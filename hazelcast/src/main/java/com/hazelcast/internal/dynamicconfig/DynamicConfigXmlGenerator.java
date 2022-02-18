@@ -170,7 +170,9 @@ public final class DynamicConfigXmlGenerator {
             gen.node("split-brain-protection-ref", c.getSplitBrainProtectionName());
             cachePartitionLostListenerConfigXmlGenerator(gen, c.getPartitionLostListenerConfigs());
 
-            gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
+            gen.node("merge-policy", c.getMergePolicyConfig().getPolicy(),
+                    "batch-size", c.getMergePolicyConfig().getBatchSize());
+
             appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendDataPersistenceConfig(gen, c.getDataPersistenceConfig());
             if (c.getMerkleTreeConfig().getEnabled() != null) {
@@ -708,6 +710,7 @@ public final class DynamicConfigXmlGenerator {
             gen.open("map-store", "enabled", s.isEnabled(), "initial-mode", initialMode.toString())
                     .node("class-name", clazz)
                     .node("factory-class-name", factoryClass)
+                    .node("write-coalescing", s.isWriteCoalescing())
                     .node("write-delay-seconds", s.getWriteDelaySeconds())
                     .node("write-batch-size", s.getWriteBatchSize())
                     .appendProperties(s.getProperties())

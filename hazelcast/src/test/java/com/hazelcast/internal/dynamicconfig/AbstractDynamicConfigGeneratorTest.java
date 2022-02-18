@@ -121,7 +121,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setWriteDelaySeconds(10)
                 .setClassName("className")
-                .setWriteCoalescing(true)
+                .setWriteCoalescing(false)
                 .setWriteBatchSize(500)
                 .setProperty("key", "value");
 
@@ -281,7 +281,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                         new CachePartitionLostListenerConfig("partitionLostListener")))
                 .setSplitBrainProtectionName("testSplitBrainProtection");
 
-        expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy").setBatchSize(99);
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
         expectedConfig.setWanReplicationRef(wanReplicationRef());
 

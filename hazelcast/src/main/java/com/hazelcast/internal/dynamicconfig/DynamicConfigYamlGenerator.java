@@ -1283,6 +1283,7 @@ public class DynamicConfigYamlGenerator {
         );
 
         addNonNullToMap(mapStoreConfigAsMap, "initial-mode", mapStoreConfig.getInitialLoadMode().name());
+        addNonNullToMap(mapStoreConfigAsMap, "write-coalescing", mapStoreConfig.isWriteCoalescing());
         addNonNullToMap(mapStoreConfigAsMap, "write-delay-seconds", mapStoreConfig.getWriteDelaySeconds());
         addNonNullToMap(mapStoreConfigAsMap, "write-batch-size", mapStoreConfig.getWriteBatchSize());
 
