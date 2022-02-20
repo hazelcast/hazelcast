@@ -146,7 +146,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         out.writeInt(sourceOrdinal);
         out.writeInt(priority);
         out.writeObject(distributedTo);
-        out.writeString(routingPolicy == null ? null : routingPolicy.name());
+        out.writeObject(routingPolicy);
         out.writeObject(config);
         CustomClassLoadedObject.write(out, partitioner);
         CustomClassLoadedObject.write(out, comparator);
@@ -159,15 +159,13 @@ public class EdgeDef implements IdentifiedDataSerializable {
         sourceOrdinal = in.readInt();
         priority = in.readInt();
         distributedTo = in.readObject();
-        String routingPolicyName = in.readString();
-        routingPolicy = routingPolicyName == null ? null : RoutingPolicy.valueOf(routingPolicyName);
+        routingPolicy = in.readObject();
         config = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
         comparator = CustomClassLoadedObject.read(in);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return String.format("%s(%d) -> %s(%d)", sourceVertex == null ? "null" : sourceVertex.name(), sourceOrdinal,
                 destVertex == null ? "null" : destVertex.name(), destOrdinal);
     }
