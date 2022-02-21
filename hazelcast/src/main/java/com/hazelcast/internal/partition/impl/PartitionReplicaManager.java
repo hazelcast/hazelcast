@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -248,17 +247,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
         replicaSyncRequestsCounter.inc();
 
-        Operation syncRequest = shouldOffload()
+        Operation syncRequest = ALLOW_OFFLOAD
                 ? new PartitionReplicaSyncRequestOffloadable(namespaces, partitionId, replicaIndex)
                 : new PartitionReplicaSyncRequest(namespaces, partitionId, replicaIndex);
 
         nodeEngine.getOperationService().send(syncRequest, target.address());
-    }
-
-    private boolean shouldOffload() {
-        return ALLOW_OFFLOAD
-                && nodeEngine.getClusterService().getClusterVersion()
-                .isGreaterOrEqual(Versions.V5_0);
     }
 
     private Collection<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
