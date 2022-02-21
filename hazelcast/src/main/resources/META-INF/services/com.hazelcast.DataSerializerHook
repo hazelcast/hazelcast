@@ -68,4 +68,3 @@ com.hazelcast.jet.impl.observer.JetObserverDataSerializerHook
 com.hazelcast.jet.impl.aggregate.AggregateDataSerializerHook
 com.hazelcast.jet.config.JetConfigDataSerializerHook
 com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook
-com.hazelcast.jet.impl.util.FunctionsSerializerHook
