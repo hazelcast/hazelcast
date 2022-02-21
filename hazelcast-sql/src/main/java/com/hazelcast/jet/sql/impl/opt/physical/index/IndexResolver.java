@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.config.IndexType.HASH;
@@ -1022,21 +1023,18 @@ public final class IndexResolver {
             List<IndexComponentCandidate> candidates,
             QueryDataType converterType
     ) {
-        // First look for equality conditions, assuming that it is the most restrictive
+        // First look for equality filters, assuming that they are more restrictive than ranges
         IndexComponentFilter equalityComponentFilter = selectComponentFilterForEquality(candidates, converterType);
         if (equalityComponentFilter != null) {
             return equalityComponentFilter;
         }
 
-        // Last, look for ranges
-        IndexComponentFilter filter = selectComponentFilterForRange(type, candidates, converterType);
-        if (filter != null) return filter;
-
-        // Cannot create an index request for the given candidates
-        return null;
+        // Look for ranges filters
+        return selectComponentFilterForRange(type, candidates, converterType);
     }
 
     private static IndexComponentFilter selectComponentFilterForEquality(List<IndexComponentCandidate> candidates, QueryDataType converterType) {
+        // First look for a single equality condition, assuming that it is the most restrictive
         for (IndexComponentCandidate candidate : candidates) {
             if (candidate.getFilter() instanceof IndexEqualsFilter) {
                 return new IndexComponentFilter(
@@ -1048,9 +1046,12 @@ public final class IndexResolver {
         }
 
         // Next look for IN, as it is worse than equality on a single value, but better than range.
-        // We choose only IN containing only Equals fitlers.
-        return selectComponentFilterForInFilter(candidates, converterType, IndexEqualsFilter.class);
+        // We choose only IN containing Equals filters only.
+        return selectComponentFilterForInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
     }
+
+    public static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
+            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
 
     private static IndexComponentFilter selectComponentFilterForRange(IndexType type, List<IndexComponentCandidate> candidates,
                                                                       QueryDataType converterType) {
@@ -1088,27 +1089,24 @@ public final class IndexResolver {
             IndexRangeFilter filter = new IndexRangeFilter(from, fromInclusive, to, toInclusive);
             return new IndexComponentFilter(filter, expressions, converterType);
         } else {
-            // Looking for composite IN with ranges
-            return selectComponentFilterForInFilter(candidates, converterType, IndexRangeFilter.class);
+            // Looking for composite IN7
+            return selectComponentFilterForInFilter(candidates, converterType, null);
         }
     }
 
     private static IndexComponentFilter selectComponentFilterForInFilter(List<IndexComponentCandidate> candidates,
                                                                          QueryDataType converterType,
-                                                                         Class<? extends IndexFilter> inFilterSubFiltersClass) {
-        for (IndexComponentCandidate candidate : candidates) {
-            if (candidate.getFilter() instanceof IndexInFilter) {
-                IndexInFilter indexInFilter = (IndexInFilter) candidate.getFilter();
-                if (indexInFilter.getFilters().stream().allMatch(filter -> filter.getClass().equals(inFilterSubFiltersClass))) {
-                    return new IndexComponentFilter(
-                            candidate.getFilter(),
-                            singletonList(candidate.getExpression()),
-                            converterType
-                    );
-                }
-            }
-        }
-        return null;
+                                                                         Predicate<IndexInFilter> additionalFilter) {
+        return candidates.stream()
+                .filter(candidate -> candidate.getFilter() instanceof IndexInFilter)
+                .filter(candidate -> additionalFilter == null || additionalFilter.test((IndexInFilter) candidate.getFilter()))
+                .map(candidate -> new IndexComponentFilter(
+                        candidate.getFilter(),
+                        singletonList(candidate.getExpression()),
+                        converterType
+                ))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -1231,16 +1229,8 @@ public final class IndexResolver {
     ) {
         List<IndexFilter> newFilters = new ArrayList<>(lastFilter.getFilters().size());
 
-        boolean wasAnyEqualsFilter = false;
-        boolean wasAnyRangeFilter = false;
-
         for (IndexFilter filter : lastFilter.getFilters()) {
             if (filter instanceof IndexEqualsFilter) {
-                if (wasAnyRangeFilter) {
-                    // Cannot compose Equals with Range filters
-                    return null;
-                }
-                wasAnyEqualsFilter = true;
                 IndexFilter newFilter = composeEqualsFilter(filters, (IndexEqualsFilter) filter, indexType, indexComponentsCount);
 
                 if (newFilter == null) {
@@ -1250,11 +1240,6 @@ public final class IndexResolver {
 
                 newFilters.add(newFilter);
             } else if (filter instanceof IndexRangeFilter) {
-                if (wasAnyEqualsFilter) {
-                    // Cannot compose Equals with Range filters
-                    return null;
-                }
-                wasAnyRangeFilter = true;
                 IndexFilter newFilter = composeRangeFilter(filters, (IndexRangeFilter) filter, indexType, indexComponentsCount);
                 newFilters.add(newFilter);
             }

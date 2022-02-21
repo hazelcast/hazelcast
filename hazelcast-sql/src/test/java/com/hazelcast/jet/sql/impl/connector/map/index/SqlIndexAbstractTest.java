@@ -259,11 +259,11 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         );
 
         if (!(f1 instanceof ExpressionType.BooleanType)) {
-            // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality, not using index)
+            // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality)
             check(
                     query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueMiddle()) +
                             ") OR field1=" + toLiteral(f1, f1.valueTo())),
-                    c_never(),
+                    c_sorted(),
                     or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
             );
 
