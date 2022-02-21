@@ -81,8 +81,8 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Schema> getAsync(long schemaId) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_1)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.1 cluster");
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
         }
         Schema schema = getLocal(schemaId);
         if (schema != null) {
@@ -132,8 +132,8 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Void> putAsync(Schema schema) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_1)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.1 cluster");
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
         }
         long schemaId = schema.getSchemaId();
         if (getLocal(schemaId) != null) {
