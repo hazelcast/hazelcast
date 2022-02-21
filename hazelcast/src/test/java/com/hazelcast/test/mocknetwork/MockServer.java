@@ -107,7 +107,7 @@ class MockServer implements Server {
             return memberUuid != null ? get(memberUuid) : null;
         }
 
-        public MockServerConnection get(UUID memberUuid) {
+        private MockServerConnection get(UUID memberUuid) {
             return server.connectionMap.get(memberUuid);
         }
 
