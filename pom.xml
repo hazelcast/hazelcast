@@ -142,7 +142,7 @@
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
-        <archunit.version>0.22.0</archunit.version>
+        <archunit.version>0.23.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
 
