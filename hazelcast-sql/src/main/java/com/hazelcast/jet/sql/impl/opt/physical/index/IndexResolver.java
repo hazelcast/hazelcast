@@ -73,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.config.IndexType.HASH;
@@ -812,7 +811,7 @@ public final class IndexResolver {
             // Separate candidates are possibly merged into a single complex filter at this stage.
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
-            IndexComponentFilter filter = selectComponentFilter(
+            IndexComponentFilter filter = IndexComponentFilterResolver.selectComponentFilter(
                     index.getType(),
                     fieldCandidates,
                     fieldConverterType
@@ -1007,106 +1006,6 @@ public final class IndexResolver {
                 null,
                 scanFilter
         );
-    }
-
-    /**
-     * This method selects the best expression to be used as index filter from the list of candidates.
-     *
-     * @param type          type of the index (SORTED, HASH)
-     * @param candidates    candidates that might be used as a filter
-     * @param converterType expected converter type for the given component of the index
-     * @return filter for the index component or {@code null} if no candidate could be applied
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private static IndexComponentFilter selectComponentFilter(
-            IndexType type,
-            List<IndexComponentCandidate> candidates,
-            QueryDataType converterType
-    ) {
-        // First look for equality filters, assuming that they are more restrictive than ranges
-        IndexComponentFilter equalityComponentFilter = selectComponentFilterForEquality(candidates, converterType);
-        if (equalityComponentFilter != null) {
-            return equalityComponentFilter;
-        }
-
-        // Look for ranges filters
-        return selectComponentFilterForRange(type, candidates, converterType);
-    }
-
-    private static IndexComponentFilter selectComponentFilterForEquality(List<IndexComponentCandidate> candidates, QueryDataType converterType) {
-        // First look for a single equality condition, assuming that it is the most restrictive
-        for (IndexComponentCandidate candidate : candidates) {
-            if (candidate.getFilter() instanceof IndexEqualsFilter) {
-                return new IndexComponentFilter(
-                        candidate.getFilter(),
-                        singletonList(candidate.getExpression()),
-                        converterType
-                );
-            }
-        }
-
-        // Next look for IN, as it is worse than equality on a single value, but better than range.
-        // We choose only IN containing Equals filters only.
-        return selectComponentFilterForInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
-    }
-
-    public static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
-            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
-
-    private static IndexComponentFilter selectComponentFilterForRange(IndexType type, List<IndexComponentCandidate> candidates,
-                                                                      QueryDataType converterType) {
-        if (type != SORTED) {
-            return null;
-        }
-
-        IndexFilterValue from = null;
-        boolean fromInclusive = false;
-        IndexFilterValue to = null;
-        boolean toInclusive = false;
-        List<RexNode> expressions = new ArrayList<>(2);
-
-        for (IndexComponentCandidate candidate : candidates) {
-            if (!(candidate.getFilter() instanceof IndexRangeFilter)) {
-                continue;
-            }
-
-            IndexRangeFilter candidateFilter = (IndexRangeFilter) candidate.getFilter();
-
-            if (from == null && candidateFilter.getFrom() != null) {
-                from = candidateFilter.getFrom();
-                fromInclusive = candidateFilter.isFromInclusive();
-                expressions.add(candidate.getExpression());
-            }
-
-            if (to == null && candidateFilter.getTo() != null) {
-                to = candidateFilter.getTo();
-                toInclusive = candidateFilter.isToInclusive();
-                expressions.add(candidate.getExpression());
-            }
-        }
-
-        if (from != null || to != null) {
-            IndexRangeFilter filter = new IndexRangeFilter(from, fromInclusive, to, toInclusive);
-            return new IndexComponentFilter(filter, expressions, converterType);
-        } else {
-            // Looking for composite IN7
-            return selectComponentFilterForInFilter(candidates, converterType, null);
-        }
-    }
-
-    private static IndexComponentFilter selectComponentFilterForInFilter(List<IndexComponentCandidate> candidates,
-                                                                         QueryDataType converterType,
-                                                                         Predicate<IndexInFilter> additionalFilter) {
-        return candidates.stream()
-                .filter(candidate -> candidate.getFilter() instanceof IndexInFilter)
-                .filter(candidate -> additionalFilter == null || additionalFilter.test((IndexInFilter) candidate.getFilter()))
-                .map(candidate -> new IndexComponentFilter(
-                        candidate.getFilter(),
-                        singletonList(candidate.getExpression()),
-                        converterType
-                ))
-                .findFirst()
-                .orElse(null);
     }
 
     /**

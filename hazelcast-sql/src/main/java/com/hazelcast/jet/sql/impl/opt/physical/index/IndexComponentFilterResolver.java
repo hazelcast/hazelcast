@@ -1,0 +1,162 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.sql.impl.opt.physical.index;
+
+import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+
+import static com.hazelcast.config.IndexType.SORTED;
+import static java.util.Collections.singletonList;
+
+final class IndexComponentFilterResolver {
+    /**
+     * This method selects the best expression to be used as index filter from the list of candidates.
+     *
+     * @param type          type of the index (SORTED, HASH)
+     * @param candidates    candidates that might be used as a filter
+     * @param converterType expected converter type for the given component of the index
+     * @return filter for the index component or {@code null} if no candidate could be applied
+     */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    static IndexComponentFilter selectComponentFilter(IndexType type, List<IndexComponentCandidate> candidates,
+                                                      QueryDataType converterType) {
+        // First look for equality filters, assuming that they are more restrictive than ranges
+        IndexComponentFilter equalityComponentFilter = selectForEquality(candidates, converterType);
+        if (equalityComponentFilter != null) {
+            return equalityComponentFilter;
+        }
+
+        // Look for ranges filters
+        return selectForRange(type, candidates, converterType);
+    }
+
+    private static IndexComponentFilter selectForEquality(List<IndexComponentCandidate> candidates,
+                                                          QueryDataType converterType) {
+        // First look for a single equality condition, assuming that it is the most restrictive
+        IndexComponentFilter candidate = selectFromEqualsFilter(candidates, converterType);
+        if (candidate != null) {
+            return candidate;
+        }
+
+        // Next look for IN, as it is worse than equality on a single value, but better than range.
+        // We choose only IN containing equals filters only here, since index may not be SORTED.
+        return selectComponentFilterFromInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
+    }
+
+    private static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
+            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
+
+    private static IndexComponentFilter selectForRange(IndexType type, List<IndexComponentCandidate> candidates,
+                                                       QueryDataType converterType) {
+        if (type != SORTED) {
+            return null;
+        }
+
+        // Looking for a filter merged from one or many range filters.
+        IndexComponentFilter filter = selectFromRangeFilters(candidates, converterType);
+        if (filter != null) {
+            return filter;
+        }
+
+        // Last place to look, IN filter with at least one range. This one may contain both ranges and equalities.
+        return selectComponentFilterFromInFilter(candidates, converterType, null);
+    }
+
+    private static IndexComponentFilter selectFromEqualsFilter(List<IndexComponentCandidate> candidates,
+                                                               QueryDataType converterType) {
+
+        for (IndexComponentCandidate candidate : candidates) {
+            if (!(candidate.getFilter() instanceof IndexEqualsFilter)) {
+                continue;
+            }
+
+            return new IndexComponentFilter(
+                    candidate.getFilter(),
+                    singletonList(candidate.getExpression()),
+                    converterType
+            );
+        }
+        return null;
+    }
+
+    private static IndexComponentFilter selectFromRangeFilters(List<IndexComponentCandidate> candidates,
+                                                               QueryDataType converterType) {
+        IndexFilterValue from = null;
+        boolean fromInclusive = false;
+        IndexFilterValue to = null;
+        boolean toInclusive = false;
+        List<RexNode> expressions = new ArrayList<>(2);
+
+        for (IndexComponentCandidate candidate : candidates) {
+            if (!(candidate.getFilter() instanceof IndexRangeFilter)) {
+                continue;
+            }
+
+            IndexRangeFilter candidateFilter = (IndexRangeFilter) candidate.getFilter();
+
+            if (from == null && candidateFilter.getFrom() != null) {
+                from = candidateFilter.getFrom();
+                fromInclusive = candidateFilter.isFromInclusive();
+                expressions.add(candidate.getExpression());
+            }
+
+            if (to == null && candidateFilter.getTo() != null) {
+                to = candidateFilter.getTo();
+                toInclusive = candidateFilter.isToInclusive();
+                expressions.add(candidate.getExpression());
+            }
+        }
+
+        if (from != null || to != null) {
+            IndexRangeFilter filter = new IndexRangeFilter(from, fromInclusive, to, toInclusive);
+            return new IndexComponentFilter(filter, expressions, converterType);
+        }
+
+        return null;
+    }
+
+    private static IndexComponentFilter selectComponentFilterFromInFilter(List<IndexComponentCandidate> candidates,
+                                                                          QueryDataType converterType,
+                                                                          Predicate<IndexInFilter> additionalFilter) {
+        for (IndexComponentCandidate candidate : candidates) {
+            if (!(candidate.getFilter() instanceof IndexInFilter)) {
+                continue;
+            }
+
+            if (additionalFilter != null && !additionalFilter.test((IndexInFilter) candidate.getFilter())) {
+                continue;
+            }
+
+            return new IndexComponentFilter(
+                    candidate.getFilter(),
+                    singletonList(candidate.getExpression()),
+                    converterType
+            );
+        }
+
+        return null;
+    }
+}
