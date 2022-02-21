@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1016,7 +1016,11 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
-                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
+                && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
+                && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
+                && nullSafeEqual(c1.getInitialLoadMode(), c2.getInitialLoadMode());
         }
 
         @Override

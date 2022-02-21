@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private String name;
     private String splitBrainProtectionName;
-    private List<ListenerConfig> listenerConfigs;
+    private List<ListenerConfig> listenerConfigs = new ArrayList<>();
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -630,6 +630,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     protected void handleConfigReload(HttpPostCommand command) throws UnsupportedEncodingException {
         prepareResponse(
+                SC_500,
                 command,
                 response(FAIL, "message", "Configuration Reload requires Hazelcast Enterprise Edition")
         );
@@ -637,6 +638,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     protected void handleConfigUpdate(HttpPostCommand command) throws UnsupportedEncodingException {
         prepareResponse(
+                SC_500,
                 command,
                 response(FAIL, "message", "Configuration Update requires Hazelcast Enterprise Edition")
         );

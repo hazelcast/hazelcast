@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public final class CompactTestUtil {
                 .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
                 .setNullableInt8("nullable_b", mainDTO.b)
                 .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableint16("nullable_s", mainDTO.s)
+                .setNullableInt16("nullable_s", mainDTO.s)
                 .setNullableInt32("nullable_i", mainDTO.i)
                 .setNullableInt64("nullable_l", mainDTO.l)
                 .setNullableFloat32("nullable_f", mainDTO.f)

@@ -51,8 +51,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT this || '-s' FROM m WHERE __key = 1", true, table),
                 plan(
-                        planRow(0, ProjectLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }

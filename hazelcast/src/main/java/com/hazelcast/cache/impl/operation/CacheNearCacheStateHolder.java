@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ import static java.util.Collections.emptyList;
  */
 public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
 
-    private UUID partitionUuid;
-    private List<Object> cacheNameSequencePairs = emptyList();
+    private volatile UUID partitionUuid;
+    private volatile List<Object> cacheNameSequencePairs = emptyList();
     private Operation cacheReplicationOperation;
 
     public CacheNearCacheStateHolder() {
@@ -61,14 +61,15 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = segment.getPartitionId();
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
-        cacheNameSequencePairs = new ArrayList(namespaces.size());
+        List<Object> nameSeqPairs = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
             String cacheName = ns.getObjectName();
 
-            cacheNameSequencePairs.add(cacheName);
-            cacheNameSequencePairs.add(metaData.currentSequence(cacheName, partitionId));
+            nameSeqPairs.add(cacheName);
+            nameSeqPairs.add(metaData.currentSequence(cacheName, partitionId));
         }
+        cacheNameSequencePairs = nameSeqPairs;
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator(ICacheService cacheService) {

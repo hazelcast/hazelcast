@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -505,8 +505,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     public int hashCode() {
         int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;
         result = 31 * result + listenerConfigurations.hashCode();
-        result = 31 * result + keyType.hashCode();
-        result = 31 * result + valueType.hashCode();
+        result = keyType == null ? result : 31 * result + keyType.hashCode();
+        result = valueType == null ? result : 31 * result + valueType.hashCode();
         result = 31 * result + (cacheWriterFactory != null ? cacheWriterFactory.hashCode() : 0);
         result = 31 * result + (expiryPolicyFactory != null ? expiryPolicyFactory.hashCode() : 0);
         result = 31 * result + (isReadThrough ? 1 : 0);

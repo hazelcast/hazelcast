@@ -23,13 +23,12 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
@@ -44,11 +43,8 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -127,16 +123,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-
-        List<Integer> projects = table.getProjects();
-        List<RexNode> projection = new ArrayList<>(projects.size());
-        for (Integer index : projects) {
-            TableField field = table.getTarget().getField(index);
-            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
-            projection.add(new RexInputRef(index, relDataType));
-        }
-
-        return project(schema, projection, parameterMetadata);
+        return project(schema, table.getProjects(), parameterMetadata);
     }
 
     public HazelcastTable getTableUnwrapped() {

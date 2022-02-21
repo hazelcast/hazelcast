@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import static java.lang.System.getenv;
 /**
  * Pings phone home server with cluster info daily.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class PhoneHome {
 
     private static final String FALSE = "false";
@@ -82,7 +83,7 @@ public class PhoneHome {
                 new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
-                new SqlInfoCollector());
+                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 

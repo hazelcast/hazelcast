@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -252,7 +252,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value);
+    GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.

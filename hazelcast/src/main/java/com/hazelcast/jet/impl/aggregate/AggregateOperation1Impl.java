@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,15 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 
@@ -89,5 +94,45 @@ public class AggregateOperation1Impl<T0, A, R>
     @Override
     public int getClassId() {
         return AggregateDataSerializerHook.AGGREGATE_OPERATION_1_IMPL;
+    }
+
+    public static class AggregateCombiningAccumulate<A, T> implements IdentifiedDataSerializable, BiConsumerEx<A, T> {
+        private FunctionEx<T, A> getAccFn;
+        private BiConsumerEx<? super A, ? super A> combineFn;
+
+        public AggregateCombiningAccumulate() {
+        }
+
+        public AggregateCombiningAccumulate(FunctionEx<T, A> getAccFn, BiConsumerEx<? super A, ? super A> combineFn) {
+            this.getAccFn = getAccFn;
+            this.combineFn = combineFn;
+        }
+
+        @Override
+        public void acceptEx(A acc, T item) throws Exception {
+            combineFn.accept(acc, getAccFn.apply(item));
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(getAccFn);
+            out.writeObject(combineFn);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            getAccFn = in.readObject();
+            combineFn = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.AGGREGATE_COMBINING_ACCUMULATE;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,8 @@ public final class UserCodeDeploymentService implements ManagedService {
                     + "config.getUserCodeDeploymentConfig().setEnabled(true);\n"
                     + "- Change XML/YAML configuration property: Set hazelcast.user-code-deployment.enabled to true\n"
                     + "- Add system property: -Dhz.user-code-deployment.enabled=true\n"
-                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true");
+                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true"
+                    + " (recommended when running container/docker image)");
         }
         locator.defineClassesFromClient(classDefinitions);
     }

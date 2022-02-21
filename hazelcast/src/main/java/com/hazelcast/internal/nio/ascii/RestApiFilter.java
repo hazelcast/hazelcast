@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,14 @@ public class RestApiFilter implements TextProtocolFilter {
                 String name = restEndpointGroup.name();
                 connection.close("REST endpoint group is not enabled - " + restEndpointGroup
                         + ". To enable it, please do one of the following:\n"
-                        + "- Change member config using JAVA API: "
+                        + "  - Change member config using JAVA API: "
                         + " config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");\n"
-                        + "- Change XML/YAML configuration property: "
+                        + "  - Change XML/YAML configuration property: "
                         + "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true\n"
-                        + "- Add system property: "
-                        + "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true\n"
-                        + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true",
+                        + "  - Add system property: "
+                        + "  -Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true\n"
+                        + "  - Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true"
+                        + " (recommended when running container/docker image)",
                         null);
             }
         } else if (!commandLine.isEmpty()) {

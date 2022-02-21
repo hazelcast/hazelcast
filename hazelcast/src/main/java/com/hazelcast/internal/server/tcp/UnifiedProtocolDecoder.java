@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,8 @@ public class UnifiedProtocolDecoder
                             + "config.getNetworkConfig().getRestApiConfig().setEnabled(true);\n"
                             + "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true\n"
                             + "- Add system property: -Dhz.network.rest-api.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true");
+                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true"
+                            + " (recommended when running container/docker image)");
                 }
                 initChannelForText(protocol, true);
             } else if (MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
@@ -123,7 +124,8 @@ public class UnifiedProtocolDecoder
                             + "- Change XML/YAML configuration property: "
                             + "hazelcast.network.memcache-protocol.enabled to true\n"
                             + "- Add system property: -Dhz.network.memcache-protocol.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true");
+                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true"
+                            + " (recommended when running container/docker image)");
                 }
                 // text doesn't have a protocol; anything that isn't cluster/client protocol will be interpreted as txt.
                 initChannelForText(protocol, false);

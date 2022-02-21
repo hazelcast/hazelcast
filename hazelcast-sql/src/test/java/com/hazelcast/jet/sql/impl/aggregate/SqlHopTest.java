@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -47,6 +48,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -59,6 +61,61 @@ public class SqlHopTest extends SqlTestSupport {
     public static void setUpClass() throws IOException {
         initialize(1, null);
         sqlService = instance().getSql();
+    }
+
+    @Test
+    public void test_validArguments_tinyInt() {
+        checkValidArguments(TINYINT, "1", row((byte) 0), row((byte) 2));
+    }
+
+    @Test
+    public void test_validArguments_smallInt() {
+        checkValidArguments(SMALLINT, "2", row((short) 0), row((short) 2));
+    }
+
+    @Test
+    public void test_validArguments_int() {
+        checkValidArguments(INTEGER, "3", row(0), row(2));
+    }
+
+    @Test
+    public void test_validArguments_bigInt() {
+        checkValidArguments(BIGINT, "4", row(0L), row(2L));
+    }
+
+    @Test
+    public void test_validArguments_time() {
+        checkValidArguments(TIME, "INTERVAL '0.005' SECOND", row(time(0)), row(time(2)));
+    }
+
+    @Test
+    public void test_validArguments_date() {
+        checkValidArguments(DATE, "INTERVAL '6' DAYS", row(date(0)), row(date(2)));
+    }
+
+    @Test
+    public void test_validArguments_timestamp() {
+        checkValidArguments(TIMESTAMP, "INTERVAL '0.007' SECOND", row(timestamp(0)), row(timestamp(2)));
+    }
+
+    @Test
+    public void test_validArguments_timestampTz() {
+        checkValidArguments(TIMESTAMP_WITH_TIME_ZONE, "INTERVAL '0.008' SECOND", row(timestampTz(0)), row(timestampTz(2)));
+    }
+
+    private static void checkValidArguments(QueryDataTypeFamily orderingColumnType, String size, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
+
+        try (SqlResult result = sqlService.execute("SELECT * FROM " +
+                "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), " + size + ", " + size + "))")
+        ) {
+            assertThat(result.getRowMetadata().findColumn("window_start")).isEqualTo(1);
+            assertThat(result.getRowMetadata().getColumn(1).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.getRowMetadata().findColumn("window_end")).isEqualTo(2);
+            assertThat(result.getRowMetadata().getColumn(2).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.iterator()).hasNext();
+        }
     }
 
     @Test
@@ -136,7 +193,7 @@ public class SqlHopTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), " + size + ", " + size + "))")
+                "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), " + size + ", " + size + "))")
         ).hasMessageContaining("The descriptor column type")
                 .hasMessageContaining("and the interval type")
                 .hasMessageContaining("do not match");
@@ -152,7 +209,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
                         "TABLE(HOP(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -176,7 +233,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
                         "TABLE(HOP(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -198,7 +255,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT SIN( CAST( EXTRACT(SECOND FROM window_start) AS DOUBLE)), SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -223,7 +280,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start/*, window_end*/ FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -239,7 +296,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, /*window_end,*/ name FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.003' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.003' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.006' SECOND" +
                         "  , INTERVAL '0.003' SECOND" +
@@ -270,7 +327,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -299,7 +356,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -325,7 +382,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder("SELECT window_start, name || '-s' AS nani FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -349,7 +406,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT window_start + INTERVAL '0.001' SECOND, SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -366,13 +423,13 @@ public class SqlHopTest extends SqlTestSupport {
                 row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Bob", 1),
                 row(timestampTz(7), "Alice", 1),
-                row(timestampTz(10), null, null)
+                row(timestampTz(10), "Alice", 1) // flushing event
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -393,7 +450,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertEmptyResultStream("SELECT window_start FROM " +
                 "TABLE(HOP(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.004' SECOND" +
                 "  , INTERVAL '0.002' SECOND" +
@@ -415,7 +472,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -430,7 +487,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(*) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -457,7 +514,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(DISTINCT name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -486,7 +543,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -516,7 +573,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(DISTINCT distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -547,7 +604,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(*) c FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -576,7 +633,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -601,7 +658,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, COUNT(*) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -624,7 +681,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MIN(name), MIN(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -651,7 +708,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MIN(DISTINCT name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -680,7 +737,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -711,7 +768,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) m FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -739,7 +796,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -762,7 +819,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, MIN(name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -785,7 +842,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MAX(name), MAX(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -812,7 +869,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MAX(DISTINCT name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -841,7 +898,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -872,7 +929,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) m FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -900,7 +957,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -923,7 +980,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, MAX(name) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -945,7 +1002,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -972,7 +1029,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(DISTINCT distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1001,7 +1058,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1032,7 +1089,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(DISTINCT distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1063,7 +1120,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) s FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1092,7 +1149,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1117,7 +1174,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1139,7 +1196,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, AVG(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1166,7 +1223,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, AVG(DISTINCT distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1194,7 +1251,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1225,7 +1282,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(DISTINCT distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1257,7 +1314,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) a FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1286,7 +1343,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1311,7 +1368,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, AVG(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1332,7 +1389,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT window_start, SUM(distance) FROM " +
-                        "TABLE(HOP(TABLE(" + name + ")" +
+                        "TABLE(HOP(TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1351,7 +1408,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.001' SECOND" +
@@ -1378,7 +1435,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(*), MIN(name), MAX(name), SUM(distance), AVG(distance) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1440,7 +1497,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT COUNT(*) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + size + ")))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + size + ")))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , " + size +
                         "  , " + size +
@@ -1464,7 +1521,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "   (SELECT ts, name, window_start AS window_start_inner FROM" +
                         "      TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.004' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
@@ -1503,7 +1560,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "   (SELECT ts, name, window_start AS wsi, window_end AS wei FROM " +
                         "      TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "           , INTERVAL '0.001' SECOND" +
@@ -1548,7 +1605,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "   (SELECT name, window_end AS window_end_inner FROM " +
                         "       TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "           , INTERVAL '0.001' SECOND" +
@@ -1599,7 +1656,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "   (SELECT ts, window_start window_start_inner, name, this FROM " +
                         "       TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "           , INTERVAL '0.001' SECOND" +
@@ -1642,7 +1699,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "   time_col => DESCRIPTOR(ts)" +
                         "   , window_size => INTERVAL '0.004' SECOND" +
                         "   , slide_size =>  INTERVAL '0.002' SECOND" +
-                        "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start/*, window_end*/",
                 asList(
@@ -1658,7 +1715,7 @@ public class SqlHopTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
-                "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
+                "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
                 "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
@@ -1669,7 +1726,7 @@ public class SqlHopTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
-                "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
+                "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
                 "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
@@ -1680,7 +1737,7 @@ public class SqlHopTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
-                "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
+                "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
                 "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
@@ -1691,7 +1748,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.004' SECOND" +
                 "  , INTERVAL '0.002' SECOND" +
@@ -1706,7 +1763,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start, SUM(distance) FROM " +
                 "TABLE(HOP(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.004' SECOND" +
                 "  , INTERVAL '0.002' SECOND" +
@@ -1732,7 +1789,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -1762,7 +1819,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT SUM(id) FROM " +
                         "TABLE(HOP(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.2' SECOND" +
                         "  , INTERVAL '0.1' SECOND" +
@@ -1788,7 +1845,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start + INTERVAL '0.001' SECOND FROM " +
                         "TABLE(HOP(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +

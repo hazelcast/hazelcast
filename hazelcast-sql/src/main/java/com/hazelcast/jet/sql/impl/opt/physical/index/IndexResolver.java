@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
@@ -903,26 +904,34 @@ public final class IndexResolver {
     }
 
     /**
-     * Builds a collation with collation fields re-mapped according with the table projects
+     * Builds a collation with collation fields re-mapped according to the table projections.
      *
      * @param scan  the logical map scan
      * @param index the index
      * @param ascs  the collation of index fields
      * @return the new collation trait
      */
-    private static RelCollation buildCollationTrait(FullScanLogicalRel scan,
-                                                    MapTableIndex index,
-                                                    List<Boolean> ascs) {
+    private static RelCollation buildCollationTrait(
+            FullScanLogicalRel scan,
+            MapTableIndex index,
+            List<Boolean> ascs
+    ) {
         if (index.getType() != SORTED) {
             return RelCollations.of(Collections.emptyList());
         }
         List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
+        // Extract those projections that are direct input field references. Only those can be used
+        // for index access
+        List<Integer> fieldProjects = table.getProjects()
+                .stream().filter(expr -> expr instanceof RexInputRef)
+                .map(inputRef -> ((RexInputRef) inputRef).getIndex())
+                .collect(Collectors.toList());
 
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
-            int remappedIndexFieldOrdinal = table.getProjects().indexOf(indexFieldOrdinal);
+            int remappedIndexFieldOrdinal = fieldProjects.indexOf(indexFieldOrdinal);
             if (remappedIndexFieldOrdinal == -1) {
                 // The field is not used in the query
                 break;
