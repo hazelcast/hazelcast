@@ -320,9 +320,8 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
             int normalTimeouts = 0;
             int invocationCount = 0;
 
-            for (Entry<Long, Invocation> e : invocationRegistry.entrySet()) {
+            for (Invocation inv : invocationRegistry) {
                 invocationCount++;
-                Invocation inv = e.getValue();
                 try {
                     if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
                         normalTimeouts++;
