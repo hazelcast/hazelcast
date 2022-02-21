@@ -27,8 +27,8 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -36,9 +36,10 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -57,11 +58,9 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
@@ -77,6 +76,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -344,14 +344,49 @@ public final class OptUtils {
                     + ", getSqlTypeName should never return null.");
         }
 
-        if (sqlTypeName == SqlTypeName.ANY) {
-            return convertRowType(field, typeFactory);
-        } else if (sqlTypeName == SqlTypeName.OTHER) {
+        if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType);
+        } else if (sqlTypeName == SqlTypeName.ANY && !fieldType.getTypeName().isEmpty()) {
+            return convertUserDefinedType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
+    }
+
+    private static RelDataType convertUserDefinedType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+        return convertUserDefinedTypeRecursively(fieldType, typeFactory);
+    }
+
+    private static RelDataType convertUserDefinedTypeRecursively(QueryDataType queryDataType,
+                                                                 RelDataTypeFactory typeFactory) {
+        final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
+        final List<HazelcastObjectType.Field> fields = new ArrayList<>();
+
+        // TODO array instead of map
+        int fieldIndex = 0;
+        for (final Map.Entry<String, QueryDataType> fieldEntry : type.getFields().entrySet()) {
+            final String fieldName = fieldEntry.getKey();
+            final QueryDataType fieldType = fieldEntry.getValue();
+
+            final RelDataType fieldRelDataType;
+            if (isUserDefinedType(fieldEntry.getValue())) {
+                // TODO compute against map with existing types
+                // TODO cache RelDataTypes?
+                fieldRelDataType = convertUserDefinedTypeRecursively(fieldType, typeFactory);
+            } else {
+                fieldRelDataType = typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType));
+            }
+
+            fields.add(new HazelcastObjectType.Field(fieldName, fieldIndex++, fieldRelDataType));
+        }
+
+        return new HazelcastObjectType(fields);
+    }
+
+    private static boolean isUserDefinedType(final QueryDataType queryDataType) {
+        return queryDataType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) &&
+                !queryDataType.getTypeName().isEmpty();
     }
 
     private static RelDataType convertCustomType(QueryDataType fieldType) {
@@ -361,45 +396,6 @@ public final class OptUtils {
             default:
                 throw new IllegalStateException("Unexpected type family: " + fieldType);
         }
-    }
-
-    private static RelDataType convertRowType(final TableField field, final RelDataTypeFactory typeFactory) {
-        return convertRowTypeRecursively(field.getType(), typeFactory);
-    }
-
-    private static RelDataType convertRowTypeRecursively(final QueryDataType dataType, final RelDataTypeFactory typeFactory) {
-        // TODO: add support for recursive types
-        if (dataType.getSubFields() == null || dataType.getSubFields().size() == 0) {
-            return new HazelcastObjectType(Collections.emptyList());
-        }
-
-        final List<QueryDataTypeField> subFields = dataType.getSubFields();
-        final List<HazelcastObjectType.Field> fields = new ArrayList<>();
-        for (int index = 0; index < subFields.size(); index++) {
-            final QueryDataTypeField entry = subFields.get(index);
-            final HazelcastObjectType.Field currentField;
-
-            if (entry.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                currentField = new HazelcastObjectType.Field(
-                        entry.getName(),
-                        index,
-                        convertRowTypeRecursively(entry.getType(), typeFactory)
-                );
-            } else {
-                currentField = new HazelcastObjectType.Field(
-                        entry.getName(),
-                        index,
-                        typeFactory.createTypeWithNullability(
-                                typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(entry.getType())),
-                                true
-                        )
-                );
-            }
-
-            fields.add(currentField);
-        }
-
-        return new HazelcastObjectType(fields);
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
@@ -528,11 +524,6 @@ public final class OptUtils {
             }
 
             @Override
-            public RexNode visitLocalRef(RexLocalRef localRef) {
-                return localRef;
-            }
-
-            @Override
             public RexNode visitCall(RexCall call) {
                 List<RexNode> newOperands = new ArrayList<>(call.getOperands().size());
                 for (RexNode operand : call.operands) {
@@ -542,15 +533,11 @@ public final class OptUtils {
             }
 
             @Override
-            public RexNode visitDynamicParam(RexDynamicParam dynamicParam) {
-                return dynamicParam;
-            }
-
-            @Override
             public RexNode visitFieldAccess(RexFieldAccess fieldAccess) {
+                // TODO: properly inline nested fields
                 final RexNode expr = fieldAccess.getReferenceExpr();
                 RexNode newOperand = expr.accept(this);
-                if (newOperand != fieldAccess.getReferenceExpr()) {
+                if (!newOperand.equals(fieldAccess.getReferenceExpr())) {
                     throw new RuntimeException("replacing partition key not supported");
                 }
                 return fieldAccess;

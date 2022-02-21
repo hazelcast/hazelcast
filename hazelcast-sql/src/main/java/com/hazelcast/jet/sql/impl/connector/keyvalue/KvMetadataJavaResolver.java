@@ -27,9 +27,9 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.util.ArrayList;
@@ -159,40 +159,13 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     String name = classField.getKey();
                     // skip Java classes like List, Map etc.
                     if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(classField.getValue())) {
-                        expandCustomTypes(classField.getValue(), customTypes);
-                        type = customTypes.get(classField.getValue().getName());
+                        type = TypeRegistry.INSTANCE.getTypeByClass(classField.getValue()).getQueryDataType();
                     }
 
                     return new MappingField(name, type, path.toString());
                 }).collect(Collectors.toList());
 
         return topLevelFields.stream();
-    }
-
-    private void expandCustomTypes(final Class<?> fieldClass, final Map<String, QueryDataType> customTypes) {
-        final Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(fieldClass);
-        final QueryDataType fieldType = customTypes.computeIfAbsent(fieldClass.getName(), className ->
-                new QueryDataType(new ArrayList<>(), className));
-
-        if (!fieldType.getSubFields().isEmpty()) {
-            return;
-        }
-
-        for (final Entry<String, Class<?>> entry : fieldsInClass.entrySet()) {
-            final String fieldName = entry.getKey();
-            final Class<?> subFieldClass = entry.getValue();
-            QueryDataType subFieldType = QueryDataTypeUtils.resolveTypeForClass(subFieldClass);
-
-            if (subFieldType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(subFieldClass)) {
-                if (!customTypes.containsKey(subFieldClass.getName())) {
-                    expandCustomTypes(subFieldClass, customTypes);
-                }
-                subFieldType = customTypes.get(subFieldClass.getName());
-                fieldType.getSubFields().add(new QueryDataTypeField(fieldName, subFieldType));
-            } else {
-                fieldType.getSubFields().add(new QueryDataTypeField(fieldName, subFieldType));
-            }
-        }
     }
 
     private boolean isJavaClass(Class<?> clazz) {

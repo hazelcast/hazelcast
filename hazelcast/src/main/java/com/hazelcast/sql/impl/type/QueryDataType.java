@@ -49,8 +49,6 @@ import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -85,7 +83,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME = new QueryDataType(OffsetDateTimeConverter.INSTANCE);
     public static final QueryDataType TIMESTAMP_WITH_TZ_ZONED_DATE_TIME = new QueryDataType(ZonedDateTimeConverter.INSTANCE);
 
-    public static final QueryDataType OBJECT = new QueryDataType(Collections.emptyList(), "");
+    public static final QueryDataType OBJECT = new QueryDataType("");
 
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
 
@@ -96,8 +94,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
 
     private Converter converter;
-    private String typeClass;
-    private List<QueryDataTypeField> fields;
+    private String typeName = "";
 
     // TODO: introduce centralized storage here and resolve references on SerDe?
 
@@ -105,33 +102,17 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         // No-op.
     }
 
-    public QueryDataType(List<QueryDataTypeField> fields, String typeClass) {
-        this.fields = fields;
+    public QueryDataType(String typeName) {
         this.converter = ObjectConverter.INSTANCE;
-        this.typeClass = typeClass;
+        this.typeName = typeName;
     }
 
     QueryDataType(Converter converter) {
         this.converter = converter;
     }
 
-    public List<QueryDataTypeField> getSubFields() {
-        return fields;
-    }
-
-    public QueryDataType getSubFieldType(String fieldName) {
-        if (fields == null || fields.size() == 0) {
-            return null;
-        }
-        return fields.stream()
-                .filter(field -> field.getName().equals(fieldName))
-                .findFirst()
-                .map(QueryDataTypeField::getType)
-                .orElse(null);
-    }
-
-    public String getTypeClass() {
-        return typeClass;
+    public String getTypeName() {
+        return typeName;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -204,13 +185,13 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
-        out.writeObject(fields);
+        out.writeString(typeName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         converter = Converters.getConverter(in.readInt());
-        fields = in.readObject();
+        typeName = in.readString();
     }
 
     @Override

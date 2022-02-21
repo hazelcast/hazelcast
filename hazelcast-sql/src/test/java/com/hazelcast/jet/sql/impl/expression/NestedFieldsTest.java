@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.expression;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -109,6 +110,10 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     }
 
     private User initDefault() {
+        // TODO: sql, dependent-types
+        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
+        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
+
         final IMap<Long, User> testMap = instance().getMap("test");
         execute("CREATE MAPPING test "
                 + "TYPE IMap OPTIONS ("

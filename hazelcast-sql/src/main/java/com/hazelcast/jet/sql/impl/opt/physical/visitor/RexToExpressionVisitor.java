@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -128,14 +129,9 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
             throw new UnsupportedOperationException();
         }
 
-        final RexInputRef inputRef = (RexInputRef) ref;
-        int parentColumnIndex = inputRef.getIndex();
-        QueryDataType fieldType = fieldTypeProvider.getType(parentColumnIndex);
-        for (String fieldName : path) {
-            fieldType = fieldType.getSubFieldType(fieldName);
-        }
+        final QueryDataType fieldType = HazelcastTypeUtils.toHazelcastType(fieldAccess.getType());
 
-        return FieldAccessExpression.create(parentColumnIndex, fieldType, path);
+        return FieldAccessExpression.create(((RexInputRef) ref).getIndex(), fieldType, path);
     }
 
     @Override

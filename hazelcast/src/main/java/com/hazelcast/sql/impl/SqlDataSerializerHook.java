@@ -173,8 +173,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int VIEW = 61;
     public static final int EXPRESSION_FIELD_ACCESS = 62;
     public static final int QUERY_DATA_TYPE_FIELD = 63;
+    public static final int TYPE = 64;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = TYPE + 1;
 
     @Override
     public int getFactoryId() {
