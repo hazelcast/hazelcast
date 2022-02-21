@@ -40,7 +40,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -61,10 +60,7 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -74,7 +70,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -296,19 +291,15 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public abstract Permission getRequiredPermission();
     }
 
-    public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
-            IdentifiedDataSerializable {
+    private static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
+        private final BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
         private transient int[] memberPartitions;
         private transient HazelcastInstance hzInstance;
         private transient InternalSerializationService serializationService;
-
-        public LocalProcessorSupplier() {
-        }
 
         private LocalProcessorSupplier(
                 @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
@@ -329,26 +320,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                     .map(partitions ->
                             new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
                     .collect(toList());
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(readerSupplier);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            readerSupplier = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER;
         }
     }
 

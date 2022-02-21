@@ -20,12 +20,11 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -40,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class RowProjectorProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+public final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
     private KvRowProjector.Supplier projectorSupplier;
 
@@ -48,7 +47,7 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, I
     private transient Extractors extractors;
 
     @SuppressWarnings("unused")
-    public RowProjectorProcessorSupplier() {
+    private RowProjectorProcessorSupplier() {
     }
 
     public RowProjectorProcessorSupplier(KvRowProjector.Supplier projectorSupplier) {
@@ -85,16 +84,6 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, I
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         projectorSupplier = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return JetSqlSerializerHook.ROW_PROJECTOR_PROCESSOR_SUPPLIER;
     }
 
     public static ProcessorSupplier rowProjector(
