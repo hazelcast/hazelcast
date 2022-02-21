@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -39,10 +38,7 @@ import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -129,6 +125,8 @@ public final class Util {
                     "-Dhz.jet.resource-upload-enabled=true",
                     "HZ_JET_RESOURCEUPLOADENABLED=true"
             );
+
+
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -775,33 +773,6 @@ public final class Util {
     public static void checkJetIsEnabled(NodeEngine nodeEngine) {
         if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
             throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
-        }
-    }
-
-    public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {
-        public static final Identity INSTANCE = new Identity<>();
-
-        @Override
-        public T applyEx(T t) throws Exception {
-            return t;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public int getFactoryId() {
-            return FunctionsSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return FunctionsSerializerHook.FUNCTION_IDENTITY;
         }
     }
 }

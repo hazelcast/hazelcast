@@ -150,10 +150,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, I
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(accumulateFns.length);
-        for (BiConsumerEx<? super A, ?> accumulateFn : accumulateFns) {
-            out.writeObject(accumulateFn);
-        }
+        out.writeObject(accumulateFns);
         out.writeObject(createFn);
         out.writeObject(combineFn);
         out.writeObject(deductFn);
@@ -163,10 +160,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, I
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        accumulateFns = new BiConsumerEx[in.readInt()];
-        for (int i = 0; i < accumulateFns.length; i++) {
-            accumulateFns[i] = in.readObject();
-        }
+        accumulateFns = in.readObject();
         createFn = in.readObject();
         combineFn = in.readObject();
         deductFn = in.readObject();
