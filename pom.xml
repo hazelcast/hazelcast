@@ -562,8 +562,8 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
+                    <checkTestClasses>true</checkTestClasses>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
                         <artifactId>java18</artifactId>
@@ -666,6 +666,11 @@
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>animal-sniffer-maven-plugin</artifactId>
+                    <version>${maven.animal.sniffer.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
