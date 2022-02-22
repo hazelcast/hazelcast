@@ -22,13 +22,12 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -38,12 +37,9 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -75,15 +71,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
 
-        List<Integer> projects = table.getProjects();
-        List<RexNode> projection = new ArrayList<>(projects.size());
-        for (Integer index : projects) {
-            TableField field = table.getTarget().getField(index);
-            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
-            projection.add(new RexInputRef(index, relDataType));
-        }
-
-        return project(schema, projection, parameterMetadata);
+        return project(schema, table.getProjects(), parameterMetadata);
     }
 
     @Override

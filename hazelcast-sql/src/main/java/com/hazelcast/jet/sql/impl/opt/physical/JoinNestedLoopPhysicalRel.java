@@ -18,7 +18,9 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
@@ -26,10 +28,17 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexShuttle;
+import org.apache.calcite.rex.RexUtil;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
+import static java.util.Arrays.asList;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
@@ -53,18 +62,47 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-        int[] rightKeys = getKeysFromRightScan();
+        List<Integer> leftKeys = analyzeCondition().leftKeys.toIntegerList();
+        List<Integer> rightKeys = analyzeCondition().rightKeys.toIntegerList();
+        HazelcastTable table = OptUtils.extractHazelcastTable(getRight());
+        RexBuilder rexBuilder = getCluster().getRexBuilder();
+
+        List<RexNode> additionalNonEquiConditions = new ArrayList<>();
+        for (int i = 0; i < rightKeys.size(); i++) {
+            Integer rightKeyIndex = rightKeys.get(i);
+            RexNode rightExpr = table.getProjects().get(rightKeyIndex);
+            if (rightExpr instanceof RexInputRef) {
+                rightKeys.set(i, ((RexInputRef) rightExpr).getIndex());
+            } else {
+                // offset the indices in rightExp by the width of left row
+                rightExpr = rightExpr.accept(new RexShuttle() {
+                    @Override
+                    public RexNode visitInputRef(RexInputRef inputRef) {
+                        return rexBuilder.makeInputRef(
+                                inputRef.getType(),
+                                inputRef.getIndex() + getLeft().getRowType().getFieldCount()
+                        );
+                    }
+                });
+                additionalNonEquiConditions.add(rexBuilder.makeCall(HazelcastSqlOperatorTable.EQUALS,
+                        rexBuilder.makeInputRef(getLeft(), leftKeys.get(i)),
+                        rightExpr));
+                leftKeys.remove(i);
+                rightKeys.remove(i);
+                i--;
+            }
+        }
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
-                analyzeCondition().getRemaining(getCluster().getRexBuilder()),
-                parameterMetadata
-        );
+                RexUtil.composeConjunction(rexBuilder, asList(
+                        analyzeCondition().getRemaining(rexBuilder),
+                        RexUtil.composeConjunction(rexBuilder, additionalNonEquiConditions))),
+                parameterMetadata);
 
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
-        return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
+        return new JetJoinInfo(getJoinType(), toIntArray(leftKeys), toIntArray(rightKeys), nonEquiCondition, condition);
     }
 
     @Override
@@ -82,12 +120,5 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
-    }
-
-    private int[] getKeysFromRightScan() {
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
-        return rightKeys;
     }
 }

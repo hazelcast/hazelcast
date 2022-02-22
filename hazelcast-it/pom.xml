@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.1-SNAPSHOT</version>
+        <version>5.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>hazelcast-it</artifactId>
@@ -31,7 +31,6 @@
     <description>Hazelcast Integration Tests</description>
 
     <modules>
-        <module>distribution-it</module>
         <!-- See other modules in profiles -->
     </modules>
 
@@ -57,5 +56,34 @@
                 <module>jdk17-tests</module>
             </modules>
         </profile>
+        <profile>
+            <id>nightly-build</id>
+            <modules>
+                <module>distribution-it</module>
+            </modules>
+        </profile>
     </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -21,10 +21,9 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.logical.LogicalTableModify;
-import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexNode;
+
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
  * Planner rule that matches single key, constant expression,
@@ -42,15 +41,12 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
     private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
-                        operand(
-                                LogicalProject.class,
-                                operandJ(
-                                        LogicalTableScan.class,
-                                        null,
-                                        scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                                        none()
-                                )
+                        TableModifyLogicalRel.class, LOGICAL, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
+                        operandJ(
+                                FullScanLogicalRel.class,
+                                null,
+                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                                none()
                         )
                 ),
                 UpdateByKeyMapLogicalRule.class.getSimpleName()
@@ -59,8 +55,8 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        LogicalTableModify update = call.rel(0);
-        LogicalTableScan scan = call.rel(2);
+        TableModifyLogicalRel update = call.rel(0);
+        FullScanLogicalRel scan = call.rel(1);
 
         RelOptTable table = scan.getTable();
         RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());

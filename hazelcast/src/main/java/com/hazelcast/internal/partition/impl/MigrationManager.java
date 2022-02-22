@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
@@ -66,7 +65,6 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,12 +200,6 @@ public class MigrationManager {
         this.asyncExecutor = node.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
     }
 
-    // RU_COMPAT 5.0
-    private boolean isClusterVersionGreaterOrEqualV51() {
-        Version clusterVersion = node.getClusterService().getClusterVersion();
-        return clusterVersion.isGreaterOrEqual(Versions.V5_1);
-    }
-
     @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
     private int migrationActiveProbe() {
         return migrationTasksAllowed.get() ? 1 : 0;
@@ -316,8 +308,7 @@ public class MigrationManager {
     }
 
     public boolean isChunkedMigrationEnabled() {
-        return isClusterVersionGreaterOrEqualV51()
-                && chunkedMigrationEnabled;
+        return chunkedMigrationEnabled;
     }
 
     public int getMaxTotalChunkedDataInBytes() {

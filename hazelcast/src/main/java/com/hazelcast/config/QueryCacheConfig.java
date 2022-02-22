@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  */
 
 @SuppressWarnings("checkstyle:methodcount")
-public class QueryCacheConfig implements IdentifiedDataSerializable, Versioned {
+public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     /**
      * By default, after reaching this minimum size, node immediately sends buffered events to {@code QueryCache}.
@@ -482,10 +480,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable, Versioned {
         out.writeObject(evictionConfig);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(indexConfigs, out);
-
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            out.writeBoolean(serializeKeys);
-        }
+        out.writeBoolean(serializeKeys);
     }
 
     @Override
@@ -502,10 +497,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable, Versioned {
         evictionConfig = in.readObject();
         entryListenerConfigs = readNullableList(in);
         indexConfigs = readNullableList(in);
-
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            serializeKeys = in.readBoolean();
-        }
+        serializeKeys = in.readBoolean();
     }
 
     @Override

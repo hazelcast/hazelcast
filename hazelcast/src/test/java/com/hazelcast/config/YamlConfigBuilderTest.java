@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3150,7 +3150,6 @@ public class YamlConfigBuilderTest
     @Test
     public void testDynamicConfig() {
         boolean persistenceEnabled = true;
-        String persistenceFile = "/mnt/dynamic-configuration/persistence-file";
         String backupDir = "/mnt/dynamic-configuration/backup-dir";
         int backupCount = 7;
 
@@ -3158,7 +3157,6 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  dynamic-configuration:\n"
                 + "    persistence-enabled: " +  persistenceEnabled + "\n"
-                + "    persistence-file: " + persistenceFile + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    backup-count: " + backupCount + "\n";
 
@@ -3166,7 +3164,6 @@ public class YamlConfigBuilderTest
         DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
 
         assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
-        assertEquals(new File(persistenceFile).getAbsolutePath(), dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
         assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
 
@@ -3179,7 +3176,6 @@ public class YamlConfigBuilderTest
         dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
 
         assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
-        assertNull(dynamicConfigurationConfig.getPersistenceFile());
         assertEquals(new File(DEFAULT_BACKUP_DIR).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
         assertEquals(DEFAULT_BACKUP_COUNT, dynamicConfigurationConfig.getBackupCount());
     }

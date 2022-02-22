@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
+    public GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeNullableInt16(fieldName, value);
         return this;

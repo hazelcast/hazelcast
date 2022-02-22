@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2712,15 +2712,6 @@ hazelcast:
   # It has the following sub-elements:
   # * "persistence-enabled":
   #     True if dynamic configuration persistence is enabled.
-  # * "persistence-file":
-  #     Path for dynamic configuration persistence file. Dynamic changes will be
-  #     persisted into this file. If not set, configuration file that was used to
-  #     start Hazelcast (root configuration) will be used. If set, this file (the
-  #     file specified in the persistence-file path) will be used for persisting
-  #     dynamic changes instead of root configuration file. User should also do
-  #     the following two: Create an XML or YAML file specified in this path and
-  #     import this XML or YAML file to the root configuration. Path can be an
-  #     absolute or relative path to the node startup directory.
   # * "backup-dir":
   #     Directory for dynamic configuration persistence file backups.
   #     Each new backup will be created inside this directory.
@@ -2731,7 +2722,6 @@ hazelcast:
 
   dynamic-configuration:
     persistence-enabled: true
-    persistence-file: /mnt/dynamic/persistence-file.xml
     backup-dir: /mnt/dynamic/backup-dir
     backup-count: 7
 

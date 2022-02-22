@@ -170,7 +170,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     @Test
     public void update_basedOnWholeKey() {
         createMapping("test_map", Key.class, int.class);
-        Map<Object, Object> map = instance().getMap("test_map");
+        Map<Key, Integer> map = instance().getMap("test_map");
         map.put(new Key(1), 1);
 
         checkUpdateCount("UPDATE test_map SET this = CASE WHEN __key IS NULL THEN 2 ELSE 3 END", 0);
@@ -193,7 +193,6 @@ public class SqlUpdateTest extends SqlTestSupport {
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
         map.put(2, 2);
-
         checkUpdateCount("UPDATE test_map SET this = this + 1", 0);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 3));
     }

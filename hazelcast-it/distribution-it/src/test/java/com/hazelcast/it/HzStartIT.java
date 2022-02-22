@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class HzStartTest extends HazelcastTestSupport {
+public class HzStartIT extends HazelcastTestSupport {
 
     private Process process;
     private HazelcastInstance client;
@@ -54,6 +54,8 @@ public class HzStartTest extends HazelcastTestSupport {
                 .inheritIO();
         builder.environment().put("HZ_CLUSTERNAME", clusterName);
         builder.environment().put("JAVA_OPTS", "-Dhazelcast.phone.home.enabled=false");
+        // Remove classpath set by Maven
+        builder.environment().remove("CLASSPATH");
 
         process = builder.start();
         client = HazelcastClient.newHazelcastClient(new ClientConfig().setClusterName(clusterName));

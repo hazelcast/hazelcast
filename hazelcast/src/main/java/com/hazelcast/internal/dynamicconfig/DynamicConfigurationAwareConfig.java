@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,7 +265,11 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    public <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
+    public static <T> boolean checkStaticConfigDoesNotExist(
+            Map<String, T> staticConfigurations,
+            String configName,
+            T newConfig
+    ) {
         T existingConfiguration = staticConfigurations.get(configName);
         return checkStaticConfigDoesNotExist(existingConfiguration, newConfig);
     }

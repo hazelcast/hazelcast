@@ -7,7 +7,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "- Change member config using JAVA API: config.getNetworkConfig().getRestApiConfig().setEnabled(true);"
     echo "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true"
     echo "- Add system property: -Dhz.network.rest-api.enabled=true"
-    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true"
+    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true (recommended when running container/docker image)"
     echo " A command may fail with a message like"
     echo "'REST endpoint group is not enabled - CP'."
     echo "In that case you must change the cluster's configuration to enable"
@@ -16,7 +16,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "- Change member config using JAVA API: config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup.CP);"
     echo "- Change XML/YAML configuration property: hazelcast.network.rest-api.endpoint-group CP with `enabled` set to true"
     echo "- Add system property: -Dhz.network.rest-api.endpoint-groups.cp.enabled=true"
-    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS.CP.ENABLED=true"
+    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS.CP.ENABLED=true (recommended when running container/docker image)"
     echo
     echo "Parameters:"
     echo "  -o, --operation    : Specifies the operation to perform, one of 'get-state', 'change-state',"
