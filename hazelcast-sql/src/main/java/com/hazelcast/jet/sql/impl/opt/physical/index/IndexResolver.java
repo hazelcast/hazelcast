@@ -811,7 +811,7 @@ public final class IndexResolver {
             // Separate candidates are possibly merged into a single complex filter at this stage.
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
-            IndexComponentFilter filter = IndexComponentFilterResolver.selectComponentFilter(
+            IndexComponentFilter filter = IndexComponentFilterResolver.findBestComponentFilter(
                     index.getType(),
                     fieldCandidates,
                     fieldConverterType

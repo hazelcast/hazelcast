@@ -32,6 +32,13 @@ import static com.hazelcast.config.IndexType.SORTED;
 import static java.util.Collections.singletonList;
 
 final class IndexComponentFilterResolver {
+    private static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
+            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
+    private static final Predicate<IndexInFilter> ALL_FILTERS_PREDICATE = indexInFilter -> true;
+
+    private IndexComponentFilterResolver() {
+    }
+
     /**
      * This method selects the best expression to be used as index filter from the list of candidates.
      *
@@ -41,52 +48,49 @@ final class IndexComponentFilterResolver {
      * @return filter for the index component or {@code null} if no candidate could be applied
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    static IndexComponentFilter selectComponentFilter(IndexType type, List<IndexComponentCandidate> candidates,
-                                                      QueryDataType converterType) {
+    static IndexComponentFilter findBestComponentFilter(IndexType type, List<IndexComponentCandidate> candidates,
+                                                        QueryDataType converterType) {
         // First look for equality filters, assuming that they are more restrictive than ranges
-        IndexComponentFilter equalityComponentFilter = selectForEquality(candidates, converterType);
+        IndexComponentFilter equalityComponentFilter = searchForEquality(candidates, converterType);
         if (equalityComponentFilter != null) {
             return equalityComponentFilter;
         }
 
         // Look for ranges filters
-        return selectForRange(type, candidates, converterType);
+        return searchForRange(type, candidates, converterType);
     }
 
-    private static IndexComponentFilter selectForEquality(List<IndexComponentCandidate> candidates,
+    private static IndexComponentFilter searchForEquality(List<IndexComponentCandidate> candidates,
                                                           QueryDataType converterType) {
         // First look for a single equality condition, assuming that it is the most restrictive
-        IndexComponentFilter candidate = selectFromEqualsFilter(candidates, converterType);
+        IndexComponentFilter candidate = convertFromEqualsFilter(candidates, converterType);
         if (candidate != null) {
             return candidate;
         }
 
         // Next look for IN, as it is worse than equality on a single value, but better than range.
         // We choose only IN containing equals filters only here, since index may not be SORTED.
-        return selectComponentFilterFromInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
+        return convertFromInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
     }
 
-    private static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
-            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
-
-    private static IndexComponentFilter selectForRange(IndexType type, List<IndexComponentCandidate> candidates,
+    private static IndexComponentFilter searchForRange(IndexType type, List<IndexComponentCandidate> candidates,
                                                        QueryDataType converterType) {
         if (type != SORTED) {
             return null;
         }
 
         // Looking for a filter merged from one or many range filters.
-        IndexComponentFilter filter = selectFromRangeFilters(candidates, converterType);
+        IndexComponentFilter filter = convertFromRangeFilters(candidates, converterType);
         if (filter != null) {
             return filter;
         }
 
         // Last place to look, IN filter with at least one range. This one may contain both ranges and equalities.
-        return selectComponentFilterFromInFilter(candidates, converterType, null);
+        return convertFromInFilter(candidates, converterType, ALL_FILTERS_PREDICATE);
     }
 
-    private static IndexComponentFilter selectFromEqualsFilter(List<IndexComponentCandidate> candidates,
-                                                               QueryDataType converterType) {
+    private static IndexComponentFilter convertFromEqualsFilter(List<IndexComponentCandidate> candidates,
+                                                                QueryDataType converterType) {
 
         for (IndexComponentCandidate candidate : candidates) {
             if (!(candidate.getFilter() instanceof IndexEqualsFilter)) {
@@ -102,8 +106,8 @@ final class IndexComponentFilterResolver {
         return null;
     }
 
-    private static IndexComponentFilter selectFromRangeFilters(List<IndexComponentCandidate> candidates,
-                                                               QueryDataType converterType) {
+    private static IndexComponentFilter convertFromRangeFilters(List<IndexComponentCandidate> candidates,
+                                                                QueryDataType converterType) {
         IndexFilterValue from = null;
         boolean fromInclusive = false;
         IndexFilterValue to = null;
@@ -138,15 +142,15 @@ final class IndexComponentFilterResolver {
         return null;
     }
 
-    private static IndexComponentFilter selectComponentFilterFromInFilter(List<IndexComponentCandidate> candidates,
-                                                                          QueryDataType converterType,
-                                                                          Predicate<IndexInFilter> additionalFilter) {
+    private static IndexComponentFilter convertFromInFilter(List<IndexComponentCandidate> candidates,
+                                                            QueryDataType converterType,
+                                                            Predicate<IndexInFilter> additionalFilter) {
         for (IndexComponentCandidate candidate : candidates) {
             if (!(candidate.getFilter() instanceof IndexInFilter)) {
                 continue;
             }
 
-            if (additionalFilter != null && !additionalFilter.test((IndexInFilter) candidate.getFilter())) {
+            if (!additionalFilter.test((IndexInFilter) candidate.getFilter())) {
                 continue;
             }
 
