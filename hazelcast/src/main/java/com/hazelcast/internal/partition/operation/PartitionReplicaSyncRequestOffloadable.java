@@ -28,6 +28,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -41,6 +42,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
@@ -216,20 +218,30 @@ public final class PartitionReplicaSyncRequestOffloadable
             }
 
             try {
-                // executed on generic operation thread
-                Integer permits = getPermits();
-                if (permits == null) {
-                    return;
-                }
-
-                sendOperationsForNamespaces(permits);
-                // send retry response for remaining namespaces
-                if (!namespaces.isEmpty()) {
-                    logNotEnoughPermits();
+                nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
+                        () -> {
+                            try {
+                                Integer permits = getPermits();
+                                if (permits == null) {
+                                    return;
+                                }
+                                sendOperationsForNamespaces(permits);
+                                // send retry response for remaining namespaces
+                                if (!namespaces.isEmpty()) {
+                                    logNotEnoughPermits();
+                                    sendRetryResponse();
+                                }
+                            } finally {
+                                clearMigratingFlag();
+                            }
+                        });
+            } catch (RejectedExecutionException e) {
+                // if execution on async executor was rejected, then send retry response and clear migrating flag
+                try {
                     sendRetryResponse();
+                } finally {
+                    clearMigratingFlag();
                 }
-            } finally {
-                clearMigratingFlag();
             }
         }
     }
