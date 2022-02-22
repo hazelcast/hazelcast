@@ -273,6 +273,8 @@ public interface GenericRecord {
     boolean[] getArrayOfBoolean(@Nonnull String fieldName);
 
     /**
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
      * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or

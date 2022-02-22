@@ -487,6 +487,8 @@ interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     * <p>
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
      *
