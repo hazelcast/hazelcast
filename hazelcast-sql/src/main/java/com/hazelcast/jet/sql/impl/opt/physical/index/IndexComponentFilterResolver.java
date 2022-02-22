@@ -47,7 +47,6 @@ final class IndexComponentFilterResolver {
      * @param converterType expected converter type for the given component of the index
      * @return filter for the index component or {@code null} if no candidate could be applied
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     static IndexComponentFilter findBestComponentFilter(IndexType type, List<IndexComponentCandidate> candidates,
                                                         QueryDataType converterType) {
         // First look for equality filters, assuming that they are more restrictive than ranges
