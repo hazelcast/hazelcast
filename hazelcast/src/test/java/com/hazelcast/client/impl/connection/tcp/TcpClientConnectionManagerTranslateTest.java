@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static junit.framework.TestCase.assertNotNull;
 
@@ -88,28 +89,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
     }
 
     @Test
-    public void testTranslateIsNotUsedOnGettingExistingConnection() {
-        // given
-        TestAddressProvider provider = new TestAddressProvider(false);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
-        TcpClientConnectionManager clientConnectionManager =
-                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
-
-        clientConnectionManager.start();
-        clientConnectionManager.reset();
-
-        clientConnectionManager.getOrConnectToAddress(privateAddress, false);
-        provider.shouldTranslate = true;
-
-        // when
-        Connection connection = clientConnectionManager.getOrConnectToAddress(privateAddress, false);
-
-        // then
-        assertNotNull(connection);
-    }
-
-    @Test
-    public void testTranslateIsUsedWhenMemberHasPublicClientAddress() throws UnknownHostException {
+    public void testTranslateIsUsedWhenMemberHasPublicClientAddress() throws UnknownHostException, ExecutionException, InterruptedException {
         // given
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
@@ -126,7 +106,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 new Address("127.0.0.1", 5701));
 
         // when
-        Connection connection = clientConnectionManager.getOrConnectToMember(member, false);
+        Connection connection = clientConnectionManager.connectToMember(member).get().connection;
 
         // then
         assertNotNull(connection);
@@ -149,7 +129,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), new Address("127.0.0.1", 5701));
 
         // when
-        clientConnectionManager.getOrConnectToMember(member, false);
+        clientConnectionManager.connectToMember(member);
 
         // then
         // throws exception because it can't connect to the incorrect member address
@@ -176,7 +156,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 new Address("127.0.0.1", 5701));
 
         // when
-        clientConnectionManager.getOrConnectToMember(member, false);
+        clientConnectionManager.connectToMember(member);
 
         // then
         // throws exception because it can't connect to the incorrect address

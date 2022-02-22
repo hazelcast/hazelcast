@@ -33,7 +33,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
@@ -160,14 +159,14 @@ public class ClientUserCodeDeploymentService {
         return null;
     }
 
-    public void deploy(HazelcastClientInstanceImpl client) throws ExecutionException, InterruptedException {
+    public void deploy(HazelcastClientInstanceImpl client) {
         if (!clientUserCodeDeploymentConfig.isEnabled()) {
             return;
         }
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
         ClientInvocation invocation = new ClientInvocation(client, request, null);
         ClientInvocationFuture future = invocation.invokeUrgent();
-        future.get();
+        future.joinInternal();
     }
 
     //testing purposes
