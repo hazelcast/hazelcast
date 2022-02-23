@@ -34,8 +34,6 @@ public abstract class BaseInvocation {
     private static final AtomicIntegerFieldUpdater<BaseInvocation> BACKUP_ACKS_RECEIVED =
             AtomicIntegerFieldUpdater.newUpdater(BaseInvocation.class, "backupsAcksReceived");
 
-    private final ILogger logger;
-
     /**
      * Number of backups acks received.
      */
@@ -55,6 +53,8 @@ public abstract class BaseInvocation {
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
      */
     volatile Object pendingResponse = VOID;
+
+    private final ILogger logger;
 
     protected BaseInvocation(ILogger logger) {
         this.logger = logger;
