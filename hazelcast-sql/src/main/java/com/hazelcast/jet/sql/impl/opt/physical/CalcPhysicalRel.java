@@ -17,19 +17,15 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Calc;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 
@@ -72,21 +68,6 @@ public class CalcPhysicalRel extends Calc implements PhysicalRel {
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw);
-    }
-
-    @Override
-    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        double inputRows = mq.getRowCount(getInput());
-
-        double rows = inputRows;
-
-        if (program.getCondition() != null) {
-            RexNode condition = program.expandLocalRef(program.getCondition());
-            rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
-        }
-        double cpu = inputRows;
-
-        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 
     @Override

@@ -89,17 +89,20 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         List<RexNode> projections;
         RelDataType projectRowType;
         SlidingWindowLogicalRel windowRel;
+
+        RexProgram program;
         if (hasCalc) {
             Calc calc = call.rel(1);
-            projections = calc.getProgram().expandList(calc.getProgram().getProjectList());
+            program = calc.getProgram();
+            projections = new ArrayList<>(program.expandList(program.getProjectList()));
             projectRowType = calc.getProgram().getOutputRowType();
             windowRel = call.rel(2);
         } else {
             windowRel = call.rel(1);
             // create an identity projection
-            RexProgram program = RexProgram.createIdentity(windowRel.getRowType());
-            projectRowType = windowRel.getRowType();
-            projections = program.expandList(program.getProjectList());
+            program = RexProgram.createIdentity(windowRel.getRowType());
+            projectRowType = program.getOutputRowType();
+            projections = new ArrayList<>(program.expandList(program.getProjectList()));
         }
 
         // Our input hierarchy is, for example:
@@ -153,10 +156,10 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
 
         for (RelNode transformedInput : transformedInputs) {
             // todo [viliam] change the name for window bound replaced with timestamps
-            RexProgram program = RexProgram.create(
+            program = RexProgram.create(
                     convertedInput.getRowType(),
                     projections,
-                    null,
+                    program.getCondition() != null ? program.expandLocalRef(program.getCondition()) : null,
                     projectRowType,
                     call.builder().getRexBuilder()
             );
