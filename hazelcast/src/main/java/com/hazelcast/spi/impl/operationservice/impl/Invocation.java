@@ -206,6 +206,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                long callTimeoutMillis,
                boolean deserialize,
                ServerConnectionManager connectionManager) {
+        super(context.logger);
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;

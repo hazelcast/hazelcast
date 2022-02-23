@@ -96,6 +96,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                int partitionId,
                                UUID uuid,
                                Connection connection) {
+        super(((ClientInvocationServiceImpl) client.getInvocationService()).invocationLogger);
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = client.getTaskScheduler();
