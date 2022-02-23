@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -59,7 +58,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             = AtomicLongFieldUpdater.newUpdater(ClientInvocation.class, "invokeCount");
     final LifecycleService lifecycleService;
     private final ClientInvocationFuture clientInvocationFuture;
-    private final ILogger logger;
     private final ClientInvocationServiceImpl invocationService;
     private final TaskScheduler executionService;
     private volatile ClientMessage clientMessage;
@@ -107,7 +105,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.connection = connection;
         this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
-        this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
