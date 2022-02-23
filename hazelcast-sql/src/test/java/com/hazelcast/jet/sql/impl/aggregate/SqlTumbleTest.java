@@ -350,7 +350,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(7), "Alice", 1) // flushing event
         );
 
-        assertTipOfStream(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +

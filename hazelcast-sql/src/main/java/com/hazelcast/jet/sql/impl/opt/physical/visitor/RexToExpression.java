@@ -497,6 +497,18 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
+    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
+        Sarg<?> sarg = literal.getValueAs(Sarg.class);
+        if (sarg == null) {
+            return null;
+        }
+
+        RelDataType literalType = literal.getType();
+        SqlTypeName sqlType = literalType.getSqlTypeName();
+        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+    }
+
+    @SuppressWarnings({"unchecked", "UnstableApiUsage"})
     private static <CI extends Comparable<CI>, CO extends Comparable<CO>> Expression<?> convertSargLiteral(
             RexLiteral literal,
             RelDataType type
@@ -532,9 +544,9 @@ public final class RexToExpression {
             case TIMESTAMP:
                 return toLocalDateTime((TimestampString) value);
             case INTERVAL_YEAR_MONTH:
-                return new SqlYearMonthInterval(((BigDecimal) value).intValue());
+                return new SqlYearMonthInterval(((BigDecimal) value).intValueExact());
             case INTERVAL_DAY_SECOND:
-                return new SqlDaySecondInterval(((BigDecimal) value).intValue());
+                return new SqlDaySecondInterval(((BigDecimal) value).longValueExact());
             default:
                 return value;
         }

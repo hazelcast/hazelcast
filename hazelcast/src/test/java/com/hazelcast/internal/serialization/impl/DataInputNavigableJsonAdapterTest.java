@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder.DEFAULT_BYTE_ORDER;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -174,8 +175,8 @@ public class DataInputNavigableJsonAdapterTest {
             buffer.append((char) next);
             next = reader.read();
         }
-        buffer.limit(buffer.position());
-        buffer.rewind();
+        upcast(buffer).limit(buffer.position());
+        upcast(buffer).rewind();
         String actual = buffer.toString();
         assertEquals(expected, actual);
     }

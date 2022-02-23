@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains the given key-value pair.
  */
-@Generated("e68614c0c6aed4fe870827196696b263")
+@Generated("87dd2f1e4044301e566c94781cf82cfe")
 public final class MultiMapContainsEntryCodec {
     //hex: 0x020900
     public static final int REQUEST_MESSAGE_TYPE = 133376;

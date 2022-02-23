@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the latest TimedMemberState of the member it's called on.
  */
-@Generated("5378e8e98f590e6a69227279ce11c61c")
+@Generated("a25070cf20c1c776b8ce70edbb3453fd")
 public final class MCGetTimedMemberStateCodec {
     //hex: 0x200B00
     public static final int REQUEST_MESSAGE_TYPE = 2099968;

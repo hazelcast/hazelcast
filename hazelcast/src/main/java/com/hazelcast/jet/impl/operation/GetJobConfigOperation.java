@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState, Versioned {
+public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
     private boolean isLightJob;
     private JobConfig response;
 
@@ -58,16 +56,12 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            out.writeBoolean(isLightJob);
-        }
+        out.writeBoolean(isLightJob);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            isLightJob = in.readBoolean();
-        }
+        isLightJob = in.readBoolean();
     }
 }

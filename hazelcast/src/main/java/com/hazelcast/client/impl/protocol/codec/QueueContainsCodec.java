@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
  * contains at least one element e such that value.equals(e)
  */
-@Generated("f392bbbe93a390a76cd1d049955e89fa")
+@Generated("f0209aa307282bef97376124cda470c7")
 public final class QueueContainsCodec {
     //hex: 0x030B00
     public static final int REQUEST_MESSAGE_TYPE = 199424;

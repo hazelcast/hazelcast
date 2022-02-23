@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-@Generated("145b15ec1fc6d075f6cbfb87dbf9e3bf")
+@Generated("07357a26b4e72bf0ced4db535a5662fb")
 public final class MapTryPutCodec {
     //hex: 0x010C00
     public static final int REQUEST_MESSAGE_TYPE = 68608;

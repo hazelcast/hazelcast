@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,6 +148,10 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
         destroyedValues.add(key);
         return atomicValues.remove(key) != null;
+    }
+
+    public int getAtomicValuesCount() {
+        return atomicValues.size();
     }
 
     public final V getAtomicValue(CPGroupId groupId, String name) {

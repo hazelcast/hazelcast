@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("343b205f5545630476fc7055da642f22")
+@Generated("c946d4c0f440a545296fb2d00403e1c6")
 public final class MapAggregateWithPredicateCodec {
     //hex: 0x013A00
     public static final int REQUEST_MESSAGE_TYPE = 80384;

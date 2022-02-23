@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkS
  * Jet aggregates the data by updating a mutable container,
  * called the <em>accumulator</em>, with the data from each stream item.
  * It does this by applying the {@link #accumulateFn accumulate} primitive
- * to the the accumulator and a given item. Jet provides some accumulator
+ * to the accumulator and a given item. Jet provides some accumulator
  * objects in the {@link com.hazelcast.jet.accumulator accumulator} package
  * that you can reuse, and you can also write your own if needed. The
  * accumulator must be serializable because Jet may need to send it to
@@ -303,7 +303,7 @@ public interface AggregateOperation<A, R> extends Serializable {
                 Objects.requireNonNull(combineFn(), "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
-                (A acc, T item) -> combineFn.accept(acc, getAccFn.apply(item)),
+                new AggregateOperation1Impl.AggregateCombiningAccumulate<>(getAccFn, combineFn),
                 combineFn,
                 deductFn(),
                 exportFn(),
