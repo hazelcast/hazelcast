@@ -195,9 +195,13 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_REMOVE);
         hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
 
+        // Join rules
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER);
+
         // Calc rules
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_TO_CALC);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
         hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
         hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
 

@@ -30,11 +30,11 @@ public final class LogicalRules {
         return RuleSets.ofList(
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
+                CalcIntoScanLogicalRule.INSTANCE,
                 CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
-//                CoreRules.FILTER_TO_CALC,
-//                CoreRules.FILTER_CALC_MERGE,
-                CalcIntoScanLogicalRule.INSTANCE,
+                // We need it in case, when transposed RIGHT JOIN to LEFT JOIN
+                CoreRules.PROJECT_TO_CALC,
                 SlidingWindowFilterTransposeLogicalRule.STREAMING_FILTER_TRANSPOSE,
 
                 // Filter rules
@@ -59,7 +59,6 @@ public final class LogicalRules {
 
                 // Join rules
                 JoinLogicalRule.INSTANCE,
-                CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 //                STREAMING_JOIN_TRANSPOSE,
 
