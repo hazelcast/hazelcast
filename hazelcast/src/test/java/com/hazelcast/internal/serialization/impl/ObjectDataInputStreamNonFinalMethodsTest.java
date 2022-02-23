@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.util.Random;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
@@ -50,7 +49,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
         when(mockSerializationService.getByteOrder()).thenReturn(BIG_ENDIAN);
 
         inputStream = spy(new TestInputStream(INIT_DATA));
-        in = new ObjectDataInputStream(new DataInputStream(inputStream), mockSerializationService);
+        in = new ObjectDataInputStream(inputStream, mockSerializationService);
     }
 
     @Test
