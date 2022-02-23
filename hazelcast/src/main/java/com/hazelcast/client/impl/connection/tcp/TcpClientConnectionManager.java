@@ -896,9 +896,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                                                 boolean switchingToNextCluster) {
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
-            connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
+            connection.setClusterUuid(response.clusterId);
 
             TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
             if (existingConnection != null) {
