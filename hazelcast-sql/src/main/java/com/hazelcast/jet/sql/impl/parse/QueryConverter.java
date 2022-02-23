@@ -184,24 +184,22 @@ public class QueryConverter {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Filter rules
-        hepProgramBuilder.addRuleInstance(PruneEmptyRules.FILTER_INSTANCE);
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_MERGE);
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_INTO_JOIN);
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.FILTER_INSTANCE);
 
         // Project rules
-        hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_MERGE);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_REMOVE);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
 
         // Calc rules
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_TO_CALC);
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_CALC_MERGE);
-        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_CALC_MERGE);
-        hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
         hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
+        hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
 
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
