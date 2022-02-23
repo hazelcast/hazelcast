@@ -31,7 +31,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
-import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -51,6 +50,9 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the name and default value for Hazelcast properties.
@@ -1756,7 +1758,7 @@ public final class ClusterProperty {
      * @since 5.0
      */
     public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
-            !OsHelper.isWindows());
+            StandardCharsets.UTF_8.equals(Charset.defaultCharset()));
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The
