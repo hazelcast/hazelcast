@@ -47,8 +47,8 @@ final class SnapshotValidator {
         if (validationRecord == null) {
             String nameOrId = snapshotName != null ? '"' + snapshotName + '"' : "with ID " + snapshotId;
             throw new JetException(String.format(
-                    "snapshot %s doesn't exist or is damaged. Unable to restore the state for %s.",
-                    nameOrId, jobIdString));
+                    "snapshot %s in IMap %s (%d entries) is damaged. Unable to restore the state for %s.",
+                    nameOrId, snapshotMap.getName(), snapshotMap.size() - 1, jobIdString));
         }
         if (validationRecord.numChunks() != snapshotMap.size() - 1) {
             // fallback validation that counts using aggregate(), ignoring different snapshot IDs
