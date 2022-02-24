@@ -79,7 +79,7 @@ public class RunnerTest {
         char containerIdx = (char) ('a' + i);
         String shortName = "builder-" + containerIdx;
         String name = shortName + "-" + testRunId;
-        GenericContainer<?> mavenContainer = new GenericContainer<>("maven:3.6.3-jdk-11")
+        GenericContainer<?> mavenContainer = new GenericContainer<>("maven:3.6.3-jdk-8")
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(8L))
                 .withFileSystemBind("..", "/usr/src/maven", BindMode.READ_WRITE)
