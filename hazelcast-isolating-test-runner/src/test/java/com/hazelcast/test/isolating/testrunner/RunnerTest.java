@@ -100,7 +100,8 @@ public class RunnerTest {
 
     private static String mvnCommandForBatch(char batchSuffix) {
         String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + batchSuffix;
-        return "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile=" + listOfTests;
+        return "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile="
+                + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir";
     }
 
     private static void prepareTestBatches(int runnersCount) {
