@@ -16,12 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import java.nio.ByteOrder;
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -39,18 +33,23 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
+import java.nio.ByteOrder;
+import java.util.Collections;
+import java.util.List;
+
 final class ExpressionConstEvaluator {
 
     private ExpressionConstEvaluator() {
     }
 
     /**
-     * Evaluate expression. If it touches the row or the context so the evaluation stops
+     * Evaluate expression. If it touches the row or the context, the evaluation stops
      * and {@code null} is returned. If succeeds, constant expression with the ready value of the same type is
      * returned.
      */
     public static ConstantExpression<?> evaluate(
-        @Nonnull Expression<?> expression
+            @Nonnull Expression<?> expression
     ) {
         try {
             Object val = expression.eval(constEvalRow(), constEvalContext());

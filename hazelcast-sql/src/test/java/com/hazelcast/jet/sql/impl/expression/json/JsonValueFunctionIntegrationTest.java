@@ -286,24 +286,22 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_defaultOnEmptyExp() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json(""));
-        test.put(2L, json("[1,2,"));
         createMapping("test", "bigint", "json");
 
-        assertEquals(2L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
-        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON EMPTY) AS c1 FROM test WHERE __key = 1"));
-        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertEquals(2L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON EMPTY) AS c1 FROM test"));
+        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON EMPTY) AS c1 FROM test"));
+        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON EMPTY) AS c1 FROM test"));
     }
 
     @Test
     public void test_defaultOnErrorExp() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
-        test.put(1L, json(""));
         test.put(2L, json("[1,2,"));
         createMapping("test", "bigint", "json");
 
-        assertEquals(3L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
-        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON ERROR) AS c1 FROM test WHERE __key = 2"));
-        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertEquals(3L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON ERROR) AS c1 FROM test"));
+        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON ERROR) AS c1 FROM test"));
+        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON ERROR) AS c1 FROM test"));
     }
 
     @Test
