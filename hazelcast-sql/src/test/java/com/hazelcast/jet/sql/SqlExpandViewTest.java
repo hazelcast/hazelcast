@@ -116,7 +116,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     public void test_viewWithStreamingQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_STREAM(10))");
 
-        assertRowsEventuallyInAnyOrder("SELECT * FROM v", rows(1, 0L, 1L, 2L));
+        assertTipOfStream("SELECT * FROM v", rows(1, 0L, 1L, 2L));
         assertRowsAnyOrder("SELECT * FROM v LIMIT 1", rows(1, 0L));
 
         assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v ORDER BY 1"))
