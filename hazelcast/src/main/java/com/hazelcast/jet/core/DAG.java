@@ -88,9 +88,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
      *
-     * @param name           the unique name of the vertex
-     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      * @see Vertex#Vertex(String, SupplierEx)
+     *
+     * @param name the unique name of the vertex
+     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
     @Nonnull
     public Vertex newVertex(
@@ -104,9 +105,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @param namePrefix     the prefix for unique name of the vertex
-     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      * @see Vertex#Vertex(String, SupplierEx)
+     *
+     * @param namePrefix the prefix for unique name of the vertex
+     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      * @since Jet 4.4
      */
     @Nonnull
@@ -119,9 +121,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code ProcessorSupplier} and adds it to this DAG.
      *
-     * @param name              the unique name of the vertex
-     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      * @see Vertex#Vertex(String, ProcessorSupplier)
+     *
+     * @param name the unique name of the vertex
+     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
@@ -133,9 +136,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @param namePrefix        the prefix for unique name of the vertex
-     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      * @see Vertex#Vertex(String, ProcessorSupplier)
+     *
+     * @param namePrefix the prefix for unique name of the vertex
+     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      * @since Jet 4.4
      */
     @Nonnull
@@ -146,9 +150,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code ProcessorMetaSupplier} and adds it to this DAG.
      *
-     * @param name         the unique name of the vertex
-     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      * @see Vertex#Vertex(String, ProcessorMetaSupplier)
+     *
+     * @param name the unique name of the vertex
+     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
+     *
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
@@ -160,9 +166,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * this DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @param namePrefix   the prefix for unique name of the vertex
-     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      * @see Vertex#Vertex(String, ProcessorMetaSupplier)
+     *
+     * @param namePrefix the prefix for unique name of the vertex
+     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      * @since Jet 4.4
      */
     @Nonnull
@@ -278,8 +285,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Returns an iterator over the DAG's vertices in topological order.
      */
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Iterator<Vertex> iterator() {
         return validate().iterator();
     }
@@ -327,7 +333,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         Map<Vertex, List<Vertex>> adjacencyMap = new HashMap<>();
         for (Edge edge : edges) {
             adjacencyMap.computeIfAbsent(edge.getSource(), x -> new ArrayList<>())
-                    .add(edge.getDestination());
+                        .add(edge.getDestination());
         }
         for (Vertex v : nameToVertex.values()) {
             adjacencyMap.putIfAbsent(v, emptyList());
@@ -448,8 +454,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      *                                neither overridden on the vertex nor the
      *                                preferred parallelism is defined by
      *                                meta-supplier
-     * @param defaultQueueSize        the queue size that will be shown if not overridden
-     *                                on the edge
+     * @param defaultQueueSize the queue size that will be shown if not overridden
+     *                         on the edge
      */
     @Nonnull
     public String toDotString(int defaultLocalParallelism, int defaultQueueSize) {
@@ -460,14 +466,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (Vertex v : this) {
             int localParallelism = v.determineLocalParallelism(defaultLocalParallelism);
             String parallelism = localParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
-                    defaultLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
-                            "default"
-                            : String.valueOf(defaultLocalParallelism)
-                    : String.valueOf(localParallelism);
+                defaultLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
+                    "default"
+                    : String.valueOf(defaultLocalParallelism)
+                : String.valueOf(localParallelism);
             builder.append("\t\"")
-                    .append(escapeGraphviz(v.getName()))
-                    .append("\" [localParallelism=").append(parallelism).append("]")
-                    .append(";\n");
+                   .append(escapeGraphviz(v.getName()))
+                   .append("\" [localParallelism=").append(parallelism).append("]")
+                   .append(";\n");
         }
 
         Map<String, int[]> inOutCounts = new HashMap<>();
@@ -476,7 +482,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             inOutCounts.computeIfAbsent(edge.getDestName(), v -> new int[2])[1]++;
         }
 
-        for (Vertex v : this) {
+        for (Vertex v: this) {
             List<Edge> out = getOutboundEdges(v.getName());
             for (Edge e : out) {
                 List<String> attributes = new ArrayList<>();
@@ -497,14 +503,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 boolean inSubgraph = e.getSourceName().equals(e.getDestName() + FIRST_STAGE_VERTEX_NAME_SUFFIX);
                 if (inSubgraph) {
                     builder.append("\tsubgraph cluster_").append(clusterCount++).append(" {\n")
-                            .append("\t");
+                           .append("\t");
                 }
                 String source = escapeGraphviz(e.getSourceName());
                 String destination = escapeGraphviz(e.getDestName());
                 builder.append("\t")
-                        .append("\"").append(source).append("\"")
-                        .append(" -> ")
-                        .append("\"").append(destination).append("\"");
+                       .append("\"").append(source).append("\"")
+                       .append(" -> ")
+                       .append("\"").append(destination).append("\"");
                 if (attributes.size() > 0) {
                     builder.append(attributes.stream().collect(joining(", ", " [", "]")));
                 }
@@ -595,7 +601,6 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             Vertex value = in.readObject();
             nameToVertex.put(key, value);
         }
-
 
         int edgeCount = in.readInt();
 
