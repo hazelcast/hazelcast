@@ -1166,8 +1166,12 @@ public final class IndexResolver {
      * @param componentsCount number of components in the filter
      * @return range filter
      */
-    private static IndexFilter composeRangeFilter(List<IndexFilter> filters, IndexRangeFilter lastFilter, IndexType indexType,
-                                                  int componentsCount) {
+    private static IndexFilter composeRangeFilter(
+            List<IndexFilter> filters,
+            IndexRangeFilter lastFilter,
+            IndexType indexType,
+            int componentsCount
+    ) {
         if (indexType == HASH) {
             return null;
         }

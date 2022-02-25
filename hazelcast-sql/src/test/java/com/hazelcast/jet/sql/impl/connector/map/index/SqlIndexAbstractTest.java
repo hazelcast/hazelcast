@@ -267,7 +267,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
             );
 
-            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (not overlapping ranges)
+            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges)
             check(
                     query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueMiddle()) +
                             ") OR (field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +

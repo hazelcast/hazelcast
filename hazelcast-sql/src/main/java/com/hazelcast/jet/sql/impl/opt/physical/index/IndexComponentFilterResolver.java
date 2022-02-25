@@ -47,9 +47,12 @@ final class IndexComponentFilterResolver {
      * @param converterType expected converter type for the given component of the index
      * @return filter for the index component or {@code null} if no candidate could be applied
      */
-    static IndexComponentFilter findBestComponentFilter(IndexType type, List<IndexComponentCandidate> candidates,
-                                                        QueryDataType converterType) {
-        // First look for equality filters, assuming that they are more restrictive than ranges
+    static IndexComponentFilter findBestComponentFilter(
+            IndexType type,
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
+    ) {
+        // First look for equality filters, assuming that they are more selective than ranges
         IndexComponentFilter equalityComponentFilter = searchForEquality(candidates, converterType);
         if (equalityComponentFilter != null) {
             return equalityComponentFilter;
@@ -59,9 +62,11 @@ final class IndexComponentFilterResolver {
         return searchForRange(type, candidates, converterType);
     }
 
-    private static IndexComponentFilter searchForEquality(List<IndexComponentCandidate> candidates,
-                                                          QueryDataType converterType) {
-        // First look for a single equality condition, assuming that it is the most restrictive
+    private static IndexComponentFilter searchForEquality(
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
+    ) {
+        // First look for a single equality condition, assuming that it is the most selective
         IndexComponentFilter candidate = convertFromEqualsFilter(candidates, converterType);
         if (candidate != null) {
             return candidate;
@@ -72,8 +77,11 @@ final class IndexComponentFilterResolver {
         return convertFromInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
     }
 
-    private static IndexComponentFilter searchForRange(IndexType type, List<IndexComponentCandidate> candidates,
-                                                       QueryDataType converterType) {
+    private static IndexComponentFilter searchForRange(
+            IndexType type,
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
+    ) {
         if (type != SORTED) {
             return null;
         }
@@ -88,9 +96,10 @@ final class IndexComponentFilterResolver {
         return convertFromInFilter(candidates, converterType, ALL_FILTERS_PREDICATE);
     }
 
-    private static IndexComponentFilter convertFromEqualsFilter(List<IndexComponentCandidate> candidates,
-                                                                QueryDataType converterType) {
-
+    private static IndexComponentFilter convertFromEqualsFilter(
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
+    ) {
         for (IndexComponentCandidate candidate : candidates) {
             if (!(candidate.getFilter() instanceof IndexEqualsFilter)) {
                 continue;
@@ -105,8 +114,10 @@ final class IndexComponentFilterResolver {
         return null;
     }
 
-    private static IndexComponentFilter convertFromRangeFilters(List<IndexComponentCandidate> candidates,
-                                                                QueryDataType converterType) {
+    private static IndexComponentFilter convertFromRangeFilters(
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
+    ) {
         IndexFilterValue from = null;
         boolean fromInclusive = false;
         IndexFilterValue to = null;
@@ -141,9 +152,11 @@ final class IndexComponentFilterResolver {
         return null;
     }
 
-    private static IndexComponentFilter convertFromInFilter(List<IndexComponentCandidate> candidates,
-                                                            QueryDataType converterType,
-                                                            Predicate<IndexInFilter> additionalFilter) {
+    private static IndexComponentFilter convertFromInFilter(
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType,
+            Predicate<IndexInFilter> additionalFilter
+    ) {
         for (IndexComponentCandidate candidate : candidates) {
             if (!(candidate.getFilter() instanceof IndexInFilter)) {
                 continue;
