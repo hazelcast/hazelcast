@@ -208,7 +208,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
-                "TABLE(TUMBLE(" +
+                        "TABLE(TUMBLE(" +
                         "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -346,7 +346,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Bob", 1),
                 row(timestampTz(3), "Alice", 1),
-                row(timestampTz(10), null, null)
+                row(timestampTz(4), "Alice", 1),
+                row(timestampTz(7), "Alice", 1) // flushing event
         );
 
         assertRowsEventuallyInAnyOrder(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConcurrency
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.Person;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.PortableAddress;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.PortablePerson;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -105,7 +106,7 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
         ByteBuffer buffer = ByteBuffer.allocate(originalPayload.length * 2);
         Packet originalPacket = new Packet(originalPayload);
         assertTrue(packetWriter.writeTo(originalPacket, buffer));
-        buffer.flip();
+        upcast(buffer).flip();
 
         SerializationService ss2 = createSerializationServiceBuilder().build();
         Packet clonedPacket = packetReader.readFrom(buffer);
@@ -132,9 +133,9 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
         boolean writeCompleted;
         do {
             writeCompleted = packetWriter.writeTo(originalPacket, bb);
-            bb.flip();
+            upcast(bb).flip();
             clonedPacket = packetReader.readFrom(bb);
-            bb.clear();
+            upcast(bb).clear();
         } while (!writeCompleted);
 
         assertNotNull(clonedPacket);
@@ -159,9 +160,9 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
             boolean writeCompleted;
             do {
                 writeCompleted = packetWriter.writeTo(originalPacket, bb);
-                bb.flip();
+                upcast(bb).flip();
                 clonedPacket = packetReader.readFrom(bb);
-                bb.clear();
+                upcast(bb).clear();
             } while (!writeCompleted);
 
             assertNotNull(clonedPacket);
@@ -180,7 +181,7 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
         boolean written = packetWriter.writeTo(originalPacket, bb);
         assertTrue(written);
 
-        bb.flip();
+        upcast(bb).flip();
 
         Packet clonedPacket = packetReader.readFrom(bb);
         assertNotNull(clonedPacket);

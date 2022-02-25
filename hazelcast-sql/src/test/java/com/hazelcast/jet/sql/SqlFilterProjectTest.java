@@ -475,7 +475,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_projectFilterProjectExpression() {
+    public void test_projectFilterProjectExpression()  {
         TestBatchSqlConnector.create(sqlService, "t", 3);
 
         assertRowsAnyOrder(

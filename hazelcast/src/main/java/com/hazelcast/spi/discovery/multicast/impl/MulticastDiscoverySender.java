@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -36,18 +33,19 @@ public class MulticastDiscoverySender implements Runnable {
     private MulticastSocket multicastSocket;
     private MulticastMemberInfo multicastMemberInfo;
     private DatagramPacket datagramPacket;
-    private ILogger logger;
-    private String group;
-    private int port;
+    private final ILogger logger;
+    private final String group;
+    private final int port;
+    private final MulticastDiscoverySerializationHelper serializationHelper;
     private volatile boolean stop;
 
-    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket,
-                                    ILogger logger, String group, int port)
-            throws IOException {
+    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket, ILogger logger, String group,
+            int port, MulticastDiscoverySerializationHelper serializationHelper) throws IOException {
         this.multicastSocket = multicastSocket;
         this.logger = logger;
         this.group = group;
         this.port = port;
+        this.serializationHelper = serializationHelper;
         if (discoveryNode != null) {
             Address address = discoveryNode.getPublicAddress();
             multicastMemberInfo = new MulticastMemberInfo(address.getHost(), address.getPort());
@@ -56,11 +54,7 @@ public class MulticastDiscoverySender implements Runnable {
     }
 
     private void initDatagramPacket() throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutput out;
-        out = new ObjectOutputStream(bos);
-        out.writeObject(multicastMemberInfo);
-        byte[] yourBytes = bos.toByteArray();
+        byte[] yourBytes = serializationHelper.serialize(multicastMemberInfo);
         datagramPacket = new DatagramPacket(yourBytes, yourBytes.length,
                 InetAddress.getByName(group), port);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Collections.emptyList;
@@ -262,7 +263,7 @@ public class ClientMessageProtectionTest {
     }
 
     private static byte[] byteBufferToBytes(ByteBuffer buffer) {
-        buffer.flip();
+        upcast(buffer).flip();
         byte[] requestBytes = new byte[buffer.limit()];
         buffer.get(requestBytes);
         return requestBytes;

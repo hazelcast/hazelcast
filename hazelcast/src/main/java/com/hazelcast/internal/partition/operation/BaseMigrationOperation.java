@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -53,7 +52,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readLi
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
+        implements MigrationCycleOperation, PartitionAwareOperation {
 
     /**
      * Volatile fields can be accessed from another thread, as replication
