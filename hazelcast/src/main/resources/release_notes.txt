@@ -17,8 +17,6 @@ after a cluster restart. See https://docs.hazelcast.com/hazelcast/5.1/configurat
   ** `DROP VIEW`
   ** `EXPLAIN`
   ** `CREATE INDEX`
-  ** `TUMBLE(TABLE table, DESCRIPTOR(column), window_size)` for creating tumbling windows in streaming queries.
-  ** `IMPOSE_ORDER` to enhance the given input table with watermarks.
   ** `UNION`
   ** `UNION ALL`
   ** `EXISTS`
@@ -27,9 +25,9 @@ after a cluster restart. See https://docs.hazelcast.com/hazelcast/5.1/configurat
   ** Sub-queries and `VALUES()` execution in JOIN arguments
   ** `JSON_ARRAY`, `JSON_OBJECT`
   ** `SHOW VIEWS`
-  [#20413], [#20268], [#20042], [#19894], [#19850], [#19810], [#19768], [#19742], [#19729], [#19650], [#19589]
+  ** Added support for stream aggregation (HOP and TUMBLE functions)
+  [#20413], [#20342], [#20268], [#20042], [#19894], [#19850], [#19810], [#19768], [#19742], [#19729], [#19650], [#19589]
 
-* Added support of hopping windows. [#20342]
 * Added `JSON` as a supported type for the SQL engine with functions like `JSON_QUERY` and `JSON_VALUE`;
 they return a JSON object/array and a primitive value, respectively. For an overview of JSON in SQL, see https://docs.hazelcast.com/hazelcast/5.1/sql/working-with-json. [#19303]
 
