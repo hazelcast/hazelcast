@@ -65,10 +65,13 @@ import static java.util.Collections.unmodifiableSet;
  */
 public class ClientClusterServiceImpl implements ClientClusterService {
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
-
-    private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>(), null);
-
-    private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
+    /**
+     * Initial list version is used at the start and also after cluster has changed with blue-green deployment feature.
+     * In both cases, we need to fire InitialMembershipEvent.
+     */
+    private static final int INITIAL_LIST_VERSION = -1;
+    private final AtomicReference<MemberListSnapshot> memberListSnapshot =
+            new AtomicReference<>(new MemberListSnapshot(INITIAL_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final Object clusterViewLock = new Object();
@@ -182,15 +185,16 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void clearMemberListVersion() {
+    public void onClusterRestart() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the member list version ");
             }
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-            // This check is necessary so that when handling auth response so that it will not
-            // intervene with client failover logic.
-            if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
+            // This check is necessary so in order not to override changing cluster information when:
+            // - registering cluster view listener back to the new cluster.
+            // - on authentication response when cluster uuid change is detected.
+            if (clusterViewSnapshot.version != INITIAL_LIST_VERSION) {
                 memberListSnapshot.set(new MemberListSnapshot(0,
                         clusterViewSnapshot.members,
                         clusterViewSnapshot.clusterUuid));
@@ -198,13 +202,16 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void reset() {
+    public void onClusterChange() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");
             }
             initialListFetchedLatch = new CountDownLatch(1);
-            memberListSnapshot.set(EMPTY_SNAPSHOT);
+            MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
+            memberListSnapshot.set(new MemberListSnapshot(INITIAL_LIST_VERSION,
+                    clusterViewSnapshot.members,
+                    clusterViewSnapshot.clusterUuid));
         }
     }
 
@@ -301,11 +308,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                     + membersString(snapshot));
         }
         MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-        if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
+        if (clusterViewSnapshot.version == INITIAL_LIST_VERSION) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
-                    //this means this is the first time client connected to cluster
+                if (clusterViewSnapshot.version == INITIAL_LIST_VERSION) {
+                    //this means this is the first time client connected to cluster/cluster has changed(blue/green)
                     applyInitialState(memberListVersion, memberInfos, clusterUuid);
                     initialListFetchedLatch.countDown();
                     return;

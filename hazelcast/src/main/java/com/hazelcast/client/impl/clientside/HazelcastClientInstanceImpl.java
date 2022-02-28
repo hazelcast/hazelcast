@@ -870,7 +870,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         dispose(onClusterChangeDisposables);
         //clear the member lists
-        clusterService.reset();
+        clusterService.onClusterChange();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -884,7 +884,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        clusterService.clearMemberListVersion();
+        clusterService.onClusterRestart();
     }
 
     public void waitForInitialMembershipEvents() {
