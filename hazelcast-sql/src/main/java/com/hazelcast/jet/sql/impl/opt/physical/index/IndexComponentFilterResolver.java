@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
@@ -32,9 +32,9 @@ import static com.hazelcast.config.IndexType.SORTED;
 import static java.util.Collections.singletonList;
 
 final class IndexComponentFilterResolver {
-    private static final Predicate<IndexInFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexInFilter ->
-            indexInFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
-    private static final Predicate<IndexInFilter> ALL_FILTERS_PREDICATE = indexInFilter -> true;
+    private static final Predicate<IndexCompositeFilter> ONLY_EQUALS_FILTERS_PREDICATE = indexCompositeFilter ->
+            indexCompositeFilter.getFilters().stream().allMatch(indexFilter -> indexFilter instanceof IndexEqualsFilter);
+    private static final Predicate<IndexCompositeFilter> ALL_FILTERS_PREDICATE = indexFilter -> true;
 
     private IndexComponentFilterResolver() {
     }
@@ -72,9 +72,9 @@ final class IndexComponentFilterResolver {
             return candidate;
         }
 
-        // Next look for IN, as it is worse than equality on a single value, but better than range.
-        // We choose only IN containing equals filters only here, since index may not be SORTED.
-        return convertFromInFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
+        // Next look for composite (IN (a,b) like), as it is worse than equality on a single value, but better than range.
+        // We choose only composite containing equals filters only here, since index may not be SORTED.
+        return convertFromCompositeFilter(candidates, converterType, ONLY_EQUALS_FILTERS_PREDICATE);
     }
 
     private static IndexComponentFilter searchForRange(
@@ -92,8 +92,8 @@ final class IndexComponentFilterResolver {
             return filter;
         }
 
-        // Last place to look, IN filter with at least one range. This one may contain both ranges and equalities.
-        return convertFromInFilter(candidates, converterType, ALL_FILTERS_PREDICATE);
+        // Last place to look, composite filter with at least one range. This one may contain both ranges and equalities.
+        return convertFromCompositeFilter(candidates, converterType, ALL_FILTERS_PREDICATE);
     }
 
     private static IndexComponentFilter convertFromEqualsFilter(
@@ -152,17 +152,17 @@ final class IndexComponentFilterResolver {
         return null;
     }
 
-    private static IndexComponentFilter convertFromInFilter(
+    private static IndexComponentFilter convertFromCompositeFilter(
             List<IndexComponentCandidate> candidates,
             QueryDataType converterType,
-            Predicate<IndexInFilter> additionalFilter
+            Predicate<IndexCompositeFilter> additionalFilter
     ) {
         for (IndexComponentCandidate candidate : candidates) {
-            if (!(candidate.getFilter() instanceof IndexInFilter)) {
+            if (!(candidate.getFilter() instanceof IndexCompositeFilter)) {
                 continue;
             }
 
-            if (!additionalFilter.test((IndexInFilter) candidate.getFilter())) {
+            if (!additionalFilter.test((IndexCompositeFilter) candidate.getFilter())) {
                 continue;
             }
 

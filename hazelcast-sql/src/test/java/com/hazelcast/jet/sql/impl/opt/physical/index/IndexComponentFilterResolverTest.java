@@ -18,9 +18,9 @@ package com.hazelcast.jet.sql.impl.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -50,7 +50,7 @@ public class IndexComponentFilterResolverTest extends TestCase {
     private static final IndexComponentCandidate SINGLE_EQUALITY_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
             new IndexEqualsFilter());
     private static final IndexComponentCandidate TWO_EQUALITIES_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
-            new IndexInFilter(new IndexEqualsFilter(), new IndexEqualsFilter()));
+            new IndexCompositeFilter(new IndexEqualsFilter(), new IndexEqualsFilter()));
     private static final IndexComponentCandidate LOWER_BOUND_RANGE_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
             new IndexRangeFilter(new IndexFilterValue(), true, null, false));
     private static final IndexComponentCandidate UPPER_BOUND_RANGE_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
@@ -58,7 +58,7 @@ public class IndexComponentFilterResolverTest extends TestCase {
     private static final IndexComponentCandidate BOTH_BOUNDS_RANGE_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
             new IndexRangeFilter(new IndexFilterValue(), true, new IndexFilterValue(), true));
     private static final IndexComponentCandidate EQUALITY_AND_RANGE_CANDIDATE = new IndexComponentCandidate(REX_INPUT_REF, 0,
-            new IndexInFilter(new IndexRangeFilter(), new IndexEqualsFilter()));
+            new IndexCompositeFilter(new IndexRangeFilter(), new IndexEqualsFilter()));
 
     private static final List<IndexComponentCandidate> WITH_SINGLE_EQUALITY_CANDIDATES = Arrays.asList(
             EQUALITY_AND_RANGE_CANDIDATE, LOWER_BOUND_RANGE_CANDIDATE, TWO_EQUALITIES_CANDIDATE, SINGLE_EQUALITY_CANDIDATE);

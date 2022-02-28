@@ -53,21 +53,21 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
  * </ul>>
  */
 @SuppressWarnings("rawtypes")
-public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
+public class IndexCompositeFilter implements IndexFilter, IdentifiedDataSerializable {
 
     private List<IndexFilter> filters;
 
-    public IndexInFilter() {
+    public IndexCompositeFilter() {
         // No-op.
     }
 
-    public IndexInFilter(IndexFilter... filters) {
+    public IndexCompositeFilter(IndexFilter... filters) {
         assert filters != null;
 
         this.filters = Arrays.asList(filters);
     }
 
-    public IndexInFilter(List<IndexFilter> filters) {
+    public IndexCompositeFilter(List<IndexFilter> filters) {
         this.filters = filters;
     }
 
@@ -150,7 +150,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             return false;
         }
 
-        IndexInFilter that = (IndexInFilter) o;
+        IndexCompositeFilter that = (IndexCompositeFilter) o;
 
         return filters.equals(that.filters);
     }
@@ -162,7 +162,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "IndexInFilter {filters=" + filters + '}';
+        return "IndexCompositeFilter {filters=" + filters + '}';
     }
 
     private static final class LazyIterator extends AbstractCompositeIterator<QueryableEntry> {

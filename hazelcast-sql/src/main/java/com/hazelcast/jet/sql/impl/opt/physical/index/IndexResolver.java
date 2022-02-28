@@ -33,10 +33,10 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -405,7 +405,7 @@ public final class IndexResolver {
                 );
             case OR:
                 // Handle OR/IN predicates. If OR condition refer to only a single column and all comparisons are equality
-                // comparisons, then IN filter is created. Otherwise null is returned. Examples:
+                // comparisons, then composite filter is created. Otherwise null is returned. Examples:
                 // {a=1 OR a=2} -> IN(EQUALS(1), EQUALS(2))
                 // {a=1 OR a>2} -> null
                 // {a=1 OR b=2} -> null
@@ -470,7 +470,7 @@ public final class IndexResolver {
                 break;
 
             case IS_NOT_TRUE:
-                filter = new IndexInFilter(
+                filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
                         )),
@@ -484,7 +484,7 @@ public final class IndexResolver {
             default:
                 assert kind == SqlKind.IS_NOT_FALSE;
 
-                filter = new IndexInFilter(
+                filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
                         )),
@@ -651,7 +651,7 @@ public final class IndexResolver {
         if (ranges.size() == 1) {
             indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
         } else {
-            indexFilter = new IndexInFilter(
+            indexFilter = new IndexCompositeFilter(
                     toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
         }
 
@@ -743,7 +743,7 @@ public final class IndexResolver {
 
             IndexFilter candidateFilter = candidate.getFilter();
 
-            if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexInFilter)) {
+            if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexCompositeFilter)) {
                 // Support only equality for ORs
                 return null;
             }
@@ -759,13 +759,13 @@ public final class IndexResolver {
             if (candidateFilter instanceof IndexEqualsFilter) {
                 filters.add(candidateFilter);
             } else {
-                filters.addAll(((IndexInFilter) candidateFilter).getFilters());
+                filters.addAll(((IndexCompositeFilter) candidateFilter).getFilters());
             }
         }
 
         assert columnIndex != null;
 
-        IndexInFilter inFilter = new IndexInFilter(filters);
+        IndexCompositeFilter inFilter = new IndexCompositeFilter(filters);
 
         return new IndexComponentCandidate(
                 exp,
@@ -1035,8 +1035,8 @@ public final class IndexResolver {
 
             if (lastFilter instanceof IndexEqualsFilter) {
                 return composeEqualsFilter(filters, (IndexEqualsFilter) lastFilter, indexType, indexComponentsCount);
-            } else if (lastFilter instanceof IndexInFilter) {
-                return composeInFilter(filters, (IndexInFilter) lastFilter, indexType, indexComponentsCount);
+            } else if (lastFilter instanceof IndexCompositeFilter) {
+                return composeCompositeFilter(filters, (IndexCompositeFilter) lastFilter, indexType, indexComponentsCount);
             } else {
                 assert lastFilter instanceof IndexRangeFilter;
 
@@ -1110,19 +1110,19 @@ public final class IndexResolver {
     }
 
     /**
-     * Create the final IN filter from the collection of per-column filters.
+     * Create the final composite filter from the collection of per-column filters.
      * <p>
      * Consider the expression {@code {a=1 AND b IN (2,3)}}. After the conversion, the composite filter will be
      * {@code {a,b} IN {{1, 2}, {1, 3}}}.
      *
      * @param filters              per-column filters
-     * @param lastFilter           the last IN filter
+     * @param lastFilter           the last composite filter
      * @param indexComponentsCount the number of index components
-     * @return composite IN filter
+     * @return composite filter
      */
-    private static IndexFilter composeInFilter(
+    private static IndexFilter composeCompositeFilter(
             List<IndexFilter> filters,
-            IndexInFilter lastFilter,
+            IndexCompositeFilter lastFilter,
             IndexType indexType,
             int indexComponentsCount
     ) {
@@ -1144,7 +1144,7 @@ public final class IndexResolver {
             }
         }
 
-        return new IndexInFilter(newFilters);
+        return new IndexCompositeFilter(newFilters);
     }
 
     /**
