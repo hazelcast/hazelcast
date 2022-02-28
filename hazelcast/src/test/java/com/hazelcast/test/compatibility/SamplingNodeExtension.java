@@ -133,7 +133,7 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public <T> T createService(Class<T> type, Object... params) {
-        return nodeExtension.createService(type);
+        return nodeExtension.createService(type, params);
     }
 
     @Override
@@ -294,16 +294,13 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
-                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
-                + " samples. Please exclude this Jet test from the sampling process.");
+        // There are 3 JET classes that must be backward compatible, so let's start the jet test too.
+        return nodeExtension.getJet();
     }
 
     @Nullable
     @Override
     public JetServiceBackend getJetServiceBackend() {
-        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
-                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
-                + " samples. Please exclude this Jet test from the sampling process.");
+        return nodeExtension.getJetServiceBackend();
     }
 }
