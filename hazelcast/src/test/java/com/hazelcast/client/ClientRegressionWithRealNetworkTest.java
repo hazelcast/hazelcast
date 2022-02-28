@@ -28,6 +28,7 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -236,6 +237,11 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             @Override
             public Address translate(Address address) {
                 return address;
+            }
+
+            @Override
+            public Address translate(Member member) throws Exception {
+                return member.getAddress();
             }
         };
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);

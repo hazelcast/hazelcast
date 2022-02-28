@@ -16,8 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -31,12 +30,10 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -70,17 +67,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
     private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>(), null);
-    private final HazelcastClientInstanceImpl client;
 
     private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
-    private final ClientConnectionManager connectionManager;
     private final Object clusterViewLock = new Object();
-    private final TranslateToPublicAddressProvider translateToPublicAddress;
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
-
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -94,12 +87,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
-        this.client = client;
-        logger = client.getLoggingService().getLogger(ClientClusterService.class);
-        connectionManager = client.getConnectionManager();
-        translateToPublicAddress = new TranslateToPublicAddressProvider(client.getClientConfig().getNetworkConfig(),
-                client.getProperties(), logger);
+    public ClientClusterServiceImpl(ILogger logger) {
+        this.logger = logger;
+    }
+
+    public Cluster getCluster() {
+        return new ClientClusterProxy(this);
     }
 
     @Override
@@ -139,11 +132,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return Clock.currentTimeMillis();
     }
 
-    @Override
-    public boolean translateToPublicAddress() {
-        return translateToPublicAddress.get();
-    }
-
     @Nonnull
     @Override
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
@@ -152,7 +140,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         synchronized (clusterViewLock) {
             UUID id = addMembershipListenerWithoutInit(listener);
             if (listener instanceof InitialMembershipListener) {
-                Cluster cluster = client.getCluster();
+                Cluster cluster = getCluster();
                 Collection<Member> members = memberListSnapshot.get().members.values();
                 //if members are empty,it means initial event did not arrive yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
@@ -222,11 +210,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos, clusterUuid);
-        translateToPublicAddress.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
-        InitialMembershipEvent event = new InitialMembershipEvent(client.getCluster(), members);
+        InitialMembershipEvent event = new InitialMembershipEvent(getCluster(), members);
         for (MembershipListener listener : listeners.values()) {
             if (listener instanceof InitialMembershipListener) {
                 ((InitialMembershipListener) listener).init(event);
@@ -280,16 +267,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         List<MembershipEvent> events = new LinkedList<>();
 
         for (Member member : deadMembers) {
-            events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, currentMembers));
-            Connection connection = connectionManager.getConnection(member.getUuid());
-            if (connection != null) {
-                connection.close(null,
-                        new TargetDisconnectedException("The client has closed the connection to this member,"
-                                + " after receiving a member left event from the cluster. " + connection));
-            }
+            events.add(new MembershipEvent(getCluster(), member, MembershipEvent.MEMBER_REMOVED, currentMembers));
         }
         for (Member member : newMembers) {
-            events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
+            events.add(new MembershipEvent(getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
         }
 
         if (events.size() != 0) {

@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
@@ -149,6 +150,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             @Override
             public Address translate(Address address) {
                 return address;
+            }
+
+            @Override
+            public Address translate(Member member) {
+                return member.getAddress();
             }
         };
     }
