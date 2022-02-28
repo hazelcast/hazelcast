@@ -21,8 +21,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -42,7 +42,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexInFilterIterationTest extends IndexFilterIteratorTestSupport {
+public class IndexCompositeFilterIterationTest extends IndexFilterIteratorTestSupport {
 
     @Parameterized.Parameters(name = "descendingDirection:{0}")
     public static Collection<Object[]> parameters() {
@@ -109,10 +109,10 @@ public class IndexInFilterIterationTest extends IndexFilterIteratorTestSupport {
         checkIterator(indexType, descendingDirection, in(equals(null, false), equals(null, false)).getEntries(index, descendingDirection, evalContext));
     }
 
-    private static IndexInFilter in(IndexEqualsFilter... filters) {
+    private static IndexCompositeFilter in(IndexEqualsFilter... filters) {
         assert filters != null;
 
-        return new IndexInFilter(Arrays.asList(filters));
+        return new IndexCompositeFilter(Arrays.asList(filters));
     }
 
     private static IndexEqualsFilter equals(Integer value) {

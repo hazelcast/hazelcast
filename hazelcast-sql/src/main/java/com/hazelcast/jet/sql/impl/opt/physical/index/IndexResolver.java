@@ -33,10 +33,10 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -405,7 +405,7 @@ public final class IndexResolver {
                 );
             case OR:
                 // Handle OR/IN predicates. If OR condition refer to only a single column and all comparisons are equality
-                // comparisons, then IN filter is created. Otherwise null is returned. Examples:
+                // comparisons, then composite filter is created. Otherwise null is returned. Examples:
                 // {a=1 OR a=2} -> IN(EQUALS(1), EQUALS(2))
                 // {a=1 OR a>2} -> null
                 // {a=1 OR b=2} -> null
@@ -470,7 +470,7 @@ public final class IndexResolver {
                 break;
 
             case IS_NOT_TRUE:
-                filter = new IndexInFilter(
+                filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
                         )),
@@ -484,7 +484,7 @@ public final class IndexResolver {
             default:
                 assert kind == SqlKind.IS_NOT_FALSE;
 
-                filter = new IndexInFilter(
+                filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
                         )),
@@ -650,12 +650,9 @@ public final class IndexResolver {
         IndexFilter indexFilter;
         if (ranges.size() == 1) {
             indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
-        } else if (ranges.stream().allMatch(IndexResolver::isSingletonRange)) {
-            indexFilter = new IndexInFilter(
-                    toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
         } else {
-            // No support for IndexInFilter with multiple IndexFilterForSingleRanges
-            return null;
+            indexFilter = new IndexCompositeFilter(
+                    toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
         }
 
         return new IndexComponentCandidate(exp, columnIndex, indexFilter);
@@ -664,22 +661,38 @@ public final class IndexResolver {
     @SuppressWarnings("unchecked")
     @Nonnull
     private static IndexFilter createIndexFilterForSingleRange(Range<?> range, QueryDataType hazelcastType) {
-        Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
-        IndexFilterValue lowerBound0 = new IndexFilterValue(
-                singletonList(lowerBound),
-                singletonList(false)
-        );
-        if (isSingletonRange(range)) {
-            return new IndexEqualsFilter(lowerBound0);
+        IndexFilterValue lowerBound0 = null;
+
+        // Range doesn't have to have both bounds.
+        if (range.hasLowerBound()) {
+            Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
+            lowerBound0 = new IndexFilterValue(
+                    singletonList(lowerBound),
+                    singletonList(false)
+            );
+            if (isSingletonRange(range)) {
+                return new IndexEqualsFilter(lowerBound0);
+            }
         }
 
-        Expression<?> upperBound = ConstantExpression.create(range.upperEndpoint(), hazelcastType);
-        IndexFilterValue upperBound0 = new IndexFilterValue(
-                singletonList(upperBound),
-                singletonList(false)
-        );
-        return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED,
-                upperBound0, range.upperBoundType() == BoundType.CLOSED);
+        if (range.hasUpperBound()) {
+            Expression<?> upperBound = ConstantExpression.create(range.upperEndpoint(), hazelcastType);
+            IndexFilterValue upperBound0 = new IndexFilterValue(
+                    singletonList(upperBound),
+                    singletonList(false)
+            );
+
+            if (lowerBound0 == null) {
+                return new IndexRangeFilter(null, false, upperBound0, range.upperBoundType() == BoundType.CLOSED);
+            }
+
+            return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED,
+                    upperBound0, range.upperBoundType() == BoundType.CLOSED);
+        } else {
+            assert lowerBound0 != null;
+
+            return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED, null, false);
+        }
     }
 
     private static <T extends Comparable<T>> boolean isSingletonRange(Range<T> range) {
@@ -730,7 +743,7 @@ public final class IndexResolver {
 
             IndexFilter candidateFilter = candidate.getFilter();
 
-            if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexInFilter)) {
+            if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexCompositeFilter)) {
                 // Support only equality for ORs
                 return null;
             }
@@ -746,13 +759,13 @@ public final class IndexResolver {
             if (candidateFilter instanceof IndexEqualsFilter) {
                 filters.add(candidateFilter);
             } else {
-                filters.addAll(((IndexInFilter) candidateFilter).getFilters());
+                filters.addAll(((IndexCompositeFilter) candidateFilter).getFilters());
             }
         }
 
         assert columnIndex != null;
 
-        IndexInFilter inFilter = new IndexInFilter(filters);
+        IndexCompositeFilter inFilter = new IndexCompositeFilter(filters);
 
         return new IndexComponentCandidate(
                 exp,
@@ -798,7 +811,7 @@ public final class IndexResolver {
             // Separate candidates are possibly merged into a single complex filter at this stage.
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
-            IndexComponentFilter filter = selectComponentFilter(
+            IndexComponentFilter filter = IndexComponentFilterResolver.findBestComponentFilter(
                     index.getType(),
                     fieldCandidates,
                     fieldConverterType
@@ -996,81 +1009,6 @@ public final class IndexResolver {
     }
 
     /**
-     * This method selects the best expression to be used as index filter from the list of candidates.
-     *
-     * @param type          type of the index (SORTED, HASH)
-     * @param candidates    candidates that might be used as a filter
-     * @param converterType expected converter type for the given component of the index
-     * @return filter for the index component or {@code null} if no candidate could be applied
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private static IndexComponentFilter selectComponentFilter(
-            IndexType type,
-            List<IndexComponentCandidate> candidates,
-            QueryDataType converterType
-    ) {
-        // First look for equality conditions, assuming that it is the most restrictive
-        for (IndexComponentCandidate candidate : candidates) {
-            if (candidate.getFilter() instanceof IndexEqualsFilter) {
-                return new IndexComponentFilter(
-                        candidate.getFilter(),
-                        singletonList(candidate.getExpression()),
-                        converterType
-                );
-            }
-        }
-
-        // Next look for IN, as it is worse than equality on a single value, but better than range
-        for (IndexComponentCandidate candidate : candidates) {
-            if (candidate.getFilter() instanceof IndexInFilter) {
-                return new IndexComponentFilter(
-                        candidate.getFilter(),
-                        singletonList(candidate.getExpression()),
-                        converterType
-                );
-            }
-        }
-
-        // Last, look for ranges
-        if (type == SORTED) {
-            IndexFilterValue from = null;
-            boolean fromInclusive = false;
-            IndexFilterValue to = null;
-            boolean toInclusive = false;
-            List<RexNode> expressions = new ArrayList<>(2);
-
-            for (IndexComponentCandidate candidate : candidates) {
-                if (!(candidate.getFilter() instanceof IndexRangeFilter)) {
-                    continue;
-                }
-
-                IndexRangeFilter candidateFilter = (IndexRangeFilter) candidate.getFilter();
-
-                if (from == null && candidateFilter.getFrom() != null) {
-                    from = candidateFilter.getFrom();
-                    fromInclusive = candidateFilter.isFromInclusive();
-                    expressions.add(candidate.getExpression());
-                }
-
-                if (to == null && candidateFilter.getTo() != null) {
-                    to = candidateFilter.getTo();
-                    toInclusive = candidateFilter.isToInclusive();
-                    expressions.add(candidate.getExpression());
-                }
-            }
-
-            if (from != null || to != null) {
-                IndexRangeFilter filter = new IndexRangeFilter(from, fromInclusive, to, toInclusive);
-
-                return new IndexComponentFilter(filter, expressions, converterType);
-            }
-        }
-
-        // Cannot create an index request for the given candidates
-        return null;
-    }
-
-    /**
      * Composes the final filter from the list of single-column filters.
      *
      * @param filters              single-column filters
@@ -1097,14 +1035,14 @@ public final class IndexResolver {
 
             if (lastFilter instanceof IndexEqualsFilter) {
                 return composeEqualsFilter(filters, (IndexEqualsFilter) lastFilter, indexType, indexComponentsCount);
-            } else if (lastFilter instanceof IndexInFilter) {
-                return composeInFilter(filters, (IndexInFilter) lastFilter, indexType, indexComponentsCount);
+            } else if (lastFilter instanceof IndexCompositeFilter) {
+                return composeCompositeFilter(filters, (IndexCompositeFilter) lastFilter, indexType, indexComponentsCount);
             } else {
                 assert lastFilter instanceof IndexRangeFilter;
 
                 assert indexType == SORTED;
 
-                return composeRangeFilter(filters, (IndexRangeFilter) lastFilter, indexComponentsCount);
+                return composeRangeFilter(filters, (IndexRangeFilter) lastFilter, indexType, indexComponentsCount);
             }
         }
     }
@@ -1172,38 +1110,41 @@ public final class IndexResolver {
     }
 
     /**
-     * Create the final IN filter from the collection of per-column filters.
+     * Create the final composite filter from the collection of per-column filters.
      * <p>
      * Consider the expression {@code {a=1 AND b IN (2,3)}}. After the conversion, the composite filter will be
      * {@code {a,b} IN {{1, 2}, {1, 3}}}.
      *
      * @param filters              per-column filters
-     * @param lastFilter           the last IN filter
+     * @param lastFilter           the last composite filter
      * @param indexComponentsCount the number of index components
-     * @return composite IN filter
+     * @return composite filter
      */
-    private static IndexFilter composeInFilter(
+    private static IndexFilter composeCompositeFilter(
             List<IndexFilter> filters,
-            IndexInFilter lastFilter,
+            IndexCompositeFilter lastFilter,
             IndexType indexType,
             int indexComponentsCount
     ) {
         List<IndexFilter> newFilters = new ArrayList<>(lastFilter.getFilters().size());
 
         for (IndexFilter filter : lastFilter.getFilters()) {
-            assert filter instanceof IndexEqualsFilter;
+            if (filter instanceof IndexEqualsFilter) {
+                IndexFilter newFilter = composeEqualsFilter(filters, (IndexEqualsFilter) filter, indexType, indexComponentsCount);
 
-            IndexFilter newFilter = composeEqualsFilter(filters, (IndexEqualsFilter) filter, indexType, indexComponentsCount);
+                if (newFilter == null) {
+                    // Cannot create a filter for one of the values of the IN clause. Stop.
+                    return null;
+                }
 
-            if (newFilter == null) {
-                // Cannot create a filter for one of the values of the IN clause. Stop.
-                return null;
+                newFilters.add(newFilter);
+            } else if (filter instanceof IndexRangeFilter) {
+                IndexFilter newFilter = composeRangeFilter(filters, (IndexRangeFilter) filter, indexType, indexComponentsCount);
+                newFilters.add(newFilter);
             }
-
-            newFilters.add(newFilter);
         }
 
-        return new IndexInFilter(newFilters);
+        return new IndexCompositeFilter(newFilters);
     }
 
     /**
@@ -1221,10 +1162,20 @@ public final class IndexResolver {
      *
      * @param filters         all per-column filters
      * @param lastFilter      the last filter (range)
+     * @param indexType
      * @param componentsCount number of components in the filter
      * @return range filter
      */
-    private static IndexFilter composeRangeFilter(List<IndexFilter> filters, IndexRangeFilter lastFilter, int componentsCount) {
+    private static IndexFilter composeRangeFilter(
+            List<IndexFilter> filters,
+            IndexRangeFilter lastFilter,
+            IndexType indexType,
+            int componentsCount
+    ) {
+        if (indexType == HASH) {
+            return null;
+        }
+
         // Flatten non-terminal components.
         List<Expression> components = new ArrayList<>(filters.size());
         List<Boolean> allowNulls = new ArrayList<>();
