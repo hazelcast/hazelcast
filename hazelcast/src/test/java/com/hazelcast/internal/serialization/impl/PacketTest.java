@@ -65,7 +65,7 @@ public class PacketTest {
             // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as SERVER_CONTROL
             // and COMPATIBILITY_EXTENDED_BIND occupies the same ordinal as SQL
             Type expected = type == Type.COMPATIBILITY_BIND_MESSAGE ? Type.SERVER_CONTROL
-                    : type == Type.COMPATIBILITY_EXTENDED_BIND ? Type.SQL
+                    : type == Type.COMPATIBILITY_EXTENDED_BIND ? Type.UNDEFINED5
                     : type;
             assertSame(expected, packet.getPacketType());
         }

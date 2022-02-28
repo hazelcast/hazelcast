@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public final class CompatibilityTcpServerControl {
     private synchronized boolean process0(TcpServerConnection connection, Address remoteEndpoint,
                                           Collection<Address> remoteAddressAliases, CompatibilityExtendedBindMessage handshake) {
         final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].connectionsInProgress.contains(remoteAddress)) {
+        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
             remoteEndpoint = remoteAddress;
         }
@@ -183,7 +183,8 @@ public final class CompatibilityTcpServerControl {
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
                 }
-                connectionManager.planes[handshake.getPlaneIndex()].connectionMap.putIfAbsent(remoteAddressAlias, connection);
+                connectionManager.planes[handshake.getPlaneIndex()]
+                        .putConnectionIfAbsent(remoteAddressAlias, connection);
             }
         }
 
@@ -191,7 +192,7 @@ public final class CompatibilityTcpServerControl {
     }
 
     private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].connectionMap.get(remoteEndPoint);
+        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
