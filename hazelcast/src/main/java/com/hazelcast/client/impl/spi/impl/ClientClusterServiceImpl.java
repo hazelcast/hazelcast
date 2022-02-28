@@ -16,11 +16,8 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.Client;
-import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -42,7 +39,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -78,7 +74,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
-    private final Set<String> labels;
     private final ILogger logger;
     private final ClientConnectionManager connectionManager;
     private final Object clusterViewLock = new Object();
@@ -101,7 +96,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        labels = unmodifiableSet(client.getClientConfig().getLabels());
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
         connectionManager = client.getConnectionManager();
         translateToPublicAddress = new TranslateToPublicAddressProvider(client.getClientConfig().getNetworkConfig(),
@@ -148,15 +142,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public boolean translateToPublicAddress() {
         return translateToPublicAddress.get();
-    }
-
-    @Override
-    public Client getLocalClient() {
-        final ClientConnectionManager cm = client.getConnectionManager();
-        final TcpClientConnection connection = (TcpClientConnection) cm.getRandomConnection();
-        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
-        UUID clientUuid = cm.getClientUuid();
-        return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels);
     }
 
     @Nonnull
@@ -237,7 +222,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos, clusterUuid);
-            translateToPublicAddress.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
+        translateToPublicAddress.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
