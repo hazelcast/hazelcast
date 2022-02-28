@@ -426,7 +426,7 @@ public class SqlHopTest extends SqlTestSupport {
                 row(timestampTz(10), "Alice", 1) // flushing event
         );
 
-        assertTipOfStream(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
