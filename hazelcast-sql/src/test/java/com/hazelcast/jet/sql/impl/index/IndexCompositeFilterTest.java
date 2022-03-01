@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.index;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,28 +34,28 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexInFilterTest extends IndexFilterTestSupport {
+public class IndexCompositeFilterTest extends IndexFilterTestSupport {
     @Test
     public void testContent() {
         List<IndexFilter> filters = Collections.singletonList(new IndexEqualsFilter(intValue(1)));
 
-        IndexInFilter filter = new IndexInFilter(filters);
+        IndexCompositeFilter filter = new IndexCompositeFilter(filters);
 
         assertSame(filters, filter.getFilters());
     }
 
     @Test
     public void testEquals() {
-        IndexInFilter filter = new IndexInFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1))));
+        IndexCompositeFilter filter = new IndexCompositeFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1))));
 
-        checkEquals(filter, new IndexInFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1)))), true);
-        checkEquals(filter, new IndexInFilter(Collections.singletonList(new IndexEqualsFilter(intValue(2)))), false);
+        checkEquals(filter, new IndexCompositeFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1)))), true);
+        checkEquals(filter, new IndexCompositeFilter(Collections.singletonList(new IndexEqualsFilter(intValue(2)))), false);
     }
 
     @Test
     public void testSerialization() {
-        IndexInFilter original = new IndexInFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1))));
-        IndexInFilter restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_IN);
+        IndexCompositeFilter original = new IndexCompositeFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1))));
+        IndexCompositeFilter restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_IN);
 
         checkEquals(original, restored, true);
     }
