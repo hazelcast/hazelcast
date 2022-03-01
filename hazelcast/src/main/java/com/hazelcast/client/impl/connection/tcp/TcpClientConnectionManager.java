@@ -59,13 +59,10 @@ import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
-import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
-import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.SocketInterceptor;
@@ -94,16 +91,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -150,7 +148,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final Set<String> labels;
     private final int outboundPortCount;
     private final boolean failoverConfigProvided;
-    private final ScheduledExecutorService clusterExecutor;
+    private final ExecutorService clusterExecutor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
     private final ClusterDiscoveryService clusterDiscoveryService;
@@ -225,23 +223,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
     }
 
-    private ScheduledExecutorService createExecutorService() {
+    private ExecutorService createClusterExecutorService() {
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        String name = client.getName();
-        return new LoggingScheduledExecutor(logger, EXECUTOR_CORE_POOL_SIZE,
-                new PoolExecutorThreadFactory(name + ".smart.cluster-", classLoader), (r, executor) -> {
-            String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-            logger.finest(message);
-            throw new RejectedExecutionException(message);
-        });
+        SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster");
+        return Executors.newSingleThreadExecutor(threadFactory);
     }
-
-    private ScheduledExecutorService createClusterExecutorService() {
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
-        return Executors.newSingleThreadScheduledExecutor(threadFactory);
-    }
-
 
     private Collection<Integer> getOutboundPorts() {
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
@@ -446,6 +432,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+    /**
+     * If this throws exception it means instance is either not started or will be shutdown.
+     */
     private void connectToCluster() {
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
         logger.info("Trying to connect to cluster: " + currentContext.getClusterName());
@@ -494,9 +483,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     AuthenticationResult connect(Object target, Function<Object, Future<AuthenticationResult>> connectFunc) {
+        Future<AuthenticationResult> future = connectFunc.apply(target);
         try {
             logger.info("Trying to connect to " + target);
-            Future<AuthenticationResult> future = connectFunc.apply(target);
             return future.get(authenticationTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
@@ -650,15 +639,15 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    Future<AuthenticationResult> connectToMember(Member member) {
+    CompletableFuture<AuthenticationResult> connectToMember(Member member) {
         return connectToTranslatedAddress(translate(member));
     }
 
-    Future<AuthenticationResult> connectToAddress(Address o) {
-        return connectToTranslatedAddress(translate(o));
+    Future<AuthenticationResult> connectToAddress(Address address) {
+        return connectToTranslatedAddress(translate(address));
     }
 
-    private Future<AuthenticationResult> connectToTranslatedAddress(@Nonnull Address address) {
+    private CompletableFuture<AuthenticationResult> connectToTranslatedAddress(@Nonnull Address address) {
         TcpClientConnection connection = createSocketConnection(address);
         ClientInvocationFuture future = authenticate(connection);
         return future.thenApply(clientMessage -> {
@@ -1050,28 +1039,45 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+    class ConnectionAttempt {
+        UUID memberUuid;
+        CompletableFuture<AuthenticationResult> future;
+
+        ConnectionAttempt(UUID memberUuid, CompletableFuture<AuthenticationResult> future) {
+            this.memberUuid = memberUuid;
+            this.future = future;
+        }
+    }
+
     public void connectToAllClusterMembers() {
         if (!client.getLifecycleService().isRunning()) {
             return;
         }
 
         Collection<Member> memberList = client.getClientClusterService().getMemberList();
-        Collection<BiTuple<UUID, Future<AuthenticationResult>>> futures = new LinkedList<>();
+        Collection<ConnectionAttempt> connectionAttempts = new LinkedList<>();
         for (Member member : memberList) {
             UUID uuid = member.getUuid();
             if (activeConnections.get(uuid) != null) {
                 continue;
             }
-            futures.add(BiTuple.of(member.getUuid(), connectToMember(member)));
+            CompletableFuture<AuthenticationResult> future = connectToMember(member);
+            connectionAttempts.add(new ConnectionAttempt(member.getUuid(), future));
         }
-        for (BiTuple<UUID, Future<AuthenticationResult>> future : futures) {
+
+        for (ConnectionAttempt attempt : connectionAttempts) {
             try {
-                onAuthenticatedToMember(future.element2.get(authenticationTimeout, TimeUnit.MILLISECONDS));
+                // This can potentially block more than authentication timeout.
+                AuthenticationResult result = attempt.future.get(authenticationTimeout, TimeUnit.MILLISECONDS);
+                onAuthenticatedToMember(result);
             } catch (Exception e) {
+                if (e instanceof TimeoutException) {
+                    attempt.future.completeExceptionally(e);
+                }
                 if (logger.isFineEnabled()) {
-                    logger.warning("Could not connect to member " + future.element1, e);
+                    logger.warning("Could not connect to member " + attempt.memberUuid, e);
                 } else {
-                    logger.warning("Could not connect to member " + future.element1 + ", reason " + e);
+                    logger.warning("Could not connect to member " + attempt.memberUuid + ", reason " + e);
                 }
             }
         }

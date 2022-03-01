@@ -75,7 +75,7 @@ public class TcpClientConnection implements ClientConnection {
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
-    private String connectedServerVersion;
+    private volatile String connectedServerVersion;
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
 

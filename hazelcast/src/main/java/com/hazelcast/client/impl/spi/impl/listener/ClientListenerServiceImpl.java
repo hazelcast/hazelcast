@@ -85,7 +85,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
         this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity, true);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
+        ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration");
         this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
     }
