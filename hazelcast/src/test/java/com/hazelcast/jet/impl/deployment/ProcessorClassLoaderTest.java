@@ -41,6 +41,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,6 +56,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore("HazelcastStarter config cloning only works when cloning across 3.x / 5.x versions")
 public class ProcessorClassLoaderTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "test-source";
