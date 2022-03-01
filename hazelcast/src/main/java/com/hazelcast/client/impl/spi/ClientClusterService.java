@@ -63,20 +63,6 @@ public interface ClientClusterService {
     Member getMasterMember();
 
     /**
-     * Gets the current number of members.
-     *
-     * @return The current number of members.
-     */
-    int getSize();
-
-    /**
-     * Returns the cluster-time.
-     *
-     * @return The cluster-time.
-     */
-    long getClusterTime();
-
-    /**
      * @param listener The listener to be registered.
      * @return The registration ID
      */

@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -40,7 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -64,9 +68,9 @@ public class ClientClusterServiceImplTest {
 
             }
         });
-        // triggers initial event
         MemberInfo member = member("127.0.0.1");
         UUID clusterUuid = UUID.randomUUID();
+        // triggers initial event
         clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
         // triggers member added
         clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
@@ -369,6 +373,15 @@ public class ClientClusterServiceImplTest {
     }
 
     @Nonnull
+    private static MemberInfo liteMember(String host) {
+        try {
+            return new MemberInfo(new Address(host, 5701), UUID.randomUUID(), emptyMap(), true, VERSION);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
     private static MemberInfo member(String host, UUID uuid) {
         try {
             return new MemberInfo(new Address(host, 5701), uuid, emptyMap(), false, VERSION);
@@ -377,4 +390,98 @@ public class ClientClusterServiceImplTest {
         }
     }
 
+    @Test
+    public void testListenersFromConfigWorking() {
+        AtomicInteger addedCount = new AtomicInteger();
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        clusterService.start(singleton(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+                addedCount.incrementAndGet();
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+
+            }
+        }));
+        MemberInfo member = member("127.0.0.1");
+        UUID clusterUuid = UUID.randomUUID();
+        // triggers initial event
+        clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
+        // triggers member added
+        clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
+        assertEquals(1, addedCount.get());
+    }
+
+    @Test
+    public void testRemoveListener() {
+        AtomicInteger addedCount = new AtomicInteger();
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        UUID listenerUuid = clusterService.addMembershipListener(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+                addedCount.incrementAndGet();
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+
+            }
+        });
+        assertTrue(clusterService.removeMembershipListener(listenerUuid));
+        MemberInfo member = member("127.0.0.1");
+        UUID clusterUuid = UUID.randomUUID();
+        // triggers initial event
+        clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
+        // triggers member added
+        clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
+        // we have removed the listener. No event should be fired to our listener
+        assertEquals(0, addedCount.get());
+    }
+
+    @Test
+    public void testRemoveNonExistingListener() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        assertFalse(clusterService.removeMembershipListener(UUID.randomUUID()));
+    }
+
+    @Test
+    public void testGetMasterMember() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        MemberInfo masterMember = member("127.0.0.1");
+        clusterService.handleMembersViewEvent(1, asList(masterMember, member("127.0.0.2"),
+                member("127.0.0.3")), UUID.randomUUID());
+        assertEquals(masterMember.toMember(), clusterService.getMasterMember());
+    }
+
+    @Test
+    public void testGetMember() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        MemberInfo masterMember = member("127.0.0.1");
+        UUID member2Uuid = UUID.randomUUID();
+        MemberInfo member2 = member("127.0.0.2", member2Uuid);
+        clusterService.handleMembersViewEvent(1, asList(masterMember, member2), UUID.randomUUID());
+        assertEquals(member2.toMember(), clusterService.getMember(member2Uuid));
+    }
+
+    @Test
+    public void testGetMembers() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        MemberInfo masterMember = member("127.0.0.1");
+        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember("127.0.0.2"),
+                member("127.0.0.3")), UUID.randomUUID());
+        assertEquals(3, clusterService.getMemberList().size());
+        assertEquals(1, clusterService.getMembers(Member::isLiteMember).size());
+        assertEquals(2, clusterService.getMembers(member -> !member.isLiteMember()).size());
+    }
+
+    @Test
+    public void testWaitInitialMembership() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        MemberInfo masterMember = member("127.0.0.1");
+        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember("127.0.0.2"),
+                member("127.0.0.3")), UUID.randomUUID());
+        clusterService.waitInitialMemberListFetched();
+    }
 }

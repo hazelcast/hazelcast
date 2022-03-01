@@ -30,7 +30,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -123,16 +122,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             return iterator.next();
         }
         return null;
-    }
-
-    @Override
-    public int getSize() {
-        return getMemberList().size();
-    }
-
-    @Override
-    public long getClusterTime() {
-        return Clock.currentTimeMillis();
     }
 
     @Nonnull
