@@ -60,7 +60,6 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
@@ -91,8 +90,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -104,7 +101,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
@@ -121,6 +117,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -331,8 +328,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
                 if (runnable != null) {
                     runnable.run();
-                }
-                if (isSmartRoutingEnabled) {
+                } else if (isSmartRoutingEnabled) {
                     connectToAllClusterMembers();
                 }
             } catch (Exception e) {
@@ -440,7 +436,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         logger.info("Trying to connect to cluster: " + currentContext.getClusterName());
         // try the current cluster
         AuthenticationResult result = doConnectToCandidateCluster(currentContext);
-        if (result != null && onAuthenticatedToCluster(result)) {
+        if (result != null && checkClusterId(result) && onAuthenticatedToCluster(result)) {
             return;
         }
         clientState = ClientState.SWITCHING_CLUSTER;
@@ -454,6 +450,19 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         throw new IllegalStateException(msg);
     }
 
+    private boolean checkClusterId(AuthenticationResult result) {
+        if (failoverConfigProvided && isClusterIdChanged(result.response.clusterId)) {
+            // If failover is provided, and this single connection is established to a different cluster, while
+            // we were trying to connect back to the same cluster, we should failover to the next cluster.
+            // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
+            result.connection.close("Connection belongs to another cluster. "
+                    + "Current cluster id" + clusterId + ", new cluster id " + result.response.clusterId
+                    + "Closing this to open a connection to next cluster with the correct client config", null);
+            return false;
+        }
+        return true;
+    }
+
     private boolean destroyCurrentClusterConnectionAndTryNextCluster(CandidateClusterContext currentContext,
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
@@ -462,39 +471,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
         logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
         AuthenticationResult result = doConnectToCandidateCluster(nextContext);
-        if (result != null) {
-            if (failoverConfigProvided && isClusterIdChanged(result.response.clusterId)) {
-                // If failover is provided, and this single connection is established to a different cluster, while
-                // we were trying to connect back to the same cluster, we should failover to the next cluster.
-                // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
-                result.connection.close("Connection belongs to another cluster. "
-                        + "Current cluster id" + clusterId + ", new cluster id " + result.response.clusterId
-                        + "Closing this to open a connection to next cluster with the correct client config", null);
-                return false;
-            }
-            if (!onAuthenticatedToCluster(result)) {
-                return false;
-            }
+        if (result != null && onAuthenticatedToCluster(result)) {
             client.waitForInitialMembershipEvents();
             fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
             return true;
         }
         return false;
-    }
-
-    AuthenticationResult connect(Object target, Function<Object, Future<AuthenticationResult>> connectFunc) {
-        Future<AuthenticationResult> future = connectFunc.apply(target);
-        try {
-            logger.info("Trying to connect to " + target);
-            return future.get(authenticationTimeout, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
-            RuntimeException exception = ExceptionUtil.peel(e);
-            if (exception instanceof InvalidConfigurationException | exception instanceof ClientNotAllowedInClusterException) {
-                throw exception;
-            }
-            return null;
-        }
     }
 
     private void fireLifecycleEvent(LifecycleState state) {
@@ -517,7 +499,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    AuthenticationResult result = connect(member, o -> connectToMember((Member) o));
+                    AuthenticationResult result = connect(translate(member));
                     if (result != null) {
                         return result;
                     }
@@ -529,7 +511,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-                    AuthenticationResult result = connect(address, o -> connectToAddress((Address) o));
+                    AuthenticationResult result = connect(translate(address));
                     if (result != null) {
                         return result;
                     }
@@ -629,7 +611,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return activeConnections.get(uuid);
     }
 
-    class AuthenticationResult {
+    static class AuthenticationResult {
         TcpClientConnection connection;
         ClientAuthenticationCodec.ResponseParameters response;
 
@@ -639,37 +621,28 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    CompletableFuture<AuthenticationResult> connectToMember(Member member) {
-        return connectToTranslatedAddress(translate(member));
-    }
-
-    Future<AuthenticationResult> connectToAddress(Address address) {
-        return connectToTranslatedAddress(translate(address));
-    }
-
-    private CompletableFuture<AuthenticationResult> connectToTranslatedAddress(@Nonnull Address address) {
-        TcpClientConnection connection = createSocketConnection(address);
-        ClientInvocationFuture future = authenticate(connection);
-        return future.thenApply(clientMessage -> {
-            ClientAuthenticationCodec.ResponseParameters response = ClientAuthenticationCodec.decodeResponse(clientMessage);
+    AuthenticationResult connect(@Nonnull Address address) {
+        try {
+            logger.info("Trying to connect to " + address);
+            TcpClientConnection connection = createSocketConnection(address);
+            ClientAuthenticationCodec.ResponseParameters response = authenticate(connection);
             checkAuthenticationResponse(connection, response);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
-            TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
-            if (existingConnection != null) {
-                connection.close("Duplicate connection to same member with uuid : " + response.memberUuid, null);
-                return new AuthenticationResult(existingConnection, null);
-            }
+            assert activeConnections.isEmpty() : "active connections should be empty when connection to cluster";
             return new AuthenticationResult(connection, response);
-        }).exceptionally(throwable -> {
-            if (throwable instanceof CompletionException && throwable.getCause() != null) {
-                throwable = throwable.getCause();
-            }
-            connection.close("Failed to authenticate connection", throwable);
-            throw rethrow(throwable);
-        });
+        } catch (InvalidConfigurationException e) {
+            logger.warning("Exception during initial connection to " + address + ": " + e);
+            throw rethrow(e);
+        } catch (ClientNotAllowedInClusterException e) {
+            logger.warning("Exception during initial connection to " + address + ": " + e);
+            throw e;
+        } catch (Exception e) {
+            logger.warning("Exception during initial connection to " + address + ": " + e);
+            return null;
+        }
     }
 
     private void fireConnectionEvent(TcpClientConnection connection, boolean isAdded) {
@@ -762,7 +735,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private Address translate(Member member) {
+    Address translate(Member member) {
         return translate(member, AddressProvider::translate);
     }
 
@@ -862,15 +835,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return firstConnection;
     }
 
-    private ClientInvocationFuture authenticate(TcpClientConnection connection) {
+    private ClientAuthenticationCodec.ResponseParameters authenticate(TcpClientConnection connection) {
+        ClientInvocationFuture future = authenticateAsync(connection);
+        try {
+            return ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
+        } catch (Exception e) {
+            connection.close("Failed to authenticate connection", e);
+            throw rethrow(e);
+        }
+    }
+
+    private ClientInvocationFuture authenticateAsync(TcpClientConnection connection) {
         Address memberAddress = connection.getInitAddress();
         ClientMessage request = encodeAuthenticationRequest(memberAddress);
         return new ClientInvocation(client, request, null, connection).invokeUrgent();
     }
 
-    private void onAuthenticatedToMember(AuthenticationResult authenticationResult) {
-        TcpClientConnection connection = authenticationResult.connection;
-        ClientAuthenticationCodec.ResponseParameters response = authenticationResult.response;
+    private void onAuthenticatedToMember(TcpClientConnection connection,
+                                         ClientAuthenticationCodec.ResponseParameters response) {
         if (isClusterIdChanged(response.clusterId)) {
             // If there are other connections that means we have a connection to wrong cluster.
             // We should not stay connected to this new connection.
@@ -894,12 +876,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * In this case, the caller should retry connecting to the cluster again.
      */
     private boolean onAuthenticatedToCluster(AuthenticationResult authenticationResult) {
-        TcpClientConnection connection = authenticationResult.connection;
         ClientAuthenticationCodec.ResponseParameters response = authenticationResult.response;
+        TcpClientConnection connection = authenticationResult.connection;
         UUID newClusterId = response.clusterId;
         boolean clusterIdChanged = isClusterIdChanged(newClusterId);
         if (clusterIdChanged) {
-            // We only have single connection established
             logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
             client.onClusterConnect();
         }
@@ -935,7 +916,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return this.clusterId != null && !newClusterId.equals(this.clusterId);
     }
 
-    private void connectionAuthenticated(TcpClientConnection connection, ClientAuthenticationCodec.ResponseParameters response) {
+    private void connectionAuthenticated(TcpClientConnection
+                                                 connection, ClientAuthenticationCodec.ResponseParameters response) {
         activeConnections.put(response.memberUuid, connection);
         logger.info("Authenticated with server " + response.address + ":" + response.memberUuid
                 + ", server version: " + response.serverHazelcastVersion
@@ -1039,18 +1021,25 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    class ConnectionAttempt {
+    private static class ConnectionAttempt {
         UUID memberUuid;
-        CompletableFuture<AuthenticationResult> future;
+        Future<ClientAuthenticationCodec.ResponseParameters> future;
+        TcpClientConnection connection;
 
-        ConnectionAttempt(UUID memberUuid, CompletableFuture<AuthenticationResult> future) {
+        ConnectionAttempt(UUID memberUuid, Future<ClientAuthenticationCodec.ResponseParameters> future,
+                          TcpClientConnection connection) {
             this.memberUuid = memberUuid;
             this.future = future;
+            this.connection = connection;
         }
     }
 
     public void connectToAllClusterMembers() {
         if (!client.getLifecycleService().isRunning()) {
+            return;
+        }
+
+        if (clientState != ClientState.INITIALIZED_ON_CLUSTER) {
             return;
         }
 
@@ -1061,18 +1050,29 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (activeConnections.get(uuid) != null) {
                 continue;
             }
-            CompletableFuture<AuthenticationResult> future = connectToMember(member);
-            connectionAttempts.add(new ConnectionAttempt(member.getUuid(), future));
+            Address address = translate(member);
+            logger.info("Trying to open connection to member at " + address);
+            TcpClientConnection connection = createSocketConnection(address);
+            Future<ClientAuthenticationCodec.ResponseParameters> future = authenticateAsync(connection)
+                    .thenApply(clientMessage -> {
+                        ClientAuthenticationCodec.ResponseParameters response =
+                                ClientAuthenticationCodec.decodeResponse(clientMessage);
+                        checkAuthenticationResponse(connection, response);
+                        connection.setConnectedServerVersion(response.serverHazelcastVersion);
+                        connection.setRemoteAddress(response.address);
+                        connection.setRemoteUuid(response.memberUuid);
+                        return response;
+                    });
+            connectionAttempts.add(new ConnectionAttempt(member.getUuid(), future, connection));
         }
 
         for (ConnectionAttempt attempt : connectionAttempts) {
             try {
                 // This can potentially block more than authentication timeout.
-                AuthenticationResult result = attempt.future.get(authenticationTimeout, TimeUnit.MILLISECONDS);
-                onAuthenticatedToMember(result);
+                onAuthenticatedToMember(attempt.connection, attempt.future.get(authenticationTimeout, TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 if (e instanceof TimeoutException) {
-                    attempt.future.completeExceptionally(e);
+                    attempt.connection.close("Authentication timeout", e);
                 }
                 if (logger.isFineEnabled()) {
                     logger.warning("Could not connect to member " + attempt.memberUuid, e);
