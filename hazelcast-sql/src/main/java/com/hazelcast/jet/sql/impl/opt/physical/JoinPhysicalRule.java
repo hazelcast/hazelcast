@@ -26,25 +26,36 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
+@Value.Enclosing
 public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(JoinPhysicalRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
-                    .trait(LOGICAL)
-                    .inputs(
-                            b1 -> b1.operand(RelNode.class).anyInputs(),
-                            b2 -> b2.operand(RelNode.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableJoinPhysicalRule.Config.builder()
+                .description(JoinPhysicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
+                        .trait(LOGICAL)
+                        .inputs(
+                                b1 -> b1.operand(RelNode.class).anyInputs(),
+                                b2 -> b2.operand(RelNode.class).anyInputs()))
+                .build();
+
+        @Override
+        default RelOptRule toRule() {
+            return new JoinPhysicalRule(this);
+        }
+    }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new JoinPhysicalRule();
+    static final RelOptRule INSTANCE = new JoinPhysicalRule(Config.DEFAULT);
 
-    private JoinPhysicalRule() {
-        super(RULE_CONFIG);
+    private JoinPhysicalRule(Config config) {
+        super(config);
     }
 
     @Override
