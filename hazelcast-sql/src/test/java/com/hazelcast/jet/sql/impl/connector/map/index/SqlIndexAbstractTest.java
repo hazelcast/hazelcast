@@ -251,13 +251,31 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
 
-        // WHERE f1<literal OR f2>literal (range from -inf..val1 and val2..+inf)
+        // WHERE f1<literal OR f1>literal (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
-                // https://github.com/hazelcast/hazelcast/issues/20748, c_sorted() should be used here
-                false,
+                c_sorted(),
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
+
+        if (!(f1 instanceof ExpressionType.BooleanType)) {
+            // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality)
+            check(
+                    query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueMiddle()) +
+                            ") OR field1=" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
+            );
+
+            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges)
+            check(
+                    query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueMiddle()) +
+                            ") OR (field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
+                            ")"),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+        }
 
         // IN
         check(
