@@ -306,6 +306,7 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                     <!-- Exclude package-info.java from compiler's scope to avoid recompiling all classes every time. -->
                     <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
                     <excludes>
