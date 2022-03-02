@@ -23,14 +23,18 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.util.Util;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,6 +61,16 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     public boolean requiresSort() {
         return requiresSort;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:magicnumber")
+    // Copy of org.apache.calcite.rel.core.Sort.computeSelfCost, but also takes our requiresSort flag into account
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        final double rowCount = mq.getRowCount(this);
+        final double bytesPerRow = getRowType().getFieldCount() * 4;
+        final double cpu = requiresSort ? Util.nLogN(rowCount) * bytesPerRow : rowCount * bytesPerRow;
+        return planner.getCostFactory().makeCost(rowCount, cpu, 0);
     }
 
     public List<FieldCollation> getCollations() {
@@ -94,5 +108,9 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     @Override
     public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
         return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType, requiresSort);
+    }
+
+    private static double nLogM(double n, double m) {
+        return (m < Math.E) ? n : (n * Math.log(m));
     }
 }
