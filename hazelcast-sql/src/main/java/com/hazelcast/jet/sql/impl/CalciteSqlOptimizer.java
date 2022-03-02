@@ -492,9 +492,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         LogicalRel logicalRel = optimizeLogical(context, rel);
-        System.out.println("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+        logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
-        System.out.println("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+        logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         return physicalRel;
     }
 
