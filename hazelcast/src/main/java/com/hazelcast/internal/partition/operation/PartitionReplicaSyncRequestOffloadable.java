@@ -211,15 +211,15 @@ public final class PartitionReplicaSyncRequestOffloadable
 
         @Override
         public void start() throws Exception {
-            // set partition as migrating to disable mutating
-            // operations while preparing replication operations
-            if (!trySetMigratingFlag()) {
-                sendRetryResponse();
-            }
-
             try {
                 nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
                         () -> {
+                            // set partition as migrating to disable mutating
+                            // operations while preparing replication operations
+                            if (!trySetMigratingFlag()) {
+                                sendRetryResponse();
+                            }
+
                             try {
                                 Integer permits = getPermits();
                                 if (permits == null) {
@@ -236,12 +236,8 @@ public final class PartitionReplicaSyncRequestOffloadable
                             }
                         });
             } catch (RejectedExecutionException e) {
-                // if execution on async executor was rejected, then send retry response and clear migrating flag
-                try {
-                    sendRetryResponse();
-                } finally {
-                    clearMigratingFlag();
-                }
+                // if execution on async executor was rejected, then send retry response
+                sendRetryResponse();
             }
         }
     }
