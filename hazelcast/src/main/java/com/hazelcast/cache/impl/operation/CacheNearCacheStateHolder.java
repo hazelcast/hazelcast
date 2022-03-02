@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,15 +62,14 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = segment.getPartitionId();
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
-        List<Object> nameSeqPairs = new ArrayList<>(namespaces.size());
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(namespaces.size()));
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
             String cacheName = ns.getObjectName();
 
-            nameSeqPairs.add(cacheName);
-            nameSeqPairs.add(metaData.currentSequence(cacheName, partitionId));
+            cacheNameSequencePairs.add(cacheName);
+            cacheNameSequencePairs.add(metaData.currentSequence(cacheName, partitionId));
         }
-        cacheNameSequencePairs = nameSeqPairs;
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator(ICacheService cacheService) {
@@ -116,7 +116,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        cacheNameSequencePairs = new ArrayList(size);
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(size));
         for (int i = 0; i < size; i++) {
             cacheNameSequencePairs.add(in.readObject());
         }
