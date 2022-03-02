@@ -17,6 +17,7 @@
 package com.hazelcast.connector;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GeneratedBuildProperties;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -120,7 +121,8 @@ public class BaseHz3Test extends HazelcastTestSupport {
 
     private File findConnectorImplJar() {
         File[] files = new File("../hazelcast-3-connector-impl/target/").listFiles();
-        File file = Arrays.stream(files).filter(f -> f.getName().matches("hazelcast-3-connector-impl-.*-SNAPSHOT.jar"))
+        File file = Arrays.stream(files).filter(f -> f.getName().matches("hazelcast-3-connector-impl-"
+                        + GeneratedBuildProperties.VERSION + ".jar"))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Could not find hazelcast-3-connector-impl jar, " +
                                                         "build the module using maven first"));
