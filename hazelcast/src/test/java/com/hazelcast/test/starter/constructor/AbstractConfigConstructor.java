@@ -176,12 +176,12 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 String mapName = mapConfigEntry.getKey();
                 Object mapConfig = mapConfigEntry.getValue();
                 Object merkleTreeConfig = getFieldValueReflectively(mapConfig, "merkleTreeConfig");
-                boolean isEnabled = getFieldValueReflectively(merkleTreeConfig, "enabled");
+                Boolean isEnabled = getFieldValueReflectively(merkleTreeConfig, "enabled");
                 int depth = getFieldValueReflectively(merkleTreeConfig, "depth");
 
                 Object otherMerkleTree = ClassLoaderUtil.newInstance(otherConfigObject.getClass().getClassLoader(),
                         "com.hazelcast.config.MerkleTreeConfig");
-                setFieldValueReflectively(otherMerkleTree, "enabled", isEnabled);
+                setFieldValueReflectively(otherMerkleTree, "enabled", isEnabled != null && isEnabled);
                 setFieldValueReflectively(otherMerkleTree, "depth", depth);
                 setFieldValueReflectively(otherMerkleTree, "mapName", mapName);
                 merkleTreeConfigs.put(mapName, otherMerkleTree);
