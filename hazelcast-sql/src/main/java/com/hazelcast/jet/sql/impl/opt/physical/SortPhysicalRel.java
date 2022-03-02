@@ -32,10 +32,12 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,10 +69,36 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     @SuppressWarnings("checkstyle:magicnumber")
     // Copy of org.apache.calcite.rel.core.Sort.computeSelfCost, but also takes our requiresSort flag into account
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        final double rowCount = mq.getRowCount(this);
-        final double bytesPerRow = getRowType().getFieldCount() * 4;
-        final double cpu = requiresSort ? Util.nLogN(rowCount) * bytesPerRow : rowCount * bytesPerRow;
-        return planner.getCostFactory().makeCost(rowCount, cpu, 0);
+        double offsetValue = Util.first(doubleValue(offset), 0d);
+
+        double inCount = mq.getRowCount(input);
+        Double fetchValue = doubleValue(fetch);
+        double readCount;
+
+        if (fetchValue == null) {
+            readCount = inCount;
+        } else if (fetchValue <= 0) {
+            // Case 1. Read zero rows from input, therefore CPU cost is zero.
+            return planner.getCostFactory().makeCost(inCount, 0, 0);
+        } else {
+            readCount = Math.min(inCount, offsetValue + fetchValue);
+        }
+
+        double bytesPerRow = (3 + getRowType().getFieldCount()) * 4;
+
+        double cpu;
+        if (collation.getFieldCollations().isEmpty() || !requiresSort) { // Here is the change
+            // Case 2. If sort keys are empty, CPU cost is cheaper because we are just
+            // stepping over the first "readCount" rows, rather than sorting all
+            // "inCount" them. (Presumably we are applying FETCH and/or OFFSET,
+            // otherwise this Sort is a no-op.)
+            cpu = readCount * bytesPerRow;
+        } else {
+            // Case 3. Read and sort all "inCount" rows, keeping "readCount" in the
+            // sort data structure at a time.
+            cpu = nLogM(inCount, readCount) * bytesPerRow;
+        }
+        return planner.getCostFactory().makeCost(readCount, cpu, 0);
     }
 
     public List<FieldCollation> getCollations() {
@@ -112,5 +140,11 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     private static double nLogM(double n, double m) {
         return (m < Math.E) ? n : (n * Math.log(m));
+    }
+
+    private static @Nullable Double doubleValue(@Nullable RexNode r) {
+        return r instanceof RexLiteral
+                ? ((RexLiteral) r).getValueAs(Double.class)
+                : null;
     }
 }
