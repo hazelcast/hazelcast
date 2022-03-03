@@ -29,6 +29,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is loaded using some url pointing to a Hazelcast XML file.
+ * <p>
+ * Unlike {@link Config#load()} and its variants, a configuration constructed via
+ * {@code UrlXmlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class UrlXmlConfig extends Config {
 

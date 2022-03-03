@@ -29,6 +29,10 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Creates a {@link Config} loaded from an in-memory Hazelcast XML String.
+ *
+ * <p>
+ * Unlike {@link Config#loadFromString(String)} and its variants, a configuration constructed via
+ * {@code InMemoryXmlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class InMemoryXmlConfig extends Config {
 
