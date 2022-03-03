@@ -245,6 +245,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
     public static final SqlFunction JSON_OBJECT = HazelcastJsonObjectFunction.INSTANCE;
     public static final SqlFunction JSON_ARRAY = HazelcastJsonArrayFunction.INSTANCE;
+    public static final SqlOperator DOT = SqlStdOperatorTable.DOT;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

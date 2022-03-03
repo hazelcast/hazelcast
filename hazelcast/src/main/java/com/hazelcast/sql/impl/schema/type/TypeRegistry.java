@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public class TypeRegistry {
     public static final TypeRegistry INSTANCE = new TypeRegistry();
 
+    // class name
     private final Map<String, Type> registry = new HashMap<>();
 
     public Type getTypeByName(final String name) {
@@ -46,44 +47,68 @@ public class TypeRegistry {
     }
 
     public void registerType(final String name, final Class<?> typeClass) {
-        if (getTypeByClass(typeClass) != null) {
+        if (getTypeByClass(typeClass) != null || getTypeByName(name) != null) {
             return;
         }
 
-        registry.put(name.toLowerCase(Locale.ROOT), createTypeFromClass(name, typeClass));
-    }
-
-    public Type createTypeFromClass(final String typeName, final Class<?> typeClass) {
         final Type type = new Type();
-        type.setName(typeName);
+        type.setName(name);
         type.setJavaClassName(typeClass.getName());
-        type.setQueryDataType(new QueryDataType(typeName));
+        type.setQueryDataType(new QueryDataType(name));
 
         if (typeClass.isAssignableFrom(GenericRecord.class)) {
             type.setFields(getFieldsFromGenericRecord(typeClass));
         } else {
-            type.setFields(getFieldsFromJavaClass(typeClass));
+            type.setFields(getFieldsFromJavaClass(typeClass, type));
         }
 
-        return type;
+        registry.put(name.toLowerCase(Locale.ROOT), type);
+        fixTypeReferences(type);
     }
 
-    private Map<String, QueryDataType> getFieldsFromJavaClass(final Class<?> typeClass) {
+    private void fixTypeReferences(final Type addedType) {
+        for (final Map.Entry<String, Type> entry : registry.entrySet()) {
+            final Type type = entry.getValue();
+
+            for (final Type.TypeField field : type.getFields()) {
+                if (field.getQueryDataType() == null && !field.getClassName().isEmpty()) {
+                    if (addedType.getJavaClassName().equals(field.getClassName())) {
+                        field.setQueryDataType(addedType.getQueryDataType());
+                    }
+                }
+            }
+        }
+    }
+
+    private List<Type.TypeField> getFieldsFromJavaClass(final Class<?> typeClass, final Type thisType) {
         return FieldsUtil.resolveClass(typeClass).entrySet().stream()
                 .map(entry -> {
                     final QueryDataType queryDataType;
                     if (isJavaClass(entry.getValue())) {
-                        queryDataType = getTypeByClass(entry.getValue()).getQueryDataType();
+                        if (entry.getValue().getName().equals(thisType.getJavaClassName())) {
+                            queryDataType = thisType.getQueryDataType();
+                        } else {
+                            final Type existingType = getTypeByClass(entry.getValue());
+                            if (existingType != null) {
+                                queryDataType = existingType.getQueryDataType();
+                            } else {
+                                queryDataType = null;
+                            }
+                        }
+
+                        if (queryDataType == null) {
+                            return new Type.TypeField(entry.getKey(), entry.getValue().getName());
+                        }
                     } else {
                         queryDataType = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
                     }
 
-                    return new AbstractMap.SimpleEntry<>(entry.getKey(), queryDataType);
+                    return new Type.TypeField(entry.getKey(), queryDataType);
                 })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toList());
     }
 
-    private Map<String, QueryDataType> getFieldsFromGenericRecord(final Class<?> typeClass) {
+    private List<Type.TypeField> getFieldsFromGenericRecord(final Class<?> typeClass) {
         throw new UnsupportedOperationException("Not implemented yet.");
     }
 

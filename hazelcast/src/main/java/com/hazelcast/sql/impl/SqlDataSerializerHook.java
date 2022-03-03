@@ -78,9 +78,9 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
@@ -172,10 +172,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SEARCH = 60;
     public static final int VIEW = 61;
     public static final int EXPRESSION_FIELD_ACCESS = 62;
-    public static final int QUERY_DATA_TYPE_FIELD = 63;
-    public static final int TYPE = 64;
+    public static final int TYPE = 63;
+    public static final int TYPE_FIELD = 64;
 
-    public static final int LEN = TYPE + 1;
+    public static final int LEN = TYPE_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -263,7 +263,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
         constructors[VIEW] = arg -> new View();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
-        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataTypeField();
+        constructors[TYPE] = arg -> new Type();
+        constructors[TYPE_FIELD] = arg -> new Type.TypeField();
 
         return new ArrayDataSerializableFactory(constructors);
     }

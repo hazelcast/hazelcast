@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastRelDataTypeReference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -58,7 +59,6 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -73,6 +73,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -355,33 +356,40 @@ public final class OptUtils {
     }
 
     private static RelDataType convertUserDefinedType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
-        return convertUserDefinedTypeRecursively(fieldType, typeFactory);
+        final Map<String, RelDataType> dataTypeMap = new HashMap<>();
+        convertUserDefinedTypeRecursively(fieldType, typeFactory, dataTypeMap);
+        return dataTypeMap.get(fieldType.getTypeName());
     }
 
-    private static RelDataType convertUserDefinedTypeRecursively(QueryDataType queryDataType,
-                                                                 RelDataTypeFactory typeFactory) {
+    private static void convertUserDefinedTypeRecursively(QueryDataType queryDataType,
+                                                                 RelDataTypeFactory typeFactory,
+                                                                 Map<String, RelDataType> typeMap) {
+        if (typeMap.get(queryDataType.getTypeName()) != null) {
+            return;
+        }
         final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
         final List<HazelcastObjectType.Field> fields = new ArrayList<>();
+        final HazelcastRelDataTypeReference typeRef = new HazelcastRelDataTypeReference();
+        typeMap.put(queryDataType.getTypeName(), typeRef);
 
-        // TODO array instead of map
-        int fieldIndex = 0;
-        for (final Map.Entry<String, QueryDataType> fieldEntry : type.getFields().entrySet()) {
-            final String fieldName = fieldEntry.getKey();
-            final QueryDataType fieldType = fieldEntry.getValue();
+        for (int i = 0; i < type.getFields().size(); i++) {
+            final String fieldName = type.getFields().get(i).getName();
+            final QueryDataType fieldType = type.getFields().get(i).getQueryDataType();
 
             final RelDataType fieldRelDataType;
-            if (isUserDefinedType(fieldEntry.getValue())) {
-                // TODO compute against map with existing types
-                // TODO cache RelDataTypes?
-                fieldRelDataType = convertUserDefinedTypeRecursively(fieldType, typeFactory);
+            if (isUserDefinedType(fieldType)) {
+                fieldRelDataType = typeMap.computeIfAbsent(fieldType.getTypeName(), (name) -> {
+                    convertUserDefinedTypeRecursively(fieldType, typeFactory, typeMap);
+                    return typeMap.get(fieldType.getTypeName());
+                });
             } else {
                 fieldRelDataType = typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType));
             }
 
-            fields.add(new HazelcastObjectType.Field(fieldName, fieldIndex++, fieldRelDataType));
+            fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
         }
 
-        return new HazelcastObjectType(fields);
+        typeRef.setOriginal(new HazelcastObjectType(fields));
     }
 
     private static boolean isUserDefinedType(final QueryDataType queryDataType) {
@@ -530,17 +538,6 @@ public final class OptUtils {
                     newOperands.add(operand.accept(this));
                 }
                 return call.clone(call.type, newOperands);
-            }
-
-            @Override
-            public RexNode visitFieldAccess(RexFieldAccess fieldAccess) {
-                // TODO: properly inline nested fields
-                final RexNode expr = fieldAccess.getReferenceExpr();
-                RexNode newOperand = expr.accept(this);
-                if (!newOperand.equals(fieldAccess.getReferenceExpr())) {
-                    throw new RuntimeException("replacing partition key not supported");
-                }
-                return fieldAccess;
             }
 
             @Override

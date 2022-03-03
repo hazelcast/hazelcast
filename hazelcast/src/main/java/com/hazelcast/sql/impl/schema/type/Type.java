@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,17 @@ package com.hazelcast.sql.impl.schema.type;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class Type implements IdentifiedDataSerializable {
     private String name;
     private String javaClassName;
-    private Map<String, QueryDataType> fields;
+    private List<TypeField> fields;
     private QueryDataType queryDataType;
 
     public Type() { }
@@ -48,11 +50,11 @@ public class Type implements IdentifiedDataSerializable {
         this.javaClassName = javaClassName;
     }
 
-    public Map<String, QueryDataType> getFields() {
+    public List<TypeField> getFields() {
         return fields;
     }
 
-    public void setFields(final Map<String, QueryDataType> fields) {
+    public void setFields(final List<TypeField> fields) {
         this.fields = fields;
     }
 
@@ -82,12 +84,77 @@ public class Type implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return 0;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return 0;
+        return SqlDataSerializerHook.TYPE;
     }
 
+    public static class TypeField implements IdentifiedDataSerializable {
+        private String name;
+        private QueryDataType queryDataType;
+        private String className = "";
+
+        public TypeField() { }
+
+        public TypeField(final String name, final QueryDataType queryDataType) {
+            this.name = name;
+            this.queryDataType = queryDataType;
+        }
+
+        public TypeField(final String name, final String className) {
+            this.name = name;
+            this.className = className;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public QueryDataType getQueryDataType() {
+            return queryDataType;
+        }
+
+        public void setQueryDataType(final QueryDataType queryDataType) {
+            this.queryDataType = queryDataType;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public void setClassName(final String className) {
+            this.className = className;
+        }
+
+        @Override
+        public void writeData(final ObjectDataOutput out) throws IOException {
+            out.writeString(name);
+            out.writeObject(queryDataType);
+            out.writeString(className);
+        }
+
+        @Override
+        public void readData(final ObjectDataInput in) throws IOException {
+            this.name = in.readString();
+            this.queryDataType = in.readObject(QueryDataType.class);
+            this.className = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return SqlDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return SqlDataSerializerHook.TYPE_FIELD;
+        }
+    }
 }

@@ -109,6 +109,30 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
                 rows(3, 1L, "new-name", organization));
     }
 
+    @Test
+    public void test_circularlyRecurrentTypes() {
+        TypeRegistry.INSTANCE.registerType("AType", A.class);
+        TypeRegistry.INSTANCE.registerType("BType", B.class);
+        TypeRegistry.INSTANCE.registerType("CType", C.class);
+
+        A a = new A();
+        B b = new B();
+        C c = new C();
+
+        a.name = "a";
+        a.b = b;
+        b.name = "b";
+        b.c = c;
+        c.name = "c";
+        c.a = a;
+
+        createMapping("test", Long.class, A.class);
+        IMap<Long, A> map = instance().getMap("test");
+        map.put(1L, a);
+
+        assertRowsAnyOrder("SELECT test.b.c.a.name FROM test", rows(1, "a"));
+    }
+
     private User initDefault() {
         // TODO: sql, dependent-types
         TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
@@ -131,6 +155,21 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     private void execute(String sql, Object ...args) {
         instance().getSql().execute(sql, args);
+    }
+
+    public static class A implements Serializable {
+        public String name;
+        public B b;
+    }
+
+    public static class B implements Serializable {
+        public String name;
+        public C c;
+    }
+
+    public static class C implements Serializable {
+        public String name;
+        public A a;
     }
 
     public static class User implements Serializable {
