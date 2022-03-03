@@ -78,7 +78,7 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
         assertEquals(1, appender.events.size());
         LogEvent logEvent = appender.events.get(0);
         assertEquals(Level.DEBUG, logEvent.getLevel());
-        assertRecommendationContent(logEvent, !OsHelper.isWindows());
+        assertRecommendationContent(logEvent, Boolean.parseBoolean(LOG_EMOJI_ENABLED.getDefaultValue()));
     }
 
     @Test
