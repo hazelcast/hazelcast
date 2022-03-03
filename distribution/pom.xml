@@ -27,7 +27,7 @@
 
     <name>hazelcast-distribution</name>
     <artifactId>hazelcast-distribution</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
@@ -157,6 +157,25 @@
                     </rules>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                            <excludes>
+                                <exclude>.*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -179,7 +198,6 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
@@ -369,6 +387,11 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-3-connector-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -25,7 +25,6 @@
 
     <dependencySets>
         <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
             <includes>
                 <include>com.hazelcast:hazelcast</include>
                 <include>com.hazelcast:hazelcast-sql</include>
@@ -56,6 +55,7 @@
                 <include>com.hazelcast.jet:hazelcast-jet-s3</include>
                 <include>com.hazelcast:hazelcast-3-connector-interface</include>
                 <include>com.hazelcast:hazelcast-3-connector-common</include>
+                <include>com.hazelcast:hazelcast-distribution</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
