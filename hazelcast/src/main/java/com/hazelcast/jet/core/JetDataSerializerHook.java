@@ -60,6 +60,9 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_COMBINING_ACCUMULATE = 16;
     public static final int EDGE_KEY_PARTITIONER = 17;
     public static final int EDGE_SINGLE_PARTITIONER = 18;
+    public static final int EXPECT_NOTHING_PROCESSOR_SUPPLIER = 19;
+    public static final int ADDRESS_PROCESSOR_SUPPLIER_FUNCTION = 20;
+    public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 21;
 
     /**
      * Factory ID
@@ -118,6 +121,12 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new Edge.KeyPartitioner<>();
                 case EDGE_SINGLE_PARTITIONER:
                     return new Edge.Single();
+                case EXPECT_NOTHING_PROCESSOR_SUPPLIER:
+                    return new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
+                case ADDRESS_PROCESSOR_SUPPLIER_FUNCTION:
+                    return new ProcessorMetaSupplier.AddressProcessorSupplierFunction();
+                case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER:
+                    return new ProcessorMetaSupplier.SpecificMemberPms();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

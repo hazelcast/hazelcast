@@ -32,7 +32,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -455,13 +455,12 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     @SerializableByConvention
-    class SpecificMemberPms implements ProcessorMetaSupplier, DataSerializable {
+    class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
 
         private ProcessorSupplier supplier;
         private Address memberAddress;
 
-        @SuppressWarnings("unused")
-        private SpecificMemberPms() {
+        SpecificMemberPms() {
         }
 
         private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
@@ -503,9 +502,19 @@ public interface ProcessorMetaSupplier extends Serializable {
             supplier = in.readObject();
             memberAddress = in.readObject();
         }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER;
+        }
     }
 
-    class AddressProcessorSupplierFunction implements Function<Address, ProcessorSupplier>, DataSerializable {
+    class AddressProcessorSupplierFunction implements Function<Address, ProcessorSupplier>, IdentifiedDataSerializable {
         private ProcessorSupplier supplier;
         private Address memberAddress;
 
@@ -519,7 +528,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         @Override
         public ProcessorSupplier apply(Address addr) {
-            return addr.equals(memberAddress) ? supplier : new ExpectNothingPFunction();
+            return addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
         }
 
         @Override
@@ -533,9 +542,19 @@ public interface ProcessorMetaSupplier extends Serializable {
             memberAddress = in.readObject();
             supplier = in.readObject();
         }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.ADDRESS_PROCESSOR_SUPPLIER_FUNCTION;
+        }
     }
 
-    class ExpectNothingPFunction implements ProcessorSupplier, DataSerializable {
+    class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
         @NotNull
         @Override
         public Collection<? extends Processor> get(int count) {
@@ -549,7 +568,18 @@ public interface ProcessorMetaSupplier extends Serializable {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
         }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EXPECT_NOTHING_PROCESSOR_SUPPLIER;
+        }
     }
+
     /**
      * Context passed to the meta-supplier at init time on the member that
      * received a job request from the client.
