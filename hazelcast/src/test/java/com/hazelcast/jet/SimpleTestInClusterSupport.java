@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -116,8 +117,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     public static void supportAfterClass() throws Exception {
         if (factory != null) {
             SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
-            spawn(() -> factory.terminateAll())
-                    .get(1, TimeUnit.MINUTES);
+            try {
+                spawn(() -> factory.terminateAll())
+                        .get(5, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                SUPPORT_LOGGER.warning("Terminating instance factory timed out", e);
+            }
         }
 
         factory = null;
