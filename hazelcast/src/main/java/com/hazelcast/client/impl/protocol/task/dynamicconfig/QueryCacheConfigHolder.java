@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ public class QueryCacheConfigHolder {
     private boolean includeValue;
     private boolean populate;
     private boolean coalesce;
+    private boolean serializeKeysExist;
+    private boolean serializeKeys;
     private String inMemoryFormat;
     private String name;
     private PredicateConfigHolder predicateConfigHolder;
@@ -47,14 +49,17 @@ public class QueryCacheConfigHolder {
 
     public QueryCacheConfigHolder(int batchSize, int bufferSize, int delaySeconds, boolean includeValue,
                                   boolean populate, boolean coalesce, String inMemoryFormat, String name,
-                                  PredicateConfigHolder predicateConfigHolder, EvictionConfigHolder evictionConfigHolder,
-                                  List<ListenerConfigHolder> listenerConfigs, List<IndexConfig> indexConfigs) {
+                                  PredicateConfigHolder predicateConfigHolder,
+                                  EvictionConfigHolder evictionConfigHolder, List<ListenerConfigHolder> listenerConfigs,
+                                  List<IndexConfig> indexConfigs, boolean serializeKeysExist, boolean serializeKeys) {
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.delaySeconds = delaySeconds;
         this.includeValue = includeValue;
         this.populate = populate;
         this.coalesce = coalesce;
+        this.serializeKeysExist = serializeKeysExist;
+        this.serializeKeys = serializeKeys;
         this.inMemoryFormat = inMemoryFormat;
         this.name = name;
         this.predicateConfigHolder = predicateConfigHolder;
@@ -101,6 +106,10 @@ public class QueryCacheConfigHolder {
 
     public void setPopulate(boolean populate) {
         this.populate = populate;
+    }
+
+    public void setSerializeKeys(boolean serializeKeys) {
+        this.serializeKeys = serializeKeys;
     }
 
     public boolean isCoalesce() {
@@ -159,13 +168,17 @@ public class QueryCacheConfigHolder {
         this.indexConfigs = indexConfigs;
     }
 
+    public boolean isSerializeKeys() {
+        return serializeKeys;
+    }
+
     public QueryCacheConfig asQueryCacheConfig(SerializationService serializationService) {
         QueryCacheConfig config = new QueryCacheConfig();
         config.setBatchSize(batchSize);
         config.setBufferSize(bufferSize);
         config.setCoalesce(coalesce);
         config.setDelaySeconds(delaySeconds);
-        config.setEvictionConfig(evictionConfigHolder.asEvictionConfg(serializationService));
+        config.setEvictionConfig(evictionConfigHolder.asEvictionConfig(serializationService));
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             List<EntryListenerConfig> entryListenerConfigs = new ArrayList<>(listenerConfigs.size());
             for (ListenerConfigHolder holder : listenerConfigs) {
@@ -181,6 +194,9 @@ public class QueryCacheConfigHolder {
         config.setName(name);
         config.setPredicateConfig(predicateConfigHolder.asPredicateConfig(serializationService));
         config.setPopulate(populate);
+        if (serializeKeysExist) {
+            config.setSerializeKeys(serializeKeys);
+        }
         return config;
     }
 
@@ -211,6 +227,7 @@ public class QueryCacheConfigHolder {
         }
         holder.setPredicateConfigHolder(PredicateConfigHolder.of(config.getPredicateConfig(), serializationService));
         holder.setPopulate(config.isPopulate());
+        holder.setSerializeKeys(config.isSerializeKeys());
         return holder;
     }
 

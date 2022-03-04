@@ -16,26 +16,35 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-
-import java.util.Collection;
+import org.apache.calcite.rel.core.TableScan;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-public final class JoinPhysicalRule extends RelOptRule {
+public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(JoinPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
+                    .trait(LOGICAL)
+                    .inputs(
+                            b1 -> b1.operand(RelNode.class).anyInputs(),
+                            b2 -> b2.operand(RelNode.class).anyInputs()));
+
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new JoinPhysicalRule();
 
     private JoinPhysicalRule() {
-        super(
-                operand(JoinLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()), operand(RelNode.class, any()))),
-                JoinPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override
@@ -43,24 +52,46 @@ public final class JoinPhysicalRule extends RelOptRule {
         JoinLogicalRel logicalJoin = call.rel(0);
 
         JoinRelType joinType = logicalJoin.getJoinType();
-        assert joinType == JoinRelType.INNER || joinType == JoinRelType.LEFT;
+        if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT) {
+            throw new RuntimeException("Unexpected joinType: " + joinType);
+        }
 
-        RelNode physicalLeft = OptUtils.toPhysicalInput(logicalJoin.getLeft());
-        RelNode physicalRight = OptUtils.toPhysicalInput(logicalJoin.getRight());
+        RelNode leftInput = call.rel(1);
+        RelNode rightInput = call.rel(2);
 
-        Collection<RelNode> lefts = OptUtils.extractPhysicalRelsFromSubset(physicalLeft);
-        Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
-        for (RelNode left : lefts) {
-            for (RelNode right : rights) {
-                RelNode rel = new JoinNestedLoopPhysicalRel(
+        if (OptUtils.isUnbounded(rightInput)) {
+            // This rule doesn't support joining of streaming data on the right side. Stream
+            // can be on the left side.
+            return;
+        }
+
+        RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
+        RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
+
+        // we don't use hash join for unbounded left input because it doesn't refresh the right side
+        if (OptUtils.isBounded(leftInput)) {
+            RelNode rel = new JoinHashPhysicalRel(
+                    logicalJoin.getCluster(),
+                    logicalJoin.getTraitSet().replace(PHYSICAL),
+                    leftInputConverted,
+                    rightInputConverted,
+                    logicalJoin.getCondition(),
+                    logicalJoin.getJoinType());
+            call.transformTo(rel);
+        }
+
+        if (rightInput instanceof TableScan) {
+            HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
+            if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
+                RelNode rel2 = new JoinNestedLoopPhysicalRel(
                         logicalJoin.getCluster(),
                         OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                        left,
-                        right,
+                        leftInputConverted,
+                        rightInputConverted,
                         logicalJoin.getCondition(),
                         logicalJoin.getJoinType()
                 );
-                call.transformTo(rel);
+                call.transformTo(rel2);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,10 @@ public final class MapTableUtils {
     public static List<MapTableIndex> getPartitionedMapIndexes(MapContainer mapContainer, List<TableField> fields) {
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
+        if (mapContainer.getIndexes() == null) {
+            return Collections.emptyList();
+        }
+
         InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
@@ -88,14 +92,14 @@ public final class MapTableUtils {
 
             List<QueryDataType> resolvedFieldConverterTypes = indexConverterToSqlTypes(index.getConverter());
 
-            List<Integer> indexFieldOrdinals = new ArrayList<>(indexConfig.getAttributes().size());
-            List<QueryDataType> indexFieldConverterTypes = new ArrayList<>(indexConfig.getAttributes().size());
+            List<String> indexAttributes = indexConfig.getAttributes();
+            List<Integer> indexFieldOrdinals = new ArrayList<>(indexAttributes.size());
+            List<QueryDataType> indexFieldConverterTypes = new ArrayList<>(indexAttributes.size());
+            String[] components = index.getComponents();
 
-            for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
-                String attribute = indexConfig.getAttributes().get(i);
-
+            for (int i = 0; i < indexAttributes.size(); i++) {
+                String attribute = indexAttributes.get(i);
                 QueryPath attributePath = QueryPath.create(attribute);
-
                 Integer ordinal = pathToOrdinalMap.get(attributePath);
 
                 if (ordinal == null) {
@@ -121,11 +125,11 @@ public final class MapTableUtils {
             }
 
             MapTableIndex index0 = new MapTableIndex(
-                indexConfig.getName(),
-                indexConfig.getType(),
-                index.getComponents().length,
-                indexFieldOrdinals,
-                indexFieldConverterTypes
+                    indexConfig.getName(),
+                    indexConfig.getType(),
+                    components.length,
+                    indexFieldOrdinals,
+                    indexFieldConverterTypes
             );
 
             res.add(index0);

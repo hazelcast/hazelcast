@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -192,7 +193,7 @@ public final class ClusterProperty {
     /**
      * Socket connection timeout in seconds. Socket.connect() is blocked until
      * either connection is established or connection is refused or this timeout
-     * passes. Default is 0, means infinite.
+     * passes. Default is 10, 0 means infinite.
      */
     public static final HazelcastProperty SOCKET_CONNECT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 10, SECONDS);
@@ -437,6 +438,27 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty PARTITION_FRAGMENTED_MIGRATION_ENABLED
             = new HazelcastProperty("hazelcast.partition.migration.fragments.enabled", true);
+
+    /**
+     * Enable to subdivide fragments into chunks.
+     * <p>
+     * Default enabled.
+     *
+     * @see ClusterProperty#PARTITION_FRAGMENTED_MIGRATION_ENABLED
+     */
+    public static final HazelcastProperty PARTITION_CHUNKED_MIGRATION_ENABLED
+            = new HazelcastProperty("hazelcast.partition.migration.chunks.enabled", true);
+
+    /**
+     * Total size of all chunks in bytes during a single partition migration.
+     * <p>
+     * If you have parallel migrations, max migrating data
+     * equals number-of-parallel-migrations times this value.
+     * <p>
+     * Default is 250 MB.
+     */
+    public static final HazelcastProperty PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB
+            = new HazelcastProperty("hazelcast.partition.migration.chunks.max.migrating.data.in.mb", 250);
 
     /**
      * The time that a newly-appointed master node waits before forming a cluster.
@@ -1669,7 +1691,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
             .setDeprecatedName("jet.idle.cooperative.max.microseconds");
 
     /**
@@ -1692,7 +1714,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
             .setDeprecatedName("jet.idle.noncooperative.min.microseconds");
 
     /**
@@ -1715,7 +1737,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
             .setDeprecatedName("jet.idle.noncooperative.max.microseconds");
 
     /**
@@ -1733,7 +1755,8 @@ public final class ClusterProperty {
      *
      * @since 5.0
      */
-    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled", true);
+    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
+            !OsHelper.isWindows());
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The

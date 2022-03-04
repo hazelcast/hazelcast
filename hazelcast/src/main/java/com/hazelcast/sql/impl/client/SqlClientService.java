@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
@@ -34,7 +37,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -45,8 +47,10 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Client-side implementation of SQL service.
@@ -222,27 +226,11 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Object deserializeRowValue(Object value) {
-        try {
-            return getSerializationService().toObject(value);
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
-    Object deserializeRowValue(LazyTarget value) {
-        try {
-            return value.deserialize(getSerializationService());
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
     public UUID getClientId() {
         return client.getLocalEndpoint().getUuid();
     }
 
-    private InternalSerializationService getSerializationService() {
+    InternalSerializationService getSerializationService() {
         return client.getSerializationService();
     }
 
@@ -290,5 +278,21 @@ public class SqlClientService implements SqlService {
         }
 
         return QueryUtils.toPublicException(cause, getClientId());
+    }
+
+    /**
+     * Gets a SQL Mapping suggestion for the given IMap name.
+     *
+     * Used by Management Center.
+     */
+    @Nonnull
+    public CompletableFuture<String> mappingDdl(Member member, String mapName) {
+        checkNotNull(mapName);
+
+        ClientInvocation invocation = new ClientInvocation(client, SqlMappingDdlCodec.encodeRequest(mapName),
+                null, member.getUuid());
+
+        return new ClientDelegatingFuture<>(invocation.invoke(), client.getSerializationService(),
+                SqlMappingDdlCodec::decodeResponse);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -59,6 +61,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String DUMMY_CLASS_PREFIX = "Dummy";
     private static final String TEST_CLASS_SUFFIX = "Test";
     private static final String TEST_PACKAGE_INFIX = ".test";
+    private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
 
     protected final InternalSerializationService delegate;
 
@@ -152,11 +155,6 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder) {
-        return delegate.createObjectDataInput(data, byteOrder);
-    }
-
-    @Override
     public BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
         return delegate.createObjectDataInput(data, offset);
     }
@@ -172,11 +170,6 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder) {
-        return createObjectDataOutput(byteOrder);
-    }
-
-    @Override
     public ManagedContext getManagedContext() {
         return delegate.getManagedContext();
     }
@@ -189,6 +182,16 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         return delegate.readAsInternalGenericRecord(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        return delegate.extractSchemaFromObject(object);
     }
 
     @Override
@@ -280,7 +283,7 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     public static boolean isTestClass(String className) {
         if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
-                || className.contains(DUMMY_CLASS_PREFIX)) {
+                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX)) {
             return true;
         }
         return false;

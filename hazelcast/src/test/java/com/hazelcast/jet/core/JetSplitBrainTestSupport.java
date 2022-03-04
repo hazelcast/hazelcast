@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     protected void onConfigCreated(Config config) {
     }
 
-    final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
+    protected final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
                               Consumer<HazelcastInstance[]> beforeSplit,
                               BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
                               Consumer<HazelcastInstance[]> afterMerge) {

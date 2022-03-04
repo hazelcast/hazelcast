@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,17 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
     @Nonnull
     @Override
-    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
-        return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
+    public EmployeeDTO read(@Nonnull CompactReader in) {
+        return new EmployeeDTO(in.readInt32("age"), in.readInt64("id"));
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
-        out.writeInt("age", object.getAge());
-        out.writeLong("id", object.getId());
+    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
+        out.writeInt32("age", object.getAge());
+        out.writeInt64("id", object.getId());
     }
 }

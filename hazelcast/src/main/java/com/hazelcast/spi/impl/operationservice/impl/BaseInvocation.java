@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -32,6 +33,8 @@ public abstract class BaseInvocation {
 
     private static final AtomicIntegerFieldUpdater<BaseInvocation> BACKUP_ACKS_RECEIVED =
             AtomicIntegerFieldUpdater.newUpdater(BaseInvocation.class, "backupsAcksReceived");
+
+    protected final ILogger logger;
 
     /**
      * Number of backups acks received.
@@ -52,6 +55,10 @@ public abstract class BaseInvocation {
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
      */
     volatile Object pendingResponse = VOID;
+
+    protected BaseInvocation(ILogger logger) {
+        this.logger = logger;
+    }
 
     public void notifyBackupComplete() {
         int newBackupAcksCompleted = BACKUP_ACKS_RECEIVED.incrementAndGet(this);
@@ -136,6 +143,9 @@ public abstract class BaseInvocation {
         }
 
         if (shouldCompleteWithoutBackups()) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Invocation " + this + " will be completed without backup acks.");
+            }
             // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
             completeWithPendingResponse();
             return true;

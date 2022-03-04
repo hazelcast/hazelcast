@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(cloned.isSslEnabled());
         assertTrue(cloned.isLite());
         assertFalse(cloned.isScriptingEnabled());
+        assertFalse(cloned.isConsoleEnabled());
+        assertTrue(cloned.isMcDataAccessEnabled());
         assertNotNull(cloned.toString());
     }
 
@@ -101,6 +103,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(deserialized.isSslEnabled());
         assertTrue(deserialized.isLite());
         assertFalse(deserialized.isScriptingEnabled());
+        assertFalse(deserialized.isConsoleEnabled());
+        assertTrue(deserialized.isMcDataAccessEnabled());
         assertNotNull(deserialized.toString());
     }
 

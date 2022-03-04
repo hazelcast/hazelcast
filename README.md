@@ -333,8 +333,22 @@ take a considerable amount of time. Hazelcast has 3 testing profiles:
 
 When you create a pull request (PR), it must pass a build-and-test
 procedure. Maintainers will be notified about your PR, and they can
-trigger the build using special comments. So you may see some phrases
-like `run-lab-run` in your PR.
+trigger the build using special comments. These are the phrases you may
+see used in the comments on your PR:
+
+* `run-lab-run` - run the default PR builder
+* `run-lts-compilers` - compiles the sources with JDK 11 and JDK 17 (without running tests)
+* `run-ee-tests` - run tests from hazelcast-enterprise with this PR
+* `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
+* `run-with-jdk17` - run the tests with JDK 17
+* `run-with-ibm-jdk-8` - run the tests with IBM JDK 8
+* `run-cdc-debezium-tests` - run all tests in the
+  `extensions/cdc-debezium` module
+* `run-cdc-mysql-tests` - run all tests in the `extensions/cdc-mysql`
+  module
+* `run-cdc-postgres-tests` - run all tests in the
+  `extensions/cdc-postgres` module
+* `run-s3-tests` - run all tests in the `extensions/s3` module
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK
 8.
@@ -361,6 +375,6 @@ We owe (the good parts of) our CLI tool's user experience to
 
 ## Copyright
 
-Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

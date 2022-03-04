@@ -1,0 +1,63 @@
+{
+  "instance": {
+    "hazelcast": {
+      "local-device": {
+        "tiered-store-device-name": {
+          "base-dir": "tiered_store_base_dir",
+          "block-size": 8192,
+          "read-io-thread-count": 1,
+          "write-io-thread-count": 1
+        },
+        "another-tiered-store-device-name": {
+          "block-size": 1024,
+          "read-io-thread-count": 1,
+          "write-io-thread-count": 1
+        },
+        "default-device": {}
+      },
+      "map": {
+        "my-map-0": {
+          "tiered-store": {
+            "enabled": true
+          }
+        },
+        "my-map-1": {
+          "tiered-store": {
+            "enabled": true,
+            "memory-tier": {
+              "capacity": {
+                "unit": "GIGABYTES",
+                "value": 2
+              }
+            }
+          }
+        },
+        "my-map-2": {
+          "tiered-store": {
+            "enabled": true,
+            "disk-tier": {
+              "enabled": true,
+              "device-name": "my-device"
+            }
+          }
+        },
+        "my-map-3": {
+          "tiered-store": {
+            "enabled": true,
+            "memory-tier": {
+              "capacity": {
+                "unit": "KILOBYTES",
+                "value": 8192
+              }
+            },
+            "disk-tier": {
+              "enabled": true,
+              "device-name": "some-device"
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

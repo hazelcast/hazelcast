@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -69,7 +70,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Nonnull
     protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
-        return new ExpirySystem(this, mapContainer, mapServiceContext);
+        return new ExpirySystemImpl(this, mapContainer, mapServiceContext);
     }
 
     @Override
@@ -182,9 +183,9 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             getExpirySystem().add(key, mergingEntry.getTtl(),
                     maxIdle, mergingEntry.getExpirationTime(), mergingEntry.getLastUpdateTime(), now);
         } else {
-            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
+            ExpiryMetadata expiryMetadata = getExpirySystem().getExpiryMetadata(key);
             getExpirySystem().add(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
+                    expiryMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
                     mergingEntry.getLastUpdateTime(), now);
         }
     }

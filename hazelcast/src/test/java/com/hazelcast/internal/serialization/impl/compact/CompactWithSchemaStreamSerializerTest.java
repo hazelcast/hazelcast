@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@ public class CompactWithSchemaStreamSerializerTest {
     public void testReadAsGenericRecord() throws IOException {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecord expected = compact("fooBarClassName")
-                .setInt("foo", 1)
-                .setLong("bar", 1231L)
+        GenericRecord expected = compact("fooBarTypeName")
+                .setInt32("foo", 1)
+                .setInt64("bar", 1231L)
                 .setGenericRecord("nested",
                         compact("nested").setBoolean("bool", true).build())
                 .build();
@@ -76,9 +76,9 @@ public class CompactWithSchemaStreamSerializerTest {
     public void testFromGenericRecord() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecord expected = compact("fooBarClassName")
-                .setInt("foo", 1)
-                .setLong("bar", 1231L)
+        GenericRecord expected = compact("fooBarTypeName")
+                .setInt32("foo", 1)
+                .setInt64("bar", 1231L)
                 .setGenericRecord("nested",
                         compact("nested").setBoolean("bool", true).build())
                 .build();

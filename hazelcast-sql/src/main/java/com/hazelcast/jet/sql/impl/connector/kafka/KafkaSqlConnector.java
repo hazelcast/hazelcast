@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -31,10 +32,12 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataNullResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
-import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -119,7 +122,8 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections
+            @Nonnull List<Expression<?>> projections,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         KafkaTable table = (KafkaTable) table0;
 
@@ -130,7 +134,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
                                 table.topicName(),
-                                EventTimePolicy.noEventTime(),
+                                eventTimePolicyProvider,
                                 table.paths(),
                                 table.types(),
                                 table.keyQueryDescriptor(),
@@ -166,6 +170,9 @@ public class KafkaSqlConnector implements SqlConnector {
                         false
                 )
         );
+        // set the parallelism to match that of the kafka sink - see https://github.com/hazelcast/hazelcast/issues/20507
+        // TODO eliminate the project vertex altogether and do the projecting in the sink directly
+        vStart.localParallelism(1);
 
         Vertex vEnd = dag.newUniqueVertex(
                 table.toString(),

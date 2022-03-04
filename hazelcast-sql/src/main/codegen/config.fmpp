@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,13 +23,20 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
-      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropView"
+      "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
       "com.hazelcast.jet.sql.impl.parse.SqlMappingColumn"
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
@@ -45,6 +52,7 @@ data: {
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "IF"
+      "INDEX"
       "JOB"
       "JOBS"
       "MAPPING"
@@ -53,6 +61,7 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -390,6 +399,7 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of non-reserved keywords to add;
@@ -412,6 +422,7 @@ data: {
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
+      "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
     ]
@@ -446,8 +457,10 @@ data: {
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
       "SqlCreateMapping"
+      "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateSnapshot"
+      "SqlCreateView"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
@@ -455,8 +468,10 @@ data: {
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
       "SqlDropMapping"
+      "SqlDropIndex"
       "SqlDropJob"
       "SqlDropSnapshot"
+      "SqlDropView"
     ]
 
     # Binary operators tokens.

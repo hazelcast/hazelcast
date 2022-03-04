@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,18 +26,11 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.net.NetworkInterface;
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static java.util.Collections.enumeration;
-import static java.util.Collections.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 /**
@@ -53,11 +46,9 @@ public class OverridePropertyRulePowerMockTest {
     @Rule
     public OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
 
-    private NetworkInterface networkInterface = mock(NetworkInterface.class);
-
     @Before
     public void setUp() {
-        mockStatic(NetworkInterface.class);
+        mockStatic(OtherClass.class);
     }
 
     @Test
@@ -95,11 +86,7 @@ public class OverridePropertyRulePowerMockTest {
     }
 
     private TestClass createTestClass() throws Exception {
-        NetworkInterface networkInterface = mock(NetworkInterface.class);
-        List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(networkInterface);
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
-
+        when(OtherClass.getName()).thenReturn("mocked-name");
         return new TestClass();
     }
 
@@ -107,11 +94,15 @@ public class OverridePropertyRulePowerMockTest {
 
         String getProperty(String property) throws Exception {
             // assert that PowerMock is working
-            ArrayList<NetworkInterface> networkInterfaces = list(NetworkInterface.getNetworkInterfaces());
-            assertEquals(1, networkInterfaces.size());
-            assertEquals(networkInterface, networkInterfaces.get(0));
+            assertEquals("mocked-name", OtherClass.getName());
 
             return System.getProperty(property);
+        }
+    }
+
+    private static final class OtherClass {
+        static String getName() {
+            return "some-name";
         }
     }
 }

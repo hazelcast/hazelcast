@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -221,6 +221,17 @@ hazelcast:
     # - false: Allows all actions that have no permission mapping
     client-block-unmapped-actions: true
 
+  local-device:
+    # Configuration for a device, which a tiered-store can reference and use for its disk-tier.
+    default-tiered-store-device:
+      base-dir: "tiered-store"
+      capacity:
+        unit: GIGABYTES
+        value: 256
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 4
+
   map:
     default:
       # Data type that will be used for storing recordMap.
@@ -308,6 +319,21 @@ hazelcast:
       # implement a custom eviction policy, out-of-the-box
       # eviction policies work regardless of this setting.
       per-entry-stats-enabled: false
+
+      # Tiered Store configuration. By default, it is disabled.
+      tiered-store:
+        enabled: false
+        memory-tier:
+          # The amount of memory to be reserved for the memory-tier of the tiered-store instance of this map.
+          capacity:
+            unit: MEGABYTES
+            value: 256
+        # Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
+        # of the tiered-store instance of this map.
+        disk-tier:
+          enabled: false
+          device-name: "default-tiered-store-device"
+
 
   queue:
     default:
@@ -835,3 +861,6 @@ hazelcast:
   # https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties
 #  properties:
 #    property.name: value
+  ##
+  integrity-checker:
+    enabled: false

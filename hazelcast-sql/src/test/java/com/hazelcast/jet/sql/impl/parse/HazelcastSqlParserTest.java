@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -25,6 +26,7 @@ import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParser.Config;
@@ -40,12 +42,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class HazelcastSqlParserTest {
 
     private static final Config CONFIG = SqlParser.configBuilder()
-                                                  .setCaseSensitive(true)
-                                                  .setUnquotedCasing(Casing.UNCHANGED)
-                                                  .setQuotedCasing(Casing.UNCHANGED)
-                                                  .setQuoting(Quoting.DOUBLE_QUOTE)
-                                                  .setParserFactory(HazelcastSqlParser.FACTORY)
-                                                  .build();
+            .setCaseSensitive(true)
+            .setUnquotedCasing(Casing.UNCHANGED)
+            .setQuotedCasing(Casing.UNCHANGED)
+            .setQuoting(Quoting.DOUBLE_QUOTE)
+            .setParserFactory(HazelcastSqlParser.FACTORY)
+            .build();
 
     @Test
     @Parameters({
@@ -80,6 +82,89 @@ public class HazelcastSqlParserTest {
         assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
         assertThat(node.getReplace()).isEqualTo(replace);
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createIndex(boolean ifNotExists) throws SqlParseException {
+        // given
+        String sql = "CREATE INDEX "
+                + (ifNotExists ? "IF NOT EXISTS " : "")
+                + "index_name "
+                + "ON mapping_name "
+                + "(column_name1, column_name2) "
+                + "TYPE SORTED "
+                + "OPTIONS ("
+                + "'option.key'='option.value'"
+                + ")";
+
+        // when
+        SqlNode parsedNode = parse(sql);
+
+        // then
+        assertThat(parsedNode).isInstanceOf(SqlCreateIndex.class);
+
+        // when
+        SqlCreateIndex node = (SqlCreateIndex) parsedNode;
+
+        // then
+        assertThat(node.mapName()).isEqualTo("mapping_name");
+        assertThat(node.indexName()).isEqualTo("index_name");
+        assertThat(node.type()).isEqualTo(IndexType.SORTED);
+        assertThat(node.columns().get(0)).isEqualTo("column_name1");
+        assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
+        assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createIndexWithoutOptions(boolean ifNotExists) throws SqlParseException {
+        // given
+        String sql = "CREATE INDEX "
+                + (ifNotExists ? "IF NOT EXISTS " : "")
+                + "index_name "
+                + "ON map_name "
+                + "(column_name1, column_name2) "
+                + "TYPE SORTED ";
+
+        // when
+        SqlNode parsedNode = parse(sql);
+
+        // then
+        assertThat(parsedNode).isInstanceOf(SqlCreateIndex.class);
+
+        // when
+        SqlCreateIndex node = (SqlCreateIndex) parsedNode;
+
+        // then
+        assertThat(node.mapName()).isEqualTo("map_name");
+        assertThat(node.indexName()).isEqualTo("index_name");
+        assertThat(node.type()).isEqualTo(IndexType.SORTED);
+        assertThat(node.columns().get(0)).isEqualTo("column_name1");
+        assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createIndexRequiresMapName(boolean ifNotExists) {
+        // given
+        String sql = "CREATE INDEX "
+                + (ifNotExists ? "IF NOT EXISTS " : "")
+                + "index_name ";
+
+        // when & then
+        assertThatThrownBy(() -> parse(sql))
+                .hasMessageContaining("Encountered \"<EOF>\" at line 1")
+                .hasMessageContaining("\"ON\" ...");
     }
 
     @Test
@@ -196,6 +281,24 @@ public class HazelcastSqlParserTest {
     }
 
     @Test
+    @Parameters({
+            "false",
+            "true"
+    })
+    public void test_dropIndex(boolean ifExists) throws SqlParseException {
+        // given
+        String sql = "DROP INDEX " + (ifExists ? "IF EXISTS " : "") + "index_name ON object_name";
+
+        // when
+        SqlDropIndex node = (SqlDropIndex) parse(sql);
+
+        // then
+        assertThat(node.indexName()).isEqualTo("index_name");
+        assertThat(node.objectName()).isEqualTo("object_name");
+        assertThat(node.ifExists()).isEqualTo(ifExists);
+    }
+
+    @Test
     public void test_dropExternalMapping() throws SqlParseException {
         // given
         String sql = "DROP EXTERNAL MAPPING mapping_name";
@@ -217,6 +320,78 @@ public class HazelcastSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createView(boolean toReplace) throws SqlParseException {
+        // given
+        String sql = "CREATE  "
+                + (toReplace ? " OR REPLACE " : "")
+                + "VIEW "
+                + "view_name "
+                + "AS "
+                + "SELECT * FROM map";
+
+        // when
+        SqlNode parsedNode = parse(sql);
+
+        // then
+        assertThat(parsedNode).isInstanceOf(SqlCreateView.class);
+
+        // when
+        SqlCreateView node = (SqlCreateView) parsedNode;
+
+        // then
+        assertThat(node.name()).isEqualTo("view_name");
+        assertThat(node.getQuery()).isInstanceOf(SqlSelect.class);
+        assertThat(node.getReplace()).isEqualTo(toReplace);
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createViewRequiresQuery(boolean toReplace) throws SqlParseException {
+        // given
+        String sql = "CREATE  "
+                + (toReplace ? " OR REPLACE " : "")
+                + "VIEW "
+                + "view_name ";
+
+        // then
+        assertThatThrownBy(() -> parse(sql))
+                .hasMessageContaining("Encountered \"<EOF>\" at line 1");
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_dropView(boolean ifExists) throws SqlParseException {
+        // given
+        String sql = "DROP  "
+                + "VIEW "
+                + (ifExists ? " IF EXISTS " : "")
+                + "view_name ";
+
+        // when
+        SqlNode parsedNode = parse(sql);
+
+        // then
+        assertThat(parsedNode).isInstanceOf(SqlDropView.class);
+
+        // when
+        SqlDropView node = (SqlDropView) parsedNode;
+
+        // then
+        assertThat(node.viewName()).isEqualTo("view_name");
+        assertThat(node.ifExists()).isEqualTo(ifExists);
     }
 
     @Test

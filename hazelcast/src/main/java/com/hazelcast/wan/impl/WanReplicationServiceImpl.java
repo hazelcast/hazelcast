@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ManagedService;
@@ -67,7 +67,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class WanReplicationServiceImpl implements WanReplicationService,
-        FragmentedMigrationAwareService, ManagedService {
+        ChunkedMigrationAwareService, ManagedService {
 
     private final Node node;
 
@@ -393,8 +393,9 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
-    public void appendWanReplicationConfig(WanReplicationConfig newConfig) {
+    public boolean appendWanReplicationConfig(WanReplicationConfig newConfig) {
         // not implemented in OS
+        return false;
     }
 
     private WanPublisher getPublisherOrNull(String wanReplicationName,

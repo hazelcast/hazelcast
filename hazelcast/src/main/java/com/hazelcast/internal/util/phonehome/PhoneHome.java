@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -40,6 +41,7 @@ import static java.lang.System.getenv;
 /**
  * Pings phone home server with cluster info daily.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class PhoneHome {
 
     private static final String FALSE = "false";
@@ -56,17 +58,32 @@ public class PhoneHome {
         this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
     }
 
+    /**
+     * Visible for testing.
+     */
+    PhoneHome(Node node, String basePhoneHomeUrl, Map<String, String> envVars) {
+        this(node, basePhoneHomeUrl, envVars, CLOUD_INFO_COLLECTOR);
+    }
+
+    /**
+     * Visible for testing.
+     */
+    PhoneHome(Node node, String basePhoneHomeUrl, MetricsCollector... additionalCollectors) {
+        this(node, basePhoneHomeUrl, System.getenv(), additionalCollectors);
+    }
+
     @SuppressWarnings("checkstyle:magicnumber")
-    PhoneHome(Node node, String baseUrl, MetricsCollector... additionalCollectors) {
+    private PhoneHome(Node node, String basePhoneHomeUrl, Map<String, String> envVars, MetricsCollector... additionalCollectors) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(PhoneHome.class);
-        basePhoneHomeUrl = baseUrl;
-        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 7);
+        this.basePhoneHomeUrl = basePhoneHomeUrl;
+        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 8);
         Collections.addAll(metricsCollectorList,
-                new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
+                new RestApiMetricsCollector(),
+                new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
-                new SqlInfoCollector());
+                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 

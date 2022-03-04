@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -772,7 +772,7 @@ public class ReferenceObjects {
     public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
     public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
     public static List<IndexConfig> aListOfIndexConfigs = Collections.singletonList(anIndexConfig);
-    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs);
+    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs, aBoolean, aBoolean);
     public static QueueStoreConfigHolder aQueueStoreConfigHolder = new QueueStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,6 +197,14 @@ public abstract class Operation implements DataSerializable, Tenantable {
      * Runs after backups, before wait-notify.
      */
     public void afterRun() throws Exception {
+    }
+
+    /**
+     * Is executed after {@link #run()} even if the operation failed.
+     *
+     * Runs after backups, before wait-notify.
+     */
+    public void afterRunFinal() {
     }
 
     /**

@@ -17,18 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.concurrent.Future;
-
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class SqlStreamGeneratorTest extends SqlTestSupport {
 
@@ -42,7 +37,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStream() {
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT * FROM TABLE(GENERATE_STREAM(100))",
                 asList(
                         new Row(0L),
@@ -54,8 +49,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStreamArgumentExpression() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('50' AS INTEGER) + 50 AS INT)))",
+        assertTipOfStream(
+                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('50' AS INTEGER) + 100 AS INT)))",
                 asList(
                         new Row(0L),
                         new Row(1L),
@@ -66,7 +61,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStreamNamedArguments() {
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT * FROM TABLE(GENERATE_STREAM(rate => 50 + 50))",
                 asList(
                         new Row(0L),
@@ -84,8 +79,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStreamFilterAndProject() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",
+        assertTipOfStream(
+                "SELECT v * 2 FROM TABLE(GENERATE_STREAM(10)) WHERE v > 0 AND v < 5",
                 asList(
                         new Row(2L),
                         new Row(4L),
@@ -137,11 +132,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateEmptyStream() {
-        SqlResult result = sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(0))");
-        Future<Boolean> future = spawn(() -> result.iterator().hasNext());
-        assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
-        result.close();
-        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertEmptyResultStream("SELECT * FROM TABLE(GENERATE_STREAM(0))");
     }
 
     @Test
@@ -178,7 +169,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_planCache() {
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT * FROM TABLE(GENERATE_STREAM(100))",
                 asList(
                         new Row(0L),
@@ -187,7 +178,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
         );
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT * FROM TABLE(GENERATE_STREAM(200))",
                 asList(
                         new Row(0L),

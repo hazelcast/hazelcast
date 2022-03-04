@@ -30,6 +30,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeSystem.MAX_
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
  * Custom Hazelcast type factory.
@@ -149,7 +150,9 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
-        if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
+        if (HazelcastTypeUtils.isJsonType(type)) {
+            return HazelcastJsonType.create(nullable);
+        } else if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
             return HazelcastIntegerType.create((HazelcastIntegerType) type, nullable);
         } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
@@ -166,6 +169,31 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
     @Override
     public RelDataType leastRestrictive(List<RelDataType> types) {
+        // special-case for JSON - see https://github.com/hazelcast/hazelcast/issues/20303
+        // SqlTypeName for JSON is OTHER, there's missing handling for OTHER in SqlTypeAssignmentRule,
+        // and we don't know how to add it there. And even if we did, OTHER can represent both JSON and
+        // a JAVA object, and these aren't assignable.
+        boolean containsNullable = false;
+        boolean allJson = true;
+        boolean allJsonOrVarchar = true;
+        for (RelDataType type : types) {
+            if (!(type instanceof HazelcastJsonType)) {
+                allJson = false;
+            }
+            if (!(type instanceof HazelcastJsonType) && type.getSqlTypeName() != VARCHAR) {
+                allJsonOrVarchar = false;
+            }
+            if (type.isNullable()) {
+                containsNullable = true;
+            }
+        }
+        if (allJson) {
+            return containsNullable ? HazelcastJsonType.TYPE_NULLABLE : HazelcastJsonType.TYPE;
+        }
+        if (allJsonOrVarchar) {
+            return createSqlType(VARCHAR, containsNullable);
+        }
+
         // Calcite returns BIGINT for all integer types and DOUBLE for all inexact fractional types.
         // This code allows us to use more narrow types in these cases.
         RelDataType selected = super.leastRestrictive(types);
@@ -208,7 +236,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
      *
      * @param targetType the target type to find the widest instance of.
      * @param types      the list of types to inspect.
-     * @return the found widest integer type.
+     * @return the widest integer type found.
      */
     private static RelDataType leastRestrictive(RelDataType targetType, List<RelDataType> types) {
         SqlTypeName typeName = targetType.getSqlTypeName();
@@ -233,12 +261,5 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         assert maxBitWidthType.getSqlTypeName() == typeName;
 
         return HazelcastIntegerType.create((HazelcastIntegerType) maxBitWidthType, targetType.isNullable());
-    }
-
-    @Override
-    public RelDataType createJoinType(RelDataType... types) {
-        // Calcite's implementation of createJoinType() returns RelCrossType.
-        // RelCrossType.getSqlTypeName() returns null. We assume in several places that it's non null...
-        return createUnknownType();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ class TranslateToPublicAddressProvider {
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if (publicIpEnabledProperty == null) {
             SSLConfig sslConfig = config.getSSLConfig();
+            // When ssl is enabled, we don't want to check if addresses are accessible and return false with a log.
+            // Because when client tries to check if addresses are reachable, because of SSL handshakes the members prints
+            // too many warnings which will alarm the users even if the behaviour is expected.
             if (sslConfig != null && sslConfig.isEnabled()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("SSL is configured. The client will use internal addresses to communicate with the cluster. If "

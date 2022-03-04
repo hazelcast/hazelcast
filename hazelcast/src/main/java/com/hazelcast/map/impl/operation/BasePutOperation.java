@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ public abstract class BasePutOperation
         invalidateNearCache(dataKey);
         publishWanUpdate(dataKey, value);
         evict(dataKey);
+        super.afterRunInternal();
     }
 
     private EntryEventType getEventType() {
@@ -70,7 +71,7 @@ public abstract class BasePutOperation
     }
 
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
-        ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         return new PutBackupOperation(name, dataKey, record, dataValue, metadata);
     }
 

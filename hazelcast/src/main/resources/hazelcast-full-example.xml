@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -105,14 +105,18 @@
         Set to true to allow scripting on the member, false to disallow.
         Default value is false.
         * console-enabled:
-        Set to true to allow console commands execution on the member, false to disallow
+        Set to true to allow console commands execution on the member, false to disallow.
         Default value is false.
+        * data-access-enabled
+        Set to true to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow.
+        Management Center can't access the data if at least one member has the data access disabled.
+        Default value is true.
 
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center scripting-enabled="false" console-enabled="false"/>
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true"/>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -1146,6 +1150,24 @@
         sub-element.
         - <fsync>:
             Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <tiered-store>:
+        Used to enable Hazelcast's Tiered-Store feature for the map. It is available only in Hazelcast
+        Enterprise. Set its "enabled" to true to enable the feature. By default, it is disabled.
+        It has the following attributes and sub-elements:
+        - enabled:
+            Specifies whether the tiered-store is enabled.
+        - <memory-tier>:
+            Memory-tier of the tiered-store. It has the following sub-element:
+            - <capacity>:
+                Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                You can give the size using its "value" attribute and the unit using its "unit" attribute.
+                Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 megabytes.
+        - <disk-tier>:
+            Defines configuration for the disk tier of the tiered store. It has the following attributes:
+            - enabled:
+                Specifies whether (local) disk should be used as the second memory tier.
+            - device-name:
+                Name of the device for a given disk tier. The default is "default-tiered-store-device".
         * <event-journal>:
         It has the following attributes and sub-elements:
         - enabled:
@@ -1318,6 +1340,12 @@
         <data-persistence enabled="false">
             <fsync>false</fsync>
         </data-persistence>
+        <tiered-store enabled="false">
+            <memory-tier>
+                <capacity unit="MEGABYTES" value="1024"/>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="tiered-store-local-device"/>
+        </tiered-store>
         <event-journal enabled="false">
             <capacity>10000</capacity>
             <time-to-live-seconds>0</time-to-live-seconds>
@@ -1427,6 +1455,10 @@
             Batch size used to determine the number of events sent in a batch to your query cache. Its default value is 1.
         * <buffer-size>:
             Maximum number of events which can be stored in a partition buffer. Its default value is 16.
+        * <serialize-keys>:
+           Defines if the Query Cache keys should be serialized or not.
+           Keys are better to be serialized if they are mutable and
+           need to be cloned via serialization. Default value is false.
         * <eviction>:
             Configuration for the eviction of your query cache. See <eviction> in the map configuration above.
         * <indexes>:
@@ -1446,6 +1478,7 @@
                 <delay-seconds>3</delay-seconds>
                 <batch-size>2</batch-size>
                 <buffer-size>32</buffer-size>
+                <serialize-keys>false</serialize-keys>
                 <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                 <indexes>
                     <index>
@@ -2115,6 +2148,16 @@
                 <prefix>java</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
     <!--
         ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
@@ -2692,6 +2735,59 @@
             </secure-store>
         </encryption-at-rest>
     </persistence>
+
+    <!--
+        ===== HAZELCAST LOCAL-DEVICE CONFIGURATION =====
+
+        Tiered-Store device configuration. Currently, only local disk is supported as a device.
+        Multiple devices can be configured, and a map with enabled tiered-store can reference
+        a given device from its disk-tier. It has the following attributes and sub-elements:
+        - name:
+            Name of the device. The default is "default-tiered-store-device".
+        * <base-dir>:
+            Specifies the directory where the Tiered-Store data will be stored. Its default value is
+            "tiered-store". You can use the default value, or you can specify another folder.
+            This directory will be created automatically if it does not exist.
+        * <capacity>:
+            Device capacity, i.e., what is the soft upper bound capacity of the device.
+            You can give the size using its "value" attribute and the unit using its "unit" attribute.
+            Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 gigabytes.
+        * <block-size>:
+            Device block/sector size in bytes. The default is 4096. The minimum is 512.
+        * <read-io-thread-count>:
+            Read IO thread count. The default is 4.
+        * <write-io-thread-count>:
+            Write IO thread count. The default is 4.
+    -->
+    <local-device name="tiered-store-local-device">
+        <base-dir>/mnt/tiered-store</base-dir>
+        <capacity unit="GIGABYTES" value="512"/>
+        <block-size>4096</block-size>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>4</write-io-thread-count>
+    </local-device>
+
+    <!--
+        ===== HAZELCAST DYNAMIC CONFIGURATION CONFIGURATION =====
+
+        Configuration settings related to dynamic configuration feature.
+
+        It has the following sub-elements:
+        * <persistence-enabled>:
+            True if dynamic configuration persistence is enabled.
+        * <backup-dir>:
+            Directory for dynamic configuration persistence file backups.
+            Each new backup will be created inside this directory.
+            Can be an absolute or relative path to the node startup directory.
+            If not set, new folder will be created where dynamic configuration file exists.
+        * <backup-count>:
+            How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+    -->
+        <dynamic-configuration>
+            <persistence-enabled>true</persistence-enabled>
+            <backup-dir>/mnt/dynamic/backup-dir</backup-dir>
+            <backup-count>7</backup-count>
+        </dynamic-configuration>
 
     <!--
         ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
@@ -3759,5 +3855,15 @@
             <receive-window-multiplier>3</receive-window-multiplier>
         </edge-defaults>
     </jet>
+
+    <!--
+    ===== HAZELCAST INTEGRITY CHECKER CONFIGURATION =====
+
+    Configuration element's name is <integrity-checker>. When you want to enable Integrity Checker,
+    set this element's "enabled" attribute to true in that member's XML configuration. Integrity Checker is a component
+    that verifies that the executable contains all the required META-INF/services files, it is a costly operation,
+    it can be disabled to improve startup time. Integrity Checker is disabled by default.
+    -->
+    <integrity-checker enabled="false"/>
 
 </hazelcast>

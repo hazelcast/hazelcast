@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,6 +151,9 @@ public final class FactoryIdHelper {
 
     public static final String ENTERPRISE_PARTITION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.partition";
     public static final int ENTERPRISE_PARTITION_DS_FACTORY_ID = -43;
+
+    public static final String BASIC_FUNCTIONS_DS_FACTORY = "hazelcast.serialization.lambda";
+    public static final int BASIC_FUNCTIONS_DS_FACTORY_ID = -44;
 
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 

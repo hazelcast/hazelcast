@@ -21,12 +21,15 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.metadata.Boundedness;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -53,12 +56,14 @@ import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,7 +71,9 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
@@ -196,19 +203,42 @@ public final class OptUtils {
     }
 
     /**
-     * Get possible physical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have the
+     * physical trait. Every returned input is guaranteed to have a unique trait
+     * set.
      *
-     * @param input Subset.
      * @return Physical rels.
      */
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
+        return extractRelsFromSubset(input, OptUtils::isPhysical);
+    }
+
+    private static boolean isPhysical(RelNode rel) {
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
+    }
+
+    /**
+     * Finds a set for the given RelNode, and return subsets that have the
+     * logical trait. Every returned input is guaranteed to have a unique trait
+     * set.
+     *
+     * @return Logical rels.
+     */
+    public static Collection<RelNode> extractLogicalRelsFromSubset(RelNode input) {
+        return extractRelsFromSubset(input, OptUtils::isLogical);
+    }
+
+    private static boolean isLogical(RelNode rel) {
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.LOGICAL);
+    }
+
+    private static Collection<RelNode> extractRelsFromSubset(RelNode input, Predicate<RelNode> predicate) {
         Set<RelTraitSet> traitSets = new HashSet<>();
 
         Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
 
         for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
-            if (!isPhysical(rel)) {
+            if (!predicate.test(rel)) {
                 continue;
             }
 
@@ -220,8 +250,16 @@ public final class OptUtils {
         return res;
     }
 
-    private static boolean isPhysical(RelNode rel) {
-        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
+    public static boolean isBounded(RelNode rel) {
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.BOUNDED;
+    }
+
+    public static boolean isUnbounded(RelNode rel) {
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
+    }
+
+    public static HazelcastRelMetadataQuery metadataQuery(RelNode rel) {
+        return HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
     }
 
     public static HazelcastRelOptCluster getCluster(RelNode rel) {
@@ -236,14 +274,15 @@ public final class OptUtils {
 
     /**
      * If the {@code node} is a {@link RelSubset}, finds the subset matching
-     * the {@code operandPredicate}. If multiple or no matches are found,
-     * throws an error.
+     * the {@code operandPredicate}.
+     * If multiple matches are found, it throws. If no match is found, it returns null.
      * <p>
-     * If the {@code node} isn't a {@code RelSubset}, check that it matches the
-     * predicate and returns it.
+     * If the {@code node} isn't a {@code RelSubset} and it matches the
+     * predicate, the {@code node} is returned. If it doesn't match,
+     * {@code null} is returned.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
+    @Nullable
     public static <T> T findMatchingRel(RelNode node, RelOptRuleOperand operandPredicate) {
         if (node instanceof RelSubset) {
             RelNode res = null;
@@ -255,14 +294,11 @@ public final class OptUtils {
                     res = rel;
                 }
             }
-            if (res != null) {
-                return (T) res;
-            }
+            return (T) res;
         } else if (operandPredicate.matches(node)) {
             return (T) node;
         }
-
-        throw new RuntimeException("expected rel not found: " + node);
+        return null;
     }
 
     public static PlanNodeSchema schema(RelDataType rowType) {
@@ -296,18 +332,31 @@ public final class OptUtils {
         QueryDataType fieldType = field.getType();
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
-
         if (sqlTypeName == null) {
-            throw new IllegalStateException("Unexpected type family: " + fieldType);
+            throw new IllegalStateException("Unsupported type family: " + fieldType
+                    + ", getSqlTypeName should never return null.");
         }
 
-        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
-        return typeFactory.createTypeWithNullability(relType, true);
+        if (sqlTypeName == SqlTypeName.OTHER) {
+            return convertCustomType(fieldType);
+        } else {
+            RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+            return typeFactory.createTypeWithNullability(relType, true);
+        }
+    }
+
+    private static RelDataType convertCustomType(QueryDataType fieldType) {
+        switch (fieldType.getTypeFamily()) {
+            case JSON:
+                return HazelcastJsonType.create(true);
+            default:
+                throw new IllegalStateException("Unexpected type family: " + fieldType);
+        }
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
         return Util.toList(rowType.getFieldList(),
-                f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
+                f -> HazelcastTypeUtils.toHazelcastType(f.getType()));
     }
 
     public static boolean requiresJob(RelNode rel) {
@@ -323,7 +372,7 @@ public final class OptUtils {
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
     }
 
-    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+    public static HazelcastTable extractHazelcastTable(RelNode rel) {
         HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
         assert table != null;
         return table;
@@ -392,5 +441,55 @@ public final class OptUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Return true if the `expression` contains any input reference to a field
+     * with index in `indexes`.
+     */
+    public static boolean hasInputRef(RexNode expression, int... indexes) {
+        boolean[] res = {false};
+        expression.accept(new RexVisitorImpl<Void>(true) {
+            @Override
+            public Void visitInputRef(RexInputRef inputRef) {
+                if (arrayIndexOf(inputRef.getIndex(), indexes) >= 0) {
+                    res[0] = true;
+                }
+                return null;
+            }
+        });
+        return res[0];
+    }
+
+    /**
+     * Inlines `inlinedExpressions` into `expr` and returns the modified expression.
+     * <p>
+     * Example:
+     * {@code
+     * inlinedExpressions: [UPPER($1), LOWER($0)]
+     * expr: $1 || $0
+     * result: LOWER($0) || UPPER($1)
+     * }
+     */
+    @SuppressWarnings("checkstyle:AnonInnerLength")
+    public static RexNode inlineExpression(List<RexNode> inlinedExpressions, RexNode expr) {
+        return expr.accept(new RexShuttle() {
+            @Override
+            public RexNode visitInputRef(RexInputRef inputRef) {
+                return inlinedExpressions.get(inputRef.getIndex());
+            }
+        });
+    }
+
+    /**
+     * Same as {@link #inlineExpression(List, RexNode)}, but applied to all
+     * expressions in {@code exprs}.
+     */
+    public static List<RexNode> inlineExpressions(List<RexNode> inlinedExpressions, List<RexNode> exprs) {
+        List<RexNode> res = new ArrayList<>(exprs.size());
+        for (RexNode expr : exprs) {
+            res.add(inlineExpression(inlinedExpressions, expr));
+        }
+        return res;
     }
 }

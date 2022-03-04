@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
 
 public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadCommand> {
 
@@ -74,7 +74,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         headervals.put("MigrationQueueSize", migrationQueueSize);
         headervals.put("ClusterSize", clusterSize);
 
-        command.setResponse(RES_200, headervals);
+        command.setResponse(SC_200, headervals);
     }
 
     @Override

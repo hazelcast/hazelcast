@@ -34,8 +34,14 @@ public interface ParserResource {
     @BaseMessage("The mapping must be created in the \"public\" schema")
     ExInst<SqlValidatorException> mappingIncorrectSchema();
 
+    @BaseMessage("The view must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> viewIncorrectSchema();
+
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
+
+    @BaseMessage("Index attribute ''{0}'' specified more than once")
+    ExInst<SqlValidatorException> duplicateIndexAttribute(String columnName);
 
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
@@ -43,8 +49,14 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
+    @BaseMessage("Index does not exist: {0}")
+    ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);
+
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();
+
+    @BaseMessage("Unknown option for {0} index: {1}")
+    ExInst<SqlValidatorException> unsupportedIndexType(String indexType, String option);
 
     @BaseMessage("Unsupported value for {0}: {1}")
     ExInst<SqlValidatorException> processingGuaranteeBadValue(String key, String value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.when;
@@ -68,12 +67,12 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
-    private static ContainsPattern containingParam(String paramName, String expectedValue) {
+    static ContainsPattern containingParam(String paramName, String expectedValue) {
         return new ContainsPattern(paramName + "=" + expectedValue);
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().jettyHeaderBufferSize(16384));
+    public WireMockRule wireMockRule = new WireMockRule();
 
     private Node node;
     private PhoneHome phoneHome;

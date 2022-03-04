@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.core.HazelcastJsonValue;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class JavaClassNameResolver {
 
     private static final Map<String, String> CLASS_NAMES_BY_FORMAT;
@@ -50,6 +53,7 @@ public final class JavaClassNameResolver {
         CLASS_NAMES_BY_FORMAT.put("date", LocalDate.class.getName());
         CLASS_NAMES_BY_FORMAT.put("timestamp", LocalDateTime.class.getName());
         CLASS_NAMES_BY_FORMAT.put("timestamp with time zone", OffsetDateTime.class.getName());
+        CLASS_NAMES_BY_FORMAT.put("json", HazelcastJsonValue.class.getName());
     }
 
     private JavaClassNameResolver() {

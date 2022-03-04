@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -72,6 +71,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     /**
      * Allow running partition replica sync on generic operation threads? Default is true.
      * System property supplied as a workaround in case of unexpected issues.
+     *
      * @since 5.0
      */
     private static final String PARTITION_REPLICA_ALLOW_OFFLOAD = "hazelcast.partition.replica.offload";
@@ -241,24 +241,22 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+            logger.finest("Sending sync replica request for partitionId="
+                    + partitionId + ", replicaIndex=" + replicaIndex
                     + ", namespaces=" + namespaces);
         }
         replicaSyncRequestsCounter.inc();
 
-        PartitionReplicaSyncRequest syncRequest = shouldOffload()
-                        ? new PartitionReplicaSyncRequestOffloadable(partitionId, namespaces, replicaIndex)
-                        : new PartitionReplicaSyncRequest(partitionId, namespaces, replicaIndex);
+        Operation syncRequest = ALLOW_OFFLOAD
+                ? new PartitionReplicaSyncRequestOffloadable(namespaces, partitionId, replicaIndex)
+                : new PartitionReplicaSyncRequest(namespaces, partitionId, replicaIndex);
+
         nodeEngine.getOperationService().send(syncRequest, target.address());
     }
 
-    private boolean shouldOffload() {
-        return ALLOW_OFFLOAD && nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0);
-    }
-
     private Collection<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
-                                                                 Collection<ServiceNamespace> requestedNamespaces,
-                                                                 int replicaIndex, PartitionReplica target, int permits) {
+                                                                       Collection<ServiceNamespace> requestedNamespaces,
+                                                                       int replicaIndex, PartitionReplica target, int permits) {
 
         List<ServiceNamespace> namespaces = new ArrayList<>(permits);
         for (ServiceNamespace namespace : requestedNamespaces) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,9 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -61,8 +64,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
@@ -882,7 +893,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='true' console-enabled='true'>"
+                + "<management-center scripting-enabled='true' console-enabled='true' data-access-enabled='false'>"
                 + "  <trusted-interfaces>\n"
                 + "    <interface>127.0.0.1</interface>\n"
                 + "    <interface>192.168.1.*</interface>\n"
@@ -895,6 +906,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mcConfig.isScriptingEnabled());
         assertTrue(mcConfig.isConsoleEnabled());
+        assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -912,6 +924,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -924,6 +937,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -2686,6 +2700,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<in-memory-format>BINARY</in-memory-format>"
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
+                + "<serialize-keys>true</serialize-keys>"
                 + "<indexes>"
                 + "<index type=\"HASH\"><attributes><attribute>name</attribute></attributes></index>"
                 + "</indexes>"
@@ -2713,6 +2728,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -2961,6 +2977,84 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testCompactSerialization() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\" />\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
+    }
+
+    @Override
+    public void testCompactSerialization_explicitSerializationRegistration() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class type-name=\"obj\" serializer=\"example.serialization.EmployeeDTOSerializer\">"
+                + "                    example.serialization.EmployeeDTO\n"
+                + "                </class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
+    }
+
+    @Override
+    public void testCompactSerialization_reflectiveSerializerRegistration() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config.getSerializationConfig());
+    }
+
+    @Override
+    public void testCompactSerialization_registrationWithJustTypeName() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class type-name=\"employee\">example.serialization.EmployeeDTO</class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    public void testCompactSerialization_registrationWithJustSerializer() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class serializer=\"example.serialization.EmployeeDTOSerializer\">\n"
+                + "                    example.serialization.EmployeeDTO\n"
+                + "                </class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
     @Test
     public void testAllowOverrideDefaultSerializers() {
         String xml = HAZELCAST_START_TAG
@@ -3044,6 +3138,206 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Override
+    @Test
+    public void testDynamicConfig() {
+        boolean persistenceEnabled = true;
+        String backupDir = "/mnt/dynamic-configuration/backup-dir";
+        int backupCount = 7;
+
+        String xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "    <backup-dir>" + backupDir + "</backup-dir>"
+                + "    <backup-count>" + backupCount + "</backup-count>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(new File(backupDir).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
+
+        xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(new File(DEFAULT_BACKUP_DIR).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(DEFAULT_BACKUP_COUNT, dynamicConfigurationConfig.getBackupCount());
+    }
+
+    @Override
+    @Test
+    public void testLocalDevice() {
+        String baseDir = "base-directory";
+        int blockSize = 2048;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 1;
+
+        String xml = HAZELCAST_START_TAG
+                + "<local-device name=\"my-device\">"
+                + "    <base-dir>" + baseDir + "</base-dir>"
+                + "    <block-size>" + blockSize + "</block-size>"
+                + "    <capacity value=\"100\" unit=\"GIGABYTES\"/>"
+                + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + writeIOThreadCount + "</write-io-thread-count>"
+                + "</local-device>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+
+        assertNotNull(localDeviceConfig);
+        assertEquals("my-device", localDeviceConfig.getName());
+        assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
+
+        int device0Multiplier = 2;
+        int device1Multiplier = 4;
+        xml = HAZELCAST_START_TAG
+                + "<local-device name=\"device0\">"
+                + "    <capacity value=\"1234567890\" unit=\"MEGABYTES\"/>"
+                + "    <block-size>" + (blockSize * device0Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device0Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device0Multiplier) + "</write-io-thread-count>"
+                + "</local-device>\n"
+                + "<local-device name=\"device1\">"
+                + "    <block-size>" + (blockSize * device1Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device1Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device1Multiplier) + "</write-io-thread-count>"
+                + "</local-device>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(3, config.getDeviceConfigs().size());
+
+        localDeviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+
+        localDeviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
+
+        // default device
+        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+        // override the default device config
+        String newBaseDir = "/some/random/base/dir/for/tiered/store";
+        xml = HAZELCAST_START_TAG
+                + "<local-device name=\"" + DEFAULT_DEVICE_NAME + "\">"
+                + "    <base-dir>" + newBaseDir + "</base-dir>"
+                + "    <block-size>" + (DEFAULT_BLOCK_SIZE_IN_BYTES * 2) + "</block-size>"
+                + "    <read-io-thread-count>" + (DEFAULT_READ_IO_THREAD_COUNT * 2) + "</read-io-thread-count>"
+                + "</local-device>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(1, config.getDeviceConfigs().size());
+
+        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(newBaseDir).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(2 * DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(2 * DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+    }
+
+    @Override
+    @Test
+    public void testTieredStore() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"map0\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <memory-tier>"
+                + "            <capacity value=\"1024\" unit=\"MEGABYTES\"/>"
+                + "        </memory-tier>"
+                + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + "<map name=\"map1\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <disk-tier enabled=\"true\"/>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + "<map name=\"map2\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <memory-tier>"
+                + "            <capacity value=\"1\" unit=\"GIGABYTES\"/>"
+                + "        </memory-tier>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + "<map name=\"map3\">"
+                + "    <tiered-store enabled=\"true\"/>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("map0").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1024, memoryTierConfig.getCapacity().getValue());
+
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals("local-device", diskTierConfig.getDeviceName());
+
+        assertEquals(DEFAULT_DEVICE_NAME,
+                config.getMapConfig("map1").getTieredStoreConfig().getDiskTierConfig().getDeviceName());
+        assertNotNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+
+        tieredStoreConfig = config.getMapConfig("map2").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.GIGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1L, memoryTierConfig.getCapacity().getValue());
+
+        assertFalse(tieredStoreConfig.getDiskTierConfig().isEnabled());
+
+        tieredStoreConfig = config.getMapConfig("map3").getTieredStoreConfig();
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(DEFAULT_CAPACITY, memoryTierConfig.getCapacity());
+
+        diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertFalse(diskTierConfig.isEnabled());
+        assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
+
+        xml = HAZELCAST_START_TAG
+                + "<map name=\"some-map\">"
+                + "    <tiered-store enabled=\"true\"/>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(1, config.getDeviceConfigs().size());
+        assertEquals(new LocalDeviceConfig(), config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+        assertEquals(DEFAULT_DEVICE_NAME,
+                config.getMapConfig("some-map").getTieredStoreConfig().getDiskTierConfig().getDeviceName());
     }
 
     @Override
@@ -4035,6 +4329,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <integrity-checker enabled=\"false\"/>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 
     @Override

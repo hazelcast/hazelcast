@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.expression.predicate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -47,8 +46,8 @@ public class ComparisonPredicateTest extends SqlTestSupport {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testCreationAndEval() {
-        assertFalse(comparison(0, 1, INT, EQUALS).eval(row("foo"), SimpleExpressionEvalContext.create()));
-        assertTrue(comparison(0, 1, INT, LESS_THAN).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertFalse(comparison(0, 1, INT, EQUALS).eval(heapRow("foo"), createExpressionEvalContext()));
+        assertTrue(comparison(0, 1, INT, LESS_THAN).eval(heapRow("foo"), createExpressionEvalContext()));
     }
 
     @Test
@@ -68,7 +67,7 @@ public class ComparisonPredicateTest extends SqlTestSupport {
         checkEquals(original, restored, true);
     }
 
-    private static com.hazelcast.sql.impl.row.Row row(Object... values) {
+    private static com.hazelcast.sql.impl.row.Row heapRow(Object... values) {
         assertNotNull(values);
         assertTrue(values.length > 0);
 

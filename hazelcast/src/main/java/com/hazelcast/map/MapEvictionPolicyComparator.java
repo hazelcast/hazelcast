@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 /**
  * {@link IMap} specific {@link EvictionPolicyComparator} for
  * comparing {@link com.hazelcast.core.EntryView}s to be evicted.
- *
+ * <p>
  * Implementors of the comparator have to implement {@code equals}
  * and {@code hashCode} methods to support correct config comparison.
- *
+ * <p>
  * Note that you may need to enable per entry stats via
  * {@link MapConfig#setPerEntryStatsEnabled} to see
  * all fields of entry view in your implementation.
@@ -43,7 +43,9 @@ public interface MapEvictionPolicyComparator<K, V>
 
     /**
      * Compares the given {@link EntryView} instances and
-     * returns the result. The result should be one of
+     * returns the result.
+     * <p>
+     * The result should be one of:
      * <ul>
      *   <li>-1: first entry has higher priority to be evicted</li>
      *   <li> 1: second entry has higher priority to be evicted</li>

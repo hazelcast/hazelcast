@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -34,7 +35,6 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
@@ -49,10 +49,8 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -70,7 +68,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.
  */
-public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
+public class RingbufferService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService {
 
     /**
@@ -215,7 +213,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     private Map<ObjectNamespace, RingbufferContainer> getOrCreateRingbufferContainers(int partitionId) {
         final Map<ObjectNamespace, RingbufferContainer> partitionContainer = containers.get(partitionId);
         if (partitionContainer == null) {
-            containers.putIfAbsent(partitionId, new HashMap<>());
+            containers.putIfAbsent(partitionId, new ConcurrentHashMap<>());
         }
         return containers.get(partitionId);
     }
@@ -271,7 +269,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
             return null;
         }
         return new ReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-
     }
 
     @Override
@@ -309,21 +306,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         int partitionId = event.getPartitionId();
         Map<ObjectNamespace, RingbufferContainer> partitionContainers = containers.get(partitionId);
 
-        if (MapUtil.isNullOrEmpty(partitionContainers)) {
-            return Collections.EMPTY_LIST;
-        }
-
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (RingbufferContainer container : partitionContainers.values()) {
-            if (container.getConfig().getTotalBackupCount() < event.getReplicaIndex()) {
-                continue;
-            }
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
-            }
-            namespaces.add(container.getNamespace());
-        }
-        return namespaces;
+        return NameSpaceUtil.getAllNamespaces(partitionContainers,
+                container -> container.getConfig().getTotalBackupCount() >= event.getReplicaIndex(),
+                RingbufferContainer::getNamespace);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ import java.util.TreeMap;
  * {@link DeserializedGenericRecord}s. It carries the schema information
  * of the record and do type checks while setting fields.
  */
-class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
+public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();
     private final Schema schema;
 
-    DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
+    public DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
         this.schema = schema;
     }
 

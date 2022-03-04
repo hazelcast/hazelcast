@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.memcache.Stats;
+import com.hazelcast.internal.ascii.rest.RestCallCollector;
 
 import java.util.Map;
 import java.util.Set;
@@ -74,6 +75,8 @@ public interface TextCommandService {
     long incrementDecrMissCount();
 
     long incrementTouchCount();
+
+    RestCallCollector getRestCallCollector();
 
     /**
      * Returns the size of the distributed queue instance with the specified name

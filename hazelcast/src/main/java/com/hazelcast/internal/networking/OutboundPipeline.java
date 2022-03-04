@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public interface OutboundPipeline {
      *
      * It will cause at least one processing of the OutboundPipeline.
      *
-     * This method is threadsafe and can safely be called from any thread.
+     * This method is thread-safe and can safely be called from any thread.
      *
      * Calling it while there is nothing in the pipeline will not do any damage,
      * apart from consuming cpu cycles.

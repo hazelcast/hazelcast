@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ public enum PhoneHomeMetrics {
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),
+    PARTITION_COUNT("parct"),
 
     //OS INFO METRICS
     OPERATING_SYSTEM_NAME("osn"),
@@ -143,9 +144,53 @@ public enum PhoneHomeMetrics {
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
 
-    //CP SUBSYSTEM METRICS
-    CP_SUBSYSTEM_ENABLED("cp");
+    // DYNAMIC CONFIG PERSISTENCE
+    DYNAMIC_CONFIG_PERSISTENCE_ENABLED("dcpe"),
 
+    // STORAGE METRICS
+    HD_MEMORY_ENABLED("hdme"),
+    MEMORY_USED_HEAP_SIZE("muhs"),
+    MEMORY_USED_NATIVE_SIZE("muns"),
+    TIERED_STORAGE_ENABLED("tse"),
+    DATA_MEMORY_COST("dmc"),
+
+    //CP SUBSYSTEM METRICS
+    CP_SUBSYSTEM_ENABLED("cp"),
+    CP_MEMBERS_COUNT("cpmc"),
+    CP_GROUPS_COUNT("cpgct"),
+    CP_SEMAPHORES_COUNT("cpsect"),
+    CP_COUNTDOWN_LATCHES_COUNT("cpclct"),
+    CP_FENCED_LOCKS_COUNT("cpflct"),
+    CP_ATOMIC_LONGS_COUNT("cpalct"),
+    CP_ATOMIC_REFS_COUNT("cparct"),
+
+    // REST API metrics
+    REST_ENABLED("restenabled"),
+    REST_MAP_GET_SUCCESS("restmapgetsucc"),
+    REST_MAP_GET_FAILURE("restmapgetfail"),
+    REST_MAP_POST_SUCCESS("restmappostsucc"),
+    REST_MAP_POST_FAILURE("restmappostfail"),
+    REST_MAP_DELETE_SUCCESS("restmapdeletesucc"),
+    REST_MAP_DELETE_FAILURE("restmapdeletefail"),
+    REST_MAP_TOTAL_REQUEST_COUNT("restmaprequestct"),
+    REST_ACCESSED_MAP_COUNT("restmapct"),
+
+    REST_QUEUE_POST_SUCCESS("restqueuepostsucc"),
+    REST_QUEUE_POST_FAILURE("restqueuepostfail"),
+    REST_QUEUE_GET_SUCCESS("restqueuegetsucc"),
+    REST_QUEUE_GET_FAILURE("restqueuegetfail"),
+    REST_QUEUE_DELETE_SUCCESS("restqueuedeletesucc"),
+    REST_QUEUE_DELETE_FAILURE("restqueuedeletefail"),
+    REST_QUEUE_TOTAL_REQUEST_COUNT("restqueuerequestct"),
+    REST_ACCESSED_QUEUE_COUNT("restqueuect"),
+
+    REST_CONFIG_UPDATE_SUCCESS("restconfigupdatesucc"),
+    REST_CONFIG_UPDATE_FAILURE("restconfigupdatefail"),
+    REST_CONFIG_RELOAD_SUCCESS("restconfigreloadsucc"),
+    REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
+
+    REST_REQUEST_COUNT("restrequestct"),
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
     private final String query;
 
     PhoneHomeMetrics(String query) {

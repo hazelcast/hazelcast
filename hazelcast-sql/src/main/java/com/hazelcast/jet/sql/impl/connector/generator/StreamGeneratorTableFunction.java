@@ -17,11 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSpecificTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
@@ -44,10 +45,7 @@ public final class StreamGeneratorTableFunction extends HazelcastSpecificTableFu
     public StreamGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                new HazelcastSqlOperandMetadata(
-                        PARAMETERS,
-                        new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
-                ),
+                StreamOperandMetadata.INSTANCE,
                 binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
                 StreamSqlConnector.INSTANCE
         );
@@ -65,5 +63,22 @@ public final class StreamGeneratorTableFunction extends HazelcastSpecificTableFu
 
     private static String randomName() {
         return SCHEMA_NAME_STREAM + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    private static final class StreamOperandMetadata extends HazelcastSqlOperandMetadata {
+
+        private static final StreamOperandMetadata INSTANCE = new StreamOperandMetadata();
+
+        private StreamOperandMetadata() {
+            super(
+                    PARAMETERS,
+                    new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
+            );
+        }
+
+        @Override
+        protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+            return true;
+        }
     }
 }

@@ -16,14 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -31,27 +35,27 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.ArrayList;
+import javax.annotation.Nullable;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
-public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
+public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            RelOptTable table
+            RelOptTable table,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
+
     ) {
-        super(cluster, traitSet, table);
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
@@ -67,15 +71,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
 
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
 
-        List<Integer> projects = table.getProjects();
-        List<RexNode> projection = new ArrayList<>(projects.size());
-        for (Integer index : projects) {
-            TableField field = table.getTarget().getField(index);
-            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
-            projection.add(new RexInputRef(index, relDataType));
-        }
-
-        return project(schema, projection, parameterMetadata);
+        return project(schema, table.getProjects(), parameterMetadata);
     }
 
     @Override
@@ -137,6 +133,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable());
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
+                watermarkedColumnIndex());
     }
 }

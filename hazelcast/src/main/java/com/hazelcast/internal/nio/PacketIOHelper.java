@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Packet.VERSION;
 
 /**
- * Responsible for writing or reading an Packet. Originally the logic was placed in the Packet. The problem with this approach
+ * Responsible for writing or reading a Packet. Originally the logic was placed in the Packet. The problem with this approach
  * is that a single Packet instance can't be shared between multiple connections and this leads to increased memory usage since
  * the packet needs to be copied for every connection.
  *
@@ -89,7 +89,7 @@ public class PacketIOHelper {
                 bytesWrite = bytesNeeded;
                 done = true;
             } else {
-                // Not all bytes for the value are available. So lets write as much as is available.
+                // Not all bytes for the value are available. So let's write as much as is available.
                 bytesWrite = bytesWritable;
                 done = false;
             }

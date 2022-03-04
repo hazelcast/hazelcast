@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ public interface FieldKindBasedOperations {
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
         throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");
     }
-
 
     default int hashCode(GenericRecord record, String fieldName) {
         return Objects.hashCode(readGenericRecordOrPrimitive(record, fieldName));

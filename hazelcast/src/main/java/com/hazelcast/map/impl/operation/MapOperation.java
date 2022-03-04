@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,9 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected void innerBeforeRun() throws Exception {
-        // Intentionally empty method body.
+        if (recordStore != null) {
+            recordStore.beforeOperation();
+        }
         // Concrete classes can override this method.
     }
 
@@ -142,6 +144,13 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected void afterRunInternal() {
         // Intentionally empty method body.
         // Concrete classes can override this method.
+    }
+
+    @Override
+    public void afterRunFinal() {
+        if (recordStore != null) {
+            recordStore.afterOperation();
+        }
     }
 
     protected void assertNativeMapOnPartitionThread() {
@@ -327,9 +336,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         Data dataValue = toHeapData(mapServiceContext.toData(value));
-        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         WanMapEntryView<Object, Object> entryView = createWanEntryView(
-                toHeapData(dataKey), dataValue, record, expiredMetadata,
+                toHeapData(dataKey), dataValue, record, expiryMetadata,
                 getNodeEngine().getSerializationService());
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);

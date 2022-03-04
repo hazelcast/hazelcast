@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,6 +149,8 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
+    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
+
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
@@ -349,7 +351,12 @@ class MapServiceContextImpl implements MapServiceContext {
         while (partitionIterator.hasNext()) {
             RecordStore partition = partitionIterator.next();
             if (predicate.test(partition)) {
-                partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                partition.beforeOperation();
+                try {
+                    partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                } finally {
+                    partition.afterOperation();
+                }
                 partitionIterator.remove();
             }
         }
@@ -427,6 +434,8 @@ class MapServiceContextImpl implements MapServiceContext {
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
+        getEventListenerCounter()
+                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
     }
 
     /**
@@ -901,5 +910,10 @@ class MapServiceContextImpl implements MapServiceContext {
     // used only for testing purposes
     PartitioningStrategyFactory getPartitioningStrategyFactory() {
         return partitioningStrategyFactory;
+    }
+
+    @Override
+    public EventListenerCounter getEventListenerCounter() {
+        return eventListenerCounter;
     }
 }

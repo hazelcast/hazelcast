@@ -40,7 +40,6 @@ import static java.util.Collections.singletonList;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.some;
-import static org.apache.calcite.plan.RelOptRule.unordered;
 
 final class ValuesLogicalRules {
 
@@ -146,19 +145,20 @@ final class ValuesLogicalRules {
 
     static final RelOptRule UNION_INSTANCE =
             new RelOptRule(
-                    operand(UnionLogicalRel.class, unordered(VALUES_CHILD_OPERAND)),
+                    operand(UnionLogicalRel.class, RelOptRule.unordered(VALUES_CHILD_OPERAND)),
                     ValuesLogicalRules.class.getSimpleName() + "(Union)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
                     Union union = call.rel(0);
-
                     List<ExpressionValues> expressionValues = new ArrayList<>(union.getInputs().size());
                     for (RelNode input : union.getInputs()) {
                         ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
+                        if (values == null) {
+                            return;
+                        }
                         expressionValues.addAll(values.values());
                     }
-
                     RelNode rel = new ValuesLogicalRel(
                             union.getCluster(),
                             union.getTraitSet(),

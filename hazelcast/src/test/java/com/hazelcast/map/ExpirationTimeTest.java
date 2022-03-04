@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,10 +86,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expirationTimeAfterPut = getExpirationTime(map, 1);
 
         // access
-        for (int i = 0; i < 2; i++) {
-            sleepSeconds(2);
-            map.get(1);
-        }
+        sleepSeconds(1);
+        map.get(1);
 
         long expirationTimeAfterGet = getExpirationTime(map, 1);
 

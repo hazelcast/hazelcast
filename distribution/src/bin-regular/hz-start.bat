@@ -1,6 +1,6 @@
 @echo off
 
-SETLOCAL
+SETLOCAL ENABLEDELAYEDEXPANSION
 
 if "x%JAVA_HOME%" == "x" (
     echo JAVA_HOME environment variable not available.
@@ -33,21 +33,33 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
-FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%HAZELCAST_HOME%\lib\hazelcast-${project.version}.jar" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
+FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%HAZELCAST_HOME%\lib\*" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
 
 IF NOT "%JAVA_VERSION%" == "8" (
-	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports jdk.management/com.ibm.lang.management.internal=ALL_UNNAMED
 )
 
 REM HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
 if "x%HAZELCAST_CONFIG%" == "x" (
-    set HAZELCAST_CONFIG=config/hazelcast.xml
+    set HAZELCAST_CONFIG=config\hazelcast.xml
+    if not exist "%HAZELCAST_HOME%\!HAZELCAST_CONFIG!" (
+      set HAZELCAST_CONFIG=config\hazelcast.yaml
+    )
+    if not exist "%HAZELCAST_HOME%\!HAZELCAST_CONFIG!" (
+      set HAZELCAST_CONFIG=config\hazelcast.yml
+    )
+    if not exist "%HAZELCAST_HOME%\!HAZELCAST_CONFIG!" (
+      echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in %HAZELCAST_HOME%\config or set the HAZELCAST_CONFIG environment variable."
+      exit /b 2
+    )
 )
 
 set JAVA_OPTS=%JAVA_OPTS%^
  "-Dhazelcast.logging.type=log4j2"^
  "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
  "-Dhazelcast.config=%HAZELCAST_HOME%\%HAZELCAST_CONFIG%"
+
+set "LOGGING_PATTERN=%%d [%%highlight{${LOG_LEVEL_PATTERN:-%%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%%style{%%t{1.}}{cyan}] [%%style{%%c{1.}}{blue}]: %%m%%n"
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*";%CLASSPATH%
 

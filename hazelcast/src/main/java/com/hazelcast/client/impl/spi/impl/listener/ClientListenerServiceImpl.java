@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,8 +102,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
             ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
             registrations.put(userRegistrationId, registration);
-            Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
-            for (ClientConnection connection : connections) {
+            Collection<Connection> connections = clientConnectionManager.getActiveConnections();
+            for (Connection connection : connections) {
                 try {
                     invoke(registration, connection);
                 } catch (Exception e) {

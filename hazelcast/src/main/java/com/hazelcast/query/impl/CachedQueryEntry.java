@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService ss, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry(SerializationService ss, Object key, Object value, Extractors extractors) {
         init(ss, key, value, extractors);
     }
 
@@ -56,20 +56,25 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         this.extractors = extractors;
     }
 
-    public CachedQueryEntry<K, V> init(SerializationService ss, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry<K, V> init(SerializationService ss, Object key, Object value, Extractors extractors) {
         this.serializationService = (InternalSerializationService) ss;
         this.extractors = extractors;
         return init(key, value);
     }
 
     @SuppressWarnings("unchecked")
-    public CachedQueryEntry<K, V> init(Data key, Object value) {
+    public CachedQueryEntry<K, V> init(Object key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        this.keyData = key;
-        this.keyObject = null;
+        if (key instanceof Data) {
+            this.keyData = (Data) key;
+            this.keyObject = null;
+        } else {
+            this.keyObject = (K) key;
+            this.keyData = null;
+        }
 
         if (value instanceof Data) {
             this.valueData = (Data) value;
@@ -78,6 +83,16 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             this.valueObject = (V) value;
             this.valueData = null;
         }
+
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public CachedQueryEntry<K, V> initWithObjectKeyValue(Object key, Object value) {
+        this.keyObject = (K) key;
+        this.keyData = null;
+        this.valueObject = (V) value;
+        this.valueData = null;
 
         return this;
     }
@@ -159,6 +174,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
 
         if (valueObject != null) {
             return valueObject;
+        }
+
+        return null;
+    }
+
+    public Object getByPrioritizingObjectValue() {
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        if (valueData != null) {
+            return valueData;
         }
 
         return null;

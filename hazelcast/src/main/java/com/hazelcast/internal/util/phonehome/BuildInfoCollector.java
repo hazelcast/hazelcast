@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -36,6 +37,14 @@ import static java.lang.Math.min;
 class BuildInfoCollector implements MetricsCollector {
 
     static final int CLASSPATH_MAX_LENGTH = 100_000;
+
+    private static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
+
+    private final Map<String, String> envVars;
+
+    BuildInfoCollector(Map<String, String> envVars) {
+        this.envVars = envVars;
+    }
 
     static String formatClassPath(String classpath) {
         String[] classPathEntries = classpath.split(File.pathSeparator);
@@ -64,6 +73,10 @@ class BuildInfoCollector implements MetricsCollector {
      * {@code source} if unable to find the download ID.
      */
     private String getDownloadId() {
+        String passedByEnvVar = envVars.get(PARDOT_ID_ENV_VAR);
+        if (passedByEnvVar != null) {
+            return passedByEnvVar;
+        }
         try (InputStream is = getClass().getClassLoader()
                                         .getResourceAsStream("hazelcast-download.properties")) {
             if (is != null) {

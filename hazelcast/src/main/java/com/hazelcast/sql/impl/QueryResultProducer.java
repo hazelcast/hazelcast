@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 /**
  * Generic interface which produces iterator over results which are then delivered to users.
@@ -28,7 +28,7 @@ public interface QueryResultProducer {
      *
      * @return Iterator.
      */
-    ResultIterator<Row> iterator();
+    ResultIterator<JetSqlRow> iterator();
 
     /**
      * Notify the producer about an error.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    @Nonnull
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         return clusterService.addMembershipListener(listener);
     }
@@ -55,12 +56,14 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    @Nonnull
     public Set<Member> getMembers() {
         final Collection<Member> members = clusterService.getMemberList();
         return new LinkedHashSet<>(members);
     }
 
     @Override
+    @Nonnull
     public Member getLocalMember() {
         throw new UnsupportedOperationException("Client has no local member!");
     }
@@ -82,6 +85,7 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    @Nonnull
     public Version getClusterVersion() {
         throw new UnsupportedOperationException();
     }
@@ -92,6 +96,7 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    @Nonnull
     public PersistenceService getPersistenceService() {
         throw new UnsupportedOperationException();
     }

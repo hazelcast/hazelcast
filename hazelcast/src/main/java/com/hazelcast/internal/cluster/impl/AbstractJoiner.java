@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,8 +111,10 @@ public abstract class AbstractJoiner
 
     @Override
     public void blacklist(Address address, boolean permanent) {
-        logger.info(address + " is added to the blacklist.");
-        blacklistedAddresses.putIfAbsent(address, permanent);
+        Boolean prev = blacklistedAddresses.putIfAbsent(address, permanent);
+        if (prev == null) {
+            logger.info(address + " is " + (permanent ? "permanently " : "") + "added to the blacklist.");
+        }
     }
 
     @Override

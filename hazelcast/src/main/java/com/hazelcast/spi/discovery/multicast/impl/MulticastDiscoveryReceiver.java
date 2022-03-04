@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,7 @@
 package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.IOUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 
@@ -31,32 +28,24 @@ public class MulticastDiscoveryReceiver {
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
     private final ILogger logger;
+    private final MulticastDiscoverySerializationHelper serializationHelper;
 
-    public MulticastDiscoveryReceiver(MulticastSocket multicastSocket, ILogger logger) {
+    public MulticastDiscoveryReceiver(MulticastSocket multicastSocket, ILogger logger,
+            MulticastDiscoverySerializationHelper serializationHelper) {
         this.multicastSocket = multicastSocket;
         this.logger = logger;
+        this.serializationHelper = serializationHelper;
     }
 
     public MulticastMemberInfo receive() {
-        ObjectInputStream in = null;
-        ByteArrayInputStream bis = null;
         try {
-            Object o;
             multicastSocket.receive(datagramPacketReceive);
             byte[] data = datagramPacketReceive.getData();
-            MulticastMemberInfo multicastMemberInfo;
-            bis = new ByteArrayInputStream(data);
-            in = new ObjectInputStream(bis);
-            o = in.readObject();
-            multicastMemberInfo = (MulticastMemberInfo) o;
-            return multicastMemberInfo;
+            return serializationHelper.deserialize(data);
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
             }
-        } finally {
-            IOUtil.closeResource(bis);
-            IOUtil.closeResource(in);
         }
         return null;
     }

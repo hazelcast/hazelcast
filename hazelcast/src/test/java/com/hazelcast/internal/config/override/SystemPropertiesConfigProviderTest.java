@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Properties;
+
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.entry;
-import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static com.hazelcast.internal.config.override.SystemPropertiesConfigParser.member;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -33,10 +34,9 @@ public class SystemPropertiesConfigProviderTest extends HazelcastTestSupport {
 
     @Test
     public void shouldParseClusternameConfigFromSystemProperties() {
-        runWithSystemProperty("hz.cluster-name", "testcluster", () -> {
-            SystemPropertiesConfigProvider provider = new SystemPropertiesConfigProvider(member());
-
-            assertContains(provider.properties().entrySet(), entry("hazelcast.cluster-name", "testcluster"));
-        });
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.cluster-name", "testcluster");
+        SystemPropertiesConfigProvider provider = new SystemPropertiesConfigProvider(member(), () -> systemProperties);
+        assertContains(provider.properties().entrySet(), entry("hazelcast.cluster-name", "testcluster"));
     }
 }

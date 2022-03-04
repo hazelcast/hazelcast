@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
             <coalesce>true</coalesce>
             <include-value>true</include-value>
             <populate>true</populate>
+            <serialize-keys>true</serialize-keys>
             <predicate type="class-name">com.hazelcast.query.impl.predicates.TruePredicate</predicate>
         </query-cache>
     </query-caches>

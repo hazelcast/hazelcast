@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,6 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
         return (E) new LazyEvictableEntryView<>(key, record,
-                expirySystem.getExpiredMetadata(key), serializationService);
+                expirySystem.getExpiryMetadata(key), serializationService);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,54 +18,22 @@ package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.jet.core.metrics.Metric;
 import com.hazelcast.jet.core.metrics.Unit;
-
-import javax.annotation.Nullable;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 
 public final class MetricsImpl {
-
-    private static final ThreadLocal<Container> CONTEXT = ThreadLocal.withInitial(Container::new);
 
     private MetricsImpl() {
     }
 
-    public static Container container() {
-        return CONTEXT.get();
-    }
-
     public static Metric metric(String name, Unit unit) {
-        return getContext().metric(name, unit);
+        return getMetricsContext().metric(name, unit);
     }
 
     public static Metric threadSafeMetric(String name, Unit unit) {
-        return getContext().threadSafeMetric(name, unit);
+        return getMetricsContext().threadSafeMetric(name, unit);
     }
 
-    private static MetricsContext getContext() {
-        Container container = CONTEXT.get();
-        MetricsContext context = container.getContext();
-        if (context == null) {
-            throw new RuntimeException("Thread %s has no metrics context set, this method can " +
-                    "be called only on threads executing the job's processors");
-        }
-        return context;
+    private static MetricsContext getMetricsContext() {
+        return Contexts.getCastedThreadContext().metricsContext();
     }
-
-    public static class Container {
-
-        @Nullable
-        private MetricsContext context;
-
-        Container() {
-        }
-
-        @Nullable
-        public MetricsContext getContext() {
-            return context;
-        }
-
-        public void setContext(@Nullable MetricsContext context) {
-            this.context = context;
-        }
-    }
-
 }

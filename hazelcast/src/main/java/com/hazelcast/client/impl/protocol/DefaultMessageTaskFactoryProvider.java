@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,7 @@ import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReloadConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
@@ -188,6 +189,7 @@ import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -246,6 +248,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -553,6 +556,7 @@ import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTas
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.QueueResetAgeStatisticsMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ReloadConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RemoveCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ResetCPSubsystemMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
@@ -560,6 +564,7 @@ import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunScriptMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownClusterMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.UpdateConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.WanSyncMapMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask;
@@ -624,6 +629,7 @@ import com.hazelcast.client.impl.protocol.task.map.MapRemoveIfSameMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemoveInterceptorMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemoveMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemovePartitionLostListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapReplaceAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapReplaceIfSameMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapReplaceMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetMessageTask;
@@ -1398,6 +1404,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapEvictMessageTask(cm, node, con));
         factories.put(MapGetAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapGetAllMessageTask(cm, node, con));
+        factories.put(MapReplaceAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new MapReplaceAllMessageTask(cm, node, con));
         factories.put(MapForceUnlockCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapForceUnlockMessageTask(cm, node, con));
         factories.put(MapLoadAllCodec.REQUEST_MESSAGE_TYPE,
@@ -1831,6 +1839,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
         factories.put(MCResetQueueAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
+        factories.put(MCReloadConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
+        factories.put(MCUpdateConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {

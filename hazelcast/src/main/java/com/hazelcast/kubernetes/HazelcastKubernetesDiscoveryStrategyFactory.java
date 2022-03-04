@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,19 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
                 KubernetesProperties.SERVICE_PORT));
     }
 
+    private final String tokenPath;
+
+    public HazelcastKubernetesDiscoveryStrategyFactory() {
+        this("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    }
+
+    /**
+     * Used externally only for testing
+     */
+    HazelcastKubernetesDiscoveryStrategyFactory(String tokenPath) {
+        this.tokenPath = tokenPath;
+    }
+
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return HazelcastKubernetesDiscoveryStrategy.class;
     }
@@ -91,7 +104,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     boolean tokenFileExists() {
-        return new File("/var/run/secrets/kubernetes.io/serviceaccount/token").exists();
+        return new File(tokenPath).exists();
     }
 
     private boolean defaultKubernetesMasterReachable() {

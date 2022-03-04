@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, G);
         }
+
+        public String abbreviation() {
+            return "B";
+        }
     },
 
     /**
@@ -74,6 +78,10 @@ public enum MemoryUnit {
 
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, M);
+        }
+
+        public String abbreviation() {
+            return "KB";
         }
     },
 
@@ -100,6 +108,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, K);
         }
+
+        public String abbreviation() {
+            return "MB";
+        }
     },
 
     /**
@@ -125,6 +137,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return value;
         }
+
+        public String abbreviation() {
+            return "GB";
+        }
     };
 
     static final int POWER = 10;
@@ -141,4 +157,6 @@ public enum MemoryUnit {
     public abstract long toMegaBytes(long value);
 
     public abstract long toGigaBytes(long value);
+
+    public abstract String abbreviation();
 }

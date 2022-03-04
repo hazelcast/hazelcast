@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkSuppliers;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -41,7 +43,9 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
 import static com.hazelcast.config.CacheDeserializedValues.NEVER;
@@ -56,7 +60,8 @@ import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sen
  *
  * @see MapService
  */
-class MapMigrationAwareService implements FragmentedMigrationAwareService, OffloadedReplicationPreparation {
+class MapMigrationAwareService
+        implements ChunkedMigrationAwareService, OffloadedReplicationPreparation {
 
     protected final PartitionContainer[] containers;
     protected final MapServiceContext mapServiceContext;
@@ -141,9 +146,22 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService, Offlo
         return operation;
     }
 
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
+                                          Collection<ServiceNamespace> namespaces) {
+        List<ChunkSupplier> chain = new ArrayList<>(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            chain.add(new MapChunkSupplier(mapServiceContext, namespace,
+                    event.getPartitionId(), event.getReplicaIndex()));
+        }
+
+        return ChunkSuppliers.newChainedChunkSupplier(chain);
+    }
+
     boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
         for (ServiceNamespace namespace : namespaces) {
-            assert isKnownServiceNamespace(namespace) : namespace + " is not a MapService namespace!";
+            assert isKnownServiceNamespace(namespace)
+                    : namespace + " is not a MapService namespace!";
         }
         return true;
     }
@@ -167,8 +185,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService, Offlo
         PartitionContainer partitionContainer
                 = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
-            // in case the record store has been created without loading during migration trigger again
-            // if loading has been already started this call will do nothing
+            // in case the record store has been created without
+            // loading during migration trigger again if loading
+            // has been already started this call will do nothing
             recordStore.startLoading();
         }
         mapServiceContext.nullifyOwnedPartitions();
@@ -242,9 +261,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService, Offlo
     }
 
     /**
-     * @param   backupCount number of backups of a maps' partition
-     * @return  predicate to find all map partitions which are expected to have
-     *          fewer backups than given backupCount.
+     * @param backupCount number of backups of a maps' partition
+     * @return predicate to find all map partitions which are expected to have
+     * fewer backups than given backupCount.
      */
     private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -304,16 +305,22 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
         NoOutputSourceP.proceedLatch.countDown();
         assertJobStatusEventually(job, NOT_RUNNING, 10);
-        createHazelcastInstance(createConfig());
+        HazelcastInstance instance6 = createHazelcastInstance(createConfig());
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
 
         // The test ends with a cluster size 2, which is below quorum
         // Start another instance so the job can restart and be cleaned up correctly
-        createHazelcastInstance(createConfig());
+        HazelcastInstance instance7 = createHazelcastInstance(createConfig());
+        waitAllForSafeState(newArrayList(instances[0], instance6, instance7));
+        assertTrueEventually(() -> assertStatusRunningOrCompleted(job.getStatus()), 5);
     }
 
     private void assertStatusNotRunningOrStarting(JobStatus status) {
         assertTrue("status=" + status, status == NOT_RUNNING || status == STARTING);
+    }
+
+    private void assertStatusRunningOrCompleted(JobStatus status) {
+        assertTrue("status=" + status, status == RUNNING || status == COMPLETED);
     }
 
     @Test

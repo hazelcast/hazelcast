@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ import static com.hazelcast.internal.util.StringUtil.resolvePlaceholders;
  */
 public final class InstanceTrackingUtil {
 
+    /**
+     * System property that is set with the instance tracking full file path.
+     * This property then can be audited via jcmd.
+     */
+    public static final String HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE = "hazelcast.config.instance.tracking.file";
 
     private InstanceTrackingUtil() {
     }
@@ -62,6 +67,10 @@ public final class InstanceTrackingUtil {
         try {
             String trackingFileContents = getInstanceTrackingContent(formatPattern, placeholderValues);
             Path file = getInstanceTrackingFilePath(fileName, placeholderValues);
+
+            // Set the instance tracking file path to a system property so it can be audited
+            System.setProperty(HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE, file.toString());
+
             logger.fine("Writing instance tracking information to " + file);
             Files.write(file, trackingFileContents.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {

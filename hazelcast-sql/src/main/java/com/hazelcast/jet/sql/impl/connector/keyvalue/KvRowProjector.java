@@ -17,9 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -38,9 +40,10 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
- * A utility to convert a key-value entry to a row represented as
- * {@code Object[]}. As a convenience, it also contains a
- * {@link #predicate} - it is applied before projecting.
+ * A utility to convert a key-value entry represented as {@code
+ * Entry<Object, Object>} to a row represented as {@link JetSqlRow}. As a
+ * convenience, it also contains a {@link #predicate} - it is applied
+ * before projecting.
  * <p>
  * {@link KvProjector} does the reverse.
  */
@@ -93,15 +96,15 @@ public class KvRowProjector implements Row {
         return extractors;
     }
 
-    public Object[] project(Object key, Object value) {
+    public JetSqlRow project(Object key, Object value) {
         return project(key, null, value, null);
     }
 
-    public Object[] project(Data key, Data value) {
+    public JetSqlRow project(Data key, Data value) {
         return project(null, key, null, value);
     }
 
-    private Object[] project(Object key, Data keyData, Object value, Data valueData) {
+    private JetSqlRow project(Object key, Data keyData, Object value, Data valueData) {
         keyTarget.setTarget(key, keyData);
         valueTarget.setTarget(value, valueData);
 
@@ -113,7 +116,7 @@ public class KvRowProjector implements Row {
         for (int i = 0; i < projections.size(); i++) {
             row[i] = evaluate(projections.get(i), this, evalContext);
         }
-        return row;
+        return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
     @Override
@@ -138,7 +141,7 @@ public class KvRowProjector implements Row {
         return new Supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
     }
 
-    public static class Supplier implements DataSerializable {
+    public static class Supplier implements IdentifiedDataSerializable {
 
         private QueryPath[] paths;
         private QueryDataType[] types;
@@ -150,7 +153,7 @@ public class KvRowProjector implements Row {
         private List<Expression<?>> projections;
 
         @SuppressWarnings("unused")
-        private Supplier() {
+        public Supplier() {
         }
 
         Supplier(
@@ -219,6 +222,16 @@ public class KvRowProjector implements Row {
             valueDescriptor = in.readObject();
             predicate = in.readObject();
             projections = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.KV_ROW_PROJECTOR_SUPPLIER;
         }
     }
 }

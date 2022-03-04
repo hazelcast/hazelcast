@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,7 +181,7 @@ public final class ReflectionUtils {
         return getFieldValueReflectively(defaultAnswer, "delegate");
     }
 
-    private static Object getDelegateFromProxyClass(Object arg) {
+    public static Object getDelegateFromProxyClass(Object arg) {
         if (isProxyClass(arg.getClass())) {
             InvocationHandler invocationHandler = getInvocationHandler(arg);
             if (invocationHandler instanceof ProxyInvocationHandler) {
@@ -190,5 +190,9 @@ public final class ReflectionUtils {
             }
         }
         return arg;
+    }
+
+    public static Object callNoArgMethod(Object obj, String methodName) throws ReflectiveOperationException {
+        return getMethod(obj.getClass(), methodName).invoke(obj);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import java.util.Set;
  * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
  * the cluster without the need to have the domain classes on the classpath.
  * <p>
- * Currently this is valid for {@link Portable} objects.
+ * Currently, this is valid for {@link Portable} and compact serializable objects.
  *
  * @since 4.1
  */
@@ -141,14 +141,8 @@ public interface GenericRecord {
     boolean getBoolean(@Nonnull String fieldName);
 
     /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
-    byte getByte(@Nonnull String fieldName);
-
-    /**
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
      * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
@@ -162,7 +156,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    double getDouble(@Nonnull String fieldName);
+    byte getInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -170,7 +164,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    float getFloat(@Nonnull String fieldName);
+    short getInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -178,7 +172,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    int getInt(@Nonnull String fieldName);
+    int getInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -186,7 +180,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    long getLong(@Nonnull String fieldName);
+    long getInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -194,7 +188,15 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short getShort(@Nonnull String fieldName);
+    float getFloat32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    double getFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -268,7 +270,18 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    boolean[] getBooleanArray(@Nonnull String fieldName);
+    boolean[] getArrayOfBoolean(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    char[] getArrayOfChar(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -277,7 +290,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    byte[] getByteArray(@Nonnull String fieldName);
+    byte[] getArrayOfInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -286,7 +299,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    char[] getCharArray(@Nonnull String fieldName);
+    short[] getArrayOfInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -295,7 +308,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    double[] getDoubleArray(@Nonnull String fieldName);
+    int[] getArrayOfInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -304,7 +317,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    float[] getFloatArray(@Nonnull String fieldName);
+    long[] getArrayOfInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -313,7 +326,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    int[] getIntArray(@Nonnull String fieldName);
+    float[] getArrayOfFloat32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -322,7 +335,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    long[] getLongArray(@Nonnull String fieldName);
+    double[] getArrayOfFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -331,16 +344,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    short[] getShortArray(@Nonnull String fieldName);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
-    @Nullable
-    String[] getStringArray(@Nonnull String fieldName);
+    String[] getArrayOfString(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -350,7 +354,7 @@ public interface GenericRecord {
      * @see #getDecimal(String)
      */
     @Nullable
-    BigDecimal[] getDecimalArray(@Nonnull String fieldName);
+    BigDecimal[] getArrayOfDecimal(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -360,7 +364,7 @@ public interface GenericRecord {
      * @see #getTime(String)
      */
     @Nullable
-    LocalTime[] getTimeArray(@Nonnull String fieldName);
+    LocalTime[] getArrayOfTime(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -370,7 +374,7 @@ public interface GenericRecord {
      * @see #getDate(String)
      */
     @Nullable
-    LocalDate[] getDateArray(@Nonnull String fieldName);
+    LocalDate[] getArrayOfDate(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -380,7 +384,7 @@ public interface GenericRecord {
      * @see #getTimestamp(String)
      */
     @Nullable
-    LocalDateTime[] getTimestampArray(@Nonnull String fieldName);
+    LocalDateTime[] getArrayOfTimestamp(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -390,7 +394,7 @@ public interface GenericRecord {
      * @see #getTimestampWithTimezone(String)
      */
     @Nullable
-    OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName);
+    OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -399,5 +403,159 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    GenericRecord[] getGenericRecordArray(@Nonnull String fieldName);
+    GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean getNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte getNullableInt8(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short getNullableInt16(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getNullableInt32(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long getNullableInt64(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float getNullableFloat32(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double getNullableFloat64(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte[] getArrayOfNullableInt8(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short[] getArrayOfNullableInt16(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer[] getArrayOfNullableInt32(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long[] getArrayOfNullableInt64(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float[] getArrayOfNullableFloat32(@Nonnull String fieldName);
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     *
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double[] getArrayOfNullableFloat64(@Nonnull String fieldName);
 }

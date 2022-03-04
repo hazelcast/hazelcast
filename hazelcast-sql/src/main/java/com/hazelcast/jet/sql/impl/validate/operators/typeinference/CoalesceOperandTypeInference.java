@@ -59,7 +59,7 @@ public final class CoalesceOperandTypeInference implements SqlOperandTypeInferen
             operandTypes[i] = binding.getOperandType(i);
 
             if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
-                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+                if (hasParameters && toHazelcastType(operandTypes[i]).getTypeFamily().isNumericInteger()) {
                     // If there are parameters in the operands, widen all the integers to BIGINT so that an expression
                     // `COALESCE(1, ?)` is resolved to `COALESCE((BIGINT)1, (BIGINT)?)` rather than
                     // `COALESCE((TINYINT)1, (TINYINT)?)`

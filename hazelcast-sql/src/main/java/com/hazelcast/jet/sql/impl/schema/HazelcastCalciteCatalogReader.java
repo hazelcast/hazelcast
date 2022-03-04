@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -33,6 +35,7 @@ import java.util.List;
  * Custom catalog reader that allows for setting predefined schema paths and wrapping of returned tables.
  */
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
+
     public HazelcastCalciteCatalogReader(
             CalciteSchema rootSchema,
             List<List<String>> schemaPaths,
@@ -62,6 +65,12 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
             return null;
         }
 
+        HazelcastTable hzTable = table.unwrap(HazelcastTable.class);
+        assert hzTable != null;
+        if (hzTable.getTarget() instanceof ViewTable) {
+            return new HazelcastViewRelOptTable(table, ((ViewTable) hzTable.getTarget()).getViewQuery());
+        }
+
         // Wrap it into our own table.
         return new HazelcastRelOptTable(table);
     }
@@ -70,6 +79,10 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public RelDataType getNamedType(SqlIdentifier typeName) {
         if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.ANY);
+        }
+
+        if (HazelcastTypeUtils.isJsonIdentifier(typeName)) {
+            return HazelcastJsonType.create(true);
         }
 
         return super.getNamedType(typeName);

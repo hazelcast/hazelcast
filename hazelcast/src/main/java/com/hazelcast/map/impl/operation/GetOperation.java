@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     @Override
     protected void afterRunInternal() {
         mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
+        super.afterRunInternal();
     }
 
     @Override

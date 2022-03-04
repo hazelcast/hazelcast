@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,6 +315,9 @@ public final class SqlConsole {
                 case OBJECT:
                     colWidths[i] = determineColumnWidth(colName, Constants.OBJECT_FORMAT_LENGTH);
                     break;
+                case JSON:
+                    colWidths[i] = determineColumnWidth(colName, Constants.JSON_FORMAT_LENGTH);
+                    break;
                 default:
                     throw new UnsupportedOperationException(type.toString());
             }
@@ -562,6 +565,7 @@ public final class SqlConsole {
         static final Integer TIMESTAMP_FORMAT_LENGTH = 19;
         static final Integer TIMESTAMP_WITH_TIME_ZONE_FORMAT_LENGTH = 25;
         static final Integer VARCHAR_FORMAT_LENGTH = 20; // it has normally unlimited precision
+        static final Integer JSON_FORMAT_LENGTH = 40;
     }
 
 }

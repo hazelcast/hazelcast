@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 /**
  * The {@link OutboundHandler} is a {@link ChannelHandler} for outbound
@@ -31,24 +32,24 @@ import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
  * An example is the PacketEncoder that takes packets from the src (Provider) and
  * encodes them to the dst (ByteBuffer).
  *
- * {@link OutboundHandler} instances are not expected to be thread-safe;
- * each channel will gets its own instance(s).
+ * An {@link OutboundHandler} instances are not expected to be thread-safe;
+ * each channel will get its own instance(s).
  *
- * A {@link OutboundHandler} is constructed through a {@link ChannelInitializer}.
+ * An {@link OutboundHandler} is constructed through a {@link ChannelInitializer}.
  *
  * <h1>Buffer</h1>
  * The OutboundHandler is responsible for its own destination buffer
- * if it has one. So if needs to be compacted/flipped etc, it should take
- * care of that.
+ * if it has one. So if the buffer needs to be compacted/flipped etc., it should
+ * take care of that.
  *
- * If OutboundHandler has an destination buffer and the {@link #onWrite()}
+ * If OutboundHandler has a destination buffer and the {@link #onWrite()}
  * is called, the first thing it should do is to call
  * {@link IOUtil#compactOrClear(ByteBuffer)} so it flips to
  * writing mode. And at the end of the onWrite method, the destination buffer
  * should be flipped into reading mode.
  *
  * If the OutboundHandler has a source buffer, it is expected to be
- * in reading mode and it is the responsibility of the OutboundHandler
+ * in reading mode, and it is the responsibility of the OutboundHandler
  * in front to put that buffer in reading mode.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or a
@@ -119,7 +120,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
         if (bytes != null) {
             buffer.put(bytes);
         }
-        buffer.flip();
+        upcast(buffer).flip();
         dst = (D) buffer;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,14 +82,14 @@ public interface InboundPipeline {
 
 
     /**
-     * Wakes up the inbound pipeline and lets it to start reading again from the
+     * Wakes up the inbound pipeline and lets it start reading again from the
      * network.
      *
      * Even if there is no data to be read, it will cause at least one processing
      * of the InboundPipeline. This will force any buffered data to be pushed
      * through the InboundPipeline.
      *
-     * This method is threadsafe and can safely be called from any thread.
+     * This method is thread-safe and can safely be called from any thread.
      *
      * Calling it while it is already waken up will not do any damage, it will
      * just cause some temporary overhead.

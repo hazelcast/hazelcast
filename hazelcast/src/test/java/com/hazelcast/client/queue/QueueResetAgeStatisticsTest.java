@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class QueueResetAgeStatisticsTest
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, "my-queue");
         invocation.invoke().get();
         LocalQueueStats statsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
-        assertEquals(Long.MIN_VALUE, statsAfterReset.getMaxAge());
+        assertEquals(0, statsAfterReset.getMaxAge());
         assertEquals(Long.MAX_VALUE, statsAfterReset.getMinAge());
         assertEquals(0, statsAfterReset.getAverageAge());
 

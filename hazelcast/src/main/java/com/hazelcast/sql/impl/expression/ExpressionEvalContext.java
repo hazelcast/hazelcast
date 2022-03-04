@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,13 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Defines expression evaluation context contract for SQL {@link Expression
@@ -26,21 +31,46 @@ import java.util.List;
  *
  * @see Expression#eval
  */
-public interface ExpressionEvalContext {
+public class ExpressionEvalContext {
+
+    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
+
+    private final List<Object> arguments;
+    private final InternalSerializationService serializationService;
+
+    public ExpressionEvalContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService serializationService
+    ) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+    }
+
+    public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
+        return new ExpressionEvalContext(
+                requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
+                ((Contexts.ProcSupplierCtx) ctx).serializationService());
+    }
+
     /**
      * @param index argument index
      * @return the query argument
      */
-    Object getArgument(int index);
+    public Object getArgument(int index) {
+        return arguments.get(index);
+    }
 
     /**
      * Return all the arguments.
      */
-    List<Object> getArguments();
+    public List<Object> getArguments() {
+        return arguments;
+    }
 
     /**
      * @return serialization service
      */
-    InternalSerializationService getSerializationService();
-
+    public InternalSerializationService getSerializationService() {
+        return serializationService;
+    }
 }

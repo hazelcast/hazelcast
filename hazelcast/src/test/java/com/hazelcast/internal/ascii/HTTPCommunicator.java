@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,10 @@ public class HTTPCommunicator {
     // Log Level
     public static final String URI_LOG_LEVEL = "log-level";
     public static final String URI_LOG_LEVEL_RESET = "log-level/reset";
+
+    // Config
+    public static final String URI_CONFIG_RELOAD = "config/reload";
+    public static final String URI_CONFIG_UPDATE = "config/update";
 
     private final String address;
     private final boolean sslEnabled;
@@ -371,6 +375,16 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
+    public ConnectionResponse configReload(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_CONFIG_RELOAD);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
+    public ConnectionResponse configUpdate(String clusterName, String clusterPassword, String configAsString) throws IOException {
+        String url = getUrl(URI_CONFIG_UPDATE);
+        return doPost(url, clusterName, clusterPassword, configAsString);
+    }
+
     public ConnectionResponse getCPGroupIds() throws IOException {
         String url = getUrl(URI_CP_GROUPS_URL);
         return doGet(url);
@@ -422,10 +436,10 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword);
     }
 
-    static class ConnectionResponse {
-        final String response;
-        final int responseCode;
-        final Map<String, List<String>> responseHeaders;
+    public static class ConnectionResponse {
+        public final String response;
+        public final int responseCode;
+        public final Map<String, List<String>> responseHeaders;
 
         ConnectionResponse(CloseableHttpResponse httpResponse) throws IOException {
             int responseCode = httpResponse.getStatusLine().getStatusCode();
@@ -445,6 +459,16 @@ public class HTTPCommunicator {
             this.response = responseStr;
             this.responseHeaders = responseHeaders;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder("HTTP ").append(responseCode).append("\r\n");
+            responseHeaders.forEach((name, values) -> {
+                values.forEach(headerValue -> str.append(name).append(": ").append(headerValue).append("\r\n"));
+            });
+            str.append("\r\n");
+            return str.append(response).toString();
+        }
     }
 
     private ConnectionResponse doHead(String url) throws IOException {
@@ -460,7 +484,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doGet(String url) throws IOException {
+    public ConnectionResponse doGet(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -507,7 +531,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doDelete(String url) throws IOException {
+    public ConnectionResponse doDelete(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,12 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.CommandParser;
-import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 
-import java.util.StringTokenizer;
-
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-
-public class HttpDeleteCommandParser implements CommandParser {
+public class HttpDeleteCommandParser extends HttpCommandParser<HttpDeleteCommand> {
 
     @Override
-    public TextCommand parser(TextDecoder decoder, String cmd, int space) {
-        StringTokenizer st = new StringTokenizer(cmd);
-        st.nextToken();
-        String uri;
-        if (st.hasMoreTokens()) {
-            uri = st.nextToken();
-        } else {
-            return new ErrorCommand(ERROR_CLIENT);
-        }
+    HttpDeleteCommand createHttpCommand(TextDecoder decoder, String uri) {
         return new HttpDeleteCommand(uri);
     }
 }

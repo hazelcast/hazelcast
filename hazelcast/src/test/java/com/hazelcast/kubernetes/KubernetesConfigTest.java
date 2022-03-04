@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,21 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,14 +48,16 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({KubernetesConfig.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KubernetesConfigTest {
     private static final String TEST_API_TOKEN = "api-token";
     private static final String TEST_CA_CERTIFICATE = "ca-certificate";
     private static final String TEST_NAMESPACE = "test";
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void dnsLookupMode() {
@@ -182,17 +185,20 @@ public class KubernetesConfigTest {
     @Test
     public void readTokenCertificateAndNamespaceFromFilesWhenPropertiesNotSet() throws Exception {
         // given
-        PowerMockito.spy(KubernetesConfig.class);
-        doReturn("token-xyz")
-                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/token");
-        doReturn("certificate-xyz")
-                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
-        doReturn("namespace-xyz")
-                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/namespace");
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-
+        KubernetesConfig.FileContentsReader dummyFileContentsReader = fileName -> {
+            switch (fileName) {
+                case "/var/run/secrets/kubernetes.io/serviceaccount/token":
+                    return "token-xyz";
+                case "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt":
+                    return "certificate-xyz";
+                case "/var/run/secrets/kubernetes.io/serviceaccount/namespace":
+                    return "namespace-xyz";
+                default:
+                    throw new RuntimeException("File not found");
+            }
+        };
         // when
-        KubernetesConfig config = new KubernetesConfig(properties);
+        KubernetesConfig config = new KubernetesConfig(Collections.emptyMap(), dummyFileContentsReader);
 
         // then
         assertEquals("certificate-xyz", config.getKubernetesCaCertificate());
@@ -294,26 +300,18 @@ public class KubernetesConfigTest {
     }
 
     @Test
-    public void readFileContents()
+    public void DefaultFileContentsReader_readFileContents()
             throws IOException {
         String expectedContents = "Hello, world!\nThis is a test with Unicode ✓.";
         String testFile = createTestFile(expectedContents);
-        String actualContents = KubernetesConfig.readFileContents(testFile);
+        String actualContents = new KubernetesConfig.DefaultFileContentsReader().readFileContents(testFile);
         assertEquals(expectedContents, actualContents);
     }
 
-    private static String createTestFile(String expectedContents)
+    private String createTestFile(String content)
             throws IOException {
-        File temp = File.createTempFile("test", ".tmp");
-        temp.deleteOnExit();
-        BufferedWriter bufferedWriter = null;
-        try {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), StandardCharsets.UTF_8));
-            bufferedWriter.write(expectedContents);
-        } finally {
-            IOUtil.closeResource(bufferedWriter);
-        }
-        return temp.getAbsolutePath();
+        File file = tempFolder.newFile("test.tmp");
+        return Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     @Test

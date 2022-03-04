@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,90 +40,100 @@ public interface InternalGenericRecord extends GenericRecord {
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     Boolean getBooleanFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
-    @Nullable
-    Byte getByteFromArray(@Nonnull String fieldName, int index);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     Character getCharFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Double getDoubleFromArray(@Nonnull String fieldName, int index);
+    Byte getInt8FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Float getFloatFromArray(@Nonnull String fieldName, int index);
+    Short getInt16FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Integer getIntFromArray(@Nonnull String fieldName, int index);
+    Integer getInt32FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Long getLongFromArray(@Nonnull String fieldName, int index);
+    Long getInt64FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Short getShortFromArray(@Nonnull String fieldName, int index);
+    Float getFloat32FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Double getFloat64FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     String getStringFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index);
@@ -135,23 +145,23 @@ public interface InternalGenericRecord extends GenericRecord {
      * @param fieldName the name of the field
      * @param index     array index to read from
      * @return a nested field as a concrete deserialized object rather than generic record
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Object getObjectFromArray(@Nonnull String fieldName, int index);
+    <T> T getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
+     * Reads same value {@link GenericRecord#getArrayOfGenericRecord(String)} (String)}, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
      * @return a nested field as array of deserialized objects rather than array of the  generic records
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType);
+    <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.
@@ -159,54 +169,129 @@ public interface InternalGenericRecord extends GenericRecord {
      *
      * @param fieldName the name of the field
      * @return a nested field as a concrete deserialized object rather than generic record
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     <T> T getObject(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     LocalTime getTimeFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     LocalDate getDateFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Byte getNullableInt8FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Short getNullableInt16FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Integer getNullableInt32FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Long getNullableInt64FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Float getNullableFloat32FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Double getNullableFloat64FromArray(@Nonnull String fieldName, int index);
 }

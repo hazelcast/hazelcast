@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ hazelcast:
   management-center:
     scripting-enabled: false
     console-enabled: false
+    data-access-enabled: true
     trusted-interfaces:
       - 10.10.1.*
       - 10.10.2.*
@@ -381,6 +382,7 @@ hazelcast:
           in-memory-format: BINARY
           coalesce: false
           populate: true
+          serialize-keys: false
           eviction:
             eviction-policy: LRU
             max-size-policy: ENTRY_COUNT
@@ -391,6 +393,15 @@ hazelcast:
                 - "name"
             - attributes:
               - "age"
+      tiered-store:
+        enabled: true
+        memory-tier:
+          capacity:
+            unit: MEGABYTES
+            value: 256
+        disk-tier:
+          enabled: true
+          device-name: default-tiered-store-device
 
   multimap:
     default:
@@ -594,6 +605,13 @@ hazelcast:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -918,6 +936,18 @@ hazelcast:
     parallelism: 3
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
+
+  dynamic-configuration:
+    persistence-enabled: true
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
+
+  local-device:
+    default-tiered-store-device:
+      base-dir: base-dir
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 1
 
   lite-member:
     enabled: true

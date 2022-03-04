@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.custom.HazelcastJsonValueCodec;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
@@ -147,6 +149,11 @@ public final class SqlPageCodec {
 
                     break;
 
+                case JSON:
+                    ListMultiFrameCodec.encodeContainsNullable(clientMessage, (Iterable<HazelcastJsonValue>) column, HazelcastJsonValueCodec::encode);
+
+                    break;
+
                 default:
                     throw new IllegalStateException("Unknown type " + columnType);
             }
@@ -261,6 +268,11 @@ public final class SqlPageCodec {
                     assert SqlPage.convertToData(columnType);
 
                     columns.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));
+
+                    break;
+
+                case JSON:
+                    columns.add(ListMultiFrameCodec.decodeContainsNullable(iterator, HazelcastJsonValueCodec::decode));
 
                     break;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -36,6 +38,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -51,10 +54,14 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
@@ -63,7 +70,8 @@ import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker {
+public class JetServiceBackend implements ManagedService, MembershipAwareService, ClusterStateListener,
+        LiveOperationsTracker, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
@@ -86,7 +94,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private JobExecutionService jobExecutionService;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
-
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
     public JetServiceBackend(Node node) {
@@ -99,13 +106,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     @Override
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
+        jobRepository = new JobRepository(engine.getHazelcastInstance());
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, jetConfig.getCooperativeThreadCount(), nodeEngine.getProperties()
         );
-        jobRepository = new JobRepository(engine.getHazelcastInstance());
-
         jobCoordinationService = createJobCoordinationService();
         jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
@@ -213,7 +218,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @SuppressWarnings("unused") // parameters are used from jet-enterprise
     public Operation createExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
-        throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise to use this feature");
+        throw new UnsupportedOperationException("You need Hazelcast Enterprise to use this feature");
     }
 
     public JetService getJet() {
@@ -252,7 +257,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Returns the job config or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public JobConfig getJobConfig(long jobId) {
+    public JobConfig getJobConfig(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            return jobCoordinationService.getLightJobConfig(jobId);
+        }
+
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return jobRecord.getConfig();
@@ -266,7 +275,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         throw new JobNotFoundException(jobId);
     }
 
-    public void handlePacket(Packet packet) {
+    @Override
+    public void accept(Packet packet) {
         try {
             networking.handle(packet);
         } catch (IOException e) {
@@ -276,13 +286,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        jobExecutionService.onMemberRemoved(event.getMember().getAddress());
+        jobExecutionService.onMemberRemoved(event.getMember());
         jobCoordinationService.onMemberRemoved(event.getMember().getUuid());
     }
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
         jobCoordinationService.onMemberAdded(event.getMember());
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        getJobCoordinationService().clusterChangeDone();
     }
 
     public AtomicInteger numConcurrentAsyncOps() {
@@ -319,4 +334,21 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public TaskletExecutionService getTaskletExecutionService() {
         return taskletExecutionService;
     }
+
+    public void beforeClusterStateChange(ClusterState requestedState) {
+        if (requestedState == PASSIVE) {
+            try {
+                nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
+                        new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                        .invoke().get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
+    public void startScanningForJobs() {
+        jobCoordinationService.startScanningForJobs();
+    }
+
 }

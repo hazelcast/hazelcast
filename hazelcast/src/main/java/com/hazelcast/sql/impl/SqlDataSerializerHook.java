@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -78,6 +77,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
@@ -105,8 +105,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_FILTER_EQUALS = 6;
     public static final int INDEX_FILTER_RANGE = 7;
     public static final int INDEX_FILTER_IN = 8;
-
-    public static final int MAP_INDEX_SCAN_METADATA = 9;
 
     public static final int EXPRESSION_COLUMN = 10;
     public static final int EXPRESSION_IS_NULL = 11;
@@ -171,7 +169,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SEARCHABLE = 59;
     public static final int EXPRESSION_SEARCH = 60;
 
-    public static final int LEN = EXPRESSION_SEARCH + 1;
+    public static final int VIEW = 61;
+
+    public static final int LEN = VIEW + 1;
 
     @Override
     public int getFactoryId() {
@@ -195,9 +195,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
-        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
-
-        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexCompositeFilter();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
@@ -259,6 +257,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+
+        constructors[VIEW] = arg -> new View();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -36,17 +35,19 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -131,7 +132,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public <T> T createService(Class<T> type) {
+    public <T> T createService(Class<T> type, Object... params) {
         return nodeExtension.createService(type);
     }
 
@@ -255,11 +256,6 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public DynamicConfigListener createDynamicConfigListener() {
-        return nodeExtension.createDynamicConfigListener();
-    }
-
-    @Override
     public void registerPlugins(Diagnostics diagnostics) {
     }
 
@@ -298,6 +294,16 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        throw new IllegalArgumentException();
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
+    }
+
+    @Nullable
+    @Override
+    public JetServiceBackend getJetServiceBackend() {
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
     }
 }

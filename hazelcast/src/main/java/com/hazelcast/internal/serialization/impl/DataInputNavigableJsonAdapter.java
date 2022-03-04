@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
+
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -105,7 +107,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         UTF8Reader(BufferObjectDataInput input) {
             byte[] data = obtainBytes(input);
             inputBuffer = ByteBuffer.wrap(data);
-            inputBuffer.position(input.position());
+            upcast(inputBuffer).position(input.position());
             decoder = Thread.currentThread() instanceof OperationThread
                     ? DECODER_THREAD_LOCAL.get()
                     : StandardCharsets.UTF_8.newDecoder();

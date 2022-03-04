@@ -29,6 +29,7 @@ public final class LogicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
+                PruneEmptyRules.FILTER_INSTANCE,
                 FilterLogicalRule.INSTANCE,
                 CoreRules.FILTER_MERGE,
                 CoreRules.FILTER_PROJECT_TRANSPOSE,
@@ -36,8 +37,10 @@ public final class LogicalRules {
                 CoreRules.FILTER_AGGREGATE_TRANSPOSE,
                 CoreRules.FILTER_INTO_JOIN,
                 CoreRules.FILTER_REDUCE_EXPRESSIONS,
+                SlidingWindowFilterTransposeRule.STREAMING_FILTER_TRANSPOSE,
 
                 // Project rules
+                PruneEmptyRules.PROJECT_INSTANCE,
                 ProjectLogicalRule.INSTANCE,
                 CoreRules.PROJECT_MERGE,
                 CoreRules.PROJECT_REMOVE,
@@ -46,8 +49,13 @@ public final class LogicalRules {
 
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
-                FullFunctionScanLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
-                FullFunctionScanLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
+                FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
+                FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
+
+                // Windowing rules
+                WatermarkRules.IMPOSE_ORDER_INSTANCE,
+                WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -59,8 +67,12 @@ public final class LogicalRules {
                 JoinLogicalRule.INSTANCE,
                 CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
+//                STREAMING_JOIN_TRANSPOSE,
 
                 // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
@@ -71,22 +83,19 @@ public final class LogicalRules {
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules
+                TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRules.INSTANCE,
-                UpdateLogicalRules.NOOP_INSTANCE,
+                UpdateLogicalRules.SCAN_INSTANCE,
+                UpdateLogicalRules.VALUES_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
+                // imap-by-key access optimization rules
                 SelectByKeyMapLogicalRules.INSTANCE,
-                SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE,
-
-                // Miscellaneous
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE
+                DeleteByKeyMapLogicalRule.INSTANCE
         );
     }
 }

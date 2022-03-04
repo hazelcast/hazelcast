@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 
@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,12 +44,21 @@ final class DnsEndpointResolver
     private final String serviceDns;
     private final int port;
     private final int serviceDnsTimeout;
+    private final RawLookupProvider rawLookupProvider;
 
     DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
+        this(logger, serviceDns, port, serviceDnsTimeout, InetAddress::getAllByName);
+    }
+
+    /**
+     * Used externally only for testing
+     */
+    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout, RawLookupProvider rawLookupProvider) {
         super(logger);
         this.serviceDns = serviceDns;
         this.port = port;
         this.serviceDnsTimeout = serviceDnsTimeout;
+        this.rawLookupProvider = rawLookupProvider;
     }
 
     List<DiscoveryNode> resolve() {
@@ -70,14 +78,9 @@ final class DnsEndpointResolver
 
     private List<DiscoveryNode> lookup()
             throws UnknownHostException, InterruptedException, ExecutionException, TimeoutException {
-        Set<String> addresses = new HashSet<String>();
+        Set<String> addresses = new HashSet<>();
 
-        Future<InetAddress[]> future = DNS_LOOKUP_SERVICE.submit(new Callable<InetAddress[]>() {
-            @Override
-            public InetAddress[] call() throws Exception {
-                return getAllInetAddresses();
-            }
-        });
+        Future<InetAddress[]> future = DNS_LOOKUP_SERVICE.submit(() -> rawLookupProvider.getAddresses(serviceDns));
 
         try {
             for (InetAddress address : future.get(serviceDnsTimeout, TimeUnit.SECONDS)) {
@@ -97,7 +100,7 @@ final class DnsEndpointResolver
             throw e;
         }
 
-        if (addresses.size() == 0) {
+        if (addresses.isEmpty()) {
             logger.warning("Could not find any service for serviceDns '" + serviceDns + "'");
             return Collections.emptyList();
         }
@@ -109,13 +112,9 @@ final class DnsEndpointResolver
         return result;
     }
 
-    /**
-     * Do the actual lookup
-     * @return array of resolved inet addresses
-     * @throws UnknownHostException
-     */
-    private InetAddress[] getAllInetAddresses() throws UnknownHostException {
-        return InetAddress.getAllByName(serviceDns);
+    @FunctionalInterface
+    interface RawLookupProvider {
+        InetAddress[] getAddresses(String host) throws UnknownHostException;
     }
 
     private static int getHazelcastPort(int port) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
@@ -67,6 +66,7 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
@@ -252,6 +252,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
+            op.afterRunFinal();
             if (publishCurrentTask) {
                 currentTask = null;
             }
@@ -449,6 +450,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
         ServerConnection connection = packet.getConn();
         Address caller = connection.getRemoteAddress();
+        UUID callerUuid = connection.getRemoteUuid();
         Operation op = null;
         try {
             Object object = nodeEngine.toObject(packet);
@@ -456,7 +458,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);
             setConnection(op, connection);
-            setCallerUuidIfNotSet(caller, op);
+            setCallerUuidIfNotSet(op, callerUuid);
             setOperationResponseHandler(op);
 
             if (!ensureValidMember(op)) {
@@ -521,14 +523,12 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         return false;
     }
 
-    private void setCallerUuidIfNotSet(Address caller, Operation op) {
+    private void setCallerUuidIfNotSet(Operation op, UUID callerUuid) {
         if (op.getCallerUuid() != null) {
             return;
-
         }
-        MemberImpl callerMember = node.clusterService.getMember(caller);
-        if (callerMember != null) {
-            op.setCallerUuid(callerMember.getUuid());
+        if (callerUuid != null) {
+            op.setCallerUuid(callerUuid);
         }
     }
 

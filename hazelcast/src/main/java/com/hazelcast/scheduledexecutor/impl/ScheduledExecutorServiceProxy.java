@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,12 +109,12 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
         command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return schedule(callable, delay, unit);
     }
 
@@ -201,7 +201,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(unit, "Unit is null");
         command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter<V> callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
     }
 
@@ -285,7 +285,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(unit, "Unit is null");
         command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnMembers(callable, members, delay, unit);
     }
 

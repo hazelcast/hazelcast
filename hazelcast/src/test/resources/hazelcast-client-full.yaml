@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -203,6 +203,13 @@ hazelcast-client:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     enabled: false
@@ -273,6 +280,7 @@ hazelcast-client:
       in-memory-format: BINARY
       coalesce: false
       populate: true
+      serialize-keys: false
       eviction:
         eviction-policy: LRU
         max-size-policy: ENTRY_COUNT

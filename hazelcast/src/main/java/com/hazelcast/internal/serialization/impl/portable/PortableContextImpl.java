@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,17 +74,16 @@ public final class PortableContextImpl implements PortableContext {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Data is not Portable!");
         }
-        try (BufferObjectDataInput in = serializationService.createObjectDataInput(data)) {
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-            int version = in.readInt();
+        BufferObjectDataInput in = serializationService.createObjectDataInput(data);
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+        int version = in.readInt();
 
-            ClassDefinition classDefinition = lookupClassDefinition(factoryId, classId, version);
-            if (classDefinition == null) {
-                classDefinition = readClassDefinition(in, factoryId, classId, version);
-            }
-            return classDefinition;
+        ClassDefinition classDefinition = lookupClassDefinition(factoryId, classId, version);
+        if (classDefinition == null) {
+            classDefinition = readClassDefinition(in, factoryId, classId, version);
         }
+        return classDefinition;
     }
 
     ClassDefinition readClassDefinition(BufferObjectDataInput in, int factoryId, int classId, int version)

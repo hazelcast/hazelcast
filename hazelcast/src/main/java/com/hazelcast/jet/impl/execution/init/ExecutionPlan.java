@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
@@ -368,8 +369,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 .flatMap(List::stream)
                 .map(EdgeDef::partitioner)
                 .filter(Objects::nonNull)
-                .forEach(partitioner ->
-                        partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)))
+                .forEach(partitioner -> {
+                            if (partitioner instanceof SerializationServiceAware) {
+                                ((SerializationServiceAware) partitioner).setSerializationService(jobSerializationService);
+                            }
+                            partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)));
+                        }
                 );
     }
 

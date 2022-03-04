@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import java.util.function.BiConsumer;
  */
 public interface QueryCacheRecordStore {
 
-    QueryCacheRecord add(Data keyData, Data valueData);
+    QueryCacheRecord add(Object queryCacheKey, Data valueData);
 
-    QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData);
+    QueryCacheRecord addWithoutEvictionCheck(Object queryCacheKey, Data valueData);
 
     /**
      * Adds entries from the given {@code entryIterator}. For each entry
@@ -44,21 +44,23 @@ public interface QueryCacheRecordStore {
     void addBatch(Iterator<Map.Entry<Data, Data>> entryIterator,
                   BiConsumer<Map.Entry<Data, Data>, QueryCacheRecord> postProcessor);
 
-    QueryCacheRecord get(Data keyData);
+    QueryCacheRecord get(Object queryCacheKey);
 
-    QueryCacheRecord remove(Data keyData);
+    QueryCacheRecord remove(Object queryCacheKey);
 
-    boolean containsKey(Data keyData);
+    boolean containsKey(Object queryCacheKey);
 
     boolean containsValue(Object value);
 
-    Set<Data> keySet();
+    Set keySet();
 
-    Set<Map.Entry<Data, QueryCacheRecord>> entrySet();
+    Set<Map.Entry<Object, QueryCacheRecord>> entrySet();
 
     int clear();
 
     boolean isEmpty();
 
     int size();
+
+    Object toQueryCacheKey(Object key);
 }

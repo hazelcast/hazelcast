@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -340,7 +340,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
-
+        node.setThisUuid(newUuid);
         localMember = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
@@ -350,8 +350,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 .memberListJoinVersion(localMember.getMemberListJoinVersion())
                 .instance(node.hazelcastInstance)
                 .build();
-
         node.loggingService.setThisMember(localMember);
+        node.getLocalAddressRegistry().setLocalUuid(newUuid);
     }
 
     public void resetJoinState() {
@@ -533,7 +533,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     /**
      * Returns whether member with given identity (either {@code UUID} or {@code Address}
-     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     * depending on Persistence is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
      * @param uuid    Uuid of the missing member
@@ -585,6 +585,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Collection<MemberImpl> getMemberImpls() {
         return membershipManager.getMembers();
     }
@@ -594,6 +595,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Set<Member> getMembers() {
         return membershipManager.getMemberSet();
     }
@@ -663,17 +665,21 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Address getThisAddress() {
         return node.getThisAddress();
     }
 
     @Override
-    public MemberImpl getLocalMember() {
-        return localMember;
+    @Nonnull
+    public UUID getThisUuid() {
+        return node.getThisUuid();
     }
 
-    public UUID getThisUuid() {
-        return localMember.getUuid();
+    @Override
+    @Nonnull
+    public MemberImpl getLocalMember() {
+        return localMember;
     }
 
     // should be called under lock
@@ -706,6 +712,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public ClusterClockImpl getClusterClock() {
         return clusterClock;
     }
@@ -733,6 +740,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterId = null;
     }
 
+    @Nonnull
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
@@ -827,6 +835,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Version getClusterVersion() {
         return clusterStateManager.getClusterVersion();
     }
@@ -837,6 +846,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public PersistenceService getPersistenceService() {
         return node.getNodeExtension().getHotRestartService();
     }
@@ -1080,12 +1090,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     /**
-     *
-     * @param millis
+     * @param timeoutMillis the maximum time in millis to block on join
      * @return true is cluster has been joined, false if timed out
      * @throws InterruptedException
      */
-    public boolean blockOnJoin(long millis) throws InterruptedException {
-        return joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
+    public boolean blockOnJoin(long timeoutMillis) throws InterruptedException {
+        return joined.get().latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 }

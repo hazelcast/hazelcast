@@ -16,28 +16,33 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableScan;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-
-public class FullScanLogicalRel extends TableScan implements LogicalRel {
+public class FullScanLogicalRel extends FullScan implements LogicalRel {
 
     FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            RelOptTable table
+            RelOptTable table,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
     ) {
-        super(cluster, traitSet, emptyList(), table);
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
     @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanLogicalRel(getCluster(), traitSet, getTable());
+        return new FullScanLogicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(), watermarkedColumnIndex());
     }
 }

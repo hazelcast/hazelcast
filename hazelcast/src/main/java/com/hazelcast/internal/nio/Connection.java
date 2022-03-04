@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 
+import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -76,6 +78,7 @@ public interface Connection {
      * <p>
      * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
      */
+    @Nullable
     InetSocketAddress getRemoteSocketAddress();
 
     /**
@@ -93,14 +96,38 @@ public interface Connection {
     void setRemoteAddress(Address remoteAddress);
 
     /**
+     * Gets the {@link UUID} of the other side of this connection.
+     * The remote UUID of the connection set is not immediately
+     * available after the connection is created.
+     * For the member connections, it's set during the
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake} processing
+     * For the client connections, it's set after client
+     * authentication is performed.
+     * If the other side of connection is not Hazelcast member or
+     * native client (when the other side of connection is MEMCACHED
+     * or REST client), this method always returns null.
+     * @return null or the uuid of the remote endpoint of the connection.
+     */
+    @Nullable
+    UUID getRemoteUuid();
+
+    /**
+     * Sets the {@link UUID} of the other side of this connection.
+     *
+     * @param remoteUuid the uuid of the remote endpoint of the connection.
+     */
+    void setRemoteUuid(UUID remoteUuid);
+
+    /**
      * Returns remote address of this Connection.
      *
      * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
      */
+    @Nullable
     InetAddress getInetAddress();
 
     /**
-     * Writes a outbound frame so it can be received by the other side of the connection. No guarantees are
+     * Writes an outbound frame, so it can be received by the other side of the connection. No guarantees are
      * made that the frame is going to be received on the other side.
      * <p>
      * The frame could be stored in an internal queue before it actually is written, so this call
@@ -113,7 +140,7 @@ public interface Connection {
     boolean write(OutboundFrame frame);
 
     /**
-     * Writes an outbound frame so it can be received by the other side of the connection. Frame delivery is ordered
+     * Writes an outbound frame, so it can be received by the other side of the connection. Frame delivery is ordered
      * with respect to other calls to this method on the same connection instance. No guarantees are made that the frame
      * is going to be received on the other side. However, if the frame is delivered, then all previous ordered frames
      * sent through the same connection instance is guaranteed to be delivered.

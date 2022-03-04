@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,6 @@ import java.util.List;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
@@ -371,7 +369,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 Node implNode = attributes.getNamedItem("implementation");
                 String implementation = implNode != null ? getTextContent(implNode) : null;
                 isTrue(className != null ^ implementation != null, "Exactly one of 'class-name' or 'implementation'"
-                    + " attributes is required to create LoadBalancer!");
+                        + " attributes is required to create LoadBalancer!");
                 if (className != null) {
                     BeanDefinitionBuilder loadBalancerBeanDefinition = createBeanBuilder(className);
                     configBuilder.addPropertyValue("loadBalancer", loadBalancerBeanDefinition.getBeanDefinition());
@@ -451,6 +449,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configMap.put(cacheName, builder.getBeanDefinition());
         }
 
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
         private void parseQueryCacheInternal(BeanDefinitionBuilder builder, Node node, String nodeName, String textContent) {
             if ("predicate".equals(nodeName)) {
                 BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);
@@ -459,27 +458,22 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 ManagedList listeners = getEntryListeners(node);
                 builder.addPropertyValue("entryListenerConfigs", listeners);
             } else if ("include-value".equals(nodeName)) {
-                boolean includeValue = getBooleanValue(textContent);
-                builder.addPropertyValue("includeValue", includeValue);
+                builder.addPropertyValue("includeValue", textContent);
             } else if ("batch-size".equals(nodeName)) {
-                int batchSize = getIntegerValue("batch-size", textContent.trim());
-                builder.addPropertyValue("batchSize", batchSize);
+                builder.addPropertyValue("batchSize", textContent);
             } else if ("buffer-size".equals(nodeName)) {
-                int bufferSize = getIntegerValue("buffer-size", textContent.trim());
-                builder.addPropertyValue("bufferSize", bufferSize);
+                builder.addPropertyValue("bufferSize", textContent);
             } else if ("delay-seconds".equals(nodeName)) {
-                int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
-                );
-                builder.addPropertyValue("delaySeconds", delaySeconds);
+                builder.addPropertyValue("delaySeconds", textContent);
             } else if ("in-memory-format".equals(nodeName)) {
                 String value = textContent.trim();
                 builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("coalesce".equals(nodeName)) {
-                boolean coalesce = getBooleanValue(textContent);
-                builder.addPropertyValue("coalesce", coalesce);
+                builder.addPropertyValue("coalesce", textContent);
             } else if ("populate".equals(nodeName)) {
-                boolean populate = getBooleanValue(textContent);
-                builder.addPropertyValue("populate", populate);
+                builder.addPropertyValue("populate", textContent);
+            } else if ("serialize-keys".equals(nodeName)) {
+                builder.addPropertyValue("serializeKeys", textContent);
             } else if ("indexes".equals(nodeName)) {
                 ManagedList indexes = getIndexes(node);
                 builder.addPropertyValue("indexConfigs", indexes);
@@ -567,8 +561,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder metricsConfigBuilder = createBeanBuilder(ClientMetricsConfig.class);
             fillValues(node, metricsConfigBuilder, "jmx");
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-            boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-            metricsConfigBuilder.addPropertyValue("enabled", enabled);
+            metricsConfigBuilder.addPropertyValue("enabled", getTextContent(attrEnabled));
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);

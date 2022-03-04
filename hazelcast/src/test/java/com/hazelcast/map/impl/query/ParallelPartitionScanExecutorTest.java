@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.internal.util.JavaVersion;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
-import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,15 +39,13 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.JavaVersion.JAVA_11;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -70,7 +67,6 @@ public class ParallelPartitionScanExecutorTest {
 
     @Test
     public void execute_success() {
-        assumeTrue("This test uses PowerMock Whitebox.setInternalState which fails in JDK >= 12", JavaVersion.isAtMost(JAVA_11));
         IPartitionService partitionService = mock(IPartitionService.class);
         when(partitionService.getPartitionCount()).thenReturn(271);
         PartitionScanRunner runner = mock(PartitionScanRunner.class);

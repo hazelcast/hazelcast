@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,13 +84,14 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void updateRecordValue(Data key, R record, Object value) {
+    public R updateRecordValue(Data key, R record, Object value) {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
                 ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
+        return record;
     }
 
     @Override
@@ -165,11 +166,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
             entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
         return new MapEntriesWithCursor(entriesData, newPointers);
-    }
-
-    @Override
-    public Record extractRecordFromLazy(EntryView entryView) {
-        return ((LazyEvictableEntryView) entryView).getRecord();
     }
 
     @Override

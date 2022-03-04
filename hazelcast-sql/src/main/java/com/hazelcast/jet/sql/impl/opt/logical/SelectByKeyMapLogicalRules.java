@@ -21,13 +21,11 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
 import static org.apache.calcite.plan.RelOptRule.none;
-import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.operandJ;
 
 /**
@@ -38,14 +36,14 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
  * or
  * <blockquote><code>SELECT this + 1 FROM map WHERE __key = 1</code></blockquote>
  * <p>
- * Such SELECT is translated to optimized, direct key {@code IMap} operation
+ * Such SELECT is translated to optimized, direct-key {@code IMap} operation
  * which does not involve starting any job.
  */
 final class SelectByKeyMapLogicalRules {
 
     static final RelOptRule INSTANCE = new RelOptRule(
             operandJ(
-                    LogicalTableScan.class,
+                    TableScan.class,
                     null,
                     scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                     none()
@@ -54,7 +52,7 @@ final class SelectByKeyMapLogicalRules {
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
-            LogicalTableScan scan = call.rel(0);
+            TableScan scan = call.rel(0);
 
             RelOptTable table = scan.getTable();
             RexBuilder rexBuilder = scan.getCluster().getRexBuilder();
@@ -66,40 +64,7 @@ final class SelectByKeyMapLogicalRules {
                         scan.getRowType(),
                         table,
                         keyCondition,
-                        rexBuilder.identityProjects(scan.getRowType())
-                );
-                call.transformTo(rel);
-            }
-        }
-    };
-
-    static final RelOptRule PROJECT_INSTANCE = new RelOptRule(
-            operand(
-                    LogicalProject.class,
-                    operandJ(
-                            LogicalTableScan.class,
-                            null,
-                            scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                            none()
-                    )
-            ),
-            SelectByKeyMapLogicalRules.class.getSimpleName() + "(Project)"
-    ) {
-        @Override
-        public void onMatch(RelOptRuleCall call) {
-            LogicalProject project = call.rel(0);
-            LogicalTableScan scan = call.rel(1);
-
-            RelOptTable table = scan.getTable();
-            RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, project.getCluster().getRexBuilder());
-            if (keyCondition != null) {
-                SelectByKeyMapLogicalRel rel = new SelectByKeyMapLogicalRel(
-                        scan.getCluster(),
-                        OptUtils.toLogicalConvention(scan.getTraitSet()),
-                        project.getRowType(),
-                        table,
-                        keyCondition,
-                        project.getProjects()
+                        OptUtils.extractHazelcastTable(scan).getProjects()
                 );
                 call.transformTo(rel);
             }

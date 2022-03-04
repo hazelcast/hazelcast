@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,15 +66,5 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
 
     @Override
     public void close(@Nullable QueryException error) {
-    }
-
-    @Override
-    public Object deserialize(Object value) {
-        throw new IllegalStateException("This result contains only update count");
-    }
-
-    @Override
-    public Object deserialize(LazyTarget value) {
-        throw new IllegalStateException("This result contains only update count");
     }
 }

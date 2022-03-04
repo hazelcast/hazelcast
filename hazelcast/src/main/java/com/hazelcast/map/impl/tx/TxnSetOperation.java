@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,9 +134,9 @@ public class TxnSetOperation extends BasePutOperation
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
         dataValue = getValueOrPostProcessedValue(record, dataValue);
-        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         return new TxnSetBackupOperation(name, dataKey,
-                record, dataValue, expiredMetadata, transactionId);
+                record, dataValue, expiryMetadata, transactionId);
     }
 
     @Override

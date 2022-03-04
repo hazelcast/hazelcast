@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.1-SNAPSHOT</version>
+        <version>5.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,20 +38,10 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.27.0</calcite.version>
+        <calcite.version>1.28.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>confluent</id>
-            <url>https://packages.confluent.io/maven/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <build>
         <resources>
@@ -114,7 +104,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.28</version>
+                        <version>2.3.31</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -221,10 +211,14 @@
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-core</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
@@ -283,6 +277,14 @@
                                     <pattern>org.slf4</pattern>
                                     <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.jsfr</pattern>
+                                    <shadedPattern>${relocation.root}.org.jsfr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
+                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
@@ -290,7 +292,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                             </transformers>
@@ -309,8 +311,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
-                                        <!-- TODO: Remove when Calcite is released with the bug fixed -->
-                                        <exclude>org/apache/calcite/linq4j/tree/ConstantExpression.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -330,7 +330,37 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.antlr:antlr4-runtime</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.code.gson:gson</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -499,7 +529,20 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-core</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-jackson-jr</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

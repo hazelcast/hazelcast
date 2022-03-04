@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,18 +55,7 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service,
-                                             boolean isCompatibility, ByteOrder byteOrder) {
-        return new ByteArrayObjectDataInput(buffer, service, byteOrder, isCompatibility);
-    }
-
-    @Override
     public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
-        return new ByteArrayObjectDataOutput(size, service, byteOrder);
-    }
-
-    @Override
-    public BufferObjectDataOutput createOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
         return new ByteArrayObjectDataOutput(size, service, byteOrder);
     }
 

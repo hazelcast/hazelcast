@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -54,10 +54,10 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
         store.forEach((BiConsumer<Data, Record>) (key, record) -> {
             Data dataKey = toHeapData(key);
             Data dataValue = toHeapData(record.getValue());
-            ExpiryMetadata expiredMetadata = store.getExpirySystem().getExpiredMetadata(dataKey);
+            ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
             consumer.accept(partitionId,
                     createMergingEntry(getSerializationService(), dataKey, dataValue,
-                            record, expiredMetadata));
+                            record, expiryMetadata));
         }, false);
     }
 

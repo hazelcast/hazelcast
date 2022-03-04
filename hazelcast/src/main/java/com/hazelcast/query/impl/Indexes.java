@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -432,7 +432,7 @@ public class Indexes {
     public Iterable<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
-        if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
+        if (!canQueryOverIndex(predicate)) {
             return null;
         }
 
@@ -453,6 +453,10 @@ public class Indexes {
         } else {
             return result;
         }
+    }
+
+    public boolean canQueryOverIndex(Predicate predicate) {
+        return haveAtLeastOneIndex() && predicate instanceof IndexAwarePredicate;
     }
 
     /**
@@ -656,8 +660,8 @@ public class Indexes {
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors,
-                indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                inMemoryFormat, partitionCount, resultFilterFactory);
+                    indexProvider, usesCachedQueryableEntries, statsEnabled, global,
+                    inMemoryFormat, partitionCount, resultFilterFactory);
         }
     }
 }

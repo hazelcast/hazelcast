@@ -36,6 +36,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -164,6 +165,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", \"timestamp\" TIMESTAMP"
                 + ", timestampTz TIMESTAMP WITH TIME ZONE"
                 + ", object OBJECT"
+                + ", map OBJECT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
@@ -190,6 +192,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         LocalDate.of(2020, 4, 15),
                         LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        "{42=43}", // map converted to a string in JSON format
                         null
                 ))
         );
@@ -264,6 +267,27 @@ public class SqlJsonTest extends SqlTestSupport {
                 singletonList(new Row(
                         new HazelcastJsonValue("{\"id\":1}"),
                         new HazelcastJsonValue("{\"name\":\"Alice\"}")
+                ))
+        );
+    }
+
+    @Test
+    public void test_jsonType() {
+        String name = randomName();
+        String createSql = format("CREATE MAPPING %s TYPE %s ", name, IMapSqlConnector.TYPE_NAME)
+                + "OPTIONS ( "
+                + format("'%s' = 'json'", OPTION_KEY_FORMAT)
+                + format(", '%s' = 'json'", OPTION_VALUE_FORMAT)
+                + ")";
+
+        sqlService.execute(createSql);
+
+        sqlService.execute("SINK INTO " + name + " VALUES (CAST('[1,2,3]' AS JSON), CAST('[4,5,6]' AS JSON))");
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(
+                        new HazelcastJsonValue("[1,2,3]"),
+                        new HazelcastJsonValue("[4,5,6]")
                 ))
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,7 +195,15 @@ final class DelegatingAddressPicker
         for (Map.Entry<EndpointQualifier, InetSocketAddress> entry : publicAddresses.entrySet()) {
             mappings.put(entry.getKey(), new Address(entry.getValue()));
         }
+        return mappings;
+    }
 
+    @Override
+    public Map<EndpointQualifier, Address> getBindAddressMap() {
+        Map<EndpointQualifier, Address> mappings = new HashMap<>(bindAddresses.size());
+        for (Map.Entry<EndpointQualifier, InetSocketAddress> entry : bindAddresses.entrySet()) {
+            mappings.put(entry.getKey(), new Address(entry.getValue()));
+        }
         return mappings;
     }
 }

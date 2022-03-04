@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * FieldKind for Compact {@link com.hazelcast.config.CompactSerializationConfig} and {@link Portable} formats.
+ * FieldKind for {@link com.hazelcast.config.CompactSerializationConfig Compact} and {@link Portable} formats.
  * It is designed to be used with {@link GenericRecord#getFieldKind(String)} API.
  * <p>
  * Note that actual id's in {@link FieldType} and {@link FieldKind} are not matching.
@@ -32,37 +32,131 @@ import com.hazelcast.spi.annotation.Beta;
 public enum FieldKind {
 
     BOOLEAN(0),
-    BOOLEAN_ARRAY(1),
-    BYTE(2),
-    BYTE_ARRAY(3),
+    ARRAY_OF_BOOLEAN(1),
+    INT8(2),
+    ARRAY_OF_INT8(3),
+
+    /**
+     * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     */
     CHAR(4),
-    CHAR_ARRAY(5),
-    SHORT(6),
-    SHORT_ARRAY(7),
-    INT(8),
-    INT_ARRAY(9),
-    LONG(10),
-    LONG_ARRAY(11),
-    FLOAT(12),
-    FLOAT_ARRAY(13),
-    DOUBLE(14),
-    DOUBLE_ARRAY(15),
+
+    /**
+     * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     */
+    ARRAY_OF_CHAR(5),
+    INT16(6),
+    ARRAY_OF_INT16(7),
+    INT32(8),
+    ARRAY_OF_INT32(9),
+    INT64(10),
+    ARRAY_OF_INT64(11),
+    FLOAT32(12),
+    ARRAY_OF_FLOAT32(13),
+    FLOAT64(14),
+    ARRAY_OF_FLOAT64(15),
     STRING(16),
-    STRING_ARRAY(17),
+    ARRAY_OF_STRING(17),
     DECIMAL(18),
-    DECIMAL_ARRAY(19),
+    ARRAY_OF_DECIMAL(19),
     TIME(20),
-    TIME_ARRAY(21),
+    ARRAY_OF_TIME(21),
     DATE(22),
-    DATE_ARRAY(23),
+    ARRAY_OF_DATE(23),
     TIMESTAMP(24),
-    TIMESTAMP_ARRAY(25),
+    ARRAY_OF_TIMESTAMP(25),
     TIMESTAMP_WITH_TIMEZONE(26),
-    TIMESTAMP_WITH_TIMEZONE_ARRAY(27),
+    ARRAY_OF_TIMESTAMP_WITH_TIMEZONE(27),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
     COMPACT(28),
-    COMPACT_ARRAY(29),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_COMPACT(29),
+
+    /**
+     * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     */
     PORTABLE(30),
-    PORTABLE_ARRAY(31);
+
+    /**
+     * Supported only for {@link Portable}. Not applicable to Compact{@link com.hazelcast.config.CompactSerializationConfig}
+     */
+    ARRAY_OF_PORTABLE(31),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_BOOLEAN(32),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_BOOLEAN(33),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_INT8(34),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_INT8(35),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_INT16(36),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_INT16(37),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_INT32(38),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_INT32(39),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_INT64(40),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_INT64(41),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_FLOAT32(42),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_FLOAT32(43),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    NULLABLE_FLOAT64(44),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_NULLABLE_FLOAT64(45);
 
     private static final FieldKind[] ALL = FieldKind.values();
     private final int id;

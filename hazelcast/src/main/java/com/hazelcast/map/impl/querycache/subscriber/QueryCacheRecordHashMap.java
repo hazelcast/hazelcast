@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
@@ -33,8 +32,8 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
  * @see SampleableEvictableStore
  */
 @SerializableByConvention
-public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, QueryCacheRecord>
-        implements SampleableEvictableStore<Data, QueryCacheRecord> {
+public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Object, QueryCacheRecord>
+        implements SampleableEvictableStore<Object, QueryCacheRecord> {
 
     private final SerializationService serializationService;
 
@@ -48,11 +47,11 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
      * @see EvictionCandidate
      */
     class QueryCacheEvictableSamplingEntry
-            extends SamplingEntry<Data, QueryCacheRecord>
+            extends SamplingEntry<Object, QueryCacheRecord>
             implements EvictionCandidate {
 
-        QueryCacheEvictableSamplingEntry(Data key, QueryCacheRecord value) {
-            super(key, value);
+        QueryCacheEvictableSamplingEntry(Object queryCacheKey, QueryCacheRecord value) {
+            super(queryCacheKey, value);
         }
 
         @Override
@@ -92,13 +91,13 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
     }
 
     @Override
-    protected QueryCacheEvictableSamplingEntry createSamplingEntry(Data key, QueryCacheRecord value) {
-        return new QueryCacheEvictableSamplingEntry(key, value);
+    protected QueryCacheEvictableSamplingEntry createSamplingEntry(Object queryCacheKey, QueryCacheRecord value) {
+        return new QueryCacheEvictableSamplingEntry(queryCacheKey, value);
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, QueryCacheRecord>>
-    boolean tryEvict(C evictionCandidate, EvictionListener<Data, QueryCacheRecord> evictionListener) {
+    public <C extends EvictionCandidate<Object, QueryCacheRecord>>
+    boolean tryEvict(C evictionCandidate, EvictionListener<Object, QueryCacheRecord> evictionListener) {
         if (evictionCandidate == null) {
             return false;
         }

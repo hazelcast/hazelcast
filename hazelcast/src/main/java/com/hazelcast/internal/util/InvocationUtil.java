@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,11 @@ public final class InvocationUtil {
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
      */
-    public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         Supplier<? extends Operation> operationSupplier,
-                                                                         int maxRetries) {
+    public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(
+            NodeEngine nodeEngine,
+            Supplier<? extends Operation> operationSupplier,
+            int maxRetries
+    ) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {

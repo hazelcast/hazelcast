@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,5 +54,14 @@ public final class OsHelper {
      */
     public static boolean isMac() {
         return (OS.contains("mac") || OS.contains("darwin"));
+    }
+
+    /**
+     * Returns {@code true} if the system is a Windows.
+     *
+     * @return {@code true} if the current system is a Windows one.
+     */
+    public static boolean isWindows() {
+        return OS.contains("windows");
     }
 }

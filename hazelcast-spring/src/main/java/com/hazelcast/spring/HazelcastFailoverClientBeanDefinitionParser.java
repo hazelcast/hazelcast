@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,9 +82,9 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         AbstractBeanDefinition handleMultipleClusterAwareClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             String attribute = element.getAttribute("try-count");
-            failoverConfigBuilder.addPropertyValue("tryCount", Integer.valueOf(attribute));
+            failoverConfigBuilder.addPropertyValue("tryCount", attribute);
 
-            ManagedList<BeanDefinition> configs = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> configs = new ManagedList<>();
             for (Node node : childElements(element)) {
                 HazelcastClientBeanDefinitionParser.SpringXmlBuilder springXmlBuilder =
                         new HazelcastClientBeanDefinitionParser.SpringXmlBuilder(parserContext);

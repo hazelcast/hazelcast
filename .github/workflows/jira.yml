@@ -1,0 +1,33 @@
+name: Create Issue in Jira when to-jira label added
+
+on:
+  issues:
+    types: labeled
+
+
+jobs:
+  jira1:
+    if: ${{ github.event.label.name == 'to-jira' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test composite one
+        uses: hazelcast/github-jira-tool-action@v2
+        with:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TARGET_JIRA_PROJECT: HZ
+          JIRA_LABEL: from-gh
+  jira2:
+    if: ${{ github.event.label.name == 'to-client-jira' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test composite one
+        uses: hazelcast/github-jira-tool-action@v3.2.0
+        with:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TARGET_JIRA_PROJECT: API
+          JIRA_LABEL: Java
+          ISSUE_TYPE: Bug

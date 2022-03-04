@@ -22,6 +22,7 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
@@ -50,12 +51,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -83,10 +86,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 if (expected.size() != actual.size()) {
                     return false;
                 }
-                List<Object[]> expectedList = (List<Object[]>) expected;
-                List<Object[]> actualList = (List<Object[]>) actual;
+                List<JetSqlRow> expectedList = (List<JetSqlRow>) expected;
+                List<JetSqlRow> actualList = (List<JetSqlRow>) actual;
                 for (int i = 0; i < expectedList.size(); i++) {
-                    if (!Arrays.equals(expectedList.get(i), actualList.get(i))) {
+                    if (!Objects.equals(expectedList.get(i), actualList.get(i))) {
                         return false;
                     }
                 }
@@ -106,11 +109,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     // We also don't test full hash index scan, because such plan aren't allowed to be created.
     @Test
     public void test_pointLookup_hashed() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
         }
-        expected.add(new Object[]{(5), "value-5", 5});
+        expected.add(jetRow((5), "value-5", 5));
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "age").setName(randomName());
         map.addIndex(indexConfig);
@@ -130,10 +133,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_fullScanAsc_sorted() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+            expected.add(jetRow((count - i + 1), "value-" + (count - i + 1), (count - i + 1)));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
@@ -154,10 +157,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_fullScanDesc_sorted() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = 0; i <= count; i++) {
             map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(count - i), "value-" + (count - i), (count - i)});
+            expected.add(jetRow((count - i), "value-" + (count - i), (count - i)));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
@@ -178,11 +181,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenFilterExistsWithoutSpecificProjection_sorted() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             if (i > count / 2) {
-                expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+                expected.add(jetRow((count - i + 1), "value-" + (count - i + 1), (count - i + 1)));
             }
         }
 
@@ -204,12 +207,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenBothFiltersAndSpecificProjectionExists_sorted() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             if (i > count / 2) {
                 if (i % 2 == 1) {
-                    expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+                    expected.add(jetRow((count - i + 1), "value-" + (count - i + 1), (count - i + 1)));
                 }
             }
         }
@@ -236,11 +239,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenFilterAndSpecificProjectionExists_sorted() {
-        List<Object[]> expected = new ArrayList<>();
+        List<JetSqlRow> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             if (i > count / 2) {
-                expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+                expected.add(jetRow((count - i + 1), "value-" + (count - i + 1), (count - i + 1)));
             }
         }
 

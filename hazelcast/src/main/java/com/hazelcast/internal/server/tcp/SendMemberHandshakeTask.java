@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class SendMemberHandshakeTask implements Runnable {
                 getConfiguredLocalAddresses(),
                 remoteAddress,
                 reply,
-                serverContext.getUuid())
+                serverContext.getThisUuid())
                 .addOption(OPTION_PLANE_COUNT, planeCount)
                 .addOption(OPTION_PLANE_INDEX, planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);

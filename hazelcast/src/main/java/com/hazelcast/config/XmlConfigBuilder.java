@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,9 @@ import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFacto
 
 /**
  * A XML {@link ConfigBuilder} implementation.
+ * <p>
+ * Unlike {@link Config#load()} and its variants, a configuration constructed via
+ * {@code XmlConfigBuilder} does not apply overrides found in environment variables/system properties.
  */
 public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements ConfigBuilder {
 

@@ -87,6 +87,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createJobDuplicateOption_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('autoScaling'='false', 'autoScaling'='false') AS "
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessageContaining("Option 'autoScaling' specified more than once");
+    }
+
+    @Test
     public void when_snapshotIntervalNotNumber_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('snapshotIntervalMillis'='foo') AS "
                         + "INSERT INTO t1 VALUES(1)"))
@@ -367,7 +374,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB testJob"))
-                .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
+                .hasMessageContaining("You need Hazelcast Enterprise to use this feature");
     }
 
     @Test
@@ -390,7 +397,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("DROP JOB testJob WITH SNAPSHOT mySnapshot"))
-                .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
+                .hasMessageContaining("You need Hazelcast Enterprise to use this feature");
     }
 
     @Test

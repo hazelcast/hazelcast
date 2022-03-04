@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,29 +20,6 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 class ExternalConfigTestUtils {
-
-    static void runWithSystemProperty(String key, String value, Runnable action) {
-        try {
-            System.setProperty(key, value);
-            action.run();
-        } finally {
-            System.clearProperty(key);
-        }
-    }
-
-    @SafeVarargs
-    static void runWithSystemProperties(Runnable action, Map.Entry<String, String>... entry) {
-        try {
-            for (Map.Entry<String, String> e : entry) {
-                System.setProperty(e.getKey(), e.getValue());
-            }
-            action.run();
-        } finally {
-            for (Map.Entry<String, String> e : entry) {
-                System.clearProperty(e.getKey());
-            }
-        }
-    }
 
     static <K, V> Map.Entry<K, V> entry(K key, V value) {
         return new AbstractMap.SimpleEntry<>(key, value);

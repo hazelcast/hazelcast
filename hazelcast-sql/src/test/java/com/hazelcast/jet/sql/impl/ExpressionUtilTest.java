@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +34,9 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
+import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.SqlTestSupport.createExpressionEvalContext;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -89,18 +93,18 @@ public class ExpressionUtilTest {
     }
 
     private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
-        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate, mock(ExpressionEvalContext.class));
+        JetSqlRow joined = ExpressionUtil.join(new JetSqlRow(TEST_SS, leftRow), new JetSqlRow(TEST_SS, rightRow), predicate, createExpressionEvalContext());
 
-        assertThat(joined).isEqualTo(expected);
+        assertThat(joined == null ? null : joined.getValues()).isEqualTo(expected);
     }
 
     @Test
     public void test_evaluate() {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"});
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(null, null, rows, mock(ExpressionEvalContext.class));
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, null, rows.stream().map(v -> new JetSqlRow(TEST_SS, v)), createExpressionEvalContext());
 
-        assertThat(evaluated).containsExactlyElementsOf(rows);
+        assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactlyElementsOf(rows);
     }
 
     @Test
@@ -112,9 +116,9 @@ public class ExpressionUtilTest {
             return value != 1;
         });
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, null, rows, mock(ExpressionEvalContext.class));
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, null, rows.stream().map(v -> new JetSqlRow(TEST_SS, v)), createExpressionEvalContext());
 
-        assertThat(evaluated).containsExactly(new Object[]{0, "a"}, new Object[]{2, "c"});
+        assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0, "a"}, new Object[]{2, "c"});
     }
 
     @Test
@@ -124,10 +128,10 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows,
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows.stream().map(v -> new JetSqlRow(TEST_SS, v)),
                 mock(ExpressionEvalContext.class));
 
-        assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{2}, new Object[]{4});
+        assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0}, new Object[]{2}, new Object[]{4});
     }
 
     @Test
@@ -141,9 +145,9 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows,
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows.stream().map(v -> new JetSqlRow(TEST_SS, v)),
                 mock(ExpressionEvalContext.class));
 
-        assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{4});
+        assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0}, new Object[]{4});
     }
 }

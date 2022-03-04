@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -379,6 +379,21 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJavaSerializationFilter();
 
     @Test
+    public abstract void testCompactSerialization();
+
+    @Test
+    public abstract void testCompactSerialization_explicitSerializationRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustTypeName();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustSerializer();
+
+    @Test
     public abstract void testAllowOverrideDefaultSerializers();
 
     @Test
@@ -392,6 +407,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testPersistence();
+
+    @Test
+    public abstract void testDynamicConfig();
+
+    @Test
+    public abstract void testLocalDevice();
+
+    @Test
+    public abstract void testTieredStore();
 
     @Test
     public abstract void testPersistenceEncryptionAtRest_whenJavaKeyStore();
@@ -649,6 +673,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, mapWith2Backups.getBackupCount());
         assertEquals(1, map1.getAttributeConfigs().size());
     }
+
+    @Test
+    public abstract void testIntegrityCheckerConfig();
 
     protected abstract Config buildAuditlogConfig();
 

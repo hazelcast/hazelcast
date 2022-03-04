@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
@@ -42,7 +43,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
 import javax.annotation.Nonnull;
-import java.net.UnknownHostException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
@@ -59,11 +59,7 @@ public final class CustomTypeFactory {
     }
 
     public static Address createAddress(String host, int port) {
-        try {
-            return new Address(host, port);
-        } catch (UnknownHostException e) {
-            throw new HazelcastException(e);
-        }
+        return Address.createUnresolvedAddress(host, port);
     }
 
     public static CacheEventDataImpl createCacheEventData(String name, int cacheEventType, Data dataKey,
@@ -235,5 +231,9 @@ public final class CustomTypeFactory {
             map.put(field.getFieldName(), field);
         }
         return new Schema(typeName, map);
+    }
+
+    public static HazelcastJsonValue createHazelcastJsonValue(String value) {
+        return new HazelcastJsonValue(value);
     }
 }

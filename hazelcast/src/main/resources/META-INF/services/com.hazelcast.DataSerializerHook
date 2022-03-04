@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,3 +68,4 @@ com.hazelcast.jet.impl.observer.JetObserverDataSerializerHook
 com.hazelcast.jet.impl.aggregate.AggregateDataSerializerHook
 com.hazelcast.jet.config.JetConfigDataSerializerHook
 com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook
+com.hazelcast.jet.impl.util.FunctionsSerializerHook

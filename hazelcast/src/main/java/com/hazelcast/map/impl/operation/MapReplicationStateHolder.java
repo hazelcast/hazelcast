@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,39 +171,44 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                final boolean isDifferentialReplication = merkleTreeDiffByMapName.containsKey(mapName);
                 List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
-                initializeRecordStore(mapName, recordStore);
-                recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
+                recordStore.beforeOperation();
+                try {
+                    initializeRecordStore(mapName, recordStore);
+                    recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
 
-                MapContainer mapContainer = recordStore.getMapContainer();
-                PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
+                    MapContainer mapContainer = recordStore.getMapContainer();
+                    PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(operation.getPartitionId());
-                for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-                    Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getValue());
-                }
+                    for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+                        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                        indexes.addOrGetIndex(indexDefinition.getValue());
+                    }
 
-                final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
+                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                    final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
 
-                InternalIndex[] indexesSnapshot = null;
+                    InternalIndex[] indexesSnapshot = null;
 
-                if (populateIndexes) {
-                    // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
-                    indexesSnapshot = indexes.getIndexes();
-                    Indexes.beginPartitionUpdate(indexesSnapshot);
-                    indexes.clearAll();
-                }
+                    if (populateIndexes) {
+                        // defensively clear possible stale leftovers in non-global indexes from
+                        // the previous failed promotion attempt
+                        indexesSnapshot = indexes.getIndexes();
+                        Indexes.beginPartitionUpdate(indexesSnapshot);
+                        indexes.clearAll();
+                    }
 
-                long nowInMillis = Clock.currentTimeMillis();
-                forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
+                    long nowInMillis = Clock.currentTimeMillis();
+                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
                         populateIndexes, nowInMillis);
 
 
-                if (populateIndexes) {
-                    Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                    if (populateIndexes) {
+                        Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                    }
+                } finally {
+                    recordStore.afterOperation();
                 }
             }
         }
@@ -321,7 +326,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
         out.writeInt(storesByMapName.size());
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
@@ -365,17 +369,24 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
-        recordStore.forEach((dataKey, record) -> {
-            try {
-                IOUtil.writeData(out, dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()));
-                Records.writeExpiry(out, recordStore.getExpirySystem()
-                        .getExpiredMetadata(dataKey));
-            } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }, operation.getReplicaIndex() != 0, true);
-        statsByMapName.get(recordStore.getName()).incrementFullPartitionReplicationRecordsCount(recordStore.size());
+        recordStore.beforeOperation();
+        try {
+            recordStore.forEach((dataKey, record) -> {
+                try {
+                    IOUtil.writeData(out, dataKey);
+                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    Records.writeExpiry(out, recordStore.getExpirySystem()
+                        .getExpiryMetadata(dataKey));
+                } catch (IOException e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }, operation.getReplicaIndex() != 0, true);
+        } finally {
+            recordStore.afterOperation();
+        }
+        LocalReplicationStatsImpl replicationStats = statsByMapName.get(recordStore.getName());
+        replicationStats.incrementFullPartitionReplicationCount();
+        replicationStats.incrementFullPartitionReplicationRecordsCount(recordStore.size());
     }
 
     protected static SerializationService getSerializationService(MapContainer mapContainer) {

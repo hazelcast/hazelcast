@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,6 +212,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
             } else {
                 // begin job execution
                 ClassLoader cl = jetServiceBackend.getJobClassLoaderService().getClassLoader(jobId);
+                if (cl == null) {
+                    cl = nodeEngine.getConfigClassLoader();
+                }
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))

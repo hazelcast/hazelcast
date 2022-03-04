@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.1-SNAPSHOT</version>
+        <version>5.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -36,17 +36,7 @@
         <maven.compiler.source>9</maven.compiler.source>
         <maven.compiler.target>9</maven.compiler.target>
 
-        <javaModuleArgs>
-            --add-exports java.base/jdk.internal.ref=com.hazelcast.core
-            --add-opens java.base/java.nio=com.hazelcast.core
-            --add-opens java.base/sun.nio.ch=com.hazelcast.core
-            --add-opens java.base/java.lang=com.hazelcast.core
-            --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core
-            --add-opens java.management/sun.management=com.hazelcast.core
-            --add-exports java.xml/jdk.xml.internal=com.hazelcast.core
-            --illegal-access=warn
-        </javaModuleArgs>
-
+        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
@@ -56,10 +46,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.9.0</version>
                 <configuration combine.self="override">
                     <release>9</release>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>source-java8-check</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

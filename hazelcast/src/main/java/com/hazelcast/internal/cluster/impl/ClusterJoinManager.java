@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,11 +103,12 @@ public class ClusterJoinManager {
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
-     * Recently left member UUIDs: when a recently crashed member is joining with same UUID,
-     * typically it will have Hot Restart enabled (otherwise it will restart
-     * probably on the same address but definitely with a new random UUID).
-     * In order to support crashed members recovery with Hot Restart, partition
-     * table validation does not expect an identical partition table.
+     * Recently left member UUIDs: when a recently crashed member is joining
+     * with same UUID, typically it will have Persistence feature enabled
+     * (otherwise it will restart probably on the same address but definitely
+     * with a new random UUID). In order to support crashed members recovery
+     * with Persistence, partition table validation does not expect an
+     * identical partition table.
      *
      * Accessed by operation & cluster heartbeat threads
      */
@@ -634,7 +635,7 @@ public class ClusterJoinManager {
         if (masterAddress.equals(node.getThisAddress())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
-            // I already know that I will do a force-start so I will not allow target to join me
+            // I already know that I will do a force-start, so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }
@@ -650,14 +651,14 @@ public class ClusterJoinManager {
 
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
-        Address target = joinMessage.getAddress();
-        MemberImpl member = clusterService.getMember(target);
+        Address targetAddress = joinMessage.getAddress();
+        MemberImpl member = clusterService.getMember(targetAddress);
         if (member == null) {
             return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
 
         if (joinMessage.getUuid().equals(member.getUuid())) {
-            sendMasterAnswer(target);
+            sendMasterAnswer(targetAddress);
 
             if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 if (logger.isFineEnabled()) {
@@ -676,7 +677,7 @@ public class ClusterJoinManager {
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
                         clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
                 op.setCallerUuid(clusterService.getThisUuid());
-                invokeClusterOp(op, target);
+                invokeClusterOp(op, targetAddress);
             }
             return true;
         }
@@ -684,18 +685,18 @@ public class ClusterJoinManager {
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.
-        if (clusterService.isMaster() || target.equals(clusterService.getMasterAddress())) {
+        if (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress())) {
             String msg = format("New join request has been received from an existing endpoint %s."
                     + " Removing old member and processing join request...", member);
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            ServerConnection existing = node.getServer().getConnectionManager(MEMBER).get(target);
+            ServerConnection existing = node.getServer().getConnectionManager(MEMBER).get(targetAddress);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getServer().getConnectionManager(MEMBER).register(target, connection);
+                node.getServer().getConnectionManager(MEMBER).register(targetAddress, joinMessage.getUuid(), connection);
             }
         }
         return true;

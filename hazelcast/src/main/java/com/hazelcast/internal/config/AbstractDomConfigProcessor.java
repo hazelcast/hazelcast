@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -354,10 +354,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
             if (matches("size", nodeName)) {
-                final String value = getTextContent(getNamedItemNode(n, "value"));
-                final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(n, "unit")));
-                MemorySize memorySize = new MemorySize(Long.parseLong(value), unit);
-                nativeMemoryConfig.setSize(memorySize);
+                nativeMemoryConfig.setSize(createMemorySize(n));
             } else if (matches("min-block-size", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
@@ -376,6 +373,12 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 handlePersistentMemoryConfig(nativeMemoryConfig.getPersistentMemoryConfig(), n);
             }
         }
+    }
+
+    protected MemorySize createMemorySize(Node node) {
+        final String value = getTextContent(getNamedItemNode(node, "value"));
+        final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(node, "unit")));
+        return new MemorySize(Long.parseLong(value), unit);
     }
 
     private void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {

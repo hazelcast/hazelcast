@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.NoopP;
+import com.hazelcast.jet.impl.processor.ProcessorSuppliers;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.SortP;
@@ -261,7 +262,7 @@ public final class Processors {
      */
     @Nonnull
     public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return () -> new AggregateP<>(aggrOp.withIdentityFinish());
+        return new ProcessorSuppliers.AggregatePSupplier<>(aggrOp.withIdentityFinish());
     }
 
     /**
@@ -289,7 +290,7 @@ public final class Processors {
     public static <A, R> SupplierEx<Processor> combineP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return () -> new AggregateP<>(aggrOp.withCombiningAccumulateFn(identity()));
+        return new ProcessorSuppliers.AggregatePSupplier<>(aggrOp.withCombiningAccumulateFn(identity()));
     }
 
     /**
@@ -546,7 +547,7 @@ public final class Processors {
      * group-by-key-and-window operation and applies the provided aggregate
      * operation on groups.
      *
-     * @param keyFns functions that extracts the grouping key from the input item
+     * @param keyFns functions that extract the grouping key from the input item
      * @param timestampFns function that extracts the timestamp from the input item
      * @param timestampKind the kind of timestamp extracted by {@code timestampFns}: either the
      *                      event timestamp or the frame timestamp
@@ -689,13 +690,7 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> SupplierEx<Processor> mapP(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
-        return () -> {
-            final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
-            return new TransformP<T, R>(item -> {
-                trav.accept(mapFn.apply(item));
-                return trav;
-            });
-        };
+        return new ProcessorSuppliers.ProcessorMapPSupplier<>(mapFn);
     }
 
     /**

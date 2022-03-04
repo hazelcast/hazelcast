@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.TestEnvironment.isSolaris;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -46,6 +47,8 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
     @Test
     public void defaultDiscovery() {
         Config c = new Config();
+        c.setClusterName(getTestMethodName());
+
         if (isSolaris()) {
             c.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
         }
@@ -53,7 +56,8 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(c);
         Hazelcast.newHazelcastInstance(c);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig().setClusterName(getTestMethodName());
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         assertClusterSizeEventually(2, client);
     }
 

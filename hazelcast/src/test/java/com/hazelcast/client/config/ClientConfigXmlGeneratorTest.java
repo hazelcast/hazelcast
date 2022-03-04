@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -52,18 +54,23 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.EmployeeDTO;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.EmployerDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -381,6 +388,44 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertCollection(expected.getSerializerConfigs(), actual.getSerializerConfigs());
         assertMap(expected.getDataSerializableFactoryClasses(), actual.getDataSerializableFactoryClasses());
         assertMap(expected.getPortableFactoryClasses(), actual.getPortableFactoryClasses());
+    }
+
+    @Test
+    public void testCompactSerialization() {
+        CompactSerializationConfig expected = new CompactSerializationConfig();
+        expected.setEnabled(true);
+        expected.register(EmployerDTO.class);
+        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+
+        clientConfig.getSerializationConfig().setCompactSerializationConfig(expected);
+
+        CompactSerializationConfig actual = newConfigViaGenerator().getSerializationConfig().getCompactSerializationConfig();
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+
+        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
+        // compact serialization config, when we read the config from XML/YAML, we store registered classes
+        // in a different map.
+        Map<String, TriTuple<String, String, String>> namedRegistrations
+                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
+
+        Map<String, TriTuple<Class, String, CompactSerializer>> registrations
+                = CompactSerializationConfigAccessor.getRegistrations(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
+            String key = entry.getKey();
+            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
+            TriTuple<String, String, String> actualRegistration = namedRegistrations.get(key);
+
+            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
+            assertEquals(expectedRegistration.element2, actualRegistration.element2);
+
+            CompactSerializer serializer = expectedRegistration.element3;
+            if (serializer != null) {
+                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+            } else {
+                assertNull(actualRegistration.element3);
+            }
+        }
     }
 
     private SerializationConfig buildSerializationConfig() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.internal.util.StringUtil;
  * <p>
  * <code><pre>
  * TextProtocolClient client = new TextProtocolClient(address, port);
+ * client.connect();
  * try {
  *   client.sendData("GET /hazelcast/health/node-state HTTP/1.0\r\n\r\n");
  *   Thread.sleep(1000L);

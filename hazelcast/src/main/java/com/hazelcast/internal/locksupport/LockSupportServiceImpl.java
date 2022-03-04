@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.locksupport.operations.LocalLockCleanupOperation;
 import com.hazelcast.internal.locksupport.operations.LockReplicationOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockOperation;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public final class LockSupportServiceImpl implements LockSupportService, ManagedService, MembershipAwareService,
-        FragmentedMigrationAwareService, ClientAwareService {
+        ChunkedMigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;

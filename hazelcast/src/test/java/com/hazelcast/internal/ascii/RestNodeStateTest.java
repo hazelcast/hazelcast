@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,17 @@
 
 package com.hazelcast.internal.ascii;
 
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertEquals;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -45,20 +34,38 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Regression test which checks the {@link NodeState} before the instance becomes {@link NodeState#ACTIVE}.
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class RestNodeStateTest {
 
-    @BeforeClass
-    @AfterClass
-    public static void cleanupClass() {
+    private static final int BASE_PORT = 5600;
+
+    @Before
+    @After
+    public void cleanup() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -75,7 +82,8 @@ public class RestNodeStateTest {
         Config config = smallInstanceConfig().setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setPort(5000).setPortAutoIncrement(false);
+        int port = TestUtil.getAvailablePort(BASE_PORT);
+        networkConfig.setPort(port).setPortAutoIncrement(false);
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);
         networkConfig.setRestApiConfig(restApiConfig);
         StrategyFactory discoveryStrategyFactory = new StrategyFactory();
@@ -83,9 +91,34 @@ public class RestNodeStateTest {
                 .addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(discoveryStrategyFactory));
         HazelcastTestSupport.spawn(() -> Hazelcast.newHazelcastInstance(config));
         discoveryStrategyFactory.getNodeStartingLatch().await();
-        HTTPCommunicator communicator = new HTTPCommunicator(5000);
+        HTTPCommunicator communicator = new HTTPCommunicator(port);
         assertEquals("\"STARTING\"", communicator.getClusterHealth("/node-state"));
         discoveryStrategyFactory.getTestDoneLatch().countDown();
+    }
+
+    @Test(timeout = 30000)
+    public void testNodeStateAvailable_whenOtherMemberUnavailable() throws Exception {
+        List<Integer> ports = TestUtil.getAvailablePorts(BASE_PORT, 2);
+        Integer port1 = ports.get(0);
+        Integer port2 = ports.get(1);
+        Config config1 = config(port1);
+        Config config2 = config(port2);
+        HazelcastInstance member1 = Hazelcast.newHazelcastInstance(config1);
+        Hazelcast.newHazelcastInstance(config2);
+        // make member1 fail operations with HazelcastInstanceNotActiveException
+        Node node1 = Accessors.getNode(member1);
+        setFieldValueReflectively(node1, "state", NodeState.SHUT_DOWN);
+        // query member2 about its node state
+        // member shouldn't execute any cluster operation and respond immediately
+        HTTPCommunicator communicator = new HTTPCommunicator(port2);
+        assertEquals("\"ACTIVE\"", communicator.getClusterHealth("/node-state"));
+    }
+
+    private Config config(int port) {
+        Config config = smallInstanceConfig();
+        config.getNetworkConfig().getRestApiConfig().setEnabled(true).enableAllGroups();
+        config.getNetworkConfig().setPort(port);
+        return config;
     }
 
     public static class StrategyFactory implements DiscoveryStrategyFactory {

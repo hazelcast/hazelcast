@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ class TcpServerConnector {
 
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
-                    connection = connectionManager.newConnection(channel, remoteAddress);
+                    connection = connectionManager.newConnection(channel, remoteAddress, false);
                     new SendMemberHandshakeTask(logger, serverContext, connection,
                             remoteAddress, true, planeIndex, planeCount).run();
                 } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.CoreService;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -39,7 +41,8 @@ public interface ClusterService extends CoreService, Cluster {
      * @param address the address of the member to lookup
      * @return the found member, or {@code null} if not found (if the address is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(Address address);
+    @Nullable
+    MemberImpl getMember(@Nullable Address address);
 
     /**
      * Gets the member with the given UUID.
@@ -47,7 +50,8 @@ public interface ClusterService extends CoreService, Cluster {
      * @param uuid the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(UUID uuid);
+    @Nullable
+    MemberImpl getMember(@Nullable UUID uuid);
 
     /**
      * Gets the member with the given UUID and address.
@@ -57,7 +61,8 @@ public interface ClusterService extends CoreService, Cluster {
      * @return the found member, or {@code null} if not found
      * (if the UUID and/or address is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(Address address, UUID uuid);
+    @Nullable
+    MemberImpl getMember(@Nullable Address address, @Nullable UUID uuid);
 
     /**
      * Gets the collection of members.
@@ -66,6 +71,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return the collection of member (the returned value will never be {@code null})
      */
+    @Nonnull
     Collection<MemberImpl> getMemberImpls();
 
     /**
@@ -81,6 +87,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return the address of the master member (can be {@code null} if the master is not yet known)
      */
+    @Nullable
     Address getMasterAddress();
 
     /**
@@ -102,7 +109,16 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return the address of this member (the returned value will never be {@code null})
      */
+    @Nonnull
     Address getThisAddress();
+
+    /**
+     * Gets the uuid of this member.
+     *
+     * @return the uuid of this member (the returned value will never be {@code null})
+     */
+    @Nonnull
+    UUID getThisUuid();
 
     /**
      * Gets the local member instance.
@@ -114,6 +130,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return the local member instance (the returned value will never be {@code null})
      */
+    @Nonnull
     Member getLocalMember();
 
     /**
@@ -138,6 +155,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return the ClusterClock
      */
+    @Nonnull
     ClusterClock getClusterClock();
 
     /**
@@ -145,6 +163,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return unique UUID for cluster
      */
+    @Nullable
     UUID getClusterId();
 
     /**

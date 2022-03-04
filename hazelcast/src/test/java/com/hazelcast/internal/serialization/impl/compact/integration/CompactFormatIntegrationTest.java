@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,8 +141,8 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         IMap<Integer, Object> map = instance1.getMap("test");
         for (int i = 0; i < 100; i++) {
             if (serverDoesNotHaveClasses) {
-                GenericRecord record = GenericRecordBuilder.compact("employee").setInt("age", i)
-                        .setLong("id", 102310312).build();
+                GenericRecord record = GenericRecordBuilder.compact("employee").setInt32("age", i)
+                        .setInt64("id", 102310312).build();
                 map.put(i, record);
             } else {
                 EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
@@ -160,7 +160,7 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         for (int i = 0; i < 100; i++) {
             if (serverDoesNotHaveClasses) {
                 GenericRecord record = (GenericRecord) map2.get(i);
-                assertEquals(record.getInt("age"), 1000 + i);
+                assertEquals(record.getInt32("age"), 1000 + i);
             } else {
                 EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
                 assertEquals(employeeDTO.getAge(), 1000 + i);
@@ -184,7 +184,7 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         public Object process(Map.Entry<Integer, GenericRecord> entry) {
             GenericRecord value = entry.getValue();
             GenericRecord newValue = value.cloneWithBuilder()
-                    .setInt("age", value.getInt("age") + 1000)
+                    .setInt32("age", value.getInt32("age") + 1000)
                     .build();
             entry.setValue(newValue);
             return null;
@@ -199,9 +199,10 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
         restartCluster();
 
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
-        map2.put(1, employeeDTO);
-        assertEquals(employeeDTO, map2.get(1));
+        map.put(1, employeeDTO);
+        assertEquals(employeeDTO, map.get(1));
+        // Perform a query to make sure that the schema is available on the cluster
+        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
     }
 
     protected abstract void restartCluster();

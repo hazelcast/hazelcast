@@ -1,0 +1,106 @@
+{
+  "instance": {
+    "hazelcast": {
+      "local-device": {
+        "some-device":{
+          "base-dir": 1111,
+          "block-size": 511,
+          "read-io-thread-count": 0,
+          "write-io-thread-count": 0
+        }
+      },
+      "map": {
+        "my-map-0": {
+          "tiered-store": {}
+        },
+        "my-map-1": {
+          "tiered-store": {
+            "enabled": true,
+            "disk-tier": {}
+          }
+        },
+        "my-map-2": {
+          "tiered-store": {
+            "enabled": true,
+            "memory-tier": {
+              "capacity": {
+                "unit": "MEGABYTES",
+                "value": -1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast",
+    "pointerToViolation": "#/hazelcast",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/LocalDevice/additionalProperties",
+        "pointerToViolation": "#/hazelcast/local-device/some-device",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/base-dir",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/base-dir",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/block-size",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/block-size",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "511 is not greater or equal to 512"
+          },
+          {
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/read-io-thread-count",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/read-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          },
+          {
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/write-io-thread-count",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/write-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          }
+        ],
+        "message": "4 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Map",
+        "pointerToViolation": "#/hazelcast/map",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store",
+            "pointerToViolation": "#/hazelcast/map/my-map-0/tiered-store",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [enabled] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
+            "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [enabled] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity/value",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-1 is not greater or equal to 1"
+          }
+        ],
+        "message": "3 schema violations found"
+      }
+    ],
+    "message": "7 schema violations found"
+  }
+}

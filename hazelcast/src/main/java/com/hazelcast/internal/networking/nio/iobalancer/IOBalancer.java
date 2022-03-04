@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
 /**
  * It attempts to detect and fix a selector imbalance problem.
  *
- * By default Hazelcast uses 3 threads to read data from TCP connections and
+ * By default, Hazelcast uses 3 threads to read data from TCP connections and
  * 3 threads to write data to connections. We have measured significant fluctuations
  * of performance when the threads are not utilized equally.
  *

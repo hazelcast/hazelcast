@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
@@ -632,8 +633,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Server createServer(Node node, ServerSocketRegistry registry) {
-            return delegate.createServer(node, registry);
+        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+            return delegate.createServer(node, registry, addressRegistry);
         }
     }
 
@@ -643,9 +644,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public <T> T createService(Class<T> clazz) {
+        public <T> T createService(Class<T> clazz, Object... params) {
             return clazz.isAssignableFrom(MapService.class)
-                    ? (T) new MockMapService((MapService) super.createService(clazz)) : super.createService(clazz);
+                    ? (T) new MockMapService((MapService) super.createService(clazz, params)) : super.createService(clazz, params);
         }
     }
 

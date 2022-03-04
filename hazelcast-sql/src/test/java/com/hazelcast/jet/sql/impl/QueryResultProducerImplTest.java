@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class QueryResultProducerImplTest extends JetTestSupport {
 
     private QueryResultProducerImpl producer;
-    private ResultIterator<Row> iterator;
+    private ResultIterator<JetSqlRow> iterator;
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     private void initProducer(boolean blockForNextItem) {
@@ -64,7 +65,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(TIMEOUT);
                 semaphore.release();
                 assertThat(iterator.hasNext()).isTrue();
-                assertInstanceOf(Row.class, iterator.next());
+                assertInstanceOf(JetSqlRow.class, iterator.next());
                 semaphore.release();
                 assertThat(iterator.hasNext()).isFalse();
                 assertThatThrownBy(iterator::next)
@@ -83,7 +84,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         sleepMillis(50);
         assertThat(semaphore.availablePermits()).isZero();
 
-        inbox.queue().add(new Object[0]);
+        inbox.queue().add(jetRow());
         producer.consume(inbox);
 
         // 2nd permit - the row returned from the iterator
@@ -110,7 +111,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
             try {
                 semaphore.release();
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(YES);
-                assertThat(iterator.next().getColumnCount()).isEqualTo(0);
+                assertThat(iterator.next().getFieldCount()).isEqualTo(0);
                 semaphore.release();
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(DONE);
                 semaphore.release();
@@ -127,7 +128,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         sleepMillis(50);
         assertThat(semaphore.availablePermits()).isZero();
 
-        inbox.queue().add(new Object[0]);
+        inbox.queue().add(jetRow());
         producer.consume(inbox);
 
         // 2nd permit - the row returned from the iterator
@@ -149,8 +150,8 @@ public class QueryResultProducerImplTest extends JetTestSupport {
     @Test
     public void when_done_then_remainingItemsIterated() {
         initProducer(false);
-        inbox.queue().add(new Object[]{1});
-        inbox.queue().add(new Object[]{2});
+        inbox.queue().add(jetRow(1));
+        inbox.queue().add(jetRow(2));
         producer.consume(inbox);
         producer.done();
 
@@ -191,7 +192,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         });
         sleepMillis(50); // sleep so that the thread starts blocking in `hasNext`
 
-        inbox.queue().add(new Object[]{42});
+        inbox.queue().add(jetRow(42));
         producer.consume(inbox);
         assertThat(inbox).isEmpty();
         future.get();
@@ -247,7 +248,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         initProducer(false);
         int numExcessItems = 2;
         for (int i = 0; i < QueryResultProducerImpl.QUEUE_CAPACITY + numExcessItems; i++) {
-            inbox.queue().add(new Object[0]);
+            inbox.queue().add(jetRow());
         }
         producer.consume(inbox);
         assertThat(inbox).hasSize(2);

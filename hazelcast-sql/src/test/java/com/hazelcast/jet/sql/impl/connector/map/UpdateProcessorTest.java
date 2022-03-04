@@ -39,9 +39,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
+import static com.hazelcast.jet.sql.impl.schema.TableResolverImpl.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -139,7 +139,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, arguments))
                 .executeBeforeEachRun(() -> map.put(1, initialValue))
-                .input(singletonList(new Object[]{inputValue}))
+                .input(singletonList(jetRow(inputValue)))
                 .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()

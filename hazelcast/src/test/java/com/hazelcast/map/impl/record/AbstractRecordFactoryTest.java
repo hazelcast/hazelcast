@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -62,7 +63,8 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void test_expected_record_per_config_is_created() {
-        Record record = factory.newRecord("value");
+        Data key = serializationService.toData("key");
+        Record record = factory.newRecord(key, "value");
         assertEquals(expectedRecordClass.getCanonicalName(), record.getClass().getCanonicalName());
     }
 

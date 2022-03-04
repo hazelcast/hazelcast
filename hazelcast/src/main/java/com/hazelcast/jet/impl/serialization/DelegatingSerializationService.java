@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashMap;
@@ -108,6 +110,16 @@ public class DelegatingSerializationService extends AbstractSerializationService
     @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         return delegate.readAsInternalGenericRecord(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        return delegate.extractSchemaFromObject(object);
     }
 
     @Override

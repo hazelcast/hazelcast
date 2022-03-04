@@ -20,8 +20,8 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -52,11 +52,11 @@ class SeriesTable extends JetTable {
         this.argumentExpressions = argumentExpressions;
     }
 
-    BatchSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+    BatchSource<JetSqlRow> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
-                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                    ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
 
                     Integer start = evaluate(argumentExpressions.get(0), null, evalContext);
                     Integer stop = evaluate(argumentExpressions.get(1), null, evalContext);
@@ -98,7 +98,7 @@ class SeriesTable extends JetTable {
 
         private static final int MAX_BATCH_SIZE = 1024;
 
-        private final Iterator<Object[]> iterator;
+        private final Iterator<JetSqlRow> iterator;
 
         private DataGenerator(
                 int start,
@@ -110,12 +110,13 @@ class SeriesTable extends JetTable {
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
-                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}, evalContext))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections,
+                            new JetSqlRow(evalContext.getSerializationService(), new Object[]{i}), evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }
 
-        private void fillBuffer(SourceBuffer<Object[]> buffer) {
+        private void fillBuffer(SourceBuffer<JetSqlRow> buffer) {
             for (int i = 0; i < MAX_BATCH_SIZE; i++) {
                 if (iterator.hasNext()) {
                     buffer.add(iterator.next());

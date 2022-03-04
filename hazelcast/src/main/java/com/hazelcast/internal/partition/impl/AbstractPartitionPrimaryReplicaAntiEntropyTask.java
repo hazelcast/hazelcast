@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
@@ -105,9 +106,10 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
 
         boolean hasCallback = (callback != null);
 
-        PartitionBackupReplicaAntiEntropyOperation op = new PartitionBackupReplicaAntiEntropyOperation(versionMap, hasCallback);
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(SERVICE_NAME);
-        OperationService operationService = nodeEngine.getOperationService();
+        Operation op = new PartitionBackupReplicaAntiEntropyOperation(versionMap, hasCallback);
+        op.setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex)
+                .setServiceName(SERVICE_NAME);
 
         ILogger logger = nodeEngine.getLogger(getClass());
         if (logger.isFinestEnabled()) {
@@ -115,6 +117,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
                     + ", replicaIndex=" + replicaIndex + ", namespaces=" + versionMap);
         }
 
+        OperationService operationService = nodeEngine.getOperationService();
         if (hasCallback) {
             operationService.createInvocationBuilder(SERVICE_NAME, op, target.address())
                     .setTryCount(OPERATION_TRY_COUNT)

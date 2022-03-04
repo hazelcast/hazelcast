@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.expression.misc;
 
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,6 +70,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
                     || field.getName().equals("DESC")
+                    || field.getName().equals("UNION")
+                    || field.getName().equals("UNION_ALL")
                     || field.getName().equals("VALUES")
                     || field.getName().equals("ROW")
                     || field.getName().equals("COLLECTION_TABLE")
@@ -81,6 +83,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("JSON_FLAT_FILE")
                     || field.getName().equals("AVRO_FILE")
                     || field.getName().equals("PARQUET_FILE")
+                    || field.getName().equals("EXISTS")
+                    || field.getName().equals("DESCRIPTOR")
+                    || field.getName().equals("IMPOSE_ORDER")
+                    || field.getName().equals("TUMBLE")
+                    || field.getName().equals("HOP")
             ) {
                 continue;
             }
@@ -129,7 +136,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_IN() {
-        check(sql("(1 IN (1)) || (1 IN (1)) "));
+        check(sql("(1 IN (1)) || (1 IN (1))"));
     }
 
     @Test
@@ -518,6 +525,26 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_MAX() {
         check(sql("MAX(?) || MAX(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_JSON_QUERY() {
+        check(sql("JSON_QUERY(CAST(? AS JSON), '$') || JSON_QUERY(CAST(? AS JSON), '$')"), "[1]", "[1]");
+    }
+
+    @Test
+    public void test_JSON_VALUE() {
+        check(sql("JSON_VALUE(CAST(? AS JSON), '$[0]') || JSON_VALUE(CAST(? AS JSON), '$[0]')"), "[1]", "[1]");
+    }
+
+    @Test
+    public void test_JSON_OBJECT() {
+        check(sql("JSON_OBJECT(? : ?) || JSON_OBJECT(KEY ? VALUE ?)"), "k", "v", "k", "v");
+    }
+
+    @Test
+    public void test_JSON_ARRAY() {
+        check(sql("JSON_ARRAY(?) || JSON_ARRAY(?)"), "v", "v");
     }
 
     private void check(String sql, Object... params) {

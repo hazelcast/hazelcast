@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -162,6 +163,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
+
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;
@@ -173,8 +175,11 @@ public class Node {
     private final BuildInfo buildInfo;
     private final HealthMonitor healthMonitor;
     private final Joiner joiner;
+    private final LocalAddressRegistry localAddressRegistry;
     private ManagementCenterService managementCenterService;
 
+    // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
+    private volatile UUID thisUuid;
     private volatile NodeState state = NodeState.STARTING;
 
     /**
@@ -218,14 +223,15 @@ public class Node {
 
         try {
             boolean liteMember = config.isLiteMember();
-            address = addressPicker.getPublicAddress(MEMBER);
             nodeExtension = nodeContext.createNodeExtension(this);
+            address = addressPicker.getPublicAddress(MEMBER);
+            thisUuid = nodeExtension.createMemberUuid();
             final Map<String, String> memberAttributes = findMemberAttributes(
                     new MemberAttributeConfigReadOnly(config.getMemberAttributeConfig()));
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
-                    .uuid(nodeExtension.createMemberUuid())
+                    .uuid(thisUuid)
                     .attributes(memberAttributes)
                     .liteMember(liteMember)
                     .instance(hazelcastInstance)
@@ -244,12 +250,12 @@ public class Node {
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
             warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
             nodeEngine = new NodeEngineImpl(this);
-            config.setConfigurationService(nodeEngine.getConfigurationService());
+            config.setServices(nodeEngine);
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
-
-            server = nodeContext.createServer(this, serverSocketRegistry);
+            localAddressRegistry = new LocalAddressRegistry(this, addressPicker);
+            server = nodeContext.createServer(this, serverSocketRegistry, localAddressRegistry);
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -426,6 +432,14 @@ public class Node {
 
     public Address getThisAddress() {
         return address;
+    }
+
+    public UUID getThisUuid() {
+        return thisUuid;
+    }
+
+    public void setThisUuid(UUID uuid) {
+        thisUuid = uuid;
     }
 
     public MemberImpl getLocalMember() {
@@ -725,6 +739,10 @@ public class Node {
         return discoveryService;
     }
 
+    public LocalAddressRegistry getLocalAddressRegistry() {
+        return localAddressRegistry;
+    }
+
     private enum ShutdownHookPolicy {
         TERMINATE,
         GRACEFUL
@@ -855,10 +873,6 @@ public class Node {
     private boolean usePublicAddress(JoinConfig join) {
         return properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED)
                 || allUsePublicAddress(AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
-    }
-
-    public UUID getThisUuid() {
-        return clusterService.getThisUuid();
     }
 
     public Config getConfig() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
+import static java.util.Objects.requireNonNull;
+
 abstract class AbstractWanEvent extends AbstractEventBase {
     private final UUID uuid;
 
     protected AbstractWanEvent(UUID uuid) {
-        assert uuid != null : "UUID must not be null";
-        this.uuid = uuid;
+        this.uuid = requireNonNull(uuid, "UUID must not be null");
     }
 
     public UUID getUuid() {
@@ -35,7 +36,7 @@ abstract class AbstractWanEvent extends AbstractEventBase {
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.add("uuid", uuid != null ? uuid.toString() : "null");
+        json.add("uuid", uuid.toString());
         return json;
     }
 }

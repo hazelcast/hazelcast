@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,14 @@ class TcpServerConnectionErrorHandler {
 
     private final ILogger logger;
     private final ServerContext serverContext;
-    private final Address endPoint;
+    private final Address endpointAddress;
     private final long minInterval;
     private final int maxFaults;
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endPoint) {
-        this.endPoint = endPoint;
+    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endpointAddress) {
+        this.endpointAddress = endpointAddress;
         this.serverContext = serverContext;
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
@@ -41,22 +41,22 @@ class TcpServerConnectionErrorHandler {
     }
 
     synchronized void onError(Throwable cause) {
-        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(cause);
+        String errorMessage = "An error occurred on connection to " + endpointAddress + getCauseDescription(cause);
         logger.finest(errorMessage);
         final long now = currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
-                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(cause);
+                String removeEndpointMessage = "Removing connection to endpoint " + endpointAddress + getCauseDescription(cause);
                 logger.warning(removeEndpointMessage);
-                serverContext.removeEndpoint(endPoint);
+                serverContext.removeEndpoint(endpointAddress);
             }
             lastFaultTime = now;
         }
     }
 
     synchronized TcpServerConnectionErrorHandler reset() {
-        String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
+        String resetMessage = "Resetting connection monitor for endpoint " + endpointAddress;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;

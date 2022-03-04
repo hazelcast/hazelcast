@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class AddCacheConfigMessageTask
         config.setCacheWriter(parameters.cacheWriter);
         config.setCacheWriterFactory(parameters.cacheWriterFactory);
         config.setDisablePerEntryInvalidationEvents(parameters.disablePerEntryInvalidationEvents);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfg(serializationService));
+        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
         if (parameters.expiryPolicyFactoryClassName != null) {
             config.setExpiryPolicyFactory(parameters.expiryPolicyFactoryClassName);
         } else if (parameters.timedExpiryPolicyFactoryConfig != null) {

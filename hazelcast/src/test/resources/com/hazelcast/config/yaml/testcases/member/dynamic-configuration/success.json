@@ -1,0 +1,12 @@
+{
+  "instance": {
+    "hazelcast": {
+      "dynamic-configuration":{
+        "persistence-enabled": true,
+        "backup-dir": "mnt/backup-dir",
+        "backup-count": 7
+      }
+    }
+  },
+  "error": null
+}

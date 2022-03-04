@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -958,7 +958,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         setCustomTtl(entryProcessor, "executeOnKey");
     }
 
-    private void setCustomTtl(EntryProcessor entryProcessor, String methodName) {
+    protected void setCustomTtl(EntryProcessor entryProcessor, String methodName) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
@@ -1011,7 +1011,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 Record record = rs.getRecordOrNull(key);
 
                 if (record != null) {
-                    assertEquals(expectedTtl, rs.getExpirySystem().getExpiredMetadata(key).getTtl());
+                    assertEquals(expectedTtl, rs.getExpirySystem().getExpiryMetadata(key).getTtl());
                     return;
                 }
             }

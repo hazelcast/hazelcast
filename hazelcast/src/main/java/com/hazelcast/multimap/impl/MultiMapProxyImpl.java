@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,6 +276,13 @@ public class MultiMapProxyImpl<K, V>
     public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addLocalListener(name, listener, null, false);
+    }
+
+    @Nonnull
+    @Override
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        return getService().addLocalListener(name, listener, null, includeValue);
     }
 
     @Nonnull

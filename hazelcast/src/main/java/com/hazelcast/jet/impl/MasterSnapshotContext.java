@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -208,8 +209,8 @@ class MasterSnapshotContext {
                 if (response instanceof Throwable) {
                     // If the member doesn't know the execution, it might have completed normally or exceptionally.
                     // If normally, we ignore it, if exceptionally, we'll also fail the snapshot. To know, we have
-                    // to look at the result of the StartExecutionOperation, which might not yet arrive. We'll collect
-                    // all the responses to an array and we'll wait for them later.
+                    // to look at the result of the StartExecutionOperation, which might not have arrived yet. We'll collect
+                    // all the responses to an array, and we'll wait for them later.
                     if (response instanceof ExecutionNotFoundException) {
                         missingResponses.add(mc.startOperationResponses().get(entry.getKey().getAddress()));
                         continue;
@@ -368,7 +369,9 @@ class MasterSnapshotContext {
 
             for (Entry<MemberInfo, Object> response : responses) {
                 if (response.getValue() instanceof Throwable) {
-                    logger.warning(SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
+                    logger.log(
+                            response.getValue() instanceof ExecutionNotFoundException ? Level.FINE : Level.WARNING,
+                            SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
                             + mc.jobIdString() + " failed on member: " + response, (Throwable) response.getValue());
                 }
             }

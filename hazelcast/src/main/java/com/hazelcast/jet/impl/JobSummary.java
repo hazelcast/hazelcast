@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,37 +43,20 @@ public class JobSummary implements IdentifiedDataSerializable {
     public JobSummary() {
     }
 
-    /**
-     * Constructor for a running job
-     */
     public JobSummary(
             boolean isLightJob,
             long jobId,
             long executionId,
             @Nonnull String nameOrId,
             @Nonnull JobStatus status,
-            long submissionTime
+            long submissionTime,
+            long completionTime,
+            String failureText,
+            SqlSummary sqlSummary
     ) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
-        this.nameOrId = nameOrId;
-        this.status = status;
-        this.submissionTime = submissionTime;
-    }
-
-    /**
-     * Constructor for a completed job
-     */
-    public JobSummary(
-            long jobId,
-            @Nonnull String nameOrId,
-            @Nonnull JobStatus status,
-            long submissionTime,
-            long completionTime,
-            @Nullable String failureText
-    ) {
-        this.jobId = jobId;
         this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -88,7 +89,6 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
-import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -188,9 +188,12 @@ public abstract class HazelcastTestSupport {
     // ###################################
 
     public static Config smallInstanceConfig() {
+        return shrinkInstanceConfig(new Config());
+    }
+
+    public static Config shrinkInstanceConfig(Config config) {
         // make the test instances consume less resources per default
-        Config config = new Config()
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
@@ -968,21 +971,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertCompletesEventually(final Future future) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Future has not completed", future.isDone());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
     public static void assertCompletesEventually(final Future future, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Future has not completed", future.isDone());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Collection collection) {
@@ -990,13 +983,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertSizeEventually(final int expectedSize, final Collection collection, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
-                        collection.size());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
+                collection.size()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {
@@ -1004,31 +992,18 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertSizeEventually(final int expectedSize, final Map<?, ?> map, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the map is not correct", expectedSize, map.size());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertEquals("the size of the map is not correct", expectedSize, map.size()), timeoutSeconds);
     }
 
     public static <E> void assertEqualsEventually(final FutureTask<E> task, final E expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue("FutureTask is not complete", task.isDone());
-                assertEquals(expected, task.get());
-            }
+        assertTrueEventually(() -> {
+            assertTrue("FutureTask is not complete", task.isDone());
+            assertEquals(expected, task.get());
         });
     }
 
     public static <E> void assertEqualsEventually(final Callable<E> task, final E expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, task.call());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, task.call()));
     }
 
     public static void assertEqualsEventually(final int expected, final AtomicInteger value) {
@@ -1069,12 +1044,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance,
                                                    long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertClusterSize(expectedSize, instance);
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertClusterSize(expectedSize, instance), timeoutSeconds);
     }
 
     public static void assertMasterAddress(Address masterAddress, HazelcastInstance... instances) {
@@ -1084,12 +1054,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance... instances) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    assertMasterAddress(masterAddress, instance);
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                assertMasterAddress(masterAddress, instance);
             }
         });
     }
@@ -1151,15 +1118,12 @@ public abstract class HazelcastTestSupport {
 
     public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
                                              long timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
-                    if (latch.getCount() != expectedCount) {
-                        throw new AssertionError("Latch count has not been met. " + message);
-                    }
-                    sleepMillis(50);
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                if (latch.getCount() != expectedCount) {
+                    throw new AssertionError("Latch count has not been met. " + message);
                 }
+                sleepMillis(50);
             }
         }, timeoutInSeconds);
     }
@@ -1213,13 +1177,16 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
-        for (int i = 0; i < durationSeconds; i++) {
+        for (int i = 0; i <= durationSeconds; i++) {
             try {
                 task.run();
             } catch (Exception e) {
                 throw rethrow(e);
             }
-            sleepSeconds(1);
+            // Don't wait if there is not next iteration
+            if ((i + 1) <= durationSeconds) {
+                sleepSeconds(1);
+            }
         }
     }
 
@@ -1644,7 +1611,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(lowerCaseInternal(System.getProperty("os.name")).contains("windows"));
+        assumeFalse("Skipping on Windows", OsHelper.isWindows());
     }
 
     public static void assumeThatLinuxOS() {

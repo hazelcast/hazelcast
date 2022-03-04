@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,8 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.internal.nio.ascii.TextDecoder;
-import com.hazelcast.internal.server.ServerConnection;
 
 public interface CommandParser  {
-    TextCommand parser(TextDecoder decoder, String cmd, int space);
 
-    default TextCommand parser(TextDecoder decoder, String cmd, int space, ServerConnection connection) {
-        return parser(decoder, cmd, space);
-    }
+    TextCommand parser(TextDecoder decoder, String cmd, int space);
 }

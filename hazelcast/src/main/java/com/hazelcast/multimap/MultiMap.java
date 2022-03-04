@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key   the key to be stored
      * @param value the value to be stored
      * @return {@code true} if size of the multimap is increased,
-     * {@code false} if the multimap already contains the key-value pair
+     * {@code false} if the multimap already contains the key-value pair and doesn't allow duplicates
      */
     boolean put(@Nonnull K key, @Nonnull V value);
 
@@ -310,6 +310,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * If the key2 is owned by member2, then the local listener will be notified
      * for the add/update event. Also note that entries can migrate to other
      * nodes for load balancing and/or membership change.
+     * <p>
+     * Note that event will not contain value. To configure if event should contain value,
+     * use {@link #addLocalEntryListener(EntryListener, boolean)}
      *
      * @param listener entry listener for this multimap
      * @return returns registration ID for the entry listener
@@ -317,6 +320,20 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      */
     @Nonnull
     UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
+
+    /**
+     * {@link #addLocalEntryListener(EntryListener)}
+     * Adds a local entry listener with ability to configure if event should contain the value
+     * for this multimap.
+     *
+     * @param listener     entry listener for this multimap
+     * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
+     *                     {@code false} otherwise
+     * @return returns registration ID for the entry listener
+     * @since 5.1
+     */
+    @Nonnull
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Adds an entry listener for this multimap.

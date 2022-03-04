@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -37,7 +38,11 @@ public class MapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIter
     @Before
     public void init() {
         factory = new TestHazelcastFactory();
-        instanceProxy = factory.newHazelcastInstance(smallInstanceConfig());
+        instanceProxy = factory.newHazelcastInstance(getConfig());
+    }
+
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     @Override

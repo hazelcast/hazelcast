@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import java.io.Serializable;
  * An interface that can be implemented to provide custom class loader for Jet
  * job.
  * <p>
- * The classloader must be serializable: it is set in the {@link
+ * The classloader factory must be serializable: it is set in the {@link
  * JobConfig#setClassLoaderFactory config} and sent to members in a serialized
- * form.
+ * form. The returned ClassLoader doesn't have to be serializable.
  * <p>
  * It is useful in custom class-loading environments, for example in OSGi.
  *

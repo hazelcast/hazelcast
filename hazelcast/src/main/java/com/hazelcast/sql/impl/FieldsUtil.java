@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,10 +195,10 @@ public final class FieldsUtil {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
 
-            case BYTE:
+            case INT8:
                 return QueryDataType.TINYINT;
 
-            case SHORT:
+            case INT16:
                 return QueryDataType.SMALLINT;
 
             case CHAR:
@@ -207,16 +207,16 @@ public final class FieldsUtil {
             case STRING:
                 return QueryDataType.VARCHAR;
 
-            case INT:
+            case INT32:
                 return QueryDataType.INT;
 
-            case LONG:
+            case INT64:
                 return QueryDataType.BIGINT;
 
-            case FLOAT:
+            case FLOAT32:
                 return QueryDataType.REAL;
 
-            case DOUBLE:
+            case FLOAT64:
                 return QueryDataType.DOUBLE;
 
             case DECIMAL:

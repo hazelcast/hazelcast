@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false" console-enabled="false">
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true">
         <trusted-interfaces>
             <interface>10.10.1.*</interface>
             <interface>10.10.2.*</interface>
@@ -428,6 +428,12 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <tiered-store enabled="true">
+            <memory-tier>
+                <capacity unit="MEGABYTES" value="256"/>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="default-tiered-store-device"/>
+        </tiered-store>
     </map>
 
     <multimap name="default">
@@ -613,6 +619,16 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
@@ -978,6 +994,20 @@
         <validation-timeout-seconds>10</validation-timeout-seconds>
         <rebalance-delay-seconds>240</rebalance-delay-seconds>
     </persistence>
+
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <backup-dir>/mnt/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
+
+    <local-device name="default-tiered-store-device">
+        <base-dir>base-dir</base-dir>
+        <block-size>4096</block-size>
+        <capacity value="256" unit="GIGABYTES"/>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>1</write-io-thread-count>
+    </local-device>
 
     <lite-member enabled="true"/>
 

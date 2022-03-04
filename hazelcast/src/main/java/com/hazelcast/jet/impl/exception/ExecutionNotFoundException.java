@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.exception;
 
 import com.hazelcast.jet.JetException;
+import com.hazelcast.spi.exception.SilentException;
 
 import static com.hazelcast.jet.Util.idToString;
 
@@ -24,7 +25,7 @@ import static com.hazelcast.jet.Util.idToString;
  * Thrown in response to operations sent from the coordinator, if the
  * target doesn't know the execution.
  */
-public class ExecutionNotFoundException extends JetException {
+public class ExecutionNotFoundException extends JetException implements SilentException {
 
     private static final long serialVersionUID = 1L;
 

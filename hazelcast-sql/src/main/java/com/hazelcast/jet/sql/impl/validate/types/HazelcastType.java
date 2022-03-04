@@ -37,6 +37,6 @@ public class HazelcastType extends BasicSqlType {
 
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
-        sb.append(HazelcastTypeUtils.toHazelcastType(typeName).getTypeFamily().getPublicType());
+        sb.append(HazelcastTypeUtils.toHazelcastType(this).getTypeFamily().getPublicType());
     }
 }

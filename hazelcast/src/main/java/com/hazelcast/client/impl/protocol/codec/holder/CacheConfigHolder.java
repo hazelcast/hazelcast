@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,33 +35,33 @@ import java.util.List;
 import java.util.Set;
 
 public class CacheConfigHolder {
-    private String name;
-    private String managerPrefix;
-    private String uriString;
-    private int backupCount;
-    private int asyncBackupCount;
-    private String inMemoryFormat;
-    private EvictionConfigHolder evictionConfigHolder;
-    private WanReplicationRef wanReplicationRef;
-    private String keyClassName;
-    private String valueClassName;
-    private Data cacheLoaderFactory;
-    private Data cacheWriterFactory;
-    private Data expiryPolicyFactory;
-    private boolean isReadThrough;
-    private boolean isWriteThrough;
-    private boolean isStoreByValue;
-    private boolean isManagementEnabled;
-    private boolean isStatisticsEnabled;
-    private HotRestartConfig hotRestartConfig;
+    private final String name;
+    private final String managerPrefix;
+    private final String uriString;
+    private final int backupCount;
+    private final int asyncBackupCount;
+    private final String inMemoryFormat;
+    private final EvictionConfigHolder evictionConfigHolder;
+    private final WanReplicationRef wanReplicationRef;
+    private final String keyClassName;
+    private final String valueClassName;
+    private final Data cacheLoaderFactory;
+    private final Data cacheWriterFactory;
+    private final Data expiryPolicyFactory;
+    private final boolean isReadThrough;
+    private final boolean isWriteThrough;
+    private final boolean isStoreByValue;
+    private final boolean isManagementEnabled;
+    private final boolean isStatisticsEnabled;
+    private final HotRestartConfig hotRestartConfig;
     private final boolean merkleTreeConfigExists;
-    private MerkleTreeConfig merkleTreeConfig;
-    private EventJournalConfig eventJournalConfig;
-    private String splitBrainProtectionName;
-    private List<Data> listenerConfigurations;
-    private MergePolicyConfig mergePolicyConfig;
-    private boolean disablePerEntryInvalidationEvents;
-    private List<ListenerConfigHolder> cachePartitionLostListenerConfigs;
+    private final MerkleTreeConfig merkleTreeConfig;
+    private final EventJournalConfig eventJournalConfig;
+    private final String splitBrainProtectionName;
+    private final List<Data> listenerConfigurations;
+    private final MergePolicyConfig mergePolicyConfig;
+    private final boolean disablePerEntryInvalidationEvents;
+    private final List<ListenerConfigHolder> cachePartitionLostListenerConfigs;
 
     public CacheConfigHolder(String name, String managerPrefix, String uriString, int backupCount, int asyncBackupCount,
                              String inMemoryFormat, EvictionConfigHolder evictionConfigHolder,
@@ -99,7 +99,6 @@ public class CacheConfigHolder {
         this.mergePolicyConfig = mergePolicyConfig;
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
         this.cachePartitionLostListenerConfigs = cachePartitionLostListenerConfigs;
-        this.mergePolicyConfig = mergePolicyConfig;
         this.merkleTreeConfigExists = merkleTreeConfigExists;
         this.merkleTreeConfig = merkleTreeConfig;
     }
@@ -220,7 +219,7 @@ public class CacheConfigHolder {
         config.setBackupCount(backupCount);
         config.setAsyncBackupCount(asyncBackupCount);
         config.setInMemoryFormat(InMemoryFormat.valueOf(inMemoryFormat));
-        config.setEvictionConfig(evictionConfigHolder.asEvictionConfg(serializationService));
+        config.setEvictionConfig(evictionConfigHolder.asEvictionConfig(serializationService));
         config.setWanReplicationRef(wanReplicationRef);
         config.setKeyClassName(keyClassName);
         config.setValueClassName(valueClassName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordFactoryAttributes;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
@@ -103,11 +104,11 @@ public class MapContainer {
     protected final InternalSerializationService serializationService;
     protected final Function<Object, Data> toDataFunction = new ObjectToData();
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final ConstructorFunction<RecordFactoryAttributes, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
-    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
+    protected final AtomicInteger invalidationListenerCounter;
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
     protected SplitBrainMergePolicy wanMergePolicy;
@@ -145,6 +146,8 @@ public class MapContainer {
                 serializationService, extractors);
         this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
+        this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
+                .getOrCreateCounter(name);
         initWanReplication(mapServiceContext.getNodeEngine());
     }
 
@@ -250,7 +253,8 @@ public class MapContainer {
     }
 
     // overridden in different context
-    ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
+    ConstructorFunction<RecordFactoryAttributes, RecordFactory> createRecordFactoryConstructor(
+            final SerializationService serializationService) {
         return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
@@ -406,7 +410,7 @@ public class MapContainer {
         return toDataFunction;
     }
 
-    public ConstructorFunction<Void, RecordFactory> getRecordFactoryConstructor() {
+    public ConstructorFunction<RecordFactoryAttributes, RecordFactory> getRecordFactoryConstructor() {
         return recordFactoryConstructor;
     }
 
@@ -428,15 +432,19 @@ public class MapContainer {
     }
 
     public boolean hasInvalidationListener() {
-        return invalidationListenerCount.get() > 0;
+        return invalidationListenerCounter.get() > 0;
     }
 
     public void increaseInvalidationListenerCount() {
-        invalidationListenerCount.incrementAndGet();
+        invalidationListenerCounter.incrementAndGet();
     }
 
     public void decreaseInvalidationListenerCount() {
-        invalidationListenerCount.decrementAndGet();
+        invalidationListenerCounter.decrementAndGet();
+    }
+
+    public AtomicInteger getInvalidationListenerCounter() {
+        return invalidationListenerCounter;
     }
 
     public InterceptorRegistry getInterceptorRegistry() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -79,17 +80,17 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
+    public GenericRecordBuilder setInt32(@Nonnull String fieldName, int value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeInt(fieldName, value);
+        defaultCompactWriter.writeInt32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
+    public GenericRecordBuilder setInt64(@Nonnull String fieldName, long value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeLong(fieldName, value);
+        defaultCompactWriter.writeInt64(fieldName, value);
         return this;
     }
 
@@ -111,47 +112,101 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
+    public GenericRecordBuilder setInt8(@Nonnull String fieldName, byte value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeByte(fieldName, value);
+        defaultCompactWriter.writeInt8(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
+        throw new UnsupportedOperationException("Compact format does not support writing a char field");
+    }
+
+    @Override
+    @Nonnull
+    public GenericRecordBuilder setFloat64(@Nonnull String fieldName, double value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeChar(fieldName, value);
+        defaultCompactWriter.writeFloat64(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
+    public GenericRecordBuilder setFloat32(@Nonnull String fieldName, float value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeDouble(fieldName, value);
+        defaultCompactWriter.writeFloat32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
+    public GenericRecordBuilder setInt16(@Nonnull String fieldName, short value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeFloat(fieldName, value);
+        defaultCompactWriter.writeInt16(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableBoolean(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableInt8(@Nonnull String fieldName, @Nullable Byte value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableInt8(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableFloat64(@Nonnull String fieldName, @Nullable Double value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableFloat64(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableFloat32(@Nonnull String fieldName, @Nullable Float value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableFloat32(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableInt32(@Nonnull String fieldName, @Nullable Integer value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableInt32(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableInt64(@Nonnull String fieldName, @Nullable Long value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableInt64(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeNullableInt16(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
-        checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeShort(fieldName, value);
-        return this;
-    }
-
-    @Override
-    @Nonnull
-    public GenericRecordBuilder setDecimal(@Nonnull String fieldName, BigDecimal value) {
+    public GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDecimal(fieldName, value);
         return this;
@@ -159,7 +214,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTime(@Nonnull String fieldName, LocalTime value) {
+    public GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTime(fieldName, value);
         return this;
@@ -167,7 +222,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDate(@Nonnull String fieldName, LocalDate value) {
+    public GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDate(fieldName, value);
         return this;
@@ -175,7 +230,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, LocalDateTime value) {
+    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestamp(fieldName, value);
         return this;
@@ -183,7 +238,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value) {
+    public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestampWithTimezone(fieldName, value);
         return this;
@@ -191,7 +246,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, GenericRecord value) {
+    public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeGenericRecord(fieldName, value);
         return this;
@@ -199,121 +254,175 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
+    public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeGenericRecordArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfGenericRecord(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
+    public GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeByteArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt8(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
+    public GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeBooleanArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfBoolean(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
+    public GenericRecordBuilder setArrayOfChar(@Nonnull String fieldName, @Nullable char[] value) {
+        throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
+    }
+
+    @Override
+    @Nonnull
+    public GenericRecordBuilder setArrayOfInt32(@Nonnull String fieldName, @Nullable int[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeCharArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
+    public GenericRecordBuilder setArrayOfInt64(@Nonnull String fieldName, @Nullable long[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeIntArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt64(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
+    public GenericRecordBuilder setArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeLongArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfFloat64(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
+    public GenericRecordBuilder setArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeDoubleArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfFloat32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
+    public GenericRecordBuilder setArrayOfInt16(@Nonnull String fieldName, @Nullable short[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeFloatArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt16(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableBoolean(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableInt8(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableFloat32(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableInt32(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableFloat64(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableInt64(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeArrayOfNullableInt16(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
+    public GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeShortArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfString(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
+    public GenericRecordBuilder setArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeStringArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfDecimal(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
+    public GenericRecordBuilder setArrayOfTime(@Nonnull String fieldName, @Nullable LocalTime[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeDecimalArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfTime(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
+    public GenericRecordBuilder setArrayOfDate(@Nonnull String fieldName, @Nullable LocalDate[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeTimeArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfDate(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
+    public GenericRecordBuilder setArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeDateArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfTimestamp(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
+    public GenericRecordBuilder setArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeTimestampArray(fieldName, value);
-        return this;
-    }
-
-    @Override
-    @Nonnull
-    public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
-        checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeTimestampWithTimezoneArray(fieldName, value);
+        defaultCompactWriter.writeArrayOfTimestampWithTimezone(fieldName, value);
         return this;
     }
 

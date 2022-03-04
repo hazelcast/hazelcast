@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.server.Server;
 
@@ -36,6 +37,5 @@ public interface NodeContext {
 
     Joiner createJoiner(Node node);
 
-    // TODO Consider the changes here (JET?)
-    Server createServer(Node node, ServerSocketRegistry registry);
+    Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry);
 }

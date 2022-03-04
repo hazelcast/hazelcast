@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,12 +101,26 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
+    /**
+     * Not supported in open source version, so test is expected to throw exception.
+     */
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapConfig_TieredStore() {
+        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+    }
+
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
         MapConfig mapConfig = new MapConfig()
                 .setInMemoryFormat(inMemoryFormat)
                 .setPerEntryStatsEnabled(true);
         mapConfig.getMergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName());
+        return mapConfig;
+    }
+
+    private MapConfig getMapConfig(boolean tieredStoreEnabled) {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.getTieredStoreConfig().setEnabled(tieredStoreEnabled);
         return mapConfig;
     }
 

@@ -209,7 +209,8 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", object"
                 + ") SELECT "
                 + "CAST(1 AS INT)"
-                + ", f.*"
+                + ", string, \"boolean\", byte, short, \"int\", long, \"float\", \"double\", \"decimal\", " +
+                "\"time\", \"date\", \"timestamp\", timestampTz, \"object\""
                 + " FROM " + from + " f"
         );
 

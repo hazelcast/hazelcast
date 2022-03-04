@@ -19,13 +19,14 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
@@ -76,8 +77,8 @@ class Projector {
         return injectors;
     }
 
-    Object project(Object[] values) {
-        HeapRow row = new HeapRow(values);
+    Object project(JetSqlRow values) {
+        Row row = values.getRow();
         target.init();
         for (int i = 0; i < injectors.length; i++) {
             Object projected = evaluate(projection.get(i), row, evalContext);

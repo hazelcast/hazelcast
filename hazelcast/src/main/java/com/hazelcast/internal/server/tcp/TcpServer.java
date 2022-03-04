@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ public final class TcpServer implements Server {
     public TcpServer(Config config,
                      ServerContext context,
                      ServerSocketRegistry registry,
+                     LocalAddressRegistry addressRegistry,
                      MetricsRegistry metricsRegistry,
                      Networking networking,
                      Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
@@ -102,13 +103,25 @@ public final class TcpServer implements Server {
 
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new TcpServerConnectionManager(
-                    this, null, channelInitializerFn, context, ProtocolType.valuesAsSet());
+                    this,
+                    null,
+                    addressRegistry,
+                    channelInitializerFn,
+                    context,
+                    ProtocolType.valuesAsSet()
+            );
         } else {
             unifiedConnectionManager = null;
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
                 TcpServerConnectionManager cm = new TcpServerConnectionManager(
-                        this, endpointConfig, channelInitializerFn, context, singleton(endpointConfig.getProtocolType()));
+                        this,
+                        endpointConfig,
+                        addressRegistry,
+                        channelInitializerFn,
+                        context,
+                        singleton(endpointConfig.getProtocolType())
+                );
                 connectionManagers.put(qualifier, cm);
             }
             refreshStatsTask.registerMetrics(metricsRegistry);

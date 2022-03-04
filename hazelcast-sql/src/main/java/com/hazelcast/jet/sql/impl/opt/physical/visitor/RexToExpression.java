@@ -18,7 +18,13 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -74,9 +80,14 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import org.apache.calcite.avatica.util.TimeUnitRange;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlJsonConstructorNullClause;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
@@ -92,6 +103,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -115,7 +127,8 @@ public final class RexToExpression {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public static Expression<?> convertLiteral(RexLiteral literal) {
-        SqlTypeName type = literal.getType().getSqlTypeName();
+        final RelDataType type = literal.getType();
+        final SqlTypeName typeName = literal.getTypeName();
 
         if (literal.getValue() == null) {
             return ConstantExpression.create(null, HazelcastTypeUtils.toHazelcastType(type));
@@ -125,7 +138,7 @@ public final class RexToExpression {
             return convertSargLiteral(literal, type);
         }
 
-        switch (type) {
+        switch (typeName) {
             case BOOLEAN:
                 return convertBooleanLiteral(literal, type);
 
@@ -178,10 +191,10 @@ public final class RexToExpression {
      *                        converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-            "checkstyle:NPathComplexity"})
+            "checkstyle:NPathComplexity", "checkstyle:MagicNumber"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
+        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType());
 
         switch (operator.getKind()) {
             case DEFAULT:
@@ -437,6 +450,42 @@ public final class RexToExpression {
                     return ToEpochMillisFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
+                } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
+                    final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[2])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[4])
+                            .getSymbol();
+
+                    return JsonQueryFunction.create(operands[0], operands[1], wrapperBehavior, onEmpty, onError);
+                } else if (function == HazelcastJsonParseFunction.INSTANCE) {
+                    return JsonParseFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
+                    final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
+
+                    return JsonValueFunction.create(
+                            operands[0],
+                            operands[1],
+                            operands[2],
+                            operands[3],
+                            resultType,
+                            onEmpty,
+                            onError
+                    );
+                } else if (function == HazelcastSqlOperatorTable.JSON_OBJECT) {
+                    final SqlJsonConstructorNullClause nullClause = ((SymbolExpression) operands[0])
+                            .getSymbol();
+                    final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
+
+                    return JsonObjectFunction.create(fields, nullClause);
+                } else if (function == HazelcastSqlOperatorTable.JSON_ARRAY) {
+                    final SqlJsonConstructorNullClause nullClause = ((SymbolExpression) operands[0])
+                            .getSymbol();
+                    final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
+
+                    return JsonArrayFunction.create(fields, nullClause);
                 }
 
                 break;
@@ -448,18 +497,30 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
+    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
+        Sarg<?> sarg = literal.getValueAs(Sarg.class);
+        if (sarg == null) {
+            return null;
+        }
+
+        RelDataType literalType = literal.getType();
+        SqlTypeName sqlType = literalType.getSqlTypeName();
+        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+    }
+
+    @SuppressWarnings({"unchecked", "UnstableApiUsage"})
     private static <CI extends Comparable<CI>, CO extends Comparable<CO>> Expression<?> convertSargLiteral(
             RexLiteral literal,
-            SqlTypeName type
+            RelDataType type
     ) {
         Sarg<CI> sarg = literal.getValueAs(Sarg.class);
-        RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type));
+        RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type.getSqlTypeName()));
         return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})
-    private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName type) {
-        switch (type) {
+    private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName typeName) {
+        switch (typeName) {
             case TINYINT:
                 return ((BigDecimal) value).byteValueExact();
             case SMALLINT:
@@ -483,24 +544,24 @@ public final class RexToExpression {
             case TIMESTAMP:
                 return toLocalDateTime((TimestampString) value);
             case INTERVAL_YEAR_MONTH:
-                return new SqlYearMonthInterval(((BigDecimal) value).intValue());
+                return new SqlYearMonthInterval(((BigDecimal) value).intValueExact());
             case INTERVAL_DAY_SECOND:
-                return new SqlDaySecondInterval(((BigDecimal) value).intValue());
+                return new SqlDaySecondInterval(((BigDecimal) value).longValueExact());
             default:
                 return value;
         }
     }
 
-    private static Expression<?> convertBooleanLiteral(RexLiteral literal, SqlTypeName type) {
-        assert type == SqlTypeName.BOOLEAN;
+    private static Expression<?> convertBooleanLiteral(RexLiteral literal, RelDataType type) {
+        assert type.getSqlTypeName() == SqlTypeName.BOOLEAN;
         Boolean value = literal.getValueAs(Boolean.class);
         return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
-    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName targetType) {
+    private static Expression<?> convertNumericLiteral(RexLiteral literal, RelDataType targetType) {
         Object value;
 
-        switch (targetType) {
+        switch (targetType.getSqlTypeName()) {
             case TINYINT:
                 value = literal.getValueAs(Byte.class);
                 break;
@@ -536,15 +597,15 @@ public final class RexToExpression {
                 break;
 
             default:
-                throw new IllegalArgumentException("Unsupported literal type: " + targetType);
+                throw new IllegalArgumentException("Unsupported literal type: " + targetType.getSqlTypeName());
         }
 
         return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(targetType));
     }
 
-    private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
+    private static Expression<?> convertStringLiteral(RexLiteral literal, RelDataType type) {
         Object value;
-        switch (type) {
+        switch (type.getSqlTypeName()) {
             case CHAR:
             case VARCHAR:
                 value = literal.getValueAs(String.class);

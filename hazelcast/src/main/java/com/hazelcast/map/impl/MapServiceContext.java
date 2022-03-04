@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import java.util.function.Predicate;
  *
  * @see MapManagedService
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 
@@ -210,9 +211,14 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     /**
      * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
-     *          otherwise {@code false}.
+     * otherwise {@code false}.
      */
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
     }
+
+    /**
+     * @return {@link EventListenerCounter} object.
+     */
+    EventListenerCounter getEventListenerCounter();
 }
