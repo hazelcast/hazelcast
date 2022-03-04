@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -395,9 +396,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         if (available() < len) {
             if (buffer != null) {
                 int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), firstGrowthSize);
-                byte[] newBuffer = new byte[newCap];
-                System.arraycopy(buffer, 0, newBuffer, 0, pos);
-                buffer = newBuffer;
+                buffer = Arrays.copyOf(buffer, newCap);
             } else {
                 buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
             }
