@@ -117,8 +117,8 @@ public class Edge implements IdentifiedDataSerializable {
      * Returns an edge between two vertices. The ordinal of the edge
      * is 0 at both ends. Equivalent to {@code from(source).to(destination)}.
      *
-     * @param source        the source vertex
-     * @param destination   the destination vertex
+     * @param source      the source vertex
+     * @param destination the destination vertex
      */
     @Nonnull
     public static Edge between(@Nonnull Vertex source, @Nonnull Vertex destination) {
@@ -222,7 +222,7 @@ public class Edge implements IdentifiedDataSerializable {
      * accepting any data from the edge with priority 2.
      *
      * <h4>Possible deadlock</h4>
-     *
+     * <p>
      * If you split the output of one source vertex and later join the streams
      * with different priorities, you're very likely to run into a deadlock. Consider this DAG:
      * <pre>
@@ -230,7 +230,7 @@ public class Edge implements IdentifiedDataSerializable {
      *      \          /
      *       +-- V2 --+
      * </pre>
-
+     * <p>
      * The vertex {@code J} joins the streams, that were originally split from
      * source {@code S}. Let's say the input from {@code V1} has higher
      * priority than the input from {@code V2}. In this case, no item from
@@ -245,7 +245,7 @@ public class Edge implements IdentifiedDataSerializable {
      * queue size configuration}.
      *
      * <h4>Note</h4>
-
+     * <p>
      * Having different priority edges will cause postponing of
      * the first snapshot until after upstream vertices of higher priority
      * edges are completed.
@@ -425,7 +425,6 @@ public class Edge implements IdentifiedDataSerializable {
      * @see #distributed()
      * @see #distributeTo(Address)
      * @see #getDistributedTo()
-     *
      * @since Jet 4.3
      */
     @Nonnull
@@ -470,11 +469,9 @@ public class Edge implements IdentifiedDataSerializable {
      * is not a member, the job can't be executed and will fail.
      *
      * @param targetMember the member to deliver the items to
-     *
      * @see #distributed()
      * @see #local()
      * @see #getDistributedTo()
-     *
      * @since Jet 4.3
      */
     @Nonnull
@@ -488,12 +485,12 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Possible return values:<ul>
-     *     <li>null - route only to local members (after a {@link #local()}
-     *          call)
-     *     <li>"255.255.255.255:0 - route to all members (after a {@link
-     *          #distributed()} call)
-     *     <li>else - route to specific member (after a {@link #distributeTo}
-     *          call)
+     * <li>null - route only to local members (after a {@link #local()}
+     * call)
+     * <li>"255.255.255.255:0 - route to all members (after a {@link
+     * #distributed()} call)
+     * <li>else - route to specific member (after a {@link #distributeTo}
+     * call)
      * </ul>
      *
      * @since Jet 4.3
@@ -530,7 +527,8 @@ public class Edge implements IdentifiedDataSerializable {
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String toString() {
         return toDebugString();
     }
@@ -583,10 +581,10 @@ public class Edge implements IdentifiedDataSerializable {
         final Edge that;
         return this == obj
                 || obj instanceof Edge
-                    && this.sourceName.equals((that = (Edge) obj).sourceName)
-                    && this.destName.equals(that.destName)
-                    && this.sourceOrdinal == that.sourceOrdinal
-                    && this.destOrdinal == that.destOrdinal;
+                && this.sourceName.equals((that = (Edge) obj).sourceName)
+                && this.destName.equals(that.destName)
+                && this.sourceOrdinal == that.sourceOrdinal
+                && this.destOrdinal == that.destOrdinal;
     }
 
     @Override
@@ -711,12 +709,15 @@ public class Edge implements IdentifiedDataSerializable {
         FANOUT
     }
 
-    private static class Single implements Partitioner<Object> {
+    public static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final Object key;
+        private Object key;
         private int partition;
+
+        public Single() {
+        }
 
         Single(Object key) {
             this.key = key;
@@ -731,16 +732,42 @@ public class Edge implements IdentifiedDataSerializable {
         public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(key);
+            out.writeInt(partition);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            key = in.readObject();
+            partition = in.readInt();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_SINGLE_PARTITIONER;
+        }
     }
 
-    private static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware {
+    public static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
+            IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final FunctionEx<T, K> keyExtractor;
-        private final Partitioner<? super K> partitioner;
-        private final String edgeDebugName;
+        private FunctionEx<T, K> keyExtractor;
+        private Partitioner<? super K> partitioner;
+        private String edgeDebugName;
         private SerializationService serializationService;
+
+        public KeyPartitioner() {
+        }
 
         KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
                        String edgeDebugName) {
@@ -769,6 +796,30 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public void setSerializationService(SerializationService serializationService) {
             this.serializationService = serializationService;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keyExtractor);
+            out.writeObject(partitioner);
+            out.writeString(edgeDebugName);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keyExtractor = in.readObject();
+            partitioner = in.readObject();
+            edgeDebugName = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_KEY_PARTITIONER;
         }
     }
 }
