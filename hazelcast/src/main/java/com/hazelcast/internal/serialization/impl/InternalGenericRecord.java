@@ -45,7 +45,7 @@ public interface InternalGenericRecord extends GenericRecord {
     /**
      * @param fieldName the name of the field
      * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
@@ -54,7 +54,7 @@ public interface InternalGenericRecord extends GenericRecord {
     /**
      * @param fieldName the name of the field
      * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
