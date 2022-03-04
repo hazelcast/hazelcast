@@ -36,7 +36,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -555,7 +554,6 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-        @NotNull
         @Override
         public Collection<? extends Processor> get(int count) {
             return singletonList(new ExpectNothingP());
