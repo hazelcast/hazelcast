@@ -120,7 +120,9 @@ public class ObjectDataInputStreamFinalMethodsTest {
 
     @Test
     public void testReadUnsignedByte() throws Exception {
-        initData[1] = -56;
+        initData[1] = (byte) Byte.toUnsignedInt((byte) 200);
+        assertThat(initData[1]).isEqualTo((byte) -56);
+
         assertThat(in.readUnsignedByte()).isZero();
         assertThat(in.readUnsignedByte()).isEqualTo(200);
         assertThat(in.readUnsignedByte()).isEqualTo(2);
@@ -132,8 +134,15 @@ public class ObjectDataInputStreamFinalMethodsTest {
         initData[1] = 1;
         initData[2] = 1;
         initData[3] = 2;
-        assertThat(in.readUnsignedShort()).isEqualTo(1);
-        assertThat(in.readUnsignedShort()).isEqualTo(258);
+        assertThat(in.readUnsignedShort()).isEqualTo(bytesToUnsignedShort(0, 1));
+        assertThat(in.readUnsignedShort()).isEqualTo((bytesToUnsignedShort(1, 2)));
+    }
+
+    /**
+     * Implementation from {@link java.io.DataInput#readUnsignedShort()}
+     */
+    private int bytesToUnsignedShort(int a, int b) {
+        return ((a & 0xff) << 8) | (b & 0xff);
     }
 
     @Test
