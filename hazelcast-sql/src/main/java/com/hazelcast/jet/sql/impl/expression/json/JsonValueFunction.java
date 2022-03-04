@@ -44,6 +44,9 @@ import java.util.Objects;
 
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
     private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
+    private static final int DEFAULT_ON_EMPTY_OPERAND_INDEX = 2;
+    private static final int DEFAULT_ON_ERROR_OPERAND_INDEX = 3;
+
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
@@ -148,7 +151,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             case ERROR:
                 throw QueryException.error("JSON_VALUE evaluated to no value");
             case DEFAULT:
-                return (T) operands[2].eval(row, context);
+                return (T) operands[DEFAULT_ON_EMPTY_OPERAND_INDEX].eval(row, context);
             case NULL:
             default:
                 return null;
@@ -165,7 +168,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 LOGGER.fine("JSON_VALUE failed", exception);
                 throw QueryException.error("JSON_VALUE failed: " + exception);
             case DEFAULT:
-                return (T) operands[3].eval(row, context);
+                return (T) operands[DEFAULT_ON_ERROR_OPERAND_INDEX].eval(row, context);
             case NULL:
             default:
                 return null;
