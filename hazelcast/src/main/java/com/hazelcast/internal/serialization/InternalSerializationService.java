@@ -89,6 +89,8 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput(int size);
 
+    BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize);
+
     BufferObjectDataOutput createObjectDataOutput();
 
     /**

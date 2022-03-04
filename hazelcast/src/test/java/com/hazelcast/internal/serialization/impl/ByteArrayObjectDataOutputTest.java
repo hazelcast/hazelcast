@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -26,10 +27,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -43,7 +46,8 @@ import static org.mockito.Mockito.verify;
 /**
  * ByteArrayObjectDataOutput Tester.
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ByteArrayObjectDataOutputTest {
 
@@ -52,10 +56,22 @@ public class ByteArrayObjectDataOutputTest {
 
     private static final byte[] TEST_DATA = new byte[]{1, 2, 3};
 
+    @Parameterized.Parameter
+    public boolean useHugeFirstGrowth;
+
+    @Parameterized.Parameters(name = "useHugeFirstGrowth:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[] {true}, new Object[] {false});
+    }
+
     @Before
     public void before() {
         mockSerializationService = mock(InternalSerializationService.class);
-        out = new ByteArrayObjectDataOutput(10, mockSerializationService, ByteOrder.BIG_ENDIAN);
+        if (useHugeFirstGrowth) {
+            out = new ByteArrayObjectDataOutput(10, 100, mockSerializationService, ByteOrder.BIG_ENDIAN);
+        } else {
+            out = new ByteArrayObjectDataOutput(10, mockSerializationService, ByteOrder.BIG_ENDIAN);
+        }
     }
 
     @After
