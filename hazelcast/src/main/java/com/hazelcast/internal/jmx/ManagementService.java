@@ -46,6 +46,7 @@ public class ManagementService implements DistributedObjectListener {
 
     static final String DOMAIN = "com.hazelcast";
     private static final int INITIAL_CAPACITY = 5;
+    private static final Pattern OBJECT_NAME_QUOTE_PATTERN = Pattern.compile("[:\",=*?]");
 
     final HazelcastInstanceImpl instance;
     private final boolean enabled;
@@ -198,7 +199,7 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     public static String quote(String text) {
-        return Pattern.compile("[:\",=*?]").matcher(text).find() || text.indexOf('\n') >= 0
+        return OBJECT_NAME_QUOTE_PATTERN.matcher(text).find() || text.indexOf('\n') >= 0
                 ? ObjectName.quote(text) : text;
     }
 }
