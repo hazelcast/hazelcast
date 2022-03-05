@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -148,7 +149,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
 
     private class MutatorThread extends Thread {
         private boolean firstLaunch = true;
-        private boolean active = true;
+        private volatile boolean active = true;
         private final long delay;
 
         private MutatorThread(long delay) {
@@ -187,7 +188,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
 
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows, Thread mutator) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
-        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
+        assertEquals(expectedRows, actualRows);
     }
 
     private List<Row> executeAndGetResult(String sql, Thread mutator) {
@@ -202,7 +203,16 @@ public class MapScanMigrationStressTest extends JetTestSupport {
 
         mutator.start();
 
-        rowIterator.forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
+        int i = 0;
+        while (rowIterator.hasNext()) {
+            SqlRow row = rowIterator.next();
+            actualRows.add(new Row(row.getObject(0), row.getObject(1)));
+            i++;
+            if (i % 10_000 == 0) {
+                logger.info("received " + i + " rows");
+            }
+        }
+        logger.info("results done");
 
         return actualRows;
     }
