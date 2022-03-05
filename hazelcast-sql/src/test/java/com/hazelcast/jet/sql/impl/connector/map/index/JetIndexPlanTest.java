@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -43,13 +44,13 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.c
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.INTEGER;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetProperIndexTest extends JetSqlIndexTestSupport {
+public class JetIndexPlanTest extends JetSqlIndexTestSupport {
     public static final int MAP_SIZE = 1000;
-    public static final String F_1_INDEX_SUFFIX = "sorted_field1";
-    public static final String F_2_INDEX_SUFFIX = "sorted_field2";
+    public static final String F_1_INDEX_NAME = "sorted_field1";
+    public static final String F_2_INDEX_NAME = "sorted_field2";
 
     private String mapName;
 
@@ -66,8 +67,8 @@ public class JetProperIndexTest extends JetSqlIndexTestSupport {
         IMap<Integer, ? super ExpressionBiValue> map = instance().getMap(mapName);
 
         createMapping(mapName, int.class, valueClass);
-        map.addIndex(IndexType.SORTED, "field1");
-        map.addIndex(IndexType.SORTED, "field2");
+        map.addIndex(new IndexConfig(IndexType.SORTED, "field1").setName(F_1_INDEX_NAME));
+        map.addIndex(new IndexConfig(IndexType.SORTED, "field2").setName(F_2_INDEX_NAME));
 
         for (int i = 1; i <= MAP_SIZE; ++i) {
             map.put(i, createBiValue(valueClass, i, i, i));
@@ -95,7 +96,7 @@ public class JetProperIndexTest extends JetSqlIndexTestSupport {
         );
 
         IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical();
-        assertTrue(rel.getIndex().getName().endsWith(F_1_INDEX_SUFFIX));
+        assertEquals(F_1_INDEX_NAME, rel.getIndex().getName());
     }
 
     @Test
@@ -122,7 +123,7 @@ public class JetProperIndexTest extends JetSqlIndexTestSupport {
         );
 
         IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical().getInput(0);
-        assertTrue(rel.getIndex().getName().endsWith(F_2_INDEX_SUFFIX));
+        assertEquals(F_2_INDEX_NAME, rel.getIndex().getName());
     }
 
     private List<QueryDataType> parameterTypes() {
