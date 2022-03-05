@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -522,42 +521,6 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
         builder.append("}");
         return builder.toString();
-    }
-
-    /**
-     * Setting local parallelism to max(2, sqrt(defaultParallelism)) for vertices with defaultParallelism that are
-     * connected with an edge. It prevents creation of sqr(defaultParallelism) of
-     * {@link com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue} in
-     * JET. Edges that are connecting such a vertices are marked as isolated.
-     */
-    public void lowerDownParallelism(int defaultParallelism) {
-        if (defaultParallelism == 1) {
-            return;
-        }
-
-        Set<Vertex> verticesToChangeParallelism = new HashSet<>();
-        for (Edge edge : edges) {
-            if (shouldChangeLocalParallelism(edge) && edge.isLocal()) {
-                verticesToChangeParallelism.add(edge.getSource());
-                verticesToChangeParallelism.add(edge.getDestination());
-                edge.isolated();
-            }
-        }
-
-        int newParallelism = (int) Math.max(2, Math.sqrt(defaultParallelism));
-        verticesToChangeParallelism.forEach(vertex -> {
-            if (vertex.getMetaSupplier().preferredLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT) {
-                vertex.localParallelism(newParallelism);
-            }
-        });
-    }
-
-    private boolean shouldChangeLocalParallelism(Edge edge) {
-        if (edge.getDestination() == null) {
-            return false;
-        }
-        return edge.getSource().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT &&
-                edge.getDestination().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT;
     }
 
     private String getEdgeLabel(Edge e) {
