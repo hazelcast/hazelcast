@@ -45,7 +45,7 @@ public class RecordsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getValueOrCachedValue_whenRecordIsNotCachable_thenDoNotCache() {
+    public void getValueOrCachedValue_whenRecordIsNotCacheable_thenDoNotCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
         Record record = new DataRecordWithStats(dataPayload);
