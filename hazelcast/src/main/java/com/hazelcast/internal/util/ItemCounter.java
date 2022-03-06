@@ -93,7 +93,7 @@ public final class ItemCounter<T> {
     /**
      * Set counter of item to value
      *
-     * @param item  to set set the value for
+     * @param item  to set the value for
      * @param value a new value
      */
     public void set(T item, long value) {
