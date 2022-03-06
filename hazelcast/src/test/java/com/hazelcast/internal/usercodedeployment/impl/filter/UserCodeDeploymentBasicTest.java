@@ -160,7 +160,7 @@ public class UserCodeDeploymentBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMainClassFetchedFirst_thenInnerlassFetchedFromRemote() {
+    public void testMainClassFetchedFirst_thenInnerClassFetchedFromRemote() {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
