@@ -134,7 +134,7 @@ CREATE MAPPING m (col1 INT, col2 INT) ...;
 
 CREATE VIEW v AS SELECT col1 FROM m;
 
--- col1 would be removed, opertion not allowed because `v` depends on it.
+-- col1 would be removed, operation not allowed because `v` depends on it.
 CREATE OR REPLACE MAPPING m (col2 INT) ...;  
 ```
 
