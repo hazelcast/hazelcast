@@ -32,7 +32,7 @@ public interface EntryCostEstimator<K, V> {
 
     /**
      * Adjust the memory cost estimation by the given adjustment.
-     * The adjustmenet can be any negative or positive number.
+     * The adjustment can be any negative or positive number.
      *
      * @param adjustment The delta by which the estimation will be adjusted
      */
