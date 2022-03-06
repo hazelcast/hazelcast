@@ -65,7 +65,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets the properties for the custom WAN consumer. These properties are
-     * accessible when initalizing the WAN consumer.
+     * accessible when initializing the WAN consumer.
      *
      * @param properties the properties for the WAN consumer
      * @return this config

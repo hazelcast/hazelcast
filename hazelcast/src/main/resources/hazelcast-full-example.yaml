@@ -332,7 +332,7 @@ hazelcast:
   #         incoming WAN events will be used.
   #     - "properties":
   #         Properties for the custom WAN consumer. These properties are
-  #         accessible when initalizing the WAN consumer.
+  #         accessible when initializing the WAN consumer.
   #     - "persist-wan-replicated-data":
   #         When true, an incoming event over WAN replication can be persisted to a
   #         database for example, otherwise it will not be persisted. Default value

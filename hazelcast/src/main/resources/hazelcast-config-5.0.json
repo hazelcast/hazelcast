@@ -3966,7 +3966,7 @@
               },
               "properties": {
                 "type": "object",
-                "description": "Properties for the custom WAN consumer. These properties are accessible when initalizing the WAN consumer."
+                "description": "Properties for the custom WAN consumer. These properties are accessible when initializing the WAN consumer."
               },
               "persist-wan-replicated-data": {
                 "type": "boolean",
