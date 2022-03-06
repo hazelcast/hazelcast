@@ -21,7 +21,7 @@
         <main.basedir>${project.basedir}/../../..</main.basedir>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
-        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+        <checkstyle.suppressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.suppressionsLocation>
     </properties>
 
     <dependencies>
