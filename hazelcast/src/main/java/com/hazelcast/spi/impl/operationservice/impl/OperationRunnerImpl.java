@@ -331,7 +331,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
      *
      * @param op the operation for which the minimum cluster size property must satisfy
      * @throws SplitBrainProtectionException if the operation requires a split brain protection and
-     *                                       the the minimum cluster size property is not satisfied
+     *                                       the minimum cluster size property is not satisfied
      */
     private void ensureNoSplitBrain(Operation op) {
         SplitBrainProtectionServiceImpl splitBrainProtectionService =

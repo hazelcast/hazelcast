@@ -475,7 +475,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.
@@ -1118,7 +1118,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.
@@ -1151,7 +1151,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.

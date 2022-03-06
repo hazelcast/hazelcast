@@ -243,7 +243,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
     /**
      * Check if the loopback mode is enabled in the multicast discovery mechanism.
      *
-     * @return {@code true} if the the loopback mode is enabled, {@code false} otherwise
+     * @return {@code true} if the loopback mode is enabled, {@code false} otherwise
      * @deprecated Use the {@link #getLoopbackModeEnabled()}.
      */
     @Deprecated

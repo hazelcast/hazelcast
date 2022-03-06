@@ -25,7 +25,7 @@ findScriptDir
 . "$SCRIPT_DIR/common.sh"
 
 # HAZELCAST_CLIENT_CONFIG holds the configuration path.
-# If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
+# If the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
 # The path can be absolute.
 # By default, it is set to $HAZELCAST_HOME/config/hazelcast-client.xml
 if [ -z "$HAZELCAST_CLIENT_CONFIG" ]; then

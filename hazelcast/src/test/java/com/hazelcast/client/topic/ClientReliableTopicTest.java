@@ -302,7 +302,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         ITopic<Object> reliableTopic = member2.getReliableTopic(topicName);
 
-        //kill the the owner member, while messages are coming
+        //kill the owner member, while messages are coming
         new Thread(new Runnable() {
             @Override
             public void run() {

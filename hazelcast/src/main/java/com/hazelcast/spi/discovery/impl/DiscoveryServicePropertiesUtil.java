@@ -44,7 +44,7 @@ final class DiscoveryServicePropertiesUtil {
      * @param propertyDefinitions property definitions specific for the given
      *                            {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
      * @return mapped properties
-     * @throws InvalidConfigurationException if the the required properties are not satisfied or any property is not not
+     * @throws InvalidConfigurationException if the required properties are not satisfied or any property is not not
      *                                       applicable to the given definitions
      * @throws ValidationException           if any property is invalid
      */

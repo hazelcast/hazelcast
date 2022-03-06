@@ -59,7 +59,7 @@ public class MembershipEvent extends EventObject {
     }
 
     /**
-     * Returns a consistent view of the the members immediately after this MembershipEvent has been processed. If a
+     * Returns a consistent view of the members immediately after this MembershipEvent has been processed. If a
      * member is removed, the returned set will not include this member. If a member is added, it will include
      * this member.
      * <p>

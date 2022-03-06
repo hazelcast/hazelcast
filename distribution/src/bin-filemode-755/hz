@@ -42,7 +42,7 @@ else
 fi
 
 # HAZELCAST_CONFIG holds the configuration path.
-# If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
+# If the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
 # The path can be absolute.
 # By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml, with fallback to $HAZELCAST_HOME/config/hazelcast.yaml
 # and to $HAZELCAST_HOME/config/hazelcast.yml if the xml file is not present.

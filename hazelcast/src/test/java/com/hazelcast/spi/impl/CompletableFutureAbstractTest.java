@@ -731,7 +731,7 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     // since handle* methods process and substitute processing outcome of first stage,
-    // if the the handler BiFunction fails with an exception, the chained CompletionStage
+    // if the handler BiFunction fails with an exception, the chained CompletionStage
     // will fail with the exception thrown from the handler's body (not the one thrown from
     // the original CompletionStage).
     @Test

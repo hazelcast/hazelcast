@@ -47,7 +47,7 @@ public final class W3cDomUtil {
     }
 
     /**
-     * Returns the the wrapped {@link YamlSequence} instance of the
+     * Returns the wrapped {@link YamlSequence} instance of the
      * provided {@link Node} if the {@code node} is an instance of
      * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link YamlSequence}.
@@ -64,7 +64,7 @@ public final class W3cDomUtil {
     }
 
     /**
-     * Returns the the wrapped {@link MutableYamlNode} instance of the
+     * Returns the wrapped {@link MutableYamlNode} instance of the
      * provided {@link Node} if the {@code node} is an instance of
      * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link MutableYamlNode}.

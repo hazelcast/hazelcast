@@ -392,7 +392,7 @@ public final class SourceBuilder<C> {
         }
 
         /**
-         * Sets the the permission required to use this sink when the
+         * Sets the permission required to use this sink when the
          * security is enabled. The default value is {@code null} which
          * means there is no restriction to use this sink. Security is an
          * enterprise feature.

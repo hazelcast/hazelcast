@@ -89,7 +89,7 @@
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
-                    Specifies whether the the discovery strategy is enabled or not. Value can be true or false.
+                    Specifies whether the discovery strategy is enabled or not. Value can be true or false.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

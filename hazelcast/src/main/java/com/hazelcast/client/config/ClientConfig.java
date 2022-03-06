@@ -493,7 +493,7 @@ public class ClientConfig {
      * Returns the {@link ClientFlakeIdGeneratorConfig} for the given name, creating
      * one if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the

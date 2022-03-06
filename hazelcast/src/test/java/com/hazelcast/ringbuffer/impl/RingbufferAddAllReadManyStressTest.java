@@ -235,7 +235,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                     } catch (ExecutionException e) {
                         if (e.getCause() instanceof StaleSequenceException) {
                             // this consumer is used in a stress test and can fall behind the producer if it gets delayed
-                            // by any reason. This is ok, just jump to the the middle of the ringbuffer.
+                            // by any reason. This is ok, just jump to the middle of the ringbuffer.
                             logger.info(getName() + " has fallen behind, catching up...");
                             final long tail = ringbuffer.tailSequence();
                             final long head = ringbuffer.headSequence();

@@ -27,7 +27,7 @@
 # 3. After that it checks if there is a ’hazelcast.yaml’ in the root of the classpath.
 #
 # 4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
-#    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
+#    ’hazelcast-default.yaml’, which is included in the Hazelcast jar
 
 hazelcast:
 

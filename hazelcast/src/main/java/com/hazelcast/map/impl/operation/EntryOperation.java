@@ -67,7 +67,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * ### Overview
  * <p>
- * Implementation of the the Offloadable contract for the EntryProcessor execution on a single key.
+ * Implementation of the Offloadable contract for the EntryProcessor execution on a single key.
  * <p>
  * Allows off-loading the processing unit implementing this interface to the specified or default Executor.
  * Currently supported in:

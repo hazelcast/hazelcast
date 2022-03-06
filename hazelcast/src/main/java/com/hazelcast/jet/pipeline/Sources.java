@@ -1270,7 +1270,7 @@ public final class Sources {
     /**
      * Returns a source which connects to the specified database using the given
      * {@code newConnectionFn}, queries the database and creates a result set
-     * using the the given {@code resultSetFn}. It creates output objects from the
+     * using the given {@code resultSetFn}. It creates output objects from the
      * {@link ResultSet} using given {@code mapOutputFn} and emits them to
      * downstream.
      * <p>

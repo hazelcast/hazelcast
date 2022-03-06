@@ -92,7 +92,7 @@ import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 /**
- * Provides important services via methods for the the Queue
+ * Provides important services via methods for the Queue
  * such as {@link com.hazelcast.collection.impl.queue.QueueEvictionProcessor }
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})

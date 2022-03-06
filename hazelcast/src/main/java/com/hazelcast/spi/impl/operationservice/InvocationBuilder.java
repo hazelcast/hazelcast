@@ -117,7 +117,7 @@ public abstract class InvocationBuilder {
      * <p>
      * Defaults to true.
      *
-     * @return true if the the result is automatically deserialized, false otherwise.
+     * @return true if the result is automatically deserialized, false otherwise.
      */
     public boolean isResultDeserialized() {
         return resultDeserialized;
