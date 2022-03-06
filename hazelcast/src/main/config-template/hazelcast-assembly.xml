@@ -71,7 +71,7 @@
         <!--
             Specifies which network interfaces Hazelcast should use. You can define multiple
             interfaces using its <interface> sub-element.
-            We enable binding to loopback interface only in ZIP and TGZ Hazelcast disribution packages
+            We enable binding to loopback interface only in ZIP and TGZ Hazelcast distribution packages
             for security reasons. (See also the property "hazelcast.socket.bind.any" value.)
         -->
         <interfaces enabled="@FILTER_LOOPBACK_INTERFACE@">
