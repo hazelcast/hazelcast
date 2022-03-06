@@ -100,7 +100,7 @@ public class ProgressMonitor {
     }
 
     private void onStalenessDetected(BounceMemberRule.TestTaskRunnable task, long currentStaleNanos) {
-        // this could seems redundant as the Hazelcast JUnit runner will also take threadumps
+        // this could seems redundant as the Hazelcast JUnit runner will also take thread dumps
         // however in this case we are doing the threaddump before declaring a test failure
         // and stopping Hazelcast instances -> there is a higher chance we will actually
         // record something useful.
