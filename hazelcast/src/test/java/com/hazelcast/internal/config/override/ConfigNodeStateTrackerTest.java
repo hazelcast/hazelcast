@@ -43,7 +43,7 @@ public class ConfigNodeStateTrackerTest {
         entries.put("HZ_CLUSTRNAME", "foo");
         entries.put("HZ_NETWORK_PORT", "5702");
         entries.put("HZ_NETWORK_JOIN_TCPIP_BLE", "false");
-        entries.put("HZ_NETWORK_JOIN_MULTCAST_ENABLED", "false");
+        entries.put("HZ_NETWORK_JOIN_MULTI_CAST_ENABLED", "false");
 
         ConfigNode configNode = PropertiesToNodeConverter.propsToNode(EnvVariablesConfigParser.member().parse(entries));
 
@@ -54,7 +54,7 @@ public class ConfigNodeStateTrackerTest {
         assertTrue(unprocessed.containsKey("hazelcast.network.port"));
         assertTrue(unprocessed.containsKey("hazelcast.clustrname"));
         assertTrue(unprocessed.containsKey("hazelcast.network.join.tcpip.ble"));
-        assertTrue(unprocessed.containsKey("hazelcast.network.join.multcast.enabled"));
+        assertTrue(unprocessed.containsKey("hazelcast.network.join.multi.cast.enabled"));
     }
 
     @Test
