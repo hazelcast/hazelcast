@@ -73,7 +73,7 @@ public interface ClassDefinition {
      *
      * @param fieldName name of the field
      * @return class ID of given field
-     * @throws java.lang.IllegalArgumentException if the field does not not exist
+     * @throws java.lang.IllegalArgumentException if the field does not exist
      */
     int getFieldClassId(String fieldName);
 

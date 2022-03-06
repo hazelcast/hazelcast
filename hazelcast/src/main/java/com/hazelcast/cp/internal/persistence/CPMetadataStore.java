@@ -30,7 +30,7 @@ public interface CPMetadataStore {
     /**
      * Returns true if this member is marked as AP member on the storage layer.
      * If {@code false} is returned, it means that AP/CP identity of the member
-     * is not not known yet CP member discovery will run.
+     * is not known yet CP member discovery will run.
      */
     boolean isMarkedAPMember();
 
