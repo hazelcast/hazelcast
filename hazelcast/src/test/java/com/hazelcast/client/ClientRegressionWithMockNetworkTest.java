@@ -182,8 +182,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         // Get the distributed objects as fast as possible to catch a race condition more likely
         Collection<DistributedObject> serverDistributedObjects = server.getDistributedObjects();
         Collection<DistributedObject> clientDistributedObjects = client.getDistributedObjects();
-        assertNoOfDistributedObject("After destroy() the server should should have %d distributed objects, but had %d", 0, serverDistributedObjects);
-        assertNoOfDistributedObject("After destroy() the client should should have %d distributed objects, but had %d", 0, clientDistributedObjects);
+        assertNoOfDistributedObject("After destroy() the server should have %d distributed objects, but had %d", 0, serverDistributedObjects);
+        assertNoOfDistributedObject("After destroy() the client should have %d distributed objects, but had %d", 0, clientDistributedObjects);
     }
 
     private void assertNoOfDistributedObject(String message, int expected, Collection<DistributedObject> distributedObjects) {
