@@ -231,7 +231,7 @@ public final class ServiceLoader {
 
     /**
      * This class keeps track of available service definition URLs and
-     * the corresponding classloaders. It uses the URLs URI for hashing andd
+     * the corresponding classloaders. It uses the URLs URI for hashing and
      * equality comparison, rather than the URL itself. The specifications for
      * hashing and equality on URL are unusual, and involve blocking DNS
      * lookups. However, the conversion from URL to URI is lossy, so if there
