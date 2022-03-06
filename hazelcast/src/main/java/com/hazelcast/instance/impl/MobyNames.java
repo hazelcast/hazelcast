@@ -411,7 +411,7 @@ final class MobyNames {
             // foremost expert on chimpanzees - https://en.wikipedia.org/wiki/Jane_Goodall
             "goodall",
 
-            // Stephen Jay Gould was was an American paleontologist, evolutionary biologist, and historian of science.
+            // Stephen Jay Gould was an American paleontologist, evolutionary biologist, and historian of science.
             // He is most famous for the theory of punctuated equilibrium -
             // https://en.wikipedia.org/wiki/Stephen_Jay_Gould
             "gould",
