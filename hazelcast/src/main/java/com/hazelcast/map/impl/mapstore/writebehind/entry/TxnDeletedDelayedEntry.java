@@ -22,7 +22,7 @@ import java.util.UUID;
 
 /**
  * Represents a candidate entry to be
- * deleted from {@link MapStore} witih a txn
+ * deleted from {@link MapStore} within a txn
  *
  * @param <K> the key type.
  * @param <V> the value type.
