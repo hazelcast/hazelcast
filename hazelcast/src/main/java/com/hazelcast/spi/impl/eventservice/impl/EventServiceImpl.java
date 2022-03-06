@@ -88,7 +88,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Service responsible for routing and dispatching local and remote events and keeping track of listener
  * registrations. Local events are events published on a local subscriber (the subscriber is on this node)
  * and remote events are published on a remote subscriber (the subscriber is on a different node and the
- * event is sent to that node). The remote events are generally asnychronous meaning that we send the event
+ * event is sent to that node). The remote events are generally asynchronous meaning that we send the event
  * and don't wait for the response. The exception to this is that every {@link #eventSyncFrequency} remote
  * event is sent as an operation and we wait for it to be submitted to the remote queue.
  * <p>
