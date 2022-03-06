@@ -134,7 +134,7 @@ public final class ConcurrentInboundEdgeStream {
 
     /**
      * This implementation performs a single {@code drainTo} operation on all
-     * the input queues queues and forwards the data to the destination, while
+     * the input queues and forwards the data to the destination, while
      * handling watermarks & barriers.
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
