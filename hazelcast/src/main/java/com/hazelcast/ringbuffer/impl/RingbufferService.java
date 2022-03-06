@@ -166,7 +166,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
     }
 
     /**
-     * Return the ringbuffer containter for the specified {@code namespace}.
+     * Return the ringbuffer container for the specified {@code namespace}.
      * If there is no ringbuffer container, create it using the {@code config}.
      *
      * @param namespace the ringbuffer container namespace
