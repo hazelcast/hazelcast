@@ -136,7 +136,7 @@ public class InvalidConfigurationClientTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void WhenInvalid_NearCacheInMemoryFormat() {
-        buildConfig("near-cache-in-memory-format", "binaryyy");
+        buildConfig("near-cache-in-memory-format", "binary_");
     }
 
     @Test(expected = InvalidConfigurationException.class)

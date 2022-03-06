@@ -249,7 +249,7 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalid_CacheInMemoryFormat() {
         expectInvalid();
-        buildConfig("cache-in-memory-format", "binaryyy");
+        buildConfig("cache-in-memory-format", "binary_");
     }
 
     @Test
