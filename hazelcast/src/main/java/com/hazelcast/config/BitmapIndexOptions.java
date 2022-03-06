@@ -187,7 +187,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
      * Returns the unique key transformation configured in this index. Defaults
      * to {@link UniqueKeyTransformation#OBJECT OBJECT}. The transformation is
      * applied to every value extracted from {@link #getUniqueKey() unique key
-     * attribue}.
+     * attribute}.
      *
      * @return the configured unique key transformation.
      */
