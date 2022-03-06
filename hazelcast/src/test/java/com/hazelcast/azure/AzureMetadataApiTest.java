@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 public class AzureMetadataApiTest {
     private static final String ACCESS_TOKEN = "access-token-1";
-    private static final String LOCATION = "lcoation-1";
+    private static final String LOCATION = "location-1";
     private static final String PLATFORM_FAULT_DOMAIN = "platform-fault-domain-1";
     private static final String RESOURCE_GROUP_NAME = "resource-group-name-1";
     private static final String SUBSCRIPTION_ID = "subscription-id-1";
