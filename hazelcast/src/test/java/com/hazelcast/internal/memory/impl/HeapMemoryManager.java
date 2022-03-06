@@ -51,7 +51,7 @@ public class HeapMemoryManager implements MemoryManager {
         this.storage = new byte[size];
     }
 
-    // Suports the testing of HashSlotArray#migrateTo()
+    // Supports the testing of HashSlotArray#migrateTo()
     public HeapMemoryManager(HeapMemoryManager that) {
         this.storage = that.storage;
         this.heapTop = storage.length / 2;
