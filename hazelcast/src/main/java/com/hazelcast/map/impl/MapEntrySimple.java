@@ -41,13 +41,13 @@ public class MapEntrySimple<K, V> extends AbstractMap.SimpleEntry<K, V> {
 
     @Override
     public boolean equals(Object o) {
-        // modified field is not part part of equality or hashCode.
+        // modified field is not part of equality or hashCode.
         return super.equals(o);
     }
 
     @Override
     public int hashCode() {
-        // modified field is not part part of equality or hashCode.
+        // modified field is not part of equality or hashCode.
         return super.hashCode();
     }
 }
