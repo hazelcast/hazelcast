@@ -1152,13 +1152,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testSqlConfig() {
-        Config confiig = new Config();
+        Config config = new Config();
 
-        confiig.getSqlConfig().setStatementTimeoutMillis(30L);
+        config.getSqlConfig().setStatementTimeoutMillis(30L);
 
-        SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
+        SqlConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSqlConfig();
 
-        assertEquals(confiig.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
+        assertEquals(config.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
     }
 
     @Test
