@@ -97,7 +97,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     }
 
     @Test
-    public void testAsync_onAllPartitions_getResponeViaFuture() throws Exception {
+    public void testAsync_onAllPartitions_getResponseViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationService(hz);
@@ -113,7 +113,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     }
 
     @Test
-    public void testAsync_onSelectedPartitions_getResponeViaFuture() throws Exception {
+    public void testAsync_onSelectedPartitions_getResponseViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationService(hz);
@@ -131,7 +131,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     }
 
     @Test
-    public void testAsync_onEmptyPartitionList_getResponeViaFuture() throws Exception {
+    public void testAsync_onEmptyPartitionList_getResponseViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationService(hz);

@@ -489,7 +489,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final UUID cpMemberUid = UUID.fromString(uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim());
         getCpSubsystem().getCPSubsystemManagementService()
                 .removeCPMember(cpMemberUid)
-                .whenCompleteAsync((respone, t) -> {
+                .whenCompleteAsync((response, t) -> {
                     if (t == null) {
                         command.send200();
                         textCommandService.sendResponse(command);
