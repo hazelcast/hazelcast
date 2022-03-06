@@ -69,12 +69,12 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     WanPublisherState getPublisherState();
 
     /**
-     * Returns the counter for the successfully transfered map WAN events.
+     * Returns the counter for the successfully transferred map WAN events.
      */
     Map<String, DistributedObjectWanEventCounters> getSentMapEventCounter();
 
     /**
-     * Returns the counter for the successfully transfered cache WAN events.
+     * Returns the counter for the successfully transferred cache WAN events.
      */
     Map<String, DistributedObjectWanEventCounters> getSentCacheEventCounter();
 
