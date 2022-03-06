@@ -855,7 +855,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_twoSlavesDisconnectedFromOneSlave_when_clusterState_NO_MIGRATON() {
+    public void test_twoSlavesDisconnectedFromOneSlave_when_clusterState_NO_MIGRATION() {
         test_twoSlavesDisconnectedFromOneSlave(ClusterState.NO_MIGRATION);
     }
 
