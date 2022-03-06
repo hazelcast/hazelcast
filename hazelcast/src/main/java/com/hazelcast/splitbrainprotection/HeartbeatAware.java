@@ -33,7 +33,7 @@ public interface HeartbeatAware {
      * (for the purpose of split brain detection) is satisfied.
      *
      * @param member    member from which heartbeat was received
-     * @param timestamp timestmap on which heartbeat was received
+     * @param timestamp timestamp on which heartbeat was received
      */
     void onHeartbeat(Member member, long timestamp);
 }
