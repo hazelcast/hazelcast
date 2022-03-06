@@ -53,7 +53,7 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
                 // takes this a lower bound.
                 final int expectedBatchOpCount = (numberOfItems / writeBatchSize) / 2;
                 final int numberOfBatchOperationsEqualWriteBatchSize
-                        = mapStore.findNumberOfBatchsEqualWriteBatchSize(writeBatchSize);
+                        = mapStore.findNumberOfBatchesEqualWriteBatchSize(writeBatchSize);
                 assertTrue(numberOfBatchOperationsEqualWriteBatchSize >= expectedBatchOpCount);
             }
         }, 20);

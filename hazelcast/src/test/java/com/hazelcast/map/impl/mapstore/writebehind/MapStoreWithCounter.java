@@ -111,7 +111,7 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
         return store.size();
     }
 
-    public int findNumberOfBatchsEqualWriteBatchSize(int writeBatchSize) {
+    public int findNumberOfBatchesEqualWriteBatchSize(int writeBatchSize) {
         int count = 0;
         final Map<Integer, Integer> batchOpCountMap = getBatchOpCountMap();
         final Collection<Integer> values = batchOpCountMap.values();
