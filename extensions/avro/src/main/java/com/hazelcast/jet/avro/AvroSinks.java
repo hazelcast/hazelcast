@@ -41,7 +41,7 @@ public final class AvroSinks {
     }
 
     /**
-     * Returns a sink that that writes the items it receives to Apache Avro
+     * Returns a sink that writes the items it receives to Apache Avro
      * files. Each processor will write to its own file whose name is equal to
      * the processor's global index (an integer unique to each processor of the
      * vertex), but a single pathname is used to resolve the containing
