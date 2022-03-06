@@ -169,7 +169,7 @@ public class PersistenceConfig {
      * Sets the number of Persistence store instances to create for one Hazelcast instance.
      */
     public PersistenceConfig setParallelism(int parallelism) {
-        checkPositive(parallelism, "Palallelism must be a positive integer");
+        checkPositive(parallelism, "Parallelism must be a positive integer");
         this.parallelism = parallelism;
         return this;
     }

@@ -166,7 +166,7 @@ public class HotRestartPersistenceConfig {
      * Sets the number of Hot Restart store instances to create for one Hazelcast instance.
      */
     public HotRestartPersistenceConfig setParallelism(int parallelism) {
-        checkPositive(parallelism, "Palallelism must be a positive integer");
+        checkPositive(parallelism, "Parallelism must be a positive integer");
         this.parallelism = parallelism;
         return this;
     }
