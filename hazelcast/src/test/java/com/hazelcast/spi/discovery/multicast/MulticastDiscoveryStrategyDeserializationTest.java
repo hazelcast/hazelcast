@@ -54,7 +54,7 @@ public class MulticastDiscoveryStrategyDeserializationTest {
     private static final int PORT = 54328;
 
     private volatile boolean stop;
-    private volatile Thread datadgramsThread;
+    private volatile Thread datagramsThread;
     private volatile Exception datagramsThreadException;
 
     @Before
@@ -63,19 +63,19 @@ public class MulticastDiscoveryStrategyDeserializationTest {
         TestDeserialized.isDeserialized = false;
         stop = false;
         datagramsThreadException = null;
-        datadgramsThread = new Thread(() -> sendDatagrams());
-        datadgramsThread.start();
+        datagramsThread = new Thread(() -> sendDatagrams());
+        datagramsThread.start();
     }
 
     @After
     public void after() {
-        if (datadgramsThread != null) {
+        if (datagramsThread != null) {
             stop = true;
             try {
-                datadgramsThread.join();
+                datagramsThread.join();
             } catch (InterruptedException e) {
             }
-            datadgramsThread = null;
+            datagramsThread = null;
         }
         assertNull(datagramsThreadException);
         HazelcastInstanceFactory.terminateAll();
