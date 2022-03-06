@@ -26,7 +26,7 @@ import static com.hazelcast.gcp.Utils.lastPartOf;
 /**
  * Responsible for connecting to the Google Cloud Instance Metadata API.
  *
- * @see <a href="https://cloud.google.com/appengine/docs/standard/java/accessing-instance-metadata">GCP Instance Metatadata</a>
+ * @see <a href="https://cloud.google.com/appengine/docs/standard/java/accessing-instance-metadata">GCP Instance Metadata</a>
  */
 class GcpMetadataApi {
     private static final String METADATA_ENDPOINT = "http://metadata.google.internal";
