@@ -36,27 +36,27 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultSerializationServiceBuilderTest {
 
-    private final String BYTE_ORDER_OVERRRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
+    private final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
 
     @Test
     public void test_byteOrderIsOverridden_whenLittleEndian() {
-        System.setProperty(BYTE_ORDER_OVERRRIDE_PROPERTY, "LITTLE_ENDIAN");
+        System.setProperty(BYTE_ORDER_OVERRIDE_PROPERTY, "LITTLE_ENDIAN");
         try {
             InternalSerializationService serializationService = getSerializationServiceBuilder().build();
             assertEquals(ByteOrder.LITTLE_ENDIAN, serializationService.getByteOrder());
         } finally {
-            System.clearProperty(BYTE_ORDER_OVERRRIDE_PROPERTY);
+            System.clearProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
         }
     }
 
     @Test
     public void test_byteOrderIsOverridden_whenBigEndian() {
-        System.setProperty(BYTE_ORDER_OVERRRIDE_PROPERTY, "BIG_ENDIAN");
+        System.setProperty(BYTE_ORDER_OVERRIDE_PROPERTY, "BIG_ENDIAN");
         try {
             InternalSerializationService serializationService = getSerializationServiceBuilder().build();
             assertEquals(ByteOrder.BIG_ENDIAN, serializationService.getByteOrder());
         } finally {
-            System.clearProperty(BYTE_ORDER_OVERRRIDE_PROPERTY);
+            System.clearProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
         }
     }
 
@@ -94,15 +94,15 @@ public class DefaultSerializationServiceBuilderTest {
 
     @Test
     public void test_nullByteOrder() {
-        String override = System.getProperty(BYTE_ORDER_OVERRRIDE_PROPERTY);
-        System.clearProperty(BYTE_ORDER_OVERRRIDE_PROPERTY);
+        String override = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
+        System.clearProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
         try {
             InternalSerializationService serializationService = getSerializationServiceBuilder()
                     .setByteOrder(null).build();
             assertEquals(DEFAULT_BYTE_ORDER, serializationService.getByteOrder());
         } finally {
             if (override != null) {
-                System.setProperty(BYTE_ORDER_OVERRRIDE_PROPERTY, override);
+                System.setProperty(BYTE_ORDER_OVERRIDE_PROPERTY, override);
             }
         }
     }
