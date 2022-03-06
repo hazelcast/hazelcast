@@ -46,7 +46,7 @@ public enum WanPublisherState {
      * {@link #PAUSED} state, some events might still be replicated after the
      * publisher has switched to this state. WAN sync is enabled.
      * For instance, this state may be useful if you know that the target cluster
-     * is being shut down, decomissioned and being put out of use and that it
+     * is being shut down, decommissioned and being put out of use and that it
      * will never come back. In such cases, you may additionally clear the WAN
      * queues to release the consumed heap after the publisher has been switched
      * into this state.
