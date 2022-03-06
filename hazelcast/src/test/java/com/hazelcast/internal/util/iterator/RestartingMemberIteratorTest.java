@@ -89,7 +89,7 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         Member member = iterator.next();
         assertSame(mockMember, member);
 
-        //topologoy change -> this should restart iteration
+        //topology change -> this should restart iteration
         Member anotherMockMember = addClusterMember();
 
         member = iterator.next();
@@ -108,7 +108,7 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         // start iterating
         iterator.next();
 
-        // topologoy change -> this should restart iteration, but there are no retry attempt left
+        // topology change -> this should restart iteration, but there are no retry attempt left
         addClusterMember();
 
         // this has to throw the Exception
