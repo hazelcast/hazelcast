@@ -106,7 +106,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testConcrruentTxnPut() throws Exception {
+    public void testConcurrentTxnPut() throws Exception {
         final String mapName = randomString();
         final MultiMap multiMap = client.getMultiMap(mapName);
 
