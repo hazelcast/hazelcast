@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
+public class SystemOperationPrecedenceTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionAware() {
