@@ -45,7 +45,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the jackson-databind version and not the jackson-mapper-asl.
+       False positive. The flaws are related to the jackson-databind version and not the jackson-mapper-asl.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
        <vulnerabilityName>CVE-2017-15095</vulnerabilityName>
@@ -60,14 +60,14 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the FasterXML jackson version (2+) and not the codehaus one.
+       False positive. The flaws are related to the FasterXML jackson version (2+) and not the codehaus one.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
        <vulnerabilityName>CVE-2018-1000873</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the postgres version and not the debezium-connector-postgres.
+       False positive. The flaws are related to the postgres version and not the debezium-connector-postgres.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-postgres@.*$</packageUrl>
        <vulnerabilityName>CVE-2007-2138</vulnerabilityName>
@@ -109,7 +109,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the Hadoop version and not the shaded guava.
+       False positive. The flaws are related to the Hadoop version and not the shaded guava.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-guava@.*$</packageUrl>
        <vulnerabilityName>CVE-2013-2192</vulnerabilityName>
@@ -120,7 +120,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
+       False positive. The flaws are related to the Hadoop version and not the shaded protobuf.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
        <vulnerabilityName>CVE-2013-2192</vulnerabilityName>
@@ -131,7 +131,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the Elasticsearch version and not the JNA.
+       False positive. The flaws are related to the Elasticsearch version and not the JNA.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.elasticsearch/jna@.*$</packageUrl>
        <vulnerabilityName>CVE-2019-7611</vulnerabilityName>
@@ -145,7 +145,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+       False positive. The flaws are related to the MySQL version and not the MySQL Binary Log connector.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
        <vulnerabilityName>CVE-2007-1420</vulnerabilityName>
@@ -163,7 +163,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
+       False positive. The flaws are related to the MySQL version and not the MySQL Debezium connector.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
        <vulnerabilityName>CVE-2007-1420</vulnerabilityName>
@@ -181,7 +181,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the WildFly and OpenSSL version and not the wildfly-openssl library.
+       False positive. The flaws are related to the WildFly and OpenSSL version and not the wildfly-openssl library.
        The OpenSSL is linked dynamically in the wildly-openssl.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@.*$</packageUrl>
