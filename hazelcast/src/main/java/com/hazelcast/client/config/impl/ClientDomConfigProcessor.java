@@ -265,7 +265,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
             }
         } else {
-            throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
+            throw new InvalidConfigurationException("User code deployment can either be className or jarPath. "
                     + childNodeName + " is invalid");
         }
     }
