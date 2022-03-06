@@ -2417,7 +2417,7 @@
           "type": "integer",
           "minimum": 1,
           "default": 120,
-          "description": "Timeout duration for CP members to restore their data from disk. CP member fails its startup if it cannot complete its CP data restore rocess in the configured duration."
+          "description": "Timeout duration for CP members to restore their data from disk. CP member fails its startup if it cannot complete its CP data restore process in the configured duration."
         },
         "raft-algorithm": {
           "type": "object",
