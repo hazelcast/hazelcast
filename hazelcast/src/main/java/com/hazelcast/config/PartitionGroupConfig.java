@@ -138,7 +138,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * </pre>
  *
  * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, this  member
- * may store store primary and backups.
+ * may store primary and backups.
  */
 public class PartitionGroupConfig {
 
