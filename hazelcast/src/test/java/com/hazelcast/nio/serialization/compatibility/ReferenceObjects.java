@@ -177,7 +177,7 @@ class ReferenceObjects {
     static Optional<String> anEmptyOptional = Optional.empty();
     static Enum anEnum = EntryEventType.ADDED;
 
-    static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
+    static Serializable serializable = new AJavaSerializable(anInt, aFloat);
     static Externalizable externalizable = new AJavaExternalizable(anInt, aFloat);
 
     static Comparable<SampleTestObjects.ValueType> aComparable = new SampleTestObjects.ValueType(aSmallString);

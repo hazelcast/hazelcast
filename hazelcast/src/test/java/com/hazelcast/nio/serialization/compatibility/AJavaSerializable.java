@@ -18,15 +18,15 @@ package com.hazelcast.nio.serialization.compatibility;
 
 import java.io.Serializable;
 
-public class AJavaSerialiazable implements Serializable {
+public class AJavaSerializable implements Serializable {
 
     int i;
     float f;
 
-    public AJavaSerialiazable() {
+    public AJavaSerializable() {
     }
 
-    public AJavaSerialiazable(int anInt, float aFloat) {
+    public AJavaSerializable(int anInt, float aFloat) {
         i = anInt;
         f = aFloat;
     }
@@ -40,7 +40,7 @@ public class AJavaSerialiazable implements Serializable {
             return false;
         }
 
-        AJavaSerialiazable that = (AJavaSerialiazable) o;
+        AJavaSerializable that = (AJavaSerializable) o;
 
         if (i != that.i) {
             return false;
