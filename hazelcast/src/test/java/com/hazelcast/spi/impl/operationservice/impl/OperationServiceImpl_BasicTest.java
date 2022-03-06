@@ -125,7 +125,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
 
     @Test(expected = ExecutionException.class)
-    public void testPropagateSerializationErrorOnResponseToCallerGithubIssue2559()
+    public void testPropagateSerializationErrorOnResponseToCallerGitHubIssue2559()
             throws Exception {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -140,22 +140,22 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
         Address address = hz2.getCluster().getLocalMember().getAddress();
 
-        Operation operation = new GithubIssue2559Operation();
+        Operation operation = new GitHubIssue2559Operation();
         String serviceName = DistributedExecutorService.SERVICE_NAME;
         InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, operation, address);
         invocationBuilder.invoke().get();
     }
 
-    public static class GithubIssue2559Operation
+    public static class GitHubIssue2559Operation
             extends Operation {
 
-        private GithubIssue2559Value value;
+        private GitHubIssue2559Value value;
 
         @Override
         public void run()
                 throws Exception {
 
-            value = new GithubIssue2559Value();
+            value = new GitHubIssue2559Value();
             value.foo = 10;
         }
 
@@ -165,7 +165,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         }
     }
 
-    public static class GithubIssue2559Value
+    public static class GitHubIssue2559Value
             implements DataSerializable {
 
         private int foo;

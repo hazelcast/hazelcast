@@ -409,7 +409,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     /**
-     * Github issues 98 and 131
+     * GitHub issues 98 and 131
      */
     @Test(timeout = 1000 * 90)
     public void testPredicateStringAttribute() {
@@ -419,7 +419,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     /**
-     * Github issues 98 and 131
+     * GitHub issues 98 and 131
      */
     @Test(timeout = 1000 * 90)
     public void testPredicateStringAttributesWithIndex() {

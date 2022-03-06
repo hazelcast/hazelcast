@@ -6,7 +6,7 @@
 |||
 |---|---|
 |Related Jira|[HZ-566](https://hazelcast.atlassian.net/browse/HZ-566)|
-|Related Github issues|_-_|
+|Related GitHub issues|_-_|
 |Document Status / Completeness|IN REVIEW|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|

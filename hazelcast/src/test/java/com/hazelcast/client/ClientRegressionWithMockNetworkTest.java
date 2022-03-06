@@ -619,7 +619,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test(expected = ExecutionException.class, timeout = 120000)
-    public void testGithubIssue3557() throws Exception {
+    public void testGitHubIssue3557() throws Exception {
         HazelcastInstance hz = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 

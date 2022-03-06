@@ -21,7 +21,7 @@
 |||
 |---|---|
 |Related Jira|_Jira Story/Task link_|
-|Related Github issues|_GH issue list_|
+|Related GitHub issues|_GH issue list_|
 |Document Status / Completeness|DRAFT / IN PROGRESS / DESIGN REVIEW / DONE|
 |Requirement owner|_Requirement owner_|
 |Developer(s)|_Implementor_|

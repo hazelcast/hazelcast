@@ -482,7 +482,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     }
 
     /**
-     * Github issue #99
+     * GitHub issue #99
      */
     @Test
     public void issue99TestQueueTakeAndDuringRollback() throws Exception {
@@ -528,7 +528,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     }
 
     /**
-     * Github issue #114
+     * GitHub issue #114
      */
     @Test
     public void issue114TestQueueListenersUnderTransaction() throws Exception {

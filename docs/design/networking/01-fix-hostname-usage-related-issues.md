@@ -17,7 +17,7 @@
 |||
 |---|---|
 |Related Jira| https://hazelcast.atlassian.net/browse/HZ-528       |
-|Related Github issues          | https://github.com/hazelcast/hazelcast/issues/15722, https://github.com/hazelcast/hazelcast/issues/16651, https://github.com/hazelcast/hazelcast-enterprise/issues/3627, https://github.com/hazelcast/hazelcast-enterprise/issues/4342 |
+|Related GitHub issues          | https://github.com/hazelcast/hazelcast/issues/15722, https://github.com/hazelcast/hazelcast/issues/16651, https://github.com/hazelcast/hazelcast-enterprise/issues/3627, https://github.com/hazelcast/hazelcast-enterprise/issues/4342 |
 |Implementation PR|https://github.com/hazelcast/hazelcast/pull/20014|
 |Document Status / Completeness | DESIGN REVIEW|
 |Requirement owner              | _Requirement owner_                                 |
