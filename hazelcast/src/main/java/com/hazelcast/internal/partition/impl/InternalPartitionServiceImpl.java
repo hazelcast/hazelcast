@@ -1498,7 +1498,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyNewPartitionTable(latestPartitions, allCompletedMigrations, thisAddress);
                 }
                 shouldFetchPartitionTables = false;
-            } catch (Throwable rethrowed) {
+            } catch (Throwable rethrown) {
                 String lineSeparator = System.lineSeparator();
 
                 StringBuilder sb = new StringBuilder()
@@ -1508,10 +1508,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                         .append(StringUtil.toString(allCompletedMigrations)).append(lineSeparator)
                         .append("allActiveMigrations:").append(lineSeparator)
                         .append(StringUtil.toString((allActiveMigrations))).append(lineSeparator)
-                        .append(rethrowed);
+                        .append(rethrown);
 
                 logger.warning(sb.toString());
-                throw rethrowed;
+                throw rethrown;
             } finally {
                 lock.unlock();
             }
