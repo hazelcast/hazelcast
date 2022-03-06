@@ -113,7 +113,7 @@ public final class GrpcServices {
     /**
      * Creates a {@link ServiceFactory} that calls out to a
      * <a href="https://grpc.io/docs/guides/concepts/#bidirectional-streaming-rpc">
-     *     bidrectional streaming gRPC service</a>. This may provide better
+     *     bidirectional streaming gRPC service</a>. This may provide better
      * throughput compared to the {@link #unaryService(SupplierEx, FunctionEx)}
      * unary} service because all communication happens within a single gRPC
      * call, eliminating some overheads.
