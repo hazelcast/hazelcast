@@ -470,7 +470,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemberGroup_givenSPIMemberGroupIsActived_whenInstanceStarting_wontThrowNPE() {
+    public void testMemberGroup_givenSPIMemberGroupIsActivated_whenInstanceStarting_wontThrowNPE() {
         // this test has no assert. it's a regression test checking an instance can start when a SPI-driven member group
         // strategy is configured. see #11681
         Config config = new Config();
