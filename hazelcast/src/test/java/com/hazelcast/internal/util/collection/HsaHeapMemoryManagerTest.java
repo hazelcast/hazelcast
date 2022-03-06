@@ -61,7 +61,7 @@ public class HsaHeapMemoryManagerTest {
     private final MemoryAccessor mem = memMgr.getAccessor();
 
     @Test
-    public void when_allocateTwoBlocks_then_eachAddressIsIndepednent() {
+    public void when_allocateTwoBlocks_then_eachAddressIsIndependent() {
         final long addr1 = allocate();
         final long addr2 = allocate();
         for (int offset = 0; offset < BLOCK_SIZE; offset += 8) {
