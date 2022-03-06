@@ -385,7 +385,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() {
+    public void testIssue1085WriteBehindBackupWithLongRunningMapStore() {
         final String name = randomMapName("testIssue1085WriteBehindBackup");
         final int expectedStoreCount = 3;
         final int nodeCount = 3;

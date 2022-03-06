@@ -159,7 +159,7 @@ public class AllTest {
                         int opId = random.nextInt(operations.size());
                         Runnable operation = operations.get(opId);
                         operation.run();
-//                        System.out.println("Runnning..." + Thread.currentThread());
+//                        System.out.println("Running..." + Thread.currentThread());
                     }
                 }
             });
