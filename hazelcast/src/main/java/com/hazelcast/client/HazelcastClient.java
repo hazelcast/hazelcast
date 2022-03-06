@@ -140,7 +140,7 @@ public final class HazelcastClient {
      * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
      * {@link ClientFailoverConfig} when it disconnects from a cluster.
      * <p>
-     * The configuration is loaded using using the following resolution mechanism:
+     * The configuration is loaded using the following resolution mechanism:
      * <ol>
      * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
      * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference. The configuration can
@@ -165,7 +165,7 @@ public final class HazelcastClient {
      * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
      * {@link ClientFailoverConfig} when it disconnects from a cluster.
      * <p>
-     * If provided clientFailoverConfig is {@code null}, the configuration is loaded using using the following resolution
+     * If provided clientFailoverConfig is {@code null}, the configuration is loaded using the following resolution
      * mechanism:
      * <ol>
      *      <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
