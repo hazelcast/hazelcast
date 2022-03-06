@@ -39,7 +39,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
     public MapIndexInfo() {
     }
 
-    public MapIndexInfo addIndexCofigs(Collection<IndexConfig> indexConfigs) {
+    public MapIndexInfo addIndexConfigs(Collection<IndexConfig> indexConfigs) {
         this.indexConfigs.addAll(indexConfigs);
         return this;
     }

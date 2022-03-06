@@ -162,7 +162,7 @@ public class MapChunkContext {
             }
         }
         return new MapIndexInfo(mapName)
-                .addIndexCofigs(indexConfigs);
+                .addIndexConfigs(indexConfigs);
     }
 
     public final void beforeOperation() {

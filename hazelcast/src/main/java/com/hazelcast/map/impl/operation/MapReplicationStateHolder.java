@@ -156,7 +156,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
-            mapIndexInfo.addIndexCofigs(indexConfigs);
+            mapIndexInfo.addIndexConfigs(indexConfigs);
             mapIndexInfos.add(mapIndexInfo);
         }
     }
