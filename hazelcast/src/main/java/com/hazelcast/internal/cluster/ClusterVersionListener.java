@@ -24,7 +24,7 @@ import com.hazelcast.version.Version;
 /**
  * Listeners interested in acting upon cluster version update should implement this interface.
  * Services registered with the Hazelcast {@link com.hazelcast.spi.impl.servicemanager.ServiceManager} which implement this
- * interface do not have have to register themselves, as their {@link #onClusterVersionChange(Version)} method will be
+ * interface do not have to register themselves, as their {@link #onClusterVersionChange(Version)} method will be
  * invoked automatically.
  *
  * Other listeners have to register themselves with {@link NodeExtension#registerListener(Object)}.
