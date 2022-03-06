@@ -119,7 +119,7 @@ SELECT * FROM myMap;
 The same can be done programmatically as follows using one of the [supported
 programming
 languages](https://docs.hazelcast.com/hazelcast/latest/clients/hazelcast-clients.html).
-Here are some exmaples in Java and Python:
+Here are some examples in Java and Python:
 
 ```java
 var hz = HazelcastClient.newHazelcastClient();
