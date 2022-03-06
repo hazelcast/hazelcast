@@ -171,7 +171,7 @@ public class CacheDestroyTest extends CacheTestSupport {
                 assertTrue(counter.get() >= 1);
             }
         }, 2);
-        // Make sure that no more than INSTNACE_COUNT events are received ever
+        // Make sure that no more than INSTANCE_COUNT events are received ever
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run()

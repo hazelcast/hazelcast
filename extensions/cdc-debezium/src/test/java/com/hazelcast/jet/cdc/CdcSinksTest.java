@@ -298,8 +298,8 @@ public class CdcSinksTest extends PipelineTestSupport {
         assertEqualsEventually(getActualMap(instance), expectedMap);
     }
 
-    private Callable<Map<?, ?>> getActualMap(HazelcastInstance instace) {
-        return () -> instace.getMap(MAP).entrySet().stream()
+    private Callable<Map<?, ?>> getActualMap(HazelcastInstance instance) {
+        return () -> instance.getMap(MAP).entrySet().stream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 

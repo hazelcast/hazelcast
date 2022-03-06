@@ -110,7 +110,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <ol>
  * <li>{@code BounceMemberRule} creates the cluster and test drivers</li>
  * <li>the test's {@code @Before} method(s) are executed to prepare the test. Use
- * {@link #getSteadyMember()} to obtain the {@code HazelcastInstace} that is kept running during the test
+ * {@link #getSteadyMember()} to obtain the {@code HazelcastInstance} that is kept running during the test
  * and prepare the test's environment.</li>
  * <li>{@code BounceMemberRule} spawns a separate thread that starts bouncing cluster members</li>
  * <li>the {@code @Test} method is executed</li>

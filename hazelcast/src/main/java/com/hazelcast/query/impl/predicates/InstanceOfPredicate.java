@@ -30,7 +30,7 @@ import java.util.Map;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
- * Predicate version of `instaceof` operator from Java.
+ * Predicate version of `instanceof` operator from Java.
  *
  */
 @BinaryInterface
