@@ -47,7 +47,7 @@ public class JsonGetterContextCache {
         context = new JsonGetterContext(queryPath);
         JsonGetterContext previousContextValue = internalCache.putIfAbsent(queryPath, context);
         if (previousContextValue == null) {
-            cleanupIfNeccessary(context);
+            cleanupIfNecessary(context);
             return context;
         } else {
             return previousContextValue;
@@ -61,7 +61,7 @@ public class JsonGetterContextCache {
      *
      * @param excluded
      */
-    private void cleanupIfNeccessary(JsonGetterContext excluded) {
+    private void cleanupIfNecessary(JsonGetterContext excluded) {
         int cacheCount;
         while ((cacheCount = internalCache.size()) > maxContexts) {
             int sampleCount = Math.max(cacheCount - maxContexts, cleanupRemoveAtLeastItems) + 1;
