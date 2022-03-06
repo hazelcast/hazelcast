@@ -1373,7 +1373,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         printSetCommands();
         printLockCommands();
         printMapCommands();
-        printMulitiMapCommands();
+        printMultiMapCommands();
         printListCommands();
         printAtomicLongCommands();
         printExecutorServiceCommands();
@@ -1462,7 +1462,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printMulitiMapCommands() {
+    private void printMultiMapCommands() {
         println("-- MultiMap commands");
         println("mm.put <key> <value>                  //puts an entry to the multimap");
         println("mm.get <key>                          //returns the value of given key from the multimap");
