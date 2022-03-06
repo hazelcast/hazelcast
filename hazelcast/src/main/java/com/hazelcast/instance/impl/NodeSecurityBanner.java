@@ -38,7 +38,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 /**
- * Class resposible for printing security recommendation to the log during the {@link Node} start.
+ * Class responsible for printing security recommendation to the log during the {@link Node} start.
  */
 class NodeSecurityBanner {
 
