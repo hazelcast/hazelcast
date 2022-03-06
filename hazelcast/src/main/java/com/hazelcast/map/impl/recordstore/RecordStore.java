@@ -596,7 +596,7 @@ public interface RecordStore<R extends Record> {
      * loading future result if the {@code lastBatch} is {@code true}.
      * <p>
      * If there was an exception during key loading, you may pass it as the
-     * {@code exception} paramter and it will be set as the result of the future.
+     * {@code exception} parameter and it will be set as the result of the future.
      *
      * @param lastBatch if the last key batch was sent
      * @param exception an exception that occurred during key loading
