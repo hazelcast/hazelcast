@@ -92,11 +92,11 @@ public class LoadTrackerTest {
     // there is no point in selecting a selector with a single handler as source.
     @Test
     public void testUpdateImbalance_notUsingSinglePipelineOwnerAsSource() throws Exception {
-        MigratablePipeline owmer1Pipeline1 = mock(MigratablePipeline.class);
+        MigratablePipeline owner1Pipeline1 = mock(MigratablePipeline.class);
         // the first selector has a handler with a large number of events
-        when(owmer1Pipeline1.load()).thenReturn(10000L);
-        when(owmer1Pipeline1.owner()).thenReturn(owner1);
-        loadTracker.addPipeline(owmer1Pipeline1);
+        when(owner1Pipeline1.load()).thenReturn(10000L);
+        when(owner1Pipeline1.owner()).thenReturn(owner1);
+        loadTracker.addPipeline(owner1Pipeline1);
 
         MigratablePipeline owner2Pipeline = mock(MigratablePipeline.class);
         when(owner2Pipeline.load()).thenReturn(200L);
