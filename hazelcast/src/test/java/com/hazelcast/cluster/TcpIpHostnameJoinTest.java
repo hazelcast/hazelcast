@@ -129,7 +129,7 @@ public class TcpIpHostnameJoinTest extends AbstractJoinTest {
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember(HOSTNAME1);
-        tcpIpConfig.addMember("nonexistinghost");
+        tcpIpConfig.addMember("nonexistenthost");
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         assertClusterSize(1, hz);

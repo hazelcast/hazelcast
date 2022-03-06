@@ -126,7 +126,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember("localhost");
-        tcpIpConfig.addMember("nonexistinghost");
+        tcpIpConfig.addMember("nonexistenthost");
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         assertClusterSize(1, hz);
