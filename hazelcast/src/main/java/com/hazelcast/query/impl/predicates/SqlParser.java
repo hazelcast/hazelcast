@@ -91,7 +91,7 @@ class SqlParser {
         for (String token : tokens) {
             if (isOperand(token)) {
                 if (token.equals(")")) {
-                    while (openParanthesesFound(stack)) {
+                    while (openParenthesesFound(stack)) {
                         output.add(stack.remove(stack.size() - 1));
                     }
                     if (stack.size() > 0) {
@@ -99,7 +99,7 @@ class SqlParser {
                         stack.remove(stack.size() - 1);
                     }
                 } else {
-                    while (openParanthesesFound(stack) && !hasHigherPrecedence(token, stack.get(stack.size() - 1))) {
+                    while (openParenthesesFound(stack) && !hasHigherPrecedence(token, stack.get(stack.size() - 1))) {
                         output.add(stack.remove(stack.size() - 1));
                     }
                     stack.add(token);
@@ -178,7 +178,7 @@ class SqlParser {
         return PRECEDENCE.containsKey(lowerCaseInternal(string));
     }
 
-    private boolean openParanthesesFound(List<String> stack) {
+    private boolean openParenthesesFound(List<String> stack) {
         return stack.size() > 0 && !stack.get(stack.size() - 1).equals("(");
     }
 
