@@ -64,7 +64,7 @@ public class ConfigStreamTest {
     public String expectedRead;
 
     @Test
-    public void resetableIsReused() throws IOException {
+    public void resettableIsReused() throws IOException {
         InputStream mockIs = givenMockedInputStream();
 
         ConfigStream configStream = new ConfigStream(mockIs);
@@ -80,7 +80,7 @@ public class ConfigStreamTest {
     }
 
     @Test
-    public void nonResetableIsCopied() throws IOException {
+    public void nonResettableIsCopied() throws IOException {
         InputStream mockIs = givenMockedInputStream();
         doThrow(IOException.class).when(mockIs).reset();
 

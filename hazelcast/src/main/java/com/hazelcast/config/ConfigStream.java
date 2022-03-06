@@ -27,7 +27,7 @@ import java.io.InputStream;
 /**
  * Stream wrapping or copying a generic {@link InputStream} for the
  * {@link ConfigRecognizer} API. The purpose of this class is to make
- * the provided {@link InputStream} resetable so that multiple
+ * the provided {@link InputStream} resettable so that multiple
  * {@link ConfigRecognizer} implementations can iterate over the stream.
  * There are even basic {@link InputStream} implementations that don't
  * support {@link InputStream#reset()} such as {@link BufferedInputStream}.
