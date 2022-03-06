@@ -61,7 +61,7 @@ import static java.lang.String.format;
 public class EncryptionReplacer extends AbstractPbeReplacer {
 
     /**
-     * Replacer property name to configure {@code true}/{@code false} flag contolling if users properties should be used as part
+     * Replacer property name to configure {@code true}/{@code false} flag controlling if users properties should be used as part
      * of the encryption password.
      */
     public static final String PROPERTY_PASSWORD_USER_PROPERTIES = "passwordUserProperties";
