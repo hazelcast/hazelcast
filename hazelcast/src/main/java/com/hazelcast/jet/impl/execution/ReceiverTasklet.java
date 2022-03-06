@@ -210,7 +210,7 @@ public class ReceiverTasklet implements Tasklet {
      *         in one standard flow control period (called "ack period" for short)
      *     </li></ol>
      * </li><li>
-     *     Define the <emph>target receive window</emph> as {@code 3 * seqsPerAckPeriod}.
+     *     Define the <em>target receive window</em> as {@code 3 * seqsPerAckPeriod}.
      * </li><li>
      *     Adjust the current receive window halfway toward the target receive window.
      * </li><li>
