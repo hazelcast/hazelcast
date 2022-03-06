@@ -82,7 +82,7 @@ public final class ClientMessageReader {
                 if (Integer.MAX_VALUE - frameLength < sumUntrustedMessageLength
                         || sumUntrustedMessageLength + frameLength > maxMessageLength) {
                     throw new MaxMessageSizeExceeded(
-                            format("The client message size (%d + %d) exceededs the maximum allowed length (%d)",
+                            format("The client message size (%d + %d) exceeds the maximum allowed length (%d)",
                                     sumUntrustedMessageLength, frameLength, maxMessageLength));
                 }
                 sumUntrustedMessageLength += frameLength;
