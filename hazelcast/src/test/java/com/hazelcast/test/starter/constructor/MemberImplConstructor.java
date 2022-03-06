@@ -54,9 +54,9 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         constructor.setAccessible(true);
         Class<?> endpointQualifierClass =
                 targetClassloader.loadClass("com.hazelcast.instance.EndpointQualifier");
-        Object memberEndpointQualifer = endpointQualifierClass.getDeclaredField("MEMBER").get(null);
+        Object memberEndpointQualifier = endpointQualifierClass.getDeclaredField("MEMBER").get(null);
         Map addressMap = new HashMap();
-        addressMap.put(memberEndpointQualifer, address);
+        addressMap.put(memberEndpointQualifier, address);
         Object[] args = new Object[] {addressMap, memberVersion, localMember, uuid, attributes, liteMember,
                                       MemberImpl.NA_MEMBER_LIST_JOIN_VERSION, null};
         return constructor.newInstance(proxyArgumentsIfNeeded(args, targetClassloader));
