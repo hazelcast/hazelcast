@@ -2507,14 +2507,14 @@
       }
     },
     "BackupCount": {
-      "description": "Number of synchronous backups. For example, if 1 is set as the backup count, then all entries of the map will be copied to another JVM for fail-safety. 0 means no sync backup. The sum of backup-count and async-backup-count can't be larger than than 6.",
+      "description": "Number of synchronous backups. For example, if 1 is set as the backup count, then all entries of the map will be copied to another JVM for fail-safety. 0 means no sync backup. The sum of backup-count and async-backup-count can't be larger than 6.",
       "type": "integer",
       "minimum": 0,
       "default": 1,
       "maximum": 6
     },
     "AsyncBackupCount": {
-      "description": "The number of asynchronous backups. 0 means no backups. The sum of backup-count and async-backup-count can't be larger than than 6.",
+      "description": "The number of asynchronous backups. 0 means no backups. The sum of backup-count and async-backup-count can't be larger than 6.",
       "type": "integer",
       "minimum": 0,
       "default": 0,
