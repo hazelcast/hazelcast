@@ -241,7 +241,7 @@ public final class Records {
         static Object wrapIfNeeded(Object object) {
             if (object instanceof Thread) {
                 //exceptional case: deserialized value is an instance of Thread
-                //we need to wrap it as we use currentThread to mark the cacheValue is 'deserilization in-progress'
+                //we need to wrap it as we use currentThread to mark the cacheValue is 'deserialization in-progress'
                 //this is the only case where we allocate a new object.
                 return new ThreadWrapper((Thread) object);
             }

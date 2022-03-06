@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 public class HotRestartStateImplTest {
 
     @Test
-    public void testSerializationAndDeserizalization() {
+    public void testSerializationAndDeserialization() {
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
         final String backupDirectory = "/some/dir";
         final HotRestartState state = new HotRestartStateImpl(backupTaskStatus, true, backupDirectory);
