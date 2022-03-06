@@ -41,7 +41,7 @@ public class MemcacheProtocolFilterTest extends AbstractTextProtocolsTestBase {
     /**
      * <pre>
      * Given: Memcache protocol is explicitly disabled
-     * When: version commad prefix (ver) is used by client
+     * When: version command prefix (ver) is used by client
      * Then: connection is terminated after reading the first 3 bytes (protocol header)
      * </pre>
      */
@@ -66,7 +66,7 @@ public class MemcacheProtocolFilterTest extends AbstractTextProtocolsTestBase {
     /**
      * <pre>
      * Given: Memcache protocol config is not provided (default is used)
-     * When: version commad prefix (ver) is used by client
+     * When: version command prefix (ver) is used by client
      * Then: connection is terminated after reading the first 3 bytes (protocol header)
      * </pre>
      */
