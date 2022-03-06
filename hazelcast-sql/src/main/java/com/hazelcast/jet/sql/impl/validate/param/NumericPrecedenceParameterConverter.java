@@ -37,7 +37,7 @@ public class NumericPrecedenceParameterConverter extends AbstractParameterConver
 
         if (valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence()) {
             // Conversion from value with lower precedence to target with higher precedence is allowed.
-            // For examplce, conversion from INTEGER to BIGINT is allowed or from BIGINT to REAL
+            // For example, conversion from INTEGER to BIGINT is allowed or from BIGINT to REAL
             return true;
         }
 
