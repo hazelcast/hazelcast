@@ -130,7 +130,7 @@ public class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testArraySubraction() throws Exception {
+    public void testArraySubtraction() throws Exception {
         assertNull(StringUtil.subtraction(null, arr("a", "test", "b", "a")));
         assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subtraction(arr("a", "test", "b", "a"), null));
         assertArrayEquals(arr("test"), StringUtil.subtraction(arr("a", "test", "b", "a"), arr("a", "b")));
