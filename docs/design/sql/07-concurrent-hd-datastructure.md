@@ -340,7 +340,7 @@ This helps to avoid two potential performance problems:
 - It minimizes the `readLock/releaseLock` calls count on the leaf node. Without batching every `next()` call on the iterator 
   would require the current leaf node locking, checking that it has not changed, producing one on-heap result entry and
   releasing the leaf node. With batching this overhead is minimized.
-- If iterator's current node has been changed, the iterator has to be re-synchrnized, that means a navigation from the root node 
+- If iterator's current node has been changed, the iterator has to be re-synchronized, that means a navigation from the root node 
   to the appropriate new leaf node is required. The iterator batching minimizes this overhead as well.
 
 In the current implementation the batch size is `1000`.    
