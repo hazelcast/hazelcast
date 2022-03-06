@@ -40,7 +40,7 @@ public interface MetadataInitializer {
      * Returns metadata for given object. Implementing class decides
      * the type of the metadata returned.
      *
-     * It is up to the implementating class to verify the type of the
+     * It is up to the implementation class to verify the type of the
      * argument.
      *
      * @param object
