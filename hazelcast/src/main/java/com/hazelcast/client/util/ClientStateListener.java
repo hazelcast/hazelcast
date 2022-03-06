@@ -118,7 +118,7 @@ public class ClientStateListener implements LifecycleListener {
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
      * @return true if the client is connected to the cluster. On returning false,
-     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
+     * you can check if timeout occurred or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitConnected(long timeout, TimeUnit unit)
@@ -167,7 +167,7 @@ public class ClientStateListener implements LifecycleListener {
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
      * @return true if the client is disconnected from the cluster. On returning false,
-     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
+     * you can check if timeout occurred or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitDisconnected(long timeout, TimeUnit unit)
