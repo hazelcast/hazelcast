@@ -427,12 +427,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(10);
         byte[] theNullArray = in.readByteArray();
         in.position(0);
-        byte[] theZeroLenghtArray = in.readByteArray();
+        byte[] theZeroLengthArray = in.readByteArray();
         in.position(4);
         byte[] bytes = in.readByteArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new byte[0], theZeroLenghtArray);
+        assertArrayEquals(new byte[0], theZeroLengthArray);
         assertArrayEquals(new byte[]{1}, bytes);
     }
 
@@ -445,12 +445,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(10);
         boolean[] theNullArray = in.readBooleanArray();
         in.position(0);
-        boolean[] theZeroLenghtArray = in.readBooleanArray();
+        boolean[] theZeroLengthArray = in.readBooleanArray();
         in.position(4);
         boolean[] booleanArray = in.readBooleanArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new boolean[0], theZeroLenghtArray);
+        assertArrayEquals(new boolean[0], theZeroLengthArray);
         assertTrue(Arrays.equals(new boolean[]{true}, booleanArray));
     }
 
@@ -463,12 +463,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(10);
         char[] theNullArray = in.readCharArray();
         in.position(0);
-        char[] theZeroLenghtArray = in.readCharArray();
+        char[] theZeroLengthArray = in.readCharArray();
         in.position(4);
         char[] booleanArray = in.readCharArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new char[0], theZeroLenghtArray);
+        assertArrayEquals(new char[0], theZeroLengthArray);
         assertArrayEquals(new char[]{1}, booleanArray);
     }
 
@@ -481,12 +481,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(12);
         int[] theNullArray = in.readIntArray();
         in.position(0);
-        int[] theZeroLenghtArray = in.readIntArray();
+        int[] theZeroLengthArray = in.readIntArray();
         in.position(4);
         int[] bytes = in.readIntArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new int[0], theZeroLenghtArray);
+        assertArrayEquals(new int[0], theZeroLengthArray);
         assertArrayEquals(new int[]{1}, bytes);
     }
 
@@ -499,12 +499,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         long[] theNullArray = in.readLongArray();
         in.position(0);
-        long[] theZeroLenghtArray = in.readLongArray();
+        long[] theZeroLengthArray = in.readLongArray();
         in.position(4);
         long[] bytes = in.readLongArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new long[0], theZeroLenghtArray);
+        assertArrayEquals(new long[0], theZeroLengthArray);
         assertArrayEquals(new long[]{1}, bytes);
     }
 
@@ -517,12 +517,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         double[] theNullArray = in.readDoubleArray();
         in.position(0);
-        double[] theZeroLenghtArray = in.readDoubleArray();
+        double[] theZeroLengthArray = in.readDoubleArray();
         in.position(4);
         double[] doubles = in.readDoubleArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new double[0], theZeroLenghtArray, 0);
+        assertArrayEquals(new double[0], theZeroLengthArray, 0);
         assertArrayEquals(new double[]{Double.longBitsToDouble(1)}, doubles, 0);
 
     }
@@ -536,12 +536,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         float[] theNullArray = in.readFloatArray();
         in.position(0);
-        float[] theZeroLenghtArray = in.readFloatArray();
+        float[] theZeroLengthArray = in.readFloatArray();
         in.position(4);
         float[] floats = in.readFloatArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new float[0], theZeroLenghtArray, 0);
+        assertArrayEquals(new float[0], theZeroLengthArray, 0);
         assertArrayEquals(new float[]{Float.intBitsToFloat(1)}, floats, 0);
     }
 
@@ -554,12 +554,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         short[] theNullArray = in.readShortArray();
         in.position(0);
-        short[] theZeroLenghtArray = in.readShortArray();
+        short[] theZeroLengthArray = in.readShortArray();
         in.position(4);
         short[] booleanArray = in.readShortArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new short[0], theZeroLenghtArray);
+        assertArrayEquals(new short[0], theZeroLengthArray);
         assertArrayEquals(new short[]{1}, booleanArray);
     }
 
@@ -572,12 +572,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         String[] theNullArray = in.readStringArray();
         in.position(0);
-        String[] theZeroLenghtArray = in.readStringArray();
+        String[] theZeroLengthArray = in.readStringArray();
         in.position(4);
         String[] bytes = in.readStringArray();
 
         assertNull(theNullArray);
-        assertArrayEquals(new String[0], theZeroLenghtArray);
+        assertArrayEquals(new String[0], theZeroLengthArray);
         assertArrayEquals(new String[]{" "}, bytes);
     }
 
@@ -619,13 +619,13 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.position(bytesLE.length - 4);
         Data nullData = readData(in);
         in.position(0);
-        Data theZeroLenghtArray = readData(in);
+        Data theZeroLengthArray = readData(in);
         in.position(4);
         Data data = readData(in);
 
         assertNull(nullData);
-        assertEquals(0, theZeroLenghtArray.getType());
-        assertArrayEquals(new byte[0], theZeroLenghtArray.toByteArray());
+        assertEquals(0, theZeroLengthArray.getType());
+        assertArrayEquals(new byte[0], theZeroLengthArray.toByteArray());
         assertArrayEquals(new byte[]{-1, -1, -1, -1, 0, 0, 0, 0}, data.toByteArray());
     }
 
