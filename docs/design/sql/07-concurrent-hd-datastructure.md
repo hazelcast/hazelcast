@@ -272,7 +272,7 @@ The inner node's header has 4 fields:
  - 8 bytes, the address of the `forward` leaf node, `NULL_ADDRESS` if it doesn't exist;
  - 8 bytes, the address of the `backward` leaf node, `NULL_ADDRESS` if it doesn't exist.
 
-The slot area contains contains multiple slots (B+tree index entries). The slot consists of 3 components:
+The slot area contains multiple slots (B+tree index entries). The slot consists of 3 components:
 
 - 8 bytes off-heap address of the `index key`.
 - 8 bytes off-heap address of the `entry key`.
