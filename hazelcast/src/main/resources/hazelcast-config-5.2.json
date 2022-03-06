@@ -2195,7 +2195,7 @@
                 "type": "integer",
                 "minimum": 0,
                 "default": 0,
-                "description": "Sets the time to live in seconds. Time to live is the time the event journal retains items before removing them from the journal. The events are removed on journal read and write actions, not while the journal is idle. Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the events never expire but they can be overwritten when the capacity of the journal is exceeed. Any integer between 0 and Integer.MAX_VALUE. 0 means infinite."
+                "description": "Sets the time to live in seconds. Time to live is the time the event journal retains items before removing them from the journal. The events are removed on journal read and write actions, not while the journal is idle. Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the events never expire but they can be overwritten when the capacity of the journal is exceeded. Any integer between 0 and Integer.MAX_VALUE. 0 means infinite."
               }
             }
           },
