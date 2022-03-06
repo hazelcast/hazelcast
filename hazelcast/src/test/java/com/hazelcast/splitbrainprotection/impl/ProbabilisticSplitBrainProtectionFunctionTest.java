@@ -114,19 +114,19 @@ public class ProbabilisticSplitBrainProtectionFunctionTest extends AbstractSplit
         assertFalse(splitBrainProtectionFunction.apply(subsetOfMembers(splitBrainProtectionSize - 1)));
     }
 
-    private void createSplitBrainProtectionFunctionProxy(long maxNoHeartbeatMillis, long hearbeatIntervalMillis) throws Exception {
-        Object qfOnTargetClassLoader = createSplitBrainProtectionFunctionReflectively(maxNoHeartbeatMillis, hearbeatIntervalMillis, splitBrainProtectionSize);
+    private void createSplitBrainProtectionFunctionProxy(long maxNoHeartbeatMillis, long heartbeatIntervalMillis) throws Exception {
+        Object qfOnTargetClassLoader = createSplitBrainProtectionFunctionReflectively(maxNoHeartbeatMillis, heartbeatIntervalMillis, splitBrainProtectionSize);
         splitBrainProtectionFunction = (SplitBrainProtectionFunction)
                 proxyObjectForStarter(ProbabilisticSplitBrainProtectionFunctionTest.class.getClassLoader(), qfOnTargetClassLoader);
     }
 
-    private Object createSplitBrainProtectionFunctionReflectively(long maxNoHeartbeatMillis, long hearbeatIntervalMillis, int splitBrainProtectionSize) {
+    private Object createSplitBrainProtectionFunctionReflectively(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, int splitBrainProtectionSize) {
         try {
             Class<?> splitBrainProtectionClazz = filteringClassloader.loadClass("com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction");
             Constructor<?> constructor = splitBrainProtectionClazz.getDeclaredConstructor(Integer.TYPE, Long.TYPE, Long.TYPE, Integer.TYPE,
                     Long.TYPE, Double.TYPE);
 
-            Object[] args = new Object[]{splitBrainProtectionSize, hearbeatIntervalMillis, maxNoHeartbeatMillis, 200, 100, 10};
+            Object[] args = new Object[]{splitBrainProtectionSize, heartbeatIntervalMillis, maxNoHeartbeatMillis, 200, 100, 10};
             return constructor.newInstance(args);
         } catch (Exception e) {
             throw new RuntimeException("Could not setup clock offset", e);
