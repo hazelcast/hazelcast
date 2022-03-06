@@ -395,7 +395,7 @@ public final class ClientMessage implements OutboundFrame {
     @SuppressWarnings("checkstyle:VisibilityModifier")
     public static class Frame {
         public final byte[] content;
-        //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
+        //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserved
         public int flags;
 
         Frame next;
