@@ -97,7 +97,7 @@ public abstract class AbstractIndexConcurrencyTest extends HazelcastTestSupport 
             threads[i].start();
         }
 
-        // wait for for all threads to finish
+        // wait for all threads to finish
         for (int i = 0; i < threads.length; ++i) {
             threads[i].join();
         }
