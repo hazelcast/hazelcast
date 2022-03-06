@@ -93,7 +93,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
     private String parent;
 
     @Parameters(name = "{index}: {0}, read{2}, {3}")
-    public static Collection<Object[]> parametrisationData() {
+    public static Collection<Object[]> parameterizationData() {
         List<Object[]> result = new ArrayList<>();
 
         directPrimitiveScenarios(result);

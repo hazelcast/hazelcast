@@ -58,7 +58,7 @@ import static java.util.Arrays.asList;
  * In this way we are testing extraction in collection and arrays making sure that the default behavior is consistent
  * for both extraction sources!
  * <p>
- * It's not the only parametrisation in this test; the other ones are:
+ * It's not the only parameterization in this test; the other ones are:
  * - each test is executed separately for BINARY and OBJECT in memory format
  * - each test is executed separately having each query using NO_INDEX, UNORDERED_INDEX and ORDERED_INDEX.
  * In this way we are spec-testing most of the reasonable combinations of the configuration of map & extraction.

@@ -45,7 +45,7 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
 
     protected IMap<String, Object> map;
 
-    // three parametrisation axes
+    // three parameterization axes
     private final Index index;
 
     /**
@@ -97,7 +97,7 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         }
     }
 
-    // constructor required by JUnit for parametrisation purposes
+    // constructor required by JUnit for parameterization purposes
     public AbstractExtractionTest(Index index) {
         this.index = index;
     }

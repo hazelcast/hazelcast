@@ -34,14 +34,14 @@ import java.util.List;
 public class AbstractExtractionSpecification extends HazelcastTestSupport {
 
     /**
-     * Parametrisation axis for indexing
+     * Parameterization axis for indexing
      */
     public enum Index {
         NO_INDEX, UNORDERED, ORDERED
     }
 
     /**
-     * Parametrisation axis for storage type: single-value, list, array, portable-array
+     * Parameterization axis for storage type: single-value, list, array, portable-array
      */
     public enum Multivalue {
         SINGLE,
@@ -120,7 +120,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
      * Parametrises queries replacing underscore to underscore_collection_type.
      * e.g. limb_[0], may be replaced to limb_array[0] or limb_list[0].
      * Of course the underlying lists or arrays has to exists in the test datastructure.
-     * Parametrisation enables reusing the same tests for multiple multi-values types.
+     * Parameterization enables reusing the same tests for multiple multi-values types.
      */
     protected static String parametrize(String expression, AbstractExtractionTest.Multivalue mv) {
         if (expression != null && !expression.contains("__")) {
