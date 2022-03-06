@@ -127,12 +127,12 @@ final class ProbeUtils {
             flatten(clazz.getSuperclass(), result);
         }
 
-        for (Class interfaze : clazz.getInterfaces()) {
-            if (!result.contains(interfaze)) {
-                result.add(interfaze);
+        for (Class iface : clazz.getInterfaces()) {
+            if (!result.contains(iface)) {
+                result.add(iface);
             }
 
-            flatten(interfaze, result);
+            flatten(iface, result);
         }
     }
 }
