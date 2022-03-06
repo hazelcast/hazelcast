@@ -51,7 +51,7 @@ import static java.util.Arrays.asList;
  * <p>
  * Extraction mechanism: EXTRACTOR-BASED EXTRACTION
  * <p>
- * This test is parametrised on two axes (see the parameterizationData() method):
+ * This test is parameterized on two axes (see the parameterizationData() method):
  * - in memory format
  * - indexing
  * - extraction in collections and arrays

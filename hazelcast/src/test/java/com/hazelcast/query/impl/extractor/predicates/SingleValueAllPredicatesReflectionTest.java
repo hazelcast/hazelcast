@@ -47,7 +47,7 @@ import static java.util.Collections.singletonList;
  * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
  * <p>
- * This test is parametrised:
+ * This test is parameterized:
  * - each test is executed separately for BINARY and OBJECT in memory format
  * - each test is executed separately having each query using NO_INDEX, UNORDERED_INDEX and ORDERED_INDEX.
  * In this way we are spec-testing most of the reasonable combinations of the configuration of map & extraction.

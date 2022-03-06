@@ -47,7 +47,7 @@ import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStruct
  * That is the reason why this test may extend the CollectionAllPredicatesReflectionTest, and the only difference
  * is the registration of the Extractors.
  * <p>
- * This test is parametrised. See CollectionAllPredicatesReflectionTest for more details.
+ * This test is parameterized. See CollectionAllPredicatesReflectionTest for more details.
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

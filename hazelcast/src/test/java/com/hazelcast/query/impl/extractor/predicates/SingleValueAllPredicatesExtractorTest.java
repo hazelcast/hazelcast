@@ -44,7 +44,7 @@ import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStruc
  * That is the reason why this test may extend the SingleValueAllPredicatesReflectionTest, and the only difference
  * is the registration of the Extractors.
  * <p>
- * This test is parametrised. See SingleValueAllPredicatesReflectionTest for more details.
+ * This test is parameterized. See SingleValueAllPredicatesReflectionTest for more details.
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

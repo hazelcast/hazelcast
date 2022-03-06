@@ -55,7 +55,7 @@ import static org.junit.Assume.assumeThat;
  * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
  * <p>
- * This test is parametrised on two axes (see the parameterizationData() method):
+ * This test is parameterized on two axes (see the parameterizationData() method):
  * - in memory format
  * - indexing
  * - extraction in collections and arrays

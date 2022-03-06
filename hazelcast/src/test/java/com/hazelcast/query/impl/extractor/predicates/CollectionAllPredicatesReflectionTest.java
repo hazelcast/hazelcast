@@ -52,7 +52,7 @@ import static java.util.Arrays.asList;
  * <p>
  * The trick here is that each multi-value attribute in the used data structure is present as both an array and as
  * a collection. For more details have a look at CollectionDataStructure.
- * This test is parametrised, so that it's executed for both options too (arrays and collections).
+ * This test is parameterized, so that it's executed for both options too (arrays and collections).
  * Let's have a look at the following path: 'limbs_[1].power'.
  * limbs_[1].power is unfolded to: limbs_array[1].power and limbs_list[1].power in two separate tests run.
  * In this way we are testing extraction in collection and arrays making sure that the default behavior is consistent
