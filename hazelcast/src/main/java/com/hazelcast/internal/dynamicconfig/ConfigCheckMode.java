@@ -19,7 +19,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.InvalidConfigurationException;
 
 /**
- * Behaviour when detects a configuration conflict while registering a new dynamic configuraiton.
+ * Behaviour when detects a configuration conflict while registering a new dynamic configuration.
  *
  */
 public enum ConfigCheckMode {
