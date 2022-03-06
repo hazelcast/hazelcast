@@ -67,7 +67,7 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
 
         invocation.notifyCallTimeout();
 
-        // now we verify if the wait timeout is still inifinite
+        // now we verify if the wait timeout is still infinite
         assertEquals(-1, op.getWaitTimeout());
     }
 
