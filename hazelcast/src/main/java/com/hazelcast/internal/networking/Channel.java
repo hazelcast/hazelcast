@@ -124,7 +124,7 @@ public interface Channel extends Closeable {
      * will expose the Socket.
      *
      * It is very important that the socket isn't closed directly; but one goes through the
-     * {@link #close()} method so that interal administration of the channel is in sync with
+     * {@link #close()} method so that internal administration of the channel is in sync with
      * that of the socket.
      */
     Socket socket();
