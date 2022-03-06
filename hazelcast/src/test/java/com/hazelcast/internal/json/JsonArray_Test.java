@@ -496,7 +496,7 @@ public class JsonArray_Test {
   }
 
   @Test
-  public void set_json_replacesDifferntArrayElements() {
+  public void set_json_replacesDifferentArrayElements() {
     array.add(3).add(6).add(9);
 
     array.set(1, 4).set(2, 5);
