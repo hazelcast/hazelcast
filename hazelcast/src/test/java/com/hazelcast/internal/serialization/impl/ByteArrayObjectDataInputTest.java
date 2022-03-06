@@ -588,8 +588,8 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         int unsigned = in.readUnsignedByte();
-        int expexted = 0xff;
-        assertEquals(expexted, unsigned);
+        int expected = 0xff;
+        assertEquals(expected, unsigned);
     }
 
     @Test

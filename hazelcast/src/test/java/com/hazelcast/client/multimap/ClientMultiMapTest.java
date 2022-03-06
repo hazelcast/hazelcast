@@ -320,14 +320,14 @@ public class ClientMultiMapTest {
         final int maxItemsPerKey = 44;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        Set expeted = new TreeSet();
+        Set expected = new TreeSet();
         for (int i = 0; i < maxItemsPerKey; i++) {
             mm.put(key, i);
-            expeted.add(i);
+            expected.add(i);
         }
         Set resultSet = new TreeSet(mm.remove(key));
 
-        assertEquals(expeted, resultSet);
+        assertEquals(expected, resultSet);
         assertEquals(0, mm.size());
     }
 
