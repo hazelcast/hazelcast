@@ -204,7 +204,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testArrayWithNestedField_when_field_nonexist() {
+    public void testArrayWithNestedField_when_field_doesnotexist() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         Long maxLongValue = map.aggregate(Aggregators.longMax(
                 "nestedArray[any].nestedArrayObject.secondary.nestedObjectLongValue.nonExistant"));
