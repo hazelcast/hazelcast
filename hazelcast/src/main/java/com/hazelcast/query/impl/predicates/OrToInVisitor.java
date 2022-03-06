@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
  * disjunction of equalPredicate(s) requires one reflective call for each equalPredicate.
  *
  * The performance is even more significant when tha {@link InPredicate#attributeName} is indexed.
- * As then the InPrecicate can be evaluated by just a single hit into index.
+ * As then the InPredicate can be evaluated by just a single hit into index.
  *
  *
  * When index is used then

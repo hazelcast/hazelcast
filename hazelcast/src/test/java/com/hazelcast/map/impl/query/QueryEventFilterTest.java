@@ -63,7 +63,7 @@ public class QueryEventFilterTest {
     }
 
     @Test
-    public void testEval_givenFilterContainsKey_whenKeyOfEntryIsEqualAndPredicacteIsMatching_thenReturnTrue() {
+    public void testEval_givenFilterContainsKey_whenKeyOfEntryIsEqualAndPredicateIsMatching_thenReturnTrue() {
         //given
         Data key1 = serializationService.toData("key1");
         Predicate predicate = Predicates.alwaysTrue();
