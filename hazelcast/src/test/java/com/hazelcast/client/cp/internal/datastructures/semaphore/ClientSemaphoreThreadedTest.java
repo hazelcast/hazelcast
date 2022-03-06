@@ -121,7 +121,7 @@ public class ClientSemaphoreThreadedTest {
 
     abstract static class SemaphoreTestThread extends Thread {
 
-        private static final int MAX_ITTERATIONS = 1000 * 10;
+        private static final int MAX_ITERATIONS = 1000 * 10;
 
         public volatile Throwable error;
 
@@ -139,7 +139,7 @@ public class ClientSemaphoreThreadedTest {
 
         public final void run() {
             try {
-                for (int i = 0; i < MAX_ITTERATIONS; i++) {
+                for (int i = 0; i < MAX_ITERATIONS; i++) {
                     iterativelyRun();
                 }
             } catch (Throwable e) {
