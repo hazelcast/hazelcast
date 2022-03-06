@@ -2755,7 +2755,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Includes allowed IP addresses for Management Center connections.
-                        More preciselly, the element configures addresses from which clients are allowed to run cluster
+                        More precisely, the element configures addresses from which clients are allowed to run cluster
                         management tasks over the Hazelcast client protocol.
                         You can give an IP addresses range using the wildcard (*) on the last digit of the IP address
                         (e.g. 192.168.1.* or 192.168.1.100-110).
