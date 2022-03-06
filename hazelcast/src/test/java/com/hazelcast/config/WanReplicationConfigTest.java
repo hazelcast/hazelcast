@@ -77,7 +77,7 @@ public class WanReplicationConfigTest {
     }
 
     @Test
-    public void testSerialization_withEmpyConfigs() {
+    public void testSerialization_withEmptyConfigs() {
         config.setName("name");
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
