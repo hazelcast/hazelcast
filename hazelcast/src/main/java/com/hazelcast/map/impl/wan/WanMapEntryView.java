@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * WAN heap based implementation of {@link EntryView}.
  * <p>
- * It is lazy because you intialise it with serialized formats
+ * It is lazy because you initialize it with serialized formats
  * of key and value and it will deserialise only if {@link #getKey()} or
  * {@link #getValue()} are invoked.
  *
