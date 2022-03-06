@@ -265,7 +265,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testInitialLoadModeEagerWhileStoppigOneNode() {
+    public void testInitialLoadModeEagerWhileStoppingOneNode() {
         final int instanceCount = 2;
         final int size = 10000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
@@ -276,14 +276,14 @@ public class MapStoreTest extends AbstractMapStoreTest {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        config.getMapConfig("testInitialLoadModeEagerWhileStoppigOneNode").setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("testInitialLoadModeEagerWhileStoppingOneNode").setMapStoreConfig(mapStoreConfig);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         new Thread(() -> {
             sleepSeconds(3);
             instance1.getLifecycleService().shutdown();
             sleepSeconds(3);
-            final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+            final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppingOneNode");
             assertEquals(size, map.size());
             countDownLatch.countDown();
 
@@ -291,7 +291,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
         assertOpenEventually(countDownLatch);
 
-        final IMap<Object, Object> map2 = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+        final IMap<Object, Object> map2 = instance2.getMap("testInitialLoadModeEagerWhileStoppingOneNode");
         final int map2Size = map2.size();
         assertEquals(size, map2Size);
     }
