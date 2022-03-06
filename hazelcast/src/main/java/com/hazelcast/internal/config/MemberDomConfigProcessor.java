@@ -738,7 +738,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     !isNullOrEmpty(splitBrainProtectionConfig.getFunctionClassName());
             if (splitBrainProtectionFunctionDefinedByClassName) {
                 throw new InvalidConfigurationException("A split brain protection cannot simultaneously"
-                        + " define probabilistic-split-brain-protectionm or "
+                        + " define probabilistic-split-brain-protection or "
                         + "recently-active-split-brain-protection and a split brain protection function class name.");
             }
             // ensure parsed attributes are reflected in constructed split brain protection config
