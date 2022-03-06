@@ -137,7 +137,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 : ns + " should be used only for chunked migrations enabled services!";
 
         ILogger logger = getLogger();
-        logger.fine("Collecting chunk chunk suppliers...");
+        logger.fine("Collecting chunk suppliers...");
 
         Collection<ChunkSupplier> chunkSuppliers = Collections.emptyList();
 
