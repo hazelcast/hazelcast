@@ -128,7 +128,7 @@ public class JsonPathCursor {
     /**
      * Returns byte array of UTF8 encoded {@link #getCurrent()}. This
      * method caches the UTF8 encoded byte array, so it is more
-     * efficient to call repeteadly.
+     * efficient to call repeatedly.
      *
      * The returned byte array must not be modified!
      *
