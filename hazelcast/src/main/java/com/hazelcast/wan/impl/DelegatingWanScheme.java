@@ -82,7 +82,7 @@ public final class DelegatingWanScheme {
                              @Nonnull WanPublisher publisher) {
         if (publishers.putIfAbsent(publisherId, publisher) != null) {
             throw new IllegalStateException("Publisher with publisher ID " + publisherId
-                    + " on WAN replication scheme " + name + " is already present and cannot be overriden");
+                    + " on WAN replication scheme " + name + " is already present and cannot be overridden");
         }
     }
 

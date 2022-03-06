@@ -199,12 +199,12 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     @Test
     public void test_metadata_discovery_on_node_startup_overrides_what_is_configured_on_member() throws Exception {
-        final String overridenAttribute = "test-string";
+        final String overriddenAttribute = "test-string";
 
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
-        config.getMemberAttributeConfig().setAttribute(overridenAttribute, "config-property");
+        config.getMemberAttributeConfig().setAttribute(overriddenAttribute, "config-property");
 
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
         try {
@@ -212,7 +212,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             assertNotNull(hazelcastInstance1);
 
             Member localMember = hazelcastInstance1.getCluster().getLocalMember();
-            assertEquals("TEST", localMember.getAttribute(overridenAttribute));
+            assertEquals("TEST", localMember.getAttribute(overriddenAttribute));
         } finally {
             instanceFactory.shutdownAll();
         }
