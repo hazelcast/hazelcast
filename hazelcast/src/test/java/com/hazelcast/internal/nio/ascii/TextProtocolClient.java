@@ -77,8 +77,8 @@ public class TextProtocolClient implements Closeable {
     /**
      * Creates new client for given socket address. Client is not connected automatically.
      */
-    public TextProtocolClient(InetSocketAddress inetSocketAdddress) {
-        this(inetSocketAdddress.getAddress(), inetSocketAdddress.getPort());
+    public TextProtocolClient(InetSocketAddress inetSocketAddress) {
+        this(inetSocketAddress.getAddress(), inetSocketAddress.getPort());
     }
 
     /**

@@ -46,7 +46,7 @@ import com.hazelcast.internal.nio.Disposable;
  * </p><h3>
  *     Memory layout
  * </h3> <p>
- * The base address, returned by {@link #address()}, is the addres of the first slot in the array.
+ * The base address, returned by {@link #address()}, is the address of the first slot in the array.
  * It is preceded by the header of size {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE}
  * which holds the metadata
  * that pertains to the structure as a whole ({@code capacity}, {@code size}, and {@code expandAt}).

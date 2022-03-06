@@ -341,7 +341,7 @@ Unit and integration tests should:
 - Verify UUID-Address management with Persistence enabled remains working (consider restarting with same UUID);
 - Verify TLS remains working (when host validation is enabled);
 - Verify the performance doesn't significantly drop in different environments (On premise, Kubernetes, GKE, AWS deployments etc.)
-- Verify cluster is correctly being formed, Persistence and WAN is working when `setPublicAdress` is applied
+- Verify cluster is correctly being formed, Persistence and WAN is working when `setPublicAddress` is applied
 - Verify that the client from external network can connect to the cluster
 
 It would definitely be better to test these scenarios also with hazelcast test containers as well.
