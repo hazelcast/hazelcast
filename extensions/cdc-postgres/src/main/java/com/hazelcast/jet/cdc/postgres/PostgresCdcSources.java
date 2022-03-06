@@ -382,7 +382,7 @@ public final class PostgresCdcSources {
         }
 
         /**
-         * Specifies the file containing containing SSL certificate authority
+         * Specifies the file containing SSL certificate authority
          * (CA) certificate(s).
          */
         @Nonnull
