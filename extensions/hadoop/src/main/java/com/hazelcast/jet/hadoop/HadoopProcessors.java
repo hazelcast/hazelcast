@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 
 /**
- * Static utility class with factories of Apache Hadoop Hadoop source and sink
+ * Static utility class with factories of Apache Hadoop source and sink
  * processors.
  *
  * @since Jet 3.0
