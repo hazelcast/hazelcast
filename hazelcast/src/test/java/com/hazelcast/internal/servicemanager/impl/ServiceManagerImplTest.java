@@ -105,7 +105,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
 
     @Test
     public void getServiceInfo_notExisting() {
-        ServiceInfo result = serviceManager.getServiceInfo("notexisting");
+        ServiceInfo result = serviceManager.getServiceInfo("nonexistent");
         assertNull(result);
     }
 
@@ -139,7 +139,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
 
     @Test
     public void getService_notExisting() {
-        Object result = serviceManager.getService("notexisting");
+        Object result = serviceManager.getService("nonexistent");
         assertNull(result);
     }
 

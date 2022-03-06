@@ -143,7 +143,7 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
 
     @Test
     public void shouldFailForNonExistingFolder() {
-        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources/notexists")
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources/nonexistent")
                                                       .glob("*")
                                                       .format(FileFormat.text());
 

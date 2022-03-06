@@ -60,7 +60,7 @@ public class NodeEngineTest extends HazelcastTestSupport {
 
     @Test
     public void getServiceOrNull_whenNonExistingService() {
-        Object sharedService = nodeEngine.getServiceOrNull("notexist");
+        Object sharedService = nodeEngine.getServiceOrNull("nonexistent");
         assertNull(sharedService);
     }
 
@@ -78,7 +78,7 @@ public class NodeEngineTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void getService_whenNonExistingService() {
-        nodeEngine.getService("notexist");
+        nodeEngine.getService("nonexistent");
     }
 
     @Test

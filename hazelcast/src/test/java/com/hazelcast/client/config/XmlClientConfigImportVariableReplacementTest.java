@@ -276,7 +276,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"notexisting.xml\"/>\n"
+                + "    <import resource=\"nonexistent.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
@@ -286,7 +286,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Test(expected = HazelcastException.class)
     public void testImportNotExistingUrlResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///notexisting.xml\"/>\n"
+                + "    <import resource=\"file:///nonexistent.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
