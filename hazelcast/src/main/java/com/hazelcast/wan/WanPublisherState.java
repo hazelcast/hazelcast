@@ -94,7 +94,7 @@ public enum WanPublisherState {
     }
 
     /**
-     * Returns {@code true} if this state allows dequeueing and replicating
+     * Returns {@code true} if this state allows dequeuing and replicating
      * events, {@code false} otherwise.
      */
     public boolean isReplicateEnqueuedEvents() {
