@@ -549,11 +549,11 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
 
         leader.replicate(new ApplyRaftRunnable("val1")).get();
-        long oldLeaderCommitIndexBeforeMemberhipChange = getCommitIndex(leader);
+        long oldLeaderCommitIndexBeforeMembershipChange = getCommitIndex(leader);
 
         assertTrueEventually(() -> {
             for (RaftNodeImpl follower : followers) {
-                assertEquals(oldLeaderCommitIndexBeforeMemberhipChange, getCommitIndex(follower));
+                assertEquals(oldLeaderCommitIndexBeforeMembershipChange, getCommitIndex(follower));
             }
         });
 
@@ -566,7 +566,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             long leaderLastLogIndex = getLastLogOrSnapshotEntry(leader).index();
-            assertTrue(leaderLastLogIndex > oldLeaderCommitIndexBeforeMemberhipChange);
+            assertTrue(leaderLastLogIndex > oldLeaderCommitIndexBeforeMembershipChange);
             assertEquals(leaderLastLogIndex, getLastLogOrSnapshotEntry(newRaftNode).index());
         });
 
