@@ -208,7 +208,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
     }
 
     @Test
-    public void testReconnectModeASYNC_clusterDown_clientGetsOfflineExcption() {
+    public void testReconnectModeASYNC_clusterDown_clientGetsOfflineException() {
         HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
 

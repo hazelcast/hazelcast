@@ -276,7 +276,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     /**
      * Tests if the future on a blocking operation can be shared by multiple threads. This tests fails in 3.6 because
-     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
+     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutException
      */
     @Test
     public void sync_whenManyGettersAndLotsOfWaiting() throws Exception {
@@ -339,7 +339,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     /**
      * Tests if the future on a blocking operation can be shared by multiple threads. This tests fails in 3.6 because
-     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
+     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutException
      */
     @Test
     public void async_whenMultipleAndThenOnSameFuture() {
