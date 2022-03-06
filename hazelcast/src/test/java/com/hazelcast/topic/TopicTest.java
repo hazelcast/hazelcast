@@ -182,7 +182,7 @@ public class TopicTest extends HazelcastTestSupport {
             }
         });
 
-        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
         topic.publishAll(messages);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -208,7 +208,7 @@ public class TopicTest extends HazelcastTestSupport {
                 count.incrementAndGet();
             }
         });
-        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
         final CompletableFuture<Void> f = topic.publishAllAsync(messages).toCompletableFuture();
         assertCompletesEventually(f);
         assertTrueEventually(new AssertTask() {

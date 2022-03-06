@@ -168,7 +168,7 @@ public class ClientTopicTest {
         final Collection<String> receivedValues = new ArrayList<>();
         ITopic<String> topic = createTopic(count, receivedValues);
 
-        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
         topic.publishAllAsync(messages);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -185,7 +185,7 @@ public class ClientTopicTest {
         final Collection<String> receivedValues = new ArrayList<>();
         ITopic<String> topic = createTopic(count, receivedValues);
 
-        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
         final CompletionStage<Void> completionStage = topic.publishAllAsync(messages);
         completionStage.toCompletableFuture().join();
         assertTrueEventually(new AssertTask() {
