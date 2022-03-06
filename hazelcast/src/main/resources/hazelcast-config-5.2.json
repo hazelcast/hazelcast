@@ -3366,7 +3366,7 @@
               },
               "min-std-deviation-millis": {
                 "type": "integer",
-                "description": "Minimum standard deviation (in milliseconds) to use for the normal distribution used when calculating phi. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.min.std.dev.millis system propery."
+                "description": "Minimum standard deviation (in milliseconds) to use for the normal distribution used when calculating phi. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.min.std.dev.millis system property."
               },
               "heartbeat-interval-millis": {
                 "type": "integer",
