@@ -39,7 +39,7 @@ public class MultiMapPutAllOperationFactory extends PartitionAwareOperationFacto
         this.name = name;
         this.partitions = partitions;
         this.mapEntries = mapEntries;
-        //NB: general structure copied from c.hz.map.impl.operation.PutAllOperationPartitionAwareFactort
+        //NB: general structure copied from c.hz.map.impl.operation.PutAllOperationPartitionAwareFactory
         //May benefit from refactoring or default interfaces
     }
 
