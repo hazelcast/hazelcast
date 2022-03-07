@@ -99,7 +99,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * doesn't create a WaitNode is that we don't want to cause additional
      * litter since most of our API calls are a get or a single ExecutionCallback.
      * <p>
-     * The state field is replaced using a cas, so registration or setting a
+     * The state field is replaced using a CAS, so registration or setting a
      * response is an atomic operation and therefore not prone to data-races.
      * There is no need to use synchronized blocks.
      */
@@ -1157,7 +1157,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
             Object newState;
             if (oldState == UNRESOLVED && (executor == null || executor == defaultExecutor())) {
-                // nothing is syncing on this future, so instead of creating a WaitNode, we just try to cas the waiter
+                // nothing is syncing on this future, so instead of creating a WaitNode, we just try to CAS the waiter
                 newState = waiter;
             } else {
                 // something already has been registered for syncing, so we need to create a WaitNode

@@ -140,7 +140,7 @@ public class Pipelining<E> {
             int current = permits.get();
             int update = current - 1;
             if (!permits.compareAndSet(current, update)) {
-                // we failed to cas, so lets try again.
+                // we failed to CAS, so lets try again.
                 continue;
             }
 
