@@ -165,7 +165,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     }
 
     private RingbufferContainer clone(RingbufferContainer original) {
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000);
+        BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000, -1);
         try {
             out.writeObject(original);
             byte[] bytes = out.toByteArray();

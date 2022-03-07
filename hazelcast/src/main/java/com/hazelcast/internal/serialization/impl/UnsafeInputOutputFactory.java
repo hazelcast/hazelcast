@@ -49,11 +49,6 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
     }
 
     @Override
-    public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
-        return new UnsafeObjectDataOutput(size, service);
-    }
-
-    @Override
     public BufferObjectDataOutput createOutput(int initialSize, int secondInitialSize, InternalSerializationService service) {
         return new UnsafeObjectDataOutput(initialSize, secondInitialSize, service);
     }

@@ -155,7 +155,7 @@ public class PortableClassVersionTest {
         Data dataV1 = serializationService.toData(portableV1);
 
         // emulate socket write by writing data to stream
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
+        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024, -1);
         writeData(out, dataV1);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream

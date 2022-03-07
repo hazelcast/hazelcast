@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -217,7 +217,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private Operation copy(Operation op) {
         try {
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000);
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000, -1);
             op.writeData(out);
 
             BufferObjectDataInput in = serializationService.createObjectDataInput(out.toByteArray());
