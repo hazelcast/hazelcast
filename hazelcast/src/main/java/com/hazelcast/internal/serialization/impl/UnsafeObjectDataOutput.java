@@ -53,8 +53,8 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         super(size, service, ByteOrder.nativeOrder());
     }
 
-    UnsafeObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
-        super(initialSize, firstGrowthSize, service, ByteOrder.nativeOrder());
+    UnsafeObjectDataOutput(int initialSize, int secondInitialSize, InternalSerializationService service) {
+        super(initialSize, secondInitialSize, service, ByteOrder.nativeOrder());
     }
 
     @Override

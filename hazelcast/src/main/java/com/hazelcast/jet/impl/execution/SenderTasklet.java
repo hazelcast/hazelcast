@@ -51,7 +51,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class SenderTasklet implements Tasklet {
     private static final int BUFFER_INITIAL_SIZE = 1 << 10;
-    private static final int BUFFER_FIRST_GROWTH_SIZE = 1 << 15;
+    private static final int BUFFER_SECOND_INITIAL_SIZE = 1 << 15;
 
     private final Connection connection;
     private final Queue<Object> inbox = new ArrayDeque<>();
@@ -96,7 +96,7 @@ public class SenderTasklet implements Tasklet {
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = connection;
-        this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_INITIAL_SIZE, BUFFER_FIRST_GROWTH_SIZE);
+        this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_INITIAL_SIZE, BUFFER_SECOND_INITIAL_SIZE);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(nodeEngine,
                 executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();
