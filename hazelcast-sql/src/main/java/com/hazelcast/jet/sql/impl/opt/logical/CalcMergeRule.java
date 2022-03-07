@@ -73,7 +73,7 @@ public final class CalcMergeRule extends RelRule<Config> {
 
         List<RexNode> lowerCalcProjects = lowerCalcProgram.getProjectList()
                 .stream()
-                .map(upperCalcProgram::expandLocalRef)
+                .map(lowerCalcProgram::expandLocalRef)
                 .collect(Collectors.toList());
         // TODO: kakayato problema tyt ^^^
 

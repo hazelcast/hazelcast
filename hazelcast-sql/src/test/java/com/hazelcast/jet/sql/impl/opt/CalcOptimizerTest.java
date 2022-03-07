@@ -38,7 +38,7 @@ public class CalcOptimizerTest extends OptimizerTestSupport {
     public void name() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("SELECT a, a1 FROM (SELECT a, random_udf(a) AS a1 FROM MyTable) t WHERE a1 > 10", table),
+                optimizeLogical("SELECT a, a1 FROM (SELECT a, SIN(a) AS a1 FROM MyTable) t WHERE a1 > 10", table),
                 plan(
                         planRow(0, Calc.class),
                         planRow(1, FullScanLogicalRel.class)
