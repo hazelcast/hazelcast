@@ -170,8 +170,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public BufferObjectDataOutput createObjectDataOutput(int initialSize, int secondInitialSize) {
-        return delegate.createObjectDataOutput(initialSize, secondInitialSize);
+    public BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize) {
+        return delegate.createObjectDataOutput(initialSize, firstGrowthSize);
     }
 
     @Override

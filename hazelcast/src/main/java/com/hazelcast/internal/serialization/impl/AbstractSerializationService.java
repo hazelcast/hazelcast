@@ -402,8 +402,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public BufferObjectDataOutput createObjectDataOutput(int initialSize, int secondInitialSize) {
-        return inputOutputFactory.createOutput(initialSize, secondInitialSize, this);
+    public BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize) {
+        return inputOutputFactory.createOutput(initialSize, firstGrowthSize, this);
     }
 
     @Override

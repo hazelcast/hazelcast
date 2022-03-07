@@ -89,11 +89,7 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput(int size);
 
-    /**
-     * Creating new {@link BufferObjectDataOutput}. The size of the internal buffer is set to initialSize at construction.
-     * When the buffer is too small to accept new bytes the buffer will grow to at least secondInitialSize.
-     */
-    BufferObjectDataOutput createObjectDataOutput(int initialSize, int secondInitialSize);
+    BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize);
 
     BufferObjectDataOutput createObjectDataOutput();
 

@@ -40,7 +40,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
 
     final int initialSize;
 
-    final int secondInitialSize;
+    final int firstGrowthSize;
 
     byte[] buffer;
 
@@ -54,9 +54,9 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         this(size, -1, service, byteOrder);
     }
 
-    ByteArrayObjectDataOutput(int initialSize, int secondInitialSize, InternalSerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service, ByteOrder byteOrder) {
         this.initialSize = initialSize;
-        this.secondInitialSize = secondInitialSize;
+        this.firstGrowthSize = firstGrowthSize;
         this.buffer = new byte[initialSize];
         this.service = service;
         isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
@@ -395,7 +395,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     final void ensureAvailable(int len) {
         if (available() < len) {
             if (buffer != null) {
-                int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), secondInitialSize);
+                int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), firstGrowthSize);
                 buffer = Arrays.copyOf(buffer, newCap);
             } else {
                 buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
