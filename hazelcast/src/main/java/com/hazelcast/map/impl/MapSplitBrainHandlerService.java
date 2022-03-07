@@ -63,6 +63,9 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
         defaultRecordStore.getMapDataStore().reset();
         defaultRecordStore.getIndexingObserver().onDestroy(false, true);
+
+        MapContainer mapContainer = defaultRecordStore.getMapContainer();
+        mapServiceContext.removeMapContainer(mapContainer);
     }
 
     @Override
