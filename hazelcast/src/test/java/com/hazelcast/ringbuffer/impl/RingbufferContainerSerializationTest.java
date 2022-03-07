@@ -38,6 +38,7 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertArrayEquals;
@@ -165,7 +166,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     }
 
     private RingbufferContainer clone(RingbufferContainer original) {
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000, -1);
+        BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000, DONT_USE_SECOND_INITIAL_SIZE);
         try {
             out.writeObject(original);
             byte[] bytes = out.toByteArray();

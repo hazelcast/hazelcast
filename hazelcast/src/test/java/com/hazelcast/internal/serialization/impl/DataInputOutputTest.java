@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.Address;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.Person;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
@@ -78,7 +79,7 @@ public class DataInputOutputTest {
         out.writeObject(object);
         byte[] data1 = bout.toByteArray();
 
-        ObjectDataOutput out2 = ss.createObjectDataOutput(1024, -1);
+        ObjectDataOutput out2 = ss.createObjectDataOutput(1024, DONT_USE_SECOND_INITIAL_SIZE);
         out2.writeObject(object);
         byte[] data2 = out2.toByteArray();
 

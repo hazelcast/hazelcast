@@ -41,6 +41,7 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static com.hazelcast.internal.nio.IOUtil.writeData;
+import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static com.hazelcast.internal.serialization.impl.portable.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.internal.serialization.impl.portable.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
@@ -155,7 +156,7 @@ public class PortableClassVersionTest {
         Data dataV1 = serializationService.toData(portableV1);
 
         // emulate socket write by writing data to stream
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024, -1);
+        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024, DONT_USE_SECOND_INITIAL_SIZE);
         writeData(out, dataV1);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream

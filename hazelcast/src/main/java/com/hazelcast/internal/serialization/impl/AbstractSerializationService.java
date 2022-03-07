@@ -68,6 +68,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {
+    public static final int DONT_USE_SECOND_INITIAL_SIZE = -1;
 
     protected final ManagedContext managedContext;
     protected final InputOutputFactory inputOutputFactory;
@@ -403,7 +404,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public BufferObjectDataOutput createObjectDataOutput() {
-        return inputOutputFactory.createOutput(outputBufferSize, -1, this);
+        return inputOutputFactory.createOutput(outputBufferSize, DONT_USE_SECOND_INITIAL_SIZE, this);
     }
 
     public final ClassLoader getClassLoader() {

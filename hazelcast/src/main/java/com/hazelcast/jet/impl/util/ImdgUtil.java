@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static java.util.stream.Collectors.toList;
 
 public final class ImdgUtil {
@@ -129,7 +130,7 @@ public final class ImdgUtil {
     @Nonnull
     public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine, int size) {
         return ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataOutput(size, -1);
+                .createObjectDataOutput(size, DONT_USE_SECOND_INITIAL_SIZE);
     }
 
     @Nonnull
