@@ -115,19 +115,19 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @AfterClass
     public static void supportAfterClass() throws Exception {
-        if (factory != null) {
-            SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
-            try {
+        try {
+            if (factory != null) {
+                SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
                 spawn(() -> factory.terminateAll())
                         .get(5, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                SUPPORT_LOGGER.warning("Terminating instance factory timed out", e);
             }
+        } catch (TimeoutException e) {
+            SUPPORT_LOGGER.warning("Terminating instance factory timed out", e);
+        } finally {
+            factory = null;
+            instances = null;
+            client = null;
         }
-
-        factory = null;
-        instances = null;
-        client = null;
     }
 
     @Nonnull
