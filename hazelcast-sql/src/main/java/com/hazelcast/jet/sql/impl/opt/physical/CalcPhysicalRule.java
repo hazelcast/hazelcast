@@ -44,10 +44,12 @@ final class CalcPhysicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         CalcLogicalRel calc = (CalcLogicalRel) rel;
 
+        RelNode transformedInput = RelOptRule.convert(calc.getInput(), calc.getInput().getTraitSet().replace(PHYSICAL));
+
         return new CalcPhysicalRel(
                 calc.getCluster(),
-                OptUtils.toPhysicalConvention(calc.getTraitSet()),
-                OptUtils.toPhysicalInput(calc.getInput()),
+                OptUtils.toPhysicalConvention(transformedInput.getTraitSet()),
+                OptUtils.toPhysicalInput(transformedInput),
                 calc.getProgram()
         );
     }

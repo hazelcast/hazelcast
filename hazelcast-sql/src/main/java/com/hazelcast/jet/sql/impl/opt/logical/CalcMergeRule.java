@@ -75,6 +75,7 @@ public final class CalcMergeRule extends RelRule<Config> {
                 .stream()
                 .map(upperCalcProgram::expandLocalRef)
                 .collect(Collectors.toList());
+        // TODO: kakayato problema tyt ^^^
 
         boolean isMergeable = true;
 
