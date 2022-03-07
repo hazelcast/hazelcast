@@ -38,6 +38,10 @@ public interface InputOutputFactory {
 
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
 
+    /**
+     * Creating new {@link BufferObjectDataOutput}. The size of the internal buffer is set to initialSize at construction.
+     * When the buffer is too small to accept new bytes the buffer will grow to at least firstGrowthSize.
+     */
     BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service);
 
     ByteOrder getByteOrder();
