@@ -70,6 +70,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
     private static final String JET_PACKAGE_PREFIX = "com.hazelcast.jet";
 
+    // Only a small subset of Jet classes requires backwards-compatibility. Jet doesn't provide client
+    // compatibility nor does it support rolling upgrades.
     private static final Set<String> JET_BACKWARD_COMPATIBLE_CLASSES = Stream
             .of(JobRecord.class, JobSummary.class, JobConfig.class)
             .map(Class::getName)

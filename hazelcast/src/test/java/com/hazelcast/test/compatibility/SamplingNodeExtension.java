@@ -294,7 +294,6 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        // There are 3 JET classes that must be backward compatible, so let's start the jet test too.
         return nodeExtension.getJet();
     }
 
