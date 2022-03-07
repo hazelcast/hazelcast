@@ -50,7 +50,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSupport {
+public class TransactionImpl_TwoPhaseIT extends HazelcastTestSupport {
 
     private HazelcastInstance[] cluster;
     private TransactionManagerServiceImpl localTxService;
