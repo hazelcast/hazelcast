@@ -85,7 +85,7 @@ public final class ModularJavaUtils {
         if (JavaVm.CURRENT_VM == JavaVm.OPENJ9) {
             return packages(
                     open("com.sun.management.internal"),
-                    open("com.ibm.lang.management.internal")
+                    export("com.ibm.lang.management.internal")
             );
         }
         return packages(open("com.sun.management.internal"));
