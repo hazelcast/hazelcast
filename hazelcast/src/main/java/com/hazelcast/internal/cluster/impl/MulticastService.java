@@ -51,7 +51,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
@@ -91,7 +90,7 @@ public final class MulticastService implements Runnable {
         this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor(context);
         this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor(context);
 
-        this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE, DONT_USE_SECOND_INITIAL_SIZE);
+        this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE, -1);
 
         Config config = node.getConfig();
         MulticastConfig multicastConfig = getActiveMemberNetworkConfig(config).getJoin().getMulticastConfig();

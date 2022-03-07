@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 import java.lang.reflect.Constructor;
 import java.util.UUID;
 
-import static com.hazelcast.internal.serialization.impl.AbstractSerializationService.DONT_USE_SECOND_INITIAL_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -218,7 +217,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private Operation copy(Operation op) {
         try {
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000, DONT_USE_SECOND_INITIAL_SIZE);
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000, -1);
             op.writeData(out);
 
             BufferObjectDataInput in = serializationService.createObjectDataInput(out.toByteArray());
