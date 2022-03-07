@@ -129,7 +129,7 @@ public final class ImdgUtil {
     @Nonnull
     public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine, int size) {
         return ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataOutput(size, -1);
+                .createObjectDataOutput(size);
     }
 
     @Nonnull

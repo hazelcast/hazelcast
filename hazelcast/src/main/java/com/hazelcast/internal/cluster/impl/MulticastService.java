@@ -90,7 +90,7 @@ public final class MulticastService implements Runnable {
         this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor(context);
         this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor(context);
 
-        this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE, -1);
+        this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
 
         Config config = node.getConfig();
         MulticastConfig multicastConfig = getActiveMemberNetworkConfig(config).getJoin().getMulticastConfig();
