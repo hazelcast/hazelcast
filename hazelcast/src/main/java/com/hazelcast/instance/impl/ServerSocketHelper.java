@@ -101,6 +101,9 @@ final class ServerSocketHelper {
                 return openServerSocketChannel(endpointConfig, socketBindAddress, isReuseAddress, logger);
             } catch (IOException e) {
                 error = e;
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Cannot bind socket address " + socketBindAddress, e);
+                }
             }
         }
         throw error;

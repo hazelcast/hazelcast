@@ -25,11 +25,13 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -61,6 +63,9 @@ public class DefaultAddressPickerTest {
 
     private static final String PUBLIC_HOST = "www.hazelcast.org";
     private static final String HAZELCAST_LOCAL_ADDRESS_PROP = "hazelcast.local.localAddress";
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-default-address-picker.xml");
 
     @Rule
     public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(HAZELCAST_LOCAL_ADDRESS_PROP);
