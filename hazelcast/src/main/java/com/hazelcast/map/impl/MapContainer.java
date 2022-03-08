@@ -515,4 +515,12 @@ public class MapContainer {
                 return getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
+
+    @Override
+    public String toString() {
+        return "MapContainer{"
+                + "name='" + name + '\''
+                + ", destroyed=" + destroyed
+                + '}';
+    }
 }
