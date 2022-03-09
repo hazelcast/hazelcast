@@ -17,10 +17,8 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldKind;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -45,6 +43,18 @@ public final class FieldsUtil {
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
+
+    private static final Class<?> RECORD_CLASS;
+
+    static {
+        Class<?> tmp;
+        try {
+            tmp = Class.forName("java.lang.Record");
+        } catch (ClassNotFoundException e) {
+            tmp = null;
+        }
+        RECORD_CLASS = tmp;
+    }
 
     private FieldsUtil() {
     }
@@ -95,7 +105,13 @@ public final class FieldsUtil {
 
         String fieldNameWithWrongCase;
 
-        if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
+        if (Record.class.isAssignableFrom(clazz)) {
+            // in JDK16 records, the get-method name is equal to the field name
+            if (methodName.equals("toString") || methodName.equals("hashCode")) {
+                return null;
+            }
+            return methodName;
+        } else if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
         } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
             // Skip getters that do not return primitive boolean.
@@ -148,26 +164,6 @@ public final class FieldsUtil {
         }
 
         return false;
-    }
-
-    /**
-     * Resolve the list of fields from a portable {@link ClassDefinition},
-     * along with their {@link QueryDataType}.
-     */
-    @Nonnull
-    public static SortedMap<String, QueryDataType> resolvePortable(@Nonnull ClassDefinition clazz) {
-        SortedMap<String, QueryDataType> fields = new TreeMap<>();
-
-        // Add regular fields.
-        for (String name : clazz.getFieldNames()) {
-            FieldType portableType = clazz.getFieldType(name);
-
-            QueryDataType type = resolveType(FieldTypeToFieldKind.toFieldKind(portableType));
-
-            fields.putIfAbsent(name, type);
-        }
-
-        return fields;
     }
 
     /**

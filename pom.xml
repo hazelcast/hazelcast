@@ -303,8 +303,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <source>16</source>
+                    <target>16</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <!-- Exclude package-info.java from compiler's scope to avoid recompiling all classes every time. -->
                     <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
