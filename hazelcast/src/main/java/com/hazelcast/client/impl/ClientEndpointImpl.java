@@ -32,7 +32,9 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
+import com.hazelcast.version.ClientVersion;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -170,6 +172,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public Set<String> getLabels() {
         return labels;
+    }
+
+    @Override
+    @Nonnull
+    public ClientVersion getVersion() {
+        return ClientVersion.of(clientVersion);
     }
 
     @Override

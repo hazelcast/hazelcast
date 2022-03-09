@@ -32,6 +32,7 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
@@ -41,6 +42,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.version.ClientVersion;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -73,7 +75,7 @@ import static java.util.Collections.unmodifiableSet;
 public class ClientClusterServiceImpl
         implements ClientClusterService {
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
-
+    private static final ClientVersion CLIENT_VERSION = ClientVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>());
     private final HazelcastClientInstanceImpl client;
 
@@ -155,7 +157,7 @@ public class ClientClusterServiceImpl
         final TcpClientConnection connection = (TcpClientConnection) cm.getRandomConnection();
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         UUID clientUuid = cm.getClientUuid();
-        return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels);
+        return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels, CLIENT_VERSION);
     }
 
     @Nonnull

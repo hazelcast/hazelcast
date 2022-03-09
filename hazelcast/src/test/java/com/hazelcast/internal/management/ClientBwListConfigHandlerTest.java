@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.ClientVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -204,7 +205,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         if (labels != null && labels.length > 0) {
             labelsSet.addAll(Arrays.asList(labels));
         }
-        return new ClientImpl(null, createInetSocketAddress(ip), name, labelsSet);
+        return new ClientImpl(null, createInetSocketAddress(ip), name, labelsSet, ClientVersion.of("1.0.0"));
     }
 
     private InetSocketAddress createInetSocketAddress(String name) {

@@ -17,7 +17,9 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.version.ClientVersion;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;
@@ -33,15 +35,17 @@ public class ClientEvent implements Client {
     private final String clientType;
     private final String name;
     private final Set<String> labels;
+    private final ClientVersion version;
 
     public ClientEvent(UUID uuid, ClientEventType eventType, InetSocketAddress address, String clientType, String name,
-                       Set<String> labels) {
+                       Set<String> labels, ClientVersion version) {
         this.uuid = uuid;
         this.eventType = eventType;
         this.address = address;
         this.clientType = clientType;
         this.name = name;
         this.labels = labels;
+        this.version = version;
     }
 
     @Override
@@ -67,6 +71,12 @@ public class ClientEvent implements Client {
     @Override
     public Set<String> getLabels() {
         return labels;
+    }
+
+    @Override
+    @Nonnull
+    public ClientVersion getVersion() {
+        return version;
     }
 
     public ClientEventType getEventType() {

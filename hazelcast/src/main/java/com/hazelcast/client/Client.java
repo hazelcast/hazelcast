@@ -17,7 +17,9 @@
 package com.hazelcast.client;
 
 import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.version.ClientVersion;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;
@@ -68,4 +70,13 @@ public interface Client extends Endpoint {
      * @since 3.12
      */
     Set<String> getLabels();
+
+    /**
+     * Returns the Hazelcast codebase version of this client.
+     *
+     * @return the {@link ClientVersion} of this client.
+     * @since 5.2
+     */
+    @Nonnull
+    ClientVersion getVersion();
 }

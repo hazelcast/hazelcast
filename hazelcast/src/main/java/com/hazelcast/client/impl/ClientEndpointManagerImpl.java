@@ -96,7 +96,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
             totalRegistrations.inc();
             ClientEvent event = new ClientEvent(endpoint.getUuid(),
                     ClientEventType.CONNECTED, endpoint.getSocketAddress(), endpoint.getClientType(), endpoint.getName(),
-                    endpoint.getLabels());
+                    endpoint.getLabels(), endpoint.getVersion());
             sendClientEvent(event);
             return true;
         }
@@ -124,7 +124,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
 
         ClientEvent event = new ClientEvent(endpoint.getUuid(),
                 ClientEventType.DISCONNECTED, endpoint.getSocketAddress(), endpoint.getClientType(), endpoint.getName(),
-                endpoint.getLabels());
+                endpoint.getLabels(), endpoint.getVersion());
         sendClientEvent(event);
     }
 

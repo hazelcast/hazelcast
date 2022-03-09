@@ -18,7 +18,9 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.version.ClientVersion;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;
@@ -32,12 +34,15 @@ public class ClientImpl implements Client {
     private final InetSocketAddress socketAddress;
     private final String name;
     private final Set<String> labels;
+    private final ClientVersion clientVersion;
 
-    public ClientImpl(UUID uuid, InetSocketAddress socketAddress, String name, Set<String> labels) {
+    public ClientImpl(UUID uuid, InetSocketAddress socketAddress, String name,
+                      Set<String> labels, @Nonnull ClientVersion clientVersion) {
         this.uuid = uuid;
         this.socketAddress = socketAddress;
         this.name = name;
         this.labels = labels;
+        this.clientVersion = clientVersion;
     }
 
     @Override
@@ -63,5 +68,11 @@ public class ClientImpl implements Client {
     @Override
     public Set<String> getLabels() {
         return labels;
+    }
+
+    @Nonnull
+    @Override
+    public ClientVersion getVersion() {
+        return clientVersion;
     }
 }

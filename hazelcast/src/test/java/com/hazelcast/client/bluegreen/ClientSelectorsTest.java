@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.ClientVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,11 +41,13 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientSelectorsTest extends HazelcastTestSupport {
 
+    private static final ClientVersion CLIENT_VERSION = ClientVersion.of(1, 0, 0);
+
     @Test
     public void testAny() {
         String name = randomString();
         Set<String> labels = Collections.emptySet();
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels, CLIENT_VERSION);
         assertTrue(client.toString(), ClientSelectors.any().select(client));
     }
 
@@ -60,7 +63,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
     public void testNone() {
         String name = randomString();
         Set<String> labels = Collections.emptySet();
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels, CLIENT_VERSION);
         assertFalse(client.toString(), ClientSelectors.none().select(client));
     }
 
@@ -68,7 +71,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
     public void testLocalhostWithIp() throws UnknownHostException {
         String name = randomString();
         Set<String> labels = Collections.emptySet();
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("localhost"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("localhost"), name, labels, CLIENT_VERSION);
         assertTrue(client.toString(), ClientSelectors.ipSelector("127.0.0.1").select(client));
     }
 
@@ -77,7 +80,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         String name = "client1";
         Set<String> labels = Collections.emptySet();
 
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels, CLIENT_VERSION);
         assertTrue(client.toString(), ClientSelectors.nameSelector("client1").select(client));
         assertTrue(client.toString(), ClientSelectors.nameSelector("clie.*").select(client));
         assertTrue(client.toString(), ClientSelectors.nameSelector(".*lie.*").select(client));
@@ -91,7 +94,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
 
     @Test
     public void testNameSelectorsWithNullInput() {
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), null, null);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), null, null, CLIENT_VERSION);
         assertFalse(client.toString(), ClientSelectors.nameSelector("client").select(client));
     }
 
@@ -101,7 +104,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         HashSet<String> labels = new HashSet<String>();
         Collections.addAll(labels, "admin", "foo", "client1");
 
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels, CLIENT_VERSION);
 
         assertTrue(client.toString(), ClientSelectors.labelSelector("client1").select(client));
         assertTrue(client.toString(), ClientSelectors.labelSelector("clie.*").select(client));
@@ -119,7 +122,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         String name = randomString();
         Set<String> labels = Collections.emptySet();
         String ip = "213.129.127.80";
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels, CLIENT_VERSION);
 
         assertTrue(client.toString(), ClientSelectors.ipSelector("213.129.127.80").select(client));
         assertTrue(client.toString(), ClientSelectors.ipSelector("213.129.127.*").select(client));
@@ -134,7 +137,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         String name = randomString();
         Set<String> labels = Collections.emptySet();
         String ip = "fe80:0:0:0:45c5:47ee:fe15:493a";
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels, CLIENT_VERSION);
         assertTrue(client.toString(), ClientSelectors.ipSelector("fe80:0:0:0:45c5:47ee:fe15:493a").select(client));
         assertTrue(client.toString(), ClientSelectors.ipSelector("fe80:0:0:0:45c5:47ee:fe15:*").select(client));
         assertTrue(client.toString(), ClientSelectors.ipSelector("fe80:0:0:0:45c5:47ee:fe15:0-5555").select(client));
@@ -148,7 +151,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         String name = "client1";
         Set<String> labels = Collections.emptySet();
 
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels, CLIENT_VERSION);
         assertFalse(client.toString(), ClientSelectors.inverse(ClientSelectors.nameSelector("client1")).select(client));
     }
 
@@ -158,7 +161,7 @@ public class ClientSelectorsTest extends HazelcastTestSupport {
         HashSet<String> labels = new HashSet<String>();
         Collections.addAll(labels, "admin", "foo", "client1");
         String ip = "213.129.127.80";
-        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels);
+        ClientImpl client = new ClientImpl(null, createInetSocketAddress(ip), name, labels, CLIENT_VERSION);
 
         assertTrue(client.toString(), ClientSelectors.or(ClientSelectors.ipSelector("213.129.*.1-100"),
                 ClientSelectors.nameSelector("clie.*")).select(client));
