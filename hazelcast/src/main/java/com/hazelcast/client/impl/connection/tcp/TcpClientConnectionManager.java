@@ -1068,6 +1068,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 if (e instanceof TimeoutException) {
                     attempt.connection.close("Authentication timeout", e);
                 }
+                // We would like to print the stack trace of the exception only if fine is enabled.
+                // Otherwise, we print just the message(toString) of the exception.
                 if (logger.isFineEnabled()) {
                     logger.warning("Could not connect to member " + attempt.memberUuid, e);
                 } else {
