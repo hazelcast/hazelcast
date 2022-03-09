@@ -711,14 +711,14 @@ public class Edge implements IdentifiedDataSerializable {
         FANOUT
     }
 
-    public static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
+    static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
         private Object key;
         private int partition;
 
-        public Single() {
+        Single() {
         }
 
         Single(Object key) {
@@ -758,7 +758,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
-    public static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
+    static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
             IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
@@ -768,7 +768,7 @@ public class Edge implements IdentifiedDataSerializable {
         private String edgeDebugName;
         private SerializationService serializationService;
 
-        public KeyPartitioner() {
+        KeyPartitioner() {
         }
 
         KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
