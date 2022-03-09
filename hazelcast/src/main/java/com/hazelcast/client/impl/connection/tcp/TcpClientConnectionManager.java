@@ -125,7 +125,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
-    private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
 
@@ -162,9 +161,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private enum ClientState {
         /**
          * Clients start with this state. Once a client connects to a cluster,
-         * it directly switches to {@link #INITIALIZED_ON_CLUSTER} instead of
-         * {@link #CONNECTED_TO_CLUSTER} because on startup a client has no
-         * local state to send to the cluster.
+         * it directly switches to {@link #CONNECTED} state.
          */
         INITIAL,
 
@@ -173,7 +170,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
          * It means that the client has connected to a new cluster but not sent
          * its local state to the new cluster yet.
          */
-        CONNECTED_TO_CLUSTER,
+        DISCONNECTED,
 
         /**
          * When a client sends its local state to the cluster it has connected,
@@ -181,15 +178,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
          * <p>
          * Invocations are allowed in this state.
          */
-        INITIALIZED_ON_CLUSTER,
-
-        /**
-         * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
-         * any connection happened without cluster switch intent are no longer allowed and will be closed.
-         * Also we will not allow ConnectToAllClusterMembersTask to make any further connection attempts as long as
-         * the state is `SWITCHING_CLUSTER`
-         */
-        SWITCHING_CLUSTER
+        CONNECTED;
     }
 
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
@@ -364,9 +353,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
 
         // if there are no more connections, we are disconnected only if we were connected to a cluster
-        if (clientState == ClientState.INITIALIZED_ON_CLUSTER) {
+        if (clientState == ClientState.CONNECTED) {
             fireLifecycleEvent(LifecycleState.CLIENT_DISCONNECTED);
         }
+
+        clientState = ClientState.DISCONNECTED;
 
         if (reconnectMode == OFF) {
             logger.info("RECONNECT MODE is off. Shutting down the client.");
@@ -439,7 +430,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         if (result != null && checkClusterId(result) && onAuthenticatedToCluster(result)) {
             return;
         }
-        clientState = ClientState.SWITCHING_CLUSTER;
         // try the next cluster
         if (clusterDiscoveryService.tryNextCluster(this::destroyCurrentClusterConnectionAndTryNextCluster)) {
             return;
@@ -541,7 +531,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public void checkInvocationAllowed() throws IOException {
         ClientState state = this.clientState;
-        if (state == ClientState.INITIALIZED_ON_CLUSTER && activeConnections.size() > 0) {
+        if (state == ClientState.CONNECTED && activeConnections.size() > 0) {
             return;
         }
 
@@ -853,10 +843,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     private void onAuthenticatedToMember(TcpClientConnection connection,
                                          ClientAuthenticationCodec.ResponseParameters response) {
+        TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
+        if (existingConnection != null) {
+            connection.close("Duplicate connection to same member with uuid : " + response.memberUuid, null);
+            return;
+        }
+
         if (isClusterIdChanged(response.clusterId)) {
-            // If there are other connections that means we have a connection to wrong cluster.
+            // We have a connection to wrong cluster.
             // We should not stay connected to this new connection.
-            // Note that in some racy scenarios we might close a connection that we can continue operating on.
+            // Note that in some race scenarios we might close a connection that we can continue operating on.
             // In those cases, we rely on the fact that we will reopen the connections and continue. Here is one scenario:
             // 1. There were 2 members.
             // 2. The client is connected to the first one.
@@ -887,7 +883,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         clusterId = newClusterId;
         connectionAuthenticated(connection, response);
         if (clusterIdChanged) {
-            clientState = ClientState.CONNECTED_TO_CLUSTER;
             try {
                 client.sendStateToCluster();
                 if (logger.isFineEnabled()) {
@@ -900,7 +895,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 return false;
             }
         }
-        clientState = ClientState.INITIALIZED_ON_CLUSTER;
+        clientState = ClientState.CONNECTED;
         fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
         return true;
     }
@@ -916,9 +911,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return this.clusterId != null && !newClusterId.equals(this.clusterId);
     }
 
-    private void connectionAuthenticated(TcpClientConnection
-                                                 connection, ClientAuthenticationCodec.ResponseParameters response) {
-        activeConnections.put(response.memberUuid, connection);
+    private void connectionAuthenticated(TcpClientConnection connection, ClientAuthenticationCodec.ResponseParameters response) {
+        activeConnections.put(connection.getRemoteUuid(), connection);
         logger.info("Authenticated with server " + response.address + ":" + response.memberUuid
                 + ", server version: " + response.serverHazelcastVersion
                 + ", local address: " + connection.getLocalSocketAddress());
@@ -1039,7 +1033,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             return;
         }
 
-        if (clientState != ClientState.INITIALIZED_ON_CLUSTER) {
+        if (clientState != ClientState.CONNECTED) {
             return;
         }
 
