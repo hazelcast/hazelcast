@@ -302,10 +302,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         startNetworking();
     }
 
-    public void tryConnectToAllClusterMembers(boolean sync) {
-        if (isSmartRoutingEnabled && sync) {
+    public void tryConnectToAllClusterMembers() {
+        if (isSmartRoutingEnabled && !asyncStart) {
             connectToAllClusterMembers();
         }
+    }
+
+    public void startClusterThread() {
+        clusterExecutor.execute(this::clusterThreadLoop);
     }
 
     private void clusterThreadLoop() {
@@ -400,7 +404,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } else {
             connectToCluster();
         }
-        clusterExecutor.execute(this::clusterThreadLoop);
     }
 
     private void asyncConnectToCluster() {

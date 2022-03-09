@@ -411,8 +411,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             if (!asyncStart) {
                 waitForInitialMembershipEvents();
             }
-            connectionManager.tryConnectToAllClusterMembers(!asyncStart);
-
+            connectionManager.tryConnectToAllClusterMembers();
+            connectionManager.startClusterThread();
             listenerService.start();
             proxyManager.init(config, clientContext);
             invocationService.addBackupListener();
