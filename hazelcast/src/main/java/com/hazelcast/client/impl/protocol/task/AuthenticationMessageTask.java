@@ -60,13 +60,13 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
                                        int partitionCount, UUID clusterId, boolean clientFailoverSupported,
-                                       boolean isAuthenticated) {
+                                       boolean isAuthenticated, String tpcPorts) {
         String serverHazelcastVersion = "";
         if (isAuthenticated) {
             serverHazelcastVersion = getMemberBuildInfo().getVersion();
         }
         return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, version, serverHazelcastVersion,
-                partitionCount, clusterId, clientFailoverSupported);
+                partitionCount, clusterId, clientFailoverSupported, tpcPorts);
     }
 
     @Override

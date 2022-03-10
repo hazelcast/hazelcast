@@ -68,6 +68,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.internal.bootstrap.TpcBootstrap;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
@@ -133,6 +134,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
     private final ExternalDataStoreService externalDataStoreService;
+    private final TpcBootstrap tpcBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -147,6 +149,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
+            this.tpcBootstrap = new TpcBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -190,6 +193,10 @@ public class NodeEngineImpl implements NodeEngine {
             }
             throw rethrow(e);
         }
+    }
+
+    public TpcBootstrap getTpcBootstrap() {
+        return tpcBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -257,7 +264,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-
+        tpcBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
@@ -583,6 +590,9 @@ public class NodeEngineImpl implements NodeEngine {
         }
         if (externalDataStoreService != null) {
             externalDataStoreService.close();
+        }
+        if (tpcBootstrap != null) {
+            tpcBootstrap.shutdown();
         }
     }
 

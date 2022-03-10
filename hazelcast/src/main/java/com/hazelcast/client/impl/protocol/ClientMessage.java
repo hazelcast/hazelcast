@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.tpc.AsyncSocket;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -129,13 +130,15 @@ public final class ClientMessage implements OutboundFrame {
 
     private static final long serialVersionUID = 1L;
 
-    transient Frame startFrame;
-    transient Frame endFrame;
+    public transient Frame startFrame;
+    public Frame endFrame;
 
     private transient boolean isRetryable;
     private transient String operationName;
     private transient Connection connection;
     private transient boolean containsSerializedDataInRequest;
+
+    public AsyncSocket asyncSocket;
 
     private ClientMessage() {
 
@@ -264,12 +267,23 @@ public final class ClientMessage implements OutboundFrame {
         int frameLength = 0;
         Frame currentFrame = startFrame;
         while (currentFrame != null) {
+            //System.out.println(currentFrame+" "+currentFrame.getSize());
             frameLength += currentFrame.getSize();
             currentFrame = currentFrame.next;
         }
         return frameLength;
     }
 
+    public int getBufferLength() {
+        int length = 0;
+        Frame currentFrame = startFrame;
+        while (currentFrame != null) {
+            length += currentFrame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+            currentFrame = currentFrame.next;
+
+        }
+        return length;
+    }
     public boolean isUrgent() {
         return false;
     }
@@ -432,7 +446,7 @@ public final class ClientMessage implements OutboundFrame {
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
         public int flags;
 
-        Frame next;
+        public Frame next;
 
         public Frame(byte[] content) {
             this(content, DEFAULT_FLAGS);
@@ -497,6 +511,12 @@ public final class ClientMessage implements OutboundFrame {
             int result = Arrays.hashCode(content);
             result = 31 * result + flags;
             return result;
+        }
+
+        @Override
+        public String toString() {
+            new Exception().printStackTrace();
+            return super.toString();
         }
     }
 

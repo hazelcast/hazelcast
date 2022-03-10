@@ -447,6 +447,14 @@
     </build>
 
     <dependencies>
+        <!-- Needed for TPC -->
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+
+
         <!-- needed for thread affinity -->
         <dependency>
             <groupId>net.openhft</groupId>

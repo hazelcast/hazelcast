@@ -74,7 +74,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         OperationQueue mockOperationQueue = mock(OperationQueue.class);
         when(mockOperationQueue.prioritySize()).thenReturn(Integer.MAX_VALUE);
 
-        PartitionOperationThread operationThread = createNewOperationThread(mockOperationQueue);
+        PartitionOperationThreadImpl operationThread = createNewOperationThread(mockOperationQueue);
 
         int prioritySize = operationThread.priorityPendingCount();
         assertEquals(Integer.MAX_VALUE, prioritySize);
@@ -85,7 +85,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         OperationQueue mockOperationQueue = mock(OperationQueue.class);
         when(mockOperationQueue.normalSize()).thenReturn(Integer.MAX_VALUE);
 
-        PartitionOperationThread operationThread = createNewOperationThread(mockOperationQueue);
+        PartitionOperationThreadImpl operationThread = createNewOperationThread(mockOperationQueue);
 
         int normalSize = operationThread.normalPendingCount();
         assertEquals(Integer.MAX_VALUE, normalSize);
@@ -156,9 +156,9 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         });
     }
 
-    private PartitionOperationThread createNewOperationThread(OperationQueue mockOperationQueue) {
+    private PartitionOperationThreadImpl createNewOperationThread(OperationQueue mockOperationQueue) {
         ILogger mockLogger = mock(ILogger.class);
         OperationRunner[] runners = new OperationRunner[0];
-        return new PartitionOperationThread("threadName", 0, mockOperationQueue, mockLogger, nodeExtension, runners, Thread.currentThread().getContextClassLoader());
+        return new PartitionOperationThreadImpl("threadName", 0, mockOperationQueue, mockLogger, nodeExtension, runners, Thread.currentThread().getContextClassLoader());
     }
 }

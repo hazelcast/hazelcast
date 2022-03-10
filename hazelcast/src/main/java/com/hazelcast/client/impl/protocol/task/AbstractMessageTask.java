@@ -40,6 +40,9 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 import java.lang.reflect.Field;
 import java.security.AccessControlException;
@@ -50,6 +53,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
@@ -60,6 +65,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =
             Arrays.asList(Error.class, MemberLeftException.class);
+
+    public AsyncSocket asyncSocket;
+    public IOBufferAllocator responseBufAllocator;
 
     protected final ClientMessage clientMessage;
     protected final ServerConnection connection;
@@ -103,6 +111,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     @Override
     public final void run() {
+//        if (asyncSocket != null) {
+//            System.out.println("Running " + getClass());
+//        }
+
         try {
             Address address = connection.getRemoteAddress();
             if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
@@ -256,13 +268,35 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         }
     }
 
+    // PETER:
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
+
+        if (asyncSocket == null) {
+            connection.write(resultClientMessage);
+        } else {
+            ClientMessage.Frame frame = resultClientMessage.startFrame;
+            //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
+            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+            while (frame != null) {
+                buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+
+                int flags = frame.flags;
+                if (frame == resultClientMessage.endFrame) {
+                    flags = frame.flags | IS_FINAL_FLAG;
+                }
+
+                buf.writeShortL((short) flags);
+                buf.writeBytes(frame.content);
+                frame = frame.next;
+            }
+            buf.byteBuffer().flip();//nasty
+            asyncSocket.writeAndFlush(buf);
+        }
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
         // not allow any interleaving with operations. It will only slow down the system. Framing should be done inside
         // the io system; not outside.
-        connection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {

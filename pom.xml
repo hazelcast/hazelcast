@@ -266,40 +266,40 @@
         </testResources>
 
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven.checkstyle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>checkstyle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <configLocation>${checkstyle.configLocation}</configLocation>
-                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
-                    <headerLocation>${checkstyle.headerLocation}</headerLocation>
-                    <enableRSS>false</enableRSS>
-                    <linkXRef>false</linkXRef>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <enableRulesSummary>true</enableRulesSummary>
-                    <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
-                    <excludes>**/module-info.java</excludes>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-checkstyle-plugin</artifactId>-->
+<!--                <version>${maven.checkstyle.plugin.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>validate</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>checkstyle</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <configLocation>${checkstyle.configLocation}</configLocation>-->
+<!--                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>-->
+<!--                    <headerLocation>${checkstyle.headerLocation}</headerLocation>-->
+<!--                    <enableRSS>false</enableRSS>-->
+<!--                    <linkXRef>false</linkXRef>-->
+<!--                    <consoleOutput>true</consoleOutput>-->
+<!--                    <failsOnError>true</failsOnError>-->
+<!--                    <failOnViolation>true</failOnViolation>-->
+<!--                    <includeTestSourceDirectory>true</includeTestSourceDirectory>-->
+<!--                    <enableRulesSummary>true</enableRulesSummary>-->
+<!--                    <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>-->
+<!--                    <excludes>**/module-info.java</excludes>-->
+<!--                </configuration>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>com.puppycrawl.tools</groupId>-->
+<!--                        <artifactId>checkstyle</artifactId>-->
+<!--                        <version>${checkstyle.version}</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -511,8 +511,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                        <excludedGroups>com.hazelcast</excludedGroups>
-                        <excludedScopes>test,provided</excludedScopes>
+                    <excludedGroups>com.hazelcast</excludedGroups>
+                    <excludedScopes>test,provided</excludedScopes>
                 </configuration>
             </plugin>
             <plugin>
@@ -570,31 +570,31 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <configuration>
-                    <checkTestClasses>true</checkTestClasses>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java18</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                    <ignores>
-                        <ignore>java.lang.invoke.MethodHandle</ignore>
-                        <ignore>sun.misc.Unsafe</ignore>
-                    </ignores>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java8-check</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.mojo</groupId>-->
+<!--                <artifactId>animal-sniffer-maven-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <checkTestClasses>true</checkTestClasses>-->
+<!--                    <signature>-->
+<!--                        <groupId>org.codehaus.mojo.signature</groupId>-->
+<!--                        <artifactId>java18</artifactId>-->
+<!--                        <version>1.0</version>-->
+<!--                    </signature>-->
+<!--                    <ignores>-->
+<!--                        <ignore>java.lang.invoke.MethodHandle</ignore>-->
+<!--                        <ignore>sun.misc.Unsafe</ignore>-->
+<!--                    </ignores>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>source-java8-check</id>-->
+<!--                        <phase>test-compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
         <pluginManagement>
             <plugins>
@@ -665,14 +665,14 @@
                     <version>1.2.1</version>
                     <configuration>
                         <exclusionPatterns>
-                        <!--
-                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
-                          are actually not the copyright lines. Let's exclude them here.
+                            <!--
+                              Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                              are actually not the copyright lines. Let's exclude them here.
 
-                          Example:
-                          com.fasterxml.jackson.core:jackson-databind:2.12.1
-                             (c) per-property override (from annotation on specific property or
-                         -->
+                              Example:
+                              com.fasterxml.jackson.core:jackson-databind:2.12.1
+                                 (c) per-property override (from annotation on specific property or
+                             -->
                             <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
@@ -1825,19 +1825,19 @@
               <version>1.1.3.Final</version>
             </dependency>
             <dependency>
-              <groupId>io.netty</groupId>
-              <artifactId>netty-tcnative-classes</artifactId>
-              <version>2.0.48.Final</version>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-classes</artifactId>
+                <version>2.0.48.Final</version>
             </dependency>
             <dependency>
-              <groupId>com.google.api-client</groupId>
-              <artifactId>google-api-client</artifactId>
-              <version>1.32.2</version>
+                <groupId>com.google.api-client</groupId>
+                <artifactId>google-api-client</artifactId>
+                <version>1.32.2</version>
             </dependency>
             <dependency>
-              <groupId>com.google.api.grpc</groupId>
-              <artifactId>proto-google-iam-v1</artifactId>
-              <version>1.1.7</version>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-iam-v1</artifactId>
+                <version>1.1.7</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
