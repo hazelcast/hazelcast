@@ -26,8 +26,13 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.server.tcp.ClientChannelInitializer;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
@@ -48,6 +53,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_ME
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
@@ -79,6 +85,8 @@ public class TcpClientConnection implements ClientConnection {
     private String connectedServerVersion;
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
+    private volatile Channel[] tpcChannels;
+    public volatile ChannelInitializer channelInitializer;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -103,6 +111,10 @@ public class TcpClientConnection implements ClientConnection {
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
     }
 
+    public void setTpcChannels(Channel[] tpcChannels) {
+        this.tpcChannels = checkNotNull(tpcChannels);
+    }
+
     @Override
     public ConcurrentMap attributeMap() {
         return attributeMap;
@@ -110,8 +122,18 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        ClientMessage clientMessage = (ClientMessage) frame;
+        int partitionId = clientMessage.getPartitionId();
+        if (tpcChannels == null || partitionId < 0) {
+            if (channel.write(frame)) {
+                return true;
+            }
+        } else {
+            // todo: ugly behavior in case of negative partitionId.
+            int tpcThreadIndex = HashUtil.hashToIndex(partitionId, tpcChannels.length);
+            if (tpcChannels[tpcThreadIndex].write(frame)) {
+                return true;
+            }
         }
 
         if (logger.isFinestEnabled()) {
@@ -220,6 +242,12 @@ public class TcpClientConnection implements ClientConnection {
 
     protected void innerClose() throws IOException {
         channel.close();
+
+        if (tpcChannels != null) {
+            for (Channel tpcChannel : tpcChannels) {
+                tpcChannel.close();
+            }
+        }
     }
 
     @Override

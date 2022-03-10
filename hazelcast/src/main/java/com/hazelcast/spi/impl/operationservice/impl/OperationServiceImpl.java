@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -39,6 +40,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.TPCOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
@@ -185,9 +187,19 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
-        this.operationExecutor = new OperationExecutorImpl(
-                properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getNodeExtension(), hzName, configClassLoader);
+        if (nodeEngine.getTpcBootstrap().isEnabled()) {
+            logger.info("Using TPCOperationExecutor");
+            TpcEngine engine = nodeEngine.getTpcBootstrap().getTpcEngine();
+            this.operationExecutor = new TPCOperationExecutor(
+                    properties, node.loggingService, engine, thisAddress, new OperationRunnerFactoryImpl(this),
+                    node.getNodeExtension(), hzName, configClassLoader);
+        } else {
+            logger.info("Using OperationExecutorImpl");
+            this.operationExecutor = new OperationExecutorImpl(
+                    properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
+                    node.getNodeExtension(), hzName, configClassLoader);
+
+        }
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
