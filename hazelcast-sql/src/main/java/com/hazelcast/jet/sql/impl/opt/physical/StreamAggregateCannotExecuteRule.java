@@ -22,6 +22,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -35,22 +36,32 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * Currently, there's only {@link AggregateSlidingWindowPhysicalRule} that
  * handles some streaming aggregation cases.
  */
+@Value.Enclosing
 public final class StreamAggregateCannotExecuteRule extends RelRule<Config> {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(StreamAggregateCannotExecuteRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)
-                    .anyInputs()
-            );
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableStreamAggregateCannotExecuteRule.Config.builder()
+                .description(StreamAggregateCannotExecuteRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isUnbounded)
+                        .anyInputs()
+                )
+                .build();
 
-    private StreamAggregateCannotExecuteRule() {
-        super(RULE_CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new StreamAggregateCannotExecuteRule(this);
+        }
+    }
+
+    private StreamAggregateCannotExecuteRule(Config config) {
+        super(config);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new StreamAggregateCannotExecuteRule();
+    public static final RelOptRule INSTANCE = new StreamAggregateCannotExecuteRule(Config.DEFAULT);
 
     @Override
     public void onMatch(RelOptRuleCall call) {

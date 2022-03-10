@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
@@ -27,6 +26,7 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexVisitorImpl;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
@@ -35,17 +35,27 @@ import static java.util.Collections.singletonList;
  * A `Filter` reading from a `SlidingWindow` will be moved before the sliding
  * window.
  */
+@Value.Enclosing
 public class SlidingWindowFilterTransposeRule extends RelRule<Config> implements TransformationRule {
 
-    private static final Config CONFIG = Config.EMPTY
-            .withDescription(SlidingWindowFilterTransposeRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0
-                    .operand(Filter.class)
-                    .trait(LOGICAL)
-                    .inputs(b1 -> b1
-                            .operand(SlidingWindow.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableSlidingWindowFilterTransposeRule.Config.builder()
+                .description(SlidingWindowFilterTransposeRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(Filter.class)
+                        .trait(LOGICAL)
+                        .inputs(b1 -> b1
+                                .operand(SlidingWindow.class).anyInputs()))
+                .build();
 
-    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeRule(CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new SlidingWindowFilterTransposeRule(this);
+        }
+    }
+
+    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeRule(Config.DEFAULT);
 
     protected SlidingWindowFilterTransposeRule(Config config) {
         super(config);
