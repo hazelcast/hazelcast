@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static java.util.Collections.singleton;
-
 /**
  * Helper class for retrieving ServiceNamespace objects.
  */
@@ -60,15 +58,7 @@ public final class NameSpaceUtil {
             ObjectNamespace namespace = toNamespace.apply(container);
 
             if (collection.isEmpty()) {
-                collection = singleton(namespace);
-                continue;
-            }
-
-            if (collection.size() == 1) {
-                // previous is an immutable singleton set
                 collection = new HashSet<>(collection);
-                collection.add(namespace);
-                continue;
             }
 
             collection.add(namespace);
