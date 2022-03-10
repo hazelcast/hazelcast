@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.validate.operators.misc;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.CoalesceOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.CoalesceOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBasicCall;
@@ -76,7 +76,7 @@ public final class HazelcastCoalesceFunction extends HazelcastFunction {
                     scope,
                     operandList.get(i),
                     returnType,
-                    sqlNode -> sqlCall.getOperands()[finalI] = sqlNode);
+                    sqlNode -> sqlCall.setOperand(finalI, sqlNode));
 
             if (!elementTypeCoerced) {
                 if (throwOnFailure) {

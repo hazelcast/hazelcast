@@ -26,6 +26,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is initialized by loading a YAML configuration file from the classpath.
+ * <p>
+ * Unlike {@link Config#loadFromClasspath(ClassLoader, String)} and its variants, a configuration constructed via
+ * {@code ClasspathYamlConfig} does not apply overrides found in environment variables/system properties.
  *
  * @see FileSystemYamlConfig
  */

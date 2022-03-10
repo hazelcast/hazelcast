@@ -46,6 +46,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  * <p>
  * This config builder is compatible with the YAML 1.2 specification and
  * supports the JSON Schema.
+ * <p>
+ * Unlike {@link Config#load()} and its variants, a configuration constructed via
+ * {@code YamlConfigBuilder} does not apply overrides found in environment variables/system properties.
  */
 public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements ConfigBuilder {
 

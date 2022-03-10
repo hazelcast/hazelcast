@@ -50,8 +50,10 @@ import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE;
+import static java.lang.String.format;
 
 /**
  * A {@link InboundHandler} that reads the protocol bytes
@@ -105,27 +107,24 @@ public class UnifiedProtocolDecoder
                 RestApiConfig restApiConfig = serverContext.getRestApiConfig();
                 if (!restApiConfig.isEnabledAndNotEmpty()) {
                     throw new IllegalStateException("REST API is not enabled. "
-                            + "To enable REST API, please do one of the following:\n"
-                            + "- Change member config using JAVA API: "
-                            + "config.getNetworkConfig().getRestApiConfig().setEnabled(true);\n"
-                            + "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true\n"
-                            + "- Add system property: -Dhz.network.rest-api.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true"
-                            + " (recommended when running container/docker image)");
+                            + "To enable REST API, do one of the following:\n"
+                            + format(CONFIG_CHANGE_TEMPLATE,
+                            "config.getNetworkConfig().getRestApiConfig().setEnabled(true);",
+                            "hazelcast.network.rest-api.enabled to true",
+                            "-Dhz.network.rest-api.enabled=true",
+                            "HZ_NETWORK_RESTAPI_ENABLED=true"));
                 }
                 initChannelForText(protocol, true);
             } else if (MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 MemcacheProtocolConfig memcacheProtocolConfig = serverContext.getMemcacheProtocolConfig();
                 if (!memcacheProtocolConfig.isEnabled()) {
                     throw new IllegalStateException("Memcache text protocol is not enabled. "
-                            + "To enable Memcache, please do one of the following:\n"
-                            + "- Change member config using JAVA API: "
-                            + "config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);\n"
-                            + "- Change XML/YAML configuration property: "
-                            + "hazelcast.network.memcache-protocol.enabled to true\n"
-                            + "- Add system property: -Dhz.network.memcache-protocol.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true"
-                            + " (recommended when running container/docker image)");
+                            + "To enable Memcache, do one of the following:\n"
+                            + format(CONFIG_CHANGE_TEMPLATE,
+                                "config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);",
+                                "hazelcast.network.memcache-protocol.enabled to true",
+                                "-Dhz.network.memcache-protocol.enabled=true",
+                                "HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true"));
                 }
                 // text doesn't have a protocol; anything that isn't cluster/client protocol will be interpreted as txt.
                 initChannelForText(protocol, false);
