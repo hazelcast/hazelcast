@@ -16,51 +16,15 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT;
-
 /**
- * An {@link OperationThread} that executes Operations for a particular partition,
- * e.g. a map.get operation.
+ * A marker interface for any thread that can execute partition specific operations. There are
+ * 2 implementations:
+ * <ol>
+ * <li>The PartitionOperationThreadImpl for the regular HZ threading model</li>
+ * <li>PartitionAwareEventloopThread for the TPC design</li>
+ * </ol>
  */
-public final class PartitionOperationThread extends OperationThread {
+public interface PartitionOperationThread {
 
-    private final OperationRunner[] partitionOperationRunners;
-
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public PartitionOperationThread(String name,
-                                    int threadId,
-                                    OperationQueue queue,
-                                    ILogger logger,
-                                    NodeExtension nodeExtension,
-                                    OperationRunner[] partitionOperationRunners,
-                                    ClassLoader configClassLoader) {
-        super(name, threadId, queue, logger, nodeExtension, false, configClassLoader);
-        this.partitionOperationRunners = partitionOperationRunners;
-    }
-
-    /**
-     * For each partition there is a {@link OperationRunner} instance. So we need
-     * to find the right one based on the partition ID.
-     */
-    @Override
-    public OperationRunner operationRunner(int partitionId) {
-        return partitionOperationRunners[partitionId];
-    }
-
-    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT)
-    int priorityPendingCount() {
-        return queue.prioritySize();
-    }
-
-    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT)
-    int normalPendingCount() {
-        return queue.normalSize();
-    }
+    int getThreadId();
 }

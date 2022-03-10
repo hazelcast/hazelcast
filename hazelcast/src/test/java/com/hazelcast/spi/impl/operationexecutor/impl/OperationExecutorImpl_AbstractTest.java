@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
  * Abstract test support to test the {@link OperationExecutorImpl}.
  * <p>
  * The idea is the following; all dependencies for the executor are available as fields in this object and by calling the
- * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
+ * {@link #initExecutor()} method, the actual OperationExecutorImpl instance is created. But if you need to replace
  * the dependencies by mocks, just replace them before calling the {@link #initExecutor()} method.
  */
 public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSupport {
