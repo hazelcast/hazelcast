@@ -1,0 +1,20 @@
+package com.hazelcast.table.impl;
+
+import com.hazelcast.spi.impl.nextgen.OpCodes;
+import com.hazelcast.spi.impl.nextgen.Op;
+
+public class SelectByKeyOperation extends Op {
+
+    public SelectByKeyOperation() {
+        super(OpCodes.TABLE_SELECT_BY_KEY);
+    }
+
+    @Override
+    public int run() {
+        return Op.RUN_CODE_DONE;
+    }
+
+    @Override
+    public void cleanup() {
+    }
+}

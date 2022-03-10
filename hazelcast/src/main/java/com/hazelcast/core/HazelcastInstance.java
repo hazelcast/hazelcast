@@ -41,6 +41,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -67,6 +68,8 @@ import java.util.concurrent.ConcurrentMap;
  * @see Hazelcast#newHazelcastInstance(Config config)
  */
 public interface HazelcastInstance {
+
+    Table getTable(String name);
 
     /**
      * Returns the name of this Hazelcast instance.

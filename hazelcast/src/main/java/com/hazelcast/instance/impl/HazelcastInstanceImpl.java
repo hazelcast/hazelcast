@@ -66,6 +66,8 @@ import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
+import com.hazelcast.table.impl.TableService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -143,6 +145,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
             }
             throw rethrow(e);
         }
+    }
+
+    @Override
+    public Table getTable(String name) {
+        checkNotNull(name, "Retrieving a table instance with a null name is not allowed!");
+        return getDistributedObject(TableService.SERVICE_NAME, name);
     }
 
     private Node createNode(Config config, NodeContext nodeContext) {

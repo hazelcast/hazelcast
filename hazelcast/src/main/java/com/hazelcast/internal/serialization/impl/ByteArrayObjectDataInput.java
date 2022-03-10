@@ -35,7 +35,7 @@ import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.version.Version.UNKNOWN;
 
-class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
+public class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -49,20 +49,20 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     private final boolean bigEndian;
     private final boolean isCompatibility;
 
-    ByteArrayObjectDataInput(byte[] data,
+    public ByteArrayObjectDataInput(byte[] data,
                              InternalSerializationService service,
                              ByteOrder byteOrder) {
         this(data, 0, service, byteOrder, false);
     }
 
-    ByteArrayObjectDataInput(byte[] data,
+    public ByteArrayObjectDataInput(byte[] data,
                              InternalSerializationService service,
                              ByteOrder byteOrder,
                              boolean isCompatibility) {
         this(data, 0, service, byteOrder, isCompatibility);
     }
 
-    ByteArrayObjectDataInput(byte[] data,
+    public ByteArrayObjectDataInput(byte[] data,
                              int offset,
                              InternalSerializationService service,
                              ByteOrder byteOrder,

@@ -318,7 +318,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 5}
          */
-        UNDEFINED5,
+        NEXT_GEN,
         /**
          * Unused packet type. Available for future use.
          * <p>

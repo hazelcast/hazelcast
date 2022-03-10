@@ -63,6 +63,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -347,6 +348,11 @@ public final class HazelcastBootstrap {
         @Override
         public <K, V> IMap<K, V> getMap(@Nonnull String name) {
             return instance.getMap(name);
+        }
+
+        @Override
+        public Table getTable(String name) {
+            return instance.getTable(name);
         }
 
         @Nonnull

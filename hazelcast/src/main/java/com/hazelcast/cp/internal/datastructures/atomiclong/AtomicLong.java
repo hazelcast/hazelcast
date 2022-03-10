@@ -26,7 +26,7 @@ public class AtomicLong extends RaftAtomicValue<Long> {
 
     private volatile long value;
 
-    AtomicLong(CPGroupId groupId, String name, long value) {
+    public AtomicLong(CPGroupId groupId, String name, long value) {
         super(groupId, name);
         this.value = value;
     }
