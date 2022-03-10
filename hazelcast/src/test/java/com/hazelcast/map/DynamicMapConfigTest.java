@@ -33,15 +33,15 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.test.Accessors.getAddress;
@@ -58,8 +58,11 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicMapConfigTest extends HazelcastTestSupport {
 
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-dynamic-map-config-update.xml");
+
     @Test
-    public void testMapConfigUpdate_reflectedToRecordStore() throws ExecutionException, InterruptedException {
+    public void testMapConfigUpdate_reflectedToRecordStore() {
         String mapName = randomMapName();
 
         Config config = getConfig();
@@ -71,18 +74,19 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         // trigger recordStore creation
         map.put(1, 1);
 
-        boolean beforeUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
+        assertFalse("RecordStore must not be evictable before the map config update", isEvictionEnabled(map));
+        assertFalse("RecordStore must not be expirable before the map config update", isRecordStoreExpirable(map));
+
         updateMapConfig(mapName, node);
         // trigger recordStore expiry system, only added/updated
         // entries after config update will be affected.
         map.put(1, 1);
-        boolean afterUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
 
-        assertFalse("Before MapConfig update, RecordStore should not be expirable and evictable", beforeUpdate);
-        assertTrue("RecordStore should be expirable and evictable after MapConfig update", afterUpdate);
+        assertTrue("RecordStore must be evictable after MapConfig update", isEvictionEnabled(map));
+        assertTrue("RecordStore must be expirable after MapConfig update", isRecordStoreExpirable(map));
     }
 
-    private void updateMapConfig(String mapName, HazelcastInstance node) throws InterruptedException, ExecutionException {
+    private void updateMapConfig(String mapName, HazelcastInstance node) {
         MapConfig mapConfig = createMapConfig();
         Operation updateMapConfigOperation = new UpdateMapConfigOperation(
                 mapName,
