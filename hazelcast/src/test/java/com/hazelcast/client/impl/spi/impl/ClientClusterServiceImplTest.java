@@ -25,6 +25,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
@@ -34,7 +35,9 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,18 +52,18 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientClusterServiceImplTest {
+public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     @Test
     public void testMemberAdded() {
-        AtomicInteger addedCount = new AtomicInteger();
+        LinkedList<Member> members = new LinkedList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
         clusterService.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
-                addedCount.incrementAndGet();
+                members.add(membershipEvent.getMember());
             }
 
             @Override
@@ -73,17 +76,19 @@ public class ClientClusterServiceImplTest {
         // triggers initial event
         clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
         // triggers member added
-        clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
-        assertEquals(1, addedCount.get());
+        MemberInfo memberInfo = member("127.0.0.2");
+        clusterService.handleMembersViewEvent(2, asList(member, memberInfo), clusterUuid);
+        assertCollection(members, Collections.singleton(memberInfo.toMember()));
         assertEquals(2, clusterService.getMemberList().size());
     }
 
     @Test
     public void testMemberRemoved() {
-        AtomicInteger removedCount = new AtomicInteger();
+        LinkedList<Member> members = new LinkedList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
         UUID clusterUuid = UUID.randomUUID();
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), clusterUuid);
+        MemberInfo memberInfo = member("127.0.0.1");
+        clusterService.handleMembersViewEvent(1, asList(memberInfo), clusterUuid);
         clusterService.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
@@ -91,11 +96,11 @@ public class ClientClusterServiceImplTest {
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
-                removedCount.incrementAndGet();
+                members.add(membershipEvent.getMember());
             }
         });
         clusterService.handleMembersViewEvent(2, Collections.emptyList(), clusterUuid);
-        assertEquals(1, removedCount.get());
+        assertCollection(members, Collections.singleton(memberInfo.toMember()));
         assertEquals(0, clusterService.getMemberList().size());
     }
 
@@ -147,10 +152,11 @@ public class ClientClusterServiceImplTest {
     @Test
     public void testFireOnlyIncrementalEvents_AfterClusterRestart() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        AtomicInteger addedCount = new AtomicInteger();
-        AtomicInteger removedCount = new AtomicInteger();
+        LinkedList<Member> addedMembers = new LinkedList<>();
+        LinkedList<Member> removedMembers = new LinkedList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        MemberInfo removedMemberInfo = member("127.0.0.1");
+        clusterService.handleMembersViewEvent(1, asList(removedMemberInfo), UUID.randomUUID());
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
             @Override
@@ -160,22 +166,23 @@ public class ClientClusterServiceImplTest {
 
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
-                addedCount.incrementAndGet();
+                addedMembers.add(membershipEvent.getMember());
             }
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
-                removedCount.incrementAndGet();
+                removedMembers.add(membershipEvent.getMember());
             }
         });
 
         //called on cluster restart
         clusterService.onClusterRestart();
 
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());
+        MemberInfo addedMemberInfo = member("127.0.0.2");
+        clusterService.handleMembersViewEvent(1, asList(addedMemberInfo), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
-        assertEquals(1, addedCount.get());
-        assertEquals(1, removedCount.get());
+        assertCollection(addedMembers, Collections.singleton(addedMemberInfo.toMember()));
+        assertCollection(removedMembers, Collections.singleton(removedMemberInfo.toMember()));
         assertEquals(1, initialEventCount.get());
     }
 
@@ -258,14 +265,16 @@ public class ClientClusterServiceImplTest {
      */
     public void testFireEvents_WhenAddressOfTheMembersChanges() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        AtomicInteger addedCount = new AtomicInteger();
-        AtomicInteger removedCount = new AtomicInteger();
+        LinkedList<Member> addedMembers = new LinkedList<>();
+        LinkedList<Member> removedMembers = new LinkedList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
         UUID member1uuid = UUID.randomUUID();
         UUID member2uuid = UUID.randomUUID();
         UUID clusterUuid = UUID.randomUUID();
+        MemberInfo removedMember1 = member("127.0.0.1", member1uuid);
+        MemberInfo removedMember2 = member("127.0.0.2", member2uuid);
         clusterService.handleMembersViewEvent(1,
-                asList(member("127.0.0.1", member1uuid), member("127.0.0.2", member2uuid)),
+                asList(removedMember1, removedMember2),
                 clusterUuid);
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -276,26 +285,27 @@ public class ClientClusterServiceImplTest {
 
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
-                addedCount.incrementAndGet();
+                addedMembers.add(membershipEvent.getMember());
             }
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
-                removedCount.incrementAndGet();
+                removedMembers.add(membershipEvent.getMember());
             }
         });
 
         //called on reconnect to same cluster when registering the listener back
         clusterService.onClusterRestart();
 
+        MemberInfo addedMember1 = member("127.0.0.1", member2uuid);
+        MemberInfo addedMember2 = member("127.0.0.2", member1uuid);
         clusterService.handleMembersViewEvent(1,
-                asList(member("127.0.0.1", member2uuid), member("127.0.0.2", member1uuid)),
+                asList(addedMember1, addedMember2),
                 clusterUuid);
         assertEquals(2, clusterService.getMemberList().size());
-        assertEquals(2, addedCount.get());
-        assertEquals(2, removedCount.get());
+        assertCollection(addedMembers, Arrays.asList(addedMember1.toMember(), addedMember2.toMember()));
+        assertCollection(removedMembers, Arrays.asList(removedMember1.toMember(), removedMember2.toMember()));
         assertEquals(1, initialEventCount.get());
-
     }
 
     @Test
@@ -304,11 +314,13 @@ public class ClientClusterServiceImplTest {
      */
     public void testFireEvents_WhenAddressAndUuidsDoesNotChange() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        AtomicInteger addedCount = new AtomicInteger();
-        AtomicInteger removedCount = new AtomicInteger();
+        LinkedList<Member> addedMembers = new LinkedList<>();
+        LinkedList<Member> removedMembers = new LinkedList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
         UUID clusterUuid = UUID.randomUUID();
-        List<MemberInfo> memberList = asList(member("127.0.0.1"), member("127.0.0.2"));
+        MemberInfo member1 = member("127.0.0.1");
+        MemberInfo member2 = member("127.0.0.2");
+        List<MemberInfo> memberList = asList(member1, member2);
         clusterService.handleMembersViewEvent(1, memberList, clusterUuid);
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -319,12 +331,12 @@ public class ClientClusterServiceImplTest {
 
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
-                addedCount.incrementAndGet();
+                addedMembers.add(membershipEvent.getMember());
             }
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
-                removedCount.incrementAndGet();
+                removedMembers.add(membershipEvent.getMember());
             }
         });
 
@@ -333,8 +345,8 @@ public class ClientClusterServiceImplTest {
 
         clusterService.handleMembersViewEvent(1, memberList, UUID.randomUUID());
         assertEquals(2, clusterService.getMemberList().size());
-        assertEquals(2, addedCount.get());
-        assertEquals(2, removedCount.get());
+        assertCollection(addedMembers, Arrays.asList(member1.toMember(), member2.toMember()));
+        assertCollection(removedMembers, Arrays.asList(member1.toMember(), member2.toMember()));
         assertEquals(1, initialEventCount.get());
 
     }
@@ -392,12 +404,12 @@ public class ClientClusterServiceImplTest {
 
     @Test
     public void testListenersFromConfigWorking() {
-        AtomicInteger addedCount = new AtomicInteger();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        LinkedList<Member> addedMembers = new LinkedList<>();
         clusterService.start(singleton(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
-                addedCount.incrementAndGet();
+                addedMembers.add(membershipEvent.getMember());
             }
 
             @Override
@@ -410,8 +422,9 @@ public class ClientClusterServiceImplTest {
         // triggers initial event
         clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
         // triggers member added
-        clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
-        assertEquals(1, addedCount.get());
+        MemberInfo addedMemberInfo = member("127.0.0.2");
+        clusterService.handleMembersViewEvent(2, asList(member, addedMemberInfo), clusterUuid);
+        assertCollection(addedMembers, Collections.singleton(addedMemberInfo.toMember()));
     }
 
     @Test
