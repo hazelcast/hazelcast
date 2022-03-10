@@ -105,7 +105,7 @@ public final class FieldsUtil {
 
         String fieldNameWithWrongCase;
 
-        if (Record.class.isAssignableFrom(clazz)) {
+        if (clazz.getSuperclass() == RECORD_CLASS) {
             // in JDK16 records, the get-method name is equal to the field name
             if (methodName.equals("toString") || methodName.equals("hashCode")) {
                 return null;
