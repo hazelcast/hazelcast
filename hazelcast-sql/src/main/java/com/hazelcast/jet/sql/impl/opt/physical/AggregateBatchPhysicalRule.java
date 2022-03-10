@@ -22,29 +22,40 @@ import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
+import org.immutables.value.Value;
 
 import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
+@Value.Enclosing
 final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(AggregateBatchPhysicalRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isBounded)
-                    .inputs(b1 -> b1.operand(RelNode.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableAggregateBatchPhysicalRule.Config.builder()
+                .description(AggregateBatchPhysicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isBounded)
+                        .inputs(b1 -> b1.operand(RelNode.class).anyInputs()))
+                .build();
 
+        @Override
+        default RelOptRule toRule() {
+            return new AggregateBatchPhysicalRule(this);
+        }
+    }
 
-    private AggregateBatchPhysicalRule() {
-        super(RULE_CONFIG);
+    private AggregateBatchPhysicalRule(Config config) {
+        super(config);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new AggregateBatchPhysicalRule();
+    static final RelOptRule INSTANCE = new AggregateBatchPhysicalRule(Config.DEFAULT);
 
     @Override
     public void onMatch(RelOptRuleCall call) {
