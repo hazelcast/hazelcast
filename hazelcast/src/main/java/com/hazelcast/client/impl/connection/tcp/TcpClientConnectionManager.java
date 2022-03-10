@@ -332,23 +332,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     private void handleConnectionClose(TcpClientConnection connection) {
         client.getInvocationService().onConnectionClose(connection);
-        Address endpoint = connection.getRemoteAddress();
-        UUID memberUuid = connection.getRemoteUuid();
-        if (endpoint == null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Destroying " + connection + ", but it has end-point set to null "
-                        + "-> not removing it from a connection map");
-            }
+        if (tryRemoveFromActiveConnections(connection)) {
+            // already removed from active connections, no need to take further action
             return;
-        }
-
-        if (activeConnections.remove(memberUuid, connection)) {
-            logger.info("Removed connection to endpoint: " + endpoint + ":" + memberUuid + ", connection: " + connection);
-
-            fireConnectionEvent(connection, false);
-        } else if (logger.isFinestEnabled()) {
-            logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
-                    + " -> " + connection + " in the connection map.");
         }
 
         if (!activeConnections.isEmpty()) {
@@ -370,6 +356,28 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
 
         retryConnectToCluster();
+    }
+
+    private boolean tryRemoveFromActiveConnections(TcpClientConnection connection) {
+        Address endpoint = connection.getRemoteAddress();
+        UUID memberUuid = connection.getRemoteUuid();
+        if (memberUuid == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying " + connection + ", but it has remote uuid set to null "
+                        + "-> not removing it from a connection map");
+            }
+            return true;
+        }
+
+        if (activeConnections.remove(memberUuid, connection)) {
+            logger.info("Removed connection to endpoint: " + endpoint + ":" + memberUuid + ", connection: " + connection);
+
+            fireConnectionEvent(connection, false);
+        } else if (logger.isFinestEnabled()) {
+            logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
+                    + " -> " + connection + " in the connection map.");
+        }
+        return false;
     }
 
     protected void startNetworking() {
@@ -893,7 +901,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
             } catch (RuntimeException e) {
                 logger.warning("Failure during sending state to the cluster. " + connection, e);
-                activeConnections.remove(connection.getRemoteUuid());
+                tryRemoveFromActiveConnections(connection);
                 connection.close("Failure during sending state to the cluster.", null);
                 return false;
             }
