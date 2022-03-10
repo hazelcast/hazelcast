@@ -68,6 +68,7 @@ import java.util.function.Predicate;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
@@ -469,6 +470,43 @@ public class CreateDagVisitor {
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
+    }
+
+    public void optimizeFinishedDag() {
+        decreaseParallelism(dag, nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
+    }
+
+    // package-visible for test
+    static void decreaseParallelism(DAG dag, int defaultParallelism) {
+        if (defaultParallelism == 1) {
+            return;
+        }
+
+        Set<Vertex> verticesToChangeParallelism = new HashSet<>();
+        for (Vertex vertex : dag) {
+            for (Edge edge : dag.getInboundEdges(vertex.getName())) {
+                if (shouldChangeLocalParallelism(edge) && edge.isLocal()) {
+                    verticesToChangeParallelism.add(edge.getSource());
+                    verticesToChangeParallelism.add(edge.getDestination());
+                    edge.isolated();
+                }
+            }
+        }
+
+        int newParallelism = (int) Math.max(2, Math.sqrt(defaultParallelism));
+        verticesToChangeParallelism.forEach(vertex -> {
+            if (vertex.getMetaSupplier().preferredLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT) {
+                vertex.localParallelism(newParallelism);
+            }
+        });
+    }
+
+    private static boolean shouldChangeLocalParallelism(Edge edge) {
+        if (edge.getDestination() == null) {
+            return false;
+        }
+        return edge.getSource().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT &&
+                edge.getDestination().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT;
     }
 
     public DAG getDag() {

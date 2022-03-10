@@ -53,6 +53,10 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         super(size, service, ByteOrder.nativeOrder());
     }
 
+    UnsafeObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
+        super(initialSize, firstGrowthSize, service, ByteOrder.nativeOrder());
+    }
+
     @Override
     public void writeChar(final int v) throws IOException {
         ensureAvailable(CHAR_SIZE_IN_BYTES);

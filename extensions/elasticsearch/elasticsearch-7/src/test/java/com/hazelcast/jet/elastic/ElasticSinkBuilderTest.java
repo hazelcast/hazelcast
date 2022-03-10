@@ -19,6 +19,8 @@ package com.hazelcast.jet.elastic;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpHost;
@@ -43,6 +45,9 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ElasticSinkBuilderTest extends PipelineTestSupport {
 
+    // Use static logger to avoid serialization issue with logger from parent class
+    private static final ILogger logger = Logger.getLogger(ElasticSinkBuilderTest.class);
+
     @Test
     public void when_writeToFailingSink_then_shouldCloseClient() throws IOException {
         ClientHolder.elasticClients.clear();
@@ -53,6 +58,7 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
                         RestClient client = (RestClient) spy(result);
+                        logger.fine("Created client " + client);
                         ClientHolder.elasticClients.add(client);
                         return client;
                     });
@@ -72,7 +78,9 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
             // ignore - elastic is not running
         }
 
+        logger.fine("Clients to close: " + ClientHolder.elasticClients.size());
         for (RestClient client : ClientHolder.elasticClients) {
+            logger.fine("Closing client " + client);
             verify(client).close();
         }
     }
