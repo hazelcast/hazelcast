@@ -40,7 +40,8 @@ public final class NameSpaceUtil {
      * @param containerFilter allows only matching containers
      * @param toNamespace     returns {@link ObjectNamespace} for a container
      *
-     * @return all service namespaces after functions are applied
+     * @return  a mutable collection of all service namespaces after functions are applied
+     *          or an immutable empty collection, when no containers match the given predicate
      */
     public static <T> Collection<ServiceNamespace> getAllNamespaces(Map<?, T> containers,
                                                                     Predicate<T> containerFilter,
