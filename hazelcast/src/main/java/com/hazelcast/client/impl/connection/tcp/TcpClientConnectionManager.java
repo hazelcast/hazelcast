@@ -742,7 +742,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 throw new HazelcastException("Address Provider " + addressProvider.getClass()
                         + " could not translate " + target);
             }
-
             return translatedAddress;
         } catch (Exception e) {
             logger.warning("Failed to translate " + target + " via address provider " + e.getMessage());
