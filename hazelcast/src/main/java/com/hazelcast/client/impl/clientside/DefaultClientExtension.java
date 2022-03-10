@@ -22,8 +22,11 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
@@ -60,6 +63,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.MODE;
@@ -190,7 +194,10 @@ public class DefaultClientExtension implements ClientExtension {
 
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
-        return new ClientPlainChannelInitializer(socketOptions, directBuffer);
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+        Consumer<ClientMessage> responseHandler = client.getInvocationService().getResponseHandler();
+        ClientMessageHandler messageHandler = new ClientMessageHandler(listenerService, responseHandler);
+        return new ClientPlainChannelInitializer(socketOptions, directBuffer, messageHandler);
     }
 
     @Override

@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.clientside;
+package com.hazelcast.client.impl.connection.tcp;
 
-import java.util.function.BiPredicate;
+/**
+ * Interface to break dependency of {@link TcpClientConnectionManager} to
+ * {@link com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl}
+ * and to be able to write unit tests for {@link TcpClientConnectionManager}
+ */
+public interface ConnectionManagerStateCallbacks {
+    void onConnectionClose(TcpClientConnection connection);
 
-public interface ClusterDiscoveryService {
+    void onClusterChange(String nextClusterName);
 
-    boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function);
+    void waitForInitialMembershipEvents();
 
-    CandidateClusterContext current();
+    void onClusterConnect();
 
+    void sendStateToCluster();
+
+    int getAndSetPartitionCount(int partitionCount);
 }

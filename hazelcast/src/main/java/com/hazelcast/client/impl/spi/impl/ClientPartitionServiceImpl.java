@@ -178,15 +178,14 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     /**
+     * set only if the partition count is not initialized yet.
+     *
      * @param newPartitionCount
-     * @return true if partition count can be set for the first time, or it is equal to one that is already available,
-     * returns false otherwise
+     * @return first applied partition count
      */
-    public boolean checkAndSetPartitionCount(int newPartitionCount) {
-        if (partitionCount.compareAndSet(0, newPartitionCount)) {
-            return true;
-        }
-        return partitionCount.get() == newPartitionCount;
+    public int getAndSetPartitionCount(int newPartitionCount) {
+        partitionCount.compareAndSet(0, newPartitionCount);
+        return partitionCount.get();
     }
 
     private final class PartitionImpl implements Partition {

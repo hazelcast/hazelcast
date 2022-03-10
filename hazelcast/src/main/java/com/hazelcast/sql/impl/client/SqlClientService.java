@@ -28,7 +28,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -49,6 +48,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -116,8 +116,7 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean skipUpdateStatistics() {
-        String connectionType = client.getConnectionManager().getConnectionType();
-        return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
+        return client.getProperties().getBoolean(MC_CLIENT_MODE_PROP);
     }
 
     private void handleExecuteResponse(

@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.connection.tcp;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 
@@ -36,17 +37,20 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 /**
  * Client side ChannelInitializer for connections without SSL/TLS. Client in this
  * case is a real client using client protocol etc.
- *
+ * <p>
  * It will automatically send the Client Protocol to the server and configure the
  * correct buffers/handlers.
  */
 public class ClientPlainChannelInitializer implements ChannelInitializer {
     private final boolean directBuffer;
     private final SocketOptions socketOptions;
+    private final ClientMessageHandler clientMessageHandler;
 
-    public ClientPlainChannelInitializer(SocketOptions socketOptions, boolean directBuffer) {
+    public ClientPlainChannelInitializer(SocketOptions socketOptions, boolean directBuffer,
+                                         ClientMessageHandler clientMessageHandler) {
         this.socketOptions = socketOptions;
         this.directBuffer = directBuffer;
+        this.clientMessageHandler = clientMessageHandler;
     }
 
     @Override
@@ -63,7 +67,7 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
 
         final TcpClientConnection connection = (TcpClientConnection) channel.attributeMap().get(TcpClientConnection.class);
 
-        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, connection::handleClientMessage, null);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, clientMessageHandler, null);
         channel.inboundPipeline().addLast(decoder);
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());
@@ -71,4 +75,5 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
         // so the protocol encoder is actually the last handler in the outbound pipeline.
         channel.outboundPipeline().addLast(new ClientProtocolEncoder());
     }
+
 }

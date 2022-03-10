@@ -89,7 +89,7 @@ class ClusterDiscoveryServiceBuilder {
         this.clusterService = clusterService;
     }
 
-    public ClusterDiscoveryService build() {
+    public ClusterDiscoveryServiceImpl build() {
         ArrayList<CandidateClusterContext> contexts = new ArrayList<>();
         for (ClientConfig config : configs) {
             ClientNetworkConfig networkConfig = config.getNetworkConfig();
@@ -113,7 +113,7 @@ class ClusterDiscoveryServiceBuilder {
                     discoveryService, credentialsFactory,
                     interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
-        return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
+        return new ClusterDiscoveryServiceImpl(unmodifiableList(contexts), configsTryCount, lifecycleService);
     }
 
     private AddressProvider createAddressProvider(ClientConfig clientConfig, DiscoveryService discoveryService) {

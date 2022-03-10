@@ -16,11 +16,8 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
@@ -29,6 +26,7 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -41,7 +39,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
@@ -61,9 +58,7 @@ public class TcpClientConnection implements ClientConnection {
     private final Channel channel;
     private final TcpClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
-    private final HazelcastClientInstanceImpl client;
     private final long startTime = System.currentTimeMillis();
-    private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
 
     @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
@@ -79,27 +74,26 @@ public class TcpClientConnection implements ClientConnection {
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
-        this.client = client;
-        this.responseHandler = client.getInvocationService().getResponseHandler();
-        this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
-        this.lifecycleService = client.getLifecycleService();
+    public TcpClientConnection(TcpClientConnectionManager connectionManager,
+                               LifecycleService lifecycleService, LoggingService loggingService,
+                               int connectionId, Channel channel) {
+        this.connectionManager = connectionManager;
+        this.lifecycleService = lifecycleService;
         this.channel = channel;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(TcpClientConnection.class, this);
         this.connectionId = connectionId;
-        this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
+        this.logger = loggingService.getLogger(TcpClientConnection.class);
     }
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
-        this.client = client;
-        this.responseHandler = client.getInvocationService().getResponseHandler();
-        this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
-        this.lifecycleService = client.getLifecycleService();
+    public TcpClientConnection(TcpClientConnectionManager connectionManager,
+                               LifecycleService lifecycleService, LoggingService loggingService, int connectionId) {
+        this.connectionManager = connectionManager;
+        this.lifecycleService = lifecycleService;
         this.connectionId = connectionId;
         this.channel = null;
         this.attributeMap = null;
-        this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
+        this.logger = loggingService.getLogger(TcpClientConnection.class);
     }
 
     @Override
@@ -232,18 +226,6 @@ public class TcpClientConnection implements ClientConnection {
             return closeCause == null ? null : closeCause.getMessage();
         } else {
             return closeReason;
-        }
-    }
-
-    @Override
-    public void handleClientMessage(ClientMessage message) {
-        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.BACKUP_EVENT_FLAG)) {
-            responseHandler.accept(message);
-        } else if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {
-            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            listenerService.handleEventMessage(message);
-        } else {
-            responseHandler.accept(message);
         }
     }
 

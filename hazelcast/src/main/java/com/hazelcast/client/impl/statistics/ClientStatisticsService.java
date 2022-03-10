@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.statistics;
 import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
-import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -366,8 +365,7 @@ public class ClientStatisticsService {
 
             addStat(stats, "clientName", client.getName());
 
-            TcpClientConnectionManager connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
-            Credentials credentials = connectionManager.getCurrentCredentials();
+            Credentials credentials = client.getCredentialsReference().get();
             if (credentials != null) {
                 addStat(stats, "credentials.principal", credentials.getName());
             }

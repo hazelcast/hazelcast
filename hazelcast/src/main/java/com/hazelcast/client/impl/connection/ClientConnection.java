@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.connection;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.nio.Connection;
 
@@ -25,19 +24,12 @@ import java.util.UUID;
 
 /**
  * The ClientConnection is connection that lives on the client side on behalf of a Java client.
- *
+ * <p>
  * On the server side there will be a {@link com.hazelcast.internal.server.ServerConnection}.
- *
+ * <p>
  * Use this class to add client specific method.
  */
 public interface ClientConnection extends Connection {
-
-    /**
-     * Start the processing of a ClientMessage.
-     *
-     * @param message the message to process.
-     */
-    void handleClientMessage(ClientMessage message);
 
     EventHandler getEventHandler(long correlationId);
 

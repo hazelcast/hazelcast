@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.clientside;
+package com.hazelcast.client.impl.connection.tcp;
 
-import java.util.function.BiPredicate;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 
-public interface ClusterDiscoveryService {
+import java.util.concurrent.CompletableFuture;
 
-    boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function);
+public interface Authenticator {
 
-    CandidateClusterContext current();
-
+    CompletableFuture<ClientMessage> authenticate(TcpClientConnection connection);
 }

@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.clientside;
+package com.hazelcast.client.impl.connection.tcp;
 
-import java.util.function.BiPredicate;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-public interface ClusterDiscoveryService {
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
+public class TcpClientConnectionManagerTest {
 
-    boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function);
+    @Test
+    public void test() {
 
-    CandidateClusterContext current();
-
+    }
 }

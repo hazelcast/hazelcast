@@ -124,6 +124,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return null;
     }
 
+
     @Nonnull
     @Override
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {

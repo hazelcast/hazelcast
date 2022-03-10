@@ -22,8 +22,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapInvalidationMetaDataFetcher;
+import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -38,6 +38,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -50,6 +51,7 @@ import static java.lang.String.format;
 public class ClientContext {
 
     private final String name;
+    private final UUID clientUUID;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
@@ -69,7 +71,7 @@ public class ClientContext {
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
 
-    public ClientContext(HazelcastClientInstanceImpl client) {
+    public ClientContext(HazelcastClientInstanceImpl client, UUID clientUUID) {
         this.name = client.getName();
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
@@ -87,6 +89,7 @@ public class ClientContext {
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
         this.clientExtension = client.getClientExtension();
+        this.clientUUID = clientUUID;
 
         registerDisposalTasksTo(client);
     }
@@ -119,7 +122,7 @@ public class ClientContext {
             ILogger logger = loggingService.getLogger(RepairingTask.class);
             return new RepairingTask(properties, invalidationMetaDataFetcher, taskScheduler, serializationService,
                     minimalPartitionService,
-                    clientConnectionManager.getClientUuid(), logger);
+                    clientUUID, logger);
         });
     }
 

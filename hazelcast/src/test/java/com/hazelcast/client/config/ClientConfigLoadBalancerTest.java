@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.RandomLB;
@@ -53,7 +54,7 @@ public class ClientConfigLoadBalancerTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastClient(new ClientConfig());
         HazelcastClientInstanceImpl client = ClientTestUtil.getHazelcastClientInstanceImpl(instance);
 
-        LoadBalancer actual = client.getLoadBalancer();
+        LoadBalancer actual = ((TcpClientConnectionManager) client.getConnectionManager()).getLoadBalancer();
         assertTrue(actual instanceof RoundRobinLB);
     }
 
@@ -69,7 +70,7 @@ public class ClientConfigLoadBalancerTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastClient(config);
         HazelcastClientInstanceImpl client = ClientTestUtil.getHazelcastClientInstanceImpl(instance);
 
-        LoadBalancer actual = client.getLoadBalancer();
+        LoadBalancer actual = ((TcpClientConnectionManager) client.getConnectionManager()).getLoadBalancer();
         assertSame(loadBalancer, actual);
     }
 
@@ -83,7 +84,7 @@ public class ClientConfigLoadBalancerTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl client = ClientTestUtil.getHazelcastClientInstanceImpl(instance);
 
-        LoadBalancer actual = client.getLoadBalancer();
+        LoadBalancer actual = ((TcpClientConnectionManager) client.getConnectionManager()).getLoadBalancer();
         assertTrue(actual instanceof CustomLoadBalancer);
     }
 }

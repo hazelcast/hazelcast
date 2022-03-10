@@ -32,6 +32,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -280,7 +281,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         TcpClientConnectionManager connectionManager = (TcpClientConnectionManager) clientInstanceImpl.getConnectionManager();
         sleepSeconds(2);
-        assertTrueEventually(() -> assertEquals(0, connectionManager.getNetworking().getChannels().size()));
+        assertTrueEventually(() -> assertEquals(0, ((NioNetworking) connectionManager.getNetworking()).getChannels().size()));
         client.shutdown();
     }
 }

@@ -17,16 +17,17 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.EventListener;
@@ -53,24 +54,31 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
-    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<UUID, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
-
-    /** Monitor which ensures that all client components are down when shutdown() is finished. */
+    private final ILogger logger;
+    private final String clientName;
+    private final Runnable onClientGracefulShutdownFunc;
+    private final Runnable shutdownClientFunc;
+    /**
+     * Monitor which ensures that all client components are down when shutdown() is finished.
+     */
     private final Object shutdownMux = new Object();
 
-    public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
-        this.client = client;
-
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+    public LifecycleServiceImpl(String clientName, ClientConfig config, ILogger logger,
+                                Runnable onClientGracefulShutdownFunc, Runnable shutdownClientFunc) {
+        this.logger = logger;
+        this.clientName = clientName;
+        this.onClientGracefulShutdownFunc = onClientGracefulShutdownFunc;
+        this.shutdownClientFunc = shutdownClientFunc;
+        ClassLoader classLoader = config.getClassLoader();
         executor = Executors.newSingleThreadExecutor(
-                new PoolExecutorThreadFactory(client.getName() + ".lifecycle-", classLoader));
+                new PoolExecutorThreadFactory(clientName + ".lifecycle-", classLoader));
 
-        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        final List<ListenerConfig> listenerConfigs = config.getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 EventListener implementation = listenerConfig.getImplementation();
@@ -78,7 +86,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
                     try {
                         implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
                     } catch (Exception e) {
-                        getLogger().severe(e);
+                        logger.severe(e);
                     }
                 }
 
@@ -88,10 +96,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
             }
         }
         buildInfo = BuildInfoProvider.getBuildInfo();
-    }
-
-    private ILogger getLogger() {
-        return client.getLoggingService().getLogger(LifecycleService.class);
     }
 
     @Nonnull
@@ -125,7 +129,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
             }
         }
 
-        getLogger().info("HazelcastClient " + buildInfo.getVersion() + " ("
+        logger.info("HazelcastClient " + buildInfo.getVersion() + " ("
                 + buildInfo.getBuild() + revision + ") is "
                 + lifecycleEvent.getState());
 
@@ -146,7 +150,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
-        client.onGracefulShutdown();
+        onClientGracefulShutdownFunc.run();
         doShutdown();
     }
 
@@ -168,8 +172,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
             }
 
             fireLifecycleEvent(SHUTTING_DOWN);
-            HazelcastClient.shutdown(client.getName());
-            client.doShutdown();
+            HazelcastClient.shutdown(clientName);
+            shutdownClientFunc.run();
             fireLifecycleEvent(SHUTDOWN);
 
             shutdownExecutor();
@@ -181,13 +185,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                getLogger().warning("LifecycleService executor awaitTermination could not completed gracefully in "
+                logger.warning("LifecycleService executor awaitTermination could not completed gracefully in "
                         + TERMINATE_TIMEOUT_SECONDS + " seconds. Terminating forcefully.");
                 executor.shutdownNow();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            getLogger().warning("LifecycleService executor awaitTermination is interrupted. Terminating forcefully.", e);
+            logger.warning("LifecycleService executor awaitTermination is interrupted. Terminating forcefully.", e);
             executor.shutdownNow();
         }
     }

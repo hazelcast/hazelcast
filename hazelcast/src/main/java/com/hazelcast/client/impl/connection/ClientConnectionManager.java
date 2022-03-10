@@ -57,8 +57,6 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
 
     Collection<Connection> getActiveConnections();
 
-    UUID getClientUuid();
-
     /**
      * For a smart client a random ClientConnection is chosen via LoadBalancer.
      * For a unisocket client the only ClientConnection will be returned.
@@ -78,5 +76,4 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      */
     ClientConnection getConnectionForSql();
 
-    String getConnectionType();
 }
