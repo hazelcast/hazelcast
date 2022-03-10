@@ -266,7 +266,11 @@ public class ReceiverTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return "ReceiverTasklet";
+        return "ReceiverTasklet{" +
+                "sourceAddressString='" + sourceAddressString + '\'' +
+                ", ordinalString='" + ordinalString + '\'' +
+                ", destinationVertexName='" + destinationVertexName + '\'' +
+                '}';
     }
 
     static int compressSeq(long seq) {

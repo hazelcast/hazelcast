@@ -135,6 +135,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient NodeEngineImpl nodeEngine;
     private transient JobClassLoaderService jobClassLoaderService;
     private transient long executionId;
+    private transient DagTraverser dagTraverser;
 
     // list of unique remote members
     private final transient Supplier<Set<Address>> remoteMembers = memoize(() ->
@@ -183,7 +184,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
             memberConnections.put(destAddr, conn);
         }
+        dagTraverser = new DagTraverser(vertices, partitionAssignment.keySet());
         for (VertexDef vertex : vertices) {
+            if (!dagTraverser.containsVertex(vertex, nodeEngine.getThisAddress())) {
+                continue;
+            }
+
             ClassLoader processorClassLoader = isLightJob ? null :
                     jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             Collection<? extends Processor> processors = doWithClassLoader(
@@ -460,7 +466,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int upstreamParallelism = edge.sourceVertex().localParallelism();
         int downstreamParallelism = edge.destVertex().localParallelism();
         int queueSize = edge.getConfig().getQueueSize();
-        int numRemoteMembers = ptionArrgmt.getRemotePartitionAssignment().size();
+        int numRemoteMembers = dagTraverser.numberOfConnections(edge, nodeEngine.getThisAddress(),
+                ptionArrgmt.getRemotePartitionAssignment().keySet());
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(
@@ -534,16 +541,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ? ptionArrgmt.getRemotePartitionAssignment()
                 : ptionArrgmt.remotePartitionAssignmentToOne(distributeTo);
 
-        OutboundCollector[] remoteCollectors = new OutboundCollector[memberToPartitions.size()];
-        int index = 0;
+        List<OutboundCollector> remoteCollectors = new ArrayList<>(memberToPartitions.size());
         for (Map.Entry<Address, int[]> entry : memberToPartitions.entrySet()) {
             Address memberAddress = entry.getKey();
             int[] memberPartitions = entry.getValue();
             ConcurrentConveyor<Object> conveyor = senderConveyorMap.get(memberAddress);
-
-            remoteCollectors[index++] = new ConveyorCollectorWithPartition(conveyor, processorIndex, memberPartitions);
+            if (conveyor == null) {
+                continue;
+            }
+            remoteCollectors.add(new ConveyorCollectorWithPartition(conveyor, processorIndex, memberPartitions));
         }
-        return remoteCollectors;
+        return remoteCollectors.toArray(new OutboundCollector[0]);
     }
 
     /**
@@ -562,6 +570,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
             final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
             for (Address destAddr : remoteMembers.get()) {
+                if (!dagTraverser.containsEdge(edge, nodeEngine.getThisAddress(), destAddr)) {
+                    continue;
+                }
+
                 final ConcurrentConveyor<Object> conveyor = createConveyorArray(
                         1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
                 @SuppressWarnings("unchecked")
@@ -640,6 +652,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                        //create a receiver per address
                        int offset = 0;
                        for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
+                           if (!dagTraverser.containsEdge(edge, addr, nodeEngine.getThisAddress())) {
+                               continue;
+                           }
+
                            final OutboundCollector[] collectors = new OutboundCollector[ptionsPerProcessor.length];
                            // assign the queues starting from end
                            final int queueOffset = --offset;
