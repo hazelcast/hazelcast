@@ -259,8 +259,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
         // recover and commit
         producer = new KafkaProducer<>(properties);
-        ResumeTransactionUtil.resumeTransaction(producer, producerId, epoch,
-                properties.getProperty("transactional.id"));
+        ResumeTransactionUtil.resumeTransaction(producer, producerId, epoch);
         producer.commitTransaction();
 
         // verify items are visible
