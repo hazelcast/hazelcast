@@ -419,6 +419,21 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!--
+                        Needed for https://github.com/hazelcast/hazelcast/issues/20945.
+                        Jacoco injects methods such as this:
+                           private static boolean[] org.apache.calcite.rel.metadata.BuiltInMetadata$RowCount$Handler.$jacocoInit()
+                        This then breaks an assertion in org.apache.calcite.rel.metadata.MetadataDef.
+                        -->
+                        <exclude>**$Handler</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
