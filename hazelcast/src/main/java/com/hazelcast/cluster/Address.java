@@ -176,7 +176,7 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public int hashCodeInternal() {
+    private int hashCodeInternal() {
         int result = port;
         result = 31 * result + host.hashCode();
         return result;
@@ -212,6 +212,7 @@ public final class Address implements IdentifiedDataSerializable {
         Address address = new Address();
         address.host = host;
         address.port = port;
+        address.hashCode = address.hashCodeInternal();
         return address;
     }
 }

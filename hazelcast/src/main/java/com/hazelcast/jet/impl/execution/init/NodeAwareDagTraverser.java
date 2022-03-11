@@ -41,6 +41,8 @@ import java.util.Set;
  * |   V2            |
  * \_________________/
  * The V2 should not be created on second node. We also do not need to create V1 -> V2 edge from first to second node.
+ *
+ * I don't use Java streams here for a better performance.
  */
 class NodeAwareDagTraverser {
     private final Map<Integer, Set<Address>> vertexOnAddress = new HashMap<>();
@@ -103,7 +105,12 @@ class NodeAwareDagTraverser {
     }
 
     private boolean allSourcesVisited(VertexDef current, Set<Integer> visited) {
-        return current.inboundEdges().stream().allMatch(edgeDef -> visited.contains(edgeDef.sourceVertex().vertexId()));
+        for (EdgeDef inboundEdge : current.inboundEdges()) {
+            if (!visited.contains(inboundEdge.sourceVertex().vertexId())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     Set<Connection> getAllConnectionsForEdge(EdgeDef edge) {
@@ -116,7 +123,12 @@ class NodeAwareDagTraverser {
     }
 
     boolean edgeExistsForConnectionTo(EdgeDef edge, Address to) {
-        return edgesToConnections.get(edge.edgeId()).stream().anyMatch(connection -> connection.isTo(to));
+        for (Connection connection : edgesToConnections.get(edge.edgeId())) {
+            if (connection.isTo(to)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean vertexExistsOnNode(VertexDef vertex, Address nodeAddress) {
