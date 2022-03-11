@@ -74,11 +74,13 @@ class ClusterDiscoveryServiceBuilder {
     private final LifecycleService lifecycleService;
     private final AddressProvider externalAddressProvider;
     private final ClientClusterService clusterService;
+    private final boolean failoverEnabled;
 
     ClusterDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
                                    AddressProvider externalAddressProvider, HazelcastProperties properties,
                                    ClientExtension clientExtension, LifecycleService lifecycleService,
-                                   ClientClusterService clusterService) {
+                                   ClientClusterService clusterService,
+                                   boolean failoverEnabled) {
         this.configsTryCount = configsTryCount;
         this.configs = configs;
         this.loggingService = loggingService;
@@ -87,6 +89,7 @@ class ClusterDiscoveryServiceBuilder {
         this.clientExtension = clientExtension;
         this.lifecycleService = lifecycleService;
         this.clusterService = clusterService;
+        this.failoverEnabled = failoverEnabled;
     }
 
     public ClusterDiscoveryServiceImpl build() {
@@ -113,7 +116,7 @@ class ClusterDiscoveryServiceBuilder {
                     discoveryService, credentialsFactory,
                     interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
-        return new ClusterDiscoveryServiceImpl(unmodifiableList(contexts), configsTryCount, lifecycleService);
+        return new ClusterDiscoveryServiceImpl(unmodifiableList(contexts), configsTryCount, lifecycleService, failoverEnabled);
     }
 
     private AddressProvider createAddressProvider(ClientConfig clientConfig, DiscoveryService discoveryService) {

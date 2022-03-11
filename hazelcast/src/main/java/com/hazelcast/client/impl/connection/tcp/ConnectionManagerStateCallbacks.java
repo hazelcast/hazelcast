@@ -21,6 +21,7 @@ package com.hazelcast.client.impl.connection.tcp;
  * and to be able to write unit tests for {@link TcpClientConnectionManager}
  */
 public interface ConnectionManagerStateCallbacks {
+
     void onConnectionClose(TcpClientConnection connection);
 
     void onClusterChange(String nextClusterName);

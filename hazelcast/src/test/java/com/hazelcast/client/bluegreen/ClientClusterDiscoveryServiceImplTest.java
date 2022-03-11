@@ -58,7 +58,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         for (int i = 0; i < numberOfCandidates; i++) {
             arrayList.add(createContext(i));
         }
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService, true);
 
         MutableInteger count = new MutableInteger();
         discoveryService.tryNextCluster((o, o2) -> {
@@ -77,7 +77,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         for (int i = 0; i < numberOfCandidates; i++) {
             arrayList.add(createContext(i));
         }
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 0, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 0, lifecycleService, true);
 
         MutableInteger count = new MutableInteger();
         for (int i = 0; i < 3; i++) {
@@ -98,7 +98,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         for (int i = 0; i < numberOfCandidates; i++) {
             arrayList.add(createContext(i));
         }
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 0, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 0, lifecycleService, true);
 
         Set<CandidateClusterContext> candidates = new HashSet<>();
         for (int i = 0; i < 3; i++) {
@@ -116,7 +116,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         for (int i = 0; i < numberOfCandidates; i++) {
             arrayList.add(createContext(i));
         }
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService, true);
 
         getNextCluster(discoveryService);
 
@@ -142,7 +142,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         for (int i = 0; i < 10; i++) {
             arrayList.add(createContext(i));
         }
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, n, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, n, lifecycleService, true);
 
         MutableInteger count = new MutableInteger();
         discoveryService.tryNextCluster((o, o2) -> {
@@ -163,7 +163,7 @@ public class ClientClusterDiscoveryServiceImplTest {
         CandidateClusterContext second = createContext(2);
         arrayList.add(second);
 
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 10, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 10, lifecycleService, true);
 
         assertEquals(first, discoveryService.current());
 
@@ -180,7 +180,7 @@ public class ClientClusterDiscoveryServiceImplTest {
 
         ArrayList<CandidateClusterContext> arrayList = new ArrayList<>();
         arrayList.add(context);
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService, true);
 
         assertNotNull(discoveryService.current());
 
@@ -196,7 +196,7 @@ public class ClientClusterDiscoveryServiceImplTest {
 
         ArrayList<CandidateClusterContext> arrayList = new ArrayList<>();
         arrayList.add(context);
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 1, lifecycleService, true);
 
         Set<CandidateClusterContext> scannedClusters = new HashSet<>();
         discoveryService.tryNextCluster((current, next) -> {
@@ -215,7 +215,7 @@ public class ClientClusterDiscoveryServiceImplTest {
 
         ArrayList<CandidateClusterContext> arrayList = new ArrayList<>();
         arrayList.add(context);
-        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 7, lifecycleService);
+        ClusterDiscoveryServiceImpl discoveryService = new ClusterDiscoveryServiceImpl(arrayList, 7, lifecycleService, true);
 
         Set<CandidateClusterContext> scannedClusters = new HashSet<>();
         discoveryService.tryNextCluster((current, next) -> {

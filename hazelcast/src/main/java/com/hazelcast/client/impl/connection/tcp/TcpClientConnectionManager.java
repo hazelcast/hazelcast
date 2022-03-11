@@ -35,8 +35,8 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.impl.spi.impl.ClientMemberListProvider;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -118,14 +118,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final int connectionTimeoutMillis;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final Networking networking;
-    private final ClientClusterService clientClusterService;
+    private final ClientMemberListProvider memberListProvider;
     private final ConnectionManagerStateCallbacks connectionManagerStateCallbacks;
     private final Authenticator authenticator;
     private final long authenticationTimeout;
     // outboundPorts is accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<>();
     private final int outboundPortCount;
-    private final boolean failoverEnabled;
     private final ExecutorService clusterExecutor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
@@ -167,21 +166,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:ExecutableStatementCount"})
     public TcpClientConnectionManager(LoggingService loggingService, ClientConfig clientConfig,
-                                      HazelcastProperties properties, boolean failoverEnabled,
+                                      HazelcastProperties properties,
                                       ClusterDiscoveryService clusterDiscoveryService, String clientName,
                                       Networking networking, LifecycleServiceImpl lifecycleService,
-                                      ClientClusterService clientClusterService,
+                                      ClientMemberListProvider memberListProvider,
                                       ConnectionManagerStateCallbacks connectionManagerStateCallbacks,
                                       Authenticator authenticator) {
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpClientConnectionManager.class);
         this.clientConfig = clientConfig;
-        this.failoverEnabled = failoverEnabled;
         this.clusterDiscoveryService = clusterDiscoveryService;
         this.clientName = clientName;
         this.networking = networking;
         this.lifecycleService = lifecycleService;
-        this.clientClusterService = clientClusterService;
+        this.memberListProvider = memberListProvider;
         this.connectionManagerStateCallbacks = connectionManagerStateCallbacks;
         this.authenticator = authenticator;
         this.loadBalancer = createLoadBalancer(clientConfig);
@@ -249,7 +247,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // If no value is provided, or set to -1 explicitly,
             // use a predefined timeout value for the failover client
             // and infinite for the normal client.
-            if (failoverEnabled) {
+            if (clusterDiscoveryService.failoverEnabled()) {
                 clusterConnectTimeout = FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
             } else {
                 clusterConnectTimeout = Long.MAX_VALUE;
@@ -414,7 +412,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private boolean checkClusterId(AuthenticationResult result) {
-        if (failoverEnabled && isClusterIdChanged(result.response.clusterId)) {
+        if (clusterDiscoveryService.failoverEnabled() && isClusterIdChanged(result.response.clusterId)) {
             // If failover is provided, and this single connection is established to a different cluster, while
             // we were trying to connect back to the same cluster, we should failover to the next cluster.
             // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
@@ -449,7 +447,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             do {
                 Set<Address> triedAddressesPerAttempt = new HashSet<>();
 
-                List<Member> memberList = new ArrayList<>(clientClusterService.getMemberList());
+                List<Member> memberList = new ArrayList<>(memberListProvider.getMemberList());
                 if (shuffleMemberList) {
                     Collections.shuffle(memberList);
                 }
@@ -749,7 +747,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
             for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
-                Member member = QueryUtils.memberOfLargerSameVersionGroup(clientClusterService.getMemberList(), null);
+                Member member = QueryUtils.memberOfLargerSameVersionGroup(memberListProvider.getMemberList(), null);
                 if (member == null) {
                     break;
                 }
@@ -767,7 +765,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 firstConnection = connectionEntry.getValue();
             }
             UUID memberId = connectionEntry.getKey();
-            Member member = clientClusterService.getMember(memberId);
+            Member member = memberListProvider.getMember(memberId);
             if (member == null || member.isLiteMember()) {
                 continue;
             }
@@ -872,7 +870,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private void checkAuthenticationResponse(TcpClientConnection connection,
                                              ClientAuthenticationCodec.ResponseParameters response) {
         AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
-        if (failoverEnabled && !response.failoverSupported) {
+        if (clusterDiscoveryService.failoverEnabled() && !response.failoverSupported) {
             logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
             authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
         }
@@ -936,7 +934,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             return;
         }
 
-        Collection<Member> memberList = clientClusterService.getMemberList();
+        Collection<Member> memberList = memberListProvider.getMemberList();
         Collection<ConnectionAttempt> connectionAttempts = new LinkedList<>();
         for (Member member : memberList) {
             UUID uuid = member.getUuid();

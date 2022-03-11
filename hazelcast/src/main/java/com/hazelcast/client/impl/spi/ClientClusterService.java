@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.impl.spi.impl.ClientMemberListProvider;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
@@ -30,22 +31,7 @@ import java.util.UUID;
  * <p>
  * Allows retrieving Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
-public interface ClientClusterService {
-
-    /**
-     * Gets the member with the given UUID.
-     *
-     * @param uuid The UUID of the member.
-     * @return The member that was found, or null if not found. If UUID is null, null is returned.
-     */
-    Member getMember(@Nonnull UUID uuid);
-
-    /**
-     * Gets the collection of members.
-     *
-     * @return The collection of members. Null will never be returned.
-     */
-    Collection<Member> getMemberList();
+public interface ClientClusterService extends ClientMemberListProvider {
 
     /**
      * Returns a collection of the members that satisfy the given {@link MemberSelector}.

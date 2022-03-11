@@ -296,15 +296,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private ClusterDiscoveryServiceImpl initClusterDiscoveryService(AddressProvider externalAddressProvider) {
         int tryCount;
         List<ClientConfig> configs;
-        if (clientFailoverConfig == null) {
-            tryCount = 0;
-            configs = Collections.singletonList(config);
-        } else {
+        boolean failoverEnabled = clientFailoverConfig != null;
+        if (failoverEnabled) {
             tryCount = clientFailoverConfig.getTryCount();
             configs = clientFailoverConfig.getClientConfigs();
+        } else {
+            tryCount = 0;
+            configs = Collections.singletonList(config);
         }
         ClusterDiscoveryServiceBuilder builder = new ClusterDiscoveryServiceBuilder(tryCount, configs, loggingService,
-                externalAddressProvider, properties, clientExtension, getLifecycleService(), clusterService);
+                externalAddressProvider, properties, clientExtension, getLifecycleService(), clusterService, failoverEnabled);
         return builder.build();
     }
 

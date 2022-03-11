@@ -23,4 +23,5 @@ public interface ClusterDiscoveryService {
 
     CandidateClusterContext current();
 
+    boolean failoverEnabled();
 }

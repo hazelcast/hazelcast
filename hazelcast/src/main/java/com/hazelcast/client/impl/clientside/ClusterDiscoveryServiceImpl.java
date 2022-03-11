@@ -31,9 +31,10 @@ public class ClusterDiscoveryServiceImpl implements ClusterDiscoveryService {
     private final LifecycleService lifecycleService;
     private final List<CandidateClusterContext> candidateClusters;
     private final AtomicInteger index = new AtomicInteger(0);
+    private final boolean failoverEnabled;
 
     public ClusterDiscoveryServiceImpl(List<CandidateClusterContext> candidateClusters,
-                                       int maxTryCount, LifecycleService lifecycleService) {
+                                       int maxTryCount, LifecycleService lifecycleService, boolean failoverEnabled) {
         checkNotNull(candidateClusters, "candidateClusters cannot be null");
         checkTrue(!candidateClusters.isEmpty(), "candidateClusters cannot be empty");
         checkTrue(maxTryCount >= 0, "maxTryCount must be >= 0");
@@ -41,6 +42,7 @@ public class ClusterDiscoveryServiceImpl implements ClusterDiscoveryService {
         this.candidateClusters = candidateClusters;
         this.maxTryCount = maxTryCount;
         this.lifecycleService = lifecycleService;
+        this.failoverEnabled = failoverEnabled;
     }
 
     public boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function) {
@@ -57,6 +59,11 @@ public class ClusterDiscoveryServiceImpl implements ClusterDiscoveryService {
 
     public CandidateClusterContext current() {
         return candidateClusters.get(index.get() % candidateClusters.size());
+    }
+
+    @Override
+    public boolean failoverEnabled() {
+        return failoverEnabled;
     }
 
     private CandidateClusterContext next() {

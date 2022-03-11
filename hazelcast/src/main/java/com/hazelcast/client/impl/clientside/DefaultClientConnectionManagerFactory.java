@@ -68,12 +68,11 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
     public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
         ClientConfig clientConfig = client.getClientConfig();
         HazelcastProperties properties = client.getProperties();
-        boolean failoverEnabled = client.getFailoverConfig() != null;
         ClusterDiscoveryService clusterDiscoveryService = client.getClusterDiscoveryService();
         NioNetworking networking = createNetworking(properties, clientConfig,
                 client.getLoggingService(), client.getMetricsRegistry(),
                 client.getName(), client.getConcurrencyDetection());
-        return new TcpClientConnectionManager(client.getLoggingService(), clientConfig, properties, failoverEnabled,
+        return new TcpClientConnectionManager(client.getLoggingService(), clientConfig, properties,
                 clusterDiscoveryService, client.getName(), networking,
                 (LifecycleServiceImpl) client.getLifecycleService(),
                 client.getClientClusterService(), client, createAuthenticator(client));

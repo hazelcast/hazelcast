@@ -97,7 +97,7 @@ class TestClientRegistry {
             HazelcastProperties properties = client.getProperties();
             boolean failoverEnabled = client.getFailoverConfig() != null;
             ClusterDiscoveryService clusterDiscoveryService = client.getClusterDiscoveryService();
-            return new MockTcpClientConnectionManager(client.getLoggingService(), clientConfig, properties, failoverEnabled,
+            return new MockTcpClientConnectionManager(client.getLoggingService(), clientConfig, properties,
                     clusterDiscoveryService, client.getName(), null,
                     (LifecycleServiceImpl) client.getLifecycleService(),
                     client.getClientClusterService(), client, createAuthenticator(client), host, ports, messageHandler);
@@ -114,14 +114,14 @@ class TestClientRegistry {
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         MockTcpClientConnectionManager(LoggingService loggingService, ClientConfig clientConfig,
-                                       HazelcastProperties properties, boolean failoverEnabled,
+                                       HazelcastProperties properties,
                                        ClusterDiscoveryService clusterDiscoveryService, String clientName,
                                        Networking networking, LifecycleServiceImpl lifecycleService,
                                        ClientClusterService clientClusterService,
                                        ConnectionManagerStateCallbacks connectionManagerStateCallbacks,
                                        Authenticator authenticator, String host, AtomicInteger ports,
                                        ClientMessageHandler clientMessageHandler) {
-            super(loggingService, clientConfig, properties, failoverEnabled, clusterDiscoveryService, clientName,
+            super(loggingService, clientConfig, properties, clusterDiscoveryService, clientName,
                     networking, lifecycleService, clientClusterService, connectionManagerStateCallbacks, authenticator);
             this.host = host;
             this.ports = ports;
