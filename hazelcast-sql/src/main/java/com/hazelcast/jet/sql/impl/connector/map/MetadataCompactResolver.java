@@ -72,7 +72,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         String typeName = options.get(typeNameProperty);
 
         if (typeName == null) {
-            throw QueryException.error("Unable to resolve table metadata. Missing ['typeName'] option");
+            throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
         }
 
         Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
