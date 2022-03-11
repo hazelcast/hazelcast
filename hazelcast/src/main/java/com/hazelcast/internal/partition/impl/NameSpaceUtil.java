@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static java.util.Collections.singleton;
-
 /**
  * Helper class for retrieving ServiceNamespace objects.
  */
@@ -42,7 +40,8 @@ public final class NameSpaceUtil {
      * @param containerFilter allows only matching containers
      * @param toNamespace     returns {@link ObjectNamespace} for a container
      *
-     * @return all service namespaces after functions are applied
+     * @return  a mutable collection of all service namespaces after functions are applied
+     *          or an immutable empty collection, when no containers match the given predicate
      */
     public static <T> Collection<ServiceNamespace> getAllNamespaces(Map<?, T> containers,
                                                                     Predicate<T> containerFilter,
@@ -60,15 +59,7 @@ public final class NameSpaceUtil {
             ObjectNamespace namespace = toNamespace.apply(container);
 
             if (collection.isEmpty()) {
-                collection = singleton(namespace);
-                continue;
-            }
-
-            if (collection.size() == 1) {
-                // previous is an immutable singleton set
                 collection = new HashSet<>(collection);
-                collection.add(namespace);
-                continue;
             }
 
             collection.add(namespace);
