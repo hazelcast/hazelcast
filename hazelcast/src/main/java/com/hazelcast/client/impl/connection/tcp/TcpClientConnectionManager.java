@@ -36,7 +36,7 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.impl.spi.impl.ClientMemberListProvider;
+import com.hazelcast.client.impl.spi.ClientMemberListProvider;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;

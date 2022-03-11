@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.spi.impl.ClientMemberListProvider;
+import com.hazelcast.client.impl.spi.ClientMemberListProvider;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.networking.Networking;

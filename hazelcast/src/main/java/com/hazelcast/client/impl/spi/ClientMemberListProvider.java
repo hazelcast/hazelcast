@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.cluster.Member;
 

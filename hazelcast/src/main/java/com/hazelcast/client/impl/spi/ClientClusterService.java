@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.impl.spi.impl.ClientMemberListProvider;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
