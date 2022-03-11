@@ -28,5 +28,9 @@
         </Root>
         <Logger name="com.hazelcast.internal.partition.impl.PartitionReplicaManager"
                 level="trace"/>
+        <Logger name="com.hazelcast.internal.cluster.impl.ClusterMergeTask"
+                level="trace"/>
+        <Logger name="com.hazelcast.map.impl.MapSplitBrainHandlerService"
+                level="trace"/>
     </Loggers>
 </Configuration>
