@@ -493,14 +493,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
 
         if (localCollector == null) {
-            return compositeCollector(remoteCollectors, edge, totalPartitionCount, false);
+            return compositeCollector(remoteCollectors, edge, totalPartitionCount, false, false);
         }
         // in a distributed edge, collectors[0] is the composite of local collector, and
         // collectors[n] where n > 0 is a collector pointing to a remote member _n_.
         OutboundCollector[] collectors = new OutboundCollector[remoteCollectors.length + 1];
         collectors[0] = localCollector;
         System.arraycopy(remoteCollectors, 0, collectors, 1, collectors.length - 1);
-        return compositeCollector(collectors, edge, totalPartitionCount, false);
+        return compositeCollector(collectors, edge, totalPartitionCount, false, true);
     }
 
     private void prepareLocalConveyorMap(EdgeDef edge) {
@@ -547,14 +547,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                             .mapToObj(i -> new ConveyorCollector(localConveyors[i],
                                     processorIndex / downstreamParallelism, null))
                             .toArray(OutboundCollector[]::new);
-            return compositeCollector(localCollectors, edge, totalPartitionCount, true);
+            return compositeCollector(localCollectors, edge, totalPartitionCount, true, true);
         } else {
             OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
             Arrays.setAll(
                     localCollectors,
                     n -> new ConveyorCollector(localConveyors[n], processorIndex, partitionsPerProcessor[n])
             );
-            return compositeCollector(localCollectors, edge, totalPartitionCount, true);
+            return compositeCollector(localCollectors, edge, totalPartitionCount, true, true);
         }
     }
 
@@ -704,7 +704,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            Arrays.setAll(collectors, n -> new ConveyorCollector(
                                    localConveyors[n], localConveyors[n].queueCount() + queueOffset,
                                    ptionsPerProcessor[n]));
-                           final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true);
+                           final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true, true);
                            ReceiverTasklet receiverTasklet = new ReceiverTasklet(
                                    collector, jobSerializationService,
                                    edge.getConfig().getReceiveWindowMultiplier(),
