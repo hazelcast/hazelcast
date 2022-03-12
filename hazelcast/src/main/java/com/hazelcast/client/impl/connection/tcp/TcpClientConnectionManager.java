@@ -925,7 +925,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    public void connectToAllClusterMembers() {
+    private void connectToAllClusterMembers() {
         if (!lifecycleService.isRunning()) {
             return;
         }
