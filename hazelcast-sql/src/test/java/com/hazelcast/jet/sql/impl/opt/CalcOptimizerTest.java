@@ -16,9 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
+import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import org.apache.calcite.rel.core.Calc;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,13 +36,14 @@ public class CalcOptimizerTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void name() {
+    public void test() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("SELECT a, a1 FROM (SELECT a, SIN(a) AS a1 FROM MyTable) t WHERE a1 > 10", table),
+                optimizeLogical("SELECT a FROM (SELECT AVG(__key) AS a FROM m) t WHERE a > 10", table),
                 plan(
-                        planRow(0, Calc.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, CalcLogicalRel.class),
+                        planRow(1, AggregateLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class)
                 )
         );
     }

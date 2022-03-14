@@ -187,10 +187,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onCalc(CalcPhysicalRel rel) {
-        RexProgram program = rel.getProgram();
-
         // TODO [sasha] : program might be trivial [program.isTrivial()], we may just skip vertex creation
-
+        RexProgram program = rel.getProgram();
         List<Expression<?>> projection = rel.projection(parameterMetadata);
 
         Vertex project = dag.newUniqueVertex("Project", mapUsingServiceP(

@@ -33,7 +33,8 @@ public final class LogicalRules {
                 CalcIntoScanLogicalRule.INSTANCE,
                 CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
-                // We need it in case, when transposed RIGHT JOIN to LEFT JOIN
+                CoreRules.CALC_REDUCE_EXPRESSIONS,
+                // We need it to transpose RIGHT JOIN to the LEFT JOIN
                 CoreRules.PROJECT_TO_CALC,
                 SlidingWindowFilterTransposeLogicalRule.STREAMING_FILTER_TRANSPOSE,
 

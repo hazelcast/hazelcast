@@ -45,7 +45,8 @@ public class CalcPhysicalRel extends Calc implements PhysicalRel {
     }
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        return filter(schema(parameterMetadata), program.expandLocalRef(program.getCondition()), parameterMetadata);
+        PlanNodeSchema schema = ((PhysicalRel) getInput()).schema(parameterMetadata);
+        return filter(schema, program.expandLocalRef(program.getCondition()), parameterMetadata);
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
