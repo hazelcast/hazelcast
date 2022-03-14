@@ -430,7 +430,7 @@
                            private static boolean[] org.apache.calcite.rel.metadata.BuiltInMetadata$RowCount$Handler.$jacocoInit()
                         This then breaks an assertion in org.apache.calcite.rel.metadata.MetadataDef.
                         -->
-                        <exclude>**$Handler</exclude>
+                        <exclude>**Metadata**$Handler</exclude>
                     </excludes>
                 </configuration>
             </plugin>
