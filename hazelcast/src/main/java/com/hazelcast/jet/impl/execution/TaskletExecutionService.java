@@ -313,9 +313,6 @@ public class TaskletExecutionService {
                 ProgressState result;
                 do {
                     result = t.call();
-                    if (result != ProgressState.NO_PROGRESS) {
-                        logFinest(logger, "Tasklet %s result %s", t, result);
-                    }
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
@@ -402,9 +399,6 @@ public class TaskletExecutionService {
                 myThread.setContextClassLoader(t.jobClassLoader);
                 contextContainer.setContext(t.tasklet.getProcessorContext());
                 final ProgressState result = t.tasklet.call();
-                if (result != ProgressState.NO_PROGRESS) {
-                    logFinest(logger, "Tasklet %s result %s", t.tasklet, result);
-                }
                 if (result.isDone()) {
                     dismissTasklet(t);
                 }
