@@ -330,8 +330,9 @@ class Reactor extends Thread {
             case TABLE_SELECT_BY_KEY:
                 op = new SelectByKeyOperation();
                 break;
-            default:
-                throw new RuntimeException("Unrecognized opcode:" + opcode);
+            default://hack
+                op = new UpsertOperation();
+                //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) reactorService.ss, ByteOrder.BIG_ENDIAN);
         op.managers = reactorService.managers;
