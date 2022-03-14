@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.nextgen;
+package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 
@@ -14,6 +14,7 @@ public abstract class Op {
     public int opcode;
     public StringBuffer name = new StringBuffer();
     public ByteArrayObjectDataInput in;
+    public Invocation invocation;
 
     public Op(int opcode) {
         this.opcode = opcode;
@@ -21,13 +22,16 @@ public abstract class Op {
 
     public void readName() throws EOFException {
         int size = in.readInt();
+        System.out.println("size:"+size);
 
-        for(int k=0;k<size;k++){
+        for (int k = 0; k < size; k++) {
             name.append(in.readChar());
         }
+
+        System.out.println("Read name: "+name);
     }
 
-    public abstract int run()throws Exception;
+    public abstract int run() throws Exception;
 
     public void cleanup() {
         in.clear();

@@ -711,6 +711,21 @@ public class ByteArrayObjectDataInput extends VersionedObjectDataInput implement
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
     }
 
+
+//    private void readUTF(StringBuffer sb) throws EOFException {
+//        sb.setLength(0);
+//        int numberOfBytes = readInt();
+//        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+//            return;
+//        }
+//
+//
+//
+//        String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
+//        pos += numberOfBytes;
+//        return result;
+//    }
+
     private String readUTFInternal() throws EOFException {
         int numberOfBytes = readInt();
         if (numberOfBytes == NULL_ARRAY_LENGTH) {

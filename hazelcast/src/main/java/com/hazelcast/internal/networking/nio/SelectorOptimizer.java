@@ -52,7 +52,7 @@ public final class SelectorOptimizer {
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
-    static Selector newSelector(ILogger logger) {
+    public static Selector newSelector(ILogger logger) {
         checkNotNull(logger, "logger");
 
         Selector selector;

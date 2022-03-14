@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.nextgen;
+package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.table.impl.TableManager;
 

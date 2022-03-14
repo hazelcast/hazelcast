@@ -50,7 +50,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
 
     private final boolean isBigEndian;
 
-    ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
+    public ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
         this(size, -1, service, byteOrder);
     }
 
