@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
@@ -25,21 +24,32 @@ import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.TransformationRule;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
+@Value.Enclosing
 public class SlidingWindowJoinTransposeRule extends RelRule<Config> implements TransformationRule {
 
-    private static final Config CONFIG = Config.EMPTY
-            .withDescription(SlidingWindowJoinTransposeRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0
-                    .operand(Join.class)
-                    .trait(LOGICAL)
-                    .inputs(b1 -> b1
-                            .operand(SlidingWindow.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableSlidingWindowJoinTransposeRule.Config.builder()
+                .description(SlidingWindowJoinTransposeRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(Join.class)
+                        .trait(LOGICAL)
+                        .inputs(b1 -> b1
+                                .operand(SlidingWindow.class).anyInputs()))
+                .build();
 
-    public static final RelOptRule STREAMING_JOIN_TRANSPOSE = new SlidingWindowJoinTransposeRule(CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new SlidingWindowJoinTransposeRule(this);
+        }
+    }
+
+    public static final RelOptRule STREAMING_JOIN_TRANSPOSE = new SlidingWindowJoinTransposeRule(Config.DEFAULT);
 
     protected SlidingWindowJoinTransposeRule(Config config) {
         super(config);

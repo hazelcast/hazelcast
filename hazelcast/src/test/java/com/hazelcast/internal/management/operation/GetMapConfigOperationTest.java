@@ -89,7 +89,7 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
         MCGetMapConfigCodec.ResponseParameters actual = runCommand(client, hz, "map-with-index").get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertThat(actual.globalIndexes)
                 .usingElementComparatorIgnoringFields("name")
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         new IndexConfig(IndexType.SORTED, "first"),
                         new IndexConfig(IndexType.HASH, "second")
                 );

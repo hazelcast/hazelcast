@@ -38,9 +38,10 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.28.0</calcite.version>
+        <calcite.version>1.29.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
+        <immutables.version>2.8.2</immutables.version>
     </properties>
 
     <build>
@@ -51,6 +52,14 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -410,6 +419,21 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!--
+                        Needed for https://github.com/hazelcast/hazelcast/issues/20945.
+                        Jacoco injects methods such as this:
+                           private static boolean[] org.apache.calcite.rel.metadata.BuiltInMetadata$RowCount$Handler.$jacocoInit()
+                        This then breaks an assertion in org.apache.calcite.rel.metadata.MetadataDef.
+                        -->
+                        <exclude>**$Handler</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -729,6 +753,13 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>${immutables.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

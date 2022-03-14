@@ -28,6 +28,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
+import org.immutables.value.Value;
 
 import java.util.Arrays;
 
@@ -48,17 +49,27 @@ import static com.hazelcast.jet.sql.impl.opt.OptUtils.inlineExpression;
  * LogicalScan[table[filter=exp1 AND exp2]]
  * </pre>
  */
+@Value.Enclosing
 public final class FilterIntoScanLogicalRule extends RelRule<Config> implements TransformationRule {
 
-    private static final Config CONFIG = Config.EMPTY
-            .withDescription(FilterIntoScanLogicalRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableFilterIntoScanLogicalRule.Config.builder()
+            .description(FilterIntoScanLogicalRule.class.getSimpleName())
+            .operandSupplier(b0 -> b0
                     .operand(Filter.class)
                     .trait(LOGICAL)
                     .inputs(b1 -> b1
-                            .operand(FullScanLogicalRel.class).anyInputs()));
+                            .operand(FullScanLogicalRel.class).anyInputs()))
+                .build();
 
-    public static final RelOptRule INSTANCE = new FilterIntoScanLogicalRule(CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new FilterIntoScanLogicalRule(this);
+        }
+    }
+
+    public static final RelOptRule INSTANCE = new FilterIntoScanLogicalRule(Config.DEFAULT);
 
     private FilterIntoScanLogicalRule(Config config) {
         super(config);
