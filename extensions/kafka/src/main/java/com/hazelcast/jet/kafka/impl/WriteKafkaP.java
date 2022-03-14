@@ -38,6 +38,7 @@ import org.apache.kafka.common.errors.TimeoutException;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -281,7 +282,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
         @Override
         public void release() {
-            producer.close();
+            producer.close(Duration.ZERO);
         }
     }
 
