@@ -271,6 +271,42 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Here is how the communication is done for two vertices in the DAG. Let's assume that we have two vertices V1 and V2 with
+     * edge between them. For each of the vertices we create the {@link ProcessorTasklet} instances. The number of the instances
+     * depends on the localParallelism of the vertex. When one instance of the {@link ProcessorTasklet} wants to send data
+     * over the V1 -> V2 edge:
+     * - If {@link ProcessorTasklet} for V1 and {@link ProcessorTasklet} for V2 are on current member, the communication
+     *   is done through the local conveyors.
+     * - If {@link ProcessorTasklet} for V1 is on remote member, on current member we have to create {@link ReceiverTasklet}
+     *   that will receive the data from V1 and pass it to V2. The communication between {@link ReceiverTasklet} and V2
+     *   {@link ProcessorTasklet} is done through the local conveyors.
+     * - If {@link ProcessorTasklet} for V2 is on remote member, on current member we have to create {@link SenderTasklet}
+     *   that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
+     *   is done through the concurrent conveyors.
+     * To make it even more clear that's what are our possibilities (http://viz-js.com/):
+     *
+     * digraph Local {
+     *     subgraph cluster_0 {
+     *         "V1 ProcessorTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     *         label = "member #1";
+     *     }
+     * }
+     *
+     * digraph Remote {
+     *     subgraph cluster_0 {
+     *         "V1 ProcessorTasklet" -> "V1 SenderTasklet" [label="concurrent conveyor"]
+     *         label = "member #1";
+     *     }
+     *
+     *     subgraph cluster_1 {
+     *         "V2 ReceiverTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     *         label = "member #2";
+     *     }
+     *
+     *     "V1 SenderTasklet" -> "V2 ReceiverTasklet" [label="network"]
+     * }
+     */
     private void createLocalConveyorsAndSenderReceiverTasklets(long jobId, InternalSerializationService jobSerializationService) {
         for (VertexDef vertex : vertices) {
             String jobPrefix = prefix(jobConfig.getName(), jobId, vertex.name());
@@ -291,7 +327,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             InternalSerializationService jobSerializationService
     ) {
         Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(outboundEdge);
-        
+
         for (NodeAwareDagTraverser.Connection connection : connections) {
             // Outbound connection from other member than current, no need to create any object.
             if (!connection.isFrom(nodeEngine.getThisAddress())) {
@@ -317,7 +353,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             InternalSerializationService jobSerializationService
     ) {
         Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(inboundEdge);
-        
+
         for (NodeAwareDagTraverser.Connection connection : connections) {
             // Inbound connection to other member than current, no need to create any object
             if (!connection.isTo(nodeEngine.getThisAddress())) {
