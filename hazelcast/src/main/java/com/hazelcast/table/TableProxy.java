@@ -36,7 +36,9 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         request.opcode = OpCodes.TABLE_UPSERT;
         request.partitionId = ThreadLocalRandom.current().nextInt(271);
         request.out = new ByteArrayObjectDataOutput(1024, ss, BIG_ENDIAN);
+
         try {
+            request.out.writeByte(OpCodes.TABLE_UPSERT);
             request.out.writeInt(name.length());
             for (int k = 0; k < name.length(); k++) {
                 request.out.writeChar(name.charAt(k));

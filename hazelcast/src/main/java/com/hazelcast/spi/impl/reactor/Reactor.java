@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
@@ -38,17 +39,18 @@ class Reactor extends Thread {
     private final ILogger logger;
     private final int port;
     private ServerSocketChannel serverSocketChannel;
-    private final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
+    public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
 
-    public Reactor(ReactorFrontEnd reactorService, int port) {
+    public Reactor(ReactorFrontEnd reactorService, Address thisAddress, int port) {
+        super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.reactorService = reactorService;
         this.logger = reactorService.logger;
         this.selector = SelectorOptimizer.newSelector(reactorService.logger);
         this.port = port;
     }
 
-    public void wakeup(){
+    public void wakeup() {
         if (Thread.currentThread() != this) {
             System.out.println("wakeup");
             selector.wakeup();
@@ -57,13 +59,11 @@ class Reactor extends Thread {
 
     public void enqueue(Request request) {
         taskQueue.add(request);
-
         wakeup();
     }
 
     public void enqueue(Packet request) {
         taskQueue.add(request);
-
         wakeup();
     }
 
@@ -110,8 +110,8 @@ class Reactor extends Thread {
             InetAddress host = InetAddress.getLocalHost();
             address = new InetSocketAddress(host, port);
             serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(false);
             serverSocketChannel.bind(address);
+            serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
             logger.info("ServerSocket listening at " + address);
             return true;
@@ -128,8 +128,7 @@ class Reactor extends Thread {
 
             Thread.sleep(1000);
 
-            System.out.println(getName() + " selectionCount:" + keyCount);
-            System.out.println(getName() + " isInterrupted:" + this.isInterrupted());
+            System.out.println(this + " selectionCount:" + keyCount);
 
             //if (keyCount > 0) {
             processSelectionKeys();
@@ -146,54 +145,57 @@ class Reactor extends Thread {
             SelectionKey key = it.next();
             it.remove();
 
-            System.out.println("isWritable: " + key.isWritable());
-            System.out.println("isAcceptable" + key.isAcceptable());
+            System.out.println(this + " selectionKey:" + key);
+
+            System.out.println(this + " isWritable: " + key.isWritable());
+            System.out.println(this + " isReadable: " + key.isReadable());
+            System.out.println(this + " isAcceptable: " + key.isAcceptable());
+            System.out.println(this + " isConnectable: " + key.isConnectable());
+
+
+//            if (key.isValid() && key.isConnectable()) {
+//                SocketChannel socketChannel = serverSocketChannel.accept();
+//                socketChannel.configureBlocking(false);
+//                key.attach(newChannel(socketChannel));
+//                socketChannel.register(selector, OP_READ);
+//                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+//            }
+
+            if (key.isValid() && key.isAcceptable()) {
+                SocketChannel socketChannel = serverSocketChannel.accept();
+                socketChannel.configureBlocking(false);
+                SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
+                selectionKey.attach(newChannel(socketChannel));
+
+                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+            }
+
+            if (key.isValid() && key.isReadable()) {
+                SocketChannel socketChannel = (SocketChannel) key.channel();
+                Channel channel = (Channel) key.attachment();
+                ByteBuffer readBuf = channel.readBuffer;
+                int bytesRead = socketChannel.read(readBuf);
+                System.out.println(this + " bytes read: " + bytesRead);
+                if (bytesRead <= 0) {
+                    socketChannel.close();
+                    key.cancel();
+                    break;
+                }
+                readBuf.flip();
+                process(readBuf);
+                compactOrClear(readBuf);
+            }
 
             if (!key.isValid()) {
                 System.out.println("sk not valid");
                 key.cancel();
             }
-
-            if (key.isValid() && key.isAcceptable()) {
-                System.out.println("sk acceptable");
-                accept(key);
-            }
-
-            if (key.isValid() && key.isReadable()) {
-                System.out.println("sk readable");
-                read(key);
-            }
-
-            if (key.isValid() && key.isConnectable()) {
-                System.out.println("sk isConnectable");
-            }
         }
-    }
-
-
-    private void read(SelectionKey key) throws IOException {
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        Channel channel = (Channel) key.attachment();
-        ByteBuffer readBuf = channel.readBuffer;
-        int result = socketChannel.read(readBuf);
-        if (result <= 0) {
-            socketChannel.close();
-            key.cancel();
-        }
-        readBuf.flip();
-        process(readBuf);
-        compactOrClear(readBuf);
-    }
-
-    private void accept(SelectionKey key) throws IOException {
-        SocketChannel socketChannel = serverSocketChannel.accept();
-        socketChannel.configureBlocking(false);
-        key.attach(newChannel(socketChannel));
-        socketChannel.register(selector, OP_READ);
-        logger.info("Connection Accepted: " + socketChannel.getLocalAddress() + "n");
     }
 
     private Channel newChannel(SocketChannel socketChannel) {
+        System.out.println(this + " newChannel: " + socketChannel);
+
         Channel channel = new Channel();
         channel.reactor = this;
         channel.readBuffer = ByteBuffer.allocate(256 * 1024);
@@ -225,21 +227,21 @@ class Reactor extends Thread {
     }
 
     private void process(Channel channel) {
+        System.out.println("Processing channel");
         try {
             for (; ; ) {
-                ByteBuffer buffer = channel.pending.poll();
+                ByteBuffer buffer = channel.next();
                 if (buffer == null) {
                     break;
                 }
 
                 int written = channel.socketChannel.write(buffer);
-                System.out.println(written);
+                System.out.println("written:" + written);
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 
     public void process(ConnectRequest connectRequest) {
         try {
@@ -247,10 +249,10 @@ class Reactor extends Thread {
             System.out.println("makeConnections address:" + address);
 
             SocketChannel socketChannel = SocketChannel.open();
+            // todo: call is blocking
             socketChannel.connect(address);
             socketChannel.configureBlocking(false);
             SelectionKey key = socketChannel.register(selector, OP_READ);
-
 
             Channel channel = newChannel(socketChannel);
             key.attach(channel);
@@ -265,6 +267,7 @@ class Reactor extends Thread {
     private void process(ByteBuffer buffer) {
         for (; ; ) {
             Packet packet = packetIOHelper.readFrom(buffer);
+            System.out.println(this + " read packet: " + packet);
             if (packet == null) {
                 return;
             }
@@ -274,11 +277,12 @@ class Reactor extends Thread {
     }
 
     private void process(Packet packet) {
+        System.out.println(this + " process packet: " + packet);
         try {
             byte[] bytes = packet.toByteArray();
-            byte opcode = bytes[0];
+            byte opcode = bytes[Packet.DATA_OFFSET];
             Op op = allocateOp(opcode);
-            op.in.init(packet.toByteArray(), 1);
+            op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
             proces(op);
         } catch (Exception e) {
             e.printStackTrace();
@@ -288,9 +292,10 @@ class Reactor extends Thread {
     private void proces(Request request) {
         System.out.println("request: " + request);
         try {
-            byte opcode = request.opcode;
+            byte[] data = request.out.toByteArray();
+            byte opcode = data[0];
             Op op = allocateOp(opcode);
-            op.in.init(request.out.toByteArray(), 0);
+            op.in.init(data, 1);
             proces(op);
             request.invocation.completableFuture.complete(null);
         } catch (Exception e) {

@@ -39,12 +39,12 @@ public class ReactorFrontEnd implements Consumer<Packet> {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
         this.ss = nodeEngine.getSerializationService();
-        this.reactorThreads = new Reactor[2];
+        this.reactorThreads = new Reactor[1];
         this.thisAddress = nodeEngine.getThisAddress();
 
         for (int cpu = 0; cpu < reactorThreads.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactorThreads[cpu] = new Reactor(this, port);
+            reactorThreads[cpu] = new Reactor(this, thisAddress, port);
         }
     }
 
@@ -95,9 +95,10 @@ public class ReactorFrontEnd implements Consumer<Packet> {
                 Channel[] channels = (Channel[]) connection.junk;
                 Channel channel = channels[partitionIdToCpu(partitionId)];
                 Packet packet = request.toPacket();
-                ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize()+8);
+                ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
                 new PacketIOHelper().writeTo(packet, buffer);
-                channel.enqueueAndFlush(buffer);
+                buffer.flip();
+                channel.writeAndFlush(buffer);
             }
 
             return invocation.completableFuture;

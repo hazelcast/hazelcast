@@ -1,19 +1,29 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.reactor.OpCodes;
+import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.reactor.OpCodes;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.Map;
 
-public class UpsertOperation extends Op implements Serializable {
+public class UpsertOperation extends Op {
 
     public UpsertOperation() {
         super(OpCodes.TABLE_UPSERT);
     }
 
+//    public void serialize(ByteArrayObjectDataOutput out) throws IOException {
+//        out.writeByte(OpCodes.TABLE_UPSERT);
+//        int length = name.length();
+//        out.writeInt(length);
+//        for (int k = 0; k < length; k++) {
+//            out.writeChar(name.charAt(k));
+//        }
+//    }
+
     @Override
-    public int run()throws Exception {
+    public int run() throws Exception {
         readName();
 
         TableManager tableManager = managers.tableManager;
