@@ -16,199 +16,155 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
-import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
-import com.hazelcast.client.impl.protocol.AuthenticationStatus;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.spi.ClientMemberListProvider;
-import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LogListener;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
-import javax.annotation.Nonnull;
-import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Properties;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-import static org.mockito.Mockito.mock;
+import static com.hazelcast.client.impl.connection.tcp.ConnectionManagerTestUtil.newConnectionManager;
+import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TcpClientConnectionManagerTest {
 
-    public static class ConnectionManagerBuilder {
+    @Test
+    public void testStartOpensConnectionToCluster() {
+        TcpClientConnectionManager connectionManager = newConnectionManager(new ClientConfig());
+        connectionManager.start();
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
+        assertEquals(1, activeConnections.size());
 
-        Runnable onClientGracefulShutdown = () -> {
-        };
-        Runnable shutdownClientFunc = () -> {
-        };
-        Runnable onClusterRestart = () -> {
-        };
-        Consumer<TcpClientConnection> onConnectionClose = connection -> {
-        };
-        Consumer<String> onClusterChange = nextClusterName -> {
-        };
+        connectionManager.shutdown();
+    }
 
-        private TcpClientConnectionManager build() {
-            ConnectionManagerStateCallbacks callbacks = new ConnectionManagerStateCallbacks() {
+    @Test
+    public void testStartOpensConnectionToClusterEventually_onAsyncStart() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        TcpClientConnectionManager connectionManager = newConnectionManager(clientConfig);
+        connectionManager.start();
+        connectionManager.startClusterThread();
 
-                @Override
-                public void onConnectionClose(TcpClientConnection connection) {
-                    onConnectionClose.accept(connection);
-                }
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
 
-                @Override
-                public void onClusterChange(String nextClusterName) {
-                    onClusterChange.accept(nextClusterName);
-                }
+        assertTrueEventually(() -> assertEquals(1, activeConnections.size()));
 
-                @Override
-                public void waitForInitialMembershipEvents() {
-                }
+        connectionManager.shutdown();
+    }
 
-                @Override
-                public void onClusterRestart() {
-                    onClusterRestart.run();
-                }
+    @Test
+    public void testTryConnectToAllClusterMembers() {
+        ConnectionManagerTestUtil.ClusterContext context = new ConnectionManagerTestUtil.ClusterContext();
+        List<UUID> expected = Arrays.asList(context.addMember("127.0.0.1", 5701),
+                context.addMember("127.0.0.1", 5702));
+        TcpClientConnectionManager connectionManager = newConnectionManager(new ClientConfig(), context);
+        connectionManager.start();
+        connectionManager.tryConnectToAllClusterMembers();
 
-                @Override
-                public void sendStateToCluster() {
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
+        assertEquals(2, activeConnections.size());
+        List<UUID> actual = activeConnections.stream().map(Connection::getRemoteUuid).collect(Collectors.toList());
+        assertContainsAll(actual, expected);
 
-                }
+        connectionManager.shutdown();
+    }
 
-                @Override
-                public int getAndSetPartitionCount(int partitionCount) {
-                    return partitionCount;
-                }
+    @Test
+    public void testTryConnectToAllClusterMembersEventually_onAsyncStart() {
+        ConnectionManagerTestUtil.ClusterContext context = new ConnectionManagerTestUtil.ClusterContext();
+        List<UUID> expected = Arrays.asList(context.addMember("127.0.0.1", 5701),
+                context.addMember("127.0.0.1", 5702));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        TcpClientConnectionManager connectionManager = newConnectionManager(clientConfig, context);
+        connectionManager.start();
+        connectionManager.tryConnectToAllClusterMembers();
+        connectionManager.startClusterThread();
 
-            };
-            LoggingService loggingService = new LoggingService() {
-                @Override
-                public void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener) {
+        assertTrueEventually(() -> {
+            Collection<Connection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(2, activeConnections.size());
+            List<UUID> actual = activeConnections.stream().map(Connection::getRemoteUuid).collect(Collectors.toList());
+            assertContainsAll(actual, expected);
+        });
 
-                }
+        connectionManager.shutdown();
+    }
 
-                @Override
-                public void removeLogListener(@Nonnull LogListener logListener) {
+    @Test
+    public void testConnectToAllIsNoopWhenAlreadyConnectedToAll() {
+        ConnectionManagerTestUtil.ClusterContext context = new ConnectionManagerTestUtil.ClusterContext();
+        context.addMember("127.0.0.1", 5701);
+        context.addMember("127.0.0.1", 5702);
 
-                }
+        TcpClientConnectionManager connectionManager = newConnectionManager(new ClientConfig(), context);
+        connectionManager.start();
+        connectionManager.tryConnectToAllClusterMembers();
 
-                @Nonnull
-                @Override
-                public ILogger getLogger(@Nonnull String name) {
-                    return Mockito.mock(ILogger.class);
-                }
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
+        assertEquals(2, activeConnections.size());
 
-                @Nonnull
-                @Override
-                public ILogger getLogger(@Nonnull Class type) {
-                    return Mockito.mock(ILogger.class);
-                }
-            };
-            Networking networking = mock(Networking.class);
-            ClientConfig clientConfig = new ClientConfig();
-            HazelcastProperties properties = new HazelcastProperties(new Properties());
-            return new TcpClientConnectionManager(loggingService, clientConfig, properties,
-                    clusterDiscoveryService(clientConfig.getNetworkConfig()), "test", networking,
-                    lifecycleServiceImpl(onClientGracefulShutdown, shutdownClientFunc),
-                    memberListProvider(), callbacks, authenticator());
-        }
+        connectionManager.connectToAllClusterMembers();
 
-        private static ClusterDiscoveryService clusterDiscoveryService(ClientNetworkConfig clientNetworkConfig) {
-            return new ClusterDiscoveryService() {
-                @Override
-                public boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function) {
-                    return false;
-                }
+        assertEquals(2, activeConnections.size());
+        connectionManager.shutdown();
+    }
 
-                @Override
-                public CandidateClusterContext current() {
-                    return new CandidateClusterContext("dev", new DefaultAddressProvider(clientNetworkConfig),
-                            null, null, null, null);
-                }
+    @Test
+    public void testClusterUuidChange_whenConnected() {
+        ConnectionManagerTestUtil.ClusterContext context = new ConnectionManagerTestUtil.ClusterContext();
+        context.addMember("127.0.0.1", 5701);
+        context.addMember("127.0.0.1", 5702);
 
-                @Override
-                public boolean failoverEnabled() {
-                    return false;
-                }
-            };
-        }
+        TcpClientConnectionManager connectionManager = newConnectionManager(new ClientConfig(), context);
+        connectionManager.start();
+        connectionManager.tryConnectToAllClusterMembers();
+        connectionManager.startClusterThread();
 
-        private static LifecycleServiceImpl lifecycleServiceImpl(Runnable onClientGracefulShutdownFunc,
-                                                                 Runnable shutdownClientFunc) {
-            LifecycleServiceImpl lifecycleService = new LifecycleServiceImpl("test", new ClientConfig(),
-                    mock(ILogger.class), onClientGracefulShutdownFunc, shutdownClientFunc);
-            lifecycleService.start();
-            return lifecycleService;
-        }
+        // open a new member with a different cluster id
+        context.addMember("127.0.0.1", 5703, UUID.randomUUID());
 
-        private static Authenticator authenticator() {
-            return connection -> {
-                CompletableFuture<ClientMessage> future = new CompletableFuture<>();
-                ClientMessage message = null;
-                try {
-                    message = ClientAuthenticationCodec.encodeResponse(AuthenticationStatus.AUTHENTICATED.getId(),
-                            new Address("127.0.0.1", 5701), UUID.randomUUID(), (byte) 1,
-                            "1.0.0", 271, UUID.randomUUID(), true);
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
-                }
-                future.complete(message);
-                return future;
-            };
-        }
+        connectionManager.connectToAllClusterMembers();
 
-        private static ClientMemberListProvider memberListProvider() {
-            ConcurrentHashMap<UUID, Member> map = new ConcurrentHashMap<>();
-            map.put(UUID.randomUUID(), new MemberImpl());
-            return new ClientMemberListProvider() {
-                @Override
-                public Member getMember(@Nonnull UUID uuid) {
-                    return map.get(uuid);
-                }
+        assertEquals(2, connectionManager.getActiveConnections().size());
+    }
 
-                @Override
-                public Collection<Member> getMemberList() {
-                    return map.values();
-                }
+    @Test
+    public void testClusterUuidChange_whenDisconnected() {
+        ConnectionManagerTestUtil.ClusterContext context = new ConnectionManagerTestUtil.ClusterContext();
+        UUID uuid1 = context.addMember("127.0.0.1", 5701);
+        UUID uuid2 = context.addMember("127.0.0.1", 5702);
+        AtomicInteger clusterRestartCount = new AtomicInteger();
+        context.onClusterConnect = clusterRestartCount::incrementAndGet;
 
-                @Override
-                public boolean translateToPublicAddress() {
-                    return false;
-                }
-            };
-        }
+        TcpClientConnectionManager connectionManager = newConnectionManager(new ClientConfig(), context);
+        connectionManager.start();
+        connectionManager.tryConnectToAllClusterMembers();
 
-        @Test
-        public void test() {
-            TcpClientConnectionManager connectionManager = new ConnectionManagerBuilder().build();
+        // remove members
+        context.removeMember(uuid1);
+        context.removeMember(uuid2);
+        // open a new member with a different cluster id
+        context.addMember("127.0.0.1", 5703, UUID.randomUUID());
+        // close connections to the old cluster
+        connectionManager.getActiveConnections().
+                forEach(connection -> connection.close(null, null));
 
-            connectionManager.start();
-            connectionManager.tryConnectToAllClusterMembers();
-            connectionManager.startClusterThread();
+        connectionManager.consumeTaskQueue();
 
-            connectionManager.shutdown();
-        }
+        assertEquals(1, connectionManager.getActiveConnections().size());
+        assertEquals(1, clusterRestartCount.get());
     }
 }

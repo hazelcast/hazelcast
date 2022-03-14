@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.Authenticator;
-import com.hazelcast.client.impl.connection.tcp.ConnectionManagerStateCallbacks;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -118,11 +117,11 @@ class TestClientRegistry {
                                        ClusterDiscoveryService clusterDiscoveryService, String clientName,
                                        Networking networking, LifecycleServiceImpl lifecycleService,
                                        ClientClusterService clientClusterService,
-                                       ConnectionManagerStateCallbacks connectionManagerStateCallbacks,
+                                       HazelcastClientInstanceImpl client,
                                        Authenticator authenticator, String host, AtomicInteger ports,
                                        ClientMessageHandler clientMessageHandler) {
             super(loggingService, clientConfig, properties, clusterDiscoveryService, clientName,
-                    networking, lifecycleService, clientClusterService, connectionManagerStateCallbacks, authenticator);
+                    networking, lifecycleService, clientClusterService, client, authenticator);
             this.host = host;
             this.ports = ports;
             this.clientMessageHandler = clientMessageHandler;
@@ -233,7 +232,7 @@ class TestClientRegistry {
                 UUID serverUuid,
                 LockPair lockPair,
                 ClientMessageHandler clientMessageHandler) {
-            super(connectionManager, lifecycleService, loggingService, connectionId);
+            super(connectionManager, lifecycleService, loggingService, connectionId, null);
             this.localAddress = localAddress;
             this.remoteAddress = remoteAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
@@ -285,11 +284,6 @@ class TestClientRegistry {
                 }
             });
             return true;
-        }
-
-        @Override
-        public Address getInitAddress() {
-            return remoteAddress;
         }
 
         private ClientMessage readFromPacket(ClientMessage packet) {

@@ -23,12 +23,7 @@ import java.util.UUID;
 
 public interface ClientMemberListProvider {
 
-    /**
-     * Returns {@code true} if member internal address should be translated into its public address.
-     *
-     * @return true if member address should be translated into its public address.
-     */
-    boolean translateToPublicAddress();
+    void waitInitialMemberListFetched();
 
     /**
      * Gets the member with the given UUID.

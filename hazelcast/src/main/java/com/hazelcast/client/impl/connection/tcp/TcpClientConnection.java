@@ -59,8 +59,6 @@ public class TcpClientConnection implements ClientConnection {
     private final TcpClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
     private final long startTime = System.currentTimeMillis();
-    private final ConcurrentMap attributeMap;
-
     @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
 
@@ -80,25 +78,13 @@ public class TcpClientConnection implements ClientConnection {
         this.connectionManager = connectionManager;
         this.lifecycleService = lifecycleService;
         this.channel = channel;
-        this.attributeMap = channel.attributeMap();
-        attributeMap.put(TcpClientConnection.class, this);
         this.connectionId = connectionId;
-        this.logger = loggingService.getLogger(TcpClientConnection.class);
-    }
-
-    public TcpClientConnection(TcpClientConnectionManager connectionManager,
-                               LifecycleService lifecycleService, LoggingService loggingService, int connectionId) {
-        this.connectionManager = connectionManager;
-        this.lifecycleService = lifecycleService;
-        this.connectionId = connectionId;
-        this.channel = null;
-        this.attributeMap = null;
         this.logger = loggingService.getLogger(TcpClientConnection.class);
     }
 
     @Override
     public ConcurrentMap attributeMap() {
-        return attributeMap;
+        return channel.attributeMap();
     }
 
     @Override
@@ -129,7 +115,7 @@ public class TcpClientConnection implements ClientConnection {
     }
 
     public Address getInitAddress() {
-        return (Address) attributeMap.get(Address.class);
+        return (Address) attributeMap().get(Address.class);
     }
 
     @Override

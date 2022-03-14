@@ -27,6 +27,8 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -54,7 +56,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PR
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class ClientInvocationServiceImpl implements ClientInvocationService {
+public class ClientInvocationServiceImpl implements ClientInvocationService, ConnectionListener {
 
     private static final ListenerMessageCodec BACKUP_LISTENER = new ListenerMessageCodec() {
         @Override
@@ -300,6 +302,16 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
     public boolean isSmartRoutingEnabled() {
         return isSmartRoutingEnabled;
+    }
+
+    @Override
+    public void connectionAdded(Connection connection) {
+
+    }
+
+    @Override
+    public void connectionRemoved(Connection connection) {
+
     }
 
     private class BackupTimeoutTask implements Runnable {

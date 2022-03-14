@@ -32,7 +32,6 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
-import com.hazelcast.client.impl.connection.tcp.ConnectionManagerStateCallbacks;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
@@ -172,8 +171,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableSet;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport,
-        ConnectionManagerStateCallbacks {
+public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private final UUID clientUUID = UuidUtil.newUnsecureUUID();
@@ -278,7 +276,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private LifecycleServiceImpl initLifecycleService() {
         ILogger logger = loggingService.getLogger(LifecycleService.class);
-        return new LifecycleServiceImpl(instanceName, config, logger, this::onGracefulShutdown, this::doShutdown);
+        return new LifecycleServiceImpl(this, instanceName, config, logger);
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {
@@ -400,7 +398,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             boolean asyncStart = connectionStrategyConfig.isAsyncStart();
             if (!asyncStart) {
-                waitForInitialMembershipEvents();
+                clusterService.waitInitialMemberListFetched();
             }
             connectionManager.tryConnectToAllClusterMembers();
             connectionManager.startClusterThread();
@@ -787,7 +785,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxySessionManager.shutdownAndAwait();
     }
 
-    public void doShutdown() {
+    public void onClientShutdown() {
         dispose(onClientShutdownDisposables);
         proxyManager.destroy();
         connectionManager.shutdown();
@@ -850,7 +848,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    @Override
     public void onConnectionClose(TcpClientConnection connection) {
         invocationService.onConnectionClose(connection);
     }
@@ -878,10 +875,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.onClusterConnect();
     }
 
-    public void waitForInitialMembershipEvents() {
-        clusterService.waitInitialMemberListFetched();
-    }
-
     public void sendStateToCluster() {
         userCodeDeploymentService.deploy(this);
         schemaService.sendAllSchemas();
@@ -889,7 +882,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.createDistributedObjectsOnCluster();
     }
 
-    @Override
     public int getAndSetPartitionCount(int partitionCount) {
         return partitionService.getAndSetPartitionCount(partitionCount);
     }
