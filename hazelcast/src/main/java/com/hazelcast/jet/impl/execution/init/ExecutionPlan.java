@@ -245,10 +245,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         processorClassLoader
                 );
 
-                // createOutboundEdgeStreams() populates edgeSenderConveyorMap.
-                // Also populates instance fields: senderMap, receiverMap, tasklets.
                 List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
-                        vertex, localProcessorIdx, jobPrefix, jobSerializationService);
+                        vertex, localProcessorIdx);
                 List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
                         vertex, localProcessorIdx, jobPrefix, globalProcessorIndex);
 
@@ -494,14 +492,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private List<OutboundEdgeStream> createOutboundEdgeStreams(
             VertexDef vertex,
-            int processorIdx,
-            String jobPrefix,
-            InternalSerializationService jobSerializationService
+            int processorIdx
     ) {
         List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
         for (EdgeDef edge : vertex.outboundEdges()) {
-            OutboundCollector outboundCollector =
-                    createOutboundCollector(edge, processorIdx);
+            OutboundCollector outboundCollector = createOutboundCollector(edge, processorIdx);
             OutboundEdgeStream outboundEdgeStream = new OutboundEdgeStream(edge.sourceOrdinal(), outboundCollector);
             outboundStreams.add(outboundEdgeStream);
         }
@@ -516,10 +511,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * For a distributed edge, there is one additional producer per member represented
      * by the ReceiverTasklet.
      */
-    private OutboundCollector createOutboundCollector(
-            EdgeDef edge,
-            int processorIndex
-    ) {
+    private OutboundCollector createOutboundCollector(EdgeDef edge, int processorIndex) {
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED && !edge.isLocal()) {
             throw new IllegalArgumentException("Isolated edges must be local: " + edge);
         }
@@ -527,26 +519,28 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int totalPartitionCount = nodeEngine.getPartitionService().getPartitionCount();
         int[][] partitionsPerProcessor = getLocalPartitionDistribution(edge, edge.destVertex().localParallelism());
 
-        OutboundCollector localCollector = !localCollectorsEdges.contains(edge.edgeId()) ? null :
-                createLocalOutboundCollector(
-                edge,
-                processorIndex,
-                totalPartitionCount,
-                partitionsPerProcessor
-        );
-        if (edge.isLocal()) {
-            return localCollector;
+        OutboundCollector localCollector = null;
+
+        if (localCollectorsEdges.contains(edge.edgeId())) {
+            localCollector = createLocalOutboundCollector(
+                    edge,
+                    processorIndex,
+                    totalPartitionCount,
+                    partitionsPerProcessor
+            );
+
+            if (edge.isLocal()) {
+                return localCollector;
+            }
         }
 
-        OutboundCollector[] remoteCollectors = createRemoteOutboundCollectors(
-                edge,
-                processorIndex
-        );
-
-
+        OutboundCollector[] remoteCollectors = createRemoteOutboundCollectors(edge, processorIndex);
         if (localCollector == null) {
+            // If we have no localCollector and exactly one remoteCollector then we want it to be opaque with
+            // OutboundCollector.Partitioned, that's why we set fastReturnSingleCollector to false.
             return compositeCollector(remoteCollectors, edge, totalPartitionCount, false, false);
         }
+
         // in a distributed edge, collectors[0] is the composite of local collector, and
         // collectors[n] where n > 0 is a collector pointing to a remote member _n_.
         OutboundCollector[] collectors = new OutboundCollector[remoteCollectors.length + 1];
