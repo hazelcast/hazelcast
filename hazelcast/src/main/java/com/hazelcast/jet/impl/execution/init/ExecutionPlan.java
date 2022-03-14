@@ -74,7 +74,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -139,10 +138,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient Set<String> localCollectorsEdges = new HashSet<>();
 
     // list of unique remote members
-    private final transient Supplier<Set<Address>> remoteMembers = memoize(() ->
-            partitionAssignment.keySet().stream()
-                  .filter(a -> !a.equals(nodeEngine.getThisAddress()))
-                  .collect(Collectors.toSet()));
+    private final transient Supplier<Set<Address>> remoteMembers = memoize(() -> {
+        Set<Address> remoteAddresses = new HashSet<>();
+        for (Address address : partitionAssignment.keySet()) {
+            if (!address.equals(nodeEngine.getThisAddress())) {
+                remoteAddresses.add(address);
+            }
+        }
+        return remoteAddresses;
+    });
 
     ExecutionPlan() {
     }
