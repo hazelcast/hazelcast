@@ -91,7 +91,6 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -187,7 +186,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             memberConnections.put(destAddr, conn);
         }
         dagTraverser = new NodeAwareDagTraverser(vertices, partitionAssignment.keySet());
-        initLocalConvoyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
+        createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
         for (VertexDef vertex : vertices) {
             if (!dagTraverser.vertexExistsOnNode(vertex, nodeEngine.getThisAddress())) {
@@ -270,49 +269,70 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 localProcessorIdx++;
             }
         }
-        List<ReceiverTasklet> allReceivers = receiverMap.values().stream()
-                                                        .flatMap(o -> o.values().stream())
-                                                        .flatMap(a -> a.values().stream())
-                                                        .collect(toList());
-
-        tasklets.addAll(allReceivers);
     }
 
-    private void initLocalConvoyorsAndSenderReceiverTasklets(long jobId, InternalSerializationService jobSerializationService) {
+    private void createLocalConveyorsAndSenderReceiverTasklets(long jobId, InternalSerializationService jobSerializationService) {
         for (VertexDef vertex : vertices) {
             String jobPrefix = prefix(jobConfig.getName(), jobId, vertex.name());
 
             for (EdgeDef outboundEdge : vertex.outboundEdges()) {
-                Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(outboundEdge);
-                for (NodeAwareDagTraverser.Connection connection : connections) {
-                    if (connection.isFrom(nodeEngine.getThisAddress())) {
-                        if (connection.isTo(nodeEngine.getThisAddress())) {
-                            localCollectorsEdges.add(outboundEdge.edgeId());
-                            prepareLocalConveyorMap(outboundEdge);
-                        }
-                        if (!outboundEdge.isLocal()) {
-                            memberToSenderConveyorMap(outboundEdge, jobPrefix, jobSerializationService);
-                        }
-                    }
-                }
+                createLocalConveyorsAndSenderTaskletsForOutbound(outboundEdge, jobPrefix, jobSerializationService);
             }
 
             for (EdgeDef inboundEdge : vertex.inboundEdges()) {
-                Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(inboundEdge);
-                for (NodeAwareDagTraverser.Connection connection : connections) {
-                    if (connection.isTo(nodeEngine.getThisAddress())) {
-                        prepareLocalConveyorMap(inboundEdge);
-                        if (connection.isFrom(nodeEngine.getThisAddress())) {
-                            localCollectorsEdges.add(inboundEdge.edgeId());
-                        } else {
-                            int totalPartitionCount = nodeEngine.getPartitionService().getPartitionCount();
-                            int[][] partitionsPerProcessor = getLocalPartitionDistribution(inboundEdge,
-                                    inboundEdge.destVertex().localParallelism());
-                            createIfAbsentReceiverTasklet(inboundEdge, jobPrefix, partitionsPerProcessor, totalPartitionCount,
-                                    jobSerializationService);
-                        }
-                    }
-                }
+                createLocalConvoyorsAndReceiverTaskletsForInbound(inboundEdge, jobPrefix, jobSerializationService);
+            }
+        }
+    }
+
+    private void createLocalConveyorsAndSenderTaskletsForOutbound(
+            EdgeDef outboundEdge,
+            String jobPrefix,
+            InternalSerializationService jobSerializationService
+    ) {
+        Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(outboundEdge);
+        
+        for (NodeAwareDagTraverser.Connection connection : connections) {
+            // Outbound connection from other member than current, no need to create any object.
+            if (!connection.isFrom(nodeEngine.getThisAddress())) {
+                continue;
+            }
+
+            // Local connection on current member, we need local conveyor.
+            if (connection.isTo(nodeEngine.getThisAddress())) {
+                localCollectorsEdges.add(outboundEdge.edgeId());
+                populateLocalConveyorMap(outboundEdge);
+            }
+        }
+
+        // Remote connection, we need a sender tasklet to send data to a remote member.
+        if (!outboundEdge.isLocal()) {
+            createSenderTasklet(outboundEdge, jobPrefix, jobSerializationService);
+        }
+    }
+
+    private void createLocalConvoyorsAndReceiverTaskletsForInbound(
+            EdgeDef inboundEdge,
+            String jobPrefix,
+            InternalSerializationService jobSerializationService
+    ) {
+        Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(inboundEdge);
+        
+        for (NodeAwareDagTraverser.Connection connection : connections) {
+            // Inbound connection to other member than current, no need to create any object
+            if (!connection.isTo(nodeEngine.getThisAddress())) {
+                continue;
+            }
+
+            // Local conveyor is always needed either between two processor tasklets, or between processor and receiver tasklets.
+            populateLocalConveyorMap(inboundEdge);
+
+            if (connection.isFrom(nodeEngine.getThisAddress())) {
+                // Local connection on current member, we populate {@link #localCollectorsEdges}
+                localCollectorsEdges.add(inboundEdge.edgeId());
+            } else {
+                // Remote connection, we need a receiver tasklet to fetch data from a remote member.
+                createReceiverTasklet(inboundEdge, jobPrefix, jobSerializationService);
             }
         }
     }
@@ -445,7 +465,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
         for (EdgeDef edge : vertex.outboundEdges()) {
             OutboundCollector outboundCollector =
-                    createOutboundCollector(edge, processorIdx, jobPrefix, jobSerializationService);
+                    createOutboundCollector(edge, processorIdx);
             OutboundEdgeStream outboundEdgeStream = new OutboundEdgeStream(edge.sourceOrdinal(), outboundCollector);
             outboundStreams.add(outboundEdgeStream);
         }
@@ -462,9 +482,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      */
     private OutboundCollector createOutboundCollector(
             EdgeDef edge,
-            int processorIndex,
-            String jobPrefix,
-            InternalSerializationService jobSerializationService
+            int processorIndex
     ) {
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED && !edge.isLocal()) {
             throw new IllegalArgumentException("Isolated edges must be local: " + edge);
@@ -486,9 +504,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
         OutboundCollector[] remoteCollectors = createRemoteOutboundCollectors(
                 edge,
-                jobPrefix,
-                processorIndex,
-                jobSerializationService
+                processorIndex
         );
 
 
@@ -503,7 +519,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return compositeCollector(collectors, edge, totalPartitionCount, false, true);
     }
 
-    private void prepareLocalConveyorMap(EdgeDef edge) {
+    private void populateLocalConveyorMap(EdgeDef edge) {
         if (localConveyorMap.containsKey(edge.edgeId())) {
             return;
         }
@@ -558,12 +574,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
     }
 
-    private OutboundCollector[] createRemoteOutboundCollectors(
-            EdgeDef edge,
-            String jobPrefix,
-            int processorIndex,
-            InternalSerializationService jobSerializationService
-    ) {
+    private OutboundCollector[] createRemoteOutboundCollectors(EdgeDef edge, int processorIndex) {
         // the distributed-to-one edge must be partitioned and the target member must be present
         if (!edge.getDistributedTo().equals(DISTRIBUTE_TO_ALL)) {
             if (edge.routingPolicy() != RoutingPolicy.PARTITIONED) {
@@ -600,46 +611,49 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     /**
      * Creates (if absent) for the given edge one sender tasklet per remote member,
      * each with a single conveyor with a number of producer queues feeding it.
-     * Populates the {@link #senderMap} and {@link #tasklets} fields.
+     * Populates the {@link #senderMap} and {@link #tasklets} and {@link #edgeSenderConveyorMap} fields.
      */
-    private Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap(
+    private void createSenderTasklet(
             EdgeDef edge,
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
         assert !edge.isLocal() : "Edge is not distributed";
 
-        return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
-            final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
-            for (Address destAddr : remoteMembers.get()) {
-                if (!dagTraverser.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
-                    continue;
-                }
+        if (edgeSenderConveyorMap.containsKey(edge.edgeId())) {
+            return;
+        }
 
-                final ConcurrentConveyor<Object> conveyor = createConveyorArray(
-                        1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
-                @SuppressWarnings("unchecked")
-                ComparatorEx<Object> origComparator = (ComparatorEx<Object>) edge.getOrderComparator();
-                ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
-                        : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
-
-                final InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
-                        jobPrefix + "/toVertex:" + edge.destVertex().name() + "-toMember:" + destAddr,
-                        adaptedComparator);
-                final int destVertexId = edge.destVertex().vertexId();
-                final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
-                        memberConnections.get(destAddr),
-                        destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
-                        edge.sourceVertex().name(), edge.sourceOrdinal(), jobSerializationService
-                );
-                senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
-                         .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())
-                         .put(destAddr, t);
-                tasklets.add(t);
-                addrToConveyor.put(destAddr, conveyor);
+        Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
+        for (Address destAddr : remoteMembers.get()) {
+            if (!dagTraverser.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
+                continue;
             }
-            return addrToConveyor;
-        });
+
+            ConcurrentConveyor<Object> conveyor = createConveyorArray(
+                    1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
+            @SuppressWarnings("unchecked")
+            ComparatorEx<Object> origComparator = (ComparatorEx<Object>) edge.getOrderComparator();
+            ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
+                    : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
+
+            InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
+                    jobPrefix + "/toVertex:" + edge.destVertex().name() + "-toMember:" + destAddr,
+                    adaptedComparator);
+            int destVertexId = edge.destVertex().vertexId();
+            SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
+                    memberConnections.get(destAddr),
+                    destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
+                    edge.sourceVertex().name(), edge.sourceOrdinal(), jobSerializationService
+            );
+            senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
+                    .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())
+                    .put(destAddr, t);
+            tasklets.add(t);
+            addrToConveyor.put(destAddr, conveyor);
+        }
+
+        edgeSenderConveyorMap.put(edge.edgeId(), addrToConveyor);
     }
 
     @SuppressWarnings("unchecked")
@@ -681,40 +695,56 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return res;
     }
 
-    private void createIfAbsentReceiverTasklet(EdgeDef edge,
-                                               String jobPrefix,
-                                               int[][] ptionsPerProcessor,
-                                               int totalPtionCount,
-                                               InternalSerializationService jobSerializationService) {
+    private void createReceiverTasklet(
+            EdgeDef inboundEdge,
+            String jobPrefix,
+            InternalSerializationService jobSerializationService
+    ) {
+        int totalPartitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int[][] partitionsPerProcessor = getLocalPartitionDistribution(inboundEdge,
+                inboundEdge.destVertex().localParallelism());
+        createReceiverTasklet(inboundEdge, jobPrefix, partitionsPerProcessor, totalPartitionCount,
+                jobSerializationService);
+    }
+
+    /**
+     * Creates receiver tasklet and populates the {@link #receiverMap} for an edge.
+     */
+    private void createReceiverTasklet(EdgeDef edge,
+                                       String jobPrefix,
+                                       int[][] ptionsPerProcessor,
+                                       int totalPtionCount,
+                                       InternalSerializationService jobSerializationService) {
         final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.get(edge.edgeId());
 
         receiverMap.computeIfAbsent(edge.destVertex().vertexId(), x -> new HashMap<>())
-                   .computeIfAbsent(edge.destOrdinal(), x -> {
-                       Map<Address, ReceiverTasklet> addrToTasklet = new HashMap<>();
-                       //create a receiver per address
-                       int offset = 0;
-                       for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
-                           if (!dagTraverser.edgeExistsForConnection(edge, addr, nodeEngine.getThisAddress())) {
-                               continue;
-                           }
+                .computeIfAbsent(edge.destOrdinal(), x -> {
+                    Map<Address, ReceiverTasklet> addrToTasklet = new HashMap<>();
+                    //create a receiver per address
+                    int offset = 0;
+                    for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
+                        if (!dagTraverser.edgeExistsForConnection(edge, addr, nodeEngine.getThisAddress())) {
+                            continue;
+                        }
 
-                           final OutboundCollector[] collectors = new OutboundCollector[ptionsPerProcessor.length];
-                           // assign the queues starting from end
-                           final int queueOffset = --offset;
-                           Arrays.setAll(collectors, n -> new ConveyorCollector(
-                                   localConveyors[n], localConveyors[n].queueCount() + queueOffset,
-                                   ptionsPerProcessor[n]));
-                           final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true, true);
-                           ReceiverTasklet receiverTasklet = new ReceiverTasklet(
-                                   collector, jobSerializationService,
-                                   edge.getConfig().getReceiveWindowMultiplier(),
-                                   getJetConfig().getFlowControlPeriodMs(),
-                                   nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
-                                   memberConnections.get(addr), jobPrefix);
-                           addrToTasklet.put(addr, receiverTasklet);
-                       }
-                       return addrToTasklet;
-                   });
+                        final OutboundCollector[] collectors = new OutboundCollector[ptionsPerProcessor.length];
+                        // assign the queues starting from end
+                        final int queueOffset = --offset;
+                        Arrays.setAll(collectors, n -> new ConveyorCollector(
+                                localConveyors[n], localConveyors[n].queueCount() + queueOffset,
+                                ptionsPerProcessor[n]));
+                        final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true, true);
+                        ReceiverTasklet receiverTasklet = new ReceiverTasklet(
+                                collector, jobSerializationService,
+                                edge.getConfig().getReceiveWindowMultiplier(),
+                                getJetConfig().getFlowControlPeriodMs(),
+                                nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
+                                memberConnections.get(addr), jobPrefix);
+                        addrToTasklet.put(addr, receiverTasklet);
+                        tasklets.add(receiverTasklet);
+                    }
+                    return addrToTasklet;
+                });
     }
 
     private JetConfig getJetConfig() {
