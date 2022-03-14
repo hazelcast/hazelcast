@@ -135,7 +135,13 @@ public class ReceiverTasklet implements Tasklet {
         this.ordinalString = "" + ordinal;
         this.destinationVertexName = destinationVertexName;
         this.memberConnection = memberConnection;
-        String prefix = String.format("%s/receiverFor:%s#%d", jobPrefix, destinationVertexName, ordinal);
+        String prefix = new StringBuilder()
+                .append(jobPrefix)
+                .append("/receiverFor:")
+                .append(destinationVertexName)
+                .append("#")
+                .append(ordinal)
+                .toString();
         this.logger = prefixedLogger(loggingService.getLogger(getClass()), prefix);
         this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
     }
@@ -212,8 +218,8 @@ public class ReceiverTasklet implements Tasklet {
      *     receive window.
      * </li></ol>
      *
-     * @param timestampNow value of the timestamp at the time the method is called. The timestamp
-     *                     must be obtained from {@code System.nanoTime()}.
+     * @param timestampNow       value of the timestamp at the time the method is called. The timestamp
+     *                           must be obtained from {@code System.nanoTime()}.
      * @param expectedConnection The connection to which the result will be sent. We use it
      *                           to check that it's the same connection the tasklet was crated with.
      */
@@ -330,8 +336,8 @@ public class ReceiverTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, destinationVertexName)
-                               .withTag(MetricTags.SOURCE_ADDRESS, sourceAddressString)
-                               .withTag(MetricTags.ORDINAL, ordinalString);
+                .withTag(MetricTags.SOURCE_ADDRESS, sourceAddressString)
+                .withTag(MetricTags.ORDINAL, ordinalString);
 
         context.collect(descriptor, this);
     }
