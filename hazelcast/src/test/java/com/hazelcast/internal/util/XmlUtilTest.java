@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
@@ -42,7 +43,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
-import org.fusesource.hawtbuf.ByteArrayInputStream;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
