@@ -654,7 +654,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             return;
         }
 
+        int destVertexId = edge.destVertex().vertexId();
         Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
+        @SuppressWarnings("unchecked")
+        ComparatorEx<Object> origComparator = (ComparatorEx<Object>) edge.getOrderComparator();
+        ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
+                : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
+
         for (Address destAddr : remoteMembers.get()) {
             if (!dagTraverser.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
                 continue;
@@ -662,15 +668,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             ConcurrentConveyor<Object> conveyor = createConveyorArray(
                     1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
-            @SuppressWarnings("unchecked")
-            ComparatorEx<Object> origComparator = (ComparatorEx<Object>) edge.getOrderComparator();
-            ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
-                    : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
             InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
                     jobPrefix + "/toVertex:" + edge.destVertex().name() + "-toMember:" + destAddr,
                     adaptedComparator);
-            int destVertexId = edge.destVertex().vertexId();
             SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
                     memberConnections.get(destAddr),
                     destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
