@@ -209,7 +209,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public Boolean call() throws InterruptedException {
-            sleepAtLeastSeconds((int) sleepSeconds);
+            sleepSeconds((int) sleepSeconds);
             return true;
         }
 
