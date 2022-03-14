@@ -166,7 +166,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         public Boolean call() throws InterruptedException {
             hz.getCPSubsystem().getCountDownLatch(taskStartedLatchName).countDown();
 
-            sleepAtLeastSeconds((int) sleepSeconds);
+            sleepSeconds((int) sleepSeconds);
             return true;
         }
 
