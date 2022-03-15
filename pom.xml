@@ -105,7 +105,7 @@
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.8.1</kafka.version>
-        <kotlin.version>1.5.32</kotlin.version>
+        <kotlin.version>1.6.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
