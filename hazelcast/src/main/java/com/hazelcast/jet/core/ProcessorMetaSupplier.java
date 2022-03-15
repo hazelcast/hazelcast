@@ -482,7 +482,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             if (!addresses.contains(memberAddress)) {
                 throw new JetException("Cluster does not contain the required member: " + memberAddress);
             }
-            return new AddressProcessorSupplierFunction(supplier, memberAddress);
+            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
         }
 
         @Override
@@ -510,46 +510,6 @@ public interface ProcessorMetaSupplier extends Serializable {
         @Override
         public int getClassId() {
             return JetDataSerializerHook.SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER;
-        }
-    }
-
-    class AddressProcessorSupplierFunction implements Function<Address, ProcessorSupplier>, IdentifiedDataSerializable {
-        private ProcessorSupplier supplier;
-        private Address memberAddress;
-
-        AddressProcessorSupplierFunction() {
-        }
-
-        AddressProcessorSupplierFunction(ProcessorSupplier supplier, Address memberAddress) {
-            this.supplier = supplier;
-            this.memberAddress = memberAddress;
-        }
-
-        @Override
-        public ProcessorSupplier apply(Address addr) {
-            return addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(memberAddress);
-            out.writeObject(supplier);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            memberAddress = in.readObject();
-            supplier = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.ADDRESS_PROCESSOR_SUPPLIER_FUNCTION;
         }
     }
 
