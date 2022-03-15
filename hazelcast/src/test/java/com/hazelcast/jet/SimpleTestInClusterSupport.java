@@ -114,15 +114,22 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @AfterClass
     public static void supportAfterClass() throws Exception {
-        if (factory != null) {
-            SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
-            spawn(() -> factory.terminateAll())
-                    .get(1, TimeUnit.MINUTES);
+        try {
+            if (factory != null) {
+                SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
+                spawn(() -> factory.terminateAll())
+                        .get(1, TimeUnit.MINUTES);
+            }
+        } catch (Exception e) {
+            // Log the exception, so it is visible in log file for the test class,
+            // otherwise it is only visible in surefire test report
+            SUPPORT_LOGGER.warning("Terminating instance factory failed", e);
+            throw e;
+        } finally {
+            factory = null;
+            instances = null;
+            client = null;
         }
-
-        factory = null;
-        instances = null;
-        client = null;
     }
 
     @Nonnull

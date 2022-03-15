@@ -22,7 +22,8 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalCalc;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -36,7 +37,7 @@ public final class CalcLogicalRule extends ConverterRule {
         );
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public RelNode convert(RelNode rel) {
         LogicalCalc calc = (LogicalCalc) rel;

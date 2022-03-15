@@ -29,23 +29,39 @@ import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.immutables.value.Value;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+
+@Value.Enclosing
 public final class CalcMergeRule extends RelRule<Config> {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(CalcMergeRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0.operand(Calc.class)
-                    .inputs(b1 -> b1.operand(Calc.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        CalcMergeRule.Config DEFAULT = ImmutableCalcMergeRule.Config.builder()
+                .description(CalcMergeRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(Calc.class)
+                        .trait(LOGICAL)
+                        .inputs(b1 -> b1
+                                .operand(Calc.class).anyInputs()))
+                .build();
 
-    private CalcMergeRule() {
-        super(RULE_CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new CalcMergeRule(this);
+        }
+    }
+
+    private CalcMergeRule(Config config) {
+        super(config);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new CalcMergeRule();
+    public static final RelOptRule INSTANCE = new CalcMergeRule(Config.DEFAULT);
 
     @Override
     public boolean matches(RelOptRuleCall call) {
@@ -75,7 +91,6 @@ public final class CalcMergeRule extends RelRule<Config> {
                 .stream()
                 .map(lowerCalcProgram::expandLocalRef)
                 .collect(Collectors.toList());
-        // TODO: kakayato problema tyt ^^^
 
         boolean isMergeable = true;
 

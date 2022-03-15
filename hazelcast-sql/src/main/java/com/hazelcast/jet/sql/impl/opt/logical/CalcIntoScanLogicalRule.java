@@ -19,26 +19,28 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.immutables.value.Value;
 
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * Logical rule that pushes down a {@link Filter} into a {@link TableScan} to allow for constrained scans.
+ * Logical rule that pushes down a {@link Calc} into a {@link TableScan} to allow for constrained scans.
  * See {@link HazelcastTable} for more information about constrained scans.
  * <p>
  * Before:
  * <pre>
- * LogicalFilter[filter=exp1]
+ * LogicalCalc[filter=exp1]
  *     LogicalScan[table[filter=exp2]]
  * </pre>
  * After:
@@ -46,17 +48,27 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * LogicalScan[table[filter=exp1 AND exp2]]
  * </pre>
  */
+@Value.Enclosing
 public final class CalcIntoScanLogicalRule extends RelRule<Config> implements TransformationRule {
 
-    private static final Config CONFIG = Config.EMPTY
-            .withDescription(CalcIntoScanLogicalRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0
-                    .operand(CalcLogicalRel.class)
-                    .trait(LOGICAL)
-                    .inputs(b1 -> b1
-                            .operand(FullScanLogicalRel.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        CalcIntoScanLogicalRule.Config DEFAULT = ImmutableCalcIntoScanLogicalRule.Config.builder()
+                .description(CalcIntoScanLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(CalcLogicalRel.class)
+                        .trait(LOGICAL)
+                        .inputs(b1 -> b1
+                                .operand(FullScanLogicalRel.class).anyInputs()))
+                .build();
 
-    public static final CalcIntoScanLogicalRule INSTANCE = new CalcIntoScanLogicalRule(CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new CalcIntoScanLogicalRule(this);
+        }
+    }
+
+    public static final CalcIntoScanLogicalRule INSTANCE = new CalcIntoScanLogicalRule(Config.DEFAULT);
 
     private CalcIntoScanLogicalRule(Config config) {
         super(config);

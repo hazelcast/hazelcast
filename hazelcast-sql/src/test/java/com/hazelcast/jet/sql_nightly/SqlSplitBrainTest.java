@@ -49,7 +49,7 @@ public class SqlSplitBrainTest extends JetSplitBrainTestSupport {
     @Test
     // test for https://github.com/hazelcast/hazelcast/issues/19472
     public void test_indexScan() throws InterruptedException {
-        Thread[] threads = new Thread[2];
+        Thread[] threads = new Thread[16];
         AtomicBoolean done = new AtomicBoolean();
         AtomicInteger numQueries = new AtomicInteger();
 
@@ -89,7 +89,7 @@ public class SqlSplitBrainTest extends JetSplitBrainTestSupport {
         done.set(true);
         boolean stuck = false;
         for (Thread t : threads) {
-            t.join(5000);
+            t.join(1000);
             if (t.isAlive()) {
                 logger.info("thread " + t + " stuck");
                 stuck = true;

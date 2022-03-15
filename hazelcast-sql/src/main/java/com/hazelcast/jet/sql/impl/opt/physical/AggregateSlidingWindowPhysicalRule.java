@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.Calc;
@@ -36,6 +37,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -46,30 +48,41 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
 
+@Value.Enclosing
 public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractPhysicalRule {
 
-    private static final Config CONFIG_WITH_CALC = Config.EMPTY
-            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
-            .withOperandSupplier(b0 -> b0
-                    .operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
-                    .inputs(b1 -> b1
-                            .operand(CalcLogicalRel.class)
-                            .inputs(b2 -> b2
-                                    .operand(SlidingWindowLogicalRel.class).anyInputs())));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config CONFIG_WITH_CALC = ImmutableAggregateSlidingWindowPhysicalRule.Config.builder()
+                .description(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
+                .operandSupplier(b0 -> b0
+                        .operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
+                        .inputs(b1 -> b1
+                                .operand(CalcLogicalRel.class)
+                                .inputs(b2 -> b2
+                                        .operand(SlidingWindowLogicalRel.class).anyInputs())))
+                .build();
 
-    private static final Config CONFIG_NO_CALC = Config.EMPTY
-            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
-            .withOperandSupplier(b0 -> b0
-                    .operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)
-                    .inputs(b1 -> b1
-                            .operand(SlidingWindowLogicalRel.class).anyInputs()));
+        Config CONFIG_NO_CALC = ImmutableAggregateSlidingWindowPhysicalRule.Config.builder()
+                .description(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
+                .operandSupplier(b0 -> b0
+                        .operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isUnbounded)
+                        .inputs(b1 -> b1
+                                .operand(SlidingWindowLogicalRel.class).anyInputs()))
+                .build();
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_CALC, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_WITH_CALC, true);
+        @Override
+        default RelOptRule toRule() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_NO_CALC, false);
+    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_WITH_CALC, true);
 
     private final boolean hasCalc;
 

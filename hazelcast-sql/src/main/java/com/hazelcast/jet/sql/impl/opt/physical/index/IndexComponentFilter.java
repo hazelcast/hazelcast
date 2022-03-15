@@ -35,7 +35,7 @@ import java.util.List;
  * participates in the filter. On the later planning stages several component filters of the same index are merged into a
  * single composite filter that will be passed to the operator.
  */
-public class IndexComponentFilter {
+class IndexComponentFilter {
     /** Filter that will be executed by the operator. */
     private final IndexFilter filter;
 
@@ -45,21 +45,21 @@ public class IndexComponentFilter {
     /** Expected converter type of the target index. If converter type doesn't match, an execution exception will be thrown. */
     private final QueryDataType converterType;
 
-    public IndexComponentFilter(IndexFilter filter, List<RexNode> expressions, QueryDataType converterType) {
+    IndexComponentFilter(IndexFilter filter, List<RexNode> expressions, QueryDataType converterType) {
         this.filter = filter;
         this.expressions = expressions;
         this.converterType = converterType;
     }
 
-    public IndexFilter getFilter() {
+    IndexFilter getFilter() {
         return filter;
     }
 
-    public List<RexNode> getExpressions() {
+    List<RexNode> getExpressions() {
         return expressions;
     }
 
-    public QueryDataType getConverterType() {
+    QueryDataType getConverterType() {
         return converterType;
     }
 

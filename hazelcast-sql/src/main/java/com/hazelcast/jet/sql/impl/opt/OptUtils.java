@@ -54,10 +54,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
@@ -480,35 +477,6 @@ public final class OptUtils {
             @Override
             public RexNode visitInputRef(RexInputRef inputRef) {
                 return inlinedExpressions.get(inputRef.getIndex());
-            }
-
-            @Override
-            public RexNode visitLocalRef(RexLocalRef localRef) {
-                return localRef;
-            }
-
-            @Override
-            public RexNode visitCall(RexCall call) {
-                List<RexNode> newOperands = new ArrayList<>(call.getOperands().size());
-                for (RexNode operand : call.operands) {
-                    newOperands.add(operand.accept(this));
-                }
-                return call.clone(call.type, newOperands);
-            }
-
-            @Override
-            public RexNode visitFieldAccess(RexFieldAccess fieldAccess) {
-                final RexNode expr = fieldAccess.getReferenceExpr();
-                RexNode newOperand = expr.accept(this);
-                if (newOperand != fieldAccess.getReferenceExpr()) {
-                    throw new RuntimeException("replacing partition key not supported");
-                }
-                return fieldAccess;
-            }
-
-            @Override
-            public RexNode visitLiteral(RexLiteral literal) {
-                return literal;
             }
         });
     }

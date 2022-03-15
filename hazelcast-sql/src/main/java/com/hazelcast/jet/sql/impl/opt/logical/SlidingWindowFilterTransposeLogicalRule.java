@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
@@ -30,26 +29,38 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.rex.RexVisitorImpl;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowFilterTransposeLogicalRule.Config.DEFAULT;
 import static java.util.Collections.singletonList;
 
 /**
  * A {@link Calc} condition reading from a {@link SlidingWindow}
  * will be moved before the sliding window as {@link Filter}
  */
+@Value.Enclosing
 public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> implements TransformationRule {
 
-    private static final Config CONFIG = Config.EMPTY
-            .withDescription(SlidingWindowFilterTransposeLogicalRule.class.getSimpleName())
-            .withOperandSupplier(b0 -> b0
-                    .operand(CalcLogicalRel.class)
-                    .predicate(calc -> calc.getProgram().getCondition() != null)
-                    .trait(LOGICAL)
-                    .inputs(b1 -> b1
-                            .operand(SlidingWindow.class).anyInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableSlidingWindowFilterTransposeLogicalRule.Config.builder()
+                .description(SlidingWindowFilterTransposeLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(CalcLogicalRel.class)
+                        .predicate(calc -> calc.getProgram().getCondition() != null)
+                        .trait(LOGICAL)
+                        .inputs(b1 -> b1
+                                .operand(SlidingWindow.class).anyInputs()))
+                .build();
 
-    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeLogicalRule(CONFIG);
+        @Override
+        default RelOptRule toRule() {
+            return new SlidingWindowFilterTransposeLogicalRule(this);
+        }
+    }
+
+    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeLogicalRule(DEFAULT);
 
     protected SlidingWindowFilterTransposeLogicalRule(Config config) {
         super(config);
