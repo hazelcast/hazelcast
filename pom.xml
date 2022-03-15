@@ -141,7 +141,7 @@
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.15.3</testcontainers.version>
-        <zookeeper.version>3.5.9</zookeeper.version>
+        <zookeeper.version>3.8.0</zookeeper.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
