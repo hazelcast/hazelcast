@@ -53,8 +53,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private ConcurrentInitialSetCache<String, JsonPath> pathCache;
     private JsonPath constantPathCache;
 
-    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
-
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
 
