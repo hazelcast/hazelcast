@@ -131,7 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ReactorFrontEnd opService;
+    private final ReactorFrontEnd reactorFrontEnd;
 
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -159,15 +159,14 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.opService = new ReactorFrontEnd(this);
+            this.reactorFrontEnd = new ReactorFrontEnd(this);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    getJetPacketConsumer(),
-                    opService
+                    getJetPacketConsumer()
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -192,8 +191,8 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public ReactorFrontEnd getOpService(){
-        return opService;
+    public ReactorFrontEnd getReactorFrontEnd(){
+        return reactorFrontEnd;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -261,7 +260,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        opService.start();
+        reactorFrontEnd.start();
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -576,8 +575,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if(opService !=null){
-            opService.shutdown();
+        if(reactorFrontEnd !=null){
+            reactorFrontEnd.shutdown();
         }
     }
 

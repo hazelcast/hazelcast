@@ -66,8 +66,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
                 responseHandler,
                 invocationMonitor,
                 eventService,
-                jetService,
-                null
+                jetService
         );
     }
 

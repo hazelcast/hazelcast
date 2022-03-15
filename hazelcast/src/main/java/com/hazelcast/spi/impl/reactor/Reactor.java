@@ -38,7 +38,7 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.channels.SelectionKey.OP_READ;
 
-class Reactor extends Thread {
+public class Reactor extends Thread {
     private final ReactorFrontEnd reactorService;
     private final Selector selector;
     private final ILogger logger;

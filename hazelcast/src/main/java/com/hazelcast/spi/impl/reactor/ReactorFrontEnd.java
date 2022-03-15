@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class ReactorFrontEnd implements Consumer<Packet> {
+public class ReactorFrontEnd {
 
     private final NodeEngineImpl nodeEngine;
     public final SerializationService ss;
@@ -172,44 +172,27 @@ public class ReactorFrontEnd implements Consumer<Packet> {
     }
 
 
-    //todo: add option to bypass offloading to thread for thread per core versionn
-    @Override
-    public void accept(Packet packet) {
-        if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
-            Address remoteAddress = packet.getConn().getRemoteAddress();
-            TargetInvocations targetInvocations = invocationsPerMember.get(remoteAddress);
-            if (targetInvocations == null) {
-                System.out.println("Dropping response " + packet + ", targetInvocations not found");
-                return;
-            }
-
-            long callId = 0;
-            Invocation invocation = targetInvocations.map.get(callId);
-            if (invocation == null) {
-                System.out.println("Dropping response " + packet + ", invocation not found");
-                invocation.completableFuture.complete(null);
-            }
-        } else {
-            int index = HashUtil.hashToIndex(packet.getPartitionHash(), reactors.length);
-            reactors[index].enqueue(packet);
-        }
-    }
-
-//    class EngineThread extends Thread {
-//        private final Reactor engine = new Reactor(ReactorService.this);
-//
-//        public void run() {
-//            try {
-//                loop();
-//            } catch (Exception e) {
-//                e.printStackTrace();
+//    //todo: add option to bypass offloading to thread for thread per core versionn
+//    @Override
+//    public void accept(Packet packet) {
+//        if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
+//            Address remoteAddress = packet.getConn().getRemoteAddress();
+//            TargetInvocations targetInvocations = invocationsPerMember.get(remoteAddress);
+//            if (targetInvocations == null) {
+//                System.out.println("Dropping response " + packet + ", targetInvocations not found");
+//                return;
 //            }
-//        }
 //
-//        private void loop() throws InterruptedException {
-//            while (!shuttingdown) {
-//                engine.tick();
+//            long callId = 0;
+//            Invocation invocation = targetInvocations.map.get(callId);
+//            if (invocation == null) {
+//                System.out.println("Dropping response " + packet + ", invocation not found");
+//                invocation.completableFuture.complete(null);
 //            }
+//        } else {
+//            int index = HashUtil.hashToIndex(packet.getPartitionHash(), reactors.length);
+//            reactors[index].enqueue(packet);
 //        }
 //    }
+
 }

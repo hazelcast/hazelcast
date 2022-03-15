@@ -26,7 +26,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
-        this.opService = nodeEngine.getOpService();
+        this.opService = nodeEngine.getReactorFrontEnd();
         this.name = name;
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
     }
