@@ -34,8 +34,6 @@ import org.immutables.value.Value;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
-
 @Value.Enclosing
 public final class CalcMergeRule extends RelRule<Config> {
 
@@ -45,7 +43,6 @@ public final class CalcMergeRule extends RelRule<Config> {
                 .description(CalcMergeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(Calc.class)
-                        .trait(LOGICAL)
                         .inputs(b1 -> b1
                                 .operand(Calc.class).anyInputs()))
                 .build();
