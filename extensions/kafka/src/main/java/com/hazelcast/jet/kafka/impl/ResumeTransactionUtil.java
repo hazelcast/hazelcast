@@ -43,9 +43,8 @@ final class ResumeTransactionUtil {
     /**
      * Instead of obtaining producerId and epoch from the transaction coordinator, re-use previously
      * obtained ones, so that we can resume transaction after a restart. Implementation of this
-     * method is based on {@link KafkaProducer#initTransactions}.
-     * https://github.com/apache/kafka/commit/5d2422258cb975a137a42a4e08f03573c49a387e
-     * #diff-f4ef1afd8792cd2a2e9069cd7ddea630
+     * method is based on https://github.com/apache/flink/blob/577648379c2abb429259ac1a46ca6a04550f3dbd/flink-connectors
+     * /flink-connector-kafka/src/main/java/org/apache/flink/connector/kafka/sink/FlinkKafkaInternalProducer.java#L276-L308
      */
     static void resumeTransaction(KafkaProducer producer, long producerId, short epoch) {
         Preconditions.checkState(producerId >= 0 && epoch >= 0,
