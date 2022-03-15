@@ -23,6 +23,10 @@ import java.io.StringWriter;
 
 import javax.annotation.Nullable;
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -39,7 +43,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 /**
- * Utility class for XML processing.
+ * Utility class for XML processing. It contains several methods to retrieve XML processing factories with XXE protection
+ * enabled (based on recommendation in the
+ * <a href="https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html">OWASP XXE prevention
+ * cheat-sheet</a>).
  */
 public final class XmlUtil {
 
@@ -53,9 +60,22 @@ public final class XmlUtil {
      */
     public static final String SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES = "hazelcast.ignoreXxeProtectionFailures";
 
+    private static final String FEATURES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
     private static final ILogger LOGGER = Logger.getLogger(XmlUtil.class);
 
     private XmlUtil() {
+    }
+
+    /**
+     * Returns namespace aware instance of {@link DocumentBuilderFactory} with XXE protection enabled.
+     *
+     * @throws ParserConfigurationException enabling XXE protection fail
+     */
+    public static DocumentBuilderFactory getNsAwareDocumentBuilderFactory() throws ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        setFeature(dbf, FEATURES_DISALLOW_DOCTYPE);
+        return dbf;
     }
 
     /**
@@ -76,6 +96,24 @@ public final class XmlUtil {
         setProperty(schemaFactory, XMLConstants.ACCESS_EXTERNAL_SCHEMA);
         setProperty(schemaFactory, XMLConstants.ACCESS_EXTERNAL_DTD);
         return schemaFactory;
+    }
+
+    /**
+     * Returns {@link SAXParserFactory} with XXE protection enabled.
+     */
+    public static SAXParserFactory getSAXParserFactory() throws ParserConfigurationException, SAXException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        setFeature(factory, FEATURES_DISALLOW_DOCTYPE);
+        return factory;
+    }
+
+    /**
+     * Returns {@link XMLInputFactory} with XXE protection enabled.
+     */
+    public static XMLInputFactory getXMLInputFactory() {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        setProperty(xmlInputFactory, XMLInputFactory.SUPPORT_DTD, false);
+        return xmlInputFactory;
     }
 
     /**
@@ -152,20 +190,26 @@ public final class XmlUtil {
         try {
             transformerFactory.setAttribute(attributeName, "");
         } catch (IllegalArgumentException iae) {
-            if (Boolean.getBoolean(SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES)) {
-                LOGGER.warning("Enabling XXE protection failed. The attribute " + attributeName
-                        + " is not supported by the TransformerFactory. The " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
-                        + " system property is used so the XML processing continues in the UNSECURE mode"
-                        + " with XXE protection disabled!!!");
-            } else {
-                LOGGER.severe("Enabling XXE protection failed. The attribute " + attributeName
-                        + " is not supported by the TransformerFactory. This usually mean an outdated XML processor"
-                        + " is present on the classpath (e.g. Xerces, Xalan). If you are not able to resolve the issue by"
-                        + " fixing the classpath, the " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
-                        + " system property can be used to disable XML External Entity protections."
-                        + " We don't recommend disabling the XXE as such the XML processor configuration is unsecure!!!", iae);
-                throw iae;
-            }
+            printWarningAndRethrowEventually(iae, TransformerFactory.class, "attribute " + attributeName);
+        }
+    }
+
+    static void setFeature(DocumentBuilderFactory dbf, String featureName) throws ParserConfigurationException {
+        try {
+            dbf.setFeature(featureName, true);
+        } catch (ParserConfigurationException e) {
+            printWarningAndRethrowEventually(e, DocumentBuilderFactory.class, "feature " + featureName);
+        }
+    }
+
+    static void setFeature(SAXParserFactory saxParserFactory, String featureName)
+            throws ParserConfigurationException, SAXException {
+        try {
+            saxParserFactory.setFeature(featureName, true);
+        } catch (SAXException e) {
+            printWarningAndRethrowEventually(e, SAXParserFactory.class, "feature " + featureName);
+        } catch (ParserConfigurationException e) {
+            printWarningAndRethrowEventually(e, SAXParserFactory.class, "feature " + featureName);
         }
     }
 
@@ -173,20 +217,36 @@ public final class XmlUtil {
         try {
             schemaFactory.setProperty(propertyName, "");
         } catch (SAXException e) {
-            if (Boolean.getBoolean(SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES)) {
-                LOGGER.warning("Enabling XXE protection failed. The property " + propertyName
-                        + " is not supported by the SchemaFactory. The " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
-                        + " system property is used so the XML processing continues in the UNSECURE mode"
-                        + " with XXE protection disabled!!!");
-            } else {
-                LOGGER.severe("Enabling XXE protection failed. The property " + propertyName
-                        + " is not supported by the SchemaFactory. This usually mean an outdated XML processor"
-                        + " is present on the classpath (e.g. Xerces, Xalan). If you are not able to resolve the issue by"
-                        + " fixing the classpath, the " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
-                        + " system property can be used to disable XML External Entity protections."
-                        + " We don't recommend disabling the XXE as such the XML processor configuration is unsecure!!!", e);
-                throw e;
-            }
+            printWarningAndRethrowEventually(e, SchemaFactory.class, "property " + propertyName);
+        }
+    }
+
+    static void setProperty(XMLInputFactory xmlInputFactory, String propertyName, Object value) {
+        try {
+            xmlInputFactory.setProperty(propertyName, value);
+        } catch (IllegalArgumentException e) {
+            printWarningAndRethrowEventually(e, XMLInputFactory.class, "property " + propertyName);
+        }
+    }
+
+    private static <T extends Exception> void printWarningAndRethrowEventually(T cause, Class<?> clazz, String objective)
+            throws T {
+        String className = clazz.getSimpleName();
+        if (Boolean.getBoolean(SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES)) {
+            LOGGER.warning("Enabling XXE protection failed. The " + objective + " is not supported by the " + className
+                    + ". The " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
+                    + " system property is used so the XML processing continues in the UNSECURE mode"
+                    + " with XXE protection disabled!!!");
+        } else {
+            LOGGER.severe(
+                    "Enabling XXE protection failed. The " + objective + " is not supported by the " + className
+                            + ". This usually mean an outdated XML processor"
+                            + " is present on the classpath (e.g. Xerces, Xalan). If you are not able to resolve the issue by"
+                            + " fixing the classpath, the " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
+                            + " system property can be used to disable XML External Entity protections."
+                            + " We don't recommend disabling the XXE as such the XML processor configuration is unsecure!",
+                    cause);
+            throw cause;
         }
     }
 
