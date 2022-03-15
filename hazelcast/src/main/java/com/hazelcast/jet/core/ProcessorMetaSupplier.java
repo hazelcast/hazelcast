@@ -514,8 +514,9 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-        @Override
+        @Override @Nonnull
         public Collection<? extends Processor> get(int count) {
+            assert count == 1;
             return singletonList(new ExpectNothingP());
         }
 
