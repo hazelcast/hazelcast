@@ -52,6 +52,8 @@ import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -117,28 +119,49 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     private final LineReader lineReader;
     private final PrintWriter writer;
-    private volatile boolean running;
-
     private final HazelcastInstance client;
 
+    private volatile boolean running;
+
     public ClientConsoleApp(@Nonnull HazelcastInstance client) {
-       this(client, null);
+        this(client, null);
     }
 
     public ClientConsoleApp(@Nonnull HazelcastInstance client, @Nullable PrintWriter writer) {
         this.client = client;
+
+        Terminal terminal = createTerminal();
+
         lineReader = LineReaderBuilder.builder()
-                .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
-                        .style(AttributedStyle.BOLD.foreground(COLOR)).append("%M%P > ").toAnsi())
+                // Check whether a real or dump terminal. Dump terminal enters an endless loop.
+                // see issue: https://github.com/jline/jline3/issues/751
+                .variable(LineReader.SECONDARY_PROMPT_PATTERN, isRealTerminal(terminal)
+                        ? new AttributedStringBuilder().style(AttributedStyle.BOLD.foreground(COLOR))
+                        .append("%M%P > ").toAnsi() : "")
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
                 .appName("hazelcast-console-app")
+                .terminal(terminal)
                 .build();
+
         if (writer == null) {
             this.writer = lineReader.getTerminal().writer();
         } else {
             this.writer = writer;
         }
+    }
+
+    private Terminal createTerminal() {
+        try {
+            return TerminalBuilder.terminal();
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    private static boolean isRealTerminal(Terminal terminal) {
+        return !Terminal.TYPE_DUMB.equals(terminal.getType())
+                && !Terminal.TYPE_DUMB_COLOR.equals(terminal.getType());
     }
 
     public IQueue<Object> getQueue() {
@@ -192,8 +215,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 writer.flush();
                 break;
             } catch (UserInterruptException e) {
-                // Ctrl+C cancels the not-yet-submitted command
-                continue;
+                // Handle thread interruption for dump terminal
+                if (!isRealTerminal(lineReader.getTerminal())) {
+                    writer.flush();
+                    break;
+                } else {
+                    // Ctrl+C cancels the not-yet-submitted command
+                    continue;
+                }
             } catch (Throwable e) {
                 e.printStackTrace(writer);
                 writer.flush();
