@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.Math.min;
 
 public class IMapOutputStream extends OutputStream {
@@ -98,6 +99,6 @@ public class IMapOutputStream extends OutputStream {
             throw new IOException("Writing to chunked IMap failed: " + e, e);
         }
         currentChunkIndex++;
-        currentChunk.clear();
+        upcast(currentChunk).clear();
     }
 }

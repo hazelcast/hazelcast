@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the configuration on the member with the passed configuration, applies (merges) the passed config to the current config
  */
-@Generated("85a65ba8e1a04d88edc78157300c4f46")
+@Generated("a55aa05f4d38abc1ec5efc091eaf64c3")
 public final class MCUpdateConfigCodec {
     //hex: 0x202300
     public static final int REQUEST_MESSAGE_TYPE = 2106112;
     //hex: 0x202301
     public static final int RESPONSE_MESSAGE_TYPE = 2106113;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_CONFIG_UPDATE_PROCESS_ID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CONFIG_UPDATE_PROCESS_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
     private MCUpdateConfigCodec() {
     }
@@ -70,12 +71,22 @@ public final class MCUpdateConfigCodec {
         return StringCodec.decode(iterator);
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.UUID configUpdateProcessId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_CONFIG_UPDATE_PROCESS_ID_FIELD_OFFSET, configUpdateProcessId);
         clientMessage.add(initialFrame);
 
         return clientMessage;
+    }
+
+    /**
+     * The unique identifier of the configuration update process which will be included in all MCEvent instances emitted for MC during the update
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.Frame initialFrame = iterator.next();
+        return decodeUUID(initialFrame.content, RESPONSE_CONFIG_UPDATE_PROCESS_ID_FIELD_OFFSET);
     }
 }

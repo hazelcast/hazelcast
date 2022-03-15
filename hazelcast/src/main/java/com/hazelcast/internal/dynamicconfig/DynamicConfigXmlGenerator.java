@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,7 +170,9 @@ public final class DynamicConfigXmlGenerator {
             gen.node("split-brain-protection-ref", c.getSplitBrainProtectionName());
             cachePartitionLostListenerConfigXmlGenerator(gen, c.getPartitionLostListenerConfigs());
 
-            gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
+            gen.node("merge-policy", c.getMergePolicyConfig().getPolicy(),
+                    "batch-size", c.getMergePolicyConfig().getBatchSize());
+
             appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendDataPersistenceConfig(gen, c.getDataPersistenceConfig());
             if (c.getMerkleTreeConfig().getEnabled() != null) {
@@ -708,6 +710,7 @@ public final class DynamicConfigXmlGenerator {
             gen.open("map-store", "enabled", s.isEnabled(), "initial-mode", initialMode.toString())
                     .node("class-name", clazz)
                     .node("factory-class-name", factoryClass)
+                    .node("write-coalescing", s.isWriteCoalescing())
                     .node("write-delay-seconds", s.getWriteDelaySeconds())
                     .node("write-batch-size", s.getWriteBatchSize())
                     .appendProperties(s.getProperties())

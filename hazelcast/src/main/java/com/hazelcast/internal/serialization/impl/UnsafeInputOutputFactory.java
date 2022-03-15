@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InputOutputFactory;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.nio.ByteOrder;
 
@@ -51,6 +51,11 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
     @Override
     public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
         return new UnsafeObjectDataOutput(size, service);
+    }
+
+    @Override
+    public BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
+        return new UnsafeObjectDataOutput(initialSize, firstGrowthSize, service);
     }
 
     @Override

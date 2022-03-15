@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 
+import java.util.UUID;
+
 public class ReloadConfigOperation
         extends AbstractDynamicConfigOperation {
     @Override
@@ -27,8 +29,8 @@ public class ReloadConfigOperation
     }
 
     @Override
-    void doRun() {
+    protected UUID startUpdateProcess() {
         ConfigurationService service = getService();
-        service.update();
+        return service.updateAsync();
     }
 }

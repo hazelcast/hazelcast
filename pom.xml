@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>5.1-SNAPSHOT</version>
+    <version>5.2-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -53,7 +53,7 @@
         <maven.compiler.plugin.version>3.9.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -68,7 +68,7 @@
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.19</maven.animal.sniffer.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
@@ -93,11 +93,11 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
         <aws.sdk.version>1.12.150</aws.sdk.version>
-        <classgraph.version>4.8.138</classgraph.version>
+        <classgraph.version>4.8.139</classgraph.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.12.6</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
@@ -106,10 +106,10 @@
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
-        <log4j.version>1.2.17.redhat-3</log4j.version>
+        <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.73.Final</netty.version>
+        <netty.version>4.1.74.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.2</parquet.version>
@@ -117,7 +117,7 @@
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.12</scala.version>
-        <slf4j.version>1.7.35</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.30</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
@@ -559,6 +559,31 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <configuration>
+                    <checkTestClasses>true</checkTestClasses>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java18</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                    <ignores>
+                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>source-java8-check</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -641,6 +666,11 @@
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>animal-sniffer-maven-plugin</artifactId>
+                    <version>${maven.animal.sniffer.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1042,6 +1072,12 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <gpgArguments>
+                                <gpgArgument>--pinentry-mode</gpgArgument>
+                                <gpgArgument>loopback</gpgArgument>
+                            </gpgArguments>
+                        </configuration>
                     </plugin>
 
                     <plugin>
@@ -1264,6 +1300,16 @@
                     --illegal-access=deny
                 </javaModuleArgs>
             </properties>
+        </profile>
+
+        <profile>
+            <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!quick</name>
+                </property>
+                <jdk>[9,)</jdk>
+            </activation>
             <modules>
                 <module>modulepath-tests</module>
             </modules>
@@ -1334,6 +1380,7 @@
             <modules>
                 <module>extensions</module>
                 <module>distribution</module>
+                <module>hazelcast-it</module>
             </modules>
         </profile>
         <profile>
@@ -1742,6 +1789,21 @@
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
               <version>2.0.48.Final</version>
+            </dependency>
+            <dependency>
+              <groupId>com.google.http-client</groupId>
+              <artifactId>google-http-client-jackson2</artifactId>
+              <version>1.40.1</version>
+            </dependency>
+            <dependency>
+              <groupId>com.google.api-client</groupId>
+              <artifactId>google-api-client</artifactId>
+              <version>1.32.2</version>
+            </dependency>
+            <dependency>
+              <groupId>com.google.api.grpc</groupId>
+              <artifactId>proto-google-iam-v1</artifactId>
+              <version>1.1.7</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.

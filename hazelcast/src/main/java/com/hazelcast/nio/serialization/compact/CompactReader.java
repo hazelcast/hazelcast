@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,9 +259,6 @@ public interface CompactReader {
     /**
      * Reads a time consisting of hour, minute, second, and nano seconds
      * or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -286,9 +283,6 @@ public interface CompactReader {
 
     /**
      * Reads a date consisting of year, month, and day or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -313,9 +307,6 @@ public interface CompactReader {
 
     /**
      * Reads a timestamp consisting of date and time or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -341,9 +332,6 @@ public interface CompactReader {
     /**
      * Reads a timestamp with timezone consisting of date, time and timezone offset
      * or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name

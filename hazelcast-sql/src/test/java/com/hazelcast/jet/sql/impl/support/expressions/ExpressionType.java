@@ -35,6 +35,7 @@ public abstract class ExpressionType<T> {
     public abstract String typeName();
     public abstract List<T> values();
     public abstract T valueFrom();
+    public abstract T valueMiddle();
     public abstract T valueTo();
     public abstract QueryDataType getFieldConverterType();
 
@@ -61,6 +62,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Boolean valueFrom() {
             return false;
+        }
+
+        @Override
+        public Boolean valueMiddle() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -91,6 +97,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public Byte valueMiddle() {
+            return (byte) 3;
+        }
+
+        @Override
         public Byte valueTo() {
             return (byte) 4;
         }
@@ -115,6 +126,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Short valueFrom() {
             return (short) 2;
+        }
+
+        @Override
+        public Short valueMiddle() {
+            return (short) 3;
         }
 
         @Override
@@ -145,6 +161,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public Integer valueMiddle() {
+            return 3;
+        }
+
+        @Override
         public Integer valueTo() {
             return 4;
         }
@@ -169,6 +190,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Long valueFrom() {
             return 2L;
+        }
+
+        @Override
+        public Long valueMiddle() {
+            return 3L;
         }
 
         @Override
@@ -206,6 +232,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public BigDecimal valueMiddle() {
+            return new BigDecimal("3");
+        }
+
+        @Override
         public BigDecimal valueTo() {
             return new BigDecimal("4");
         }
@@ -240,6 +271,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public BigInteger valueMiddle() {
+            return new BigInteger("3");
+        }
+
+        @Override
         public BigInteger valueTo() {
             return new BigInteger("4");
         }
@@ -264,6 +300,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Float valueFrom() {
             return 2f;
+        }
+
+        @Override
+        public Float valueMiddle() {
+            return 3f;
         }
 
         @Override
@@ -294,6 +335,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public Double valueMiddle() {
+            return 3d;
+        }
+
+        @Override
         public Double valueTo() {
             return 4d;
         }
@@ -321,6 +367,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public String valueMiddle() {
+            return "c";
+        }
+
+        @Override
         public String valueTo() {
             return "d";
         }
@@ -345,6 +396,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Character valueFrom() {
             return 'b';
+        }
+
+        @Override
+        public Character valueMiddle() {
+            return 'c';
         }
 
         @Override
@@ -381,6 +437,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public LocalTime valueMiddle() {
+            return LocalTime.parse("03:00");
+        }
+
+        @Override
         public LocalTime valueTo() {
             return LocalTime.parse("04:00");
         }
@@ -411,6 +472,11 @@ public abstract class ExpressionType<T> {
         @Override
         public LocalDate valueFrom() {
             return LocalDate.parse("2020-01-02");
+        }
+
+        @Override
+        public LocalDate valueMiddle() {
+            return LocalDate.parse("2020-01-03");
         }
 
         @Override
@@ -447,6 +513,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public LocalDateTime valueMiddle() {
+            return LocalDateTime.parse("2020-01-03T00:00:00");
+        }
+
+        @Override
         public LocalDateTime valueTo() {
             return LocalDateTime.parse("2020-01-04T00:00:00");
         }
@@ -480,6 +551,11 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
+        public OffsetDateTime valueMiddle() {
+            return OffsetDateTime.parse("2020-01-03T00:00:00+00:00");
+        }
+
+        @Override
         public OffsetDateTime valueTo() {
             return OffsetDateTime.parse("2020-01-04T00:00:00+00:00");
         }
@@ -510,6 +586,11 @@ public abstract class ExpressionType<T> {
         @Override
         public Object valueFrom() {
             return new ObjectHolder(2);
+        }
+
+        @Override
+        public Object valueMiddle() {
+            return new ObjectHolder(3);
         }
 
         @Override

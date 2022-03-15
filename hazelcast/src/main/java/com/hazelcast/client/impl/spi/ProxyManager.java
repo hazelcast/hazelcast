@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,33 +154,6 @@ public final class ProxyManager {
         }
 
         readProxyDescriptors();
-
-        this.addDistributedObjectListener(new CleanupDistObjListener(this));
-    }
-
-    /**
-     * This listener is to destroy local distributed objects when they are destroyed in the cluster.
-     * This helps to avoid memory leak. Note that member-side code uses a similar event based mechanism to
-     * create/destroy local proxies when a destroy/create occurs in the cluster. We don't create proxies in
-     * this listener because the client does not need the proxies it does not use.
-     */
-    public static class CleanupDistObjListener implements DistributedObjectListener {
-
-        private final ProxyManager proxyManager;
-
-        public CleanupDistObjListener(ProxyManager proxyManager) {
-            this.proxyManager = proxyManager;
-        }
-
-        @Override
-        public void distributedObjectCreated(DistributedObjectEvent event) {
-            // no op
-        }
-
-        @Override
-        public void distributedObjectDestroyed(DistributedObjectEvent event) {
-            proxyManager.destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
-        }
     }
 
     private void readProxyDescriptors() {

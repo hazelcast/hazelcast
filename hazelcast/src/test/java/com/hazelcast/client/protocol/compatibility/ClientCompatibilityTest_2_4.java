@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6622,6 +6622,8 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCReloadConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 844;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, MCReloadConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6635,6 +6637,8 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCUpdateConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 846;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, MCUpdateConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test

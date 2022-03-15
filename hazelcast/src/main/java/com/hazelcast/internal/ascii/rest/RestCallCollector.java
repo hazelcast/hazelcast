@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import com.hazelcast.internal.util.counters.MwCounter;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.URI_CONFIG_RELOAD;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.URI_CONFIG_UPDATE;
 
 public class RestCallCollector {
 
@@ -72,6 +75,11 @@ public class RestCallCollector {
     private final MwCounter queueDeleteSuccCount = MwCounter.newMwCounter();
     private final MwCounter queueDeleteFailCount = MwCounter.newMwCounter();
     private final MwCounter queueTotalRequestCount = MwCounter.newMwCounter();
+
+    private final MwCounter configUpdateSuccCount = MwCounter.newMwCounter();
+    private final MwCounter configUpdateFailCount = MwCounter.newMwCounter();;
+    private final MwCounter configReloadSuccCount = MwCounter.newMwCounter();
+    private final MwCounter configReloadFailCount = MwCounter.newMwCounter();
 
     private final MwCounter requestCount = MwCounter.newMwCounter();
     private final ConcurrentHashMap.KeySetView<RequestIdentifier, Boolean> uniqueRequests = ConcurrentHashMap.newKeySet();
@@ -136,6 +144,11 @@ public class RestCallCollector {
     private void handlePost(RestCallExecution execution) {
         RestCallExecution.ObjectType objectType = execution.getObjectType();
         if (objectType == null) {
+            if (execution.getRequestPath().endsWith(URI_CONFIG_UPDATE)) {
+                (execution.isSuccess() ? configUpdateSuccCount : configUpdateFailCount).inc();
+            }  else if (execution.getRequestPath().endsWith(URI_CONFIG_RELOAD)) {
+                (execution.isSuccess() ? configReloadSuccCount : configReloadFailCount).inc();
+            }
             return;
         }
         switch (objectType) {
@@ -257,6 +270,22 @@ public class RestCallCollector {
 
     public String getTotalMapRequestCount() {
         return String.valueOf(mapTotalRequestCount.get());
+    }
+
+    public String getConfigUpdateSuccessCount() {
+        return String.valueOf(configUpdateSuccCount.get());
+    }
+
+    public String getConfigUpdateFailureCount() {
+        return String.valueOf(configUpdateFailCount.get());
+    }
+
+    public String getConfigReloadSuccessCount() {
+        return String.valueOf(configReloadSuccCount.get());
+    }
+
+    public String getConfigReloadFailureCount() {
+        return String.valueOf(configReloadFailCount.get());
     }
 
     public String getTotalQueueRequestCount() {

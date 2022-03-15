@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.usercodedeployment.impl.filter.ClassNameFilterParser.parseClassNameFilters;
 import static com.hazelcast.internal.usercodedeployment.impl.filter.MemberProviderFilterParser.parseMemberFilter;
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
+import static java.lang.String.format;
 
 public final class UserCodeDeploymentService implements ManagedService {
 
@@ -70,12 +72,12 @@ public final class UserCodeDeploymentService implements ManagedService {
     public void defineClasses(List<Map.Entry<String, byte[]>> classDefinitions) {
         if (!enabled) {
             throw new IllegalStateException("User Code Deployment is not enabled. "
-                    + "To enable User Code Deployment, please do one of the following:\n"
-                    + "- Change member config using JAVA API: "
-                    + "config.getUserCodeDeploymentConfig().setEnabled(true);\n"
-                    + "- Change XML/YAML configuration property: Set hazelcast.user-code-deployment.enabled to true\n"
-                    + "- Add system property: -Dhz.user-code-deployment.enabled=true\n"
-                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true");
+                    + "To enable User Code Deployment, do one of the following:\n"
+                    + format(CONFIG_CHANGE_TEMPLATE,
+                        "config.getUserCodeDeploymentConfig().setEnabled(true);",
+                        "hazelcast.user-code-deployment.enabled to true",
+                        "-Dhz.user-code-deployment.enabled=true",
+                        "HZ_USERCODEDEPLOYMENT_ENABLED=true"));
         }
         locator.defineClassesFromClient(classDefinitions);
     }

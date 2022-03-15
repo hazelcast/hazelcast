@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,12 @@ public interface InputOutputFactory {
                                       boolean isCompatibility);
 
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
+
+    /**
+     * Creating new {@link BufferObjectDataOutput}. The size of the internal buffer is set to initialSize at construction.
+     * When the buffer is too small to accept new bytes the buffer will grow to at least firstGrowthSize.
+     */
+    BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service);
 
     ByteOrder getByteOrder();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Random;
 
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -111,7 +112,7 @@ public class HyperLogLogImplTest {
             int toCount = random.nextInt();
             actualCount.add(toCount);
 
-            bb.clear();
+            upcast(bb).clear();
             bb.putInt(toCount);
             hyperLogLog.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 

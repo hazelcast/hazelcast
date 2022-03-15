@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -498,8 +498,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
             if (matches("persistence-enabled", name)) {
                 dynamicConfigurationConfig.setPersistenceEnabled(parseBoolean(getTextContent(n)));
-            } else if (matches("persistence-file", name)) {
-                dynamicConfigurationConfig.setPersistenceFile(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("backup-dir", name)) {
                 dynamicConfigurationConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("backup-count", name)) {

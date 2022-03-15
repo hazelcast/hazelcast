@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,7 @@ public class LightMasterContext {
             logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
                     idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
+
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"

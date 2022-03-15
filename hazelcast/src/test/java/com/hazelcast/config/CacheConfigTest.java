@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,12 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cleanup() {
         HazelcastInstanceFactory.terminateAll();
         JsrTestUtil.cleanup();
+    }
+
+    @Test
+    public void testHashCode() {
+        CacheConfig cacheConfig = new CacheConfig();
+        assertTrue(cacheConfig.hashCode() != 0);
     }
 
     @Test
@@ -370,7 +376,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
                 jcacheConfigFile.getAbsolutePath()
         );
 
-        URI uri = new URI("jar:file:" + jcacheConfigFile.getAbsolutePath() + "!/test-hazelcast-jcache.xml");
+        URI uri = new URI("jar:" + jcacheConfigFile.toURI() + "!/test-hazelcast-jcache.xml");
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, new Properties());
         assertThat(cacheManager).isNotNull();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,8 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Schema> getAsync(long schemaId) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_1)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.1 cluster");
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
         }
         Schema schema = getLocal(schemaId);
         if (schema != null) {
@@ -132,8 +132,8 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Void> putAsync(Schema schema) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_1)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.1 cluster");
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
         }
         long schemaId = schema.getSchemaId();
         if (getLocal(schemaId) != null) {

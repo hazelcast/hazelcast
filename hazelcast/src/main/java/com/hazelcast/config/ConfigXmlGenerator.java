@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -326,7 +326,7 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(gen.open("ldap"), c)
                 .node("url", c.getUrl())
                 .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("parse-dn", c.getParseDn())
                 .nodeIfContents("role-context", c.getRoleContext())
                 .nodeIfContents("role-filter", c.getRoleFilter())
                 .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
@@ -535,9 +535,10 @@ public class ConfigXmlGenerator {
 
         gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries
+                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
         if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
             gen.open("registered-classes");
             appendRegisteredClasses(gen, registries);
@@ -899,10 +900,6 @@ public class ConfigXmlGenerator {
 
         gen.open("dynamic-configuration")
                 .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
-
-        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
-            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
-        }
 
         if (dynamicConfigurationConfig.getBackupDir() != null) {
             gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());

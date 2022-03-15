@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 /**
  * A {@link Config} which includes functionality for loading itself from a
  * XML configuration file.
+ * <p>
+ * Unlike {@link Config#loadFromFile(File)} and its variants, a configuration constructed via
+ * {@code FileSystemXmlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class FileSystemXmlConfig extends Config {
 

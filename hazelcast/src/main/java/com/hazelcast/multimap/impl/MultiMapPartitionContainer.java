@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
@@ -25,8 +25,6 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
@@ -82,23 +80,9 @@ public class MultiMapPartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        if (containerMap.isEmpty()) {
-            return Collections.EMPTY_LIST;
-        }
-
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (MultiMapContainer container : containerMap.values()) {
-            MultiMapConfig config = container.getConfig();
-            if (config.getTotalBackupCount() < replicaIndex) {
-                continue;
-            }
-
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
-            }
-            namespaces.add(container.getObjectNamespace());
-        }
-        return namespaces;
+        return NameSpaceUtil.getAllNamespaces(containerMap,
+                container -> container.getConfig().getTotalBackupCount() >= replicaIndex,
+                MultiMapContainer::getObjectNamespace);
     }
 
     void destroyMultiMap(String name) {

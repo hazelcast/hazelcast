@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class UpdateConfigOperation
         extends AbstractDynamicConfigOperation {
@@ -42,10 +42,9 @@ public class UpdateConfigOperation
     }
 
     @Override
-    void doRun() {
+    protected UUID startUpdateProcess() {
         ConfigurationService configService = getService();
-        Config configPatchObject = Config.loadFromString(configPatch);
-        configService.update(configPatchObject);
+        return configService.updateAsync(configPatch);
     }
 
     @Override

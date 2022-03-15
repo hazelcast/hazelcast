@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.Integer.min;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -687,8 +688,8 @@ public class IOUtilTest extends HazelcastTestSupport {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
         buffer.put((byte) 0xFF);
         buffer.put((byte) 0xFF);
-        buffer.flip();
-        buffer.position(1);
+        upcast(buffer).flip();
+        upcast(buffer).position(1);
         compactOrClear(buffer);
         assertEquals("Buffer position invalid", 1, buffer.position());
 

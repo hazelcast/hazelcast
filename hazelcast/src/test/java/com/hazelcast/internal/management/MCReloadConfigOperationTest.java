@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.fail;
+
 public class MCReloadConfigOperationTest
         extends AbstractClientMapTest {
 
@@ -35,6 +37,11 @@ public class MCReloadConfigOperationTest
                 MCReloadConfigCodec.encodeRequest(),
                 null
         );
-        inv.invoke().get();
+        try {
+            inv.invoke().get();
+            fail("did not throw exception");
+        } catch (ExecutionException e) {
+            assertInstanceOf(UnsupportedOperationException.class, e.getCause());
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -435,6 +435,13 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returning if the edge is local.
+     */
+    public boolean isLocal() {
+        return distributedTo == null;
+    }
+
+    /**
      * Declares that the edge is distributed. A non-distributed edge only
      * transfers data within the same member. If the data source running on
      * local member is distributed (produces only a slice of all the data on
@@ -611,7 +618,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
         out.writeObject(getDistributedTo());
-        out.writeObject(getRoutingPolicy());
+        out.writeString(getRoutingPolicy().name());
         out.writeObject(getConfig());
         CustomClassLoadedObject.write(out, getPartitioner());
         CustomClassLoadedObject.write(out, getOrderComparator());
@@ -625,7 +632,7 @@ public class Edge implements IdentifiedDataSerializable {
         destOrdinal = in.readInt();
         priority = in.readInt();
         distributedTo = in.readObject();
-        routingPolicy = in.readObject();
+        routingPolicy = RoutingPolicy.valueOf(in.readString());
         config = in.readObject();
         try {
             partitioner = CustomClassLoadedObject.read(in);

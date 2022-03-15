@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Objects;
 
@@ -42,7 +41,6 @@ public class DynamicConfigurationConfig {
     public static final int DEFAULT_BACKUP_COUNT = 5;
 
     private boolean persistenceEnabled;
-    private File persistenceFile;
     private File backupDir = new File(DEFAULT_BACKUP_DIR);
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
@@ -64,35 +62,6 @@ public class DynamicConfigurationConfig {
     @Nonnull
     public DynamicConfigurationConfig setPersistenceEnabled(boolean persistenceEnabled) {
         this.persistenceEnabled = persistenceEnabled;
-        return this;
-    }
-
-    /**
-     * Returns persistence file where Dynamic Configuration changes are persisted.
-     * Note that if you set this file to something other than root declarative
-     * configuration (hazelcast.xml for example) you must import into the root
-     * declarative configuration manually.
-     *
-     * @return persistenceFile
-     */
-    @Nullable
-    public File getPersistenceFile() {
-        return persistenceFile;
-    }
-
-    /**
-     * Sets persistence file where Dynamic Configuration changes are persisted.
-     * Note that if you set this file to something other than root declarative
-     * configuration (hazelcast.xml for example) you must import into the root
-     * declarative configuration manually. If set to null, then root config is
-     * used.
-     *
-     * @param persistenceFile can be absolute path or relative path to the node startup directory
-     * @return DynamicConfigurationConfig
-     */
-    @Nonnull
-    public DynamicConfigurationConfig setPersistenceFile(@Nullable File persistenceFile) {
-        this.persistenceFile = persistenceFile;
         return this;
     }
 
@@ -151,14 +120,12 @@ public class DynamicConfigurationConfig {
         DynamicConfigurationConfig that = (DynamicConfigurationConfig) o;
         return persistenceEnabled == that.persistenceEnabled
                 && backupCount == that.backupCount
-                && Objects.equals(persistenceFile, that.persistenceFile)
                 && Objects.equals(backupDir, that.backupDir);
     }
 
     @Override
     public int hashCode() {
         int result = (persistenceEnabled ? 1 : 0);
-        result = 31 * result + (persistenceFile != null ? persistenceFile.hashCode() : 0);
         result = 31 * result + (backupDir != null ? backupDir.hashCode() : 0);
         result = 31 * result + backupCount;
         return result;
@@ -168,7 +135,6 @@ public class DynamicConfigurationConfig {
     public String toString() {
         return "DynamicConfigurationConfig{"
                 + "persistenceEnabled=" + persistenceEnabled
-                + ", persistenceFile=" + persistenceFile
                 + ", backupDir=" + backupDir
                 + ", backupCount=" + backupCount
                 + '}';

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is initialized by loading an XML configuration file from the classpath.
+ * <p>
+ * Unlike {@link Config#loadFromClasspath(ClassLoader, String)} and its variants, a configuration constructed via
+ * {@code ClasspathXmlConfig} does not apply overrides found in environment variables/system properties.
  *
  * @see FileSystemXmlConfig
  */

@@ -80,14 +80,14 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
         assertTipOfStream(
                 "SELECT window_start, window_end, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(__key), 2)))" +
                         "  , DESCRIPTOR(__key)" +
                         "  , 2" +
                         ")) " +
                         "GROUP BY window_start, window_end",
                 asList(
-                        new Row(timestampTz(0L), timestampTz(2L), 2L),
-                        new Row(timestampTz(2L), timestampTz(4L), 1L)
+                        new Row(0, 2, 2L),
+                        new Row(2, 4, 1L)
                 )
         );
     }
@@ -114,13 +114,13 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
         assertTipOfStream(
                 "SELECT window_start, window_end, SUM(__key) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2))), " +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(__key), 2))), " +
                         "DESCRIPTOR(__key), 4, 2)) " +
                         "GROUP BY window_start, window_end",
                 asList(
-                        new Row(timestampTz(-2L), timestampTz(2L), 1L),
-                        new Row(timestampTz(0L), timestampTz(4L), 3L),
-                        new Row(timestampTz(2L), timestampTz(6L), 2L)
+                        new Row(-2, 2, 1L),
+                        new Row(0, 4, 3L),
+                        new Row(2, 6, 2L)
                 )
         );
     }

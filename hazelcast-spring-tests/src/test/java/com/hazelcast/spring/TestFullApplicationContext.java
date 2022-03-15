@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,6 @@ import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.IntegrityCheckerConfig;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -58,11 +56,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -1189,19 +1189,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
         assertTrue(compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
-        assertEquals(2, namedRegistries.size());
+        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
+        assertEquals(2, namedRegistrations.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
         TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistries.get(reflectivelySerializableClassName);
+        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
         assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
 
         String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
         String typeName = "dummy";
         TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistries.get(typeName);
+        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
         assertEquals(explicitClassRegistration, actualExplicitRegistration);
     }
 
@@ -1395,14 +1395,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testDynamicConfiguration() {
         boolean persistenceEnabled = false;
-        File persistenceFile = new File("/mnt/persistence-file");
         File backupDir = new File("/mnt/backup-dir");
         int backupCount = 7;
 
         DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
 
         assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
-        assertEquals(persistenceFile, dynamicConfigurationConfig.getPersistenceFile());
         assertEquals(backupDir, dynamicConfigurationConfig.getBackupDir());
         assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
     }

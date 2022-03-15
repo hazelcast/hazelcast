@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -78,7 +77,7 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
         assertEquals(1, appender.events.size());
         LogEvent logEvent = appender.events.get(0);
         assertEquals(Level.DEBUG, logEvent.getLevel());
-        assertRecommendationContent(logEvent, !OsHelper.isWindows());
+        assertRecommendationContent(logEvent, Boolean.parseBoolean(LOG_EMOJI_ENABLED.getDefaultValue()));
     }
 
     @Test

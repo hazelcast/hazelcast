@@ -98,12 +98,13 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
+    protected static final String MAP_TS = "map_tiered_store";
 
-    private static final int[] PAGE_SIZES = {256};
-    private static final int[] DATA_SET_SIZES = {4096};
+    protected static final int[] PAGE_SIZES = {256};
+    protected static final int[] DATA_SET_SIZES = {4096};
 
-    private static HazelcastInstance member1;
-    private static HazelcastInstance member2;
+    protected static HazelcastInstance member1;
+    protected static HazelcastInstance member2;
     protected static HazelcastInstance client;
 
     @Parameter
@@ -483,7 +484,7 @@ public class SqlBasicTest extends SqlTestSupport {
         return serializationMode == SerializationMode.PORTABLE;
     }
 
-    private String mapName() {
+    protected String mapName() {
         return inMemoryFormat == InMemoryFormat.OBJECT ? MAP_OBJECT : MAP_BINARY;
     }
 
@@ -609,13 +610,17 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     static Config memberConfig() {
+        MapConfig tsMapConfig = new MapConfig(MAP_TS).setInMemoryFormat(InMemoryFormat.NATIVE);
+        tsMapConfig.getTieredStoreConfig().setEnabled(true);
+
         return smallInstanceConfig()
                 .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
                 .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+                .addMapConfig(tsMapConfig)
                 .setSerializationConfig(serializationConfig());
     }
 
-    static ClientConfig clientConfig() {
+    protected static ClientConfig clientConfig() {
         return new ClientConfig().setSerializationConfig(serializationConfig());
     }
 

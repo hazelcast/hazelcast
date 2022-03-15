@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,9 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
  * <p>
  * Config instances can be shared between threads, but should not be
  * modified after they are used to create HazelcastInstances.
+ * <p>
+ * Unlike {@code Config} instances obtained via {@link Config#load()} and its variants,
+ * a {@code Config} does not apply overrides found in environment variables/system properties.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class Config {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,13 +265,22 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    public <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
-        Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null && !existingConfiguration.equals(newConfig)) {
+    public static <T> boolean checkStaticConfigDoesNotExist(
+            Map<String, T> staticConfigurations,
+            String configName,
+            T newConfig
+    ) {
+        T existingConfiguration = staticConfigurations.get(configName);
+        return checkStaticConfigDoesNotExist(existingConfiguration, newConfig);
+    }
+
+    // be careful to not use this method with get*Config as it creates the config if not found
+    public static <T> boolean checkStaticConfigDoesNotExist(T oldConfig, T newConfig) {
+        if (oldConfig != null && !oldConfig.equals(newConfig)) {
             throw new InvalidConfigurationException("Cannot add a new dynamic configuration " + newConfig
-                    + " as static configuration already contains " + existingConfiguration);
+                    + " as static configuration already contains " + oldConfig);
         }
-        return existingConfiguration == null;
+        return oldConfig == null;
     }
 
     public Config getStaticConfig() {

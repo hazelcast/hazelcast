@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getAddress;
@@ -124,6 +125,11 @@ public class TestAwareInstanceFactory {
         ServerSocketEndpointConfig memberEndpointConfig
                 = (ServerSocketEndpointConfig) advancedNetworkConfig.getEndpointConfigs().get(MEMBER);
         memberEndpointConfig.setPort(PORT.getAndIncrement());
+        ServerSocketEndpointConfig clientEndpointConfig = (ServerSocketEndpointConfig) advancedNetworkConfig
+                .getEndpointConfigs().get(CLIENT);
+        if (clientEndpointConfig != null) {
+            clientEndpointConfig.setPort(PORT.getAndIncrement());
+        }
         JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
         advancedJoinConfig.getMulticastConfig().setEnabled(false);
         TcpIpConfig advancedTcpIpConfig = advancedJoinConfig.getTcpIpConfig().setEnabled(true);
@@ -134,7 +140,7 @@ public class TestAwareInstanceFactory {
         HazelcastInstance hz = HazelcastInstanceFactory.newHazelcastInstance(
                 config, config.getInstanceName(), nodeCtx);
         members.add(hz);
-        int nextPort = getPort(hz, MEMBER) + 1;
+        int nextPort = Math.max(getPort(hz, MEMBER), getPort(hz, CLIENT)) + 1;
         int current;
         while (nextPort > (current = PORT.get())) {
             PORT.compareAndSet(current, nextPort);
