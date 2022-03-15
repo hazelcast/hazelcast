@@ -38,6 +38,7 @@ import org.apache.kafka.common.errors.TimeoutException;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -181,8 +182,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         properties2.put("transactional.id", txnId.getKafkaId());
         try (KafkaProducer<?, ?> p  = new KafkaProducer<>(properties2)) {
             if (commit) {
-                ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch(),
-                        txnId.getKafkaId());
+                ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch());
                 try {
                     p.commitTransaction();
                 } catch (InvalidTxnStateException e) {
@@ -282,7 +282,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
         @Override
         public void release() {
-            producer.close();
+            producer.close(Duration.ZERO);
         }
     }
 
