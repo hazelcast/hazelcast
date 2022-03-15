@@ -75,16 +75,7 @@ class Reactor extends Thread {
         connectRequest.future = new CompletableFuture<>();
         taskQueue.add(connectRequest);
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if (Thread.currentThread() != this) {
-            System.out.println("wakeup");
-            selector.wakeup();
-        }
+        wakeup();
 
         return connectRequest.future;
     }
