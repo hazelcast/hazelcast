@@ -523,6 +523,11 @@
                     <groupId>net.minidev</groupId>
                     <artifactId>json-smart</artifactId>
                 </exclusion>
+                <!-- https://github.com/hazelcast/hazelcast/issues/20975 -->
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
