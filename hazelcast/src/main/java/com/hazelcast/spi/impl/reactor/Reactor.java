@@ -6,7 +6,11 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
+import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 
@@ -20,6 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +46,7 @@ class Reactor extends Thread {
     private ServerSocketChannel serverSocketChannel;
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
+    private BitSet allowedCpus;
 
     public Reactor(ReactorFrontEnd reactorService, Address thisAddress, int port) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
@@ -48,6 +54,10 @@ class Reactor extends Thread {
         this.logger = reactorService.logger;
         this.selector = SelectorOptimizer.newSelector(reactorService.logger);
         this.port = port;
+    }
+
+    public void setThreadAffinity(ThreadAffinity threadAffinity) {
+        this.allowedCpus = threadAffinity.nextAllowedCpus();
     }
 
     public void wakeup() {
@@ -86,12 +96,30 @@ class Reactor extends Thread {
     }
 
     public void run() {
+        setThreadAffinity();
+
         try {
             if (bind()) {
                 loop();
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void setThreadAffinity() {
+        if (allowedCpus == null) {
+            return;
+        }
+
+        ThreadAffinityHelper.setAffinity(allowedCpus);
+        BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+        ILogger logger = Logger.getLogger(HazelcastManagedThread.class);
+        if (!actualCpus.equals(allowedCpus)) {
+            logger.warning(getName() + " affinity was not applied successfully. "
+                    + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
+        } else {
+            logger.info(getName() + " has affinity for CPUs:" + allowedCpus);
         }
     }
 
@@ -117,13 +145,13 @@ class Reactor extends Thread {
 
             int keyCount = selector.select();
 
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
 
-            System.out.println(this + " selectionCount:" + keyCount);
+            //System.out.println(this + " selectionCount:" + keyCount);
 
-            //if (keyCount > 0) {
-            processSelectionKeys();
-            //}
+            if (keyCount > 0) {
+                processSelectionKeys();
+            }
 
             processTasks();
         }
@@ -135,22 +163,6 @@ class Reactor extends Thread {
         while (it.hasNext()) {
             SelectionKey key = it.next();
             it.remove();
-
-            System.out.println(this + " selectionKey:" + key);
-
-            System.out.println(this + " isWritable: " + key.isWritable());
-            System.out.println(this + " isReadable: " + key.isReadable());
-            System.out.println(this + " isAcceptable: " + key.isAcceptable());
-            System.out.println(this + " isConnectable: " + key.isConnectable());
-
-
-//            if (key.isValid() && key.isConnectable()) {
-//                SocketChannel socketChannel = serverSocketChannel.accept();
-//                socketChannel.configureBlocking(false);
-//                key.attach(newChannel(socketChannel));
-//                socketChannel.register(selector, OP_READ);
-//                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
-//            }
 
             if (key.isValid() && key.isAcceptable()) {
                 SocketChannel socketChannel = serverSocketChannel.accept();

@@ -8,6 +8,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -30,21 +31,23 @@ public class ReactorFrontEnd implements Consumer<Packet> {
     public final SerializationService ss;
     public final ILogger logger;
     private final Address thisAddress;
+    private final ThreadAffinity threadAffinity;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
-    private final Reactor[] reactorThreads;
+    private final Reactor[] reactors;
     public final Managers managers = new Managers();
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
         this.ss = nodeEngine.getSerializationService();
-        this.reactorThreads = new Reactor[1];
+        this.reactors = new Reactor[1];
         this.thisAddress = nodeEngine.getThisAddress();
-
-        for (int cpu = 0; cpu < reactorThreads.length; cpu++) {
+        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor-threadaffinity");
+        for (int cpu = 0; cpu < reactors.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactorThreads[cpu] = new Reactor(this, thisAddress, port);
+            reactors[cpu] = new Reactor(this, thisAddress, port);
+            reactors[cpu].setThreadAffinity(threadAffinity);
         }
     }
 
@@ -53,13 +56,13 @@ public class ReactorFrontEnd implements Consumer<Packet> {
     }
 
     public int partitionIdToCpu(int partitionId) {
-        return HashUtil.hashToIndex(partitionId, reactorThreads.length);
+        return HashUtil.hashToIndex(partitionId, reactors.length);
     }
 
     public void start() {
         logger.finest("Starting ReactorServicee");
 
-        for (Reactor t : reactorThreads) {
+        for (Reactor t : reactors) {
             t.start();
         }
     }
@@ -84,7 +87,7 @@ public class ReactorFrontEnd implements Consumer<Packet> {
 
             if (targetAddress.equals(thisAddress)) {
                 System.out.println("local invoke");
-                reactorThreads[partitionIdToCpu(partitionId)].enqueue(request);
+                reactors[partitionIdToCpu(partitionId)].enqueue(request);
             } else {
                 System.out.println("remove invoke");
                 if (connectionManager == null) {
@@ -123,13 +126,13 @@ public class ReactorFrontEnd implements Consumer<Packet> {
         if (connection.junk == null) {
             synchronized (connection) {
                 if (connection.junk == null) {
-                    Channel[] channels = new Channel[reactorThreads.length];
+                    Channel[] channels = new Channel[reactors.length];
                     connection.junk = channels;
                     Address remoteAddress = connection.getRemoteAddress();
 
                     for (int cpu = 0; cpu < channels.length; cpu++) {
                         SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, cpu));
-                        Future<Channel> f = reactorThreads[cpu].enqueue(socketAddress);
+                        Future<Channel> f = reactors[cpu].enqueue(socketAddress);
                         try {
                             Channel channel = f.get();
                             channels[cpu] = channel;
@@ -187,8 +190,8 @@ public class ReactorFrontEnd implements Consumer<Packet> {
                 invocation.completableFuture.complete(null);
             }
         } else {
-            int index = HashUtil.hashToIndex(packet.getPartitionHash(), reactorThreads.length);
-            reactorThreads[index].enqueue(packet);
+            int index = HashUtil.hashToIndex(packet.getPartitionHash(), reactors.length);
+            reactors[index].enqueue(packet);
         }
     }
 
