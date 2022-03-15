@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -131,10 +132,13 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         terminateInstance(hz2);
         terminateInstance(hz3);
 
-        hz3 = factory.newHazelcastInstance(hz3Address);
-        final Member newMember3 = getClusterService(hz3).getLocalMember();
+        HazelcastInstance newInstance = factory.newHazelcastInstance(hz3Address);
+        hz3 = newInstance;
+        Member newMember3 = getClusterService(hz3).getLocalMember();
 
         assertClusterSizeEventually(2, hz1, hz3);
+        // ensure partition state is applied on the new member
+        assertTrueEventually(() -> Accessors.isPartitionStateInitialized(newInstance));
 
         final List<HazelcastInstance> instanceList = asList(hz1, hz3);
         assertTrueAllTheTime(new AssertTask() {
