@@ -144,7 +144,7 @@ public class SqlCompactTest extends SqlTestSupport {
         float f;
         double d;
 
-        public Primitives() {}
+        public Primitives() { }
 
         public Primitives(boolean b, byte bt, short s, int i, long l, float f, double d) {
             this.b = b;
