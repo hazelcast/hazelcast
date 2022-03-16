@@ -117,6 +117,12 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         return dst.position() == 0;
     }
 
+
+    // The signal methods below are called from the protocol decoder
+    // side that is run on IO input threads. We must synchronize the
+    // accesses of the variables which these methods share with
+    // SingleProtocolEncoder#onWrite that is run on IO output threads.
+
     // Used by SingleProtocolDecoder in order to swap
     // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
