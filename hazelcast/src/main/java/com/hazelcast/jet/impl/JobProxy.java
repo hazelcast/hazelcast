@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -66,8 +65,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         super(engine, jobId, isLightJob, jobDefinition, config);
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobStatus getStatus0() {
         assert !isLightJob();
         try {
@@ -77,8 +75,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobSuspensionCause getSuspensionCause() {
         checkNotLightJob("suspensionCause");
         try {
@@ -88,8 +85,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobMetrics getMetrics() {
         checkNotLightJob("metrics");
         try {
@@ -110,13 +106,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), null, dag, serializationService().toData(config), isLightJob(), null));
-    }
-
-    protected CompletableFuture<Void> invokeSubmitJob(DAG jobDefinition, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), jobDefinition, null, serializationService().toData(config), isLightJob(),
-                null));
+    protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
+        Data configData = serializationService().toData(config);
+        if (isLightJob()) {
+            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, null, configData, true, null));
+        }
+        Data jobDefinitionData = serializationService().toData(jobDefinition);
+        return invokeOp(new SubmitJobOperation(getId(), null, jobDefinitionData, configData, false, null));
     }
 
     @Override
@@ -201,8 +197,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
                 .invoke();
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     protected Address masterId() {
         Address masterAddress = container().getMasterAddress();
         if (masterAddress == null) {

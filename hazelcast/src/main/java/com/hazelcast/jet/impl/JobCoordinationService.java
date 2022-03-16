@@ -152,6 +152,7 @@ public class JobCoordinationService {
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
+    private final Context pipelineToDagContext;
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
@@ -186,6 +187,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
+        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -248,11 +250,7 @@ public class JobCoordinationService {
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
                     int coopThreadCount = config.getCooperativeThreadCount();
-                    dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                        @Override public int defaultLocalParallelism() {
-                            return coopThreadCount;
-                        }
-                    });
+                    dag = ((PipelineImpl) jobDefinition).toDag(pipelineToDagContext);
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
@@ -313,24 +311,20 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> submitLightJob(
             long jobId,
-            DAG deserializedDag,
+            Object deserializedJobDefinition,
             Data serializedJobDefinition,
             JobConfig jobConfig,
             Subject subject
     ) {
-        Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+        if (deserializedJobDefinition == null) {
+            deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+        }
+
         DAG dag;
-        if (deserializedDag != null) {
-            dag = deserializedDag;
-        } else if (jobDefinition instanceof DAG) {
-            dag = (DAG) jobDefinition;
+        if (deserializedJobDefinition instanceof DAG) {
+            dag = (DAG) deserializedJobDefinition;
         } else {
-            int coopThreadCount = config.getCooperativeThreadCount();
-            dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                @Override public int defaultLocalParallelism() {
-                    return coopThreadCount;
-                }
-            });
+            dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
         }
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId

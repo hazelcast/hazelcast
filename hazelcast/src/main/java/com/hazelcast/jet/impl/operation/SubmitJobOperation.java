@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +28,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class SubmitJobOperation extends AsyncJobOperation {
-    private transient DAG deserializedDag;
+    private transient Object deserializedJobDefinition;
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data serializedJobDefinition;
@@ -42,14 +41,14 @@ public class SubmitJobOperation extends AsyncJobOperation {
 
     public SubmitJobOperation(
             long jobId,
-            DAG deserializedDag,
+            Object deserializedJobDefinition,
             Data serializedJobDefinition,
             Data serializedConfig,
             boolean isLightJob,
             Subject subject
     ) {
         super(jobId);
-        this.deserializedDag = deserializedDag;
+        this.deserializedJobDefinition = deserializedJobDefinition;
         this.serializedJobDefinition = serializedJobDefinition;
         this.serializedConfig = serializedConfig;
         this.isLightJob = isLightJob;
@@ -60,8 +59,8 @@ public class SubmitJobOperation extends AsyncJobOperation {
     public CompletableFuture<Void> doRun() {
         JobConfig jobConfig = getNodeEngine().getSerializationService().toObject(serializedConfig);
         if (isLightJob) {
-            if (deserializedDag != null) {
-                return getJobCoordinationService().submitLightJob(jobId(), deserializedDag, null, jobConfig, subject);
+            if (deserializedJobDefinition != null) {
+                return getJobCoordinationService().submitLightJob(jobId(), deserializedJobDefinition, null, jobConfig, subject);
             }
             return getJobCoordinationService().submitLightJob(jobId(), null, serializedJobDefinition, jobConfig, subject);
         }
