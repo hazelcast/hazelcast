@@ -84,8 +84,7 @@ public class QueryParser {
 
         return new QueryParseResult(
                 node,
-                new QueryParameterMetadata(validator.getParameterConverters(node)),
-                validator.isInfiniteRows()
+                new QueryParameterMetadata(validator.getParameterConverters(node))
         );
     }
 

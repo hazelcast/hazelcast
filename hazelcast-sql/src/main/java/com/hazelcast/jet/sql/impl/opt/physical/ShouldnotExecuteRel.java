@@ -38,12 +38,12 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * the rel it matched cannot be executed without some transformation. It is used
  * to avoid throwing directly from the rule, where there can perhaps be another
  * rule that can replace the same rel with a rel, that is executable. That's why
- * this rel has infinite cost.
+ * this rel has huge cost.
  */
-public class CannotExecuteRel extends AbstractRelNode implements PhysicalRel {
+public class ShouldnotExecuteRel extends AbstractRelNode implements PhysicalRel {
     private final String exceptionMessage;
 
-    public CannotExecuteRel(
+    public ShouldnotExecuteRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,

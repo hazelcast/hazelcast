@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
@@ -46,7 +45,6 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
@@ -113,9 +111,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final IMapResolver iMapResolver;
 
-    private boolean isCreateJob;
-    private boolean isInfiniteRows;
-
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
@@ -130,10 +125,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public SqlNode validate(SqlNode topNode) {
-        if (topNode instanceof SqlCreateJob) {
-            isCreateJob = true;
-        }
-
         if (topNode instanceof SqlDropView) {
             return topNode;
         }
@@ -154,7 +145,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
              * There was a corner case with queries where ORDER BY is present.
              * SqlOrderBy is present as AST node (or SqlNode),
              * but then it becomes embedded as part of SqlSelect AST node,
-             * and node itself is removed in `performUnconditionalRewrites().
+             * and node itself is removed in performUnconditionalRewrites().
              * As a result, ORDER BY is absent as operator
              * on the next validation & optimization phases
              * and also doesn't present in SUPPORTED_KINDS.
@@ -222,8 +213,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (countOrderingFunctions(node) > 1) {
             throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
         }
-
-        isInfiniteRows = containsStreamingSource(node);
     }
 
     private static int countOrderingFunctions(SqlNode node) {
@@ -246,17 +235,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    protected void validateOrderList(SqlSelect select) {
-        super.validateOrderList(select);
-
-        if (select.hasOrderBy() && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
-        }
-    }
-
-    @Override
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
+
+        // Note: it's an only usage of containsStreamingSource() left.
+        // Since stream to stream join supposed to be supported in 5.2,
+        // I'd like to move all validation logic to RelNode level completely.
 
         boolean leftInputIsStream = containsStreamingSource(join.getLeft());
         boolean rightInputIsStream = containsStreamingSource(join.getRight());
@@ -289,15 +273,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 break;
             default:
                 throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
-        }
-    }
-
-    @Override
-    public void validateInsert(SqlInsert insert) {
-        super.validateInsert(insert);
-
-        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
-            throw newValidationError(insert, RESOURCE.mustUseCreateJob());
         }
     }
 
@@ -393,11 +368,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private Table extractTable(SqlIdentifier identifier) {
         SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
         return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
-    }
-
-    private boolean isInfiniteRows(SqlNode node) {
-        isInfiniteRows |= containsStreamingSource(node);
-        return isInfiniteRows;
     }
 
     /**
@@ -523,8 +493,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             ParameterConverter converter = parameterConverterMap.get(i);
 
             if (converter == null) {
-                QueryDataType targetType =
-                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
+                QueryDataType targetType = HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
                 converter = AbstractParameterConverter.from(targetType, i, parameterPositionMap.get(i));
             }
 
@@ -578,15 +547,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
-    }
-
-    /**
-     * Returns whether the validated node returns an infinite number of rows.
-     *
-     * @throws IllegalStateException if called before the node is validated.
-     */
-    public boolean isInfiniteRows() {
-        return isInfiniteRows;
     }
 
     @Override

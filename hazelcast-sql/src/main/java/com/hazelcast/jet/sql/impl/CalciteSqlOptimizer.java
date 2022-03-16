@@ -286,7 +286,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
-                    parseResult.isInfiniteRows(),
                     false,
                     task.getSql());
         }
@@ -338,15 +337,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
-        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
+        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
+        boolean infiniteRows = OptUtils.isUnbounded(dmlConvertedResult.getRel());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
                 dmlConvertedResult.getFieldNames(),
                 context,
-                dmlParseResult.isInfiniteRows(),
                 true,
                 query);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
@@ -357,7 +356,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
                 query,
-                parseResult.isInfiniteRows(),
+                infiniteRows,
                 planExecutor
         );
     }
@@ -434,7 +433,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
-            boolean isInfiniteRows,
             boolean isCreateJob,
             String query
     ) {
@@ -520,7 +518,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     visitor.getObjectKeys(),
                     visitor.getDag(),
                     query,
-                    isInfiniteRows,
+                    OptUtils.isUnbounded(physicalRel),
                     planExecutor,
                     permissions
             );
@@ -537,7 +535,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     visitor.getObjectKeys(),
                     visitor.getDag(),
                     query,
-                    isInfiniteRows,
+                    OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
                     permissions

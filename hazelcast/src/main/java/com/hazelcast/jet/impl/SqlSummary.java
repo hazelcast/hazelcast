@@ -29,6 +29,10 @@ public class SqlSummary implements IdentifiedDataSerializable {
     public SqlSummary() {
     }
 
+    public SqlSummary(String query) {
+        this.query = query;
+    }
+
     public SqlSummary(String query, boolean unbounded) {
         this.query = query;
         this.unbounded = unbounded;

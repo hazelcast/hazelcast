@@ -50,6 +50,7 @@ public final class PhysicalRules {
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
+                StreamingSortMustnotExecuteRule.INSTANCE,
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
@@ -71,6 +72,8 @@ public final class PhysicalRules {
                 SinkMapPhysicalRule.INSTANCE,
                 UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
+
+                StreamingInsertMustnotExecuteRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

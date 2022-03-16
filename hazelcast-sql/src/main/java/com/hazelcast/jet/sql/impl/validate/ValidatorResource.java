@@ -34,9 +34,6 @@ public interface ValidatorResource {
     @BaseMessage("Unknown argument name ''{0}''")
     ExInst<SqlValidatorException> unknownArgumentName(String name);
 
-    @BaseMessage("Sorting is not supported for a streaming query")
-    ExInst<SqlValidatorException> streamingSortingNotSupported();
-
     @BaseMessage("The {0} side of a {1} JOIN cannot be a streaming source")
     ExInst<SqlValidatorException> streamingSourceOnWrongSide(String side, String joinType);
 

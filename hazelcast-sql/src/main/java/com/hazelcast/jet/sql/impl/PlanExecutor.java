@@ -494,10 +494,10 @@ public class PlanExecutor {
      * reordering them is allowed.
      * <p>
      * This is an interim mitigation for
-     * https://github.com/hazelcast/hazelcast/issues/20032. It disallows
-     * incompatible changes when doing CREATE OR REPLACE VIEW, however
-     * incompatible changes are still possible with DROP VIEW followed
-     * by a CREATE VIEW.
+     * https://github.com/hazelcast/hazelcast/issues/20032.
+     * It disallows incompatible changes when doing CREATE OR REPLACE VIEW,
+     * however incompatible changes are still possible with DROP VIEW
+     * followed by a CREATE VIEW.
      */
     private static void checkViewNewRowType(View original, View replacement) {
         Map<String, QueryDataType> newTypes = new HashMap<>();
