@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SubmitJobOperation extends AsyncJobOperation {
     private transient Object deserializedJobDefinition;
+    private transient JobConfig deserializedJobConfig;
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data serializedJobDefinition;
@@ -42,6 +43,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     public SubmitJobOperation(
             long jobId,
             Object deserializedJobDefinition,
+            JobConfig deserializedJobConfig,
             Data serializedJobDefinition,
             Data serializedConfig,
             boolean isLightJob,
@@ -49,6 +51,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     ) {
         super(jobId);
         this.deserializedJobDefinition = deserializedJobDefinition;
+        this.deserializedJobConfig = deserializedJobConfig;
         this.serializedJobDefinition = serializedJobDefinition;
         this.serializedConfig = serializedConfig;
         this.isLightJob = isLightJob;
@@ -57,7 +60,8 @@ public class SubmitJobOperation extends AsyncJobOperation {
 
     @Override
     public CompletableFuture<Void> doRun() {
-        JobConfig jobConfig = getNodeEngine().getSerializationService().toObject(serializedConfig);
+        JobConfig jobConfig = deserializedJobConfig != null ? deserializedJobConfig :
+                getNodeEngine().getSerializationService().toObject(serializedConfig);
         if (isLightJob) {
             if (deserializedJobDefinition != null) {
                 return getJobCoordinationService().submitLightJob(jobId(), deserializedJobDefinition, null, jobConfig, subject);

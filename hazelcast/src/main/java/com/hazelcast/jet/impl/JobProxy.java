@@ -107,12 +107,12 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
-        Data configData = serializationService().toData(config);
         if (isLightJob()) {
-            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, null, configData, true, null));
+            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, true, null));
         }
+        Data configData = serializationService().toData(config);
         Data jobDefinitionData = serializationService().toData(jobDefinition);
-        return invokeOp(new SubmitJobOperation(getId(), null, jobDefinitionData, configData, false, null));
+        return invokeOp(new SubmitJobOperation(getId(), null, null, jobDefinitionData, configData, false, null));
     }
 
     @Override
