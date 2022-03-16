@@ -313,13 +313,16 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> submitLightJob(
             long jobId,
+            DAG deserializedDag,
             Data serializedJobDefinition,
             JobConfig jobConfig,
             Subject subject
     ) {
         Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         DAG dag;
-        if (jobDefinition instanceof DAG) {
+        if (deserializedDag != null) {
+            dag = deserializedDag;
+        } else if (jobDefinition instanceof DAG) {
             dag = (DAG) jobDefinition;
         } else {
             int coopThreadCount = config.getCooperativeThreadCount();

@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
@@ -312,8 +313,13 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private NonCompletableFuture doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
-        invokeSubmitJob(serializationService().toData(jobDefinition), config)
-                .whenCompleteAsync(callback);
+        if (isLightJob() && jobDefinition instanceof DAG && this instanceof JobProxy) {
+            ((JobProxy) this).invokeSubmitJob((DAG) jobDefinition, config)
+                    .whenCompleteAsync(callback);
+        } else {
+            invokeSubmitJob(serializationService().toData(jobDefinition), config)
+                    .whenCompleteAsync(callback);
+        }
         return submitFuture;
     }
 
@@ -407,7 +413,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         @Override
         protected void retryActionInt(Throwable t) {
             logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
-            invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
+            if (isLightJob() && jobDefinition instanceof DAG && AbstractJobProxy.this instanceof JobProxy) {
+                ((JobProxy) AbstractJobProxy.this).invokeSubmitJob((DAG) jobDefinition, config).whenCompleteAsync(this);
+            } else {
+                invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
+            }
         }
 
         @Override

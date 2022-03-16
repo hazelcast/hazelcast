@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -107,7 +108,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), isLightJob()));
+        return invokeOp(new SubmitJobOperation(getId(), null, dag, serializationService().toData(config), isLightJob(), null));
+    }
+
+    protected CompletableFuture<Void> invokeSubmitJob(DAG jobDefinition, JobConfig config) {
+        return invokeOp(new SubmitJobOperation(getId(), jobDefinition, null, serializationService().toData(config), isLightJob(), null));
     }
 
     @Override
