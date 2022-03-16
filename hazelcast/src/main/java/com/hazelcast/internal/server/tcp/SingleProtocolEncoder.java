@@ -44,11 +44,11 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
 
-    private boolean isDecoderVerifiedProtocol;
-    private boolean isDecoderReceivedProtocol;
     private boolean clusterProtocolBuffered;
 
-    private String exceptionMessage;
+    private volatile boolean isDecoderVerifiedProtocol;
+    private volatile boolean isDecoderReceivedProtocol;
+    private volatile String exceptionMessage;
 
     public SingleProtocolEncoder(OutboundHandler next) {
         this(new OutboundHandler[]{next});
@@ -120,16 +120,16 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     // Used by SingleProtocolDecoder in order to swap
     // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = true;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
     public void signalWrongProtocol(String exceptionMessage) {
         this.exceptionMessage = exceptionMessage;
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
