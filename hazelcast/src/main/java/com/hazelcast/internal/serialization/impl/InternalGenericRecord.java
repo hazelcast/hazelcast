@@ -32,7 +32,8 @@ import java.time.OffsetDateTime;
  *
  * @see GenericRecordQueryReader
  * InternalGenericRecord implementations should not deserialize the passed content completely in their constructor when
- * they are created to be used in query.
+ * they are created, because they will be used to query a couple of fields from a big object. And deserializing the
+ * whole content in the constructor will be a redundant work.
  * @see com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord
  * @see com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord
  * <p>
