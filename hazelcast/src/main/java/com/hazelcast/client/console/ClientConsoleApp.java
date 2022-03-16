@@ -198,36 +198,40 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     public void start() {
-        println(startPrompt(client));
-        writer.flush();
-        running = true;
-        while (running) {
-            try {
-                final String command = lineReader.readLine(
-                        new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(COLOR))
-                                .append("hazelcast[")
-                                .append(namespace)
-                                .append("] > ").toAnsi());
-                handleCommand(command);
-            } catch (EndOfFileException | IOError e) {
-                // Ctrl+D, and kill signals result in exit
-                println("Exiting from the client console application.");
-                writer.flush();
-                break;
-            } catch (UserInterruptException e) {
-                // Handle thread interruption for dumb terminal
-                if (!isRealTerminal(lineReader.getTerminal())) {
+        try {
+            println(startPrompt(client));
+            writer.flush();
+            running = true;
+            while (running) {
+                try {
+                    final String command = lineReader.readLine(
+                            new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(COLOR))
+                                    .append("hazelcast[")
+                                    .append(namespace)
+                                    .append("] > ").toAnsi());
+                    handleCommand(command);
+                } catch (EndOfFileException | IOError e) {
+                    // Ctrl+D, and kill signals result in exit
+                    println("Exiting from the client console application.");
                     writer.flush();
                     break;
-                } else {
-                    // Ctrl+C cancels the not-yet-submitted command
-                    continue;
+                } catch (UserInterruptException e) {
+                    // Handle thread interruption for dumb terminal
+                    if (!isRealTerminal(lineReader.getTerminal())) {
+                        writer.flush();
+                        break;
+                    } else {
+                        // Ctrl+C cancels the not-yet-submitted command
+                        continue;
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace(writer);
+                    writer.flush();
                 }
-            } catch (Throwable e) {
-                e.printStackTrace(writer);
-                writer.flush();
+                running = running && client.getLifecycleService().isRunning();
             }
-            running = running && client.getLifecycleService().isRunning();
+        } finally {
+            IOUtil.closeResource(lineReader.getTerminal());
         }
     }
 
