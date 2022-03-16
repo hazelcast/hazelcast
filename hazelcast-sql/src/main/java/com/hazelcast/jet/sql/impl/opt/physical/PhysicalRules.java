@@ -54,6 +54,7 @@ public final class PhysicalRules {
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
+                JoinValidationRule.INSTANCE,
 
                 // Union rules
                 UnionPhysicalRule.INSTANCE,

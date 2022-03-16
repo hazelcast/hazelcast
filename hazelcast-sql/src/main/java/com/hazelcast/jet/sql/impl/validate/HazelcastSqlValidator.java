@@ -75,6 +75,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static org.apache.calcite.sql.JoinType.FULL;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -242,37 +243,15 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         // Since stream to stream join supposed to be supported in 5.2,
         // I'd like to move all validation logic to RelNode level completely.
 
-        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
-        boolean rightInputIsStream = containsStreamingSource(join.getRight());
+//        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
+//        boolean rightInputIsStream = containsStreamingSource(join.getRight());
+//
+//        if (leftInputIsStream && rightInputIsStream) {
+//            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
+//        }
 
-        if (leftInputIsStream && rightInputIsStream) {
-            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
-        }
-
-        switch (join.getJoinType()) {
-            case LEFT:
-                if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "LEFT"));
-                }
-                break;
-            case RIGHT:
-                if (leftInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("left", "RIGHT"));
-                }
-                break;
-            case FULL:
-                throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
-            case INNER:
-            case COMMA:
-            case CROSS:
-                if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide(
-                            "right", join.getJoinType().name().toUpperCase()
-                    ));
-                }
-                break;
-            default:
-                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
+        if (join.getJoinType() == FULL) {
+            throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
         }
     }
 

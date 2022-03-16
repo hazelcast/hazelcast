@@ -23,7 +23,6 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import org.junit.BeforeClass;
@@ -66,38 +65,8 @@ public class SqlJoinTest {
 
             assertThatThrownBy(() ->
                     sqlService.execute(
-                            "SELECT * FROM " + stream1 + " AS s1, " + stream1 + " AS s2 WHERE s1.a = s2.b"
-                    )).hasMessageContaining("Stream to stream JOIN operation is not supported");
-        }
-
-        @Test
-        public void when_commaJoinToStream_then_fail() {
-            String batchName = randomName();
-            String streamName = randomName();
-            TestBatchSqlConnector.create(sqlService, batchName, 3);
-            TestStreamSqlConnector.create(sqlService, streamName, singletonList("a"), singletonList(INTEGER));
-
-            createMapping(batchName, int.class, int.class);
-
-            assertThatThrownBy(() ->
-                    sqlService.execute(
-                            "SELECT * FROM " + batchName + " AS b, " + streamName + " AS s WHERE b.__key = s.a"
-                    )).hasMessageContaining("The right side of a COMMA JOIN cannot be a streaming source");
-        }
-
-        @Test
-        public void when_crossJoinToStream_then_fail() {
-            String batchName = "batch";
-            String streamName = "streamm";
-            TestBatchSqlConnector.create(sqlService, batchName, 3);
-            TestStreamSqlConnector.create(sqlService, streamName, singletonList("a"), singletonList(VARCHAR));
-
-            createMapping(batchName, int.class, String.class);
-            instance().getMap(batchName).put(1, "a");
-
-            assertThatThrownBy(() ->
-                    sqlService.execute("SELECT * FROM " + batchName + " CROSS JOIN " + streamName
-                    )).hasMessageContaining("The right side of a CROSS JOIN cannot be a streaming source");
+                            "SELECT * FROM " + stream1 + " AS s1, " + stream2 + " AS s2 WHERE s1.a = s2.b"
+                    )).hasMessageContaining("The right side of a INNER JOIN cannot be a streaming source");
         }
     }
 
@@ -1353,12 +1322,7 @@ public class SqlJoinTest {
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "TABLE(GENERATE_STREAM(1))") + " ON true"))
-                    .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining(
-                            joinType == OuterJoinType.LEFT ?
-                                    "The right side of a LEFT JOIN cannot be a streaming source" :
-                                    "The left side of a RIGHT JOIN cannot be a streaming source"
-                    );
+                    .hasMessageContaining("The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source");
         }
 
         @Test
