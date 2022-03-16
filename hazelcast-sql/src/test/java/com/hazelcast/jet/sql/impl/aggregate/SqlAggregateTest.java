@@ -1045,7 +1045,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY ROLLUP(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'ROLLUP' does not exist");
+                .hasMessageContaining("ROLLUP not supported");
     }
 
     @Test
@@ -1054,7 +1054,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY CUBE(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'CUBE' does not exist");
+                .hasMessageContaining("CUBE not supported");
     }
 
     @Test
@@ -1063,7 +1063,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY GROUPING SETS ((name), (distance))"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'GROUPING SETS' does not exist");
+                .hasMessageContaining("GROUPING SETS not supported");
     }
 
     @Test
