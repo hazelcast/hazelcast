@@ -133,7 +133,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         Terminal terminal = createTerminal();
 
         lineReader = LineReaderBuilder.builder()
-                // Check whether a real or dump terminal. Dump terminal enters an endless loop.
+                // Check whether a real or dumb terminal. Dumb terminal enters an endless loop.
                 // see issue: https://github.com/jline/jline3/issues/751
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, isRealTerminal(terminal)
                         ? new AttributedStringBuilder().style(AttributedStyle.BOLD.foreground(COLOR))
@@ -215,7 +215,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 writer.flush();
                 break;
             } catch (UserInterruptException e) {
-                // Handle thread interruption for dump terminal
+                // Handle thread interruption for dumb terminal
                 if (!isRealTerminal(lineReader.getTerminal())) {
                     writer.flush();
                     break;
