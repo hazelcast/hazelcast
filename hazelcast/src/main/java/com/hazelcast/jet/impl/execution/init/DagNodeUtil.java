@@ -32,10 +32,9 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * A job representation in the form of a DAG, where one vertex is crated for
- * each job operator and each node. Edges represent the connections between the
- * operators on each node. The main point is to eliminate unnecessary
- * connections, especially operators on nodes after a distributed-to-one edge.
+ * A utility to deploy DAG on nodes. It helps to find which vertices never
+ * receive data on some nodes and avoid creating processors on those nodes and
+ * also queues, sender and receiver tasklets to those nodes.
  *
  * <pre>{@code
  * /--------|--------\
@@ -55,14 +54,14 @@ import java.util.Set;
  * <p>
  * We don't use Java streams here for a better performance.
  */
-class NodeLevelDag {
+class DagNodeUtil {
 
     private final Address localAddress;
     private final BitSet localVertices;
     private final Map<String, Set<Address>> targets = new HashMap<>();
     private final Map<String, Set<Address>> sources = new HashMap<>();
 
-    NodeLevelDag(List<VertexDef> vertices, Set<Address> allAddresses, Address localAddress) {
+    DagNodeUtil(List<VertexDef> vertices, Set<Address> allAddresses, Address localAddress) {
         this.localAddress = localAddress;
         Int2ObjectHashMap<Set<Address>> vertexOnAddress = new Int2ObjectHashMap<>();
         Map<String, Set<Connection>> edgesToConnections = new HashMap<>();

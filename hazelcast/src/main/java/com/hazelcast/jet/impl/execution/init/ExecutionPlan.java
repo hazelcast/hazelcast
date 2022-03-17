@@ -134,7 +134,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient NodeEngineImpl nodeEngine;
     private transient JobClassLoaderService jobClassLoaderService;
     private transient long executionId;
-    private transient NodeLevelDag nodeLevelDag;
+    private transient DagNodeUtil dagNodeUtil;
     private final transient Set<String> localCollectorsEdges = new HashSet<>();
 
     // list of unique remote members
@@ -185,11 +185,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
             memberConnections.put(destAddr, conn);
         }
-        nodeLevelDag = new NodeLevelDag(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
+        dagNodeUtil = new DagNodeUtil(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
         createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
         for (VertexDef vertex : vertices) {
-            if (!nodeLevelDag.vertexExists(vertex)) {
+            if (!dagNodeUtil.vertexExists(vertex)) {
                 continue;
             }
 
@@ -324,7 +324,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<Address> edgeTargets = nodeLevelDag.getEdgeTargets(outboundEdge);
+        Set<Address> edgeTargets = dagNodeUtil.getEdgeTargets(outboundEdge);
 
         // create local connections
         for (Address targetAddress : edgeTargets) {
@@ -345,7 +345,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<Address> edgeSources = nodeLevelDag.getEdgeSources(inboundEdge);
+        Set<Address> edgeSources = dagNodeUtil.getEdgeSources(inboundEdge);
 
         for (Address sourceAddress : edgeSources) {
             if (sourceAddress.equals(nodeEngine.getThisAddress())) {
@@ -541,7 +541,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int upstreamParallelism = edge.sourceVertex().localParallelism();
         int downstreamParallelism = edge.destVertex().localParallelism();
         int queueSize = edge.getConfig().getQueueSize();
-        int numRemoteMembers = nodeLevelDag.numRemoteSources(edge);
+        int numRemoteMembers = dagNodeUtil.numRemoteSources(edge);
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             int queueCount = upstreamParallelism / downstreamParallelism;
@@ -644,7 +644,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
                 : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
-        for (Address destAddr : nodeLevelDag.getEdgeTargets(edge)) {
+        for (Address destAddr : dagNodeUtil.getEdgeTargets(edge)) {
             if (destAddr.equals(nodeEngine.getThisAddress())) {
                 continue;
             }
@@ -737,7 +737,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     //create a receiver per address
                     int offset = 0;
                     for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
-                        if (!nodeLevelDag.getEdgeSources(edge).contains(addr)) {
+                        if (!dagNodeUtil.getEdgeSources(edge).contains(addr)) {
                             continue;
                         }
 
@@ -769,7 +769,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                              String jobPrefix, int globalProcessorIdx) {
         final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
-            if (nodeLevelDag.getEdgeSources(inEdge).isEmpty()) {
+            if (dagNodeUtil.getEdgeSources(inEdge).isEmpty()) {
                 continue;
             }
             // each tasklet has one input conveyor per edge

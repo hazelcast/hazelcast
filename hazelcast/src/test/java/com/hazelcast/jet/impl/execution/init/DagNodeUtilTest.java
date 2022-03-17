@@ -39,7 +39,7 @@ import static java.util.Collections.singleton;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NodeLevelDagTest extends TestCase {
+public class DagNodeUtilTest extends TestCase {
     public static final ProcessorSupplier MOCK_PROCESSOR_SUPPLIER = null;
     public static final int MOCK_DEFAULT_PARALLELISM = 1;
 
@@ -70,13 +70,13 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
+        DagNodeUtil util = new DagNodeUtil(vertices, allAddresses, node1Address);
 
-        assertTrue(traverser.vertexExists(vertex_1));
-        assertTrue(traverser.vertexExists(vertex_2));
+        assertTrue(util.vertexExists(vertex_1));
+        assertTrue(util.vertexExists(vertex_2));
 
-        assertEquals(singleton(node1Address), traverser.getEdgeSources(edge_1_2));
-        assertEquals(singleton(node1Address), traverser.getEdgeTargets(edge_1_2));
+        assertEquals(singleton(node1Address), util.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), util.getEdgeTargets(edge_1_2));
     }
 
     @Test
@@ -86,8 +86,8 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
-        assertEquals(0, traverser.numRemoteSources(edge_1_2));
+        DagNodeUtil util = new DagNodeUtil(vertices, allAddresses, node1Address);
+        assertEquals(0, util.numRemoteSources(edge_1_2));
     }
 
     @Test
@@ -97,8 +97,8 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
-        assertTrue(traverser.getEdgeSources(edge_1_2).contains(node1Address));
+        DagNodeUtil util = new DagNodeUtil(vertices, allAddresses, node1Address);
+        assertTrue(util.getEdgeSources(edge_1_2).contains(node1Address));
     }
 
     /*
@@ -117,18 +117,18 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, node1Address);
 
-        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
-        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
+        DagNodeUtil util1 = new DagNodeUtil(vertices, allAddresses, node1Address);
+        DagNodeUtil util2 = new DagNodeUtil(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser1.vertexExists(vertex_1));
-        assertTrue(traverser2.vertexExists(vertex_1));
-        assertTrue(traverser1.vertexExists(vertex_2));
-        assertFalse(traverser2.vertexExists(vertex_2));
+        assertTrue(util1.vertexExists(vertex_1));
+        assertTrue(util2.vertexExists(vertex_1));
+        assertTrue(util1.vertexExists(vertex_2));
+        assertFalse(util2.vertexExists(vertex_2));
 
-        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
-        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_1_2));
-        assertEquals(emptySet(), traverser2.getEdgeSources(edge_1_2));
-        assertEquals(singleton(node1Address), traverser2.getEdgeTargets(edge_1_2));
+        assertEquals(allAddresses, util1.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), util1.getEdgeTargets(edge_1_2));
+        assertEquals(emptySet(), util2.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), util2.getEdgeTargets(edge_1_2));
     }
 
     /*
@@ -147,18 +147,18 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, Edge.DISTRIBUTE_TO_ALL);
 
-        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
-        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
+        DagNodeUtil util1 = new DagNodeUtil(vertices, allAddresses, node1Address);
+        DagNodeUtil util2 = new DagNodeUtil(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser1.vertexExists(vertex_1));
-        assertTrue(traverser1.vertexExists(vertex_2));
-        assertTrue(traverser2.vertexExists(vertex_1));
-        assertTrue(traverser2.vertexExists(vertex_2));
+        assertTrue(util1.vertexExists(vertex_1));
+        assertTrue(util1.vertexExists(vertex_2));
+        assertTrue(util2.vertexExists(vertex_1));
+        assertTrue(util2.vertexExists(vertex_2));
 
-        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
-        assertEquals(allAddresses, traverser1.getEdgeTargets(edge_1_2));
-        assertEquals(allAddresses, traverser2.getEdgeSources(edge_1_2));
-        assertEquals(allAddresses, traverser2.getEdgeTargets(edge_1_2));
+        assertEquals(allAddresses, util1.getEdgeSources(edge_1_2));
+        assertEquals(allAddresses, util1.getEdgeTargets(edge_1_2));
+        assertEquals(allAddresses, util2.getEdgeSources(edge_1_2));
+        assertEquals(allAddresses, util2.getEdgeTargets(edge_1_2));
     }
 
     /*
@@ -179,25 +179,25 @@ public class NodeLevelDagTest extends TestCase {
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, node1Address);
         EdgeDef edge_2_3 = createEdge(vertex_2, vertex_3, null);
 
-        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
-        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
+        DagNodeUtil util1 = new DagNodeUtil(vertices, allAddresses, node1Address);
+        DagNodeUtil util2 = new DagNodeUtil(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser1.vertexExists(vertex_1));
-        assertTrue(traverser2.vertexExists(vertex_1));
-        assertTrue(traverser1.vertexExists(vertex_2));
-        assertFalse(traverser2.vertexExists(vertex_2));
-        assertTrue(traverser1.vertexExists(vertex_3));
-        assertFalse(traverser2.vertexExists(vertex_3));
+        assertTrue(util1.vertexExists(vertex_1));
+        assertTrue(util2.vertexExists(vertex_1));
+        assertTrue(util1.vertexExists(vertex_2));
+        assertFalse(util2.vertexExists(vertex_2));
+        assertTrue(util1.vertexExists(vertex_3));
+        assertFalse(util2.vertexExists(vertex_3));
 
-        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
-        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_1_2));
-        assertEquals(emptySet(), traverser2.getEdgeSources(edge_1_2));
-        assertEquals(singleton(node1Address), traverser2.getEdgeTargets(edge_1_2));
+        assertEquals(allAddresses, util1.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), util1.getEdgeTargets(edge_1_2));
+        assertEquals(emptySet(), util2.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), util2.getEdgeTargets(edge_1_2));
 
-        assertEquals(singleton(node1Address), traverser1.getEdgeSources(edge_2_3));
-        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_2_3));
-        assertEquals(emptySet(), traverser2.getEdgeSources(edge_2_3));
-        assertEquals(emptySet(), traverser2.getEdgeTargets(edge_2_3));
+        assertEquals(singleton(node1Address), util1.getEdgeSources(edge_2_3));
+        assertEquals(singleton(node1Address), util1.getEdgeTargets(edge_2_3));
+        assertEquals(emptySet(), util2.getEdgeSources(edge_2_3));
+        assertEquals(emptySet(), util2.getEdgeTargets(edge_2_3));
     }
 
     private EdgeDef createEdge(VertexDef from, VertexDef to, Address distributedTo) {
