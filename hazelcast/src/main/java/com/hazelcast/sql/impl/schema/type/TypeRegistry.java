@@ -21,10 +21,10 @@ import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 // Temporary workaround
@@ -32,7 +32,7 @@ public class TypeRegistry {
     public static final TypeRegistry INSTANCE = new TypeRegistry();
 
     // class name
-    private final Map<String, Type> registry = new HashMap<>();
+    private final Map<String, Type> registry = new ConcurrentHashMap<>();
 
     public Type getTypeByName(final String name) {
         return registry.get(name.toLowerCase(Locale.ROOT));
@@ -64,6 +64,10 @@ public class TypeRegistry {
 
         registry.put(name.toLowerCase(Locale.ROOT), type);
         fixTypeReferences(type);
+    }
+
+    public void clear() {
+        registry.clear();
     }
 
     private void fixTypeReferences(final Type addedType) {

@@ -29,7 +29,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastRelDataTypeReference;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectTypeReference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -346,9 +346,7 @@ public final class OptUtils {
         }
 
         if (sqlTypeName == SqlTypeName.OTHER) {
-            return convertCustomType(fieldType);
-        } else if (sqlTypeName == SqlTypeName.ANY && !fieldType.getTypeName().isEmpty()) {
-            return convertUserDefinedType(fieldType, typeFactory);
+            return convertCustomType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
@@ -369,7 +367,7 @@ public final class OptUtils {
         }
         final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
         final List<HazelcastObjectType.Field> fields = new ArrayList<>();
-        final HazelcastRelDataTypeReference typeRef = new HazelcastRelDataTypeReference();
+        final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
         typeMap.put(queryDataType.getTypeName(), typeRef);
 
         for (int i = 0; i < type.getFields().size(); i++) {
@@ -389,18 +387,20 @@ public final class OptUtils {
             fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
         }
 
-        typeRef.setOriginal(new HazelcastObjectType(fields));
+        typeRef.setOriginal(new HazelcastObjectType(type.getName(), fields));
     }
 
     private static boolean isUserDefinedType(final QueryDataType queryDataType) {
-        return queryDataType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) &&
+        return queryDataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT) &&
                 !queryDataType.getTypeName().isEmpty();
     }
 
-    private static RelDataType convertCustomType(QueryDataType fieldType) {
+    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
                 return HazelcastJsonType.create(true);
+            case HZ_OBJECT:
+                return convertUserDefinedType(fieldType, typeFactory);
             default:
                 throw new IllegalStateException("Unexpected type family: " + fieldType);
         }

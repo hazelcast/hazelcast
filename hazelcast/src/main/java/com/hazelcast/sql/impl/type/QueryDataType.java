@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.DateConverter;
 import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
+import com.hazelcast.sql.impl.type.converter.HazelcastObjectConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
 import com.hazelcast.sql.impl.type.converter.IntervalConverter;
@@ -43,6 +44,7 @@ import com.hazelcast.sql.impl.type.converter.MapConverter;
 import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
@@ -83,7 +85,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME = new QueryDataType(OffsetDateTimeConverter.INSTANCE);
     public static final QueryDataType TIMESTAMP_WITH_TZ_ZONED_DATE_TIME = new QueryDataType(ZonedDateTimeConverter.INSTANCE);
 
-    public static final QueryDataType OBJECT = new QueryDataType("");
+    public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
 
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
 
@@ -92,6 +94,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
+    public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
+    public static final QueryDataType HZ_OBJECT = new QueryDataType("");
 
     private Converter converter;
     private String typeName = "";
@@ -103,7 +107,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     }
 
     public QueryDataType(String typeName) {
-        this.converter = ObjectConverter.INSTANCE;
+        this.converter = HazelcastObjectConverter.INSTANCE;
         this.typeName = typeName;
     }
 

@@ -83,6 +83,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            type = TypeRegistry.INSTANCE.getTypeByClass(clazz).getQueryDataType();
+        }
+
         if (type != QueryDataType.OBJECT) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
@@ -150,26 +154,16 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
-        final Map<String, QueryDataType> customTypes = new HashMap<>();
-
         final List<MappingField> topLevelFields = fieldsInClass.entrySet().stream()
                 .map(classField -> {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
                     String name = classField.getKey();
-                    // skip Java classes like List, Map etc.
-                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(classField.getValue())) {
-                        type = TypeRegistry.INSTANCE.getTypeByClass(classField.getValue()).getQueryDataType();
-                    }
 
                     return new MappingField(name, type, path.toString());
                 }).collect(Collectors.toList());
 
         return topLevelFields.stream();
-    }
-
-    private boolean isJavaClass(Class<?> clazz) {
-        return !clazz.getPackage().getName().startsWith("java.");
     }
 
     private Stream<MappingField> resolveAndValidateObjectFields(

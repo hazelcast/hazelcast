@@ -27,26 +27,31 @@ import java.util.List;
 
 public class HazelcastObjectType extends RelDataTypeImpl {
     private final boolean nullable;
-    public HazelcastObjectType(final List<Field> fields) {
+    private final String name;
+    public HazelcastObjectType(final String name, final List<Field> fields) {
         super(fields);
-        this.digest = "OBJECT";
+        this.name = name;
+        this.digest = "HZ_OBJECT(" + name + ")";
         this.nullable = true;
     }
 
-    public HazelcastObjectType(final List<Field> fields, final boolean nullable) {
+    public HazelcastObjectType(final String name, final List<Field> fields, final boolean nullable) {
         super(fields);
-        this.digest = "OBJECT";
+        this.name = name;
+        this.digest = "HZ_OBJECT(" + name + ")";
         this.nullable = nullable;
     }
 
     @Override
     protected void generateTypeString(final StringBuilder sb, final boolean withDetail) {
-        sb.append("OBJECT");
+        sb.append("HZ_OBJECT(")
+                .append(name)
+                .append(")");
     }
 
     @Override
     public SqlTypeName getSqlTypeName() {
-        return SqlTypeName.ANY;
+        return SqlTypeName.OTHER;
     }
 
     @Override

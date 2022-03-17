@@ -31,14 +31,22 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.nio.charset.Charset;
 import java.util.List;
 
-public class HazelcastRelDataTypeReference implements RelDataType {
-    private RelDataType original;
+/**
+ * Temporary reference type used to support CRec (Circularly-recurrent) types e.g.
+ * Class A { B b; }
+ * Class B { C c; }
+ * Class C { A a; }
+ * In this hierarchy instead of supplying actual type for columns b, c, a, this type will be inserted and later on
+ * the original's will be set to respective HazelcastObjectTypes to fix the references.
+ */
+public class HazelcastObjectTypeReference implements RelDataType {
+    private HazelcastObjectType original;
 
     public RelDataType getOriginal() {
         return original;
     }
 
-    public void setOriginal(final RelDataType original) {
+    public void setOriginal(final HazelcastObjectType original) {
         this.original = original;
     }
 
@@ -172,5 +180,16 @@ public class HazelcastRelDataTypeReference implements RelDataType {
     public boolean isDynamicStruct() {
         assert original != null;
         return original.isDynamicStruct();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        // TODO: proper equality
+        return obj != null && obj.equals(original);
+    }
+
+    @Override
+    public int hashCode() {
+        return original.hashCode();
     }
 }

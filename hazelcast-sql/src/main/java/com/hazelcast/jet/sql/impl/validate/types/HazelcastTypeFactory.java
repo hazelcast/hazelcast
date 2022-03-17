@@ -23,7 +23,6 @@ import org.apache.calcite.util.ConversionUtil;
 
 import javax.annotation.Nullable;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
@@ -59,8 +58,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
             6
     );
 
-    private static final RelDataType TYPE_OBJECT = new HazelcastObjectType(Collections.emptyList(), false);
-    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastObjectType(Collections.emptyList(), true);
+    private static final RelDataType TYPE_OBJECT = new HazelcastType(SqlTypeName.ANY, false);
+    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastType(SqlTypeName.ANY, true);
 
     private HazelcastTypeFactory() {
         super(HazelcastTypeSystem.INSTANCE);

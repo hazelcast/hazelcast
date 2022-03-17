@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -79,7 +80,13 @@ public enum SqlColumnType {
     NULL(14, Void.class),
 
     /** JSON type, represented by {@link HazelcastJsonValue} */
-    JSON(15, HazelcastJsonValue.class);
+    JSON(15, HazelcastJsonValue.class),
+
+    /** ROW type, represented by {@link TODO ROW} */
+    ROW(16, null),
+
+    /** HZ_OBJECT type, represented by any class marked with {@link HazelcastObjectMarker} */
+    HZ_OBJECT(17, HazelcastObjectMarker.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 

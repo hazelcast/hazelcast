@@ -20,16 +20,21 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.schema.type.TypeRegistry;
-import org.jetbrains.annotations.NotNull;
+import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Objects;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class NestedFieldsTest extends SqlJsonTestSupport {
+
     @BeforeClass
     public static void beforeClass() {
         Config config = new Config();
@@ -37,15 +42,20 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         initialize(1, config);
     }
 
+    @Before
+    public void init() {
+        TypeRegistry.INSTANCE.clear();
+    }
+
     @Test
     public void test_simpleNestedColumnSelect() {
         initDefault();
 
         final String sql = "SELECT "
-                + "test.name AS user_name, "
-                + "test.organization.name AS org_name, "
-                + "test.organization.office.name AS office_name, "
-                + "test.organization.office.id AS office_id "
+                + "test.this.name AS user_name, "
+                + "test.this.organization.name AS org_name, "
+                + "test.this.organization.office.name AS office_name, "
+                + "test.this.organization.office.id AS office_id "
                 + "FROM test";
         assertRowsAnyOrder(sql, rows(4, "user1", "organization1", "office1", 3L));
     }
@@ -57,8 +67,8 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         final Office office = organization.getOffice();
 
         final String sql = "SELECT "
-                + "test.organization, "
-                + "test.organization.office "
+                + "test.this.organization, "
+                + "test.this.organization.office "
                 + "FROM test";
         assertRowsAnyOrder(sql, rows(2, organization, office));
     }
@@ -70,32 +80,30 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         final Office office = organization.getOffice();
 
         final String sql = "SELECT "
-                + "test.organization, "
-                + "test.organization.office "
-                + "FROM test WHERE test.organization.office = ?";
+                + "test.this.organization, "
+                + "test.this.organization.office "
+                + "FROM test WHERE test.this.organization.office = ?";
 
         assertRowsAnyOrder(sql, Collections.singletonList(office),
                 rows(2, organization, office));
     }
 
-    // TODO: fix!
-    @Ignore
     @Test
     public void test_fullInsert() {
         initDefault();
 
-        // TODO: deeper hierarchy to test possible failing null checks
         final Office office = new Office(5L, "office2");
         final Organization organization = new Organization(4L, "organization2", office);
         final User user = new User(2L, "user1", organization);
 
-        execute("INSERT INTO test (__key, id, name, organization) VALUES (?, ?, ?, ?)",
-                2L, 2L, "user2", user.organization);
+        execute("INSERT INTO test (__key, this) VALUES (?, ?)",
+                2L, new User(2L, "user2", user.organization));
 
-        assertRowsAnyOrder("SELECT test.organization, test.organization.office FROM test WHERE __key = 2",
+        assertRowsAnyOrder("SELECT test.this.organization, test.this.organization.office FROM test WHERE __key = 2",
                 rows(2, organization, office));
     }
 
+    // TODO: fix
     @Test
     public void test_update() {
         initDefault();
@@ -103,10 +111,44 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         final Office office = new Office(3L, "office1");
         final Organization organization = new Organization(2L, "organization1", office);
         final User user = new User(1L, "user1", organization);
+        final User newUser = new User(1L, "new-name", organization);
 
-        execute("UPDATE test SET name = 'new-name' WHERE __key = 1");
-        assertRowsAnyOrder("SELECT test.id, test.name, test.organization FROM test WHERE __key = 1",
+        execute("UPDATE test SET this = ? WHERE __key = 1", newUser);
+        assertRowsAnyOrder("SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
                 rows(3, 1L, "new-name", organization));
+    }
+
+    @Test
+    public void test_selfRefType() {
+        TypeRegistry.INSTANCE.registerType("SelfRefType", SelfRef.class);
+
+        final SelfRef first = new SelfRef(1L, "first");
+        final SelfRef second = new SelfRef(2L, "second");
+        final SelfRef third = new SelfRef(3L, "third");
+        final SelfRef fourth = new SelfRef(4L, "fourth");
+
+        first.other = second;
+        second.other = third;
+        third.other = fourth;
+        fourth.other = first;
+
+        createMapping("test", Long.class, SelfRef.class);
+        instance().getMap("test").put(1L, first);
+
+        assertRowsAnyOrder("SELECT "
+                        + "test.this.name, "
+                        + "test.this.other.name, "
+                        + "test.this.other.other.name, "
+                        + "test.this.other.other.other.name, "
+                        + "test.this.other.other.other.other.name "
+                        + "FROM test",
+                rows(5,
+                        "first",
+                        "second",
+                        "third",
+                        "fourth",
+                        "first"
+                ));
     }
 
     @Test
@@ -115,26 +157,56 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         TypeRegistry.INSTANCE.registerType("BType", B.class);
         TypeRegistry.INSTANCE.registerType("CType", C.class);
 
-        A a = new A();
-        B b = new B();
-        C c = new C();
+        final A a = new A("a");
+        final B b = new B("b");
+        final C c = new C("c");
 
-        a.name = "a";
         a.b = b;
-        b.name = "b";
         b.c = c;
-        c.name = "c";
         c.a = a;
 
         createMapping("test", Long.class, A.class);
         IMap<Long, A> map = instance().getMap("test");
         map.put(1L, a);
 
-        assertRowsAnyOrder("SELECT test.b.c.a.name FROM test", rows(1, "a"));
+        assertRowsAnyOrder("SELECT test.this.b.c.a.name FROM test", rows(1, "a"));
+    }
+
+    @Test
+    public void test_deepInsert() {
+        // TODO: ROW-literal?
+    }
+
+    // TODO: fix
+    @Test
+    @Ignore
+    public void test_deepUpdate() {
+        TypeRegistry.INSTANCE.registerType("AType", A.class);
+        TypeRegistry.INSTANCE.registerType("BType", B.class);
+        TypeRegistry.INSTANCE.registerType("CType", C.class);
+
+        final A a = new A("a");
+        final B b = new B("b");
+        final C c = new C("c");
+
+        a.b = b;
+        b.c = c;
+        c.a = a;
+
+        createMapping("public", Long.class, A.class);
+        IMap<Long, A> map = instance().getMap("public");
+        map.put(1L, a);
+
+//        instance().getSql().execute("UPDATE public SET name = 'a_2'");
+        // update persons set address=(address.street, 'new city')
+        instance().getSql().execute("UPDATE public SET this = (public.this.b.c, 'test')");
+        System.out.println("hello");
+//        assertRowsAnyOrder("SELECT name, public.public.b.c.a.b.c.a.b.name FROM public", rows(2, "a_2", "b"));
     }
 
     private User initDefault() {
         // TODO: sql, dependent-types
+        TypeRegistry.INSTANCE.registerType("UserType", User.class);
         TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
         TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
 
@@ -157,22 +229,53 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         instance().getSql().execute(sql, args);
     }
 
-    public static class A implements Serializable {
+    public static class A implements Serializable, HazelcastObjectMarker {
         public String name;
         public B b;
+
+        public A() { }
+
+        public A(final String name) {
+            this.name = name;
+        }
     }
 
-    public static class B implements Serializable {
+    public static class B implements Serializable, HazelcastObjectMarker {
         public String name;
         public C c;
+
+        public B() { }
+
+        public B(final String name) {
+            this.name = name;
+        }
     }
 
-    public static class C implements Serializable {
+    public static class C implements Serializable, HazelcastObjectMarker {
         public String name;
         public A a;
+
+        public C() { }
+
+        public C(final String name) {
+            this.name = name;
+        }
     }
 
-    public static class User implements Serializable {
+    public static class SelfRef implements Serializable, HazelcastObjectMarker {
+        public Long id;
+        public String name;
+        public SelfRef other;
+
+        public SelfRef() { }
+
+        public SelfRef(final Long id, final String name) {
+            this.id = id;
+            this.name = name;
+        }
+    }
+
+    public static class User implements Serializable, HazelcastObjectMarker {
         private Long id;
         private String name;
         private Organization organization;
@@ -238,11 +341,10 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Organization implements Serializable, Comparable<Organization> {
+    public static class Organization implements Serializable, Comparable<Organization>, HazelcastObjectMarker {
         private Long id;
         private String name;
         private Office office;
-        private User ceo;
 
         public Organization() { }
 
@@ -276,14 +378,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
             this.office = office;
         }
 
-//        public User getCeo() {
-//            return ceo;
-//        }
-//
-//        public void setCeo(final User ceo) {
-//            this.ceo = ceo;
-//        }
-
         @Override
         public boolean equals(final Object o) {
             if (this == o) {
@@ -304,7 +398,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
 
         @Override
-        public int compareTo(@NotNull final Organization o) {
+        public int compareTo(final Organization o) {
             return hashCode() - o.hashCode();
         }
 
@@ -318,7 +412,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Office implements Serializable, Comparable<Office> {
+    public static class Office implements Serializable, Comparable<Office>, HazelcastObjectMarker {
         private Long id;
         private String name;
 
@@ -363,7 +457,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
 
         @Override
-        public int compareTo(@NotNull final Office o) {
+        public int compareTo(final Office o) {
             return hashCode() - o.hashCode();
         }
 

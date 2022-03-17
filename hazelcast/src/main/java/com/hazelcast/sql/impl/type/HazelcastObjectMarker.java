@@ -16,5 +16,5 @@
 
 package com.hazelcast.sql.impl.type;
 
-public interface RowTypeMarker {
+public interface HazelcastObjectMarker {
 }
