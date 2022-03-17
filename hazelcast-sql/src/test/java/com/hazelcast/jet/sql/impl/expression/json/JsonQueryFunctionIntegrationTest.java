@@ -326,22 +326,6 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
             querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"\\\"quoted\\\\s\\\"\")' WITH CONDITIONAL WRAPPER) FROM test"));
     }
 
-    @Test
-    public void test_nestedArraysAndArrayFilters() {
-        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
-        final String jsonStr = "{\"userObjects\":["
-            + "{\"id\":\"id1\", \"tags\":[\"t1\", \"t2\"]},"
-            + "{\"id\":\"id2\", \"tags\":[\"t3\", \"t4\"]}"
-            + "]}";
-        test.put(1L, json(jsonStr));
-        createMapping("test", "bigint", "json");
-
-        assertEquals(json("\"t1\""),
-            querySingleValue("SELECT JSON_QUERY(this, '$.userObjects[*].tags[*]?(@==\"t1\")' WITH CONDITIONAL WRAPPER) FROM test"));
-        assertEquals(json("{\"id\":\"id1\",\"tags\":[\"t1\",\"t2\"]}"),
-            querySingleValue("SELECT JSON_QUERY(this, '$.userObjects[*]?(@.id==\"id1\")' WITH CONDITIONAL WRAPPER) FROM test"));
-    }
-
     protected void initComplexObject() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         createMapping("test", "bigint", "json");
