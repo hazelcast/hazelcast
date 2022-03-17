@@ -26,6 +26,8 @@ import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.isUnbounded;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.toPhysicalConvention;
+import static org.apache.calcite.rel.core.JoinRelType.INNER;
+import static org.apache.calcite.rel.core.JoinRelType.LEFT;
 
 @Value.Enclosing
 public final class JoinValidationRule extends RelRule<Config> implements TransformationRule {
@@ -57,29 +59,25 @@ public final class JoinValidationRule extends RelRule<Config> implements Transfo
         JoinLogicalRel join = call.rel(0);
         boolean rightInputIsStream = isUnbounded(join.getRight());
 
-        //noinspection CheckStyle
-        switch (join.getJoinType()) {
-            case LEFT:
-                String msg = "The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source";
-                if (rightInputIsStream) {
-                    call.transformTo(
-                            new MustnotExecuteRel(
-                                    join.getCluster(),
-                                    toPhysicalConvention(join.getTraitSet()),
-                                    join.getRowType(),
-                                    msg));
-                }
-                break;
-            case INNER:
-                if (rightInputIsStream) {
-                    call.transformTo(
-                            new MustnotExecuteRel(
-                                    join.getCluster(),
-                                    toPhysicalConvention(join.getTraitSet()),
-                                    join.getRowType(),
-                                    "The right side of a INNER JOIN cannot be a streaming source"));
-                }
-                break;
+        if (join.getJoinType() == LEFT) {
+            String msg = "The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source";
+            if (rightInputIsStream) {
+                call.transformTo(
+                        new MustnotExecuteRel(
+                                join.getCluster(),
+                                toPhysicalConvention(join.getTraitSet()),
+                                join.getRowType(),
+                                msg));
+            }
+        } else if (join.getJoinType() == INNER) {
+            if (rightInputIsStream) {
+                call.transformTo(
+                        new MustnotExecuteRel(
+                                join.getCluster(),
+                                toPhysicalConvention(join.getTraitSet()),
+                                join.getRowType(),
+                                "The right side of a INNER JOIN cannot be a streaming source"));
+            }
         }
     }
 }
