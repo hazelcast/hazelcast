@@ -139,7 +139,6 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         // Replace references to either window bound to timestamp in projection
         List<Integer> windowStartIndexes = new ArrayList<>();
         List<Integer> windowEndIndexes = new ArrayList<>();
-        // TODO: rework it with RexProgramBuilder
         for (int i = 0; i < projections.size(); i++) {
             RexNode projection = projections.get(i);
             // we don't support any transformation of the window bound using an expression, it must be a direct input reference.
