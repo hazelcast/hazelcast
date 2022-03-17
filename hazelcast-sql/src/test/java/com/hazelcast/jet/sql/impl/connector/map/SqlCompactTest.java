@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
@@ -134,7 +135,6 @@ public class SqlCompactTest extends SqlTestSupport {
         ).updateCount()).hasMessageContaining("Cannot derive Compact type for 'OBJECT'");
     }
 
-
     public static class Primitives {
         boolean b;
         byte bt;
@@ -144,9 +144,7 @@ public class SqlCompactTest extends SqlTestSupport {
         float f;
         double d;
 
-        public Primitives() {
-
-        }
+        public Primitives() { }
 
         public Primitives(boolean b, byte bt, short s, int i, long l, float f, double d) {
             this.b = b;
@@ -157,8 +155,6 @@ public class SqlCompactTest extends SqlTestSupport {
             this.f = f;
             this.d = d;
         }
-
-
     }
 
     @Test
@@ -611,6 +607,18 @@ public class SqlCompactTest extends SqlTestSupport {
                         + ")").iterator().next())
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Compact serialization");
+    }
+
+    @Test
+    public void when_compactDisabled_then_compactFormatNotAllowed() {
+        HazelcastInstance inst = createHazelcastInstance(smallInstanceConfig());
+        assertFalse(inst.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled());
+        assertThatThrownBy(() -> inst.getSql().execute("create mapping m " +
+                "type imap " +
+                "options (" +
+                "'keyFormat'='int', 'valueFormat'='compact', " +
+                "'valueCompactTypeName'='foo')"))
+                .hasMessage("Compact serialization is disabled in the config");
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
