@@ -64,6 +64,10 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         defaultRecordStore.getMapDataStore().reset();
         defaultRecordStore.getIndexingObserver().onDestroy(false, true);
 
+        // Removal of old mapContainer is required not to leak old
+        // state into merged cluster. An example old state that we
+        // don't want to leak into merged cluster is index state. In
+        // merged cluster, there will be a fresh mapContainer object.
         MapContainer mapContainer = defaultRecordStore.getMapContainer();
         mapServiceContext.removeMapContainer(mapContainer);
     }

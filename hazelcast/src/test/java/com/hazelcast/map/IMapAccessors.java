@@ -23,7 +23,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 
 /**
- * Utility accessors for IMap internals
+ * Utility accessors for IMap internals.
+ * <p>
+ * Works only with server side maps.
  */
 public final class IMapAccessors {
 
@@ -31,14 +33,23 @@ public final class IMapAccessors {
     }
 
     public static MapContainer getMapContainer(IMap map) {
+        assertMapImpl(map);
+
         MapServiceContext mapServiceContext = getMapServiceContext(map);
         return mapServiceContext.getMapContainers().get(map.getName());
     }
 
     public static MapServiceContext getMapServiceContext(IMap map) {
+        assertMapImpl(map);
+
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         RemoteService service = mapProxy.getService();
         MapService mapService = (MapService) service;
         return mapService.getMapServiceContext();
+    }
+
+    private static void assertMapImpl(IMap map) {
+        assert map instanceof MapProxyImpl
+                : "Works only with server side map";
     }
 }
