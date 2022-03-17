@@ -32,7 +32,7 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
 
     public static final List<Address> TARGETS = new CopyOnWriteArrayList<Address>();
 
-    private int syncBackupCount;
+    private int backupCount;
     private int asyncBackupCount;
     private TargetAwareOperation backupOp;
     private Address targetAddress;
@@ -41,8 +41,8 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
         this(0, 0, -1);
     }
 
-    TargetAwareOperation(int syncBackupCount, int asyncBackupCount, int partitionId) {
-        this.syncBackupCount = syncBackupCount;
+    TargetAwareOperation(int backupCount, int asyncBackupCount, int partitionId) {
+        this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
         this.setPartitionId(partitionId);
     }
@@ -61,7 +61,7 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(targetAddress);
-        out.writeInt(syncBackupCount);
+        out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
     }
 
@@ -69,7 +69,7 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         targetAddress = in.readObject();
-        syncBackupCount = in.readInt();
+        backupCount = in.readInt();
         asyncBackupCount = in.readInt();
     }
 
@@ -81,12 +81,12 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
 
     @Override
     public boolean shouldBackup() {
-        return (syncBackupCount + asyncBackupCount) > 0;
+        return (backupCount + asyncBackupCount) > 0;
     }
 
     @Override
     public int getBackupCount() {
-        return syncBackupCount;
+        return backupCount;
     }
 
     @Override

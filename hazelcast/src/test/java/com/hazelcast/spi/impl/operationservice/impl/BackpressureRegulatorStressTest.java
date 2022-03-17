@@ -96,7 +96,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             stressThread.runDelayMs = 1;
             stressThread.shouldBackup = false;
             stressThread.asyncBackups = 0;
-            stressThread.syncBackups = 0;
+            stressThread.backups = 0;
             stressThread.backupRunDelayMs = 0;
             stressThread.partitionId = getPartitionId(remote);
             return stressThread;
@@ -112,7 +112,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             stressThread.runDelayMs = 0;
             stressThread.shouldBackup = false;
             stressThread.asyncBackups = 0;
-            stressThread.syncBackups = 1;
+            stressThread.backups = 1;
             stressThread.backupRunDelayMs = 1;
             stressThread.partitionId = getPartitionId(remote);
             return stressThread;
@@ -128,7 +128,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             stressThread.runDelayMs = 0;
             stressThread.shouldBackup = true;
             stressThread.asyncBackups = 1;
-            stressThread.syncBackups = 0;
+            stressThread.backups = 0;
             stressThread.backupRunDelayMs = 1;
             stressThread.partitionId = getPartitionId(remote);
             return stressThread;
@@ -144,7 +144,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             stressThread.runDelayMs = 0;
             stressThread.shouldBackup = true;
             stressThread.asyncBackups = 1;
-            stressThread.syncBackups = 0;
+            stressThread.backups = 0;
             stressThread.backupRunDelayMs = 1;
             stressThread.partitionId = getPartitionId(remote);
             return stressThread;
@@ -160,7 +160,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             stressThread.runDelayMs = 0;
             stressThread.shouldBackup = true;
             stressThread.asyncBackups = 1;
-            stressThread.syncBackups = 1;
+            stressThread.backups = 1;
             stressThread.backupRunDelayMs = 1;
             stressThread.partitionId = getPartitionId(remote);
             return stressThread;
@@ -199,7 +199,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         public int partitionId;
         public boolean syncInvocation;
         public int asyncBackups;
-        public int syncBackups;
+        public int backups;
         public boolean shouldBackup;
         public boolean returnsResponse;
         public int runDelayMs = 1;
@@ -231,7 +231,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
                 DummyOperation operation = new DummyOperation(expectedResult);
 
                 operation.returnsResponse = returnsResponse;
-                operation.syncBackups = syncBackups;
+                operation.backups = backups;
                 operation.asyncBackups = asyncBackups;
                 operation.runDelayMs = runDelayMs;
                 operation.backupRunDelayMs = backupRunDelayMs;
@@ -293,7 +293,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     static class DummyOperation extends Operation implements BackupAwareOperation {
         long result;
         int asyncBackups;
-        int syncBackups;
+        int backups;
         boolean shouldBackup = false;
         boolean returnsResponse = true;
         int runDelayMs = 1;
@@ -323,7 +323,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         @Override
         public int getBackupCount() {
-            return syncBackups;
+            return backups;
         }
 
         @Override
@@ -351,7 +351,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             out.writeInt(runDelayMs);
 
             out.writeBoolean(shouldBackup);
-            out.writeInt(syncBackups);
+            out.writeInt(backups);
             out.writeInt(asyncBackups);
             out.writeInt(backupRunDelayMs);
             byte[] bytes = new byte[MEMORY_STRESS_PAYLOAD_SIZE];
@@ -366,7 +366,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             runDelayMs = in.readInt();
 
             shouldBackup = in.readBoolean();
-            syncBackups = in.readInt();
+            backups = in.readInt();
             asyncBackups = in.readInt();
             backupRunDelayMs = in.readInt();
 

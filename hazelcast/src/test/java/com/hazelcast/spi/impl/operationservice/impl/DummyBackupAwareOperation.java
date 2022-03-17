@@ -29,7 +29,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
 
     public static final ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
 
-    public int syncBackupCount;
+    public int backupCount;
     public int asyncBackupCount;
     public boolean returnsResponse = true;
     public String backupKey;
@@ -53,7 +53,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
 
     @Override
     public int getBackupCount() {
-        return syncBackupCount;
+        return backupCount;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(syncBackupCount);
+        out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(returnsResponse);
         out.writeString(backupKey);
@@ -87,7 +87,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        syncBackupCount = in.readInt();
+        backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         returnsResponse = in.readBoolean();
         backupKey = in.readString();

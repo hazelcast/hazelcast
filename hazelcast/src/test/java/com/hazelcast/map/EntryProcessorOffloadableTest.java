@@ -86,7 +86,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(1)
-    public int syncBackupCount;
+    public int backupCount;
 
     @Parameter(2)
     public int asyncBackupCount;
@@ -104,7 +104,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     }
 
     private boolean isBackup() {
-        return syncBackupCount + asyncBackupCount > 0;
+        return backupCount + asyncBackupCount > 0;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         mapConfig.setAsyncBackupCount(asyncBackupCount);
-        mapConfig.setBackupCount(syncBackupCount);
+        mapConfig.setBackupCount(backupCount);
         config.addMapConfig(mapConfig);
         return config;
     }

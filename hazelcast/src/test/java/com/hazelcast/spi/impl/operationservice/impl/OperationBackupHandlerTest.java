@@ -74,10 +74,10 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         backupHandler = operationService.backupHandler;
     }
 
-    // ============================ syncBackups =================================
+    // ============================ backups =================================
 
     @Test
-    public void syncBackups_whenForceSyncEnabled() {
+    public void backups_whenForceSyncEnabled() {
         setup(BACKPRESSURE_ENABLED);
 
         // when force sync enabled, we sum tot sync and asyncs
@@ -93,7 +93,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void syncBackups_whenForceSyncDisabled() {
+    public void backups_whenForceSyncDisabled() {
         setup(BACKPRESSURE_ENABLED);
 
         // when force-sync disabled, we only look at the sync backups
@@ -207,8 +207,8 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         assertBackup(0, BACKUPS + 1, BACKUPS);
     }
 
-    private void assertBackup(final int syncBackups, final int asyncBackups, int expectedResult) throws Exception {
-        final DummyBackupAwareOperation backupAwareOp = makeOperation(syncBackups, asyncBackups);
+    private void assertBackup(final int backups, final int asyncBackups, int expectedResult) throws Exception {
+        final DummyBackupAwareOperation backupAwareOp = makeOperation(backups, asyncBackups);
 
         int result = backupHandler.sendBackups0(backupAwareOp);
 
@@ -220,15 +220,15 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
                 if (completed == null) {
                     completed = 0;
                 }
-                int totalBackups = min(BACKUPS, syncBackups + asyncBackups);
+                int totalBackups = min(BACKUPS, backups + asyncBackups);
                 assertEquals(new Integer(totalBackups), completed);
             }
         });
     }
 
-    private DummyBackupAwareOperation makeOperation(int syncBackupCount, int asyncBackupCount) {
+    private DummyBackupAwareOperation makeOperation(int backupCount, int asyncBackupCount) {
         DummyBackupAwareOperation operation = new DummyBackupAwareOperation();
-        operation.syncBackupCount = syncBackupCount;
+        operation.backupCount = backupCount;
         operation.asyncBackupCount = asyncBackupCount;
         operation.backupKey = randomUUID().toString();
         setCallerAddress(operation, getAddress(local));
