@@ -55,6 +55,7 @@ import static java.lang.Math.min;
  * @since Jet 3.0
  */
 public class Vertex implements IdentifiedDataSerializable {
+    private boolean locked;
 
     /**
      * The value of {@link #localParallelism(int)} with the meaning
@@ -156,6 +157,7 @@ public class Vertex implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Vertex localParallelism(int localParallelism) {
+        checkLocked();
         this.localParallelism = checkLocalParallelism(localParallelism);
         return this;
     }
@@ -192,6 +194,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * decorate the existing meta-supplier.
      */
     public void updateMetaSupplier(@Nonnull UnaryOperator<ProcessorMetaSupplier> updateFn) {
+        checkLocked();
         metaSupplier = updateFn.apply(metaSupplier);
     }
 
@@ -228,4 +231,12 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     // END Implementation of IdentifiedDataSerializable
+
+    void checkLocked() {
+        assert !locked;
+    }
+
+    public void lock() {
+        locked = true;
+    }
 }

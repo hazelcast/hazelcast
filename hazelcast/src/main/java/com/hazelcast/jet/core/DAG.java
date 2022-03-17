@@ -78,7 +78,7 @@ import static java.util.stream.Collectors.joining;
  * @since Jet 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
-
+    private boolean locked;
     private final Set<Edge> edges = new LinkedHashSet<>();
     private final Map<String, Vertex> nameToVertex = new HashMap<>();
     // Transient field:
@@ -96,6 +96,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public Vertex newVertex(
             @Nonnull String name, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        checkLocked();
         return addVertex(new Vertex(name, simpleSupplier));
     }
 
@@ -114,6 +115,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public Vertex newUniqueVertex(
             @Nonnull String namePrefix, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        checkLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), simpleSupplier));
     }
 
@@ -127,6 +129,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
+        checkLocked();
         return addVertex(new Vertex(name, processorSupplier));
     }
 
@@ -143,6 +146,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorSupplier processorSupplier) {
+        checkLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), processorSupplier));
     }
 
@@ -157,6 +161,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        checkLocked();
         return addVertex(new Vertex(name, metaSupplier));
     }
 
@@ -173,6 +178,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        checkLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), metaSupplier));
     }
 
@@ -181,6 +187,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public DAG vertex(@Nonnull Vertex vertex) {
+        checkLocked();
         addVertex(vertex);
         return this;
     }
@@ -197,6 +204,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public DAG edge(@Nonnull Edge edge) {
+        checkLocked();
         if (edge.getDestination() == null) {
             throw new IllegalArgumentException("Edge has no destination");
         }
@@ -584,5 +592,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Override
     public int getClassId() {
         return JetDataSerializerHook.DAG;
+    }
+
+    void checkLocked() {
+        assert !locked;
+    }
+
+    public void lock() {
+        locked = true;
+        verticesByIdentity.forEach(Vertex::lock);
     }
 }
