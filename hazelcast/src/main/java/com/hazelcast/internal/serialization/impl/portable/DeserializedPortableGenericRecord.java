@@ -36,6 +36,9 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Set;
 
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
 public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     private final ClassDefinition classDefinition;

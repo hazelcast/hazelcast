@@ -28,6 +28,8 @@ import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOpe
 
 /**
  * Implementation of GenericRecord interface to give common equals and hashcode implementation
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
 public abstract class AbstractGenericRecord implements InternalGenericRecord {
 

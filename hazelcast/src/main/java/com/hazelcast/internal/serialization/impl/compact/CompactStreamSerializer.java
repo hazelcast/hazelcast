@@ -233,13 +233,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     private GenericRecord readGenericRecord(BufferObjectDataInput input, Schema schema, boolean schemaIncludedInBinary) {
-        DefaultCompactReader reader = new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+        CompactInternalGenericRecord record =
+                new CompactInternalGenericRecord(this, input, schema, null, schemaIncludedInBinary);
         Collection<FieldDescriptor> fields = schema.getFields();
         DeserializedSchemaBoundGenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
             FieldKind fieldKind = fieldDescriptor.getKind();
-            builder.write(fieldName, reader.readAny(fieldName), fieldKind);
+            builder.write(fieldName, record.readAny(fieldName), fieldKind);
         }
         return builder.build();
     }
@@ -253,7 +254,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput in) throws IOException {
         Schema schema = getOrReadSchema(in, false);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        return new DefaultCompactReader(this, input, schema, null, false);
+        return new CompactInternalGenericRecord(this, input, schema, null, false);
     }
 
     //Should be deleted with removing Beta tags

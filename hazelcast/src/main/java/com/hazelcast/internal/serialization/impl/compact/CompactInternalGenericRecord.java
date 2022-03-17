@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -85,6 +86,8 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  * objects as {@link InternalGenericRecord}s. This class is not instantiated
  * directly, but its subclass {@link DefaultCompactReader} is used in the
  * query system.
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
@@ -153,13 +156,17 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public GenericRecordBuilder newBuilder() {
-        throw new UnsupportedOperationException();
+        return new DeserializedSchemaBoundGenericRecordBuilder(schema);
     }
 
     @Override
     @Nonnull
     public GenericRecordBuilder cloneWithBuilder() {
-        throw new UnsupportedOperationException();
+        TreeMap<String, Object> objects = new TreeMap<>();
+        for (String fieldName : getFieldNames()) {
+            objects.put(fieldName, readAny(fieldName));
+        }
+        return new DeserializedGenericRecordCloner(schema, objects);
     }
 
     @Override

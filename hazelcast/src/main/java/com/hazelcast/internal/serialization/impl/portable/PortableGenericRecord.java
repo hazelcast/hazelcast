@@ -16,12 +16,16 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
 public abstract class PortableGenericRecord extends AbstractGenericRecord {
 
     /**

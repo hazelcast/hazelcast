@@ -57,6 +57,9 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
 public class PortableInternalGenericRecord extends PortableGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;

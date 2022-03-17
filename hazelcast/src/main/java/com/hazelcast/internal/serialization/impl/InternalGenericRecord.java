@@ -16,8 +16,17 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
+import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.DeserializedPortableGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
+import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.compact.CompactReader;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,6 +49,19 @@ import java.time.OffsetDateTime;
  * read*FromArray methods will return `null`
  * 1. if the array is null or empty
  * 2. there is no data at given index. In other words, the index is bigger than the length of the array
+ * <p>
+ * <p>
+ * GenericRecord inheritance hierarchy:
+ * GenericRecord
+ * - {@link InternalGenericRecord}                -> Interface for Query Related Methods
+ * -- {@link AbstractGenericRecord}               -> common methods. toString getAny equals hashCode
+ * --- {@link CompactGenericRecord}               -> Abstract class implementing getSchema toString for Compact
+ * ---- {@link CompactInternalGenericRecord}      -> concrete class used in query {@link GenericRecordQueryReader}
+ * ----- {@link DefaultCompactReader}             -> Adaptor to make CompactInternalGenericRecord usable as {@link CompactReader}
+ * ---- {@link DeserializedGenericRecord}         -> concrete class passed to the user
+ * --- {@link PortableGenericRecord}              -> Abstract class implementing getClassDefinition toString for Portable
+ * ---- {@link DeserializedPortableGenericRecord} -> concrete class used in query {@link GenericRecordQueryReader}
+ * ---- {@link PortableInternalGenericRecord}     -> concrete class passed to the user
  */
 public interface InternalGenericRecord extends GenericRecord {
 
