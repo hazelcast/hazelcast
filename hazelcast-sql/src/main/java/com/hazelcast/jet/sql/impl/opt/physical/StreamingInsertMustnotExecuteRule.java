@@ -26,7 +26,7 @@ import org.apache.calcite.rel.rules.TransformationRule;
 import org.immutables.value.Value;
 
 /**
- * A rule that replaces any streaming SINK INTO attempt with {@link MustnotExecuteRel}.
+ * A rule that replaces any streaming SINK INTO without Jet job creation with {@link MustnotExecuteRel}.
  */
 @Value.Enclosing
 public final class StreamingInsertMustnotExecuteRule extends RelRule<Config> implements TransformationRule {
