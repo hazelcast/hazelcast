@@ -269,7 +269,7 @@ public class PlanExecutor {
             fieldTypes.add(toHazelcastType(field.getType()));
         }
 
-        View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
+        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes);
 
         if (plan.isReplace()) {
             View existingView = catalog.getView(plan.viewName());

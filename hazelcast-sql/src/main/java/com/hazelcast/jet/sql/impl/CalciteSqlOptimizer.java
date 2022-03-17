@@ -394,7 +394,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 context,
                 sqlNode.name(),
                 sql,
-                sqlNode.isStream(),
                 replace,
                 ifNotExists,
                 planExecutor

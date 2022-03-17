@@ -24,7 +24,6 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -239,17 +238,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        // Note: it's an only usage of containsStreamingSource() left.
-        // Since stream to stream join supposed to be supported in 5.2,
-        // I'd like to move all validation logic to RelNode level completely.
-
-//        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
-//        boolean rightInputIsStream = containsStreamingSource(join.getRight());
-//
-//        if (leftInputIsStream && rightInputIsStream) {
-//            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
-//        }
-
         if (join.getJoinType() == FULL) {
             throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
         }
@@ -347,51 +335,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private Table extractTable(SqlIdentifier identifier) {
         SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
         return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
-    }
-
-    /**
-     * Goes over all the referenced tables in the given {@link SqlNode}
-     * and returns true if any of them uses a streaming connector.
-     */
-    public boolean containsStreamingSource(SqlNode node) {
-        class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
-            boolean found;
-
-            @Override
-            public Void visit(SqlIdentifier id) {
-                SqlValidatorTable table = getCatalogReader().getTable(id.names);
-                // not every identifier is a table
-                if (table != null) {
-                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-                    if (hazelcastTable.getTarget() instanceof ViewTable) {
-                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
-                        return null;
-                    }
-                    SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
-                    if (connector.isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(id);
-            }
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastTableSourceFunction) {
-                    if (((HazelcastTableSourceFunction) operator).isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(call);
-            }
-        }
-
-        FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
-        node.accept(visitor);
-        return visitor.found;
     }
 
     @Override

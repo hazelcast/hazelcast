@@ -31,17 +31,15 @@ public class View implements IdentifiedDataSerializable {
 
     private String name;
     private String query;
-    private boolean isStream;
     private List<String> viewColumnNames;
     private List<QueryDataType> viewColumnTypes;
 
     public View() {
     }
 
-    public View(String name, String query, boolean isStream, List<String> columnNames, List<QueryDataType> columnTypes) {
+    public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes) {
         this.name = name;
         this.query = query;
-        this.isStream = isStream;
         this.viewColumnNames = columnNames;
         this.viewColumnTypes = columnTypes;
     }
@@ -52,10 +50,6 @@ public class View implements IdentifiedDataSerializable {
 
     public String query() {
         return query;
-    }
-
-    public boolean isStream() {
-        return isStream;
     }
 
     public List<String> viewColumnNames() {
@@ -70,7 +64,6 @@ public class View implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(query);
-        out.writeBoolean(isStream);
         SerializationUtil.writeList(viewColumnNames, out);
         SerializationUtil.writeList(viewColumnTypes, out);
     }
@@ -79,7 +72,6 @@ public class View implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         query = in.readString();
-        isStream = in.readBoolean();
         viewColumnNames = SerializationUtil.readList(in);
         viewColumnTypes = SerializationUtil.readList(in);
     }
@@ -105,13 +97,12 @@ public class View implements IdentifiedDataSerializable {
         View view = (View) o;
         return Objects.equals(name, view.name)
                 && Objects.equals(query, view.query)
-                && isStream == view.isStream
                 && Objects.equals(viewColumnNames, view.viewColumnNames)
                 && Objects.equals(viewColumnTypes, view.viewColumnTypes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, query, isStream, viewColumnNames, viewColumnTypes);
+        return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
     }
 }
