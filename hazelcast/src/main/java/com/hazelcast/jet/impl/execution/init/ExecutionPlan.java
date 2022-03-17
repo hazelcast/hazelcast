@@ -185,11 +185,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
             memberConnections.put(destAddr, conn);
         }
-        nodeLevelDag = new NodeLevelDag(vertices, partitionAssignment.keySet());
+        nodeLevelDag = new NodeLevelDag(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
         createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
         for (VertexDef vertex : vertices) {
-            if (!nodeLevelDag.vertexExistsOnNode(vertex, nodeEngine.getThisAddress())) {
+            if (!nodeLevelDag.vertexExists(vertex)) {
                 continue;
             }
 
@@ -324,11 +324,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<NodeLevelDag.Connection> connections = nodeLevelDag.getAllConnectionsForEdge(outboundEdge);
+        Set<Address> edgeTargets = nodeLevelDag.getEdgeTargets(outboundEdge);
 
         // create local connections
-        for (NodeLevelDag.Connection connection : connections) {
-            if (connection.isFrom(nodeEngine.getThisAddress()) && connection.isFrom(nodeEngine.getThisAddress())) {
+        for (Address targetAddress : edgeTargets) {
+            if (targetAddress.equals(nodeEngine.getThisAddress())) {
                 localCollectorsEdges.add(outboundEdge.edgeId());
                 populateLocalConveyorMap(outboundEdge);
             }
@@ -345,18 +345,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<NodeLevelDag.Connection> connections = nodeLevelDag.getAllConnectionsForEdge(inboundEdge);
+        Set<Address> edgeSources = nodeLevelDag.getEdgeSources(inboundEdge);
 
-        for (NodeLevelDag.Connection connection : connections) {
-            // Inbound connection to other member than current, no need to create any object
-            if (!connection.isTo(nodeEngine.getThisAddress())) {
-                continue;
-            }
-
+        for (Address sourceAddress : edgeSources) {
             // Local conveyor is always needed either between two processor tasklets, or between processor and receiver tasklets.
             populateLocalConveyorMap(inboundEdge);
 
-            if (connection.isFrom(nodeEngine.getThisAddress())) {
+            if (sourceAddress.equals(nodeEngine.getThisAddress())) {
                 // Local connection on current member, we populate {@link #localCollectorsEdges}
                 localCollectorsEdges.add(inboundEdge.edgeId());
             } else {
@@ -549,8 +544,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int upstreamParallelism = edge.sourceVertex().localParallelism();
         int downstreamParallelism = edge.destVertex().localParallelism();
         int queueSize = edge.getConfig().getQueueSize();
-        int numRemoteMembers = nodeLevelDag.numberOfConnections(edge, nodeEngine.getThisAddress(),
-                ptionArrgmt.getRemotePartitionAssignment().keySet());
+        int numRemoteMembers = nodeLevelDag.numRemoteSources(edge);
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             int queueCount = upstreamParallelism / downstreamParallelism;
@@ -653,8 +647,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
                 : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
-        for (Address destAddr : remoteMembers.get()) {
-            if (!nodeLevelDag.connectionExistsForEdge(edge, nodeEngine.getThisAddress(), destAddr)) {
+        for (Address destAddr : nodeLevelDag.getEdgeTargets(edge)) {
+            if (destAddr.equals(nodeEngine.getThisAddress())) {
                 continue;
             }
 
@@ -746,7 +740,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     //create a receiver per address
                     int offset = 0;
                     for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
-                        if (!nodeLevelDag.connectionExistsForEdge(edge, addr, nodeEngine.getThisAddress())) {
+                        if (!nodeLevelDag.getEdgeSources(edge).contains(addr)) {
                             continue;
                         }
 
@@ -778,7 +772,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                              String jobPrefix, int globalProcessorIdx) {
         final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
-            if (!nodeLevelDag.edgeExistsForConnectionTo(inEdge, nodeEngine.getThisAddress())) {
+            if (nodeLevelDag.getEdgeSources(inEdge).isEmpty()) {
                 continue;
             }
             // each tasklet has one input conveyor per edge

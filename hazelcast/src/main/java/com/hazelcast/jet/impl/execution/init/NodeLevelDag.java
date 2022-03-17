@@ -17,13 +17,16 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.jet.core.Edge;
 
+import java.util.ArrayDeque;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -53,16 +56,23 @@ import java.util.Set;
  * We don't use Java streams here for a better performance.
  */
 class NodeLevelDag {
-    private final Map<Integer, Set<Address>> vertexOnAddress = new HashMap<>();
-    private final Map<String, Set<Connection>> edgesToConnections = new HashMap<>();
 
-    NodeLevelDag(List<VertexDef> vertices, Set<Address> nodesAddresses) {
-        Queue<VertexDef> queue = new LinkedList<>();
-        Set<Integer> visited = new HashSet<>();
+    private final Address localAddress;
+    private final BitSet localVertices;
+    private final Map<String, Set<Address>> targets = new HashMap<>();
+    private final Map<String, Set<Address>> sources = new HashMap<>();
+
+    NodeLevelDag(List<VertexDef> vertices, Set<Address> allAddresses, Address localAddress) {
+        this.localAddress = localAddress;
+        Int2ObjectHashMap<Set<Address>> vertexOnAddress = new Int2ObjectHashMap<>();
+        Map<String, Set<Connection>> edgesToConnections = new HashMap<>();
+
+        Queue<VertexDef> queue = new ArrayDeque<>(vertices.size());
+        BitSet visited = new BitSet(vertices.size());
 
         for (VertexDef vertex : vertices) {
             if (vertex.inboundEdges().isEmpty()) {
-                vertexOnAddress.put(vertex.vertexId(), nodesAddresses);
+                vertexOnAddress.put(vertex.vertexId(), allAddresses);
                 queue.add(vertex);
             } else {
                 vertexOnAddress.put(vertex.vertexId(), new HashSet<>());
@@ -71,20 +81,50 @@ class NodeLevelDag {
 
         while (!queue.isEmpty()) {
             VertexDef current = queue.poll();
-            visited.add(current.vertexId());
+            visited.set(current.vertexId());
 
             Set<Address> currentVertexAddresses = vertexOnAddress.get(current.vertexId());
             for (EdgeDef outboundEdge : current.outboundEdges()) {
-                traverse(outboundEdge, currentVertexAddresses, nodesAddresses);
+                traverse(outboundEdge, currentVertexAddresses, allAddresses, vertexOnAddress, edgesToConnections);
                 if (allSourcesVisited(outboundEdge.destVertex(), visited) &&
-                        !visited.contains(outboundEdge.destVertex().vertexId())) {
+                        !visited.get(outboundEdge.destVertex().vertexId())) {
                     queue.add(outboundEdge.destVertex());
+                }
+            }
+        }
+
+        localVertices = new BitSet(vertices.size());
+        for (Entry<Integer, Set<Address>> entry : vertexOnAddress.entrySet()) {
+            if (entry.getValue().contains(localAddress)) {
+                localVertices.set(entry.getKey());
+            }
+        }
+
+        for (String edgeId : edgesToConnections.keySet()) {
+            sources.put(edgeId, new HashSet<>());
+            targets.put(edgeId, new HashSet<>());
+        }
+
+
+        for (Entry<String, Set<Connection>> entry : edgesToConnections.entrySet()) {
+            for (Connection connection : entry.getValue()) {
+                if (connection.isTo(localAddress)) {
+                    sources.computeIfAbsent(entry.getKey(), x -> new HashSet<>()).add(connection.from);
+                }
+                if (connection.isFrom(localAddress)) {
+                    targets.computeIfAbsent(entry.getKey(), x -> new HashSet<>()).add(connection.to);
                 }
             }
         }
     }
 
-    private void traverse(EdgeDef outboundEdge, Set<Address> currentVertexAddresses, Set<Address> allAddresses) {
+    private void traverse(
+            EdgeDef outboundEdge,
+            Set<Address> currentVertexAddresses,
+            Set<Address> allAddresses,
+            Int2ObjectHashMap<Set<Address>> vertexOnAddress,
+            Map<String, Set<Connection>> edgesToConnections
+    ) {
         Set<Connection> connections = edgesToConnections.computeIfAbsent(outboundEdge.edgeId(), edgeDef -> new HashSet<>());
         if (outboundEdge.isLocal()) {
             for (Address address : currentVertexAddresses) {
@@ -112,53 +152,33 @@ class NodeLevelDag {
         }
     }
 
-    private boolean allSourcesVisited(VertexDef current, Set<Integer> visited) {
+    private boolean allSourcesVisited(VertexDef current, BitSet visited) {
         for (EdgeDef inboundEdge : current.inboundEdges()) {
-            if (!visited.contains(inboundEdge.sourceVertex().vertexId())) {
+            if (!visited.get(inboundEdge.sourceVertex().vertexId())) {
                 return false;
             }
         }
         return true;
     }
 
-    Set<Connection> getAllConnectionsForEdge(EdgeDef edge) {
-        return edgesToConnections.get(edge.edgeId());
+    Set<Address> getEdgeTargets(EdgeDef edge) {
+        return targets.get(edge.edgeId());
     }
 
-    /**
-     * Returns, whether connection between `from` and `to` exists for edge `edge`.
-     */
-    boolean connectionExistsForEdge(EdgeDef edge, Address from, Address to) {
-        Connection connection = new Connection(from, to);
-        return edgesToConnections.get(edge.edgeId()).contains(connection);
+    Set<Address> getEdgeSources(EdgeDef edge) {
+        return sources.get(edge.edgeId());
     }
 
-    boolean edgeExistsForConnectionTo(EdgeDef edge, Address to) {
-        for (Connection connection : edgesToConnections.get(edge.edgeId())) {
-            if (connection.isTo(to)) {
-                return true;
-            }
-        }
-        return false;
+    boolean vertexExists(VertexDef vertex) {
+        return localVertices.get(vertex.vertexId());
     }
 
-    boolean vertexExistsOnNode(VertexDef vertex, Address nodeAddress) {
-        return vertexOnAddress.get(vertex.vertexId()).contains(nodeAddress);
+    int numRemoteSources(EdgeDef edge) {
+        Set<Address> edgeSources = sources.get(edge.edgeId());
+        return edgeSources.contains(localAddress) ? edgeSources.size() - 1 : edgeSources.size();
     }
 
-    int numberOfConnections(EdgeDef edge, Address toAddress, Set<Address> fromAddresses) {
-        Set<Connection> connections = edgesToConnections.get(edge.edgeId());
-
-        int i = 0;
-        for (Connection connection : connections) {
-            if (toAddress.equals(connection.to) && fromAddresses.contains(connection.from)) {
-                i++;
-            }
-        }
-        return i;
-    }
-
-    static class Connection {
+    private static class Connection {
         final Address from;
         final Address to;
         private final int hashCode;

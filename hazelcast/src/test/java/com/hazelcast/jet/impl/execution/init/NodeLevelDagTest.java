@@ -34,6 +34,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NodeLevelDagTest extends TestCase {
@@ -67,17 +70,13 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
+        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
 
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node2Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node2Address));
+        assertTrue(traverser.vertexExists(vertex_1));
+        assertTrue(traverser.vertexExists(vertex_2));
 
-        Set<NodeLevelDag.Connection> connections_1_2 = traverser.getAllConnectionsForEdge(edge_1_2);
-        assertEquals(2, connections_1_2.size());
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node1Address, node1Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node2Address, node2Address));
+        assertEquals(singleton(node1Address), traverser.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), traverser.getEdgeTargets(edge_1_2));
     }
 
     @Test
@@ -87,11 +86,8 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
-        assertEquals(1, traverser.numberOfConnections(edge_1_2, node1Address, allAddresses));
-        assertEquals(1, traverser.numberOfConnections(edge_1_2, node2Address, allAddresses));
-        assertEquals(0, traverser.numberOfConnections(edge_1_2, node1Address, Sets.newSet(node2Address)));
-        assertEquals(0, traverser.numberOfConnections(edge_1_2, node2Address, Sets.newSet(node1Address)));
+        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
+        assertEquals(0, traverser.numRemoteSources(edge_1_2));
     }
 
     @Test
@@ -101,9 +97,8 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
-        assertTrue(traverser.edgeExistsForConnectionTo(edge_1_2, node1Address));
-        assertTrue(traverser.edgeExistsForConnectionTo(edge_1_2, node2Address));
+        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses, node1Address);
+        assertTrue(traverser.getEdgeSources(edge_1_2).contains(node1Address));
     }
 
     /*
@@ -122,17 +117,18 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, node1Address);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
+        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
+        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node2Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node1Address));
-        assertFalse(traverser.vertexExistsOnNode(vertex_2, node2Address));
+        assertTrue(traverser1.vertexExists(vertex_1));
+        assertTrue(traverser2.vertexExists(vertex_1));
+        assertTrue(traverser1.vertexExists(vertex_2));
+        assertFalse(traverser2.vertexExists(vertex_2));
 
-        Set<NodeLevelDag.Connection> connections_1_2 = traverser.getAllConnectionsForEdge(edge_1_2);
-        assertEquals(2, connections_1_2.size());
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node1Address, node1Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node2Address, node1Address));
+        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_1_2));
+        assertEquals(emptySet(), traverser2.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), traverser2.getEdgeTargets(edge_1_2));
     }
 
     /*
@@ -151,19 +147,18 @@ public class NodeLevelDagTest extends TestCase {
         List<VertexDef> vertices = Arrays.asList(vertex_1, vertex_2);
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, Edge.DISTRIBUTE_TO_ALL);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
+        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
+        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node2Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node2Address));
+        assertTrue(traverser1.vertexExists(vertex_1));
+        assertTrue(traverser1.vertexExists(vertex_2));
+        assertTrue(traverser2.vertexExists(vertex_1));
+        assertTrue(traverser2.vertexExists(vertex_2));
 
-        Set<NodeLevelDag.Connection> connections_1_2 = traverser.getAllConnectionsForEdge(edge_1_2);
-        assertEquals(4, connections_1_2.size());
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node1Address, node1Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node2Address, node1Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node1Address, node2Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node2Address, node2Address));
+        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
+        assertEquals(allAddresses, traverser1.getEdgeTargets(edge_1_2));
+        assertEquals(allAddresses, traverser2.getEdgeSources(edge_1_2));
+        assertEquals(allAddresses, traverser2.getEdgeTargets(edge_1_2));
     }
 
     /*
@@ -184,23 +179,25 @@ public class NodeLevelDagTest extends TestCase {
         EdgeDef edge_1_2 = createEdge(vertex_1, vertex_2, node1Address);
         EdgeDef edge_2_3 = createEdge(vertex_2, vertex_3, null);
 
-        NodeLevelDag traverser = new NodeLevelDag(vertices, allAddresses);
+        NodeLevelDag traverser1 = new NodeLevelDag(vertices, allAddresses, node1Address);
+        NodeLevelDag traverser2 = new NodeLevelDag(vertices, allAddresses, node2Address);
 
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node1Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_1, node2Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_2, node1Address));
-        assertFalse(traverser.vertexExistsOnNode(vertex_2, node2Address));
-        assertTrue(traverser.vertexExistsOnNode(vertex_3, node1Address));
-        assertFalse(traverser.vertexExistsOnNode(vertex_3, node2Address));
+        assertTrue(traverser1.vertexExists(vertex_1));
+        assertTrue(traverser2.vertexExists(vertex_1));
+        assertTrue(traverser1.vertexExists(vertex_2));
+        assertFalse(traverser2.vertexExists(vertex_2));
+        assertTrue(traverser1.vertexExists(vertex_3));
+        assertFalse(traverser2.vertexExists(vertex_3));
 
-        Set<NodeLevelDag.Connection> connections_1_2 = traverser.getAllConnectionsForEdge(edge_1_2);
-        assertEquals(2, connections_1_2.size());
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node1Address, node1Address));
-        assertTrue(traverser.connectionExistsForEdge(edge_1_2, node2Address, node1Address));
+        assertEquals(allAddresses, traverser1.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_1_2));
+        assertEquals(emptySet(), traverser2.getEdgeSources(edge_1_2));
+        assertEquals(singleton(node1Address), traverser2.getEdgeTargets(edge_1_2));
 
-        Set<NodeLevelDag.Connection> connections_2_3 = traverser.getAllConnectionsForEdge(edge_2_3);
-        assertEquals(1, connections_2_3.size());
-        assertTrue(traverser.connectionExistsForEdge(edge_2_3, node1Address, node1Address));
+        assertEquals(singleton(node1Address), traverser1.getEdgeSources(edge_2_3));
+        assertEquals(singleton(node1Address), traverser1.getEdgeTargets(edge_2_3));
+        assertEquals(emptySet(), traverser2.getEdgeSources(edge_2_3));
+        assertEquals(emptySet(), traverser2.getEdgeTargets(edge_2_3));
     }
 
     private EdgeDef createEdge(VertexDef from, VertexDef to, Address distributedTo) {
