@@ -93,6 +93,13 @@ class DagNodeUtil {
         }
 
         localVertices = new BitSet(vertices.size());
+        populateFields(vertexOnAddress, edgesToConnections);
+    }
+
+    private void populateFields(
+            Int2ObjectHashMap<Set<Address>> vertexOnAddress,
+            Map<String, Set<Connection>> edgesToConnections
+    ) {
         for (Entry<Integer, Set<Address>> entry : vertexOnAddress.entrySet()) {
             if (entry.getValue().contains(localAddress)) {
                 localVertices.set(entry.getKey());
