@@ -463,7 +463,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     private void processOther(SqlCall call) {
-        // Before the validation, som function calls are SqlUnresolvedFunction, some have the calcite
+        // Before the validation, some function calls are SqlUnresolvedFunction, some have the calcite
         // representation, such as SqlJsonValueFunction instead of HazelcastJsonValueFunction etc.
         // They will be validated after validation, ignore it in the pre-validation check.
         if (!isValidated) {
