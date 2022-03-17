@@ -326,22 +326,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ) {
         Set<NodeLevelDag.Connection> connections = nodeLevelDag.getAllConnectionsForEdge(outboundEdge);
 
+        // create local connections
         for (NodeLevelDag.Connection connection : connections) {
-            // Outbound connection from other member than current, no need to create any object.
-            if (!connection.isFrom(nodeEngine.getThisAddress())) {
-                continue;
-            }
-
-            // Local connection on current member, we need local conveyor.
-            if (connection.isTo(nodeEngine.getThisAddress())) {
+            if (connection.isFrom(nodeEngine.getThisAddress()) && connection.isFrom(nodeEngine.getThisAddress())) {
                 localCollectorsEdges.add(outboundEdge.edgeId());
                 populateLocalConveyorMap(outboundEdge);
             }
         }
 
-        // Remote connection, we need a sender tasklet to send data to a remote member.
+        // create remote connections, we need a sender tasklet to send data to a remote member.
         if (!outboundEdge.isLocal()) {
-            createSenderTasklet(outboundEdge, jobPrefix, jobSerializationService);
+            createSenderTasklets(outboundEdge, jobPrefix, jobSerializationService);
         }
     }
 
@@ -640,7 +635,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * each with a single conveyor with a number of producer queues feeding it.
      * Populates the {@link #senderMap} and {@link #tasklets} and {@link #edgeSenderConveyorMap} fields.
      */
-    private void createSenderTasklet(
+    private void createSenderTasklets(
             EdgeDef edge,
             String jobPrefix,
             InternalSerializationService jobSerializationService
@@ -659,7 +654,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
         for (Address destAddr : remoteMembers.get()) {
-            if (!nodeLevelDag.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
+            if (!nodeLevelDag.connectionExistsForEdge(edge, nodeEngine.getThisAddress(), destAddr)) {
                 continue;
             }
 
@@ -751,7 +746,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     //create a receiver per address
                     int offset = 0;
                     for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
-                        if (!nodeLevelDag.edgeExistsForConnection(edge, addr, nodeEngine.getThisAddress())) {
+                        if (!nodeLevelDag.connectionExistsForEdge(edge, addr, nodeEngine.getThisAddress())) {
                             continue;
                         }
 

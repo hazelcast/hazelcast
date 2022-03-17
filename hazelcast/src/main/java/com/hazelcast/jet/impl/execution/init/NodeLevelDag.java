@@ -125,7 +125,10 @@ class NodeLevelDag {
         return edgesToConnections.get(edge.edgeId());
     }
 
-    boolean edgeExistsForConnection(EdgeDef edge, Address from, Address to) {
+    /**
+     * Returns, whether connection between `from` and `to` exists for edge `edge`.
+     */
+    boolean connectionExistsForEdge(EdgeDef edge, Address from, Address to) {
         Connection connection = new Connection(from, to);
         return edgesToConnections.get(edge.edgeId()).contains(connection);
     }
