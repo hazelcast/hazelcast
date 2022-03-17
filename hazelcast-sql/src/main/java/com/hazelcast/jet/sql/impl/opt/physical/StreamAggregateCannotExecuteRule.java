@@ -29,7 +29,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 /**
  * A rule that replaces any streaming aggregation with {@link ShouldnotExecuteRel}.
  * This is to handle cases when the aggregation isn't implemented by replacing
- * it with {@link ShouldnotExecuteRel}, which has infinity cost. If no other rule
+ * it with {@link ShouldnotExecuteRel}, which has huge cost. If no other rule
  * replaces the aggregation with something that can be executed, the error will
  * be thrown to the user.
  * <p>
