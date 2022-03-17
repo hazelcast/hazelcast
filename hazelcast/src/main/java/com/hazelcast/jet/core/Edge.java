@@ -67,6 +67,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @since Jet 3.0
  */
+@SuppressWarnings("checkstyle:DeclarationOrder")
 public class Edge implements IdentifiedDataSerializable {
     private boolean locked;
 

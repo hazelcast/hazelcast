@@ -54,6 +54,7 @@ import static java.lang.Math.min;
  *
  * @since Jet 3.0
  */
+@SuppressWarnings("checkstyle:DeclarationOrder")
 public class Vertex implements IdentifiedDataSerializable {
     private boolean locked;
 
