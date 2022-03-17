@@ -5,4 +5,4 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 * Fixed an issue where the partition migrations were failing when there is a single map
 in the cluster with Merkle trees enabled. [#20929]
-* Fixed a potential deadlock during partition migrations deadlock and inability to make progress while performing graceful shutdown with persistence enabled. [#20813]
+* Fixed a potential deadlock during partition migrations and inability to make progress while performing graceful shutdown with persistence enabled. [#20813]
