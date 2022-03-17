@@ -81,15 +81,15 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         // when force sync enabled, we sum tot sync and asyncs
-        assertEquals(0, backupHandler.syncBackups(0, 0, FORCE_SYNC_ENABLED));
-        assertEquals(1, backupHandler.syncBackups(1, 0, FORCE_SYNC_ENABLED));
-        assertEquals(0, backupHandler.syncBackups(0, 0, FORCE_SYNC_ENABLED));
-        assertEquals(3, backupHandler.syncBackups(1, 2, FORCE_SYNC_ENABLED));
+        assertEquals(0, backupHandler.backups(0, 0, FORCE_SYNC_ENABLED));
+        assertEquals(1, backupHandler.backups(1, 0, FORCE_SYNC_ENABLED));
+        assertEquals(0, backupHandler.backups(0, 0, FORCE_SYNC_ENABLED));
+        assertEquals(3, backupHandler.backups(1, 2, FORCE_SYNC_ENABLED));
 
         // checking to see what happens when we are at or above the maximum number of backups
-        assertEquals(BACKUPS, backupHandler.syncBackups(BACKUPS, 0, FORCE_SYNC_ENABLED));
-        assertEquals(BACKUPS, backupHandler.syncBackups(BACKUPS + 1, 0, FORCE_SYNC_ENABLED));
-        assertEquals(BACKUPS, backupHandler.syncBackups(BACKUPS, 1, FORCE_SYNC_ENABLED));
+        assertEquals(BACKUPS, backupHandler.backups(BACKUPS, 0, FORCE_SYNC_ENABLED));
+        assertEquals(BACKUPS, backupHandler.backups(BACKUPS + 1, 0, FORCE_SYNC_ENABLED));
+        assertEquals(BACKUPS, backupHandler.backups(BACKUPS, 1, FORCE_SYNC_ENABLED));
     }
 
     @Test
@@ -97,14 +97,14 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         // when force-sync disabled, we only look at the sync backups
-        assertEquals(0, backupHandler.syncBackups(0, 0, FORCE_SYNC_DISABLED));
-        assertEquals(1, backupHandler.syncBackups(1, 0, FORCE_SYNC_DISABLED));
-        assertEquals(0, backupHandler.syncBackups(0, 0, FORCE_SYNC_DISABLED));
-        assertEquals(1, backupHandler.syncBackups(1, 1, FORCE_SYNC_DISABLED));
+        assertEquals(0, backupHandler.backups(0, 0, FORCE_SYNC_DISABLED));
+        assertEquals(1, backupHandler.backups(1, 0, FORCE_SYNC_DISABLED));
+        assertEquals(0, backupHandler.backups(0, 0, FORCE_SYNC_DISABLED));
+        assertEquals(1, backupHandler.backups(1, 1, FORCE_SYNC_DISABLED));
 
         // checking to see what happens when we are at or above the maximum number of backups
-        assertEquals(BACKUPS, backupHandler.syncBackups(BACKUPS, 0, FORCE_SYNC_DISABLED));
-        assertEquals(BACKUPS, backupHandler.syncBackups(BACKUPS + 1, 0, FORCE_SYNC_DISABLED));
+        assertEquals(BACKUPS, backupHandler.backups(BACKUPS, 0, FORCE_SYNC_DISABLED));
+        assertEquals(BACKUPS, backupHandler.backups(BACKUPS + 1, 0, FORCE_SYNC_DISABLED));
     }
 
     // ============================ asyncBackups =================================

@@ -81,7 +81,7 @@ final class OperationBackupHandler {
     }
 
     int sendBackups0(BackupAwareOperation backupAwareOp) {
-        int requestedSyncBackups = requestedSyncBackups(backupAwareOp);
+        int requestedBackups = requestedBackups(backupAwareOp);
         int requestedAsyncBackups = requestedAsyncBackups(backupAwareOp);
         int requestedTotalBackups = requestedTotalBackups(backupAwareOp);
         if (requestedTotalBackups == 0) {
@@ -96,34 +96,34 @@ final class OperationBackupHandler {
 
         boolean syncForced = backpressureRegulator.isSyncForced(backupAwareOp);
 
-        int syncBackups = syncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
-        int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
+        int backups = backups(requestedBackups, requestedAsyncBackups, syncForced);
+        int asyncBackups = asyncBackups(requestedBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
         if (!op.returnsResponse()) {
-            asyncBackups += syncBackups;
-            syncBackups = 0;
+            asyncBackups += backups;
+            backups = 0;
         }
 
-        if (syncBackups + asyncBackups == 0) {
+        if (backups + asyncBackups == 0) {
             return 0;
         }
 
-        return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
+        return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, backups, asyncBackups);
     }
 
-    int syncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
+    int backups(int requestedBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced) {
             // if force sync enabled, then the sum of the backups
-            requestedSyncBackups += requestedAsyncBackups;
+            requestedBackups += requestedAsyncBackups;
         }
 
         InternalPartitionService partitionService = node.getPartitionService();
         int maxBackupCount = partitionService.getMaxAllowedBackupCount();
-        return min(maxBackupCount, requestedSyncBackups);
+        return min(maxBackupCount, requestedBackups);
     }
 
-    int asyncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
+    int asyncBackups(int requestedBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced || requestedAsyncBackups == 0) {
             // if syncForced, then there will never be any async backups (they are forced to become sync)
             // if there are no asyncBackups then we are also done.
@@ -132,10 +132,10 @@ final class OperationBackupHandler {
 
         InternalPartitionService partitionService = node.getPartitionService();
         int maxBackupCount = partitionService.getMaxAllowedBackupCount();
-        return min(maxBackupCount - requestedSyncBackups, requestedAsyncBackups);
+        return min(maxBackupCount - requestedBackups, requestedAsyncBackups);
     }
 
-    private int requestedSyncBackups(BackupAwareOperation op) {
+    private int requestedBackups(BackupAwareOperation op) {
         int backups = op.getBackupCount();
 
         if (backups < 0) {
@@ -182,30 +182,30 @@ final class OperationBackupHandler {
     }
 
     private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                            int syncBackups, int asyncBackups) {
-        int sendSyncBackups;
-        int totalBackups = syncBackups + asyncBackups;
+                            int backups, int asyncBackups) {
+        int backupsSent;
+        int totalBackups = backups + asyncBackups;
 
         InternalPartitionService partitionService = node.getPartitionService();
         InternalPartition partition = partitionService.getPartition(partitionId);
 
         if (totalBackups == 1) {
-            sendSyncBackups = sendSingleBackup(backupAwareOp, partition, replicaVersions, syncBackups);
+            backupsSent = sendSingleBackup(backupAwareOp, partition, replicaVersions, backups);
         } else {
-            sendSyncBackups = sendMultipleBackups(backupAwareOp, partition, replicaVersions, syncBackups, totalBackups);
+            backupsSent = sendMultipleBackups(backupAwareOp, partition, replicaVersions, backups, totalBackups);
         }
-        return sendSyncBackups;
+        return backupsSent;
     }
 
     private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                 long[] replicaVersions, int syncBackups) {
+                                 long[] replicaVersions, int backups) {
         // Since there is only one replica, replica index is `1`
-        return sendSingleBackup(backupAwareOp, partition, replicaVersions, syncBackups, 1);
+        return sendSingleBackup(backupAwareOp, partition, replicaVersions, backups, 1);
     }
 
     private int sendMultipleBackups(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                    long[] replicaVersions, int syncBackups, int totalBackups) {
-        int sendSyncBackups = 0;
+                                    long[] replicaVersions, int backups, int totalBackups) {
+        int backupsSent = 0;
         Operation backupOp = getBackupOperation(backupAwareOp);
         if (!(backupOp instanceof TargetAware)) {
             // optimize common case: serialize operation once and send to multiple targets
@@ -222,27 +222,27 @@ final class OperationBackupHandler {
                     continue;
                 }
 
-                boolean isSyncBackup = replicaIndex <= syncBackups;
+                boolean needsAck = replicaIndex <= backups;
 
-                Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
+                Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, needsAck);
                 outboundOperationHandler.send(backup, target.address());
 
-                if (isSyncBackup) {
-                    sendSyncBackups++;
+                if (needsAck) {
+                    backupsSent++;
                 }
             }
         } else {
             for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
-                int syncBackupSent = sendSingleBackup(backupAwareOp, partition, replicaVersions,
-                        syncBackups, replicaIndex);
-                sendSyncBackups += syncBackupSent;
+                int sent = sendSingleBackup(backupAwareOp, partition, replicaVersions,
+                        backups, replicaIndex);
+                backupsSent += sent;
             }
         }
-        return sendSyncBackups;
+        return backupsSent;
     }
 
     private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                 long[] replicaVersions, int syncBackups, int replica) {
+                                 long[] replicaVersions, int backups, int replica) {
         Operation backupOp = getBackupOperation(backupAwareOp);
         PartitionReplica target = partition.getReplica(replica);
         if (target != null) {
@@ -262,12 +262,12 @@ final class OperationBackupHandler {
                 ((TargetAware) backupOp).setTarget(target.address());
             }
 
-            boolean isSyncBackup = syncBackups == 1;
+            boolean needsAck = backups == 1;
 
-            Backup backup = newBackup(backupAwareOp, backupOp, replicaVersions, 1, isSyncBackup);
+            Backup backup = newBackup(backupAwareOp, backupOp, replicaVersions, 1, needsAck);
             outboundOperationHandler.send(backup, target.address());
 
-            if (isSyncBackup) {
+            if (needsAck) {
                 return 1;
             }
         }
@@ -322,13 +322,13 @@ final class OperationBackupHandler {
     }
 
     private static Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
-                                    int replicaIndex, boolean respondBack) {
+                                    int replicaIndex, boolean needsAck) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {
-            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
+            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, needsAck, op.getClientCallId());
         } else if (backupOp instanceof Data) {
-            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
+            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, needsAck, op.getClientCallId());
         } else {
             throw new IllegalArgumentException("Only 'Data' or 'Operation' typed backup operation is supported!");
         }

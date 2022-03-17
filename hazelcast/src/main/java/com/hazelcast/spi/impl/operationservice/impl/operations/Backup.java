@@ -55,7 +55,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     private Address originalCaller;
     private ServiceNamespace namespace;
     private long[] replicaVersions;
-    private boolean sync;
+    private boolean needsAck;
 
     private Operation backupOp;
     private Data backupOpData;
@@ -67,17 +67,18 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     public Backup() {
     }
 
-    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this(backupOp, originalCaller, replicaVersions, sync, -1);
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean needsAck) {
+        this(backupOp, originalCaller, replicaVersions, needsAck, -1);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions,
+                  boolean needsAck, long clientCorrelationId) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
-        this.sync = sync;
+        this.needsAck = needsAck;
         this.replicaVersions = replicaVersions;
-        if (sync && originalCaller == null) {
+        if (needsAck && originalCaller == null) {
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
                     + backupOp);
         }
@@ -85,17 +86,17 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this(backupOpData, originalCaller, replicaVersions, sync, -1);
+    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean needsAck) {
+        this(backupOpData, originalCaller, replicaVersions, needsAck, -1);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
+    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean needsAck, long clientCorrelationId) {
         this.backupOpData = backupOpData;
         this.originalCaller = originalCaller;
-        this.sync = sync;
+        this.needsAck = needsAck;
         this.replicaVersions = replicaVersions;
-        if (sync && originalCaller == null) {
+        if (needsAck && originalCaller == null) {
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
                     + backupOpData);
         }
@@ -180,7 +181,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
     @Override
     public void afterRun() throws Exception {
-        if (validationFailure != null || !sync || getCallId() == 0 || originalCaller == null) {
+        if (validationFailure != null || !needsAck || getCallId() == 0 || originalCaller == null) {
             return;
         }
 
@@ -282,7 +283,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             out.writeLong(replicaVersions[k]);
         }
 
-        out.writeBoolean(sync);
+        out.writeBoolean(needsAck);
         out.writeLong(clientCorrelationId);
     }
 
@@ -305,7 +306,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             replicaVersions[k] = in.readLong();
         }
 
-        sync = in.readBoolean();
+        needsAck = in.readBoolean();
         clientCorrelationId = in.readLong();
     }
 
@@ -317,6 +318,6 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         sb.append(", backupOpData=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
-        sb.append(", sync=").append(sync);
+        sb.append(", sync=").append(needsAck);
     }
 }
