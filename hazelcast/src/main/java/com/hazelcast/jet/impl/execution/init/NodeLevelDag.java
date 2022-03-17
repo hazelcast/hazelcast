@@ -29,7 +29,12 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * The traverser job is to find out which vertices and edges should be physically created from DAG. For example:
+ * A job representation in the form of a DAG, where one vertex is crated for
+ * each job operator and each node. Edges represent the connections between the
+ * operators on each node. The main point is to eliminate unnecessary
+ * connections, especially operators on nodes after a distributed-to-one edge.
+ *
+ * <pre>{@code
  * /--------|--------\
  * | Node 1 | Node 2 |
  * |--------|--------|
@@ -40,15 +45,18 @@ import java.util.Set;
  * |   \/|/          |
  * |   V2            |
  * \_________________/
- * The V2 should not be created on second node. We also do not need to create V1 -> V2 edge from first to second node.
+ * }</pre>
  *
- * I don't use Java streams here for a better performance.
+ * The V2 operator doesn't need to be created on the second node. We also do not
+ * need to create V1 -> V2 edge from the first to the second node.
+ * <p>
+ * We don't use Java streams here for a better performance.
  */
-class NodeAwareDagTraverser {
+class NodeLevelDag {
     private final Map<Integer, Set<Address>> vertexOnAddress = new HashMap<>();
     private final Map<String, Set<Connection>> edgesToConnections = new HashMap<>();
 
-    NodeAwareDagTraverser(List<VertexDef> vertices, Set<Address> nodesAddresses) {
+    NodeLevelDag(List<VertexDef> vertices, Set<Address> nodesAddresses) {
         Queue<VertexDef> queue = new LinkedList<>();
         Set<Integer> visited = new HashSet<>();
 

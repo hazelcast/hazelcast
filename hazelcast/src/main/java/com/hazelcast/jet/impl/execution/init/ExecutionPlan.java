@@ -134,17 +134,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient NodeEngineImpl nodeEngine;
     private transient JobClassLoaderService jobClassLoaderService;
     private transient long executionId;
-    private transient NodeAwareDagTraverser dagTraverser;
-    private transient Set<String> localCollectorsEdges = new HashSet<>();
+    private transient NodeLevelDag nodeLevelDag;
+    private final transient Set<String> localCollectorsEdges = new HashSet<>();
 
     // list of unique remote members
     private final transient Supplier<Set<Address>> remoteMembers = memoize(() -> {
-        Set<Address> remoteAddresses = new HashSet<>();
-        for (Address address : partitionAssignment.keySet()) {
-            if (!address.equals(nodeEngine.getThisAddress())) {
-                remoteAddresses.add(address);
-            }
-        }
+        Set<Address> remoteAddresses = new HashSet<>(partitionAssignment.keySet());
+        remoteAddresses.remove(nodeEngine.getThisAddress());
         return remoteAddresses;
     });
 
@@ -189,11 +185,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
             memberConnections.put(destAddr, conn);
         }
-        dagTraverser = new NodeAwareDagTraverser(vertices, partitionAssignment.keySet());
+        nodeLevelDag = new NodeLevelDag(vertices, partitionAssignment.keySet());
         createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
         for (VertexDef vertex : vertices) {
-            if (!dagTraverser.vertexExistsOnNode(vertex, nodeEngine.getThisAddress())) {
+            if (!nodeLevelDag.vertexExistsOnNode(vertex, nodeEngine.getThisAddress())) {
                 continue;
             }
 
@@ -318,7 +314,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
 
             for (EdgeDef inboundEdge : vertex.inboundEdges()) {
-                createLocalConvoyorsAndReceiverTaskletsForInbound(inboundEdge, jobPrefix, jobSerializationService);
+                createLocalConveyorsAndReceiverTaskletsForInbound(inboundEdge, jobPrefix, jobSerializationService);
             }
         }
     }
@@ -328,9 +324,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(outboundEdge);
+        Set<NodeLevelDag.Connection> connections = nodeLevelDag.getAllConnectionsForEdge(outboundEdge);
 
-        for (NodeAwareDagTraverser.Connection connection : connections) {
+        for (NodeLevelDag.Connection connection : connections) {
             // Outbound connection from other member than current, no need to create any object.
             if (!connection.isFrom(nodeEngine.getThisAddress())) {
                 continue;
@@ -349,14 +345,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
     }
 
-    private void createLocalConvoyorsAndReceiverTaskletsForInbound(
+    private void createLocalConveyorsAndReceiverTaskletsForInbound(
             EdgeDef inboundEdge,
             String jobPrefix,
             InternalSerializationService jobSerializationService
     ) {
-        Set<NodeAwareDagTraverser.Connection> connections = dagTraverser.getAllConnectionsForEdge(inboundEdge);
+        Set<NodeLevelDag.Connection> connections = nodeLevelDag.getAllConnectionsForEdge(inboundEdge);
 
-        for (NodeAwareDagTraverser.Connection connection : connections) {
+        for (NodeLevelDag.Connection connection : connections) {
             // Inbound connection to other member than current, no need to create any object
             if (!connection.isTo(nodeEngine.getThisAddress())) {
                 continue;
@@ -494,10 +490,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return processors;
     }
 
-    private List<OutboundEdgeStream> createOutboundEdgeStreams(
-            VertexDef vertex,
-            int processorIdx
-    ) {
+    private List<OutboundEdgeStream> createOutboundEdgeStreams(VertexDef vertex, int processorIdx) {
         List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
         for (EdgeDef edge : vertex.outboundEdges()) {
             OutboundCollector outboundCollector = createOutboundCollector(edge, processorIdx);
@@ -542,7 +535,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         if (localCollector == null) {
             // If we have no localCollector and exactly one remoteCollector then we want it to be opaque with
             // OutboundCollector.Partitioned, that's why we set fastReturnSingleCollector to false.
-            return compositeCollector(remoteCollectors, edge, totalPartitionCount, false, false);
+            return compositeCollector(remoteCollectors, edge, totalPartitionCount, false, true);
         }
 
         // in a distributed edge, collectors[0] is the composite of local collector, and
@@ -550,7 +543,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         OutboundCollector[] collectors = new OutboundCollector[remoteCollectors.length + 1];
         collectors[0] = localCollector;
         System.arraycopy(remoteCollectors, 0, collectors, 1, collectors.length - 1);
-        return compositeCollector(collectors, edge, totalPartitionCount, false, true);
+        return compositeCollector(collectors, edge, totalPartitionCount, false, false);
     }
 
     private void populateLocalConveyorMap(EdgeDef edge) {
@@ -561,7 +554,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int upstreamParallelism = edge.sourceVertex().localParallelism();
         int downstreamParallelism = edge.destVertex().localParallelism();
         int queueSize = edge.getConfig().getQueueSize();
-        int numRemoteMembers = dagTraverser.numberOfConnections(edge, nodeEngine.getThisAddress(),
+        int numRemoteMembers = nodeLevelDag.numberOfConnections(edge, nodeEngine.getThisAddress(),
                 ptionArrgmt.getRemotePartitionAssignment().keySet());
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
@@ -597,14 +590,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                             .mapToObj(i -> new ConveyorCollector(localConveyors[i],
                                     processorIndex / downstreamParallelism, null))
                             .toArray(OutboundCollector[]::new);
-            return compositeCollector(localCollectors, edge, totalPartitionCount, true, true);
+            return compositeCollector(localCollectors, edge, totalPartitionCount, true, false);
         } else {
             OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
             Arrays.setAll(
                     localCollectors,
                     n -> new ConveyorCollector(localConveyors[n], processorIndex, partitionsPerProcessor[n])
             );
-            return compositeCollector(localCollectors, edge, totalPartitionCount, true, true);
+            return compositeCollector(localCollectors, edge, totalPartitionCount, true, false);
         }
     }
 
@@ -666,7 +659,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
         for (Address destAddr : remoteMembers.get()) {
-            if (!dagTraverser.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
+            if (!nodeLevelDag.edgeExistsForConnection(edge, nodeEngine.getThisAddress(), destAddr)) {
                 continue;
             }
 
@@ -758,7 +751,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     //create a receiver per address
                     int offset = 0;
                     for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
-                        if (!dagTraverser.edgeExistsForConnection(edge, addr, nodeEngine.getThisAddress())) {
+                        if (!nodeLevelDag.edgeExistsForConnection(edge, addr, nodeEngine.getThisAddress())) {
                             continue;
                         }
 
@@ -768,7 +761,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         Arrays.setAll(collectors, n -> new ConveyorCollector(
                                 localConveyors[n], localConveyors[n].queueCount() + queueOffset,
                                 ptionsPerProcessor[n]));
-                        final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true, true);
+                        final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount, true, false);
                         ReceiverTasklet receiverTasklet = new ReceiverTasklet(
                                 collector, jobSerializationService,
                                 edge.getConfig().getReceiveWindowMultiplier(),
@@ -790,7 +783,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                              String jobPrefix, int globalProcessorIdx) {
         final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
-            if (!dagTraverser.edgeExistsForConnectionTo(inEdge, nodeEngine.getThisAddress())) {
+            if (!nodeLevelDag.edgeExistsForConnectionTo(inEdge, nodeEngine.getThisAddress())) {
                 continue;
             }
             // each tasklet has one input conveyor per edge

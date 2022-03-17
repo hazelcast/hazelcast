@@ -307,7 +307,8 @@ public class ReceiverTasklet implements Tasklet {
                     final int mark = input.position();
                     final Object item = input.readObject();
                     final int itemSize = input.position() - mark;
-                    inbox.add(new ObjWithPtionIdAndSize(item, input.readInt(), itemSize));
+                    int partitionId = input.readInt();
+                    inbox.add(new ObjWithPtionIdAndSize(item, partitionId, itemSize));
                 }
                 totalItems += itemCount;
                 totalBytes += input.position();

@@ -44,6 +44,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     protected Address distributedTo;
 
     // transient fields populated and used after deserialization
+    // non-private for tests
     protected transient String id;
     protected transient VertexDef sourceVertex;
     protected transient VertexDef destVertex;

@@ -56,15 +56,14 @@ public interface OutboundCollector {
         throw new UnsupportedOperationException();
     }
 
-
     static OutboundCollector compositeCollector(
             OutboundCollector[] collectors,
             EdgeDef outboundEdge,
             int partitionCount,
             boolean local,
-            boolean fastReturnSingleCollector
+            boolean forceWrapping
     ) {
-        if (fastReturnSingleCollector && collectors.length == 1) {
+        if (!forceWrapping && collectors.length == 1) {
             return collectors[0];
         }
         switch (outboundEdge.routingPolicy()) {
