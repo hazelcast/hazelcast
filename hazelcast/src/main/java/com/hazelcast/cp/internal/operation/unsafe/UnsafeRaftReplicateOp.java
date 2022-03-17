@@ -55,7 +55,7 @@ public class UnsafeRaftReplicateOp extends AbstractUnsafeRaftOp implements Backu
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return 1;
     }
 

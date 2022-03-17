@@ -136,7 +136,7 @@ final class OperationBackupHandler {
     }
 
     private int requestedSyncBackups(BackupAwareOperation op) {
-        int backups = op.getSyncBackupCount();
+        int backups = op.getBackupCount();
 
         if (backups < 0) {
             throw new IllegalArgumentException("Can't create backup for " + op
@@ -169,12 +169,12 @@ final class OperationBackupHandler {
     }
 
     private int requestedTotalBackups(BackupAwareOperation op) {
-        int backups = op.getSyncBackupCount() + op.getAsyncBackupCount();
+        int backups = op.getBackupCount() + op.getAsyncBackupCount();
 
         if (backups > MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Can't create backup for " + op
                     + ", the sum of async and sync backups is larger than " + MAX_BACKUP_COUNT
-                    + ", sync backup count is " + op.getSyncBackupCount()
+                    + ", sync backup count is " + op.getBackupCount()
                     + ", async backup count is " + op.getAsyncBackupCount());
         }
 

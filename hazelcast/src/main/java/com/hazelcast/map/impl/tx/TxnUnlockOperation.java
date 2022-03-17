@@ -104,7 +104,7 @@ public class TxnUnlockOperation extends LockAwareOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

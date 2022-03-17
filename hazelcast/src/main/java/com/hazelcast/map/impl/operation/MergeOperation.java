@@ -186,7 +186,7 @@ public class MergeOperation extends MapOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

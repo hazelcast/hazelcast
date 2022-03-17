@@ -473,7 +473,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 1;
         }
 

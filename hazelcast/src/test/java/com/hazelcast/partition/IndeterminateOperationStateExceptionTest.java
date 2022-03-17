@@ -241,7 +241,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 1;
         }
 

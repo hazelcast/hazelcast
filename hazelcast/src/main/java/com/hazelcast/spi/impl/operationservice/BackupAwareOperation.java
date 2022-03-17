@@ -34,11 +34,14 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
     boolean shouldBackup();
 
     /**
-     * The synchronous backup count. If no backups need to be made, 0 is returned.
+     * The backup count. If no backups need to be made, 0 is returned.
+     * Waiting for completion of backup operation
+     * is not a concern of operation execution. It is
+     * handled by {@link com.hazelcast.spi.impl.operationservice.impl.Invocation}.
      *
-     * @return the synchronous backup count.
+     * @return the backup count.
      */
-    int getSyncBackupCount();
+    int getBackupCount();
 
     /**
      * The asynchronous backup count. If no asynchronous backups need to be made, 0 is returned.

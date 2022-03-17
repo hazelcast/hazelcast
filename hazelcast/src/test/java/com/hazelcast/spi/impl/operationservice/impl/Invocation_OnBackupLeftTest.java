@@ -146,7 +146,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 1;
         }
 

@@ -48,7 +48,7 @@ public class TestFragmentPutOperation extends TestAbstractFragmentOperation impl
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         TestFragmentedMigrationAwareService service = getService();
         return service.backupCount;
     }

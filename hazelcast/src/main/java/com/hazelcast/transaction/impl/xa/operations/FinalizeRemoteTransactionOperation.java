@@ -90,7 +90,7 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return 0;
     }
 

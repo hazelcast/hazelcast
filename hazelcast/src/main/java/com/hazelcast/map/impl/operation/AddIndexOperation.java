@@ -62,7 +62,7 @@ public class AddIndexOperation extends MapOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapContainer.getTotalBackupCount();
     }
 

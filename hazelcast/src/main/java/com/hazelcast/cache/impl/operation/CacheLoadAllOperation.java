@@ -141,7 +141,7 @@ public class CacheLoadAllOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return cache.getConfig().getBackupCount();
     }
 

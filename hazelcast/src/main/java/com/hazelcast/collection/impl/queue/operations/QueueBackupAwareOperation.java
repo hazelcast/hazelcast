@@ -36,7 +36,7 @@ public abstract class QueueBackupAwareOperation extends QueueOperation implement
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return getContainer().getConfig().getBackupCount();
     }
 

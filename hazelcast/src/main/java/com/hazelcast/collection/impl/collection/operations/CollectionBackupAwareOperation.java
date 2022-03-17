@@ -28,7 +28,7 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return getOrCreateContainer().getConfig().getBackupCount();
     }
 

@@ -147,7 +147,7 @@ public class PutFromLoadAllOperation extends MapOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

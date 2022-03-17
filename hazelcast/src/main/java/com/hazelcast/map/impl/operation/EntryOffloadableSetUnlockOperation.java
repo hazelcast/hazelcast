@@ -139,7 +139,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

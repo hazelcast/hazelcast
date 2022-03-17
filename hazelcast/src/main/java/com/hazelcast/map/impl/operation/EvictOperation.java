@@ -83,7 +83,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         if (asyncBackup) {
             return 0;
         }

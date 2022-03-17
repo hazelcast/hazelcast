@@ -52,7 +52,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return syncBackupCount;
     }
 

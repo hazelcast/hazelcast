@@ -61,7 +61,7 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

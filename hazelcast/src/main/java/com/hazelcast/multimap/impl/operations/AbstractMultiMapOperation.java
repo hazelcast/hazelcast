@@ -106,7 +106,7 @@ public abstract class AbstractMultiMapOperation extends Operation
         return getOrCreateContainer().getConfig().isBinary();
     }
 
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return getOrCreateContainer().getConfig().getBackupCount();
     }
 

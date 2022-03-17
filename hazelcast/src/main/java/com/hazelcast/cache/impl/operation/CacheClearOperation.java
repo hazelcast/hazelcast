@@ -93,7 +93,7 @@ public class CacheClearOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return cache != null ? cache.getConfig().getBackupCount() : 0;
     }
 

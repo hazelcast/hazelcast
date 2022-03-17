@@ -87,7 +87,7 @@ public abstract class AbstractLockOperation extends Operation
         return service.getLockStore(getPartitionId(), namespace);
     }
 
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         if (asyncBackup) {
             return 0;
         } else {

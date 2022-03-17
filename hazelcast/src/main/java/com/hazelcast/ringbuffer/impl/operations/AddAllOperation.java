@@ -96,7 +96,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         RingbufferContainer ringbuffer = getRingBufferContainer();
         return ringbuffer.getConfig().getBackupCount();
     }

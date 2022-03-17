@@ -253,13 +253,13 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 0;
         }
 
         @Override
         public int getAsyncBackupCount() {
-            return super.getSyncBackupCount();
+            return super.getBackupCount();
         }
     }
 }

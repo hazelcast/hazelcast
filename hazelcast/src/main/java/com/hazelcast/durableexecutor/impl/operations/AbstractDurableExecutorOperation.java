@@ -47,7 +47,7 @@ abstract class AbstractDurableExecutorOperation extends AbstractNamedOperation i
         return executorContainer;
     }
 
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return executorContainer.getDurability();
     }
 

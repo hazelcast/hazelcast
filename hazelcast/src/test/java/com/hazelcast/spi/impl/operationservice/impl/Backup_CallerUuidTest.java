@@ -72,7 +72,7 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 1;
         }
 

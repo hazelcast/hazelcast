@@ -59,7 +59,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
     @Override
     protected void beforeRunInternal() {
-        hasBackups = getSyncBackupCount() + getAsyncBackupCount() > 0;
+        hasBackups = getBackupCount() + getAsyncBackupCount() > 0;
         if (hasBackups) {
             backupRecords = createHashMap(mergingEntries.size());
         }

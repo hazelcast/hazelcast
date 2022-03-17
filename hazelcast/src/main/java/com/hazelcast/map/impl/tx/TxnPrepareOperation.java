@@ -107,7 +107,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

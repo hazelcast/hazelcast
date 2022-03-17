@@ -209,7 +209,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 0;
         }
 
@@ -240,7 +240,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 0;
         }
 
@@ -271,7 +271,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 0;
         }
 

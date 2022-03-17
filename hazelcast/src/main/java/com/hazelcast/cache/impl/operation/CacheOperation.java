@@ -171,7 +171,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     }
 
     // region BackupAwareOperation will use these
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return recordStore != null ? recordStore.getConfig().getBackupCount() : 0;
     }
 

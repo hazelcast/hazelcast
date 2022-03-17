@@ -96,7 +96,7 @@ public class TxnRollbackOperation
     }
 
     @Override
-    public final int getSyncBackupCount() {
+    public final int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

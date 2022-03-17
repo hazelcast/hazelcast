@@ -164,7 +164,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return 0;
         }
 

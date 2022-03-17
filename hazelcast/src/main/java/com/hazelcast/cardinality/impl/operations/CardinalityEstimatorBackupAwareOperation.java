@@ -37,7 +37,7 @@ public abstract class CardinalityEstimatorBackupAwareOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return getCardinalityEstimatorContainer().getBackupCount();
     }
 

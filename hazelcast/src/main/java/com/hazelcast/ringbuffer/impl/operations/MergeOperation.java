@@ -166,7 +166,7 @@ public class MergeOperation extends Operation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return config.getBackupCount();
     }
 

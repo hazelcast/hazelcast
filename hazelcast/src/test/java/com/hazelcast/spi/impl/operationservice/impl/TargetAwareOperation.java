@@ -85,7 +85,7 @@ public class TargetAwareOperation extends Operation implements TargetAware, Back
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return syncBackupCount;
     }
 

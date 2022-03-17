@@ -95,7 +95,7 @@ public class MultipleEntryOperation extends MapOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return 0;
     }
 

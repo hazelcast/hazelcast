@@ -36,7 +36,7 @@ public abstract class AbstractBackupAwareSchedulerOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return getContainer().getDurability();
     }
 

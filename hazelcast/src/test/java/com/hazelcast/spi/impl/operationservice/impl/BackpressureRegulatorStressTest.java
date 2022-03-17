@@ -322,7 +322,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getSyncBackupCount() {
+        public int getBackupCount() {
             return syncBackups;
         }
 

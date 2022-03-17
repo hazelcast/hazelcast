@@ -46,7 +46,7 @@ public class TestPutOperation extends Operation implements BackupAwareOperation 
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         TestMigrationAwareService service = getService();
         return service.backupCount;
     }

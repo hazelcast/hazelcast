@@ -89,7 +89,7 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         RingbufferContainer ringbuffer = getRingBufferContainer();
         return ringbuffer.getConfig().getBackupCount();
     }

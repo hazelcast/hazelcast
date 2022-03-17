@@ -77,7 +77,7 @@ public class EvictAllOperation extends MapOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapServiceContext.getMapContainer(name).getBackupCount();
     }
 

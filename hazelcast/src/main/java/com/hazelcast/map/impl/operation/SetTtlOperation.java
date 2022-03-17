@@ -78,7 +78,7 @@ public class SetTtlOperation extends LockAwareOperation
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return mapContainer.getBackupCount();
     }
 

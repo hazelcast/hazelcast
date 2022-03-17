@@ -58,7 +58,7 @@ public class ClearRemoteTransactionOperation extends AbstractXAOperation impleme
     }
 
     @Override
-    public int getSyncBackupCount() {
+    public int getBackupCount() {
         return 0;
     }
 
