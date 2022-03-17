@@ -2,10 +2,12 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
@@ -39,7 +41,7 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 public class Reactor extends Thread {
-    private final ReactorFrontEnd reactorService;
+    private final ReactorFrontEnd frontend;
     private final Selector selector;
     private final ILogger logger;
     private final int port;
@@ -48,11 +50,11 @@ public class Reactor extends Thread {
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private BitSet allowedCpus;
 
-    public Reactor(ReactorFrontEnd reactorService, Address thisAddress, int port) {
+    public Reactor(ReactorFrontEnd frontend, Address thisAddress, int port) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
-        this.reactorService = reactorService;
-        this.logger = reactorService.logger;
-        this.selector = SelectorOptimizer.newSelector(reactorService.logger);
+        this.frontend = frontend;
+        this.logger = frontend.logger;
+        this.selector = SelectorOptimizer.newSelector(frontend.logger);
         this.port = port;
     }
 
@@ -72,16 +74,12 @@ public class Reactor extends Thread {
         wakeup();
     }
 
-    public void enqueue(Packet request) {
-        taskQueue.add(request);
-        wakeup();
-    }
-
-    public Future<Channel> enqueue(SocketAddress address) {
+    public Future<Channel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
         connectRequest.address = address;
+        connectRequest.connection = connection;
         connectRequest.future = new CompletableFuture<>();
         taskQueue.add(connectRequest);
 
@@ -91,6 +89,7 @@ public class Reactor extends Thread {
     }
 
     static class ConnectRequest {
+        Connection connection;
         SocketAddress address;
         CompletableFuture<Channel> future;
     }
@@ -141,7 +140,7 @@ public class Reactor extends Thread {
     }
 
     private void loop() throws Exception {
-        while (!reactorService.shuttingdown) {
+        while (!frontend.shuttingdown) {
 
             int keyCount = selector.select();
 
@@ -168,7 +167,7 @@ public class Reactor extends Thread {
                 SocketChannel socketChannel = serverSocketChannel.accept();
                 socketChannel.configureBlocking(false);
                 SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
-                selectionKey.attach(newChannel(socketChannel));
+                selectionKey.attach(newChannel(socketChannel, null));
 
                 logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
             }
@@ -185,7 +184,7 @@ public class Reactor extends Thread {
                     break;
                 }
                 readBuf.flip();
-                process(readBuf);
+                process(readBuf, channel);
                 compactOrClear(readBuf);
             }
 
@@ -196,13 +195,14 @@ public class Reactor extends Thread {
         }
     }
 
-    private Channel newChannel(SocketChannel socketChannel) {
+    private Channel newChannel(SocketChannel socketChannel, Connection connection) {
         System.out.println(this + " newChannel: " + socketChannel);
 
         Channel channel = new Channel();
         channel.reactor = this;
         channel.readBuffer = ByteBuffer.allocate(256 * 1024);
         channel.socketChannel = socketChannel;
+        channel.connection = connection;
         return channel;
     }
 
@@ -217,8 +217,6 @@ public class Reactor extends Thread {
                 process((Channel) item);
             } else if (item instanceof ConnectRequest) {
                 process((ConnectRequest) item);
-            } else if (item instanceof Packet) {
-                process((Packet) item);
             } else if (item instanceof Op) {
                 proces((Op) item);
             } else if (item instanceof Request) {
@@ -232,6 +230,7 @@ public class Reactor extends Thread {
     private void process(Channel channel) {
         System.out.println("Processing channel");
         try {
+            // the buffers could be written in batch.
             for (; ; ) {
                 ByteBuffer buffer = channel.next();
                 if (buffer == null) {
@@ -257,7 +256,7 @@ public class Reactor extends Thread {
             socketChannel.configureBlocking(false);
             SelectionKey key = socketChannel.register(selector, OP_READ);
 
-            Channel channel = newChannel(socketChannel);
+            Channel channel = newChannel(socketChannel, connectRequest.connection);
             key.attach(channel);
 
             logger.info("Socket listening at " + address);
@@ -267,7 +266,7 @@ public class Reactor extends Thread {
         }
     }
 
-    private void process(ByteBuffer buffer) {
+    private void process(ByteBuffer buffer, Channel channel) {
         for (; ; ) {
             Packet packet = packetIOHelper.readFrom(buffer);
             System.out.println(this + " read packet: " + packet);
@@ -275,6 +274,8 @@ public class Reactor extends Thread {
                 return;
             }
 
+            packet.setConn((ServerConnection) channel.connection);
+            packet.channel = channel;
             process(packet);
         }
     }
@@ -282,11 +283,15 @@ public class Reactor extends Thread {
     private void process(Packet packet) {
         System.out.println(this + " process packet: " + packet);
         try {
-            byte[] bytes = packet.toByteArray();
-            byte opcode = bytes[Packet.DATA_OFFSET];
-            Op op = allocateOp(opcode);
-            op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-            proces(op);
+            if(packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)){
+                frontend.handleResponse(packet);
+            }else {
+                byte[] bytes = packet.toByteArray();
+                byte opcode = bytes[Packet.DATA_OFFSET];
+                Op op = allocateOp(opcode);
+                op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
+                proces(op);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -308,6 +313,8 @@ public class Reactor extends Thread {
 
     private void proces(Op op) {
         try {
+            long callId = op.in.readLong();
+            System.out.println("callId: "+callId);
             int runCode = op.run();
             switch (runCode) {
                 case RUN_CODE_DONE:
@@ -337,8 +344,8 @@ public class Reactor extends Thread {
                 op = new UpsertOperation();
                 //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) reactorService.ss, ByteOrder.BIG_ENDIAN);
-        op.managers = reactorService.managers;
+        op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.managers = frontend.managers;
         return op;
     }
 

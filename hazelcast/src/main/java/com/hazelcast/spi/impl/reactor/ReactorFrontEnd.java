@@ -12,6 +12,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -20,9 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
-import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ReactorFrontEnd {
@@ -36,6 +35,7 @@ public class ReactorFrontEnd {
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
     public final Managers managers = new Managers();
+    private final ConcurrentMap<Address, ConnectionInvocations> invocationsPerMember = new ConcurrentHashMap<>();
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -73,41 +73,47 @@ public class ReactorFrontEnd {
 
 
     public CompletableFuture invoke(Request request) {
-        int partitionId = request.partitionId;
+       try {
+           int partitionId = request.partitionId;
 
-        if (partitionId >= 0) {
-            System.out.println("Blabla");
-            Address targetAddress = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-            TargetInvocations invocations = getTargetInvocations(targetAddress);
-            Invocation invocation = new Invocation();
-            invocation.callId = invocations.counter.incrementAndGet();
-            invocation.request = request;
-            request.invocation = invocation;
-            invocations.map.put(invocation.callId, invocation);
+           if (partitionId >= 0) {
+               System.out.println("Blabla");
+               Address targetAddress = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+               ConnectionInvocations invocations = getConnectionInvocations(targetAddress);
+               Invocation invocation = new Invocation();
+               invocation.callId = invocations.counter.incrementAndGet();
+               request.out.writeLong(Request.OFFSET_CALL_ID, invocation.callId);
+               invocation.request = request;
+               request.invocation = invocation;
+               invocations.map.put(invocation.callId, invocation);
 
-            if (targetAddress.equals(thisAddress)) {
-                System.out.println("local invoke");
-                reactors[partitionIdToCpu(partitionId)].enqueue(request);
-            } else {
-                System.out.println("remove invoke");
-                if (connectionManager == null) {
-                    connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
-                }
+               if (targetAddress.equals(thisAddress)) {
+                   System.out.println("local invoke");
+                   reactors[partitionIdToCpu(partitionId)].enqueue(request);
+               } else {
+                   System.out.println("remove invoke");
+                   if (connectionManager == null) {
+                       connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
+                   }
 
-                TcpServerConnection connection = getConnection(targetAddress);
-                Channel[] channels = (Channel[]) connection.junk;
-                Channel channel = channels[partitionIdToCpu(partitionId)];
-                Packet packet = request.toPacket();
-                ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
-                new PacketIOHelper().writeTo(packet, buffer);
-                buffer.flip();
-                channel.writeAndFlush(buffer);
-            }
+                   TcpServerConnection connection = getConnection(targetAddress);
+                   Channel[] channels = (Channel[]) connection.junk;
+                   Channel channel = channels[partitionIdToCpu(partitionId)];
 
-            return invocation.completableFuture;
-        } else {
-            throw new RuntimeException();
-        }
+                   Packet packet = request.toPacket();
+                   ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
+                   new PacketIOHelper().writeTo(packet, buffer);
+                   buffer.flip();
+                   channel.writeAndFlush(buffer);
+               }
+
+               return invocation.completableFuture;
+           } else {
+               throw new RuntimeException();
+           }
+       }catch (IOException e){
+           throw new RuntimeException(e);
+       }
     }
 
     private TcpServerConnection getConnection(Address targetAddress) {
@@ -132,7 +138,7 @@ public class ReactorFrontEnd {
 
                     for (int cpu = 0; cpu < channels.length; cpu++) {
                         SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, cpu));
-                        Future<Channel> f = reactors[cpu].enqueue(socketAddress);
+                        Future<Channel> f = reactors[cpu].enqueue(socketAddress, connection);
                         try {
                             Channel channel = f.get();
                             channels[cpu] = channel;
@@ -147,28 +153,41 @@ public class ReactorFrontEnd {
         return connection;
     }
 
-    public TargetInvocations getTargetInvocations(Address address) {
-        TargetInvocations invocations = invocationsPerMember.get(address);
+    public ConnectionInvocations getConnectionInvocations(Address address) {
+        ConnectionInvocations invocations = invocationsPerMember.get(address);
         if (invocations != null) {
             return invocations;
         }
 
-        TargetInvocations newInvocations = new TargetInvocations(address);
-        TargetInvocations foundInvocations = invocationsPerMember.putIfAbsent(address, newInvocations);
+        ConnectionInvocations newInvocations = new ConnectionInvocations(address);
+        ConnectionInvocations foundInvocations = invocationsPerMember.putIfAbsent(address, newInvocations);
         return foundInvocations == null ? newInvocations : foundInvocations;
     }
 
-    private final ConcurrentMap<Address, TargetInvocations> invocationsPerMember = new ConcurrentHashMap<>();
-
-    private class TargetInvocations {
+     private class ConnectionInvocations {
         private final Address target;
         private final ConcurrentMap<Long, Invocation> map = new ConcurrentHashMap<>();
-        private final AtomicLong counter = new AtomicLong(0);
+        private final AtomicLong counter = new AtomicLong(500);
 
-        public TargetInvocations(Address target) {
+        public ConnectionInvocations(Address target) {
             this.target = target;
         }
+    }
 
+    public void handleResponse(Packet packet) {
+        Address remoteAddress = packet.getConn().getRemoteAddress();
+        ConnectionInvocations targetInvocations = invocationsPerMember.get(remoteAddress);
+        if (targetInvocations == null) {
+            System.out.println("Dropping response " + packet + ", targetInvocations not found");
+            return;
+        }
+
+        long callId = 0;
+        Invocation invocation = targetInvocations.map.get(callId);
+        if (invocation == null) {
+            System.out.println("Dropping response " + packet + ", invocation not found");
+            invocation.completableFuture.complete(null);
+        }
     }
 
 

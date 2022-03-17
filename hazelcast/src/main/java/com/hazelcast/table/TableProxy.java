@@ -1,5 +1,6 @@
 package com.hazelcast.table;
 
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
@@ -41,13 +42,13 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         try {
             request.out.writeByte(OpCodes.TABLE_UPSERT);
+            request.out.position(request.out.position() + Bits.LONG_SIZE_IN_BYTES);
             request.out.writeInt(name.length());
-            System.out.println("write name length: "+name.length());
             for (int k = 0; k < name.length(); k++) {
                 request.out.writeChar(name.charAt(k));
             }
-        } catch (IOException e) {
-            throw new RuntimeException();
+        }catch (IOException e){
+            throw new RuntimeException(e);
         }
         CompletableFuture f = opService.invoke(request);
         f.join();
