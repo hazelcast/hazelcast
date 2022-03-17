@@ -124,9 +124,6 @@ public class MulticastDiscoveryStrategyDeserializationTest {
             byte[] data = bos.toByteArray();
             multicastSocket = new MulticastSocket(PORT);
             multicastSocket.setTimeToLive(0);
-            if (OsHelper.isMac()) {
-                multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
-            }
             InetAddress group = InetAddress.getByName(GROUP);
             multicastSocket.joinGroup(group);
             DatagramPacket packet = new DatagramPacket(data, data.length, group, PORT);
