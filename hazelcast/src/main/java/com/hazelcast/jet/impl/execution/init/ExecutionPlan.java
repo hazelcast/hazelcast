@@ -314,7 +314,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
 
             for (EdgeDef inboundEdge : vertex.inboundEdges()) {
-                createReceiverTaskletsForInbound(inboundEdge, jobPrefix, jobSerializationService);
+                createLocalConveyorsAndReceiverTaskletsForInbound(inboundEdge, jobPrefix, jobSerializationService);
             }
         }
     }
@@ -340,7 +340,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
     }
 
-    private void createReceiverTaskletsForInbound(
+    private void createLocalConveyorsAndReceiverTaskletsForInbound(
             EdgeDef inboundEdge,
             String jobPrefix,
             InternalSerializationService jobSerializationService
@@ -348,6 +348,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         Set<Address> edgeSources = dagNodeUtil.getEdgeSources(inboundEdge);
 
         for (Address sourceAddress : edgeSources) {
+            // Local conveyor is always needed either between two processor tasklets, or between processor and receiver tasklets.
+            populateLocalConveyorMap(inboundEdge);
+
             if (sourceAddress.equals(nodeEngine.getThisAddress())) {
                 // Local connection on current member, we populate {@link #localCollectorsEdges}
                 localCollectorsEdges.add(inboundEdge.edgeId());
