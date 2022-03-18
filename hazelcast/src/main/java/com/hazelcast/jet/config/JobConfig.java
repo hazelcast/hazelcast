@@ -65,9 +65,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @since Jet 3.0
  */
 public class JobConfig implements IdentifiedDataSerializable {
-
     private static final long SNAPSHOT_INTERVAL_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
+    private boolean locked;
     private String name;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
@@ -111,6 +111,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setName(@Nullable String name) {
+        checkLocked();
         this.name = name;
         return this;
     }
@@ -154,6 +155,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setSplitBrainProtection(boolean isEnabled) {
+        checkLocked();
         this.splitBrainProtectionEnabled = isEnabled;
         return this;
     }
@@ -178,6 +180,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @see #setProcessingGuarantee Enabling/disabling snapshots
      */
     public JobConfig setAutoScaling(boolean enabled) {
+        checkLocked();
         this.autoScaling = enabled;
         return this;
     }
@@ -208,6 +211,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since Jet 4.3
      */
     public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
+        checkLocked();
         this.suspendOnFailure = suspendOnFailure;
         return this;
     }
@@ -246,6 +250,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
+        checkLocked();
         this.processingGuarantee = processingGuarantee;
         return this;
     }
@@ -270,6 +275,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
+        checkLocked();
         checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
@@ -352,6 +358,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJar(@Nonnull URL url) {
+        checkLocked();
         return add(url, filenamePart(url), ResourceType.JAR);
     }
 
@@ -640,6 +647,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     @Beta
     public JobConfig addCustomClasspath(@Nonnull String name, @Nonnull String path) {
+        checkLocked();
         List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
         classpathItems.add(path);
         return this;
@@ -663,6 +671,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     @Beta
     public JobConfig addCustomClasspaths(@Nonnull String name, @Nonnull List<String> paths) {
+        checkLocked();
         List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
         classpathItems.addAll(paths);
         return this;
@@ -1036,6 +1045,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachAll(@Nonnull Map<String, File> idToFile) {
+        checkLocked();
         for (Entry<String, File> e : idToFile.entrySet()) {
             File file = e.getValue();
             if (!file.canRead()) {
@@ -1137,6 +1147,7 @@ public class JobConfig implements IdentifiedDataSerializable {
             @Nonnull Class<T> clazz,
             @Nonnull Class<S> serializerClass
     ) {
+        checkLocked();
         Preconditions.checkFalse(serializerConfigs.containsKey(clazz.getName()),
                 "Serializer for " + clazz + " already registered");
         serializerConfigs.put(clazz.getName(), serializerClass.getName());
@@ -1153,11 +1164,13 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     private void addClass(@Nonnull Class<?> clazz) {
+        checkLocked();
         ResourceConfig cfg = new ResourceConfig(clazz);
         resourceConfigs.put(cfg.getId(), cfg);
     }
 
     private JobConfig add(@Nonnull URL url, @Nonnull String id, @Nonnull ResourceType resourceType) {
+        checkLocked();
         Preconditions.checkHasText(id, "Resource ID is blank");
         ResourceConfig cfg = new ResourceConfig(url, id, resourceType);
         if (resourceConfigs.putIfAbsent(id, cfg) != null) {
@@ -1178,6 +1191,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setArgument(String key, Object value) {
+        checkLocked();
         arguments.put(key, value);
         return this;
     }
@@ -1205,6 +1219,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setClassLoaderFactory(@Nullable JobClassLoaderFactory classLoaderFactory) {
+        checkLocked();
         this.classLoaderFactory = classLoaderFactory;
         return this;
     }
@@ -1246,6 +1261,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setInitialSnapshotName(@Nullable String initialSnapshotName) {
+        checkLocked();
         this.initialSnapshotName = initialSnapshotName;
         return this;
     }
@@ -1262,6 +1278,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setMetricsEnabled(boolean enabled) {
+        checkLocked();
         this.enableMetrics = enabled;
         return this;
     }
@@ -1307,6 +1324,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since Jet 3.2
      */
     public JobConfig setStoreMetricsAfterJobCompletion(boolean storeMetricsAfterJobCompletion) {
+        checkLocked();
         this.storeMetricsAfterJobCompletion = storeMetricsAfterJobCompletion;
         return this;
     }
@@ -1335,6 +1353,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 5.0
      */
     public JobConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+        checkLocked();
         checkTrue(maxProcessorAccumulatedRecords > 0 || maxProcessorAccumulatedRecords == -1,
                 "maxProcessorAccumulatedRecords must be a positive number or -1");
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
@@ -1359,6 +1378,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 5.0
      */
     public JobConfig setTimeoutMillis(long timeoutMillis) {
+        checkLocked();
         checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
         this.timeoutMillis = timeoutMillis;
         return this;
@@ -1460,4 +1480,13 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
                 maxProcessorAccumulatedRecords + ", timeoutMillis=" + timeoutMillis + "}";
     }
+
+    private void checkLocked() {
+        assert !locked;
+    }
+
+    public void lock() {
+        locked = true;
+    }
+
 }

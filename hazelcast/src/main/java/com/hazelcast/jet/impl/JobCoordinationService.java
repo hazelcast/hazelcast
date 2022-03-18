@@ -327,6 +327,7 @@ public class JobCoordinationService {
             dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
         }
         dag.lock();
+        jobConfig.lock();
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
