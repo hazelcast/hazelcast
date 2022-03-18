@@ -55,12 +55,12 @@ import java.util.Set;
  * We don't use Java streams here for a better performance.
  */
 class DagNodeUtil {
-
     private final Address localAddress;
     private final BitSet localVertices;
     private final Map<String, Set<Address>> targets = new HashMap<>();
     private final Map<String, Set<Address>> sources = new HashMap<>();
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     DagNodeUtil(List<VertexDef> vertices, Set<Address> allAddresses, Address localAddress) {
         this.localAddress = localAddress;
         Int2ObjectHashMap<Set<Address>> vertexOnAddress = new Int2ObjectHashMap<>();
@@ -110,7 +110,6 @@ class DagNodeUtil {
             sources.put(edgeId, new HashSet<>());
             targets.put(edgeId, new HashSet<>());
         }
-
 
         for (Entry<String, Set<Connection>> entry : edgesToConnections.entrySet()) {
             for (Connection connection : entry.getValue()) {
