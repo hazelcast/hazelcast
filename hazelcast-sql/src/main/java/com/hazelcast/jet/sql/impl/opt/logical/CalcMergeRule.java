@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil.InputFinder;
