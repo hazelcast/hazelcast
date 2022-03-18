@@ -601,5 +601,6 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public void lock() {
         locked = true;
         verticesByIdentity.forEach(Vertex::lock);
+        edges.forEach(Edge::lock);
     }
 }
