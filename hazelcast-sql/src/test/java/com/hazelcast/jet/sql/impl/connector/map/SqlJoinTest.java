@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import org.junit.BeforeClass;
@@ -66,7 +67,7 @@ public class SqlJoinTest {
             assertThatThrownBy(() ->
                     sqlService.execute(
                             "SELECT * FROM " + stream1 + " AS s1, " + stream2 + " AS s2 WHERE s1.a = s2.b"
-                    )).hasMessageContaining("The right side of a INNER JOIN cannot be a streaming source");
+                    )).hasMessageContaining("The right side of an INNER JOIN cannot be a streaming source");
         }
     }
 
@@ -1322,6 +1323,7 @@ public class SqlJoinTest {
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "TABLE(GENERATE_STREAM(1))") + " ON true"))
+                    .hasCauseInstanceOf(QueryException.class)
                     .hasMessageContaining("The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source");
         }
 

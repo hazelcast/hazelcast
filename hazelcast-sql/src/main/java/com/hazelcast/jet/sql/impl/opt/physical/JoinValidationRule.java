@@ -60,23 +60,22 @@ public final class JoinValidationRule extends RelRule<Config> implements Transfo
         boolean rightInputIsStream = isUnbounded(join.getRight());
 
         if (join.getJoinType() == LEFT) {
-            String msg = "The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source";
             if (rightInputIsStream) {
                 call.transformTo(
-                        new MustnotExecuteRel(
+                        new MustNotExecuteRel(
                                 join.getCluster(),
                                 toPhysicalConvention(join.getTraitSet()),
                                 join.getRowType(),
-                                msg));
+                                "The right side of a LEFT JOIN or the left side of RIGHT JOIN cannot be a streaming source"));
             }
         } else if (join.getJoinType() == INNER) {
             if (rightInputIsStream) {
                 call.transformTo(
-                        new MustnotExecuteRel(
+                        new MustNotExecuteRel(
                                 join.getCluster(),
                                 toPhysicalConvention(join.getTraitSet()),
                                 join.getRowType(),
-                                "The right side of a INNER JOIN cannot be a streaming source"));
+                                "The right side of an INNER JOIN cannot be a streaming source"));
             }
         }
     }

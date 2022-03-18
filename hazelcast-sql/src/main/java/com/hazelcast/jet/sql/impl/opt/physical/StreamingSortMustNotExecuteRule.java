@@ -17,25 +17,25 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
+import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.immutables.value.Value;
 
 /**
- * A rule that replaces any streaming SINK INTO without Jet job creation with {@link MustnotExecuteRel}.
+ * A rule that replaces any streaming sort attempt with {@link MustNotExecuteRel}.
  */
 @Value.Enclosing
-public final class StreamingInsertMustnotExecuteRule extends RelRule<Config> implements TransformationRule {
+public final class StreamingSortMustNotExecuteRule extends RelRule<Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableStreamingInsertMustnotExecuteRule.Config.builder()
-                .description(StreamingInsertMustnotExecuteRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(SinkPhysicalRel.class)
+        Config DEFAULT = ImmutableStreamingSortMustNotExecuteRule.Config.builder()
+                .description(StreamingSortMustNotExecuteRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(SortPhysicalRel.class)
                         .predicate(OptUtils::isUnbounded)
                         .anyInputs()
                 )
@@ -43,25 +43,24 @@ public final class StreamingInsertMustnotExecuteRule extends RelRule<Config> imp
 
         @Override
         default RelOptRule toRule() {
-            return new StreamingInsertMustnotExecuteRule(this);
+            return new StreamingSortMustNotExecuteRule(this);
         }
     }
 
-    private StreamingInsertMustnotExecuteRule(Config config) {
+    private StreamingSortMustNotExecuteRule(Config config) {
         super(config);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new StreamingInsertMustnotExecuteRule(Config.DEFAULT);
+    public static final RelOptRule INSTANCE = new StreamingSortMustNotExecuteRule(Config.DEFAULT);
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        SinkPhysicalRel sinkRel = call.rel(0);
-        HazelcastRelOptCluster cluster = (HazelcastRelOptCluster) sinkRel.getCluster();
-        if (!cluster.requiresJob()) {
+        Sort sort = call.rel(0);
+        if (sort.fetch == null) {
             call.transformTo(
-                    new MustnotExecuteRel(sinkRel.getCluster(), sinkRel.getTraitSet(), sinkRel.getRowType(),
-                            "You must use CREATE JOB statement for a streaming DML query"));
+                    new MustNotExecuteRel(sort.getCluster(), sort.getTraitSet(), sort.getRowType(),
+                            "Sorting is not supported for a streaming query"));
         }
     }
 }
