@@ -38,7 +38,6 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -49,6 +48,7 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -83,10 +83,17 @@ public class IMapSqlConnector implements SqlConnector {
     public static final String TYPE_NAME = "IMap";
     public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
-    private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
+    private static final KvMetadataResolvers METADATA_RESOLVERS_WITH_COMPACT = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
             MetadataPortableResolver.INSTANCE,
             MetadataCompactResolver.INSTANCE,
+            MetadataJsonResolver.INSTANCE
+    );
+
+    private static final KvMetadataResolvers METADATA_RESOLVERS_WITHOUT_COMPACT = new KvMetadataResolvers(
+            KvMetadataJavaResolver.INSTANCE,
+            MetadataPortableResolver.INSTANCE,
+            MetadataCompactDisabledResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
 
@@ -107,7 +114,11 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
     ) {
-        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
+        if (nodeEngine.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled()) {
+            return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
+        } else {
+            return METADATA_RESOLVERS_WITHOUT_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
+        }
     }
 
     @Nonnull
@@ -122,8 +133,8 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, ss);
-        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, ss);
+        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(true, resolvedFields, options, ss);
+        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(false, resolvedFields, options, ss);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 

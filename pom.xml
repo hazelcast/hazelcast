@@ -50,7 +50,7 @@
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
 
-        <maven.compiler.plugin.version>3.9.0</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
@@ -101,10 +101,10 @@
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>0.10</json-surfer.version>
+        <json-surfer.version>0.11-SNAPSHOT</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>2.2.2</kafka.version>
+        <kafka.version>2.8.1</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
@@ -141,7 +141,7 @@
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.15.3</testcontainers.version>
-        <zookeeper.version>3.5.8</zookeeper.version>
+        <zookeeper.version>3.5.9</zookeeper.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -306,11 +306,6 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
-                    <!-- Exclude package-info.java from compiler's scope to avoid recompiling all classes every time. -->
-                    <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-                    <excludes>
-                        <exclude>**/package-info.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
 

@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import kafka.admin.AdminUtils;
-import kafka.admin.BrokerMetadata;
-import kafka.common.TopicAndPartition;
+import com.hazelcast.internal.util.StringUtil;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.MockTime;
 import kafka.utils.TestUtils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import kafka.zk.EmbeddedZookeeper;
-import org.I0Itec.zkclient.ZkClient;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -41,46 +40,35 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.utils.Time;
 
-import com.hazelcast.internal.util.StringUtil;
-
-import scala.Option;
-import scala.collection.Seq;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static kafka.admin.RackAwareMode.Disabled$.MODULE$;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static scala.collection.JavaConversions.asScalaSet;
-import static scala.collection.JavaConversions.mapAsJavaMap;
-import static scala.collection.JavaConversions.mapAsScalaMap;
 
 public class KafkaTestSupport {
 
     private static final String ZK_HOST = "127.0.0.1";
     private static final String BROKER_HOST = "127.0.0.1";
-    private static final int SESSION_TIMEOUT = 30_000;
-    private static final int CONNECTION_TIMEOUT = 30_000;
 
     private EmbeddedZookeeper zkServer;
     private String zkConnect;
-    private ZkUtils zkUtils;
+    private Admin admin;
 
     private KafkaServer kafkaServer;
     private KafkaProducer<Integer, String> producer;
@@ -92,8 +80,6 @@ public class KafkaTestSupport {
         System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();
         zkConnect = ZK_HOST + ':' + zkServer.port();
-        ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
-        zkUtils = ZkUtils.apply(zkClient, false);
 
         Properties brokerProps = new Properties();
         brokerProps.setProperty("zookeeper.connect", zkConnect);
@@ -115,12 +101,15 @@ public class KafkaTestSupport {
         brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
 
         brokerConnectionString = BROKER_HOST + ':' + brokerPort;
+        Properties props = new Properties();
+        props.setProperty("bootstrap.servers", brokerConnectionString);
+        admin = Admin.create(props);
     }
 
     public void shutdownKafkaCluster() {
         if (kafkaServer != null) {
             kafkaServer.shutdown();
-            zkUtils.close();
+            admin.close();
             if (producer != null) {
                 producer.close();
             }
@@ -135,7 +124,7 @@ public class KafkaTestSupport {
 
             producer = null;
             kafkaServer = null;
-            zkUtils = null;
+            admin = null;
             zkServer = null;
         }
     }
@@ -153,26 +142,19 @@ public class KafkaTestSupport {
     }
 
     public void createTopic(String topicId, int partitionCount) {
-        AdminUtils.createTopic(zkUtils, topicId, partitionCount, 1, new Properties(), MODULE$);
+        List<NewTopic> newTopics = Collections.singletonList(new NewTopic(topicId, partitionCount, (short) 1));
+        CreateTopicsResult createTopicsResult = admin.createTopics(newTopics);
+        try {
+            createTopicsResult.all().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void setPartitionCount(String topicId, int numPartitions) {
-        Seq<String> topicSeq = asScalaSet(singleton(topicId)).toSeq();
-        Map<TopicAndPartition, Seq<Object>> replicaAssignments = mapAsJavaMap(
-                zkUtils.getReplicaAssignmentForTopics(topicSeq)
-        );
-        Map<Object, Seq<Object>> existingAssignment =
-                replicaAssignments.entrySet().stream()
-                                  .map(e -> entry(e.getKey().partition(), e.getValue()))
-                                  .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
-        Seq<BrokerMetadata> brokerMetadatas =
-                AdminUtils.getBrokerMetadatas(zkUtils, null, Option.apply(zkUtils.getSortedBrokerList()));
-        // doesn't actually add the given number to existing partitions, just sets to it
-        AdminUtils.addPartitions(
-                zkUtils, topicId, mapAsScalaMap(existingAssignment), brokerMetadatas, numPartitions, Option.empty(),
-                false
-        );
+        Map<String, NewPartitions> newPartitions = new HashMap<>();
+        newPartitions.put(topicId, NewPartitions.increaseTo(numPartitions));
+        admin.createPartitions(newPartitions);
     }
 
     public Future<RecordMetadata> produce(String topic, Integer key, String value) {

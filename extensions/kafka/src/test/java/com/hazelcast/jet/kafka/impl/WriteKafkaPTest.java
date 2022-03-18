@@ -249,8 +249,8 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         long producerId = ResumeTransactionUtil.getProducerId(producer);
         short epoch = ResumeTransactionUtil.getEpoch(producer);
 
-        // close the producer
-        producer.close();
+        // close the producer immediately to avoid aborting transaction
+        producer.close(Duration.ZERO);
 
         // verify items are not visible
         KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic);
@@ -259,8 +259,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
         // recover and commit
         producer = new KafkaProducer<>(properties);
-        ResumeTransactionUtil.resumeTransaction(producer, producerId, epoch,
-                properties.getProperty("transactional.id"));
+        ResumeTransactionUtil.resumeTransaction(producer, producerId, epoch);
         producer.commitTransaction();
 
         // verify items are visible
