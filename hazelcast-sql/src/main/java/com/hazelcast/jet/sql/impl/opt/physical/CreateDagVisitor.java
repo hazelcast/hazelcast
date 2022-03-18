@@ -187,6 +187,7 @@ public class CreateDagVisitor {
                 );
     }
 
+
     public Vertex onCalc(CalcPhysicalRel rel) {
         // TODO [sasha] : program might be trivial [program.isTrivial()], we may just skip vertex creation
         RexProgram program = rel.getProgram();
@@ -450,7 +451,7 @@ public class CreateDagVisitor {
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
+        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
             SortPhysicalRel sortRel = input instanceof SortPhysicalRel
                     ? (SortPhysicalRel) input
                     : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
@@ -606,7 +607,7 @@ public class CreateDagVisitor {
         }
     }
 
-    private boolean isProjectionWithSort(RelNode input) {
+    private boolean isCalcWithSort(RelNode input) {
         return input instanceof CalcPhysicalRel &&
                 ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }

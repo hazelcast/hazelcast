@@ -31,7 +31,7 @@ import java.util.List;
 
 public class FullScanLogicalRel extends FullScan implements LogicalRel {
 
-    public FullScanLogicalRel(
+    FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,

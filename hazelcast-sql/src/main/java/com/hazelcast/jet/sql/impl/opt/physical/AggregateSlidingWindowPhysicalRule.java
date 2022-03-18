@@ -81,8 +81,8 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         }
     }
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_NO_CALC, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_WITH_CALC, true);
+    static final RelOptRule NO_CALC_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_NO_CALC, false);
+    static final RelOptRule WITH_CALC_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_WITH_CALC, true);
 
     private final boolean hasCalc;
 
