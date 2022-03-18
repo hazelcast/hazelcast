@@ -134,8 +134,8 @@ public class ParserOperationsTest extends SqlTestSupport {
 
     @Test
     public void testNullsFirstLast() {
-        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS FIRST", "Function 'NULLS FIRST' does not exist");
-        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS LAST", "Function 'NULLS LAST' does not exist");
+        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS FIRST", "NULLS FIRST not supported");
+        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS LAST", "NULLS LAST not supported");
     }
 
     @Test
