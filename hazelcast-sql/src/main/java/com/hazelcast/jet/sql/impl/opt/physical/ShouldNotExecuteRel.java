@@ -40,10 +40,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * rule that can replace the same rel with a rel, that is executable. That's why
  * this rel has huge cost.
  */
-public class ShouldnotExecuteRel extends AbstractRelNode implements PhysicalRel {
+public class ShouldNotExecuteRel extends AbstractRelNode implements PhysicalRel {
     private final String exceptionMessage;
 
-    public ShouldnotExecuteRel(
+    public ShouldNotExecuteRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,

@@ -27,12 +27,12 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /**
  * A RelNode that is used to replace another RelNode, if a rule determines that
  * the rel it matched cannot be executed without some transformation. It is used
- * to avoid throwing directly from the rule, but unlike {@link ShouldnotExecuteRel},
+ * to avoid throwing directly from the rule, but unlike {@link ShouldNotExecuteRel},
  * it should interrupt execution unconditionally.
  * That's why this rel has zero cost.
  */
-public class MustnotExecuteRel extends ShouldnotExecuteRel {
-    public MustnotExecuteRel(
+public class MustNotExecuteRel extends ShouldNotExecuteRel {
+    public MustNotExecuteRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,
