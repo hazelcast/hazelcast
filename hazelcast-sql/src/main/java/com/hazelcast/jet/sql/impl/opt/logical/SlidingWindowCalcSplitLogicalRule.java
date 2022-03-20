@@ -23,7 +23,6 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
-import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexProgram;
@@ -32,20 +31,20 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
-import static com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowFilterTransposeLogicalRule.Config.DEFAULT;
+import static com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowCalcSplitLogicalRule.Config.DEFAULT;
 import static java.util.Collections.singletonList;
 
 /**
  * A {@link Calc} condition reading from a {@link SlidingWindow}
- * will be moved before the sliding window as {@link Filter}
+ * will be moved before the sliding window as another {@link Calc}
  */
 @Value.Enclosing
-public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> implements TransformationRule {
+public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableSlidingWindowFilterTransposeLogicalRule.Config.builder()
-                .description(SlidingWindowFilterTransposeLogicalRule.class.getSimpleName())
+        Config DEFAULT = ImmutableSlidingWindowCalcSplitLogicalRule.Config.builder()
+                .description(SlidingWindowCalcSplitLogicalRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(CalcLogicalRel.class)
                         .predicate(calc -> calc.getProgram().getCondition() != null)
@@ -56,13 +55,13 @@ public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> imp
 
         @Override
         default RelOptRule toRule() {
-            return new SlidingWindowFilterTransposeLogicalRule(this);
+            return new SlidingWindowCalcSplitLogicalRule(this);
         }
     }
 
-    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeLogicalRule(DEFAULT);
+    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowCalcSplitLogicalRule(DEFAULT);
 
-    protected SlidingWindowFilterTransposeLogicalRule(Config config) {
+    protected SlidingWindowCalcSplitLogicalRule(Config config) {
         super(config);
     }
 
@@ -86,17 +85,20 @@ public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> imp
 
         program.expandLocalRef(program.getCondition()).accept(visitor);
 
-        final FilterLogicalRel newFilter = new FilterLogicalRel(
+        RexProgram identityProgram = RexProgram.createIdentity(calc.getRowType());
+
+        final CalcLogicalRel filterCalc = new CalcLogicalRel(
                 calc.getCluster(),
                 sw.getTraitSet(),
+                calc.getHints(),
                 sw.getInput(),
-                program.expandLocalRef(program.getCondition())
+                identityProgram
         );
 
         RexProgramBuilder builder = RexProgramBuilder.forProgram(program, calc.getCluster().getRexBuilder(), true);
         builder.clearCondition();
 
-        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newFilter));
+        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(filterCalc));
         final CalcLogicalRel newCalc = (CalcLogicalRel) calc.copy(calc.getTraitSet(), topSW, builder.getProgram());
         call.transformTo(newCalc);
     }

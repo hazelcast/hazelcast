@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
-import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;

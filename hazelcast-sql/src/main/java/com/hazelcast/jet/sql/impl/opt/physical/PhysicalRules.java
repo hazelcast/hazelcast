@@ -30,7 +30,6 @@ public final class PhysicalRules {
         return RuleSets.ofList(
                 // Filter rules
                 CalcPhysicalRule.INSTANCE,
-                FilterPhysicalRule.INSTANCE,
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,

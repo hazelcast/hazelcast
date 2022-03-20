@@ -64,13 +64,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
-import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
@@ -188,38 +186,24 @@ public class CreateDagVisitor {
     }
 
     public Vertex onCalc(CalcPhysicalRel rel) {
-        // TODO [sasha] : program might be trivial [program.isTrivial()], we may just skip vertex creation
         RexProgram program = rel.getProgram();
         List<Expression<?>> projection = rel.projection(parameterMetadata);
 
-        Vertex project = dag.newUniqueVertex("Project", mapUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
-                (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
-        ));
-
+        Vertex vertex;
         if (program.getCondition() != null) {
             Expression<Boolean> filterExpr = rel.filter(parameterMetadata);
 
-            Vertex filter = dag.newUniqueVertex("Filter", filterUsingServiceP(
+            vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
-                            ExpressionUtil.filterFn(filterExpr, ExpressionEvalContext.from(ctx))),
-                    (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
-            dag.edge(between(filter, project));
-            connectInputPreserveCollation(rel, filter);
+                            ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
+                    (Function<JetSqlRow, JetSqlRow> calcFn, JetSqlRow row) -> calcFn.apply(row)));
         } else {
-            connectInputPreserveCollation(rel, project);
+            vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
+                    ServiceFactories.nonSharedService(ctx ->
+                            ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
+                    (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
+            ));
         }
-        return project;
-    }
-
-    public Vertex onFilter(FilterPhysicalRel rel) {
-        Expression<Boolean> filter = rel.filter(parameterMetadata);
-
-        Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
-                (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
