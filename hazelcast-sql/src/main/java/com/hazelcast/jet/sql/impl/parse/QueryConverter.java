@@ -164,10 +164,8 @@ public class QueryConverter {
         );
 
         planner.setRoot(rel);
-
         return planner.findBestExp();
     }
-
 
     /**
      * Second unconditional query optimization step. It includes
@@ -215,7 +213,6 @@ public class QueryConverter {
         );
 
         planner.setRoot(rel);
-
         return planner.findBestExp();
     }
 

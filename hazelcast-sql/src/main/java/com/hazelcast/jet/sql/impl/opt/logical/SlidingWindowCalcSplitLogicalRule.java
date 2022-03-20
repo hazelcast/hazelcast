@@ -76,7 +76,7 @@ public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implement
             public Void visitInputRef(RexInputRef ref) {
                 int index = ref.getIndex();
                 if (index == sw.windowStartIndex() || index == sw.windowEndIndex()) {
-                    // TODO[sasha]: convert into ShouldnotExecuteRel (after #20996 merge)
+                    // TODO[sasha]: convert into ShouldNotExecuteRel (after #20996 merge)
                     throw QueryException.error("Can't apply filter criteria to window bounds");
                 }
                 return super.visitInputRef(ref);

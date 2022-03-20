@@ -756,7 +756,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         return new Object[]{
                 new Object[]{QueryDataTypeFamily.TINYINT, QueryDataType.BIGINT},
                 new Object[]{QueryDataTypeFamily.SMALLINT, QueryDataType.BIGINT},
-                new Object[]{INTEGER, QueryDataType.BIGINT},
+                new Object[]{QueryDataTypeFamily.INTEGER, QueryDataType.BIGINT},
                 new Object[]{QueryDataTypeFamily.BIGINT, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.DECIMAL, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.REAL, QueryDataType.REAL},
@@ -924,7 +924,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         return new Object[]{
                 new Object[]{QueryDataTypeFamily.TINYINT, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.SMALLINT, QueryDataType.DECIMAL},
-                new Object[]{INTEGER, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.INTEGER, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.BIGINT, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.DECIMAL, QueryDataType.DECIMAL},
                 new Object[]{QueryDataTypeFamily.REAL, QueryDataType.DOUBLE},

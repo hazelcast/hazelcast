@@ -27,10 +27,8 @@ import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumn
 
 public abstract class HazelcastWindowTableFunction extends HazelcastTableFunction {
 
-    @SuppressWarnings("checkstyle:StaticVariableName")
-    public static final String WINDOW_START_TYPE_NAME = "window_start";
-    @SuppressWarnings({"checkstyle:StaticVariableName"})
-    public static final String WINDOW_END_TYPE_NAME = "window_end";
+    private static final String WINDOW_START_FIELD_NAME = "window_start";
+    private static final String WINDOW_END_FIELD_NAME = "window_end";
 
     protected HazelcastWindowTableFunction(SqlKind kind, SqlOperandMetadata operandMetadata, int orderingColumnIndex) {
         super(kind.name(), operandMetadata, returnTypeInference(orderingColumnIndex));
@@ -50,8 +48,8 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
             return binding.getTypeFactory().builder()
                     .kind(inputRowType.getStructKind())
                     .addAll(inputRowType.getFieldList())
-                    .add(WINDOW_START_TYPE_NAME, orderingColumnType)
-                    .add(WINDOW_END_TYPE_NAME, orderingColumnType)
+                    .add(WINDOW_START_FIELD_NAME, orderingColumnType)
+                    .add(WINDOW_END_FIELD_NAME, orderingColumnType)
                     .build();
         };
     }

@@ -35,7 +35,7 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * Logical rule that pushes down a {@link Calc} into a {@link TableScan} to allow for constrained scans.
+ * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
  * See {@link HazelcastTable} for more information about constrained scans.
  * <p>
  * Before:
