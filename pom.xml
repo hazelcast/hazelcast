@@ -65,7 +65,7 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>5.1.4</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
@@ -306,6 +306,16 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <!--
+                    Workaround for compilation failure on Windows in hazelcast-sql module:
+                    Compilation failure
+                    org.immutables.value.internal.$processor$.$Processor threw com.sun.tools.javac.jvm.ClassReader$BadClassFile: bad class file: hazelcast\target\hazelcast-5.2-SNAPSHOT.jar(com/hazelcast/jet/package-info.class)
+                    class file contains wrong class: com\hazelcast\jet\package-info
+                    Please remove or make sure it appears in the correct subdirectory of the classpath.
+                    -->
+                    <excludes>
+                        <exclude>**/package-info.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 
