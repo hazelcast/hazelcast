@@ -33,6 +33,7 @@ import org.immutables.value.Value;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowCalcSplitLogicalRule.Config.DEFAULT;
 import static java.util.Collections.singletonList;
+import static org.apache.calcite.rex.RexProgramBuilder.forProgram;
 
 /**
  * A {@link Calc} condition reading from a {@link SlidingWindow}
@@ -85,7 +86,14 @@ public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implement
 
         program.expandLocalRef(program.getCondition()).accept(visitor);
 
-        RexProgram identityProgram = RexProgram.createIdentity(calc.getRowType());
+        RexProgramBuilder programBuilder = new RexProgramBuilder(
+                sw.getInput().getRowType(),
+                sw.getCluster().getRexBuilder());
+        programBuilder.clearCondition();
+        programBuilder.addCondition(program.expandLocalRef(program.getCondition()));
+        programBuilder.addIdentity();
+
+        RexProgram identityProgram = programBuilder.getProgram();
 
         final CalcLogicalRel filterCalc = new CalcLogicalRel(
                 calc.getCluster(),
@@ -95,7 +103,7 @@ public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implement
                 identityProgram
         );
 
-        RexProgramBuilder builder = RexProgramBuilder.forProgram(program, calc.getCluster().getRexBuilder(), true);
+        RexProgramBuilder builder = forProgram(program, calc.getCluster().getRexBuilder(), true);
         builder.clearCondition();
 
         final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(filterCalc));
