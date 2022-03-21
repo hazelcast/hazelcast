@@ -158,7 +158,7 @@ public class Vertex implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Vertex localParallelism(int localParallelism) {
-        checkLocked();
+        throwIfLocked();
         this.localParallelism = checkLocalParallelism(localParallelism);
         return this;
     }
@@ -195,7 +195,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * decorate the existing meta-supplier.
      */
     public void updateMetaSupplier(@Nonnull UnaryOperator<ProcessorMetaSupplier> updateFn) {
-        checkLocked();
+        throwIfLocked();
         metaSupplier = updateFn.apply(metaSupplier);
     }
 
@@ -233,11 +233,13 @@ public class Vertex implements IdentifiedDataSerializable {
 
     // END Implementation of IdentifiedDataSerializable
 
-    void checkLocked() {
-        assert !locked;
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("Edge is already locked");
+        }
     }
 
-    public void lock() {
+    void lock() {
         locked = true;
     }
 }

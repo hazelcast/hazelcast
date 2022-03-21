@@ -69,7 +69,7 @@ import static java.util.Objects.requireNonNull;
  */
 @SuppressWarnings("checkstyle:DeclarationOrder")
 public class Edge implements IdentifiedDataSerializable {
-    private boolean locked;
+    private transient boolean locked;
 
     /**
      * An address returned by {@link #getDistributedTo()} denoting an edge that
@@ -152,7 +152,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination) {
-        checkLocked();
+        throwIfLocked();
         return to(destination, 0);
     }
 
@@ -161,7 +161,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination, int ordinal) {
-        checkLocked();
+        throwIfLocked();
         if (this.destination != null) {
             throw new IllegalStateException("destination already set");
         }
@@ -269,7 +269,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge priority(int priority) {
-        checkLocked();
+        throwIfLocked();
         if (priority == MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
             throw new IllegalArgumentException("priority must not be Integer.MIN_VALUE ("
                     + MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
@@ -292,7 +292,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge unicast() {
-        checkLocked();
+        throwIfLocked();
         routingPolicy = RoutingPolicy.UNICAST;
         return this;
     }
@@ -305,7 +305,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T> Edge partitioned(@Nonnull FunctionEx<T, ?> extractKeyFn) {
-        checkLocked();
+        throwIfLocked();
         // optimization for ConstantFunctionEx
         if (extractKeyFn instanceof ConstantFunctionEx) {
             return allToOne(extractKeyFn.apply(null));
@@ -323,7 +323,7 @@ public class Edge implements IdentifiedDataSerializable {
             @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull Partitioner<? super K> partitioner
     ) {
-        checkLocked();
+        throwIfLocked();
         checkSerializable(extractKeyFn, "extractKeyFn");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
@@ -343,7 +343,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge allToOne(Object key) {
-        checkLocked();
+        throwIfLocked();
         return partitioned(wholeItem(), new Single(key));
     }
 
@@ -352,7 +352,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge broadcast() {
-        checkLocked();
+        throwIfLocked();
         routingPolicy = RoutingPolicy.BROADCAST;
         return this;
     }
@@ -366,7 +366,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge isolated() {
-        checkLocked();
+        throwIfLocked();
         routingPolicy = RoutingPolicy.ISOLATED;
         return this;
     }
@@ -386,7 +386,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @since Jet 4.3
      */
     public Edge ordered(@Nonnull ComparatorEx<?> comparator) {
-        checkLocked();
+        throwIfLocked();
         this.comparator = comparator;
         return this;
     }
@@ -398,7 +398,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge fanout() {
-        checkLocked();
+        throwIfLocked();
         routingPolicy = RoutingPolicy.FANOUT;
         return this;
     }
@@ -443,7 +443,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge local() {
-        checkLocked();
+        throwIfLocked();
         distributedTo = null;
         return this;
     }
@@ -476,7 +476,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributed() {
-        checkLocked();
+        throwIfLocked();
         distributedTo = DISTRIBUTE_TO_ALL;
         return this;
     }
@@ -501,7 +501,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributeTo(@Nonnull Address targetMember) {
-        checkLocked();
+        throwIfLocked();
         if (requireNonNull(targetMember).equals(DISTRIBUTE_TO_ALL)) {
             throw new IllegalArgumentException();
         }
@@ -549,7 +549,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge setConfig(@Nullable EdgeConfig config) {
-        checkLocked();
+        throwIfLocked();
         this.config = config;
         return this;
     }
@@ -796,11 +796,13 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
-    void checkLocked() {
-        assert !locked;
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("Edge is already locked");
+        }
     }
 
-    public void lock() {
+    void lock() {
         locked = true;
     }
 }
