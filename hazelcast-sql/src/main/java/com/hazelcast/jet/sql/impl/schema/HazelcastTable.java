@@ -60,9 +60,9 @@ import static java.util.stream.Collectors.joining;
  * <h2>Constrained scans</h2>
  * For a sequence of logical project/filter/scan operators we would like to ensure that the resulting relational tree is as
  * flat as possible because this minimizes the processing overhead and memory usage. To achieve this we try to push projects and
- * filters into the table using {@link CalcIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}. These rules
- * reduce the amount of data returned from the table during scanning. Pushed-down projection ensures that only columns required
- * by parent operators are returned, thus implementing field trimming. Pushed-down filter reduces the number of returned rows.
+ * filters into the table using {@link CalcIntoScanLogicalRule}. These rules reduce the amount of data returned from the table
+ * during scanning. Pushed-down projection ensures that only columns required by parent operators are returned, thus
+ * implementing field trimming. Pushed-down filter reduces the number of returned rows.
  * <p>
  * Projects are indexes of table fields that are returned. Initial projection (i.e. before optimization) returns all the columns.
  * After project pushdown the number and order of columns may change. For example, for the table {@code t[f0, f1, f2]} the

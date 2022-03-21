@@ -185,7 +185,6 @@ public class CreateDagVisitor {
                 );
     }
 
-
     public Vertex onCalc(CalcPhysicalRel rel) {
         RexProgram program = rel.getProgram();
         List<Expression<?>> projection = rel.projection(parameterMetadata);
