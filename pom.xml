@@ -1647,7 +1647,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.10.13</version>
+                <version>2.10.14</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
