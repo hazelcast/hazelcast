@@ -93,6 +93,24 @@ public class CompactStreamSerializerTest {
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
                 .build();
+        MainDTO expected = createMainDTO();
+
+        Data data = serializationService.toData(expected);
+        MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReaderReturnsDefaultValues_whenDataIsMissing() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializer());
+        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
 
         Data data = serializationService.toData(GenericRecordBuilder.compact("main").build());
         MainDTO actual = serializationService.toObject(data);
@@ -142,24 +160,6 @@ public class CompactStreamSerializerTest {
         assertArrayEquals(new Long[0], innerDTO.nullableLongs);
         assertArrayEquals(new Float[0], innerDTO.nullableFloats);
         assertArrayEquals(new Double[0], innerDTO.nullableDoubles);
-    }
-
-    @Test
-    public void testReaderReturnsDefaultValues_whenDataIsMissing() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializer());
-        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
-        compactSerializationConfig.setEnabled(true);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-        MainDTO expected = createMainDTO();
-
-        Data data = serializationService.toData(expected);
-        MainDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
     }
 
     @Test

@@ -65,6 +65,7 @@ public final class CompactTestUtil {
                 .setArrayOfInt64("l", inner.longs)
                 .setArrayOfFloat32("f", inner.floats)
                 .setArrayOfFloat64("d", inner.doubles)
+                .setArrayOfString("strings", inner.strings)
                 .setArrayOfGenericRecord("nn", namedRecords)
                 .setArrayOfDecimal("bigDecimals", inner.bigDecimals)
                 .setArrayOfTime("localTimes", inner.localTimes)

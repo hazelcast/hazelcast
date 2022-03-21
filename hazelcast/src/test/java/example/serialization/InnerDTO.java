@@ -147,7 +147,7 @@ public class InnerDTO {
                 + ", + ll=" + Arrays.toString(longs)
                 + ", + ff=" + Arrays.toString(floats)
                 + ", + dd=" + Arrays.toString(doubles)
-                + ", + dd=" + Arrays.toString(strings)
+                + ", + strings=" + Arrays.toString(strings)
                 + ", + nn=" + Arrays.toString(nn)
                 + ", + bigDecimals=" + Arrays.toString(bigDecimals)
                 + ", + localTimes=" + Arrays.toString(localTimes)
