@@ -16,12 +16,6 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import com.hazelcast.internal.util.StringUtil;
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.MockTime;
-import kafka.utils.TestUtils;
-import kafka.zk.EmbeddedZookeeper;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -32,16 +26,18 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.common.utils.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,82 +59,43 @@ import static org.junit.Assert.assertTrue;
 
 public class KafkaTestSupport {
 
-    private static final String ZK_HOST = "127.0.0.1";
-    private static final String BROKER_HOST = "127.0.0.1";
-
-    private EmbeddedZookeeper zkServer;
-    private String zkConnect;
+    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.0.1");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTestSupport.class);
     private Admin admin;
 
-    private KafkaServer kafkaServer;
     private KafkaProducer<Integer, String> producer;
     private KafkaProducer<String, String> stringStringProducer;
-    private int brokerPort = -1;
     private String brokerConnectionString;
+    private KafkaContainer kafkaContainer;
 
     public void createKafkaCluster() throws IOException {
-        System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
-        zkServer = new EmbeddedZookeeper();
-        zkConnect = ZK_HOST + ':' + zkServer.port();
+        kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + TEST_KAFKA_VERSION))
+                .withEmbeddedZookeeper()
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+        kafkaContainer.start();
 
-        Properties brokerProps = new Properties();
-        brokerProps.setProperty("zookeeper.connect", zkConnect);
-        brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
-        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":0");
-        brokerProps.setProperty("offsets.topic.replication.factor", "1");
-        brokerProps.setProperty("offsets.topic.num.partitions", "1");
-        // we need this due to avoid OOME while running tests, see https://issues.apache.org/jira/browse/KAFKA-3872
-        brokerProps.setProperty("log.cleaner.dedupe.buffer.size", Long.toString(2 * 1024 * 1024L));
-        brokerProps.setProperty("transaction.state.log.replication.factor", "1");
-        brokerProps.setProperty("transaction.state.log.num.partitions", "1");
-        brokerProps.setProperty("transaction.state.log.min.isr", "1");
-        brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
-        brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
-        KafkaConfig config = new KafkaConfig(brokerProps);
-        Time mock = new MockTime();
-        kafkaServer = TestUtils.createServer(config, mock);
-        brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
-
-        brokerConnectionString = BROKER_HOST + ':' + brokerPort;
+        brokerConnectionString = kafkaContainer.getBootstrapServers();
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", brokerConnectionString);
         admin = Admin.create(props);
     }
 
     public void shutdownKafkaCluster() {
-        if (kafkaServer != null) {
-            kafkaServer.shutdown();
+        if (kafkaContainer != null) {
+            kafkaContainer.stop();
             admin.close();
             if (producer != null) {
                 producer.close();
             }
-            try {
-                zkServer.shutdown();
-            } catch (Exception e) {
-                // ignore error on Windows, it fails there, see https://issues.apache.org/jira/browse/KAFKA-6291
-                if (!isWindows()) {
-                    throw e;
-                }
-            }
-
             producer = null;
-            kafkaServer = null;
             admin = null;
-            zkServer = null;
+            kafkaContainer = null;
+            brokerConnectionString = null;
         }
-    }
-
-    public String getZookeeperConnectionString() {
-        return zkConnect;
     }
 
     public String getBrokerConnectionString() {
         return brokerConnectionString;
-    }
-
-    private static boolean isWindows() {
-        return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows");
     }
 
     public void createTopic(String topicId, int partitionCount) {
@@ -172,7 +129,7 @@ public class KafkaTestSupport {
     private KafkaProducer<Integer, String> getProducer() {
         if (producer == null) {
             Properties producerProps = new Properties();
-            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ':' + brokerPort);
+            producerProps.setProperty("bootstrap.servers", brokerConnectionString);
             producerProps.setProperty("key.serializer", IntegerSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
             producer = new KafkaProducer<>(producerProps);
@@ -183,7 +140,7 @@ public class KafkaTestSupport {
     private KafkaProducer<String, String> getStringStringProducer() {
         if (stringStringProducer == null) {
             Properties producerProps = new Properties();
-            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ':' + brokerPort);
+            producerProps.setProperty("bootstrap.servers", brokerConnectionString);
             producerProps.setProperty("key.serializer", StringSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
             stringStringProducer = new KafkaProducer<>(producerProps);

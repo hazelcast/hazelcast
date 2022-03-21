@@ -83,7 +83,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
         Properties properties = new Properties();
         properties.put("listeners", "http://0.0.0.0:0");
-        properties.put("kafkastore.connection.url", kafkaTestSupport.getZookeeperConnectionString());
+        properties.put("kafkastore.bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
         schemaRegistry = schemaRegistryApplication.createServer();

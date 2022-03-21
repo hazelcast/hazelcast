@@ -39,7 +39,7 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <calcite.version>1.29.0</calcite.version>
-        <confluent.version>4.1.4</confluent.version>
+        <confluent.version>6.2.2</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
         <immutables.version>2.8.2</immutables.version>
     </properties>
@@ -728,6 +728,12 @@
             <artifactId>hazelcast-jet-kafka</artifactId>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
