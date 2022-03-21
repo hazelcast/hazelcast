@@ -112,7 +112,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return new ClientJobProxy(client, jobId, lightJobCoordinator);
     }
 
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    public Job newJobProxy(
+            long jobId,
+            boolean isLightJob,
+            boolean immutableDefinitionAndConfig,
+            @Nonnull Object jobDefinition,
+            @Nonnull JobConfig config
+    ) {
         return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
     }
 

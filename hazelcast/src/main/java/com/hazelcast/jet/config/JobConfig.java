@@ -67,7 +67,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class JobConfig implements IdentifiedDataSerializable {
     private static final long SNAPSHOT_INTERVAL_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
-    private boolean locked;
+    private transient boolean locked;
+
     private String name;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
@@ -1482,7 +1483,9 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     private void checkLocked() {
-        assert !locked;
+        if (locked) {
+            throw new IllegalStateException("JobConfig is already locked");
+        }
     }
 
     public void lock() {

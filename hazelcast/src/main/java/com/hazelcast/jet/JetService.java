@@ -151,11 +151,20 @@ public interface JetService {
 
     /**
      * Submits a new light job with a default config. See {@link
-     * #newLightJob(Pipeline, JobConfig)}.
+     * #newLightJob(Pipeline, JobConfig, boolean)}.
      */
     @Nonnull
     default Job newLightJob(@Nonnull Pipeline p) {
         return newLightJob(p, new JobConfig());
+    }
+
+    /**
+     * Submits a new light job with a default config. See {@link
+     * #newLightJob(Pipeline, JobConfig, boolean)}.
+     */
+    @Nonnull
+    default Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config) {
+        return newLightJob(p, config, false);
     }
 
     /**
@@ -183,15 +192,21 @@ public interface JetService {
      * It substantially reduces the overhead for jobs that take milliseconds to
      * complete.
      * <p>
-     * A light job will not be cancelled if the client disconnects. It's
+     * A light job will not be cancelled if the client disconnects. Its
      * potential failure will be only logged in member logs.
+     * <p>
+     * If pipeline and config instances will not mutate during the execution the
+     * immutableDefinitionAndConfig may be set to true. With that guarantee we can skip
+     * cloning of those parameters which also reduces overhead. This flag has an
+     * effect only in submission on member. In submission from client there is no
+     * way to skip the serialization part.
      */
-    Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config);
+    Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config, boolean immutableDefinitionAndConfig);
 
     /**
      * Submits a job defined in the Core API with a default config.
      * <p>
-     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
+     * See {@link #newLightJob(Pipeline, JobConfig, boolean)} for more information.
      */
     @Nonnull
     default Job newLightJob(@Nonnull DAG dag) {
@@ -201,9 +216,19 @@ public interface JetService {
     /**
      * Submits a job defined in the Core API.
      * <p>
-     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
+     * See {@link #newLightJob(Pipeline, JobConfig, boolean)} for more information.
      */
-    Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
+    @Nonnull
+    default Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
+        return newLightJob(dag, config, false);
+    }
+
+    /**
+     * Submits a job defined in the Core API.
+     * <p>
+     * See {@link #newLightJob(Pipeline, JobConfig, boolean)} for more information.
+     */
+    Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config, boolean immutableDefinitionAndConfig);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

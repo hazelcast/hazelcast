@@ -33,7 +33,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.lang.Boolean.FALSE;
@@ -199,7 +204,8 @@ public class JobConfigTest extends JetTestSupport {
 
         JobConfig configWithClassLoaderFactory = new JobConfig();
         configWithClassLoaderFactory.setClassLoaderFactory(new JobClassLoaderFactory() {
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public ClassLoader getJobClassLoader() {
                 throw new UnsupportedOperationException();
             }
@@ -226,8 +232,53 @@ public class JobConfigTest extends JetTestSupport {
         );
     }
 
-    private static class ObjectSerializer implements StreamSerializer<Object> {
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedJobConfig_then_fail() {
+        JobConfig jobConfig = new JobConfig();
 
+        URL mockUrl;
+        try {
+            File file = File.createTempFile("jobConfig", "suffix");
+            mockUrl = file.toURI().toURL();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> jobConfig.setName(""),
+                () -> jobConfig.setSplitBrainProtection(false),
+                () -> jobConfig.setAutoScaling(false),
+                () -> jobConfig.setSuspendOnFailure(false),
+                () -> jobConfig.setProcessingGuarantee(null),
+                () -> jobConfig.setSnapshotIntervalMillis(0L),
+                () -> jobConfig.addClass(this.getClass()),
+                () -> jobConfig.addPackage(this.getClass().getPackage().getName()),
+                () -> jobConfig.addJar(mockUrl),
+                () -> jobConfig.addJarsInZip(mockUrl),
+                () -> jobConfig.addClasspathResource(mockUrl),
+                () -> jobConfig.addCustomClasspath(null, null),
+                () -> jobConfig.addCustomClasspaths(null, null),
+                () -> jobConfig.attachFile(mockUrl),
+                () -> jobConfig.attachDirectory(""),
+                () -> jobConfig.attachAll(null),
+                () -> jobConfig.registerSerializer(null, null),
+                () -> jobConfig.setArgument("", ""),
+                () -> jobConfig.setClassLoaderFactory(null),
+                () -> jobConfig.setInitialSnapshotName(""),
+                () -> jobConfig.setMetricsEnabled(false),
+                () -> jobConfig.setStoreMetricsAfterJobCompletion(false),
+                () -> jobConfig.setMaxProcessorAccumulatedRecords(0L),
+                () -> jobConfig.setTimeoutMillis(0L)
+        );
+
+        jobConfig.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+
+    private static class ObjectSerializer implements StreamSerializer<Object> {
         @Override
         public int getTypeId() {
             return 0;

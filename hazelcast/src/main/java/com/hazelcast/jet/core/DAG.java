@@ -594,8 +594,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return JetDataSerializerHook.DAG;
     }
 
-    void checkLocked() {
-        assert !locked;
+    private void checkLocked() {
+        if (locked) {
+            throw new IllegalStateException("DAG is already locked");
+        }
     }
 
     public void lock() {
