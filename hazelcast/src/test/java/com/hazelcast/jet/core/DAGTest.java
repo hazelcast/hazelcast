@@ -410,4 +410,56 @@ public class DAGTest {
             assertThrows(IllegalStateException.class, mutatingMethod::get);
         }
     }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedVertexInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex = dag.newVertex("", (ProcessorMetaSupplier) addresses -> address -> null);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> vertex.localParallelism(1),
+                () -> {
+                    vertex.updateMetaSupplier(null);
+                    return null;
+                }
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedEdgeInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex1 = dag.newVertex("1", (ProcessorMetaSupplier) addresses -> address -> null);
+        Vertex vertex2 = dag.newVertex("2", (ProcessorMetaSupplier) addresses -> address -> null);
+        Edge edge = between(vertex1, vertex2);
+        dag.edge(edge);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> edge.to(null),
+                () -> edge.to(null, 0),
+                () -> edge.priority(0),
+                () -> edge.unicast(),
+                () -> edge.partitioned(null),
+                () -> edge.partitioned(null, null),
+                () -> edge.allToOne(null),
+                () -> edge.broadcast(),
+                () -> edge.isolated(),
+                () -> edge.ordered(null),
+                () -> edge.fanout(),
+                () -> edge.local(),
+                () -> edge.distributed(),
+                () -> edge.distributeTo(null),
+                () -> edge.setConfig(null)
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
 }
