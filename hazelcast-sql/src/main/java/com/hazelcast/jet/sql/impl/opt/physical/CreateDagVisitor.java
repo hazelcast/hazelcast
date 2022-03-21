@@ -86,6 +86,7 @@ public class CreateDagVisitor {
     private static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
+    private static final long DEFAULT_TTL = 1000L;
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
 
@@ -375,6 +376,28 @@ public class CreateDagVisitor {
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
             return vertex2;
         }
+    }
+
+    public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
+        Expression<?> timestampExpression = rel.timestampExpression();
+        ToLongFunctionEx<JetSqlRow> timestampFn = row ->
+                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), MOCK_EEC));
+
+        Vertex vertex = null;
+//                dag.newUniqueVertex(
+//                "Drop-Late-Items",
+//                Processors.mapStatefulP(
+//                        0L,
+//                        Object::hashCode,
+//                        timestampFn,
+//                        ExpressionEvalContext::from,
+//                        (o, i, row) -> null,
+//                        null
+//                )
+//        );
+
+        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        return vertex;
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {

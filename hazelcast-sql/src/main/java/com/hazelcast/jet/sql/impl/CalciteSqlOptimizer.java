@@ -42,8 +42,6 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -594,8 +592,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        detectStandaloneImposeOrder(logicalRel);
-
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -660,21 +656,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
-    }
-
-    // The IMPOSE_ORDER function must also drop late items. We don't have this implemented,
-    // therefore we detect if, besides IMPOSE_ORDER, there's also streaming window aggregation.
-    // If not, we throw an error. But we don't cover all cases...
-    private void detectStandaloneImposeOrder(RelNode rel) {
-        HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
-        WatermarkedFields wm = mq.extractWatermarkedFields(rel);
-        if (wm != null && !wm.isEmpty()) {
-            StreamingAggregationDetector detector = new StreamingAggregationDetector();
-            detector.go(rel);
-            if (!detector.found) {
-                throw QueryException.error("Currently, IMPOSE_ORDER can only be used with window aggregation");
-            }
-        }
     }
 
     private static class StreamingAggregationDetector extends RelVisitor {

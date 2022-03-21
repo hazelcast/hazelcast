@@ -41,6 +41,7 @@ public final class PhysicalRules {
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
+                DropLateItemsPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,

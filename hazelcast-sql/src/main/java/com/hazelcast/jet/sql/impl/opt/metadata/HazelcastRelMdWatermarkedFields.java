@@ -73,7 +73,7 @@ public final class HazelcastRelMdWatermarkedFields
         return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
     }
 
-    private static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
+    public static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
         if (watermarkedFieldIndex < 0) {
             return null;
         }

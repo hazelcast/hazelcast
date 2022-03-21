@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -40,7 +41,10 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.Map;
+
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
@@ -112,14 +116,35 @@ final class WatermarkRules {
             WatermarkLogicalRel logicalWatermark = call.rel(0);
             FullScanLogicalRel logicalScan = call.rel(1);
 
-            RelNode rel = new FullScanLogicalRel(
+            int wmIndex = logicalWatermark.watermarkedColumnIndex();
+            if (wmIndex < 0) {
+                return;
+            }
+            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(logicalWatermark, wmIndex);
+            if (watermarkedFields == null || watermarkedFields.isEmpty()) {
+                return;
+            }
+
+            Map.Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst();
+            if (watermarkedField == null) {
+                return;
+            }
+
+            FullScanLogicalRel scan = new FullScanLogicalRel(
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
                     logicalWatermark.eventTimePolicyProvider(),
-                    logicalWatermark.watermarkedColumnIndex()
+                    wmIndex
             );
-            call.transformTo(rel);
+
+            DropLateItemsLogicalRel dropLateItems = new DropLateItemsLogicalRel(
+                    logicalWatermark.getCluster(),
+                    logicalWatermark.getTraitSet(),
+                    scan,
+                    watermarkedField.getValue()
+            );
+            call.transformTo(dropLateItems);
         }
     };
 
