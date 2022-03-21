@@ -27,10 +27,10 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,80 +63,34 @@ final class ValuesLogicalRules {
                 }
             };
 
-    static final RelOptRule FILTER_INSTANCE =
+    static final RelOptRule CALC_INSTANCE =
             new RelOptRule(
-                    operand(FilterLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
-                    ValuesLogicalRules.class.getSimpleName() + "(Filter)"
-            ) {
-                @Override
-                public void onMatch(RelOptRuleCall call) {
-                    Filter filter = call.rel(0);
-                    ValuesLogicalRel values = call.rel(1);
-                    ExpressionValues expressionValues = new TransformedExpressionValues(
-                            filter.getCondition(),
-                            null,
-                            values.getRowType(),
-                            values.values(),
-                            ((HazelcastRelOptCluster) filter.getCluster()).getParameterMetadata()
-                    );
-                    RelNode rel = new ValuesLogicalRel(
-                            filter.getCluster(),
-                            filter.getTraitSet(),
-                            filter.getRowType(),
-                            singletonList(expressionValues)
-                    );
-                    call.transformTo(rel);
-                }
-            };
-
-    static final RelOptRule PROJECT_INSTANCE =
-            new RelOptRule(
-                    operand(ProjectLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
+                    operand(CalcLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
                     ValuesLogicalRules.class.getSimpleName() + "(Project)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    Project project = call.rel(0);
+                    CalcLogicalRel calc = call.rel(0);
                     ValuesLogicalRel values = call.rel(1);
-                    ExpressionValues expressionValues = new TransformedExpressionValues(
-                            null,
-                            project.getProjects(),
-                            values.getRowType(),
-                            values.values(),
-                            ((HazelcastRelOptCluster) project.getCluster()).getParameterMetadata()
-                    );
-                    RelNode rel = new ValuesLogicalRel(
-                            project.getCluster(),
-                            project.getTraitSet(),
-                            project.getRowType(),
-                            singletonList(expressionValues)
-                    );
-                    call.transformTo(rel);
-                }
-            };
 
-    static final RelOptRule PROJECT_FILTER_INSTANCE =
-            new RelOptRule(
-                    operand(ProjectLogicalRel.class,
-                            some(operand(FilterLogicalRel.class, operand(ValuesLogicalRel.class, none())))),
-                    ValuesLogicalRules.class.getSimpleName() + "(Project-Filter)"
-            ) {
-                @Override
-                public void onMatch(RelOptRuleCall call) {
-                    Project project = call.rel(0);
-                    Filter filter = call.rel(1);
-                    ValuesLogicalRel values = call.rel(2);
+                    RexProgram rexProgram = calc.getProgram();
+
+                    RexNode filter = null;
+                    if (rexProgram.getCondition() != null) {
+                        filter = rexProgram.expandLocalRef(rexProgram.getCondition());
+                    }
+
                     ExpressionValues expressionValues = new TransformedExpressionValues(
-                            filter.getCondition(),
-                            project.getProjects(),
+                            filter,
+                            rexProgram.expandList(rexProgram.getProjectList()),
                             values.getRowType(),
                             values.values(),
-                            ((HazelcastRelOptCluster) project.getCluster()).getParameterMetadata()
+                            ((HazelcastRelOptCluster) calc.getCluster()).getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
-                            project.getCluster(),
-                            project.getTraitSet(),
-                            project.getRowType(),
+                            calc.getCluster(),
+                            calc.getTraitSet(),
+                            rexProgram.getOutputRowType(),
                             singletonList(expressionValues)
                     );
                     call.transformTo(rel);
