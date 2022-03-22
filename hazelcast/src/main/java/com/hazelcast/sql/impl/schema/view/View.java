@@ -62,6 +62,15 @@ public class View implements IdentifiedDataSerializable {
         return viewColumnNames;
     }
 
+    /**
+     * Returns the list of column names for this view.
+     * <p>
+     * Warning: this information can be stale if objects this view depends on is
+     * changed. For example, if this view is defined by `select a from
+     * my_mapping` and the type of `a` changes in `my_mapping`, the actual type
+     * of the view column will change, but it will not be reflected in the
+     * return value of this method, until the view is recreated.
+     */
     public List<QueryDataType> viewColumnTypes() {
         return viewColumnTypes;
     }

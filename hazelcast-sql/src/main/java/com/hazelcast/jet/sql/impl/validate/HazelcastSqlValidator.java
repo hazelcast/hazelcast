@@ -414,15 +414,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 // not every identifier is a table
                 if (table != null) {
                     HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-                    if (hazelcastTable.getTarget() instanceof ViewTable) {
-                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
-                        return null;
-                    }
-                    SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
-                    if (connector.isStream()) {
-                        found = true;
-                        return null;
-                    }
+                    assert hazelcastTable != null;
+                    found |= hazelcastTable.getTarget().isStream();
                 }
                 return super.visit(id);
             }

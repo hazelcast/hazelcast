@@ -120,6 +120,11 @@ public class SqlCatalogTest {
         public PlanObjectKey getObjectKey() {
             return null;
         }
+
+        @Override
+        public boolean isStream() {
+            throw new UnsupportedOperationException();
+        }
     }
 }
 

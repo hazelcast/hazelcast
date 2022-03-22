@@ -42,7 +42,7 @@ public abstract class Table {
     ) {
         this.schemaName = schemaName;
         this.sqlName = sqlName;
-        this.fields = Collections.unmodifiableList(fields);
+        this.fields = fields;
         this.statistics = statistics;
     }
 
@@ -58,16 +58,19 @@ public abstract class Table {
     }
 
     public List<TableField> getFields() {
+        initFields();
         return fields;
     }
 
+    protected void initFields() { }
+
     public int getFieldCount() {
-        return fields.size();
+        return getFields().size();
     }
 
     @SuppressWarnings("unchecked")
     public <T extends TableField> T getField(int index) {
-        return (T) fields.get(index);
+        return (T) getFields().get(index);
     }
 
     public int getFieldIndex(String fieldName) {
@@ -78,6 +81,8 @@ public abstract class Table {
         }
         return -1;
     }
+
+    public abstract boolean isStream();
 
     public TableStatistics getStatistics() {
         return statistics;

@@ -50,6 +50,7 @@ public abstract class JetTable extends Table {
         return sqlConnector;
     }
 
+    @Override
     public final boolean isStream() {
         return sqlConnector.isStream();
     }

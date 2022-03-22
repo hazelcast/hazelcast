@@ -18,11 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.virtual;
 
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.view.View;
-
-import java.util.List;
 
 /**
  * Table object to represent virtual (view) table.
@@ -30,13 +27,8 @@ import java.util.List;
 public class ViewTable extends Table {
     private final View view;
 
-    public ViewTable(
-            String schemaName,
-            View view,
-            List<TableField> fields,
-            TableStatistics statistics
-    ) {
-        super(schemaName, view.name(), fields, statistics);
+    public ViewTable(String schemaName, View view, TableStatistics statistics) {
+        super(schemaName, view.name(), null, statistics);
         this.view = view;
     }
 
@@ -47,12 +39,29 @@ public class ViewTable extends Table {
         return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
 
+    @Override
+    protected void initFields() {
+//        if (expansionStack.contains(viewPath)) {
+//            throw QueryException.error("Cycle detected in view references");
+//        }
+//        expansionStack.push(viewPath);
+//        SqlNode sqlNode = parser.parse(queryString).getNode();
+//        final RelRoot root = sqlToRelConverter.convertQuery(sqlNode, true, true);
+//        expansionStack.pop();
+//        final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));
+//
+//        final RelBuilder relBuilder = QueryConverter.CONFIG.getRelBuilderFactory().create(relOptCluster, null);
+//        return root2.withRel(RelDecorrelator.decorrelateQuery(root.rel, relBuilder));
+        throw new UnsupportedOperationException("TODO");
+    }
+
     public String getViewQuery() {
         return view.query();
     }
 
+    @Override
     public boolean isStream() {
-        return view.isStream();
+        // TODO [viliam]
+        return false;
     }
-
 }
