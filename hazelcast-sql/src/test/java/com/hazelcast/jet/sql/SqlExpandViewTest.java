@@ -139,7 +139,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 .hasMessageContaining("DML operations not supported for views");
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
     @Test
     public void test_referencedViewChanged() {
         // We create a view v2 as reading from v1, and then change v1.
