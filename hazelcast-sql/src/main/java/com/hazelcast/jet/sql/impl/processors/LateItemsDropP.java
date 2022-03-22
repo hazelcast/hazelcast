@@ -29,6 +29,16 @@ import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 
+/**
+ * Implementation of processor which removes late items from stream.
+ * While {@link LateItemsDropP#tryProcessWatermark} call captures
+ * the most recent watermark, {@link LateItemsDropP#tryProcess}
+ * filters each input item by its timestamp.
+ * SQL engine-specific private API.
+ *
+ * @param <T> processed item
+ * @since 5.2
+ */
 public class LateItemsDropP<T> extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
