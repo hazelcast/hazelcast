@@ -24,6 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.networking.HandlerStatus.BLOCKED;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -77,6 +78,8 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
                 ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
                 connection.setConnectionType(ConnectionType.MEMBER);
                 channel.outboundPipeline().replace(this, outboundHandlers);
+            } else {
+                return BLOCKED;
             }
 
             return CLEAN;
