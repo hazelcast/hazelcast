@@ -95,11 +95,6 @@ public class PartitionedMapTable extends AbstractMapTable {
         return hd;
     }
 
-    @Override
-    public boolean isStream() {
-        return false;
-    }
-
     public Stream<MapTableField> keyFields() {
         return getFields().stream().map(field -> (MapTableField) field).filter(field -> field.getPath().isKey());
     }

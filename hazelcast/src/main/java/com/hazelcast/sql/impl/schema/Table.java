@@ -86,8 +86,6 @@ public abstract class Table {
         return -1;
     }
 
-    public abstract boolean isStream();
-
     public TableStatistics getStatistics() {
         return statistics;
     }

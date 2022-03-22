@@ -38,7 +38,6 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
  */
 public class ViewTable extends Table {
     private final View view;
-    private boolean isStream;
 
     public ViewTable(String schemaName, View view, TableStatistics statistics) {
         super(schemaName, view.name(), null, statistics);
@@ -62,7 +61,6 @@ public class ViewTable extends Table {
         }
         expansionStack.push(viewPath);
         QueryParseResult parseResult = context.parse(view.query());
-        isStream = parseResult.isInfiniteRows();
         final QueryConvertResult convertResult = context.convert(parseResult.getNode());
         expansionStack.pop();
         List<RelDataTypeField> fieldList = convertResult.getRel().getRowType().getFieldList();
