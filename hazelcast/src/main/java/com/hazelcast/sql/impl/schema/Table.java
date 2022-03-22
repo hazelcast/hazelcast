@@ -29,16 +29,16 @@ public abstract class Table {
 
     private final String schemaName;
     private final String sqlName;
-    private final List<TableField> fields;
+    private List<TableField> fields;
     private final TableStatistics statistics;
 
     private Set<String> conflictingSchemas;
 
     protected Table(
-        String schemaName,
-        String sqlName,
-        List<TableField> fields,
-        TableStatistics statistics
+            String schemaName,
+            String sqlName,
+            List<TableField> fields,
+            TableStatistics statistics
     ) {
         this.schemaName = schemaName;
         this.sqlName = sqlName;
@@ -58,11 +58,15 @@ public abstract class Table {
     }
 
     public List<TableField> getFields() {
-        initFields();
+        if (fields == null) {
+            fields = initFields();
+        }
         return fields;
     }
 
-    protected void initFields() { }
+    protected List<TableField> initFields() {
+        throw new AssertionError("initFields() should be overridden");
+    }
 
     public int getFieldCount() {
         return getFields().size();

@@ -99,20 +99,6 @@ public class HazelcastTable extends AbstractTable {
         this.filter = null;
     }
 
-    private void initRowType() {
-        if (rowType == null) {
-            // produce default projects
-            int fieldCount = target.getFieldCount();
-            projects = new ArrayList<>(fieldCount);
-            for (int i = 0; i < fieldCount; i++) {
-                TableField field = target.getField(i);
-                RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
-                projects.add(new RexInputRef(i, type));
-            }
-            rowType = computeRowType(projects);
-        }
-    }
-
     private HazelcastTable(
             Table target,
             Statistic statistic,
@@ -125,6 +111,20 @@ public class HazelcastTable extends AbstractTable {
         this.projects = projects;
         this.rowType = rowType == null ? computeRowType(projects) : rowType;
         this.filter = filter;
+    }
+
+    private void initRowType() {
+        if (rowType == null) {
+            // produce default projects
+            int fieldCount = target.getFieldCount();
+            projects = new ArrayList<>(fieldCount);
+            for (int i = 0; i < fieldCount; i++) {
+                TableField field = target.getField(i);
+                RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                projects.add(new RexInputRef(i, type));
+            }
+            rowType = computeRowType(projects);
+        }
     }
 
     public HazelcastTable withProject(List<RexNode> projects, @Nullable RelDataType rowType) {

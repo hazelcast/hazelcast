@@ -16,16 +16,29 @@
 
 package com.hazelcast.jet.sql.impl.connector.virtual;
 
+import com.hazelcast.jet.sql.impl.OptimizerContext;
+import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.view.View;
+import org.apache.calcite.rel.type.RelDataTypeField;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 /**
  * Table object to represent virtual (view) table.
  */
 public class ViewTable extends Table {
     private final View view;
+    private boolean isStream;
 
     public ViewTable(String schemaName, View view, TableStatistics statistics) {
         super(schemaName, view.name(), null, statistics);
@@ -40,19 +53,24 @@ public class ViewTable extends Table {
     }
 
     @Override
-    protected void initFields() {
-//        if (expansionStack.contains(viewPath)) {
-//            throw QueryException.error("Cycle detected in view references");
-//        }
-//        expansionStack.push(viewPath);
-//        SqlNode sqlNode = parser.parse(queryString).getNode();
-//        final RelRoot root = sqlToRelConverter.convertQuery(sqlNode, true, true);
-//        expansionStack.pop();
-//        final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));
-//
-//        final RelBuilder relBuilder = QueryConverter.CONFIG.getRelBuilderFactory().create(relOptCluster, null);
-//        return root2.withRel(RelDecorrelator.decorrelateQuery(root.rel, relBuilder));
-        throw new UnsupportedOperationException("TODO");
+    protected List<TableField> initFields() {
+        OptimizerContext context = OptimizerContext.getThreadContext();
+        Deque<String> expansionStack = context.getViewExpansionStack();
+        String viewPath = getSchemaName() + "." + view.name();
+        if (expansionStack.contains(viewPath)) {
+            throw QueryException.error("Cycle detected in view references");
+        }
+        expansionStack.push(viewPath);
+        QueryParseResult parseResult = context.parse(view.query());
+        isStream = parseResult.isInfiniteRows();
+        final QueryConvertResult convertResult = context.convert(parseResult.getNode());
+        expansionStack.pop();
+        List<RelDataTypeField> fieldList = convertResult.getRel().getRowType().getFieldList();
+        List<TableField> res = new ArrayList<>(fieldList.size());
+        for (RelDataTypeField f : fieldList) {
+            res.add(new TableField(f.getName(), toHazelcastType(f.getType()), false));
+        }
+        return res;
     }
 
     public String getViewQuery() {
@@ -61,7 +79,7 @@ public class ViewTable extends Table {
 
     @Override
     public boolean isStream() {
-        // TODO [viliam]
-        return false;
+        initFields();
+        return isStream;
     }
 }
