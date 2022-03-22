@@ -60,8 +60,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     public JobProxy(
             NodeEngineImpl engine,
             long jobId,
-            boolean immutableDefinitionAndConfig,
             boolean isLightJob,
+            boolean immutableDefinitionAndConfig,
             @Nonnull Object jobDefinition,
             @Nonnull JobConfig config
     ) {
@@ -112,11 +112,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
         if (immutableDefinitionAndConfig) {
-            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, true, null));
+            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, isLightJob(), null));
         }
         Data configData = serializationService().toData(config);
         Data jobDefinitionData = serializationService().toData(jobDefinition);
-        return invokeOp(new SubmitJobOperation(getId(), null, null, jobDefinitionData, configData, false, null));
+        return invokeOp(new SubmitJobOperation(getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
     }
 
     @Override
