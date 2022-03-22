@@ -94,4 +94,8 @@ class WanMapSupportingService implements WanSupportingService {
             throw rethrow(t);
         }
     }
+
+    @Override
+    public void someNewMethod() {
+    }
 }

@@ -34,4 +34,9 @@ public interface WanSupportingService {
      *                        appropriate member
      */
     void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType);
+
+    /**
+     * Some method.
+     */
+    void someNewMethod();
 }
