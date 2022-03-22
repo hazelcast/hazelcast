@@ -66,7 +66,7 @@ public class View implements IdentifiedDataSerializable, Versioned {
     }
 
     /**
-     * Returns the list of column names for this view.
+     * Returns the list of column types for this view.
      * <p>
      * Warning: this information can be stale if objects this view depends on is
      * changed. For example, if this view is defined by `select a from

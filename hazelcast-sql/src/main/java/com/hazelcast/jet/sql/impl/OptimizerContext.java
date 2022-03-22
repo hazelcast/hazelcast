@@ -161,6 +161,10 @@ public final class OptimizerContext {
         return converter.convert(node);
     }
 
+    public RelNode convertView(SqlNode node) {
+        return converter.convertView(node);
+    }
+
     /**
      * Apply the given rules to the node.
      *

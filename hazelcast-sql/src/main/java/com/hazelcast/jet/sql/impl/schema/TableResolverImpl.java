@@ -217,7 +217,7 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(View view) {
-        return new ViewTable(SCHEMA_NAME_PUBLIC, view, new ConstantTableStatistics(0L));
+        return new ViewTable(SCHEMA_NAME_PUBLIC, view.name(), view.query(), new ConstantTableStatistics(0L));
     }
 
     @Override
