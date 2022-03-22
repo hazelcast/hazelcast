@@ -130,7 +130,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS FIRST, name ASC", tableName)
-        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS FIRST' does not exist");
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("NULLS FIRST not supported");
     }
 
     @Test
@@ -145,7 +145,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS LAST, name ASC", tableName)
-        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS LAST' does not exist");
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("NULLS LAST not supported");
     }
 
     @Test
@@ -160,8 +160,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS FIRST, name DESC", tableName)
-        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS FIRST' does not exist");
-
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("NULLS FIRST not supported");
     }
 
     @Test
@@ -176,7 +175,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS LAST, name DESC", tableName)
-        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS LAST' does not exist");
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("NULLS LAST not supported");
     }
 
     @Test

@@ -52,7 +52,7 @@ public class PhysicalJoinTest extends OptimizerTestSupport {
         assertPlan(
                 optimizePhysical(query, asList(), tableLeft, tableRight).getPhysical(),
                 plan(
-                        planRow(0, ProjectPhysicalRel.class),
+                        planRow(0, CalcPhysicalRel.class),
                         planRow(1, JoinHashPhysicalRel.class),
                         planRow(2, FullScanPhysicalRel.class),
                         planRow(2, AggregateCombineByKeyPhysicalRel.class),

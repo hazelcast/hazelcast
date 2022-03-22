@@ -29,10 +29,7 @@ public final class PhysicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
-                FilterPhysicalRule.INSTANCE,
-
-                // Project rules
-                ProjectPhysicalRule.INSTANCE,
+                CalcPhysicalRule.INSTANCE,
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,
@@ -44,8 +41,8 @@ public final class PhysicalRules {
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
-                AggregateSlidingWindowPhysicalRule.PROJECT_INSTANCE,
-                AggregateSlidingWindowPhysicalRule.NO_PROJECT_INSTANCE,
+                AggregateSlidingWindowPhysicalRule.WITH_CALC_INSTANCE,
+                AggregateSlidingWindowPhysicalRule.NO_CALC_INSTANCE,
                 StreamAggregateCannotExecuteRule.INSTANCE,
 
                 // Sort rules
