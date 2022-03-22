@@ -56,6 +56,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -63,13 +64,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
-import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
@@ -187,25 +186,25 @@ public class CreateDagVisitor {
                 );
     }
 
-    public Vertex onFilter(FilterPhysicalRel rel) {
-        Expression<Boolean> filter = rel.filter(parameterMetadata);
-
-        Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
-                (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
-        connectInputPreserveCollation(rel, vertex);
-        return vertex;
-    }
-
-    public Vertex onProject(ProjectPhysicalRel rel) {
+    public Vertex onCalc(CalcPhysicalRel rel) {
+        RexProgram program = rel.getProgram();
         List<Expression<?>> projection = rel.projection(parameterMetadata);
 
-        Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
-                (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
-        ));
+        Vertex vertex;
+        if (program.getCondition() != null) {
+            Expression<Boolean> filterExpr = rel.filter(parameterMetadata);
+
+            vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
+                    ServiceFactories.nonSharedService(ctx ->
+                            ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
+                    (Function<JetSqlRow, JetSqlRow> calcFn, JetSqlRow row) -> calcFn.apply(row)));
+        } else {
+            vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
+                    ServiceFactories.nonSharedService(ctx ->
+                            ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
+                    (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
+            ));
+        }
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -458,10 +457,10 @@ public class CreateDagVisitor {
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
+        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
             SortPhysicalRel sortRel = input instanceof SortPhysicalRel
                     ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
+                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -600,8 +599,8 @@ public class CreateDagVisitor {
         if (preserveCollation) {
             int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
-            // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
-            // vertices indeed have the same LP
+            // It's not strictly necessary to set the LP to the input,
+            // but we do it to ensure that the two vertices indeed have the same LP
             inputVertex.determineLocalParallelism(explicitLP);
             vertex.localParallelism(explicitLP);
         }
@@ -614,8 +613,8 @@ public class CreateDagVisitor {
         }
     }
 
-    private boolean isProjectionWithSort(RelNode input) {
-        return input instanceof ProjectPhysicalRel &&
-                ((ProjectPhysicalRel) input).getInput() instanceof SortPhysicalRel;
+    private boolean isCalcWithSort(RelNode input) {
+        return input instanceof CalcPhysicalRel &&
+                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }

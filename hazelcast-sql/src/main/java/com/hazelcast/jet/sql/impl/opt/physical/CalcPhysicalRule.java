@@ -16,37 +16,41 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Project;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class ProjectPhysicalRule extends ConverterRule {
+final class CalcPhysicalRule extends ConverterRule {
 
-    /** Default configuration. */
+    /**
+     * Default configuration.
+     */
     private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
+            .withConversion(CalcLogicalRel.class, LOGICAL, PHYSICAL, CalcPhysicalRule.class.getSimpleName());
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new ProjectPhysicalRule();
+    static final RelOptRule INSTANCE = new CalcPhysicalRule();
 
-    private ProjectPhysicalRule() {
+    private CalcPhysicalRule() {
         super(DEFAULT_CONFIG);
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
+        CalcLogicalRel calc = (CalcLogicalRel) rel;
 
-        RelNode transformedInput = RelOptRule.convert(project.getInput(), project.getInput().getTraitSet().replace(PHYSICAL));
-        return new ProjectPhysicalRel(
-                project.getCluster(),
-                transformedInput.getTraitSet(),
-                transformedInput,
-                project.getProjects(),
-                project.getRowType());
+        RelNode transformedInput = RelOptRule.convert(calc.getInput(), calc.getInput().getTraitSet().replace(PHYSICAL));
+
+        return new CalcPhysicalRel(
+                calc.getCluster(),
+                OptUtils.toPhysicalConvention(transformedInput.getTraitSet()),
+                OptUtils.toPhysicalInput(transformedInput),
+                calc.getProgram()
+        );
     }
 }

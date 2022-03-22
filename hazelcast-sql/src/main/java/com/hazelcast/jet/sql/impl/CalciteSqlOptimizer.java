@@ -98,7 +98,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Aggregate;
-import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -671,8 +671,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     return;
                 }
 
-                if (input instanceof Project) {
-                    RelNode projectInput = ((Project) input).getInput();
+                if (input instanceof Calc) {
+                    RelNode projectInput = ((Calc) input).getInput();
                     if (projectInput instanceof SlidingWindow) {
                         found = true;
                         return;

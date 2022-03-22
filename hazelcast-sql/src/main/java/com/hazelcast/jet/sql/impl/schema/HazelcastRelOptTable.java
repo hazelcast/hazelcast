@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
@@ -45,7 +44,7 @@ import java.util.List;
  * Custom implementation of Apache Calcite table.
  * <p>
  * Tables are used inside {@link TableScan} operators. During logical planning we attempt to flatten the relational tree by
- * pushing down projects and filters into the table, see {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}.
+ * pushing down projects and filters into the table, see {@link CalcIntoScanLogicalRule}.
  * <p>
  * It is important to distinguish {@code TableScan} operators with and without pushdown. Otherwise scans that produce different
  * results will be merged into a single equivalence group, leading to incorrect query results.

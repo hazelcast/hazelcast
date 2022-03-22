@@ -772,7 +772,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(VARCHAR, columnType),
                 asList(
                         new String[]{"A", "1"},
                         new String[]{"B", "2"},
@@ -940,7 +940,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(VARCHAR, columnType),
                 asList(
                         new String[]{"A", "1"},
                         new String[]{"B", "2"},
@@ -1028,8 +1028,8 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                   .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                           "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1090,7 +1090,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, QueryDataTypeFamily.INTEGER),
+                asList(VARCHAR, INTEGER),
                 asList(values)
         );
         return name;
