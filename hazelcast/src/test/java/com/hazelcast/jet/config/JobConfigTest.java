@@ -204,8 +204,7 @@ public class JobConfigTest extends JetTestSupport {
 
         JobConfig configWithClassLoaderFactory = new JobConfig();
         configWithClassLoaderFactory.setClassLoaderFactory(new JobClassLoaderFactory() {
-            @Nonnull
-            @Override
+            @Nonnull @Override
             public ClassLoader getJobClassLoader() {
                 throw new UnsupportedOperationException();
             }
@@ -279,6 +278,7 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     private static class ObjectSerializer implements StreamSerializer<Object> {
+
         @Override
         public int getTypeId() {
             return 0;
