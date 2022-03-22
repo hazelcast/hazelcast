@@ -163,6 +163,25 @@ public final class ExpressionUtil {
         };
     }
 
+    public static FunctionEx<JetSqlRow, JetSqlRow> calcFn(
+            @Nonnull List<Expression<?>> projections,
+            @Nonnull Expression<Boolean> predicate,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return row0 -> {
+            Row row = row0.getRow();
+            if (Boolean.TRUE.equals(evaluate(predicate, row, context))) {
+                Object[] result = new Object[projections.size()];
+                for (int i = 0; i < projections.size(); i++) {
+                    result[i] = evaluate(projections.get(i), row, context);
+                }
+                return new JetSqlRow(context.getSerializationService(), result);
+            } else {
+                return null;
+            }
+        };
+    }
+
     /**
      * Concatenates {@code leftRow} and {@code rightRow} into one, evaluates
      * the {@code predicate} on it, and if the predicate passed, returns the

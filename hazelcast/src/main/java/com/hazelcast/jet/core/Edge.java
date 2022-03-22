@@ -718,12 +718,15 @@ public class Edge implements IdentifiedDataSerializable {
         FANOUT
     }
 
-    private static class Single implements Partitioner<Object> {
+    static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final Object key;
+        private Object key;
         private int partition;
+
+        Single() {
+        }
 
         Single(Object key) {
             this.key = key;
@@ -738,16 +741,42 @@ public class Edge implements IdentifiedDataSerializable {
         public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(key);
+            out.writeInt(partition);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            key = in.readObject();
+            partition = in.readInt();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_SINGLE_PARTITIONER;
+        }
     }
 
-    private static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware {
+    static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
+            IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final FunctionEx<T, K> keyExtractor;
-        private final Partitioner<? super K> partitioner;
-        private final String edgeDebugName;
+        private FunctionEx<T, K> keyExtractor;
+        private Partitioner<? super K> partitioner;
+        private String edgeDebugName;
         private SerializationService serializationService;
+
+        KeyPartitioner() {
+        }
 
         KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
                        String edgeDebugName) {
@@ -776,6 +805,30 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public void setSerializationService(SerializationService serializationService) {
             this.serializationService = serializationService;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keyExtractor);
+            out.writeObject(partitioner);
+            out.writeString(edgeDebugName);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keyExtractor = in.readObject();
+            partitioner = in.readObject();
+            edgeDebugName = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_KEY_PARTITIONER;
         }
     }
 }

@@ -76,10 +76,4 @@ public class ViewTable extends Table {
     public String getViewQuery() {
         return view.query();
     }
-
-    @Override
-    public boolean isStream() {
-        initFields();
-        return isStream;
-    }
 }
