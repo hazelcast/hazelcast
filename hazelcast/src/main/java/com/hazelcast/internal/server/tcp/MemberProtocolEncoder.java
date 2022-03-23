@@ -37,7 +37,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
     private volatile boolean encoderCanReplace;
 
-    private boolean clusterProtocolBuffered;
+    private volatile boolean clusterProtocolBuffered;
 
     /**
      * Decodes first 3 incoming bytes, validates against {@code supportedProtocol} and, when
@@ -64,12 +64,11 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
             if (!clusterProtocolBuffered) {
                 clusterProtocolBuffered = true;
                 dst.put(stringToBytes(CLUSTER));
-                // Return false because ProtocolEncoder is not ready yet; but first we need to flush protocol
-                return DIRTY;
+                return CLEAN;
             }
 
             if (!isProtocolBufferDrained()) {
-                // Return false because ProtocolEncoder is not ready yet; but first we need to flush protocol
+                // Return DIRTY because ProtocolEncoder is not ready yet; but first we need to flush protocol
                 return DIRTY;
             }
 
