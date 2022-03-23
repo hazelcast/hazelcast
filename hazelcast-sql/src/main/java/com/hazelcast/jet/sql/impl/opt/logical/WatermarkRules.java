@@ -107,6 +107,7 @@ final class WatermarkRules {
      * Push down {@link WatermarkLogicalRel} into {@link
      * FullScanLogicalRel}, if one is its input.
      */
+    @SuppressWarnings("checkstyle:AnonInnerLength")
     static final RelOptRule WATERMARK_INTO_SCAN_INSTANCE = new RelOptRule(
             operand(WatermarkLogicalRel.class, operand(FullScanLogicalRel.class, none())),
             WatermarkRules.class.getSimpleName() + "(Watermark Into Scan)"

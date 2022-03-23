@@ -40,6 +40,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,6 +75,7 @@ public final class HazelcastRelMdWatermarkedFields
         return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
     }
 
+    @Nullable
     public static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
         if (watermarkedFieldIndex < 0) {
             return null;
