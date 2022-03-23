@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -64,6 +65,11 @@ public class MigrationInterceptorTest extends HazelcastTestSupport {
         config2.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config2.addListenerConfig(new ListenerConfig(listener));
         final HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
+
+        // Wait for the partition state is initialized on the second member.
+        // Otherwise, some migrations can fail with a PartitionStateVersionMismatchException
+        // with message "Local partition stamp is not equal to master's stamp! Local: 0, Master: 1"
+        assertTrueEventually(() -> Accessors.isPartitionStateInitialized(hz2));
 
         migrationStartLatch.countDown();
 
