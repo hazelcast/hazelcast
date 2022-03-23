@@ -83,7 +83,9 @@ public class KafkaTestSupport {
     public void shutdownKafkaCluster() {
         if (kafkaContainer != null) {
             kafkaContainer.stop();
-            admin.close();
+            if (admin != null) {
+                admin.close();
+            }
             if (producer != null) {
                 producer.close();
             }
