@@ -19,13 +19,11 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -46,7 +44,6 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
@@ -77,6 +74,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static org.apache.calcite.sql.JoinType.FULL;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -113,9 +111,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final IMapResolver iMapResolver;
 
-    private boolean isCreateJob;
-    private boolean isInfiniteRows;
-
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
@@ -130,10 +125,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public SqlNode validate(SqlNode topNode) {
-        if (topNode instanceof SqlCreateJob) {
-            isCreateJob = true;
-        }
-
         if (topNode instanceof SqlDropView) {
             return topNode;
         }
@@ -154,7 +145,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
              * There was a corner case with queries where ORDER BY is present.
              * SqlOrderBy is present as AST node (or SqlNode),
              * but then it becomes embedded as part of SqlSelect AST node,
-             * and node itself is removed in `performUnconditionalRewrites().
+             * and node itself is removed in performUnconditionalRewrites().
              * As a result, ORDER BY is absent as operator
              * on the next validation & optimization phases
              * and also doesn't present in SUPPORTED_KINDS.
@@ -222,8 +213,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (countOrderingFunctions(node) > 1) {
             throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
         }
-
-        isInfiniteRows = containsStreamingSource(node);
     }
 
     private static int countOrderingFunctions(SqlNode node) {
@@ -246,58 +235,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    protected void validateOrderList(SqlSelect select) {
-        super.validateOrderList(select);
-
-        if (select.hasOrderBy() && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
-        }
-    }
-
-    @Override
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
-        boolean rightInputIsStream = containsStreamingSource(join.getRight());
-
-        if (leftInputIsStream && rightInputIsStream) {
-            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
-        }
-
-        switch (join.getJoinType()) {
-            case LEFT:
-                if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "LEFT"));
-                }
-                break;
-            case RIGHT:
-                if (leftInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("left", "RIGHT"));
-                }
-                break;
-            case FULL:
-                throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
-            case INNER:
-            case COMMA:
-            case CROSS:
-                if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide(
-                            "right", join.getJoinType().name().toUpperCase()
-                    ));
-                }
-                break;
-            default:
-                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
-        }
-    }
-
-    @Override
-    public void validateInsert(SqlInsert insert) {
-        super.validateInsert(insert);
-
-        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
-            throw newValidationError(insert, RESOURCE.mustUseCreateJob());
+        if (join.getJoinType() == FULL) {
+            throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
         }
     }
 
@@ -395,56 +337,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
     }
 
-    private boolean isInfiniteRows(SqlNode node) {
-        isInfiniteRows |= containsStreamingSource(node);
-        return isInfiniteRows;
-    }
-
-    /**
-     * Goes over all the referenced tables in the given {@link SqlNode}
-     * and returns true if any of them uses a streaming connector.
-     */
-    public boolean containsStreamingSource(SqlNode node) {
-        class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
-            boolean found;
-
-            @Override
-            public Void visit(SqlIdentifier id) {
-                SqlValidatorTable table = getCatalogReader().getTable(id.names);
-                // not every identifier is a table
-                if (table != null) {
-                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-                    if (hazelcastTable.getTarget() instanceof ViewTable) {
-                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
-                        return null;
-                    }
-                    SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
-                    if (connector.isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(id);
-            }
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastTableSourceFunction) {
-                    if (((HazelcastTableSourceFunction) operator).isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(call);
-            }
-        }
-
-        FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
-        node.accept(visitor);
-        return visitor.found;
-    }
-
     @Override
     public RelDataType deriveTypeImpl(SqlValidatorScope scope, SqlNode operand) {
         if (operand.getKind() == SqlKind.LITERAL) {
@@ -523,8 +415,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             ParameterConverter converter = parameterConverterMap.get(i);
 
             if (converter == null) {
-                QueryDataType targetType =
-                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
+                QueryDataType targetType = HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
                 converter = AbstractParameterConverter.from(targetType, i, parameterPositionMap.get(i));
             }
 
@@ -578,15 +469,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
-    }
-
-    /**
-     * Returns whether the validated node returns an infinite number of rows.
-     *
-     * @throws IllegalStateException if called before the node is validated.
-     */
-    public boolean isInfiniteRows() {
-        return isInfiniteRows;
     }
 
     @Override
