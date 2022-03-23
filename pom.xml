@@ -93,31 +93,32 @@
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
+        <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.120</aws.sdk.version>
-        <classgraph.version>4.8.66</classgraph.version>
-        <grpc.version>1.34.0</grpc.version>
+        <aws.sdk.version>1.12.183</aws.sdk.version>
+        <classgraph.version>4.8.139</classgraph.version>
+        <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.0</hadoop.version>
-        <jackson.version>2.12.1</jackson.version>
-        <jline.version>3.19.0</jline.version>
+        <hadoop.version>3.3.1</hadoop.version>
+        <jackson.version>2.12.6</jackson.version>
+        <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
+        <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
-        <log4j.version>1.2.17</log4j.version>
-        <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
-        <log4j2.version>2.17.0</log4j2.version>
+        <log4j.version>1.2.17.redhat-00008</log4j.version>
+        <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.63.Final</netty.version>
+        <netty.version>4.1.75.Final</netty.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.0</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.13.0</protobuf.version>
         <scala.version>2.12</scala.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
@@ -1341,6 +1342,25 @@
 
     <repositories>
         <repository>
+            <!--
+            This is the same as central in the super pom.
+            Putting it here changes the order in which the repositories are queried.
+            Most artefacts are stored in central so this provides best build times when a mirror is not used.
+            Repository order reference:
+            https://maven.apache.org/guides/mini/guide-multiple-repositories.html#repository-order
+            -->
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -1349,6 +1369,30 @@
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>hazelcast-security</id>
+            <name>Thirdparty security fixes</name>
+            <url>https://repository.hazelcast.com/security-maven/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
+        <repository>
+            <id>redhat-ga</id>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -1476,11 +1520,16 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.htrace</groupId>
+                <artifactId>htrace-core4</artifactId>
+                <version>4.2.0-incubating.hazelcast-2</version>
+            </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.13</version>
+                <version>4.4.15</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -1505,7 +1554,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.6</version>
+                <version>2.8.9</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -1542,6 +1591,46 @@
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.21.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-core-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.7</version>
+            </dependency>
+            <dependency>
+              <groupId>org.wildfly.openssl</groupId>
+              <artifactId>wildfly-openssl</artifactId>
+              <version>1.0.12.Final</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
@@ -1559,7 +1648,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.26.0-GA</version>
+                <version>3.28.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
