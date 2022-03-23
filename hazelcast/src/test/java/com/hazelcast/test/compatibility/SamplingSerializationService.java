@@ -69,6 +69,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String TEST_PACKAGE_INFIX = ".test";
     private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
     private static final String JET_PACKAGE_PREFIX = "com.hazelcast.jet";
+    private static final String SQL_PACKAGE_PREFIX = "com.hazelcast.sql";
 
     // Only a small subset of Jet classes requires backwards-compatibility. Jet doesn't provide client
     // compatibility nor does it support rolling upgrades.
@@ -281,6 +282,10 @@ public class SamplingSerializationService implements InternalSerializationServic
         }
 
         if (className.startsWith(JET_PACKAGE_PREFIX) && !JET_BACKWARD_COMPATIBLE_CLASSES.contains(className)) {
+            return false;
+        }
+
+        if (className.startsWith(SQL_PACKAGE_PREFIX)) {
             return false;
         }
 
