@@ -40,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -69,7 +70,7 @@ public class MigrationInterceptorTest extends HazelcastTestSupport {
         // Wait for the partition state is initialized on the second member.
         // Otherwise, some migrations can fail with a PartitionStateVersionMismatchException
         // with message "Local partition stamp is not equal to master's stamp! Local: 0, Master: 1"
-        assertTrueEventually(() -> Accessors.isPartitionStateInitialized(hz2));
+        assertTrueEventually(() -> assertTrue(Accessors.isPartitionStateInitialized(hz2)));
 
         migrationStartLatch.countDown();
 
