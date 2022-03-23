@@ -60,7 +60,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return null;
+        return visitor.onDropLateItems(this);
     }
 
     @Override
