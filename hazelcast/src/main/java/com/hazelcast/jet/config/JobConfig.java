@@ -1488,6 +1488,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         }
     }
 
+    @PrivateApi
     public void lock() {
         locked = true;
     }

@@ -249,7 +249,6 @@ public class JobCoordinationService {
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = config.getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(pipelineToDagContext);
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {

@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,10 +68,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @since Jet 3.0
  */
-@SuppressWarnings("checkstyle:DeclarationOrder")
 public class Edge implements IdentifiedDataSerializable {
-    private transient boolean locked;
-
     /**
      * An address returned by {@link #getDistributedTo()} denoting an edge that
      * distributes the items among all members.
@@ -87,6 +85,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
+    private transient boolean locked;
     private Vertex source; // transient field, restored during DAG deserialization
     private String sourceName;
     private int sourceOrdinal;
@@ -680,7 +679,7 @@ public class Edge implements IdentifiedDataSerializable {
      * the reasoning we introduce the concept of the <em>set of candidate
      * downstream processors</em>, or the <em>candidate set</em> for short. On
      * a local edge the candidate set contains only local processors and on a
-     * distributed edge it contain all the processors.
+     * distributed edge it contains all the processors.
      */
     public enum RoutingPolicy implements Serializable {
         /**
@@ -802,6 +801,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
+    @PrivateApi
     void lock() {
         locked = true;
     }

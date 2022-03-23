@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -43,21 +44,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class LightJobTest extends SimpleTestInClusterSupport {
 
+    private static HazelcastInstance liteMember;
+
     @Parameter
-    public boolean useClient;
+    public TestMode testMode;
 
     @Parameters(name = "useClient={0}")
     public static Object[] parameters() {
-        return new Object[]{true, false};
+        return TestMode.values();
     }
 
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(2, null, null);
+        liteMember = factory().newHazelcastInstance(smallInstanceConfig().setLiteMember(true));
+        System.out.println("lite=" + liteMember.getConfig().isLiteMember());
     }
 
     private HazelcastInstance submittingInstance() {
-        return useClient ? client() : instance();
+        switch (testMode) {
+            case CLIENT:
+                return client();
+            case MEMBER:
+                return instance();
+            case LITE_MEMBER:
+                return liteMember;
+        }
+        throw new AssertionError("unexpected testMode=" + testMode);
     }
 
     @Test
@@ -75,6 +88,20 @@ public class LightJobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void smokeTest_dagWithoutSerialization() {
+        List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
+
+        DAG dag = new DAG();
+        Vertex src = dag.newVertex("src", processorFromPipelineSource(TestSources.items(items)));
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
+        dag.edge(between(src, sink).distributed());
+
+        submittingInstance().getJet().newLightJob(dag, new JobConfig(), true).join();
+        List<Integer> result = instance().getList("sink");
+        assertThat(result).containsExactlyInAnyOrderElementsOf(items);
+    }
+
+    @Test
     public void smokeTest_pipeline() {
         List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
 
@@ -85,5 +112,11 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         submittingInstance().getJet().newLightJob(p).join();
         List<Integer> result = instance().getList("sink");
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
+    }
+
+    enum TestMode {
+        CLIENT,
+        MEMBER,
+        LITE_MEMBER
     }
 }

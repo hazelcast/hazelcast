@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -201,7 +202,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * one inbound and one outbound.
      * <p>
      * Jet supports multigraphs, that is you can add two edges between the same
-     * tow vertices. However, they have to have different ordinals.
+     * two vertices. However, they have to have different ordinals.
      */
     @Nonnull
     public DAG edge(@Nonnull Edge edge) {
@@ -601,6 +602,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
     }
 
+    @PrivateApi
     public void lock() {
         locked = true;
         verticesByIdentity.forEach(Vertex::lock);

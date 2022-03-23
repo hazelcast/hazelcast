@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -54,9 +55,7 @@ import static java.lang.Math.min;
  *
  * @since Jet 3.0
  */
-@SuppressWarnings("checkstyle:DeclarationOrder")
 public class Vertex implements IdentifiedDataSerializable {
-    private boolean locked;
 
     /**
      * The value of {@link #localParallelism(int)} with the meaning
@@ -64,6 +63,7 @@ public class Vertex implements IdentifiedDataSerializable {
      */
     public static final int LOCAL_PARALLELISM_USE_DEFAULT = -1;
 
+    private boolean locked;
     private ProcessorMetaSupplier metaSupplier;
     private String name;
     private int localParallelism = -1;
@@ -239,6 +239,7 @@ public class Vertex implements IdentifiedDataSerializable {
         }
     }
 
+    @PrivateApi
     void lock() {
         locked = true;
     }

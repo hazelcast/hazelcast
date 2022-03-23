@@ -68,6 +68,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
             }
             return getJobCoordinationService().submitLightJob(jobId(), null, serializedJobDefinition, jobConfig, subject);
         }
+        assert deserializedJobDefinition == null; // the jobDefinition for non-light job is always serialized
         return getJobCoordinationService().submitJob(jobId(), serializedJobDefinition, jobConfig, subject);
     }
 
