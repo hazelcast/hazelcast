@@ -44,7 +44,7 @@ final class WatermarkPhysicalRule extends RelOptRule implements TransformationRu
     public void onMatch(RelOptRuleCall call) {
         RelNode rel = call.rel(0);
         call.transformTo(
-                new CannotExecuteRel(
+                new MustNotExecuteRel(
                         rel.getCluster(),
                         toPhysicalConvention(rel.getTraitSet()),
                         rel.getRowType(),
