@@ -216,6 +216,8 @@ class MapMigrationAwareService
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
+        } else {
+            populateIndexes(event, TargetIndexes.GLOBAL, "rollbackMigration");
         }
 
         mapServiceContext.nullifyOwnedPartitions();
@@ -276,8 +278,8 @@ class MapMigrationAwareService
     @SuppressWarnings("checkstyle:NPathComplexity")
     private void populateIndexes(PartitionMigrationEvent event,
                                  TargetIndexes targetIndexes, String stepName) {
-        assert event.getMigrationEndpoint() == DESTINATION;
-        assert targetIndexes != null;
+//        assert event.getMigrationEndpoint() == DESTINATION;
+//        assert targetIndexes != null;
 
         if (event.getNewReplicaIndex() != 0) {
             // backup partitions have no indexes to populate

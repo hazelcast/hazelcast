@@ -190,6 +190,14 @@ public class GlobalIndexPartitionTracker {
         public int hashCode() {
             return Objects.hash(stamp, partitions);
         }
+
+        @Override
+        public String toString() {
+            return "PartitionStamp{"
+                    + "stamp=" + stamp
+                    + ", partitions=" + partitions
+                    + '}';
+        }
     }
 
     /**

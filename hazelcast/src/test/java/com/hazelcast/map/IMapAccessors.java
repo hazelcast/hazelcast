@@ -22,6 +22,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Utility accessors for IMap internals.
  * <p>
@@ -32,13 +35,18 @@ public final class IMapAccessors {
     private IMapAccessors() {
     }
 
-    public static MapContainer getMapContainer(IMap map) {
+    /**
+     * @return existing map-container or {@code null}.
+     */
+    @Nullable
+    public static MapContainer getExistingMapContainer(IMap map) {
         assertMapImpl(map);
 
         MapServiceContext mapServiceContext = getMapServiceContext(map);
         return mapServiceContext.getMapContainers().get(map.getName());
     }
 
+    @Nonnull
     public static MapServiceContext getMapServiceContext(IMap map) {
         assertMapImpl(map);
 
