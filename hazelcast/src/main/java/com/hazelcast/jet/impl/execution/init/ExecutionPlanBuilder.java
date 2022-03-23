@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.security.auth.Subject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -176,5 +177,25 @@ public final class ExecutionPlanBuilder {
             partitionAssignment.put(memberWithPartitions.getKey(), memberWithPartitions.getValue().getFilledElements());
         }
         return partitionAssignment;
+    }
+
+    static class IntArrayWithPosition {
+        private final int[] array;
+        private int pos;
+
+        IntArrayWithPosition(int size) {
+            array = new int[size];
+        }
+
+        void add(int i) {
+            array[pos++] = i;
+        }
+
+        int[] getFilledElements() {
+            if (pos == array.length) {
+                return array;
+            }
+            return Arrays.copyOfRange(array, 0, pos);
+        }
     }
 }
