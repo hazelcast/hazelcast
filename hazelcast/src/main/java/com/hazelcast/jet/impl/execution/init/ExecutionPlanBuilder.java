@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
@@ -42,11 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static com.hazelcast.function.FunctionEx.identity;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -156,11 +151,16 @@ public final class ExecutionPlanBuilder {
      */
     public static Map<MemberInfo, int[]> getPartitionAssignment(NodeEngine nodeEngine, List<MemberInfo> memberList) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
-        Map<Address, MemberInfo> membersByAddress = memberList.stream().collect(toMap(MemberInfo::getAddress, identity()));
+        Map<Address, MemberInfo> membersByAddress = new HashMap<>();
+        for (MemberInfo memberInfo : memberList) {
+            membersByAddress.put(memberInfo.getAddress(), memberInfo);
+        }
 
-        final MemberInfo[] partitionOwners = new MemberInfo[partitionService.getPartitionCount()];
+        Map<MemberInfo, IntArrayWithPosition> partitionsForMember = new HashMap<>();
+        int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
-        for (int partitionId = 0; partitionId < partitionOwners.length; partitionId++) {
+
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             MemberInfo member = membersByAddress.get(address);
             if (member == null) {
@@ -168,14 +168,13 @@ public final class ExecutionPlanBuilder {
                 // round-robin fashion
                 member = memberList.get(memberIndex++ % memberList.size());
             }
-            partitionOwners[partitionId] = member;
+            partitionsForMember.computeIfAbsent(member, ignored -> new IntArrayWithPosition(partitionCount)).add(partitionId);
         }
 
-        return IntStream.range(0, partitionOwners.length)
-                .mapToObj(i -> tuple2(partitionOwners[i], i))
-                .collect(Collectors.groupingBy(Tuple2::f0,
-                        Collectors.mapping(Tuple2::f1,
-                                Collectors.collectingAndThen(Collectors.<Integer>toList(),
-                                        intList -> intList.stream().mapToInt(Integer::intValue).toArray()))));
+        Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();
+        for (Entry<MemberInfo, IntArrayWithPosition> memberWithPartitions : partitionsForMember.entrySet()) {
+            partitionAssignment.put(memberWithPartitions.getKey(), memberWithPartitions.getValue().getFilledElements());
+        }
+        return partitionAssignment;
     }
 }
