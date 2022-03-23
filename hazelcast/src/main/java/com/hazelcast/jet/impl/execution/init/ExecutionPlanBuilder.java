@@ -157,7 +157,7 @@ public final class ExecutionPlanBuilder {
             membersByAddress.put(memberInfo.getAddress(), memberInfo);
         }
 
-        Map<MemberInfo, IntArrayWithPosition> partitionsForMember = new HashMap<>();
+        Map<MemberInfo, FixedCapacityIntArrayList> partitionsForMember = new HashMap<>();
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
 
@@ -169,33 +169,33 @@ public final class ExecutionPlanBuilder {
                 // round-robin fashion
                 member = memberList.get(memberIndex++ % memberList.size());
             }
-            partitionsForMember.computeIfAbsent(member, ignored -> new IntArrayWithPosition(partitionCount)).add(partitionId);
+            partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
+                    .add(partitionId);
         }
 
         Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();
-        for (Entry<MemberInfo, IntArrayWithPosition> memberWithPartitions : partitionsForMember.entrySet()) {
-            partitionAssignment.put(memberWithPartitions.getKey(), memberWithPartitions.getValue().getFilledElements());
+        for (Entry<MemberInfo, FixedCapacityIntArrayList> memberWithPartitions : partitionsForMember.entrySet()) {
+            partitionAssignment.put(memberWithPartitions.getKey(), memberWithPartitions.getValue().asArray());
         }
         return partitionAssignment;
     }
 
-    static class IntArrayWithPosition {
-        private final int[] array;
-        private int pos;
+    static class FixedCapacityIntArrayList {
+        private int[] elements;
+        private int size;
 
-        IntArrayWithPosition(int size) {
-            array = new int[size];
+        FixedCapacityIntArrayList(int capacity) {
+            elements = new int[capacity];
         }
 
-        void add(int i) {
-            array[pos++] = i;
+        void add(int element) {
+            elements[size++] = element;
         }
 
-        int[] getFilledElements() {
-            if (pos == array.length) {
-                return array;
-            }
-            return Arrays.copyOfRange(array, 0, pos);
+        int[] asArray() {
+            int[] result = size == elements.length ? elements : Arrays.copyOfRange(elements, 0, size);
+            elements = null;
+            return result;
         }
     }
 }
