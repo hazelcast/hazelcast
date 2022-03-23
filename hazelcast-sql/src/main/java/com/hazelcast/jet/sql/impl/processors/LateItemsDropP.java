@@ -19,8 +19,6 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
 
@@ -44,7 +42,6 @@ public class LateItemsDropP<T> extends AbstractProcessor {
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
     private final ToLongFunction<? super T> timestampFn;
-    private final FlatMapper<T, T> flatMapper = flatMapper(this::flatMapEvent);
 
     private long currentWm = Long.MIN_VALUE;
 
@@ -54,23 +51,20 @@ public class LateItemsDropP<T> extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        return flatMapper.tryProcess((T) item);
+        @SuppressWarnings("unchecked")
+        long timestamp = timestampFn.applyAsLong((T) item);
+        if (timestamp < currentWm) {
+            logLateEvent(getLogger(), currentWm, item);
+            lateEventsDropped.inc();
+            return true;
+        } else {
+            return tryEmit(item);
+        }
     }
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         currentWm = watermark.timestamp();
         return super.tryProcessWatermark(watermark);
-    }
-
-    @Nonnull
-    private Traverser<T> flatMapEvent(T event) {
-        long timestamp = timestampFn.applyAsLong(event);
-        if (timestamp < currentWm) {
-            logLateEvent(getLogger(), currentWm, event);
-            lateEventsDropped.inc();
-            return Traversers.empty();
-        }
-        return Traversers.singleton(event);
     }
 }
