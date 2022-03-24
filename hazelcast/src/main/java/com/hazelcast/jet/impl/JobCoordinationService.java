@@ -943,7 +943,7 @@ public class JobCoordinationService {
                             ? masterContext.jobContext().jobMetrics()
                             : null;
             jobRepository.completeJob(masterContext, jobMetrics, error, completionTime);
-            if (masterContexts.remove(masterContext.jobId(), masterContext)) {
+            if (removeMasterContext(masterContext)) {
                 completeObservables(masterContext.jobRecord().getOwnedObservables(), error);
                 logger.fine(masterContext.jobIdString() + " is completed");
                 (error == null ? jobCompletedSuccessfully : jobCompletedWithFailure).inc();
@@ -958,6 +958,12 @@ public class JobCoordinationService {
             }
             unscheduleJobTimeout(masterContext.jobId());
         });
+    }
+
+    private boolean removeMasterContext(MasterContext masterContext) {
+        synchronized (lock) {
+            return masterContexts.remove(masterContext.jobId(), masterContext);
+        }
     }
 
     /**
@@ -1102,15 +1108,20 @@ public class JobCoordinationService {
     ) {
         // the order of operations is important.
         long jobId = jobRecord.getJobId();
-        JobResult jobResult = jobRepository.getJobResult(jobId);
-        if (jobResult != null) {
-            logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
-            return jobResult.asCompletableFuture();
-        }
 
         MasterContext masterContext;
         MasterContext oldMasterContext;
         synchronized (lock) {
+//            // Run the job result check under lock so we avoid:
+//            // 1. Check the result here
+//            // 2. Create job result and remove master context in completeJob
+//            // 3. Re-create master context below
+            JobResult jobResult = jobRepository.getJobResult(jobId);
+            if (jobResult != null) {
+                logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
+                return jobResult.asCompletableFuture();
+            }
+
             checkOperationalState();
 
             masterContext = createMasterContext(jobRecord, jobExecutionRecord);
@@ -1146,7 +1157,7 @@ public class JobCoordinationService {
             logger.fine("Completing master context for " + masterContext.jobIdString()
                     + " since already completed with result: " + jobResult);
             masterContext.jobContext().setFinalResult(jobResult.getFailureAsThrowable());
-            return masterContexts.remove(jobId, masterContext);
+            return removeMasterContext(masterContext);
         }
 
         if (!masterContext.jobConfig().isAutoScaling() && masterContext.jobExecutionRecord().executed()) {
