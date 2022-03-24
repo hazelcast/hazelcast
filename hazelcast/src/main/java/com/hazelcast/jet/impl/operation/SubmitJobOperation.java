@@ -33,7 +33,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data serializedJobDefinition;
-    private Data serializedConfig;
+    private Data serializedJobConfig;
     private boolean isLightJob;
     private Subject subject;
 
@@ -45,7 +45,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
             Object deserializedJobDefinition,
             JobConfig deserializedJobConfig,
             Data serializedJobDefinition,
-            Data serializedConfig,
+            Data serializedJobConfig,
             boolean isLightJob,
             Subject subject
     ) {
@@ -53,7 +53,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
         this.deserializedJobDefinition = deserializedJobDefinition;
         this.deserializedJobConfig = deserializedJobConfig;
         this.serializedJobDefinition = serializedJobDefinition;
-        this.serializedConfig = serializedConfig;
+        this.serializedJobConfig = serializedJobConfig;
         this.isLightJob = isLightJob;
         this.subject = subject;
     }
@@ -61,7 +61,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     @Override
     public CompletableFuture<Void> doRun() {
         JobConfig jobConfig = deserializedJobConfig != null ? deserializedJobConfig :
-                getNodeEngine().getSerializationService().toObject(serializedConfig);
+                getNodeEngine().getSerializationService().toObject(serializedJobConfig);
         if (isLightJob) {
             if (deserializedJobDefinition != null) {
                 return getJobCoordinationService().submitLightJob(jobId(), deserializedJobDefinition, null, jobConfig, subject);
@@ -80,10 +80,14 @@ public class SubmitJobOperation extends AsyncJobOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+
         assert serializedJobDefinition != null;
-        assert serializedConfig != null;
+        assert serializedJobConfig != null;
+        assert deserializedJobDefinition == null;
+        assert deserializedJobConfig == null;
+
         IOUtil.writeData(out, serializedJobDefinition);
-        IOUtil.writeData(out, serializedConfig);
+        IOUtil.writeData(out, serializedJobConfig);
         out.writeBoolean(isLightJob);
         out.writeObject(subject);
     }
@@ -92,7 +96,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         serializedJobDefinition = IOUtil.readData(in);
-        serializedConfig = IOUtil.readData(in);
+        serializedJobConfig = IOUtil.readData(in);
         isLightJob = in.readBoolean();
         subject = in.readObject();
     }

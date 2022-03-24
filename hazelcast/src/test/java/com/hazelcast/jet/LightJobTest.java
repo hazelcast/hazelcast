@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -83,20 +82,6 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         dag.edge(between(src, sink).distributed());
 
         submittingInstance().getJet().newLightJob(dag).join();
-        List<Integer> result = instance().getList("sink");
-        assertThat(result).containsExactlyInAnyOrderElementsOf(items);
-    }
-
-    @Test
-    public void smokeTest_dagWithoutSerialization() {
-        List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
-
-        DAG dag = new DAG();
-        Vertex src = dag.newVertex("src", processorFromPipelineSource(TestSources.items(items)));
-        Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
-        dag.edge(between(src, sink).distributed());
-
-        submittingInstance().getJet().newLightJob(dag, new JobConfig(), true).join();
         List<Integer> result = instance().getList("sink");
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
     }

@@ -151,7 +151,7 @@ public interface JetService {
 
     /**
      * Submits a new light job with a default config. See {@link
-     * #newLightJob(Pipeline, JobConfig, boolean)}.
+     * #newLightJob(Pipeline, JobConfig)}.
      */
     @Nonnull
     default Job newLightJob(@Nonnull Pipeline p) {
