@@ -1631,6 +1631,11 @@
               <artifactId>wildfly-openssl</artifactId>
               <version>1.0.12.Final</version>
             </dependency>
+            <dependency>
+              <groupId>org.codehaus.woodstox</groupId>
+              <artifactId>stax2-api</artifactId>
+              <version>4.2.1</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
