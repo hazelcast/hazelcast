@@ -63,6 +63,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -138,7 +139,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, hz1, hz3);
         // ensure partition state is applied on the new member
-        assertTrueEventually(() -> Accessors.isPartitionStateInitialized(newInstance));
+        assertTrueEventually(() -> assertTrue(Accessors.isPartitionStateInitialized(newInstance)));
 
         final List<HazelcastInstance> instanceList = asList(hz1, hz3);
         assertTrueAllTheTime(new AssertTask() {
