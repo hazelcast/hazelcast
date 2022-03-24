@@ -270,7 +270,6 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore("Execution tracker future doesn't complete in this test")
     public void when_blockingSleepingTaskletIsCancelled_then_completeEarly() throws Exception {
         // Given
         final List<MockTasklet> tasklets =
@@ -413,9 +412,11 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
             }
             if (isSleeping) {
                 try {
-                    Thread.currentThread().join();
+                    Thread.sleep(500);
+                    return NO_PROGRESS;
                 } catch (InterruptedException e) {
-                    return DONE;
+                    throw new RuntimeException("Sleeping interrupted, this should not happen because " +
+                            "we don't interrupt blocking workers", e);
                 }
             }
             if (latch != null) {
