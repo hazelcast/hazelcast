@@ -1112,10 +1112,10 @@ public class JobCoordinationService {
         MasterContext masterContext;
         MasterContext oldMasterContext;
         synchronized (lock) {
-            // Run the job result check under lock so we avoid:
-            // 1. Check the result here
-            // 2. Create job result and remove master context in completeJob
-            // 3. Re-create master context below
+            // We check the JobResult while holding the lock to avoid this scenario:
+            // 1. We find no job result
+            // 2. Another thread creates the result and removes the master context in completeJob
+            // 3. We re-create the master context below
             JobResult jobResult = jobRepository.getJobResult(jobId);
             if (jobResult != null) {
                 logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
