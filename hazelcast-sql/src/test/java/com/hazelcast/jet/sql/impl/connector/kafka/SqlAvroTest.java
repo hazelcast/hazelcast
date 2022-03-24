@@ -78,7 +78,7 @@ public class SqlAvroTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
 
         Properties properties = new Properties();

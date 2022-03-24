@@ -31,11 +31,7 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.DockerClientFactory;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -57,44 +53,26 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class KafkaTestSupport {
-
-    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.0.1");
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTestSupport.class);
-    private Admin admin;
-
-    private KafkaProducer<Integer, String> producer;
+public abstract class KafkaTestSupport {
+    protected Admin admin;
+    protected KafkaProducer<Integer, String> producer;
+    protected String brokerConnectionString;
     private KafkaProducer<String, String> stringStringProducer;
-    private String brokerConnectionString;
-    private KafkaContainer kafkaContainer;
 
-    public void createKafkaCluster() throws IOException {
-        kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + TEST_KAFKA_VERSION))
-                .withEmbeddedZookeeper()
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
-        kafkaContainer.start();
-
-        brokerConnectionString = kafkaContainer.getBootstrapServers();
-        Properties props = new Properties();
-        props.setProperty("bootstrap.servers", brokerConnectionString);
-        admin = Admin.create(props);
-    }
-
-    public void shutdownKafkaCluster() {
-        if (kafkaContainer != null) {
-            kafkaContainer.stop();
-            if (admin != null) {
-                admin.close();
+    public static KafkaTestSupport create() {
+        if (DockerClientFactory.instance().isDockerAvailable()) {
+            return new DockerizedKafkaTestSupport();
+        } else {
+            if (System.getProperties().containsKey("test.kafka.version")) {
+                throw new IllegalArgumentException("'test.kafka.version' system property requires docker ");
             }
-            if (producer != null) {
-                producer.close();
-            }
-            producer = null;
-            admin = null;
-            kafkaContainer = null;
-            brokerConnectionString = null;
+            return new EmbeddedKafkaTestSupport();
         }
     }
+
+    public abstract void createKafkaCluster() throws IOException;
+
+    public abstract void shutdownKafkaCluster();
 
     public String getBrokerConnectionString() {
         return brokerConnectionString;

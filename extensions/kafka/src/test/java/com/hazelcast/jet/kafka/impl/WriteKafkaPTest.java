@@ -76,7 +76,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
         initialize(2, null);
     }
@@ -99,8 +99,10 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void afterClass() {
-        kafkaTestSupport.shutdownKafkaCluster();
-        kafkaTestSupport = null;
+        if (kafkaTestSupport != null) {
+            kafkaTestSupport.shutdownKafkaCluster();
+            kafkaTestSupport = null;
+        }
     }
 
     @Test
