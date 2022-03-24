@@ -92,8 +92,12 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        schemaRegistry.stop();
-        kafkaTestSupport.shutdownKafkaCluster();
+        if (schemaRegistry != null) {
+            schemaRegistry.stop();
+        }
+        if (kafkaTestSupport != null) {
+            kafkaTestSupport.shutdownKafkaCluster();
+        }
     }
 
     @Test
