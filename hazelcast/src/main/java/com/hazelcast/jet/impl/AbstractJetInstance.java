@@ -113,31 +113,25 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobInt(newJobId(), dag, config, false, false);
+        return newJobInt(newJobId(), dag, config, false);
     }
 
     @Nonnull
     public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobInt(jobId, dag, config, false, false);
+        return newJobInt(jobId, dag, config, false);
     }
 
     @Nonnull @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobInt(newJobId(), pipeline, config, false, false);
+        return newJobInt(newJobId(), pipeline, config, false);
     }
 
     @Nonnull
     public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobInt(jobId, pipeline, config, false, false);
+        return newJobInt(jobId, pipeline, config, false);
     }
 
-    private Job newJobInt(
-            long jobId,
-            @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config,
-            boolean isLightJob,
-            boolean immutableDefinitionAndConfig
-    ) {
+    private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nonnull JobConfig config, boolean isLightJob) {
         if (isLightJob) {
             validateConfigForLightJobs(config);
         }
@@ -147,7 +141,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         if (!config.getResourceConfigs().isEmpty()) {
             uploadResources(jobId, config);
         }
-        return newJobProxy(jobId, isLightJob, immutableDefinitionAndConfig, jobDefinition, config);
+        return newJobProxy(jobId, isLightJob, jobDefinition, config);
     }
 
     protected static void validateConfigForLightJobs(JobConfig config) {
@@ -165,7 +159,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         if (config.getName() == null) {
-            return newJobInt(newJobId(), jobDefinition, config, false, false);
+            return newJobInt(newJobId(), jobDefinition, config, false);
         } else {
             while (true) {
                 Job job = getJob(config.getName());
@@ -176,7 +170,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                     }
                 }
                 try {
-                    return newJobInt(newJobId(), jobDefinition, config, false, false);
+                    return newJobInt(newJobId(), jobDefinition, config, false);
                 } catch (JobAlreadyExistsException e) {
                     logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
@@ -195,18 +189,18 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     @Nonnull @Override
-    public Job newLightJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config, boolean immutableDefinitionAndConfig) {
-        return newJobInt(newJobId(), pipeline, config, true, immutableDefinitionAndConfig);
+    public Job newLightJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        return newJobInt(newJobId(), pipeline, config, true);
     }
 
     @Nonnull @Override
-    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config, boolean immutableDefinitionAndConfig) {
-        return newJobInt(newJobId(), dag, config, true, immutableDefinitionAndConfig);
+    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
+        return newJobInt(newJobId(), dag, config, true);
     }
 
     @Nonnull
     public Job newLightJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobInt(jobId, dag, config, true, false);
+        return newJobInt(jobId, dag, config, true);
     }
 
     @Nonnull @Override
@@ -374,7 +368,6 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     public abstract Job newJobProxy(
             long jobId,
             boolean isLightJob,
-            boolean immutableDefinitionAndConfig,
             @Nonnull Object jobDefinition,
             @Nonnull JobConfig config
     );

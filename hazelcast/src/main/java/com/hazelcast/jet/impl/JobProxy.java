@@ -50,23 +50,18 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
-    private final boolean immutableDefinitionAndConfig;
-
     public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
         super(nodeEngine, jobId, coordinator);
-        this.immutableDefinitionAndConfig = false;
     }
 
     public JobProxy(
             NodeEngineImpl engine,
             long jobId,
             boolean isLightJob,
-            boolean immutableDefinitionAndConfig,
             @Nonnull Object jobDefinition,
             @Nonnull JobConfig config
     ) {
         super(engine, jobId, isLightJob, jobDefinition, config);
-        this.immutableDefinitionAndConfig = immutableDefinitionAndConfig;
     }
 
     @Nonnull @Override
@@ -111,7 +106,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
-        if (immutableDefinitionAndConfig) {
+        if (isLightJob()) {
             return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, isLightJob(), null));
         }
         Data configData = serializationService().toData(config);

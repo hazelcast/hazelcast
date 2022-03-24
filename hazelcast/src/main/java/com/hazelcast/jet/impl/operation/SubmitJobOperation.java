@@ -80,6 +80,8 @@ public class SubmitJobOperation extends AsyncJobOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        assert serializedJobDefinition != null;
+        assert serializedConfig != null;
         IOUtil.writeData(out, serializedJobDefinition);
         IOUtil.writeData(out, serializedConfig);
         out.writeBoolean(isLightJob);
