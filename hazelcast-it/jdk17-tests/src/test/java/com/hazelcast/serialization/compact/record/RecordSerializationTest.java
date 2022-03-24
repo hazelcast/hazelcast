@@ -25,7 +25,6 @@ import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,7 +35,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
