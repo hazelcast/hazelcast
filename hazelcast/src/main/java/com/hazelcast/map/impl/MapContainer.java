@@ -121,6 +121,7 @@ public class MapContainer {
 
     private volatile boolean destroyed;
 
+
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link PostJoinAwareService#getPostJoinOperation()}

@@ -27,8 +27,8 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Tracker of indexed partition for global indexes.
  * <p>
- * Used by {@link InternalIndex} to keep track of indexed partitions and decide whether the query
- * using this index could be executed or not.
+ * Used by {@link InternalIndex} to keep track of indexed partitions and
+ * decide whether the query using this index could be executed or not.
  */
 public class GlobalIndexPartitionTracker {
 
@@ -52,7 +52,8 @@ public class GlobalIndexPartitionTracker {
     public GlobalIndexPartitionTracker(int partitionCount) {
         this.partitionCount = partitionCount;
 
-        state = new AtomicReference<>(new State(STAMP_INITIAL, new PartitionIdSet(partitionCount), 0));
+        state = new AtomicReference<>(new State(STAMP_INITIAL,
+                new PartitionIdSet(partitionCount), 0));
     }
 
     /**

@@ -278,8 +278,7 @@ class MapMigrationAwareService
     @SuppressWarnings("checkstyle:NPathComplexity")
     private void populateIndexes(PartitionMigrationEvent event,
                                  TargetIndexes targetIndexes, String stepName) {
-//        assert event.getMigrationEndpoint() == DESTINATION;
-//        assert targetIndexes != null;
+        assert targetIndexes != null;
 
         if (event.getNewReplicaIndex() != 0) {
             // backup partitions have no indexes to populate

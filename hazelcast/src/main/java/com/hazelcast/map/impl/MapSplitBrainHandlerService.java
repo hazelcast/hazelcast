@@ -16,14 +16,18 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
@@ -60,18 +64,51 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
+        DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
+        defaultRecordStore.getMapDataStore().reset();
+        defaultRecordStore.getIndexingObserver().onDestroy(false, true);
+
         // Removal of old mapContainer is required not to leak old
         // state into merged cluster. An example old state that we
         // don't want to leak into merged cluster is index state. In
         // merged cluster, there will be a fresh mapContainer object.
         PartitionContainer partitionContainer
                 = mapServiceContext.getPartitionContainer(recordStore.getPartitionId());
-        partitionContainer.destroyMapContainer(recordStore.getMapContainer());
+        MapContainer mapContainer = recordStore.getMapContainer();
 
-        DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-        defaultRecordStore.getMapDataStore().reset();
-        defaultRecordStore.getIndexingObserver().onDestroy(false, true);
+        // only one partition can destroy mapContainer.
+        if (partitionContainer.destroyMapContainer(mapContainer)) {
+            if (mapContainer.shouldUseGlobalIndex()) {
+                // remove global indexes from old-map-container and add them to new one
+                addIndexConfigToNewMapContainer(mapContainer.name, -1,
+                        mapContainer.getIndexes());
+            }
+        }
 
+        // remove partitioned indexes from old-map-container and add them to new one
+        if (!mapContainer.shouldUseGlobalIndex()) {
+            Indexes indexes = partitionContainer.getIndexes().remove(mapContainer.name);
+            addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
+                    indexes);
+        }
+    }
+
+    private void addIndexConfigToNewMapContainer(String mapName, int partitionId,
+                                                 Indexes indexes) {
+        if (indexes == null) {
+            return;
+        }
+
+        LinkedList<IndexConfig> indexConfigs = new LinkedList<>();
+        InternalIndex[] internalIndexes = indexes.getIndexes();
+        for (int i = 0; i < internalIndexes.length; i++) {
+            indexConfigs.add(internalIndexes[i].getConfig());
+        }
+
+        MapContainer newMapContainer = mapServiceContext.getMapContainer(mapName);
+        for (IndexConfig indexConfig : indexConfigs) {
+            newMapContainer.getIndexes(partitionId).addOrGetIndex(indexConfig);
+        }
     }
 
     @Override
