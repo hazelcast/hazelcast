@@ -110,8 +110,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         if (isLightJob()) {
             if (jobDefinition instanceof DAG) {
                 ((DAG) jobDefinition).lock();
-                config.lock();
             }
+            config.lock();
             return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, isLightJob(), null));
         }
         Data configData = serializationService().toData(config);

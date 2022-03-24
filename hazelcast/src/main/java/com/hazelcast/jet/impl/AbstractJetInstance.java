@@ -365,12 +365,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     /**
      * Submit a new job and return the job proxy.
      */
-    public abstract Job newJobProxy(
-            long jobId,
-            boolean isLightJob,
-            @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config
-    );
+    public abstract Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config);
 
     public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 
