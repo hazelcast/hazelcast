@@ -177,48 +177,4 @@ public class RecordSerializationTest extends HazelcastTestSupport {
         assertThat(deserialized.objectBooleanArray())
                 .containsExactly(genericRecord.getArrayOfBoolean("objectBooleanArray")[0]);
     }
-
-    @Test
-    public void shouldThrowWhileSerializingRecordWithCharField() {
-        CharRecord charRecord = new CharRecord('x');
-        assertThatThrownBy(() -> service.toData(charRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'char'");
-    }
-
-    @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterField() {
-        CharacterRecord characterRecord = new CharacterRecord('x');
-        assertThatThrownBy(() -> service.toData(characterRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'Character'");
-    }
-
-    @Test
-    public void shouldThrowWhileSerializingRecordWithCharArrayField() {
-        CharArrayRecord charArrayRecord = new CharArrayRecord(new char[]{'x'});
-        assertThatThrownBy(() -> service.toData(charArrayRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'char[]'");
-    }
-
-    @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterArrayField() {
-        CharacterArrayRecord characterArrayRecord = new CharacterArrayRecord(new Character[]{'x'});
-        assertThatThrownBy(() -> service.toData(characterArrayRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'Character[]'");
-    }
-
-    record CharRecord(char field) {
-    }
-
-    record CharacterRecord(Character field) {
-    }
-
-    record CharArrayRecord(char[] field) {
-    }
-
-    record CharacterArrayRecord(Character[] field) {
-    }
 }
