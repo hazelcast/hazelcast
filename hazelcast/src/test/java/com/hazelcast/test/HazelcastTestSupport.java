@@ -720,13 +720,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitInstanceForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually(() -> {
-            isInstanceInSafeState(instance);
-        });
+        assertTrueEventually(() -> assertTrue(isInstanceInSafeState(instance)));
     }
 
     public static void waitClusterForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually((() -> assertTrue(isClusterInSafeState(instance))));
+        assertTrueEventually(() -> assertTrue(isClusterInSafeState(instance)));
     }
 
     public static void waitUntilClusterState(HazelcastInstance hz, ClusterState state, int timeoutSeconds) {
