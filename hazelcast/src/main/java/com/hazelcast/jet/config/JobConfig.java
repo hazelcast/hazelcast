@@ -1488,6 +1488,11 @@ public class JobConfig implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Used to prevent further mutations the config after submitting it with a job execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
     @PrivateApi
     public void lock() {
         locked = true;
