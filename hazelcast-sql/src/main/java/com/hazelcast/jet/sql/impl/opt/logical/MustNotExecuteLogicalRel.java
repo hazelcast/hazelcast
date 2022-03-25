@@ -33,7 +33,8 @@ public class MustNotExecuteLogicalRel extends AbstractRelNode implements Logical
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,
-            String exceptionMessage) {
+            String exceptionMessage
+    ) {
         super(cluster, traitSet);
         this.rowType = type;
         this.exceptionMessage = exceptionMessage;
