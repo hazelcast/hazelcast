@@ -38,7 +38,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         Request request = new Request();
         request.opcode = OpCodes.TABLE_UPSERT;
         request.partitionId = ThreadLocalRandom.current().nextInt(271);
-        request.out = new ByteArrayObjectDataOutput(1024, ss, BIG_ENDIAN);
+        request.out = new ByteArrayObjectDataOutput(128, ss, BIG_ENDIAN);
         request.out.position(Packet.DATA_OFFSET);
 
         try {

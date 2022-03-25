@@ -21,7 +21,6 @@ import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -50,13 +49,15 @@ public class NioReactor extends Thread {
     private final ILogger logger;
     private final int port;
     private final Address thisAddress;
+    private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private BitSet allowedCpus;
 
-    public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port) {
+    public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
+        this.spin = spin;
         this.thisAddress = thisAddress;
         this.frontend = frontend;
         this.logger = frontend.logger;
@@ -65,10 +66,14 @@ public class NioReactor extends Thread {
     }
 
     public void setThreadAffinity(ThreadAffinity threadAffinity) {
-        this.allowedCpus = null;//threadAffinity.nextAllowedCpus();
+        this.allowedCpus = threadAffinity.nextAllowedCpus();
     }
 
     public void wakeup() {
+        if (spin) {
+            return;
+        }
+
         if (Thread.currentThread() != this) {
             //System.out.println("wakeup");
             selector.wakeup();
@@ -108,9 +113,11 @@ public class NioReactor extends Thread {
             if (bind()) {
                 loop();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
+
+        System.out.println(getName()+" Died: frontend shutting down:"+frontend.shuttingdown);
     }
 
     private void setThreadAffinity() {
@@ -134,22 +141,34 @@ public class NioReactor extends Thread {
         try {
             serverSocketChannel = ServerSocketChannel.open();
             address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            System.out.println(getName()+" Binding to "+address);
+            System.out.println(getName() + " Binding to " + address);
             serverSocketChannel.bind(address);
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            logger.info(getName()+" ServerSocket listening at " + address);
+            logger.info(getName() + " ServerSocket listening at " + address);
             return true;
         } catch (IOException e) {
-            logger.severe(getName()+" Could not bind to " + address);
+            logger.severe(getName() + " Could not bind to " + address);
         }
         return false;
     }
 
     private void loop() throws Exception {
+//        long nextPrint = System.currentTimeMillis() + 1000;
         while (!frontend.shuttingdown) {
 
-            int keyCount = selector.select();
+            int keyCount = spin ? selector.selectNow() : selector.select();
+
+//            if (System.currentTimeMillis() > nextPrint) {
+//                for (SelectionKey key : selector.keys()) {
+//                    Channel channel = (Channel) key.attachment();
+//                    if (channel != null) {
+//                        System.out.println(channel.toDebugString());
+//                    }
+//                }
+//                nextPrint = System.currentTimeMillis() + 1000;
+//            }
+
 
             //Thread.sleep(1000);
 
@@ -182,17 +201,18 @@ public class NioReactor extends Thread {
             if (key.isValid() && key.isReadable()) {
                 SocketChannel socketChannel = (SocketChannel) key.channel();
                 Channel channel = (Channel) key.attachment();
-                ByteBuffer readBuf = channel.readBuffer;
+                ByteBuffer readBuf = channel.readBuff;
                 int bytesRead = socketChannel.read(readBuf);
                 //System.out.println(this + " bytes read: " + bytesRead);
-                if (bytesRead <= 0) {
+                if (bytesRead == -1) {
                     socketChannel.close();
                     key.cancel();
-                    break;
+                } else {
+                    channel.bytesRead+=bytesRead;
+                    readBuf.flip();
+                    process(readBuf, channel);
+                    compactOrClear(readBuf);
                 }
-                readBuf.flip();
-                process(readBuf, channel);
-                compactOrClear(readBuf);
             }
 
             if (!key.isValid()) {
@@ -207,7 +227,7 @@ public class NioReactor extends Thread {
 
         Channel channel = new Channel();
         channel.reactor = this;
-        channel.readBuffer = ByteBuffer.allocate(256 * 1024);
+        channel.readBuff = ByteBuffer.allocate(256 * 1024);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
         return channel;
@@ -237,7 +257,7 @@ public class NioReactor extends Thread {
     private void process(Channel channel) {
         //System.out.println("Processing channel");
         try {
-            // the buffers could be written in batch.
+            // todo: the buffers could be written in batch.
             for (; ; ) {
                 ByteBuffer buffer = channel.next();
                 if (buffer == null) {
@@ -245,6 +265,7 @@ public class NioReactor extends Thread {
                 }
 
                 int written = channel.socketChannel.write(buffer);
+                channel.bytesWritten+=written;
                 //System.out.println("written:" + written);
             }
         } catch (IOException e) {
@@ -281,6 +302,8 @@ public class NioReactor extends Thread {
                 return;
             }
 
+            channel.packetsRead++;
+
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
             process(packet);
@@ -290,10 +313,10 @@ public class NioReactor extends Thread {
     private void process(Packet packet) {
         //System.out.println(this + " process packet: " + packet);
         try {
-            if(packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)){
+            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
                 //System.out.println("Received remote response: "+packet);
                 frontend.handleResponse(packet);
-            }else {
+            } else {
                 byte[] bytes = packet.toByteArray();
                 byte opcode = bytes[Packet.DATA_OFFSET];
                 Op op = allocateOp(opcode);

@@ -37,6 +37,9 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
     public final ILogger logger;
     private final Address thisAddress;
     private final ThreadAffinity threadAffinity;
+    private final int reactorCount;
+    private final int channelsPerNodeCount;
+    private final boolean reactorSpin;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final NioReactor[] reactors;
@@ -48,14 +51,18 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
         this.logger = nodeEngine.getLogger(NioReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        int reactorTreadCount = Integer.parseInt(System.getProperty("reactor.threadcount", "" + Runtime.getRuntime().availableProcessors()));
-        logger.info("Reactor threadcount:" + reactorTreadCount);
-        this.reactors = new NioReactor[reactorTreadCount];
+        this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
+        this.channelsPerNodeCount = Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
+        logger.info("reactor.count:" + reactorCount);
+        logger.info("reactor.spin:" + reactorSpin);
+        logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
+        this.reactors = new NioReactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
-        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor-threadaffinity");
+        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
         for (int cpu = 0; cpu < reactors.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactors[cpu] = new NioReactor(this, thisAddress, port);
+            reactors[cpu] = new NioReactor(this, thisAddress, port, reactorSpin);
             reactors[cpu].setThreadAffinity(threadAffinity);
         }
     }
@@ -78,11 +85,20 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
 
     public void shutdown() {
         shuttingdown = true;
-    }
 
+        for(ConnectionInvocations invocations: invocationsPerMember.values()){
+            for(Invocation i : invocations.map.values()){
+                i.completableFuture.completeExceptionally(new RuntimeException("Shutting down"));
+            }
+        }
+    }
 
     @Override
     public CompletableFuture invoke(Request request) {
+        if (shuttingdown) {
+            throw new RuntimeException("Can't make invocation, frontend shutting down");
+        }
+
         try {
             int partitionId = request.partitionId;
 
@@ -137,6 +153,11 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }finally {
+            if (shuttingdown) {
+                throw new RuntimeException("Can't make invocation, frontend shutting down");
+            }
+
         }
     }
 
@@ -156,14 +177,14 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
         if (connection.junk == null) {
             synchronized (connection) {
                 if (connection.junk == null) {
-                    Channel[] channels = new Channel[reactors.length];
+                    Channel[] channels = new Channel[channelsPerNodeCount];
                     Address remoteAddress = connection.getRemoteAddress();
 
-                    for (int cpu = 0; cpu < channels.length; cpu++) {
-                        SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, cpu));
-                        Future<Channel> f = reactors[cpu].enqueue(socketAddress, connection);
+                    for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
+                        SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, channelIndex));
+                        Future<Channel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
                         try {
-                            channels[cpu] = f.get();
+                            channels[channelIndex] = f.get();
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to connect to :" + socketAddress, e);
                         }
@@ -210,7 +231,7 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
             ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(packet.toByteArray(), ss, BIG_ENDIAN);
 
             long callId = in.readLong();
-            Invocation invocation = targetInvocations.map.get(callId);
+            Invocation invocation = targetInvocations.map.remove(callId);
             if (invocation == null) {
                 System.out.println("Dropping response " + packet + ", invocation not found");
             } else {
