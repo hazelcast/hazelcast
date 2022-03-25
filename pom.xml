@@ -30,10 +30,10 @@
 
     <modules>
         <module>hazelcast</module>
-        <module>hazelcast-archunit-rules</module>
-        <module>hazelcast-spring</module>
-        <module>hazelcast-spring-tests</module>
-        <module>hazelcast-build-utils</module>
+<!--        <module>hazelcast-archunit-rules</module>-->
+<!--        <module>hazelcast-spring</module>-->
+<!--        <module>hazelcast-spring-tests</module>-->
+<!--        <module>hazelcast-build-utils</module>-->
         <module>hazelcast-sql</module>
     </modules>
 
@@ -565,31 +565,31 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <configuration>
-                    <checkTestClasses>true</checkTestClasses>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java18</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                    <ignores>
-                        <ignore>java.lang.invoke.MethodHandle</ignore>
-                        <ignore>sun.misc.Unsafe</ignore>
-                    </ignores>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java8-check</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.mojo</groupId>-->
+<!--                <artifactId>animal-sniffer-maven-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <checkTestClasses>true</checkTestClasses>-->
+<!--                    <signature>-->
+<!--                        <groupId>org.codehaus.mojo.signature</groupId>-->
+<!--                        <artifactId>java18</artifactId>-->
+<!--                        <version>1.0</version>-->
+<!--                    </signature>-->
+<!--                    <ignores>-->
+<!--                        <ignore>java.lang.invoke.MethodHandle</ignore>-->
+<!--                        <ignore>sun.misc.Unsafe</ignore>-->
+<!--                    </ignores>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>source-java8-check</id>-->
+<!--                        <phase>test-compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1308,18 +1308,18 @@
             </properties>
         </profile>
 
-        <profile>
-            <id>modulepath-tests</id>
-            <activation>
-                <property>
-                    <name>!quick</name>
-                </property>
-                <jdk>[9,)</jdk>
-            </activation>
-            <modules>
-                <module>modulepath-tests</module>
-            </modules>
-        </profile>
+<!--        <profile>-->
+<!--            <id>modulepath-tests</id>-->
+<!--            <activation>-->
+<!--                <property>-->
+<!--                    <name>!quick</name>-->
+<!--                </property>-->
+<!--                <jdk>[9,)</jdk>-->
+<!--            </activation>-->
+<!--            <modules>-->
+<!--                <module>modulepath-tests</module>-->
+<!--            </modules>-->
+<!--        </profile>-->
 
         <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->

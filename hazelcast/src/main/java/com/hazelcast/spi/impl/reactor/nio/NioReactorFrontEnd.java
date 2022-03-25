@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,7 +47,10 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(NioReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.reactors = new NioReactor[1];
+
+        int reactorTreadCount = Integer.parseInt(System.getProperty("reactor.threadcount", "" + Runtime.getRuntime().availableProcessors()));
+        logger.info("Reactor threadcount:" + reactorTreadCount);
+        this.reactors = new NioReactor[reactorTreadCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor-threadaffinity");
         for (int cpu = 0; cpu < reactors.length; cpu++) {
@@ -85,7 +87,6 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
             int partitionId = request.partitionId;
 
             if (partitionId >= 0) {
-                System.out.println("Blabla");
                 Address targetAddress = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
                 ConnectionInvocations invocations = getConnectionInvocations(targetAddress);
                 Invocation invocation = new Invocation();
@@ -96,17 +97,32 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
                 invocations.map.put(invocation.callId, invocation);
 
                 if (targetAddress.equals(thisAddress)) {
-                    System.out.println("local invoke");
+                    //System.out.println("local invoke");
                     reactors[partitionIdToCpu(partitionId)].enqueue(request);
                 } else {
-                    System.out.println("remove invoke");
+                    //System.out.println("remove invoke");
                     if (connectionManager == null) {
                         connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
                     }
 
                     TcpServerConnection connection = getConnection(targetAddress);
-                    Channel[] channels = (Channel[]) connection.junk;
-                    Channel channel = channels[partitionIdToCpu(partitionId)];
+                    Channel channel = null;
+                    for (int k = 0; k < 10; k++) {
+                        Channel[] channels = (Channel[]) connection.junk;
+                        if (channels != null) {
+                            channel = channels[partitionIdToCpu(partitionId)];
+                            break;
+                        }
+
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+
+                    if (channel == null) {
+                        throw new RuntimeException("Could not connect to " + targetAddress + " partitionId:" + partitionId);
+                    }
 
                     Packet packet = request.toPacket();
                     ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
@@ -117,7 +133,7 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
 
                 return invocation.completableFuture;
             } else {
-                throw new RuntimeException();
+                throw new RuntimeException("Negative partition id not supported:" + partitionId);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -141,20 +157,20 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
             synchronized (connection) {
                 if (connection.junk == null) {
                     Channel[] channels = new Channel[reactors.length];
-                    connection.junk = channels;
                     Address remoteAddress = connection.getRemoteAddress();
 
                     for (int cpu = 0; cpu < channels.length; cpu++) {
                         SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, cpu));
                         Future<Channel> f = reactors[cpu].enqueue(socketAddress, connection);
                         try {
-                            Channel channel = f.get();
-                            channels[cpu] = channel;
+                            channels[cpu] = f.get();
                         } catch (Exception e) {
-                            throw new RuntimeException();
+                            throw new RuntimeException("Failed to connect to :" + socketAddress, e);
                         }
                         //todo: assignment of the socket to the channels.
                     }
+
+                    connection.junk = channels;
                 }
             }
         }

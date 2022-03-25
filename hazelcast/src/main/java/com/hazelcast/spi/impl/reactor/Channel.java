@@ -26,7 +26,7 @@ public class Channel {
     public void write(ByteBuffer buffer){
         checkNotNull(buffer);
 
-        System.out.println("write:"+buffer);
+        //System.out.println("write:"+buffer);
 
         pending.add(buffer);
     }

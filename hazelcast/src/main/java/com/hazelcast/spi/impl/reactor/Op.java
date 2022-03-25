@@ -24,13 +24,13 @@ public abstract class Op {
 
     public void readName() throws EOFException {
         int size = in.readInt();
-        System.out.println("size:"+size);
+        //System.out.println("size:"+size);
 
         for (int k = 0; k < size; k++) {
             name.append(in.readChar());
         }
 
-        System.out.println("Read name: "+name);
+        //System.out.println("Read name: "+name);
     }
 
     public abstract int run() throws Exception;
