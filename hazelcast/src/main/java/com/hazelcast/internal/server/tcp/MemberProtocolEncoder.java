@@ -88,9 +88,8 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         }
     }
 
-    public void signalEncoderCanReplace() {
+    public void setEncoderCanReplace() {
         encoderCanReplace = true;
-        channel.outboundPipeline().wakeup();
     }
 
     /**
