@@ -124,9 +124,10 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
+    protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
         Data configData = serializationService().toData(config);
-        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, lightJobCoordinator);
+        Data jobDefinitionData = serializationService().toData(jobDefinition);
+        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), jobDefinitionData, configData, lightJobCoordinator);
         return invocation(request, coordinatorId()).invoke().thenApply(c -> null);
     }
 
