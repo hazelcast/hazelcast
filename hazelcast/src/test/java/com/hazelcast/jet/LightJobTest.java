@@ -48,7 +48,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
     @Parameter
     public TestMode testMode;
 
-    @Parameters(name = "useClient={0}")
+    @Parameters(name = "testMode={0}")
     public static Object[] parameters() {
         return TestMode.values();
     }
@@ -57,7 +57,6 @@ public class LightJobTest extends SimpleTestInClusterSupport {
     public static void beforeClass() {
         initializeWithClient(2, null, null);
         liteMember = factory().newHazelcastInstance(smallInstanceConfig().setLiteMember(true));
-        System.out.println("lite=" + liteMember.getConfig().isLiteMember());
     }
 
     private HazelcastInstance submittingInstance() {
