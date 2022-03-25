@@ -117,7 +117,7 @@ public class NioReactor extends Thread {
             e.printStackTrace();
         }
 
-        System.out.println(getName()+" Died: frontend shutting down:"+frontend.shuttingdown);
+        System.out.println(getName() + " Died: frontend shutting down:" + frontend.shuttingdown);
     }
 
     private void setThreadAffinity() {
@@ -208,7 +208,7 @@ public class NioReactor extends Thread {
                     socketChannel.close();
                     key.cancel();
                 } else {
-                    channel.bytesRead+=bytesRead;
+                    channel.bytesRead += bytesRead;
                     readBuf.flip();
                     process(readBuf, channel);
                     compactOrClear(readBuf);
@@ -257,16 +257,35 @@ public class NioReactor extends Thread {
     private void process(Channel channel) {
         //System.out.println("Processing channel");
         try {
-            // todo: the buffers could be written in batch.
             for (; ; ) {
-                ByteBuffer buffer = channel.next();
+                ByteBuffer buffer = channel.pending.poll();
                 if (buffer == null) {
                     break;
                 }
 
-                int written = channel.socketChannel.write(buffer);
-                channel.bytesWritten+=written;
-                //System.out.println("written:" + written);
+                channel.writeBuffs[channel.writeBuffLen] = buffer;
+                channel.writeBuffLen++;
+            }
+
+            long written = channel.socketChannel.write(channel.writeBuffs, 0, channel.writeBuffLen);
+            channel.bytesWritten += written;
+
+            int toIndex = 0;
+            int length = channel.writeBuffLen;
+            for (int pos = 0; pos < length; pos++) {
+                if (channel.writeBuffs[pos].hasRemaining()) {
+                    if (pos == 0){
+                        // the first one is not empty, we are done
+                        break;
+                    } else {
+                        channel.writeBuffs[toIndex] = channel.writeBuffs[pos];
+                        channel.writeBuffs[pos] = null;
+                        toIndex++;
+                    }
+                } else {
+                    channel.writeBuffLen--;
+                    channel.writeBuffs[pos] = null;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

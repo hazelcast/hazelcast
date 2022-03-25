@@ -25,7 +25,8 @@ public class Channel {
     public long bytesRead = 0;
     public long bytesWritten = 0;
 
-    public ByteBuffer currentWriteBuff;
+    public ByteBuffer[] writeBuffs = new ByteBuffer[128];
+    public int writeBuffLen = 0;
 
     public void flush(){
         reactor.wakeup();
@@ -45,18 +46,18 @@ public class Channel {
         flush();
     }
 
-    public ByteBuffer next() {
-        if (currentWriteBuff == null) {
-            currentWriteBuff = pending.poll();
-        } else {
-            if (!currentWriteBuff.hasRemaining()) {
-                buffersWritten++;
-                currentWriteBuff = null;
-            }
-        }
-
-        return currentWriteBuff;
-    }
+//    public ByteBuffer next() {
+//        if (currentWriteBuff == null) {
+//            currentWriteBuff = pending.poll();
+//        } else {
+//            if (!currentWriteBuff.hasRemaining()) {
+//                buffersWritten++;
+//                currentWriteBuff = null;
+//            }
+//        }
+//
+//        return currentWriteBuff;
+//    }
 
     public String toDebugString() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -69,11 +70,11 @@ public class Channel {
         sb.append("read="+packetsRead).append(' ');
         sb.append("bytes-written="+bytesWritten).append(' ');
         sb.append("bytes-read="+bytesRead).append(' ');
-        if(currentWriteBuff == null){
-            sb.append("currentWriteBuff=null");
-        }else{
-            sb.append(IOUtil.toDebugString("currentWriteBuff", currentWriteBuff));
-        }
+//        if(currentWriteBuff == null){
+//            sb.append("currentWriteBuff=null");
+//        }else{
+//            sb.append(IOUtil.toDebugString("currentWriteBuff", currentWriteBuff));
+//        }
         sb.append(" ");
         if(readBuff == null){
             sb.append("readBuff=null");
