@@ -7,6 +7,7 @@ import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.OpCodes;
+import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
@@ -21,7 +22,7 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
 
-    private final NioReactorFrontEnd opService;
+    private final ReactorFrontEnd opService;
     private final String name;
     private final InternalSerializationService ss;
 

@@ -59,6 +59,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
+import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
@@ -191,7 +192,7 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public NioReactorFrontEnd getReactorFrontEnd(){
+    public ReactorFrontEnd getReactorFrontEnd(){
         return reactorFrontEnd;
     }
 

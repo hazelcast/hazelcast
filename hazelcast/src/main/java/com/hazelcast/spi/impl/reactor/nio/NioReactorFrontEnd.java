@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class NioReactorFrontEnd {
+public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.ReactorFrontEnd {
 
     private final NodeEngineImpl nodeEngine;
     public final SerializationService ss;
@@ -76,6 +76,7 @@ public class NioReactorFrontEnd {
     }
 
 
+    @Override
     public CompletableFuture invoke(Request request) {
        try {
            int partitionId = request.partitionId;
