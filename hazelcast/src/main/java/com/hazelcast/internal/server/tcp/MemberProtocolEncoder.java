@@ -38,7 +38,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
     private volatile boolean encoderCanReplace;
 
-    private volatile boolean clusterProtocolBuffered;
+    private boolean clusterProtocolBuffered;
 
     /**
      * Decodes first 3 incoming bytes, validates against {@code supportedProtocol} and, when
