@@ -1132,12 +1132,7 @@ public class JobCoordinationService {
             return oldMasterContext.jobContext().jobCompletionFuture();
         }
 
-        // If job is not currently running, it might be that it just completed.
-        // Since we've put the MasterContext into the masterContexts map, someone else could
-        // have joined to the job in the meantime so we should notify its future.
-        if (completeMasterContextIfJobAlreadyCompleted(masterContext)) {
-            return masterContext.jobContext().jobCompletionFuture();
-        }
+        assert jobRepository.getJobResult(jobId) == null : "jobResult should not exist at this point";
 
         if (jobExecutionRecord.isSuspended()) {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
