@@ -59,7 +59,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
-import com.hazelcast.spi.impl.reactor.NioReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.nio.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;

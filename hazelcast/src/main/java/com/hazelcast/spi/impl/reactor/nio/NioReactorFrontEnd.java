@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
@@ -11,6 +11,10 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Invocation;
+import com.hazelcast.spi.impl.reactor.Managers;
+import com.hazelcast.spi.impl.reactor.Request;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

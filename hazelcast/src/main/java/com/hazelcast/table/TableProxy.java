@@ -7,7 +7,7 @@ import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.OpCodes;
-import com.hazelcast.spi.impl.reactor.NioReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.nio.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.TableService;

@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
@@ -13,6 +13,9 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 

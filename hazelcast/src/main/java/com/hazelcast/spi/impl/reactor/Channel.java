@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
