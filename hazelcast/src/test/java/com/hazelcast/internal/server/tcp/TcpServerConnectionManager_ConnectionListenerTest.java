@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -48,7 +49,7 @@ public class TcpServerConnectionManager_ConnectionListenerTest
 
         Connection c = connect(tcpServerA, addressB);
 
-        assertTrueEventually(() -> listener.connectionAdded(c));
+        assertTrueEventually(() -> verify(listener).connectionAdded(c));
     }
 
     @Test
@@ -61,7 +62,7 @@ public class TcpServerConnectionManager_ConnectionListenerTest
         Connection c = connect(tcpServerA, addressB);
         c.close(null, null);
 
-        assertTrueEventually(() -> listener.connectionRemoved(c));
+        assertTrueEventually(() -> verify(listener).connectionRemoved(c));
     }
 
     @Test
