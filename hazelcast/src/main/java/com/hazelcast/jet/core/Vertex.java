@@ -239,6 +239,11 @@ public class Vertex implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Used to prevent further mutations this instance after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
     @PrivateApi
     void lock() {
         locked = true;

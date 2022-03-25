@@ -79,9 +79,8 @@ import static java.util.stream.Collectors.joining;
  * @since Jet 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
-    /**
-     * This lock cannot prevent changing user supplied objects like processor.
-     */
+    //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
+    // objects like processor suppliers or various lambdas.
     private transient boolean locked;
 
     private final Set<Edge> edges = new LinkedHashSet<>();
@@ -605,6 +604,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
     }
 
+    /**
+     * Used to prevent further mutations to the DAG after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
     @PrivateApi
     public void lock() {
         locked = true;
