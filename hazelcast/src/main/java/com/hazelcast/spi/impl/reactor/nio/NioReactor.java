@@ -7,6 +7,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
+import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
@@ -287,6 +288,7 @@ public class NioReactor extends Thread {
         System.out.println(this + " process packet: " + packet);
         try {
             if(packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)){
+                System.out.println("Received remote response: "+packet);
                 frontend.handleResponse(packet);
             }else {
                 byte[] bytes = packet.toByteArray();
@@ -294,13 +296,20 @@ public class NioReactor extends Thread {
                 Op op = allocateOp(opcode);
                 op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
                 proces(op);
+
+                System.out.println("We need to send response to "+op.callId);
+                ByteArrayObjectDataOutput out = op.out;
+                ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
+                packet.channel.writeAndFlush(byteBuffer);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    // local call
     private void proces(Request request) {
+
         System.out.println("request: " + request);
         try {
             byte[] data = request.out.toByteArray();
@@ -317,6 +326,7 @@ public class NioReactor extends Thread {
     private void proces(Op op) {
         try {
             long callId = op.in.readLong();
+            op.callId = callId;
             System.out.println("callId: "+callId);
             int runCode = op.run();
             switch (runCode) {
@@ -328,6 +338,8 @@ public class NioReactor extends Thread {
                 default:
                     throw new RuntimeException();
             }
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -348,6 +360,7 @@ public class NioReactor extends Thread {
                 //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.out = new ByteArrayObjectDataOutput(64, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
         op.managers = frontend.managers;
         return op;
     }

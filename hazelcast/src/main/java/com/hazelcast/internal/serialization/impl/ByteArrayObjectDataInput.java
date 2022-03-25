@@ -654,7 +654,7 @@ public class ByteArrayObjectDataInput extends VersionedObjectDataInput implement
     @Override
     public final void position(int newPos) {
         if ((newPos > size) || (newPos < 0)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("newPos:"+newPos+" size:"+size);
         }
         pos = newPos;
         if (mark > pos) {
