@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class ReactorFrontEnd {
+public class NioReactorFrontEnd {
 
     private final NodeEngineImpl nodeEngine;
     public final SerializationService ss;
@@ -33,20 +33,20 @@ public class ReactorFrontEnd {
     private final ThreadAffinity threadAffinity;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
-    private final Reactor[] reactors;
+    private final NioReactor[] reactors;
     public final Managers managers = new Managers();
     private final ConcurrentMap<Address, ConnectionInvocations> invocationsPerMember = new ConcurrentHashMap<>();
 
-    public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
+    public NioReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
+        this.logger = nodeEngine.getLogger(NioReactorFrontEnd.class);
         this.ss = nodeEngine.getSerializationService();
-        this.reactors = new Reactor[1];
+        this.reactors = new NioReactor[1];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor-threadaffinity");
         for (int cpu = 0; cpu < reactors.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactors[cpu] = new Reactor(this, thisAddress, port);
+            reactors[cpu] = new NioReactor(this, thisAddress, port);
             reactors[cpu].setThreadAffinity(threadAffinity);
         }
     }
@@ -62,7 +62,7 @@ public class ReactorFrontEnd {
     public void start() {
         logger.finest("Starting ReactorServicee");
 
-        for (Reactor t : reactors) {
+        for (NioReactor t : reactors) {
             t.start();
         }
     }

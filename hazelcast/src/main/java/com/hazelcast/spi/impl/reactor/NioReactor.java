@@ -40,8 +40,8 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.channels.SelectionKey.OP_READ;
 
-public class Reactor extends Thread {
-    private final ReactorFrontEnd frontend;
+public class NioReactor extends Thread {
+    private final NioReactorFrontEnd frontend;
     private final Selector selector;
     private final ILogger logger;
     private final int port;
@@ -50,7 +50,7 @@ public class Reactor extends Thread {
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private BitSet allowedCpus;
 
-    public Reactor(ReactorFrontEnd frontend, Address thisAddress, int port) {
+    public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.frontend = frontend;
         this.logger = frontend.logger;

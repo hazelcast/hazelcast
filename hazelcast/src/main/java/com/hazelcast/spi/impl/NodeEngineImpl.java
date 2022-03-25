@@ -59,7 +59,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -131,7 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ReactorFrontEnd reactorFrontEnd;
+    private final NioReactorFrontEnd reactorFrontEnd;
 
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -159,7 +159,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.reactorFrontEnd = new ReactorFrontEnd(this);
+            this.reactorFrontEnd = new NioReactorFrontEnd(this);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -191,7 +191,7 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public ReactorFrontEnd getReactorFrontEnd(){
+    public NioReactorFrontEnd getReactorFrontEnd(){
         return reactorFrontEnd;
     }
 
