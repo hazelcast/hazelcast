@@ -16,11 +16,19 @@
 
 package com.hazelcast.spi.discovery.multicast;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.TestDeserialized;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -29,22 +37,11 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.util.OsHelper;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-
-import example.serialization.TestDeserialized;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests if safe-serialization property works in {@link MulticastDiscoveryStrategy}.
@@ -124,9 +121,6 @@ public class MulticastDiscoveryStrategyDeserializationTest {
             byte[] data = bos.toByteArray();
             multicastSocket = new MulticastSocket(PORT);
             multicastSocket.setTimeToLive(0);
-            if (OsHelper.isMac()) {
-                multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
-            }
             InetAddress group = InetAddress.getByName(GROUP);
             multicastSocket.joinGroup(group);
             DatagramPacket packet = new DatagramPacket(data, data.length, group, PORT);

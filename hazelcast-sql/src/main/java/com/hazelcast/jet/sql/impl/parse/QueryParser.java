@@ -29,7 +29,6 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.impl.ParseException;
-import org.apache.calcite.sql.util.SqlVisitor;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -75,17 +74,15 @@ public class QueryParser {
         if (statements.size() != 1) {
             throw QueryException.error(SqlErrorCode.PARSING, "The command must contain a single statement");
         }
+
         SqlNode topNode = statements.get(0);
-
+        topNode.accept(new UnsupportedOperationVisitor(false));
         SqlNode node = validator.validate(topNode);
-
-        SqlVisitor<Void> visitor = new UnsupportedOperationVisitor();
-        node.accept(visitor);
+        node.accept(new UnsupportedOperationVisitor(true));
 
         return new QueryParseResult(
                 node,
-                new QueryParameterMetadata(validator.getParameterConverters(node)),
-                validator.isInfiniteRows()
+                new QueryParameterMetadata(validator.getParameterConverters(node))
         );
     }
 

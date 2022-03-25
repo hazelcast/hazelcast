@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateViewOperator;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -43,7 +42,6 @@ public class SqlCreateView extends SqlCreate {
 
     private final SqlIdentifier name;
     private SqlNode query;
-    private boolean isStream;
 
     public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, ifNotExists);
@@ -57,10 +55,6 @@ public class SqlCreateView extends SqlCreate {
 
     public SqlNode getQuery() {
         return query;
-    }
-
-    public boolean isStream() {
-        return isStream;
     }
 
     @Override
@@ -104,6 +98,5 @@ public class SqlCreateView extends SqlCreate {
         }
 
         query = validator.validate(query);
-        isStream = ((HazelcastSqlValidator) validator).containsStreamingSource(query);
     }
 }

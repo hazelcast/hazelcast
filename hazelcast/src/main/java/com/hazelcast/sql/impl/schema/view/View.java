@@ -16,10 +16,12 @@
 
 package com.hazelcast.sql.impl.schema.view;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -27,21 +29,26 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-public class View implements IdentifiedDataSerializable {
+public class View implements IdentifiedDataSerializable, Versioned {
 
     private String name;
     private String query;
-    private boolean isStream;
     private List<String> viewColumnNames;
     private List<QueryDataType> viewColumnTypes;
 
     public View() {
     }
 
+    public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes) {
+        this.name = name;
+        this.query = query;
+        this.viewColumnNames = columnNames;
+        this.viewColumnTypes = columnTypes;
+    }
+
     public View(String name, String query, boolean isStream, List<String> columnNames, List<QueryDataType> columnTypes) {
         this.name = name;
         this.query = query;
-        this.isStream = isStream;
         this.viewColumnNames = columnNames;
         this.viewColumnTypes = columnTypes;
     }
@@ -52,10 +59,6 @@ public class View implements IdentifiedDataSerializable {
 
     public String query() {
         return query;
-    }
-
-    public boolean isStream() {
-        return isStream;
     }
 
     public List<String> viewColumnNames() {
@@ -70,7 +73,9 @@ public class View implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(query);
-        out.writeBoolean(isStream);
+        if (out.getVersion().isLessThan(Versions.V5_2)) {
+            out.writeBoolean(false);
+        }
         SerializationUtil.writeList(viewColumnNames, out);
         SerializationUtil.writeList(viewColumnTypes, out);
     }
@@ -79,7 +84,9 @@ public class View implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         query = in.readString();
-        isStream = in.readBoolean();
+        if (in.getVersion().isLessThan(Versions.V5_2)) {
+            in.readBoolean();
+        }
         viewColumnNames = SerializationUtil.readList(in);
         viewColumnTypes = SerializationUtil.readList(in);
     }
@@ -105,13 +112,12 @@ public class View implements IdentifiedDataSerializable {
         View view = (View) o;
         return Objects.equals(name, view.name)
                 && Objects.equals(query, view.query)
-                && isStream == view.isStream
                 && Objects.equals(viewColumnNames, view.viewColumnNames)
                 && Objects.equals(viewColumnTypes, view.viewColumnTypes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, query, isStream, viewColumnNames, viewColumnTypes);
+        return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
     }
 }

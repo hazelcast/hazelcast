@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
@@ -29,10 +30,12 @@ import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThr
 class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<RecordStore> {
 
     private final MapServiceContext mapServiceContext;
+    private final ILogger logger;
 
     MapSplitBrainHandlerService(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine());
         this.mapServiceContext = mapServiceContext;
+        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -65,6 +68,11 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     @Override
     protected void destroyStore(RecordStore store) {
         assertRunningOnPartitionThread();
+
+        if (logger.isFineEnabled()) {
+            logger.fine(String.format("Destroyed store [mapName:%s, partitionId:%d, partitionSize:%d]",
+                    store.getName(), store.getPartitionId(), store.size()));
+        }
 
         ((DefaultRecordStore) store).destroyStorageAfterClear(false, true);
     }

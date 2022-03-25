@@ -269,7 +269,7 @@ public class PlanExecutor {
             fieldTypes.add(toHazelcastType(field.getType()));
         }
 
-        View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
+        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes);
 
         if (plan.isReplace()) {
             View existingView = catalog.getView(plan.viewName());
@@ -494,10 +494,10 @@ public class PlanExecutor {
      * reordering them is allowed.
      * <p>
      * This is an interim mitigation for
-     * https://github.com/hazelcast/hazelcast/issues/20032. It disallows
-     * incompatible changes when doing CREATE OR REPLACE VIEW, however
-     * incompatible changes are still possible with DROP VIEW followed
-     * by a CREATE VIEW.
+     * https://github.com/hazelcast/hazelcast/issues/20032.
+     * It disallows incompatible changes when doing CREATE OR REPLACE VIEW,
+     * however incompatible changes are still possible with DROP VIEW
+     * followed by a CREATE VIEW.
      */
     private static void checkViewNewRowType(View original, View replacement) {
         Map<String, QueryDataType> newTypes = new HashMap<>();
