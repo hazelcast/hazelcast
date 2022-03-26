@@ -1,14 +1,10 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.nio.PacketIOHelper;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
@@ -16,56 +12,90 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.Request;
+import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
+import io.netty.channel.unix.Buffer;
+import io.netty.channel.unix.FileDescriptor;
+import io.netty.util.NetUtil;
+import io.netty.util.collection.IntObjectHashMap;
+import io.netty.util.collection.IntObjectMap;
+import io.netty.util.internal.PlatformDependent;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.BitSet;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_FOO;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
-import static java.nio.channels.SelectionKey.OP_READ;
+import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
+import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 
-public class NioReactor extends Thread {
-    private final NioReactorFrontEnd frontend;
-    private final Selector selector;
+
+/**
+ * To build io uring:
+ *
+ * sudo yum install autoconf
+ * sudo yum install automake
+ * sudo yum install libtool
+ *
+ * Good read:
+ * https://unixism.net/2020/04/io-uring-by-example-part-3-a-web-server-with-io-uring/
+ */
+public class IOUringReactor extends Thread implements IOUringCompletionQueueCallback {
+    private final IOUringReactorFrontEnd frontend;
+    //private final Selector selector;
     private final ILogger logger;
     private final int port;
     private final Address thisAddress;
     private final boolean spin;
-    private ServerSocketChannel serverSocketChannel;
+    //    private ServerSocketChannel serverSocketChannel;
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
-    private final PacketIOHelper packetIOHelper = new PacketIOHelper();
+    private final RingBuffer ringBuffer;
+    private final FileDescriptor eventfd;
+    private final LinuxSocket serverSocket;
+    private final IOUringSubmissionQueue sq;
+    private final IOUringCompletionQueue cq;
     private BitSet allowedCpus;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
     private long nextPrint = System.currentTimeMillis() + 1000;
+    private ByteBuffer acceptedAddressMemory;
+    private long acceptedAddressMemoryAddress;
+    private ByteBuffer acceptedAddressLengthMemory;
+    private long acceptedAddressLengthMemoryAddress;
+    private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
+    private final IntObjectMap<IOUringChannel> channels = new IntObjectHashMap<>(4096);
 
-    public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
-        super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
-
+    public IOUringReactor(IOUringReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
+        super("IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.spin = spin;
         this.thisAddress = thisAddress;
         this.frontend = frontend;
         this.logger = frontend.logger;
-        this.selector = SelectorOptimizer.newSelector(frontend.logger);
+        //this.selector = SelectorOptimizer.newSelector(frontend.logger);
         this.port = port;
+        this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
+        this.sq = ringBuffer.ioUringSubmissionQueue();
+        this.cq = ringBuffer.ioUringCompletionQueue();
+        this.eventfd = Native.newBlockingEventFd();
+        this.serverSocket = LinuxSocket.newSocketStream(false);
+
+        this.acceptedAddressMemory = Buffer.allocateDirectWithNativeOrder(Native.SIZEOF_SOCKADDR_STORAGE);
+        this.acceptedAddressMemoryAddress = Buffer.memoryAddress(acceptedAddressMemory);
+        this.acceptedAddressLengthMemory = Buffer.allocateDirectWithNativeOrder(Long.BYTES);
+        // Needs to be initialized to the size of acceptedAddressMemory.
+        // See https://man7.org/linux/man-pages/man2/accept.2.html
+        this.acceptedAddressLengthMemory.putLong(0, Native.SIZEOF_SOCKADDR_STORAGE);
+        this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 
     public void setThreadAffinity(ThreadAffinity threadAffinity) {
@@ -78,7 +108,8 @@ public class NioReactor extends Thread {
         }
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-            selector.wakeup();
+            // write to the evfd which will then wake-up epoll_wait(...)
+            Native.eventFdWrite(eventfd.intValue(), 1L);
         }
     }
 
@@ -87,7 +118,7 @@ public class NioReactor extends Thread {
         wakeup();
     }
 
-    public Future<NioChannel> enqueue(SocketAddress address, Connection connection) {
+    public Future<IOUringChannel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
@@ -104,7 +135,7 @@ public class NioReactor extends Thread {
     static class ConnectRequest {
         Connection connection;
         SocketAddress address;
-        CompletableFuture<NioChannel> future;
+        CompletableFuture<IOUringChannel> future;
     }
 
     @Override
@@ -113,7 +144,7 @@ public class NioReactor extends Thread {
 
         try {
             if (bind()) {
-                loop();
+                eventLoop();
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -141,13 +172,13 @@ public class NioReactor extends Thread {
     private boolean bind() {
         InetSocketAddress address = null;
         try {
-            serverSocketChannel = ServerSocketChannel.open();
             address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            System.out.println(getName() + " Binding to " + address);
-            serverSocketChannel.bind(address);
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            logger.info(getName() + " ServerSocket listening at " + address);
+            //serverSocket.setTcpQuickAck(false);
+            //serverSocket.setTcpNoDelay(true);
+            serverSocket.bind(address);
+            System.out.println(getName() + " Bind success " + address);
+            serverSocket.listen(NetUtil.SOMAXCONN);
+            System.out.println(getName() + " Listening on " + address);
             return true;
         } catch (IOException e) {
             logger.severe(getName() + " Could not bind to " + address);
@@ -155,90 +186,93 @@ public class NioReactor extends Thread {
         return false;
     }
 
-    private void loop() throws Exception {
+    private void eventLoop() throws Exception {
+        sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
+
+        addAcceptRequest();
+
         while (!frontend.shuttingdown) {
-            int keyCount;
-            if (spin) {
-                keyCount = selector.selectNow();
-            } else {
-                wakeupNeeded.set(true);
-                keyCount = selector.select();
-                wakeupNeeded.set(false);
+            if (cq.hasCompletions()) {
+                System.out.println(getName() + " has completions:" + cq.hasCompletions());
             }
 
+            // Check there were any completion events to process
+//            if (!cq.hasCompletions()) {
+//                 sq.submitAndWait();
+//            }
 
-            //System.out.println(this + " selectionCount:" + keyCount);
+            //int processed = cq.process(this);
+            //if (processed > 0) {
+            //    System.out.println(getName() + " " + processed);
+            //}
 
-            if (keyCount > 0) {
-                processSelectionKeys();
-            }
-
+            Thread.sleep(10);
             processTasks();
         }
     }
 
-    private void printChannelsDebug() {
-        if (System.currentTimeMillis() > nextPrint) {
-            for (SelectionKey key : selector.keys()) {
-                NioChannel channel = (NioChannel) key.attachment();
-                if (channel != null) {
-                    System.out.println(channel.toDebugString());
-                }
-            }
-            nextPrint = System.currentTimeMillis() + 1000;
-        }
+    private void addAcceptRequest() {
+        sq.addAccept(serverSocket.intValue(), acceptedAddressMemoryAddress, acceptedAddressLengthMemoryAddress, (short) 0);
     }
 
-    private void processSelectionKeys() throws IOException {
-        Set<SelectionKey> selectionKeys = selector.selectedKeys();
-        Iterator<SelectionKey> it = selectionKeys.iterator();
-        while (it.hasNext()) {
-            SelectionKey key = it.next();
-            it.remove();
+    @Override
+    public void handle(int fd, int res, int flags, byte op, short data) {
+        System.out.println(getName() + " handle called");
 
-            if (key.isValid() && key.isAcceptable()) {
-                SocketChannel socketChannel = serverSocketChannel.accept();
-                socketChannel.configureBlocking(false);
-                SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
-                selectionKey.attach(newChannel(socketChannel, null));
-
-                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
-            }
-
-            if (key.isValid() && key.isReadable()) {
-                SocketChannel socketChannel = (SocketChannel) key.channel();
-                NioChannel channel = (NioChannel) key.attachment();
-                ByteBuffer readBuf = channel.readBuff;
-                int bytesRead = socketChannel.read(readBuf);
-                //System.out.println(this + " bytes read: " + bytesRead);
-                if (bytesRead == -1) {
-                    socketChannel.close();
-                    key.cancel();
-                } else {
-                    channel.bytesRead += bytesRead;
-                    readBuf.flip();
-                    process(readBuf, channel);
-                    compactOrClear(readBuf);
-                }
-            }
-
-            if (!key.isValid()) {
-                //System.out.println("sk not valid");
-                key.cancel();
-            }
-        }
+        //todo: once we determine that the request was an accept, we need to call 'addAcceptRequest'
     }
 
-    private NioChannel newChannel(SocketChannel socketChannel, Connection connection) {
-        System.out.println(this + " newChannel: " + socketChannel);
 
-        NioChannel channel = new NioChannel();
-        channel.reactor = this;
-        channel.readBuff = ByteBuffer.allocate(256 * 1024);
-        channel.socketChannel = socketChannel;
-        channel.connection = connection;
-        return channel;
-    }
+//    private void processSelectionKeys() throws IOException {
+//        Set<SelectionKey> selectionKeys = selector.selectedKeys();
+//        Iterator<SelectionKey> it = selectionKeys.iterator();
+//        while (it.hasNext()) {
+//            SelectionKey key = it.next();
+//            it.remove();
+//
+//            if (key.isValid() && key.isAcceptable()) {
+//                SocketChannel socketChannel = serverSocketChannel.accept();
+//                socketChannel.configureBlocking(false);
+//                SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
+//                selectionKey.attach(newChannel(socketChannel, null));
+//                 we
+//                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+//            }
+//
+//            if (key.isValid() && key.isReadable()) {
+//                SocketChannel socketChannel = (SocketChannel) key.channel();
+//                Channel channel = (Channel) key.attachment();
+//                ByteBuffer readBuf = channel.readBuff;
+//                int bytesRead = socketChannel.read(readBuf);
+//                //System.out.println(this + " bytes read: " + bytesRead);
+//                if (bytesRead == -1) {
+//                    socketChannel.close();
+//                    key.cancel();
+//                } else {
+//                    channel.bytesRead += bytesRead;
+//                    readBuf.flip();
+//                    process(readBuf, channel);
+//                    compactOrClear(readBuf);
+//                }
+//            }
+//
+//            if (!key.isValid()) {
+//                //System.out.println("sk not valid");
+//                key.cancel();
+//            }
+//        }
+//    }
+
+//    private Channel newChannel(SocketChannel socketChannel, Connection connection) {
+//        System.out.println(this + " newChannel: " + socketChannel);
+//
+//        Channel channel = new Channel();
+//        channel.reactor = this;
+//        channel.readBuff = ByteBuffer.allocate(256 * 1024);
+//        channel.socketChannel = socketChannel;
+//        channel.connection = connection;
+//        return channel;
+//    }
 
     private void processTasks() {
         for (; ; ) {
@@ -302,39 +336,46 @@ public class NioReactor extends Thread {
     public void process(ConnectRequest connectRequest) {
         try {
             SocketAddress address = connectRequest.address;
-            System.out.println("ConnectRequest address:" + address);
+            System.out.println(getName() + " connectRequest address:" + address);
 
-            SocketChannel socketChannel = SocketChannel.open();
-            // todo: call is blocking
-            socketChannel.connect(address);
-            socketChannel.configureBlocking(false);
-            SelectionKey key = socketChannel.register(selector, OP_READ);
+            LinuxSocket socket = LinuxSocket.newSocketStream(false);
+            //socket.setTcpNoDelay(true);
+            //socket.setTcpQuickAck(false);
 
-            NioChannel channel = newChannel(socketChannel, connectRequest.connection);
-            key.attach(channel);
+            if (!socket.connect(connectRequest.address)) {
+                connectRequest.future.completeExceptionally(new IOException("Could not connect to " + connectRequest.address));
+                return;
+            }
 
-            logger.info("Socket listening at " + address);
+            IOUringChannel channel = new IOUringChannel();
+            channel.reactor = this;
+            channel.socket = socket;
+
+            this.channels.put(socket.intValue(), channel);
+
+
+            logger.info(getName() + "Socket connected to " + address);
             connectRequest.future.complete(channel);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void process(ByteBuffer buffer, NioChannel channel) {
-        for (; ; ) {
-            Packet packet = packetIOHelper.readFrom(buffer);
-            //System.out.println(this + " read packet: " + packet);
-            if (packet == null) {
-                return;
-            }
-
-            channel.packetsRead++;
-
-            packet.setConn((ServerConnection) channel.connection);
-            packet.channel = channel;
-            process(packet);
-        }
-    }
+//    private void process(ByteBuffer buffer, Channel channel) {
+//        for (; ; ) {
+//            Packet packet = packetIOHelper.readFrom(buffer);
+//            //System.out.println(this + " read packet: " + packet);
+//            if (packet == null) {
+//                return;
+//            }
+//
+//            channel.packetsRead++;
+//
+//            packet.setConn((ServerConnection) channel.connection);
+//            packet.channel = channel;
+//            process(packet);
+//        }
+//    }
 
     private void process(Packet packet) {
         //System.out.println(this + " process packet: " + packet);
@@ -411,8 +452,8 @@ public class NioReactor extends Thread {
                 op = new UpsertOperation();
                 //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.out = new ByteArrayObjectDataOutput(64, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.out = new ByteArrayObjectDataOutput(64, frontend.ss, ByteOrder.BIG_ENDIAN);
         op.managers = frontend.managers;
         return op;
     }

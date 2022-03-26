@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOUtil;
@@ -12,14 +12,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class Channel {
+public class IOUringChannel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
 
     public Connection connection;
     public ByteBuffer readBuff;
-    public SocketChannel socketChannel;
-    public NioReactor reactor;
+    public LinuxSocket socket;
+    public IOUringReactor reactor;
     public long buffersWritten = 0;
     public long packetsRead = 0;
     public long bytesRead = 0;

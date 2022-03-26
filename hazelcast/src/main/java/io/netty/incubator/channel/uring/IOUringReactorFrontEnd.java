@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.ReactorFrontEnd {
+public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.ReactorFrontEnd {
 
     private final NodeEngineImpl nodeEngine;
     public final InternalSerializationService ss;
@@ -41,26 +41,28 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
     private final boolean reactorSpin;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
-    private final NioReactor[] reactors;
+    private final IOUringReactor[] reactors;
     public final Managers managers = new Managers();
     private final ConcurrentMap<Address, ConnectionInvocations> invocationsPerMember = new ConcurrentHashMap<>();
 
-    public NioReactorFrontEnd(NodeEngineImpl nodeEngine) {
+    public IOUringReactorFrontEnd(NodeEngineImpl nodeEngine) {
+        IOUring.ensureAvailability();
+
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(NioReactorFrontEnd.class);
+        this.logger = nodeEngine.getLogger(IOUringReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        this.channelsPerNodeCount = Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
+        this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.reactorSpin = false;//Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
+        this.channelsPerNodeCount = 1;//Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
         logger.info("reactor.count:" + reactorCount);
         logger.info("reactor.spin:" + reactorSpin);
         logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
-        this.reactors = new NioReactor[reactorCount];
+        this.reactors = new IOUringReactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
         for (int cpu = 0; cpu < reactors.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactors[cpu] = new NioReactor(this, thisAddress, port, reactorSpin);
+            reactors[cpu] = new IOUringReactor(this, thisAddress, port, reactorSpin);
             reactors[cpu].setThreadAffinity(threadAffinity);
         }
     }
@@ -76,7 +78,7 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
     public void start() {
         logger.finest("Starting ReactorServicee");
 
-        for (NioReactor t : reactors) {
+        for (IOUringReactor t : reactors) {
             t.start();
         }
     }
@@ -120,9 +122,9 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
                     }
 
                     TcpServerConnection connection = getConnection(targetAddress);
-                    NioChannel channel = null;
+                    IOUringChannel channel = null;
                     for (int k = 0; k < 10; k++) {
-                        NioChannel[] channels = (NioChannel[]) connection.junk;
+                        IOUringChannel[] channels = (IOUringChannel[]) connection.junk;
                         if (channels != null) {
                             channel = channels[partitionIdToCpu(partitionId)];
                             break;
@@ -175,12 +177,12 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
         if (connection.junk == null) {
             synchronized (connection) {
                 if (connection.junk == null) {
-                    NioChannel[] channels = new NioChannel[channelsPerNodeCount];
+                    IOUringChannel[] channels = new IOUringChannel[channelsPerNodeCount];
                     Address remoteAddress = connection.getRemoteAddress();
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, channelIndex));
-                        Future<NioChannel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
+                        Future<IOUringChannel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
                         try {
                             channels[channelIndex] = f.get();
                         } catch (Exception e) {
@@ -239,29 +241,4 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
             e.printStackTrace();
         }
     }
-
-
-//    //todo: add option to bypass offloading to thread for thread per core versionn
-//    @Override
-//    public void accept(Packet packet) {
-//        if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
-//            Address remoteAddress = packet.getConn().getRemoteAddress();
-//            TargetInvocations targetInvocations = invocationsPerMember.get(remoteAddress);
-//            if (targetInvocations == null) {
-//                System.out.println("Dropping response " + packet + ", targetInvocations not found");
-//                return;
-//            }
-//
-//            long callId = 0;
-//            Invocation invocation = targetInvocations.map.get(callId);
-//            if (invocation == null) {
-//                System.out.println("Dropping response " + packet + ", invocation not found");
-//                invocation.completableFuture.complete(null);
-//            }
-//        } else {
-//            int index = HashUtil.hashToIndex(packet.getPartitionHash(), reactors.length);
-//            reactors[index].enqueue(packet);
-//        }
-//    }
-
 }

@@ -433,6 +433,14 @@
     </build>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+            <version>0.0.13.Final-SNAPSHOT</version>
+            <classifier>linux-x86_64</classifier>
+        </dependency>
+
         <!-- needed for thread affinity -->
         <dependency>
             <groupId>net.openhft</groupId>

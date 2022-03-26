@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 
 import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 
@@ -36,7 +36,7 @@ import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 @SuppressWarnings({"checkstyle:declarationorder", "checkstyle:magicnumber"})
 public final class Packet extends HeapData implements OutboundFrame {
 
-    public Channel channel;
+    public NioChannel channel;
 
     public static final byte VERSION = 4;
 
