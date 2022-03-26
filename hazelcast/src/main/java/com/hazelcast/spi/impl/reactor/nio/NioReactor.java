@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
@@ -54,6 +55,8 @@ public class NioReactor extends Thread {
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private BitSet allowedCpus;
+    private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
+    private long nextPrint = System.currentTimeMillis() + 1000;
 
     public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
@@ -70,12 +73,11 @@ public class NioReactor extends Thread {
     }
 
     public void wakeup() {
-        if (spin) {
+        if (spin || Thread.currentThread() == this) {
             return;
         }
 
-        if (Thread.currentThread() != this) {
-            //System.out.println("wakeup");
+        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
             selector.wakeup();
         }
     }
@@ -154,23 +156,16 @@ public class NioReactor extends Thread {
     }
 
     private void loop() throws Exception {
-//        long nextPrint = System.currentTimeMillis() + 1000;
         while (!frontend.shuttingdown) {
+            int keyCount;
+            if (spin) {
+                keyCount = selector.selectNow();
+            } else {
+                wakeupNeeded.set(true);
+                keyCount = selector.select();
+                wakeupNeeded.set(false);
+            }
 
-            int keyCount = spin ? selector.selectNow() : selector.select();
-
-//            if (System.currentTimeMillis() > nextPrint) {
-//                for (SelectionKey key : selector.keys()) {
-//                    Channel channel = (Channel) key.attachment();
-//                    if (channel != null) {
-//                        System.out.println(channel.toDebugString());
-//                    }
-//                }
-//                nextPrint = System.currentTimeMillis() + 1000;
-//            }
-
-
-            //Thread.sleep(1000);
 
             //System.out.println(this + " selectionCount:" + keyCount);
 
@@ -179,6 +174,18 @@ public class NioReactor extends Thread {
             }
 
             processTasks();
+        }
+    }
+
+    private void printChannelsDebug() {
+        if (System.currentTimeMillis() > nextPrint) {
+            for (SelectionKey key : selector.keys()) {
+                Channel channel = (Channel) key.attachment();
+                if (channel != null) {
+                    System.out.println(channel.toDebugString());
+                }
+            }
+            nextPrint = System.currentTimeMillis() + 1000;
         }
     }
 
@@ -274,7 +281,7 @@ public class NioReactor extends Thread {
             int length = channel.writeBuffLen;
             for (int pos = 0; pos < length; pos++) {
                 if (channel.writeBuffs[pos].hasRemaining()) {
-                    if (pos == 0){
+                    if (pos == 0) {
                         // the first one is not empty, we are done
                         break;
                     } else {

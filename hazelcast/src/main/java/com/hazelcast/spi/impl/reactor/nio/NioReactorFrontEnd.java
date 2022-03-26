@@ -50,7 +50,6 @@ public class NioReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Reacto
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(NioReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-
         this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
         this.channelsPerNodeCount = Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
