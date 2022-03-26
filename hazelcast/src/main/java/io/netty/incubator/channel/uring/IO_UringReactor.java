@@ -39,6 +39,17 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_CLOSE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_CONNECT;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_POLL_ADD;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_POLL_REMOVE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_RECVMSG;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_SENDMSG;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_TIMEOUT;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
 
 /**
@@ -50,9 +61,71 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
  *
  * Good read:
  * https://unixism.net/2020/04/io-uring-by-example-part-3-a-web-server-with-io-uring/
+ *
+ *
+ * no syscalls:
+ * https://wjwh.eu/posts/2021-10-01-no-syscall-server-iouring.html
+ *
+ * https://github.com/torvalds/linux/blob/master/include/uapi/linux/io_uring.h
+ * IORING_OP_NOP               0
+ * IORING_OP_READV             1
+ * IORING_OP_WRITEV            2
+ * IORING_OP_FSYNC             3
+ * IORING_OP_READ_FIXED        4
+ * IORING_OP_WRITE_FIXED       5
+ * IORING_OP_POLL_ADD          6
+ * IORING_OP_POLL_REMOVE       7
+ * IORING_OP_SYNC_FILE_RANGE   8
+ * IORING_OP_SENDMSG           9
+ * IORING_OP_RECVMSG           10
+ * IORING_OP_TIMEOUT,          11
+ * IORING_OP_TIMEOUT_REMOVE,   12
+ * IORING_OP_ACCEPT,           13
+ * IORING_OP_ASYNC_CANCEL,     14
+ * IORING_OP_LINK_TIMEOUT,     15
+ * IORING_OP_CONNECT,          16
+ * IORING_OP_FALLOCATE,        17
+ * IORING_OP_OPENAT,
+ * IORING_OP_CLOSE,
+ * IORING_OP_FILES_UPDATE,
+ * IORING_OP_STATX,
+ * IORING_OP_READ,
+ * IORING_OP_WRITE,
+ * IORING_OP_FADVISE,
+ * IORING_OP_MADVISE,
+ * IORING_OP_SEND,
+ * IORING_OP_RECV,
+ * IORING_OP_OPENAT2,
+ * IORING_OP_EPOLL_CTL,
+ * IORING_OP_SPLICE,
+ * IORING_OP_PROVIDE_BUFFERS,
+ * IORING_OP_REMOVE_BUFFERS,
+ * IORING_OP_TEE,
+ * IORING_OP_SHUTDOWN,
+ * IORING_OP_RENAMEAT,
+ * IORING_OP_UNLINKAT,
+ * IORING_OP_MKDIRAT,
+ * IORING_OP_SYMLINKAT,
+ * IORING_OP_LINKAT,
+ * IORING_OP_MSG_RING,
  */
-public class IOUringReactor extends Thread implements IOUringCompletionQueueCallback {
-    private final IOUringReactorFrontEnd frontend;
+public class IO_UringReactor extends Thread implements IOUringCompletionQueueCallback {
+
+    static {
+        System.out.println("IORING_OP_POLL_ADD:" + IORING_OP_POLL_ADD);
+        System.out.println("IORING_OP_TIMEOUT:" + IORING_OP_TIMEOUT);
+        System.out.println("IORING_OP_ACCEPT:" + IORING_OP_ACCEPT);
+        System.out.println("IORING_OP_READ:" + IORING_OP_READ);
+        System.out.println("IORING_OP_WRITE:" + IORING_OP_WRITE);
+        System.out.println("IORING_OP_POLL_REMOVE:" + IORING_OP_POLL_REMOVE);
+        System.out.println("IORING_OP_CONNECT:" + IORING_OP_CONNECT);
+        System.out.println("IORING_OP_CLOSE:" + IORING_OP_CLOSE);
+        System.out.println("IORING_OP_WRITEV:" + IORING_OP_WRITEV);
+        System.out.println("IORING_OP_SENDMSG:" + IORING_OP_SENDMSG);
+        System.out.println("IORING_OP_RECVMSG:" + IORING_OP_RECVMSG);
+    }
+
+    private final IO_UringReactorFrontEnd frontend;
     //private final Selector selector;
     private final ILogger logger;
     private final int port;
@@ -62,7 +135,7 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
-    private final LinuxSocket serverSocket;
+    private LinuxSocket serverSocket;
     private final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     private BitSet allowedCpus;
@@ -73,9 +146,10 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
     private ByteBuffer acceptedAddressLengthMemory;
     private long acceptedAddressLengthMemoryAddress;
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
-    private final IntObjectMap<IOUringChannel> channels = new IntObjectHashMap<>(4096);
+    private final IntObjectMap<IO_UringChannel> channels = new IntObjectHashMap<>(4096);
+    private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
 
-    public IOUringReactor(IOUringReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
+    public IO_UringReactor(IO_UringReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
         super("IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.spin = spin;
         this.thisAddress = thisAddress;
@@ -87,7 +161,6 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.eventfd = Native.newBlockingEventFd();
-        this.serverSocket = LinuxSocket.newSocketStream(false);
 
         this.acceptedAddressMemory = Buffer.allocateDirectWithNativeOrder(Native.SIZEOF_SOCKADDR_STORAGE);
         this.acceptedAddressMemoryAddress = Buffer.memoryAddress(acceptedAddressMemory);
@@ -118,7 +191,7 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
         wakeup();
     }
 
-    public Future<IOUringChannel> enqueue(SocketAddress address, Connection connection) {
+    public Future<IO_UringChannel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
@@ -135,7 +208,7 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
     static class ConnectRequest {
         Connection connection;
         SocketAddress address;
-        CompletableFuture<IOUringChannel> future;
+        CompletableFuture<IO_UringChannel> future;
     }
 
     @Override
@@ -143,7 +216,7 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
         setThreadAffinity();
 
         try {
-            if (bind()) {
+            if (setupListeningSocket()) {
                 eventLoop();
             }
         } catch (Throwable e) {
@@ -169,55 +242,130 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
         }
     }
 
-    private boolean bind() {
-        InetSocketAddress address = null;
+    private boolean setupListeningSocket() {
+        InetSocketAddress bindAddress = null;
         try {
-            address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+            this.serverSocket = LinuxSocket.newSocketStream(false);
+            this.serverSocket.setReuseAddress(true);
+
+            System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
+
+            bindAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
             //serverSocket.setTcpQuickAck(false);
             //serverSocket.setTcpNoDelay(true);
-            serverSocket.bind(address);
-            System.out.println(getName() + " Bind success " + address);
+            serverSocket.bind(bindAddress);
+            System.out.println(getName() + " Bind success " + bindAddress);
             serverSocket.listen(NetUtil.SOMAXCONN);
-            System.out.println(getName() + " Listening on " + address);
+            System.out.println(getName() + " Listening on " + bindAddress);
             return true;
         } catch (IOException e) {
-            logger.severe(getName() + " Could not bind to " + address);
+            logger.severe(getName() + " Could not bind to " + bindAddress);
         }
         return false;
     }
 
     private void eventLoop() throws Exception {
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
+        sq.addAccept(serverSocket.intValue(), acceptedAddressMemoryAddress, acceptedAddressLengthMemoryAddress, (short) 0);
 
-        addAcceptRequest();
+        // not needed
+        sq.submit();
 
         while (!frontend.shuttingdown) {
-            if (cq.hasCompletions()) {
-                System.out.println(getName() + " has completions:" + cq.hasCompletions());
+            // Check there were any completion events to process
+            if (!cq.hasCompletions()) {
+                //System.out.println(getName() + " submitAndWait:started");
+                wakeupNeeded.set(true);
+                sq.submitAndWait();
+                sq.submit();
+                wakeupNeeded.set(false);
+                //System.out.println(getName() + " submitAndWait:completed");
+            } else {
+                int processed = cq.process(this);
+                if (processed > 0) {
+                    System.out.println(getName() + " processed " + processed);
+                }
             }
 
-            // Check there were any completion events to process
-//            if (!cq.hasCompletions()) {
-//                 sq.submitAndWait();
-//            }
-
-            //int processed = cq.process(this);
-            //if (processed > 0) {
-            //    System.out.println(getName() + " " + processed);
-            //}
-
-            Thread.sleep(10);
+            Thread.sleep(500);
             processTasks();
         }
     }
 
-    private void addAcceptRequest() {
-        sq.addAccept(serverSocket.intValue(), acceptedAddressMemoryAddress, acceptedAddressLengthMemoryAddress, (short) 0);
-    }
-
     @Override
     public void handle(int fd, int res, int flags, byte op, short data) {
-        System.out.println(getName() + " handle called");
+        System.out.println(getName() + " handle called: opcode:" + op);
+
+        if (op == IORING_OP_READ && eventfd.intValue() == fd) {
+            System.out.println(getName() + " handle Native.IORING_OP_READ");
+
+            //pendingWakeup = false;
+            sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
+        } else if (op == IORING_OP_TIMEOUT) {
+            System.out.println(getName() + " handle Native.IORING_OP_TIMEOUT");
+            //if (res == Native.ERRNO_ETIME_NEGATIVE) {
+            //    prevDeadlineNanos = NONE;
+            // }
+        } else {
+            // Remaining events should be channel-specific
+            IO_UringChannel channel = channels.get(fd);
+
+            if (op == IORING_OP_ACCEPT) {
+                System.out.println(getName() + " handle Native.IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue()+ "res:"+res);
+
+                SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
+                System.out.println(address);
+                if (res >= 0) {
+                    // the event source is the server socket
+                    // But how can we determine the fd for the new channel
+                    LinuxSocket socket = new LinuxSocket(res);
+
+//                   return new IOUringSocketChannel(this, new LinuxSocket(fd), address);
+//
+                    channel = new IO_UringChannel();
+                    channel.socket = socket;
+                    channel.reactor = this;
+
+                    channels.put(fd, channel);
+
+                    //sq.addEventFdRead(res, )
+                    // register for read.
+
+                }
+
+                sq.addAccept(serverSocket.intValue(), acceptedAddressMemoryAddress, acceptedAddressLengthMemoryAddress, (short) 0);
+                return;
+            }
+
+            if (channel == null) {
+                System.out.println("no channel found");
+                return;
+            }
+
+            if (op == IORING_OP_READ || op == IORING_OP_RECVMSG) {
+
+                // handleRead(channel, res, data);
+            } else if (op == IORING_OP_WRITEV || op == IORING_OP_WRITE || op == IORING_OP_SENDMSG) {
+                //handleWrite(channel, res, data);
+            } else if (op == IORING_OP_POLL_ADD) {
+                //handlePollAdd(channel, res, data);
+            } else if (op == IORING_OP_POLL_REMOVE) {
+//                if (res == Errors.ERRNO_ENOENT_NEGATIVE) {
+//                    logger.trace("IORING_POLL_REMOVE not successful");
+//                } else if (res == 0) {
+//                    logger.trace("IORING_POLL_REMOVE successful");
+//                }
+//                channel.clearPollFlag(data);
+//                if (!channel.ioScheduled()) {
+//                    // We cancelled the POLL ops which means we are done and should remove the mapping.
+//                    remove(channel);
+//                    return;
+//                }
+            } else if (op == IORING_OP_CONNECT) {
+                //handleConnect(channel, res);
+            }
+            // channel.ioUringUnsafe().processDelayedClose();
+        }
 
         //todo: once we determine that the request was an accept, we need to call 'addAcceptRequest'
     }
@@ -336,7 +484,7 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
     public void process(ConnectRequest connectRequest) {
         try {
             SocketAddress address = connectRequest.address;
-            System.out.println(getName() + " connectRequest address:" + address);
+            System.out.println(getName() + " connectRequest to address:" + address);
 
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             //socket.setTcpNoDelay(true);
@@ -347,12 +495,11 @@ public class IOUringReactor extends Thread implements IOUringCompletionQueueCall
                 return;
             }
 
-            IOUringChannel channel = new IOUringChannel();
+            IO_UringChannel channel = new IO_UringChannel();
             channel.reactor = this;
             channel.socket = socket;
 
-            this.channels.put(socket.intValue(), channel);
-
+            channels.put(socket.intValue(), channel);
 
             logger.info(getName() + "Socket connected to " + address);
             connectRequest.future.complete(channel);

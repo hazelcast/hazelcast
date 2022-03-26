@@ -2,24 +2,22 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class IOUringChannel {
+public class IO_UringChannel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
 
     public Connection connection;
     public ByteBuffer readBuff;
     public LinuxSocket socket;
-    public IOUringReactor reactor;
+    public IO_UringReactor reactor;
     public long buffersWritten = 0;
     public long packetsRead = 0;
     public long bytesRead = 0;

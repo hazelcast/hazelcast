@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.ReactorFrontEnd {
+public class IO_UringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.ReactorFrontEnd {
 
     private final NodeEngineImpl nodeEngine;
     public final InternalSerializationService ss;
@@ -41,15 +41,15 @@ public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Re
     private final boolean reactorSpin;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
-    private final IOUringReactor[] reactors;
+    private final IO_UringReactor[] reactors;
     public final Managers managers = new Managers();
     private final ConcurrentMap<Address, ConnectionInvocations> invocationsPerMember = new ConcurrentHashMap<>();
 
-    public IOUringReactorFrontEnd(NodeEngineImpl nodeEngine) {
+    public IO_UringReactorFrontEnd(NodeEngineImpl nodeEngine) {
         IOUring.ensureAvailability();
 
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(IOUringReactorFrontEnd.class);
+        this.logger = nodeEngine.getLogger(IO_UringReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = false;//Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
@@ -57,12 +57,12 @@ public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Re
         logger.info("reactor.count:" + reactorCount);
         logger.info("reactor.spin:" + reactorSpin);
         logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
-        this.reactors = new IOUringReactor[reactorCount];
+        this.reactors = new IO_UringReactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
         for (int cpu = 0; cpu < reactors.length; cpu++) {
             int port = toPort(thisAddress, cpu);
-            reactors[cpu] = new IOUringReactor(this, thisAddress, port, reactorSpin);
+            reactors[cpu] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
             reactors[cpu].setThreadAffinity(threadAffinity);
         }
     }
@@ -78,7 +78,7 @@ public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Re
     public void start() {
         logger.finest("Starting ReactorServicee");
 
-        for (IOUringReactor t : reactors) {
+        for (IO_UringReactor t : reactors) {
             t.start();
         }
     }
@@ -122,9 +122,9 @@ public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Re
                     }
 
                     TcpServerConnection connection = getConnection(targetAddress);
-                    IOUringChannel channel = null;
+                    IO_UringChannel channel = null;
                     for (int k = 0; k < 10; k++) {
-                        IOUringChannel[] channels = (IOUringChannel[]) connection.junk;
+                        IO_UringChannel[] channels = (IO_UringChannel[]) connection.junk;
                         if (channels != null) {
                             channel = channels[partitionIdToCpu(partitionId)];
                             break;
@@ -177,12 +177,12 @@ public class IOUringReactorFrontEnd implements com.hazelcast.spi.impl.reactor.Re
         if (connection.junk == null) {
             synchronized (connection) {
                 if (connection.junk == null) {
-                    IOUringChannel[] channels = new IOUringChannel[channelsPerNodeCount];
+                    IO_UringChannel[] channels = new IO_UringChannel[channelsPerNodeCount];
                     Address remoteAddress = connection.getRemoteAddress();
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, channelIndex));
-                        Future<IOUringChannel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
+                        Future<IO_UringChannel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
                         try {
                             channels[channelIndex] = f.get();
                         } catch (Exception e) {

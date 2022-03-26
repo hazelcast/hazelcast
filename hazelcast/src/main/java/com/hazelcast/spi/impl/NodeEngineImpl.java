@@ -80,7 +80,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
-import io.netty.incubator.channel.uring.IOUringReactorFrontEnd;
+import io.netty.incubator.channel.uring.IO_UringReactorFrontEnd;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -160,7 +160,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.reactorFrontEnd = new IOUringReactorFrontEnd(this);
+            this.reactorFrontEnd = new IO_UringReactorFrontEnd(this);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
