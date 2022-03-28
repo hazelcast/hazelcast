@@ -39,7 +39,6 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -96,9 +95,6 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
-import org.apache.calcite.rel.RelVisitor;
-import org.apache.calcite.rel.core.Aggregate;
-import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -653,31 +649,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
-    }
-
-    private static class StreamingAggregationDetector extends RelVisitor {
-        @SuppressWarnings("checkstyle:VisibilityModifier")
-        public boolean found;
-
-        @Override
-        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            if (node instanceof Aggregate) {
-                RelNode input = ((Aggregate) node).getInput();
-                if (input instanceof SlidingWindow) {
-                    found = true;
-                    return;
-                }
-
-                if (input instanceof Calc) {
-                    RelNode projectInput = ((Calc) input).getInput();
-                    if (projectInput instanceof SlidingWindow) {
-                        found = true;
-                        return;
-                    }
-                }
-            }
-            super.visit(node, ordinal, parent);
-        }
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {

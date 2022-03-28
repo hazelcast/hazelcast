@@ -27,7 +27,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
 /**
- * Logical rule that eliminates a {@link DropLateItemsLogicalRel} under {@link SlidingWindow}.
+ * Logical rule that eliminates a {@link DropLateItemsLogicalRel} as an input of {@link SlidingWindow}.
  * <p>
  * Before:
  * <pre>
@@ -40,12 +40,12 @@ import static java.util.Collections.singletonList;
  * </pre>
  */
 @Value.Enclosing
-public class SlidingWindowDropsLateItemsMergeRule extends RelRule<RelRule.Config> implements TransformationRule {
+public class SlidingWindowDropLateItemsMergeRule extends RelRule<RelRule.Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableSlidingWindowDropsLateItemsMergeRule.Config.builder()
-                .description(SlidingWindowDropsLateItemsMergeRule.class.getSimpleName())
+        Config DEFAULT = ImmutableSlidingWindowDropLateItemsMergeRule.Config.builder()
+                .description(SlidingWindowDropLateItemsMergeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(SlidingWindow.class)
                         .trait(LOGICAL)
@@ -55,13 +55,13 @@ public class SlidingWindowDropsLateItemsMergeRule extends RelRule<RelRule.Config
 
         @Override
         default RelOptRule toRule() {
-            return new SlidingWindowDropsLateItemsMergeRule(this);
+            return new SlidingWindowDropLateItemsMergeRule(this);
         }
     }
 
-    public static final RelOptRule INSTANCE = new SlidingWindowDropsLateItemsMergeRule(Config.DEFAULT);
+    public static final RelOptRule INSTANCE = new SlidingWindowDropLateItemsMergeRule(Config.DEFAULT);
 
-    protected SlidingWindowDropsLateItemsMergeRule(Config config) {
+    protected SlidingWindowDropLateItemsMergeRule(Config config) {
         super(config);
     }
 
