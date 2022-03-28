@@ -11,6 +11,7 @@ through the https://huntr.dev/bounties/d63972a2-b910-480a-a86b-d1f75d24d563/. [#
 
 * Fixed a data race in `SingleProtocolEncoder`; while one method of this interface is called from the input thread,
 another one is called from the output thread which was causing the race. [#20993]
+* Fixed a potential deadlock during partition migrations and inability to make progress while performing graceful shutdown with persistence enabled. [#20884]
 * Fixed an issue where the `hz-start.bat` command was not working with Java 8 in the Windows operating system. [#20811]
 * Fixed an issue where the Operation Profiler of diagnostic utility was showing incorrect
 latency distributions. [#20722]
