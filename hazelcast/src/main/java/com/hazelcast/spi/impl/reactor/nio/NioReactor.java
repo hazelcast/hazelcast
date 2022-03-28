@@ -18,6 +18,7 @@ import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
+import io.netty.incubator.channel.uring.IO_UringChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -352,7 +353,7 @@ public class NioReactor extends Thread {
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                packet.channel.writeAndFlush(byteBuffer);
+                ((IO_UringChannel)packet.channel).writeAndFlush(byteBuffer);
             }
         } catch (Exception e) {
             e.printStackTrace();
