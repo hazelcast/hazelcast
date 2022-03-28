@@ -31,10 +31,12 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import java.util.function.ToLongFunction;
 
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
 
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private final ToLongFunction<ExpressionEvalContext> lagTimeProvider;
     private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
@@ -42,16 +44,22 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
             RelTraitSet traits,
             RelNode input,
             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            ToLongFunction<ExpressionEvalContext> lagTimeProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
 
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.lagTimeProvider = lagTimeProvider;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
+    }
+
+    public ToLongFunction<ExpressionEvalContext> lagTimeProvider() {
+        return lagTimeProvider;
     }
 
     public int watermarkedColumnIndex() {
@@ -62,16 +70,25 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
                 .item("eventTimePolicyProvider", eventTimePolicyProvider)
+                .item("lagTimeProvider", lagTimeProvider)
                 .item("watermarkedColumnIndex", watermarkedColumnIndex);
     }
 
     @Override
-    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+    public @Nullable
+    RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return planner.getCostFactory().makeHugeCost();
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new WatermarkLogicalRel(getCluster(), traitSet, sole(inputs), eventTimePolicyProvider, watermarkedColumnIndex);
+        return new WatermarkLogicalRel(
+                getCluster(),
+                traitSet,
+                sole(inputs),
+                eventTimePolicyProvider,
+                lagTimeProvider,
+                watermarkedColumnIndex
+        );
     }
 }

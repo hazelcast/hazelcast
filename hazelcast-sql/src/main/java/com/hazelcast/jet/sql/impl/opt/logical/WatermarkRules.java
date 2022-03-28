@@ -42,6 +42,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Map;
+import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
@@ -71,6 +72,7 @@ final class WatermarkRules {
                     OptUtils.toLogicalConvention(function.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(function.getInputs(), OptUtils::toLogicalInput)),
                     toEventTimePolicyProvider(function),
+                    lagTimeProvider(function),
                     orderingColumnFieldIndex(function));
         }
 
@@ -90,6 +92,11 @@ final class WatermarkRules {
                         0,
                         EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
             };
+        }
+
+        private ToLongFunction<ExpressionEvalContext> lagTimeProvider(LogicalTableFunctionScan function) {
+            Expression<?> lagExpression = lagExpression(function);
+            return context -> WindowUtils.extractMillis(lagExpression, context);
         }
 
         private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {
@@ -143,7 +150,8 @@ final class WatermarkRules {
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     scan,
-                    watermarkedField.getValue()
+                    watermarkedField.getValue(),
+                    logicalWatermark.lagTimeProvider()
             );
             call.transformTo(dropLateItems);
         }

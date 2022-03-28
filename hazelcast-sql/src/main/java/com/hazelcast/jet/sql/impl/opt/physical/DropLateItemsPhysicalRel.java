@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -35,22 +36,34 @@ import org.apache.calcite.rex.RexVisitor;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRexToExpressionVisitor;
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
     private final RexNode wmField;
+    private final ToLongFunction<ExpressionEvalContext> allowedLagProvider;
 
     protected DropLateItemsPhysicalRel(
-            RelOptCluster cluster, RelTraitSet traitSet, RelNode input, RexNode wmField) {
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelNode input,
+            RexNode wmField,
+            ToLongFunction<ExpressionEvalContext> allowedLagProvider
+    ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
+        this.allowedLagProvider = allowedLagProvider;
     }
 
     public Expression<?> timestampExpression() {
         QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
         RexVisitor<Expression<?>> visitor = createRexToExpressionVisitor(schema(parameterMetadata), parameterMetadata);
         return wmField.accept(visitor);
+    }
+
+    public ToLongFunction<ExpressionEvalContext> allowedLagProvider() {
+        return allowedLagProvider;
     }
 
     @Override
@@ -65,7 +78,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmField);
+        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmField, allowedLagProvider);
     }
 
     @Override

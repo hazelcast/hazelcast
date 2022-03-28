@@ -46,7 +46,8 @@ public final class DropLateItemsPhysicalRule extends ConverterRule {
                 rel.getCluster(),
                 OptUtils.toPhysicalConvention(logicalRel.getTraitSet()),
                 OptUtils.toPhysicalInput(logicalRel.getInput()),
-                logicalRel.getWmField()
+                logicalRel.wmField(),
+                logicalRel.allowedLagProvider()
         );
     }
 }

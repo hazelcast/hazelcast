@@ -42,18 +42,20 @@ public class LateItemsDropP<T> extends AbstractProcessor {
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
     private final ToLongFunction<? super T> timestampFn;
+    private final long allowedLag;
 
     private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(ToLongFunction<? super T> timestampFn) {
+    public LateItemsDropP(ToLongFunction<? super T> timestampFn, long allowedLag) {
         this.timestampFn = timestampFn;
+        this.allowedLag = allowedLag;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         @SuppressWarnings("unchecked")
         long timestamp = timestampFn.applyAsLong((T) item);
-        if (timestamp < currentWm) {
+        if (timestamp + allowedLag < currentWm) {
             logLateEvent(getLogger(), currentWm, item);
             lateEventsDropped.inc();
             return true;

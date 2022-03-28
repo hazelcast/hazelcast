@@ -283,7 +283,55 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         new Row(timestampTz(30), "Caitlyn"),
                         new Row(timestampTz(30), "Dorian"),
                         new Row(timestampTz(31), "Elijah")
-                        // Zedd is dropped because ti's late
+                        // Zedd is dropped because this event is late
+                )
+        );
+    }
+
+    @Test
+    public void test_lateItemsDidNotDropWithAllowedLag() {
+        String name = createTable(
+                row(timestampTz(28), "Alice"),
+                row(timestampTz(29), "Bob"),
+                row(timestampTz(30), "Caitlyn"),
+                row(timestampTz(30), "Dorian"),
+                row(timestampTz(31), "Elijah"),
+                row(timestampTz(27), "Zedd")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.005' SECONDS))",
+                asList(
+                        new Row(timestampTz(28), "Alice"),
+                        new Row(timestampTz(29), "Bob"),
+                        new Row(timestampTz(30), "Caitlyn"),
+                        new Row(timestampTz(30), "Dorian"),
+                        new Row(timestampTz(31), "Elijah"),
+                        // Zedd was not dropped due to allowed lag
+                        new Row(timestampTz(27), "Zedd"))
+        );
+    }
+
+    @Test
+    public void test_lateItemsDropWithAllowedLag() {
+        String name = createTable(
+                row(timestampTz(28), "Alice"),
+                row(timestampTz(29), "Bob"),
+                row(timestampTz(30), "Caitlyn"),
+                row(timestampTz(30), "Dorian"),
+                row(timestampTz(31), "Elijah"),
+                row(timestampTz(15), "Zedd")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.005' SECONDS))",
+                asList(
+                        new Row(timestampTz(28), "Alice"),
+                        new Row(timestampTz(29), "Bob"),
+                        new Row(timestampTz(30), "Caitlyn"),
+                        new Row(timestampTz(30), "Dorian"),
+                        new Row(timestampTz(31), "Elijah")
+                        // Zedd is dropped because this event is late desp
                 )
         );
     }

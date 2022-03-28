@@ -88,7 +88,6 @@ public class CreateDagVisitor {
     private static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
-    private static final long DEFAULT_TTL = 1000L;
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
 
@@ -385,7 +384,9 @@ public class CreateDagVisitor {
         ToLongFunctionEx<JetSqlRow> timestampFn = row ->
                 WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), MOCK_EEC));
 
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP<>(timestampFn);
+        long allowedLag = rel.allowedLagProvider().applyAsLong(MOCK_EEC);
+
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP<>(timestampFn, allowedLag);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);

@@ -35,8 +35,8 @@ import static java.util.Arrays.asList;
 @RunWith(HazelcastParallelClassRunner.class)
 public class LateItemsDropPTest {
     @Test
-    public void when_noEventIsLate_than_successful() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp);
+    public void when_noEventIsLate_then_successful() {
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp, 0L);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -57,8 +57,8 @@ public class LateItemsDropPTest {
     }
 
     @Test
-    public void when_oneEventIsLate_than_dropEvent() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp);
+    public void when_oneEventIsLate_then_dropEvent() {
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp, 0L);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -78,8 +78,8 @@ public class LateItemsDropPTest {
     }
 
     @Test
-    public void when_fewEventsAreLate_than_dropEvents() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp);
+    public void when_fewEventsAreLate_then_dropEvents() {
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp, 0L);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -98,6 +98,28 @@ public class LateItemsDropPTest {
                         jetEvent(1, 2L),
                         wm(3),
                         wm(4)
+                ));
+    }
+
+    @Test
+    public void when_oneEventIsLateWithAllowedLag_then_doNotDropEvent() {
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP<JetEvent<Long>>(JetEvent::timestamp, 2L);
+
+        TestSupport.verifyProcessor(supplier)
+                .disableSnapshots()
+                .input(asList(
+                        wm(0L),
+                        jetEvent(0L, 1L),
+                        jetEvent(1L, 2L),
+                        wm(3L),
+                        jetEvent(2L, 3L)
+                ))
+                .expectOutput(asList(
+                        wm(0L),
+                        jetEvent(0, 1L),
+                        jetEvent(1, 2L),
+                        wm(3),
+                        jetEvent(2, 3L)
                 ));
     }
 }
