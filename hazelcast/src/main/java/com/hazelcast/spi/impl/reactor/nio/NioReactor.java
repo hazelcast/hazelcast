@@ -14,8 +14,7 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.reactor.Op;
-import com.hazelcast.spi.impl.reactor.Request;
+import com.hazelcast.spi.impl.reactor.*;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 import io.netty.incubator.channel.uring.IO_UringChannel;
@@ -44,8 +43,8 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.channels.SelectionKey.OP_READ;
 
-public class NioReactor extends Thread {
-    private final NioReactorFrontEnd frontend;
+public class NioReactor extends Reactor {
+    private final ReactorFrontEnd frontend;
     private final Selector selector;
     private final ILogger logger;
     private final int port;
@@ -58,7 +57,7 @@ public class NioReactor extends Thread {
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
     private long nextPrint = System.currentTimeMillis() + 1000;
 
-    public NioReactor(NioReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
+    public NioReactor(ReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
         super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
 
         this.spin = spin;
@@ -69,9 +68,6 @@ public class NioReactor extends Thread {
         this.port = port;
     }
 
-    public void setThreadAffinity(ThreadAffinity threadAffinity) {
-        this.allowedCpus = threadAffinity.nextAllowedCpus();
-    }
 
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
@@ -83,12 +79,14 @@ public class NioReactor extends Thread {
         }
     }
 
+    @Override
     public void enqueue(Request request) {
         taskQueue.add(request);
         wakeup();
     }
 
-    public Future<NioChannel> enqueue(SocketAddress address, Connection connection) {
+    @Override
+    public Future<Channel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
@@ -105,7 +103,7 @@ public class NioReactor extends Thread {
     static class ConnectRequest {
         Connection connection;
         SocketAddress address;
-        CompletableFuture<NioChannel> future;
+        CompletableFuture<Channel> future;
     }
 
     @Override
@@ -121,22 +119,6 @@ public class NioReactor extends Thread {
         }
 
         System.out.println(getName() + " Died: frontend shutting down:" + frontend.shuttingdown);
-    }
-
-    private void setThreadAffinity() {
-        if (allowedCpus == null) {
-            return;
-        }
-
-        ThreadAffinityHelper.setAffinity(allowedCpus);
-        BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-        ILogger logger = Logger.getLogger(HazelcastManagedThread.class);
-        if (!actualCpus.equals(allowedCpus)) {
-            logger.warning(getName() + " affinity was not applied successfully. "
-                    + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-        } else {
-            logger.info(getName() + " has affinity for CPUs:" + allowedCpus);
-        }
     }
 
     private boolean bind() {

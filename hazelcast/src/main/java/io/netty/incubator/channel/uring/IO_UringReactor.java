@@ -12,8 +12,7 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.reactor.Op;
-import com.hazelcast.spi.impl.reactor.Request;
+import com.hazelcast.spi.impl.reactor.*;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 import io.netty.buffer.ByteBuf;
@@ -121,7 +120,7 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
  * IORING_OP_LINKAT,
  * IORING_OP_MSG_RING,
  */
-public class IO_UringReactor extends Thread implements IOUringCompletionQueueCallback {
+public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCallback {
 
     static {
         System.out.println("IORING_OP_POLL_ADD:" + IORING_OP_POLL_ADD);
@@ -137,7 +136,7 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
         System.out.println("IORING_OP_RECVMSG:" + IORING_OP_RECVMSG);
     }
 
-    private final IO_UringReactorFrontEnd frontend;
+    private final ReactorFrontEnd frontend;
     //private final Selector selector;
     private final ILogger logger;
     private final int port;
@@ -163,7 +162,7 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
     private final IOUringRecvByteAllocatorHandle allocHandle;
     private final PooledByteBufAllocator allocator = new PooledByteBufAllocator(true);
 
-    public IO_UringReactor(IO_UringReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
+    public IO_UringReactor(ReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
         super("IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.spin = spin;
         this.thisAddress = thisAddress;
@@ -186,10 +185,6 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
         this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 
-    public void setThreadAffinity(ThreadAffinity threadAffinity) {
-        this.allowedCpus = threadAffinity.nextAllowedCpus();
-    }
-
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -206,7 +201,7 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
         wakeup();
     }
 
-    public Future<IO_UringChannel> enqueue(SocketAddress address, Connection connection) {
+    public Future<Channel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
@@ -223,7 +218,7 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
     static class ConnectRequest {
         Connection connection;
         SocketAddress address;
-        CompletableFuture<IO_UringChannel> future;
+        CompletableFuture<Channel> future;
     }
 
     @Override
@@ -239,22 +234,6 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
         }
 
         System.out.println(getName() + " Died: frontend shutting down:" + frontend.shuttingdown);
-    }
-
-    private void setThreadAffinity() {
-        if (allowedCpus == null) {
-            return;
-        }
-
-        ThreadAffinityHelper.setAffinity(allowedCpus);
-        BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-        ILogger logger = Logger.getLogger(HazelcastManagedThread.class);
-        if (!actualCpus.equals(allowedCpus)) {
-            logger.warning(getName() + " affinity was not applied successfully. "
-                    + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-        } else {
-            logger.info(getName() + " has affinity for CPUs:" + allowedCpus);
-        }
     }
 
     private boolean setupServerSocket() {
@@ -342,12 +321,9 @@ public class IO_UringReactor extends Thread implements IOUringCompletionQueueCal
             SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
             System.out.println(this + " new connected accepted: " + address);
 
-            LinuxSocket socket = new LinuxSocket(res);
-
-            IO_UringChannel channel = newChannel(socket);
+            IO_UringChannel channel = newChannel(new LinuxSocket(res));
             channel.address = address;
             channels.put(res, channel);
-
             sq_addRead(channel);
         }
     }

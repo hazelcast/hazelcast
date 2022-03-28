@@ -2,6 +2,7 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.PacketIOHelper;
+import com.hazelcast.spi.impl.reactor.Channel;
 import io.netty.buffer.ByteBuf;
 
 import java.net.SocketAddress;
@@ -10,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class IO_UringChannel {
+public class IO_UringChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
 

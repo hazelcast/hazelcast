@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 
 import java.nio.ByteBuffer;
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class NioChannel {
+public class NioChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
 

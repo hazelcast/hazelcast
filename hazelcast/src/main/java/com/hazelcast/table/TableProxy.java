@@ -8,7 +8,6 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.OpCodes;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.nio.NioReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.TableService;
@@ -22,13 +21,13 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
 
-    private final ReactorFrontEnd opService;
+    private final ReactorFrontEnd reactorFrontEnd;
     private final String name;
     private final InternalSerializationService ss;
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
-        this.opService = nodeEngine.getReactorFrontEnd();
+        this.reactorFrontEnd = nodeEngine.getReactorFrontEnd();
         this.name = name;
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
     }
@@ -51,7 +50,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         }catch (IOException e){
             throw new RuntimeException(e);
         }
-        CompletableFuture f = opService.invoke(request);
+        CompletableFuture f = reactorFrontEnd.invoke(request);
         f.join();
     }
 
@@ -60,7 +59,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         Request request = new Request();
         request.opcode = OpCodes.TABLE_SELECT_BY_KEY;
         request.partitionId = 0;
-        CompletableFuture f = opService.invoke(request);
+        CompletableFuture f = reactorFrontEnd.invoke(request);
         f.join();
     }
 

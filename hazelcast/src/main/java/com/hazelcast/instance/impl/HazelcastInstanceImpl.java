@@ -91,7 +91,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class HazelcastInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
-
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
 
