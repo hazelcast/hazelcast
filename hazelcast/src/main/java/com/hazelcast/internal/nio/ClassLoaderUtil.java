@@ -238,34 +238,24 @@ public final class ClassLoaderUtil {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         ClassLoader theClassLoader = belongsToHazelcastPackage(className) ? ClassLoaderUtil.class.getClassLoader() : null;
-        Class<?> cachedClass = tryLoadClassFromCache(className, classLoaderHint, theClassLoader, contextClassLoader,
-                NULL_FALLBACK_CLASSLOADER);
+
+        // The order of class loaders is:
+        // - first we try to load a class with classLoaderHint if provided
+        // - if that doesn't give us a result and the class is a hazelcast class then we try our class loader
+        // - if that doesn't give us a result then we try context class loader if it exists
+        // - if that doesn't give us a result then we go to NULL_FALLBACK_CLASSLOADER
+        ClassLoader[] classLoadersInOrder = {classLoaderHint, theClassLoader, contextClassLoader, NULL_FALLBACK_CLASSLOADER};
+
+        Class<?> cachedClass = tryLoadClassFromCache(className, classLoadersInOrder);
 
         if (cachedClass != null) {
             return cachedClass;
         }
 
-        // Try to load it using the hinted classloader if not null
-        if (classLoaderHint != null) {
-            try {
-                return tryLoadClass(className, classLoaderHint);
-            } catch (ClassNotFoundException ignore) {
-            }
-        }
+        Class<?> loadedClass = tryLoadClass(className, classLoadersInOrder);
+        assert loadedClass != null;
 
-        // If this is a Hazelcast class, try to load it using our classloader
-        if (theClassLoader != null) {
-            try {
-                return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
-            } catch (ClassNotFoundException ignore) {
-            }
-        }
-
-        // Try to load it using context class loader if not null
-        if (contextClassLoader != null) {
-            return tryLoadClass(className, contextClassLoader);
-        }
-        return tryLoadClass(className, NULL_FALLBACK_CLASSLOADER);
+        return loadedClass;
     }
 
     private static boolean belongsToHazelcastPackage(String className) {
@@ -291,7 +281,7 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static Class<?> tryLoadClassFromCache(String className, ClassLoader... classLoaders)  {
+    private static Class<?> tryLoadClassFromCache(String className, ClassLoader... classLoaders) {
         if (CLASS_CACHE_DISABLED) {
             return null;
         }
@@ -304,6 +294,20 @@ public final class ClassLoaderUtil {
             Class<?> cachedClass = CLASS_CACHE.get(classLoader, className);
             if (cachedClass != null) {
                 return cachedClass;
+            }
+        }
+        return null;
+    }
+
+    private static Class<?> tryLoadClass(String className, ClassLoader... classLoaders) {
+        for (ClassLoader classLoader : classLoaders) {
+            if (classLoader == null) {
+                continue;
+            }
+
+            try {
+                return tryLoadClass(className, classLoader);
+            } catch (ClassNotFoundException ignore) {
             }
         }
         return null;
