@@ -28,7 +28,6 @@ import com.hazelcast.function.SupplierEx;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 public class AwsConfig implements Serializable {
 
@@ -90,7 +89,7 @@ public class AwsConfig implements Serializable {
     }
 
     @Nullable
-    public Supplier<ExecutorService> getExecutorServiceSupplier() {
+    public SupplierEx<ExecutorService> getExecutorServiceSupplier() {
         return executorServiceSupplier;
     }
 
