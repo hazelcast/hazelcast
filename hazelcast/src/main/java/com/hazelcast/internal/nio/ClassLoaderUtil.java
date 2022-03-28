@@ -239,7 +239,6 @@ public final class ClassLoaderUtil {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         ClassLoader theClassLoader = belongsToHazelcastPackage(className) ? ClassLoaderUtil.class.getClassLoader() : null;
 
-        // The order of class loaders is:
         // - first we try to load a class with classLoaderHint if provided
         // - if that doesn't give us a result and the class is a hazelcast class then we try our class loader
         // - if that doesn't give us a result then we try context class loader if it exists
