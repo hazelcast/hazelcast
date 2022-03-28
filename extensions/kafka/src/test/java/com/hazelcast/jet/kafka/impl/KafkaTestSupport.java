@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.impl;
 
+import com.hazelcast.internal.util.OsHelper;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -60,11 +61,11 @@ public abstract class KafkaTestSupport {
     private KafkaProducer<String, String> stringStringProducer;
 
     public static KafkaTestSupport create() {
-        if (DockerClientFactory.instance().isDockerAvailable()) {
+        if (DockerClientFactory.instance().isDockerAvailable() && !OsHelper.isArmMac()) {
             return new DockerizedKafkaTestSupport();
         } else {
             if (System.getProperties().containsKey("test.kafka.version")) {
-                throw new IllegalArgumentException("'test.kafka.version' system property requires docker ");
+                throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
             }
             return new EmbeddedKafkaTestSupport();
         }
