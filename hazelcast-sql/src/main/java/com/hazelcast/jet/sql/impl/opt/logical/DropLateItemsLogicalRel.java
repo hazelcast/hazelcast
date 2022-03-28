@@ -40,7 +40,8 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
             RelTraitSet traitSet,
             RelNode input,
             RexNode wmField,
-            ToLongFunction<ExpressionEvalContext> allowedLagProvider) {
+            ToLongFunction<ExpressionEvalContext> allowedLagProvider
+    ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
         this.allowedLagProvider = allowedLagProvider;
