@@ -23,9 +23,12 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 public class AwsConfig implements Serializable {
 
@@ -39,6 +42,8 @@ public class AwsConfig implements Serializable {
     private String accessKey;
     @Nullable
     private String secretKey;
+    @Nullable
+    private SupplierEx<ExecutorService> executorServiceSupplier;
 
     public AwsConfig withEndpoint(@Nullable String endpoint) {
         this.endpoint = endpoint;
@@ -79,6 +84,16 @@ public class AwsConfig implements Serializable {
         return secretKey;
     }
 
+    public AwsConfig withExecutorServiceSupplier(SupplierEx<ExecutorService> executorServiceSupplier) {
+        this.executorServiceSupplier = executorServiceSupplier;
+        return this;
+    }
+
+    @Nullable
+    public Supplier<ExecutorService> getExecutorServiceSupplier() {
+        return executorServiceSupplier;
+    }
+
     public AmazonKinesisAsync buildClient() {
         AmazonKinesisAsyncClientBuilder builder = AmazonKinesisAsyncClientBuilder.standard();
         if (endpoint == null) {
@@ -94,6 +109,9 @@ public class AwsConfig implements Serializable {
         );
 
         builder.withClientConfiguration(new ClientConfiguration());
+        if (executorServiceSupplier != null) {
+            builder.withExecutorFactory(() -> executorServiceSupplier.get());
+        }
 
         return builder.build();
     }

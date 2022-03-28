@@ -19,6 +19,7 @@ import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.PutRecordsResult;
 import com.amazonaws.services.kinesis.model.Shard;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
@@ -48,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
@@ -173,6 +177,37 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, results -> {
                         assertEquals(MESSAGES, results.size());
                         results.forEach(v -> assertEquals(expectedPerSequenceNo, v.getValue()));
+                    }));
+
+            hz().getJet().newJob(pipeline).join();
+            fail("Expected exception not thrown");
+        } catch (CompletionException ce) {
+            Throwable cause = peel(ce);
+            assertTrue(cause instanceof JetException);
+            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+        }
+    }
+
+    @Test
+    public void testCustomSinkExecutorService() throws Exception {
+        HELPER.createStream(1);
+
+        SupplierEx<ExecutorService> sinkExecutorSupplier = () -> Executors.newFixedThreadPool(
+                1, r -> new Thread(r, "kinesis-sink-thread"));
+        Sink<Map.Entry<String, byte[]>> sink = kinesisSink()
+                .withExecutorServiceSupplier(sinkExecutorSupplier)
+                .build();
+
+        sendMessages(MESSAGES, sink);
+
+        try {
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(kinesisSource().build())
+                    .withoutTimestamps()
+                    .groupingKey(key -> "sameKeyAllEntries")
+                    .rollingAggregate(counting())
+                    .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
+                        assertTrue((long) windowResults.size() == MESSAGES);
                     }));
 
             hz().getJet().newJob(pipeline).join();
@@ -556,6 +591,30 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .build();
         hz().getJet().newJob(getPipeline(source));
         assertMessages(expectedMessages(51, 100), true, false);
+    }
+
+    @Test
+    public void initialRead_customSourceExecutorService() {
+        HELPER.createStream(1);
+
+        // send out some records, make sure they are in the shard
+        HELPER.putRecords(messages(0, 100));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
+        assertMessages(expectedMessages(0, 100), true, false);
+        initialJob.cancel();
+        results.clear();
+
+        // start a new job which reads records with custom executor service supplier
+        SupplierEx<ExecutorService> sourceExecutorSupplier = () -> Executors.newFixedThreadPool(
+                1, r -> new Thread(r, "kinesis-source-thread"));
+        StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
+                .withExecutorServiceSupplier(sourceExecutorSupplier).build();
+        Job job = hz().getJet().newJob(getPipeline(source));
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // send some more messages and check that the job reads both old and new records
+        HELPER.putRecords(messages(100, 200));
+        assertMessages(expectedMessages(0, 200), true, false);
     }
 
     private void assertOpenShards(int count, Shard... excludedShards) {
