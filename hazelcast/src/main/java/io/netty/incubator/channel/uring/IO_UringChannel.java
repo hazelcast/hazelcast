@@ -26,16 +26,25 @@ public class IO_UringChannel extends Channel {
     public ByteBuffer readBuffer;
     public PacketIOHelper packetIOHelper = new PacketIOHelper();
 
+    @Override
     public void flush() {
         reactor.wakeup();
     }
 
+    @Override
     public void write(ByteBuffer buffer) {
         checkNotNull(buffer);
 
         //System.out.println("write:"+buffer);
 
         pending.add(buffer);
+    }
+
+    @Override
+    public void writeAndFlush(ByteBuffer buffer) {
+        write(buffer);
+        reactor.taskQueue.add(this);
+        flush();
     }
 
     public ByteBuffer next() {
@@ -49,11 +58,5 @@ public class IO_UringChannel extends Channel {
         }
 
         return currentWriteBuff;
-    }
-
-    public void writeAndFlush(ByteBuffer buffer) {
-        write(buffer);
-        reactor.taskQueue.add(this);
-        flush();
     }
 }

@@ -38,8 +38,7 @@ public class ReactorFrontEnd {
     private final int reactorCount;
     private final int channelsPerNodeCount;
     private final boolean reactorSpin;
-    private final boolean ioUring
-            ;
+    private final boolean ioUring;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -52,7 +51,8 @@ public class ReactorFrontEnd {
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        this.channelsPerNodeCount = 1;;//Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
+        this.channelsPerNodeCount = 1;
+        ;//Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
         logger.info("reactor.count:" + reactorCount);
         logger.info("reactor.spin:" + reactorSpin);
         logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
@@ -63,9 +63,9 @@ public class ReactorFrontEnd {
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
-            if(ioUring) {
+            if (ioUring) {
                 reactors[reactor] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
-            }else{
+            } else {
                 reactors[reactor] = new NioReactor(this, thisAddress, port, reactorSpin);
 
             }
@@ -92,8 +92,8 @@ public class ReactorFrontEnd {
     public void shutdown() {
         shuttingdown = true;
 
-        for(ConnectionInvocations invocations: invocationsPerMember.values()){
-            for(Invocation i : invocations.map.values()){
+        for (ConnectionInvocations invocations : invocationsPerMember.values()) {
+            for (Invocation i : invocations.map.values()) {
                 i.completableFuture.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
@@ -158,7 +158,7 @@ public class ReactorFrontEnd {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             if (shuttingdown) {
                 throw new RuntimeException("Can't make invocation, frontend shutting down");
             }
@@ -172,7 +172,7 @@ public class ReactorFrontEnd {
             connectionManager.getOrConnect(targetAddress);
             try {
                 if (!connectionManager.blockOnConnect(thisAddress, SECONDS.toMillis(10), 0)) {
-                    throw new RuntimeException();
+                    throw new RuntimeException("Failed to connect to:"+targetAddress);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
