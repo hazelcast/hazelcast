@@ -12,16 +12,12 @@ import java.net.SocketAddress;
 import java.util.BitSet;
 import java.util.concurrent.Future;
 
-public abstract class Reactor extends Thread {
+public abstract class Reactor extends HazelcastManagedThread {
 
     private BitSet allowedCpus;
 
     public Reactor(String name) {
         super(name);
-    }
-
-    public void setThreadAffinity(ThreadAffinity threadAffinity) {
-        this.allowedCpus = threadAffinity.nextAllowedCpus();
     }
 
     public abstract void wakeup();
@@ -30,19 +26,5 @@ public abstract class Reactor extends Thread {
 
     public abstract Future<Channel> enqueue(SocketAddress address, Connection connection);
 
-    protected void setThreadAffinity() {
-        if (allowedCpus == null) {
-            return;
-        }
 
-        ThreadAffinityHelper.setAffinity(allowedCpus);
-        BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-        ILogger logger = Logger.getLogger(Reactor.class);
-        if (!actualCpus.equals(allowedCpus)) {
-            logger.warning(getName() + " affinity was not applied successfully. "
-                    + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-        } else {
-            logger.info(getName() + " has affinity for CPUs:" + allowedCpus);
-        }
-    }
 }

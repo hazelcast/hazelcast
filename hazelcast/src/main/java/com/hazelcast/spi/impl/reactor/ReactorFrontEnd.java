@@ -59,7 +59,7 @@ public class ReactorFrontEnd {
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
-        this.ioUring = false;
+        this.ioUring = true;
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
@@ -129,7 +129,7 @@ public class ReactorFrontEnd {
                     TcpServerConnection connection = getConnection(targetAddress);
                     Channel channel = null;
                     for (int k = 0; k < 10; k++) {
-                        Channel[] channels = (Channel[]) connection.junk;
+                        Channel[] channels = (Channel[]) connection.channels;
                         if (channels != null) {
                             channel = channels[partitionIdToCpu(partitionId)];
                             break;
@@ -179,9 +179,9 @@ public class ReactorFrontEnd {
             }
         }
 
-        if (connection.junk == null) {
+        if (connection.channels == null) {
             synchronized (connection) {
-                if (connection.junk == null) {
+                if (connection.channels == null) {
                     Channel[] channels = new Channel[channelsPerNodeCount];
                     Address remoteAddress = connection.getRemoteAddress();
 
@@ -196,7 +196,7 @@ public class ReactorFrontEnd {
                         //todo: assignment of the socket to the channels.
                     }
 
-                    connection.junk = channels;
+                    connection.channels = channels;
                 }
             }
         }

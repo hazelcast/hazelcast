@@ -222,9 +222,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public void run() {
-        setThreadAffinity();
-
+    public void executeRun() {
         try {
             if (setupServerSocket()) {
                 eventLoop();

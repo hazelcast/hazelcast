@@ -9,15 +9,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.internal.util.ThreadAffinityHelper;
-import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.reactor.*;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
-import io.netty.incubator.channel.uring.IO_UringChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -107,11 +102,9 @@ public class NioReactor extends Reactor {
     }
 
     @Override
-    public void run() {
-        setThreadAffinity();
-
+    public void executeRun() {
         try {
-            if (bind()) {
+            if (setupServerSocket()) {
                 loop();
             }
         } catch (Throwable e) {
@@ -121,7 +114,7 @@ public class NioReactor extends Reactor {
         System.out.println(getName() + " Died: frontend shutting down:" + frontend.shuttingdown);
     }
 
-    private boolean bind() {
+    private boolean setupServerSocket() {
         InetSocketAddress address = null;
         try {
             serverSocketChannel = ServerSocketChannel.open();
@@ -394,8 +387,8 @@ public class NioReactor extends Reactor {
                 op = new UpsertOperation();
                 //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.in = new ByteArrayObjectDataInput(null, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.out = new ByteArrayObjectDataOutput(64, (InternalSerializationService) frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
+        op.out = new ByteArrayObjectDataOutput(64, frontend.ss, ByteOrder.BIG_ENDIAN);
         op.managers = frontend.managers;
         return op;
     }
