@@ -251,7 +251,7 @@ public final class ClassLoaderUtil {
             return cachedClass;
         }
 
-        Class<?> loadedClass = tryLoadClass(className, classLoadersInOrder);
+        Class<?> loadedClass = loadClass(className, classLoadersInOrder);
         assert loadedClass != null;
 
         return loadedClass;
@@ -298,7 +298,7 @@ public final class ClassLoaderUtil {
         return null;
     }
 
-    private static Class<?> tryLoadClass(String className, ClassLoader... classLoaders) {
+    private static Class<?> loadClass(String className, ClassLoader... classLoaders) {
         for (ClassLoader classLoader : classLoaders) {
             if (classLoader == null) {
                 continue;
