@@ -1134,6 +1134,10 @@ public class JobCoordinationService {
 
         assert jobRepository.getJobResult(jobId) == null : "jobResult should not exist at this point";
 
+        if (finalizeJobIfAutoScalingOff(masterContext)) {
+            masterContext.jobContext().jobCompletionFuture();
+        }
+
         if (jobExecutionRecord.isSuspended()) {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
@@ -1155,13 +1159,16 @@ public class JobCoordinationService {
             return removeMasterContext(masterContext);
         }
 
+        return finalizeJobIfAutoScalingOff(masterContext);
+    }
+
+    private boolean finalizeJobIfAutoScalingOff(MasterContext masterContext) {
         if (!masterContext.jobConfig().isAutoScaling() && masterContext.jobExecutionRecord().executed()) {
             logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
             masterContext.jobContext().finalizeJob(new TopologyChangedException());
             return true;
         }
-
         return false;
     }
 
