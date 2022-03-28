@@ -12,7 +12,6 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 
@@ -51,26 +50,26 @@ public class ReactorFrontEnd {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        this.channelsPerNodeCount = Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
+        this.channelsPerNodeCount = 1;;//Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
         logger.info("reactor.count:" + reactorCount);
         logger.info("reactor.spin:" + reactorSpin);
         logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
-        this.ioUring = true;
+        this.ioUring = false;
 
-        for (int cpu = 0; cpu < reactors.length; cpu++) {
-            int port = toPort(thisAddress, cpu);
+        for (int reactor = 0; reactor < reactors.length; reactor++) {
+            int port = toPort(thisAddress, reactor);
             if(ioUring) {
-                reactors[cpu] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
+                reactors[reactor] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
             }else{
-                reactors[cpu] = new NioReactor(this, thisAddress, port, reactorSpin);
+                reactors[reactor] = new NioReactor(this, thisAddress, port, reactorSpin);
 
             }
-            reactors[cpu].setThreadAffinity(threadAffinity);
+            reactors[reactor].setThreadAffinity(threadAffinity);
         }
     }
 

@@ -58,7 +58,7 @@ public class NioReactor extends Reactor {
     private long nextPrint = System.currentTimeMillis() + 1000;
 
     public NioReactor(ReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
-        super("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
+        super("NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
 
         this.spin = spin;
         this.thisAddress = thisAddress;
@@ -68,7 +68,7 @@ public class NioReactor extends Reactor {
         this.port = port;
     }
 
-
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -335,7 +335,7 @@ public class NioReactor extends Reactor {
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                ((IO_UringChannel)packet.channel).writeAndFlush(byteBuffer);
+                ((NioChannel)packet.channel).writeAndFlush(byteBuffer);
             }
         } catch (Exception e) {
             e.printStackTrace();
