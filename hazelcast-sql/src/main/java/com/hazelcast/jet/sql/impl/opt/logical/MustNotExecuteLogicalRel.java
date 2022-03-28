@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.physical.MustNotExecutePhysicalRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -26,6 +27,9 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * See {@link MustNotExecutePhysicalRel}.
+ */
 public class MustNotExecuteLogicalRel extends AbstractRelNode implements LogicalRel {
     private final String exceptionMessage;
 

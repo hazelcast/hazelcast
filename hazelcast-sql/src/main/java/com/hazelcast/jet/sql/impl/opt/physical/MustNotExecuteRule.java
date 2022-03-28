@@ -39,7 +39,7 @@ public final class MustNotExecuteRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         MustNotExecuteLogicalRel logicalRel = (MustNotExecuteLogicalRel) rel;
-        return new MustNotExecuteRel(
+        return new MustNotExecutePhysicalRel(
                 logicalRel.getCluster(),
                 toPhysicalConvention(logicalRel.getTraitSet()),
                 logicalRel.getRowType(),

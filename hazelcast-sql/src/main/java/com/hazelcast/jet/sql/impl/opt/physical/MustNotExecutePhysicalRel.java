@@ -31,8 +31,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * it should interrupt execution unconditionally.
  * That's why this rel has zero cost.
  */
-public class MustNotExecuteRel extends ShouldNotExecuteRel {
-    public MustNotExecuteRel(
+public class MustNotExecutePhysicalRel extends ShouldNotExecuteRel {
+    public MustNotExecutePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,
