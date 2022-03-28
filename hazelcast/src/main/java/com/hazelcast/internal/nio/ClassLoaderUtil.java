@@ -236,6 +236,15 @@ public final class ClassLoaderUtil {
             return primitiveClass;
         }
 
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader theClassLoader = belongsToHazelcastPackage(className) ? ClassLoaderUtil.class.getClassLoader() : null;
+        Class<?> cachedClass = tryLoadClassFromCache(className, classLoaderHint, theClassLoader, contextClassLoader,
+                NULL_FALLBACK_CLASSLOADER);
+
+        if (cachedClass != null) {
+            return cachedClass;
+        }
+
         // Try to load it using the hinted classloader if not null
         if (classLoaderHint != null) {
             try {
@@ -245,8 +254,7 @@ public final class ClassLoaderUtil {
         }
 
         // If this is a Hazelcast class, try to load it using our classloader
-        ClassLoader theClassLoader = ClassLoaderUtil.class.getClassLoader();
-        if (theClassLoader != null && belongsToHazelcastPackage(className)) {
+        if (theClassLoader != null) {
             try {
                 return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
             } catch (ClassNotFoundException ignore) {
@@ -254,7 +262,6 @@ public final class ClassLoaderUtil {
         }
 
         // Try to load it using context class loader if not null
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (contextClassLoader != null) {
             return tryLoadClass(className, contextClassLoader);
         }
@@ -284,14 +291,26 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static Class<?> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
-        Class<?> clazz;
-        if (!CLASS_CACHE_DISABLED) {
-            clazz = CLASS_CACHE.get(classLoader, className);
-            if (clazz != null) {
-                return clazz;
+    private static Class<?> tryLoadClassFromCache(String className, ClassLoader... classLoaders)  {
+        if (CLASS_CACHE_DISABLED) {
+            return null;
+        }
+
+        for (ClassLoader classLoader : classLoaders) {
+            if (classLoader == null) {
+                continue;
+            }
+
+            Class<?> cachedClass = CLASS_CACHE.get(classLoader, className);
+            if (cachedClass != null) {
+                return cachedClass;
             }
         }
+        return null;
+    }
+
+    private static Class<?> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+        Class<?> clazz;
 
         if (classLoader == NULL_FALLBACK_CLASSLOADER) {
             clazz = Class.forName(className);
