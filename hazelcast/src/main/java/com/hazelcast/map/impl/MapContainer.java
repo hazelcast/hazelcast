@@ -121,7 +121,6 @@ public class MapContainer {
 
     private volatile boolean destroyed;
 
-
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link PostJoinAwareService#getPostJoinOperation()}
@@ -436,14 +435,6 @@ public class MapContainer {
         return invalidationListenerCounter.get() > 0;
     }
 
-    public void increaseInvalidationListenerCount() {
-        invalidationListenerCounter.incrementAndGet();
-    }
-
-    public void decreaseInvalidationListenerCount() {
-        invalidationListenerCounter.decrementAndGet();
-    }
-
     public AtomicInteger getInvalidationListenerCounter() {
         return invalidationListenerCounter;
     }
@@ -460,7 +451,8 @@ public class MapContainer {
         destroyed = true;
     }
 
-    // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
+    // callback called when the MapContainer is de-registered
+    // from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
     }
 
@@ -469,7 +461,8 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
-        return getIndexes(partitionId).haveAtLeastOneIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        return getIndexes(partitionId).haveAtLeastOneIndex()
+                && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
@@ -505,8 +498,7 @@ public class MapContainer {
     }
 
     public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
-        CacheDeserializedValues cacheDeserializedValues = getMapConfig().getCacheDeserializedValues();
-        switch (cacheDeserializedValues) {
+        switch (getMapConfig().getCacheDeserializedValues()) {
             case NEVER:
                 return false;
             case ALWAYS:

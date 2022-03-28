@@ -187,7 +187,7 @@ public class PartitionContainer {
         }
 
         // getting rid of Indexes object in case it has been initialized
-        indexes.remove(mapContainer.getName());
+        indexes.remove(name);
 
         destroyMapContainer(mapContainer);
         mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());

@@ -23,7 +23,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMapAccessors;
 import com.hazelcast.map.impl.MapContainer;
@@ -81,9 +80,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private static final int ENTRY_COUNT = 10_000;
-    private static final String[] MAP_NAMES = {"mapNameA", "mapNameB"
-    };
-    private static final List<String> POSSIBLE_VALUES = Arrays.asList("A", "B", "C", "D");
+    private static final String[] MAP_NAMES = {"mapNameA", "mapNameB"};
 
     private Map<String, List<GlobalIndexPartitionTracker.PartitionStamp>> stampsByMap_BeforeSplit = new HashMap<>();
 
@@ -107,7 +104,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
         waitAllForSafeState(instances);
 
         for (long key = 0; key < ENTRY_COUNT; key++) {
-            String randomValue = POSSIBLE_VALUES.get(ThreadLocalRandomProvider.get().nextInt(POSSIBLE_VALUES.size()));
+            String randomValue = randomString();
             for (String mapName : MAP_NAMES) {
                 instances[0].getMap(mapName).put(key, new TestObject(key, randomValue));
             }
@@ -119,8 +116,8 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) throws Exception {
-        System.err.println(toMemberToPartitionsMap(firstBrain[0]));
-        System.err.println(toMemberToPartitionsMap(secondBrain[0]));
+        System.out.println(toMemberToPartitionsMap(firstBrain[0]));
+        System.out.println(toMemberToPartitionsMap(secondBrain[0]));
     }
 
     @Override

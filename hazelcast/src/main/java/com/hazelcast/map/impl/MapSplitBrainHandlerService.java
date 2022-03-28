@@ -76,7 +76,15 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
                 = mapServiceContext.getPartitionContainer(recordStore.getPartitionId());
         MapContainer mapContainer = recordStore.getMapContainer();
 
-        // only one partition can destroy mapContainer.
+        // `onStoreCollection` method is called after collection
+        // of each record-store. Since same map-container is shared
+        // between all record-stores of a map, to destroy it only
+        // one time, we use `destroyMapContainer` method. It only
+        // destroys map-container once and other calls have no
+        // effect.
+        //
+        // This one-time logic also helps us to add shared
+        // global indexes to new-map-container only once.
         if (partitionContainer.destroyMapContainer(mapContainer)) {
             if (mapContainer.shouldUseGlobalIndex()) {
                 // remove global indexes from old-map-container and add them to new one
@@ -105,6 +113,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
             indexConfigs.add(internalIndexes[i].getConfig());
         }
 
+        // create new map-container here.
         MapContainer newMapContainer = mapServiceContext.getMapContainer(mapName);
         for (IndexConfig indexConfig : indexConfigs) {
             newMapContainer.getIndexes(partitionId).addOrGetIndex(indexConfig);
