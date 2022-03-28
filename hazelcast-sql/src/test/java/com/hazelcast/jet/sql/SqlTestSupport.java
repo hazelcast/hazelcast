@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
@@ -533,6 +534,36 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             JetSqlRow expectedItem = (JetSqlRow) expected.get(i);
             JetSqlRow actualItem = (JetSqlRow) actual.get(i);
             if (!Objects.equals(expectedItem, actualItem)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Compares two lists.
+     * The same as {@link SqlTestSupport##compareRowLists(List<?>, List<?>)}, but with watermark support.
+     */
+    public static boolean compareWatermarkedRowLists(List<?> expected, List<?> actual) {
+        if (expected.size() != actual.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < expected.size(); i++) {
+            if (expected.get(i) instanceof JetSqlRow) {
+                JetSqlRow expectedItem = (JetSqlRow) expected.get(i);
+                JetSqlRow actualItem = (JetSqlRow) actual.get(i);
+                if (!Objects.equals(expectedItem, actualItem)) {
+                    return false;
+                }
+            } else if (expected.get(i) instanceof Watermark) {
+                Watermark expectedItem = (Watermark) expected.get(i);
+                Watermark actualItem = (Watermark) actual.get(i);
+                if (!Objects.equals(expectedItem, actualItem)) {
+                    return false;
+                }
+            } else {
                 return false;
             }
         }

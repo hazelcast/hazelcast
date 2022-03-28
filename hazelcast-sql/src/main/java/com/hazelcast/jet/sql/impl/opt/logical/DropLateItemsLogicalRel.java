@@ -31,6 +31,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.List;
 import java.util.function.ToLongFunction;
 
+/**
+ * Relational operator that returns items from its input, with late items
+ * removed. A late item is an item whose timestamp is before the timestamp of
+ * the last watermark.
+ */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     private final RexNode wmField;
     private final ToLongFunction<ExpressionEvalContext> allowedLagProvider;

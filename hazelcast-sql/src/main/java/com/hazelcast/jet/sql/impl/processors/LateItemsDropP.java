@@ -21,9 +21,13 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
-import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 
@@ -34,27 +38,33 @@ import static com.hazelcast.jet.impl.util.Util.logLateEvent;
  * filters each input item by its timestamp.
  * SQL engine-specific private API.
  *
- * @param <T> processed item
  * @since 5.2
  */
-public class LateItemsDropP<T> extends AbstractProcessor {
+public class LateItemsDropP extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
-    private final ToLongFunction<? super T> timestampFn;
+    private final Expression<?> timestampExpression;
     private final long allowedLag;
 
+    private ExpressionEvalContext evalContext;
     private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(ToLongFunction<? super T> timestampFn, long allowedLag) {
-        this.timestampFn = timestampFn;
+    public LateItemsDropP(Expression<?> timestampExpression, long allowedLag) {
+        this.timestampExpression = timestampExpression;
         this.allowedLag = allowedLag;
     }
 
     @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        this.evalContext = ExpressionEvalContext.from(context);
+        super.init(context);
+    }
+
+    @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        @SuppressWarnings("unchecked")
-        long timestamp = timestampFn.applyAsLong((T) item);
+        Row row = ((JetSqlRow) item).getRow();
+        long timestamp = WindowUtils.extractMillis(timestampExpression.eval(row, evalContext));
         if (timestamp + allowedLag < currentWm) {
             logLateEvent(getLogger(), currentWm, item);
             lateEventsDropped.inc();
