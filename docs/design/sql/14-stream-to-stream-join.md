@@ -77,21 +77,22 @@ SQL engine should use a specialized Jet processor to perform JOIN operation for 
 
 #### Overall design
 
-Consider having two streams - __S1__ and __S2__.
+Consider having two streams - __S1__ and __S2__. There is only one payload in both streams event: conditional timestamp
+of that event.
 
 Let's describe all possible scenarios for joining these two streams:
 
-| Behavior                                                   | Outcome                            |
-|------------------------------------------------------------|------------------------------------|
-| Both input streams don't have watermarks                   | exception during query processing  |
-| At least one input stream doesn't have watermarks          | exception during query processing  |
-| At least one input stream has zero lag                     | result set would be empty          |
-| Both __S1__ and __S2__ have watermarks with same lag times | Example in Table 3                 |
-| ---                                                        | ---                                |
+| Behavior                                                   | Outcome                           |
+|------------------------------------------------------------|-----------------------------------|
+| Both input streams don't have watermarks                   | exception during query processing |
+| At least one input stream doesn't have watermarks          | exception during query processing |
+| At least one input stream has zero lag                     | result set would be empty         |
+| Both __S1__ and __S2__ have watermarks with same lag times | Example in Table 3,4              |
+| ---                                                        | ---                               |
 
 __Table 2__
 
-Let's lag time be equal for both inputs. Consider streams have the following input:
+Let lag time be equal for both inputs. Consider streams have the following input:
 
 | S1          | S2          |
 |-------------|-------------|
@@ -103,6 +104,8 @@ Let's lag time be equal for both inputs. Consider streams have the following inp
 | -           | s2_wm(6)    |
 | -           | s2_event(7) |
 | -           | s2_wm(8)    |
+
+__Table 3__
 
 After applying the `CROSS JOIN` operation we expect next output:
 
@@ -119,7 +122,43 @@ After applying the `CROSS JOIN` operation we expect next output:
 | [NULL, s2_event(7)]`[**]`  |  
 | s2_wm(8)                   |  
 
-__Table 3__
+__Table 4__
+
+#### Processor algorithm description
+
+Consider having two input streams __S1__ and __S2__. Let's define the schema for __S1__ and __S2__ as
+
+```sql
+CREATE MAPPING S1 (id BIGINT, payload BIGINT, s1_time TIMESTAMP) TYPE Stream
+CREATE MAPPING S2 (id BIGINT, payload VARCHAR, s2_time TIMESTAMP) TYPE Stream
+```
+
+Consider the following query:
+
+```sql
+> SELECT * FROM IMPOSE_ORDER(TABLE(S1), DESCRIPTOR(s1_time), INTERVAL '1' SECOND) AS s1
+  INNER JOIN 
+  SELECT * FROM IMPOSE_ORDER(TABLE(S2), DESCRIPTOR(s2_time), INTERVAL '1' SECOND) AS s2
+  ON s2.s2_time BETWEEN s1.s1_time AND s1.s1_time + INTERVAL '2' SECOND 
+```
+
+1. Perform query analysis, detect timestamp column from both input stream schemas
+2. Prepare two buffers : B0 to store input events from ordinal 0 (stream S1) and B1 to store input events from ordinal
+   1 (stream S2).
+3. Receive event E from the ordinal.
+    1. If received event is watermark:
+        1. Clear buffer B0, if received from ordinal 0, clear B1 otherwise.
+        2. Emit watermark event to the outbox.
+    2. Else:
+        1. Extract timestamp from event E.
+        2. If extract attempt was failed - throw an exception.
+        3. Store E to the buffer B0, if received from ordinal 0, store to B1 otherwise.
+        4. For each event in 'parallel' buffer
+            1. Test the JOIN condition with received timestamps.
+            2. Perform JOIN operation for each event in 'parallel' buffer, perform
+                1. If test was not successful, retry step 3.
+            3. If the join type is `OUTER JOIN`, we should fill empty side (no input events received) with NULL.
+            4. Emit joined event.
 
 #### Watermarks
 
