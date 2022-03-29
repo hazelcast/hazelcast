@@ -19,12 +19,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -36,7 +39,7 @@ public class ReactorFrontEnd {
     private final Address thisAddress;
     private final ThreadAffinity threadAffinity;
     private final int reactorCount;
-    private final int channelsPerNodeCount;
+    private final int channelCount;
     private final boolean reactorSpin;
     private final boolean ioUring;
     private volatile ServerConnectionManager connectionManager;
@@ -51,11 +54,12 @@ public class ReactorFrontEnd {
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        this.channelsPerNodeCount = 1;
+        String reactorType = System.getProperty("reactor.type", "nio");
+        this.channelCount = 1;
         ;//Integer.parseInt(System.getProperty("reactor.channels.per.node", "" + Runtime.getRuntime().availableProcessors()));
         logger.info("reactor.count:" + reactorCount);
         logger.info("reactor.spin:" + reactorSpin);
-        logger.info("reactor.channels.per.node:" + channelsPerNodeCount);
+        logger.info("reactor.channels.per.node:" + channelCount);
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
@@ -63,11 +67,12 @@ public class ReactorFrontEnd {
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
-            if (ioUring) {
+            if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
                 reactors[reactor] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
-            } else {
+            } else if (reactorType.equals("nio")) {
                 reactors[reactor] = new NioReactor(this, thisAddress, port, reactorSpin);
-
+            } else {
+                throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
             reactors[reactor].setThreadAffinity(threadAffinity);
         }
@@ -78,14 +83,14 @@ public class ReactorFrontEnd {
     }
 
     public int partitionIdToCpu(int partitionId) {
-        return HashUtil.hashToIndex(partitionId, reactors.length);
+        return hashToIndex(partitionId, reactors.length);
     }
 
     public void start() {
         logger.finest("Starting ReactorServicee");
 
-        for (Reactor t : reactors) {
-            t.start();
+        for (Reactor r : reactors) {
+            r.start();
         }
     }
 
@@ -108,8 +113,8 @@ public class ReactorFrontEnd {
             int partitionId = request.partitionId;
 
             if (partitionId >= 0) {
-                Address targetAddress = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                ConnectionInvocations invocations = getConnectionInvocations(targetAddress);
+                Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+                ConnectionInvocations invocations = getConnectionInvocations(address);
                 Invocation invocation = new Invocation();
                 invocation.callId = invocations.counter.incrementAndGet();
                 request.out.writeLong(Request.OFFSET_CALL_ID, invocation.callId);
@@ -117,33 +122,13 @@ public class ReactorFrontEnd {
                 request.invocation = invocation;
                 invocations.map.put(invocation.callId, invocation);
 
-                if (targetAddress.equals(thisAddress)) {
+                if (address.equals(thisAddress)) {
                     //System.out.println("local invoke");
                     reactors[partitionIdToCpu(partitionId)].enqueue(request);
                 } else {
                     //System.out.println("remove invoke");
-                    if (connectionManager == null) {
-                        connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
-                    }
-
-                    TcpServerConnection connection = getConnection(targetAddress);
-                    Channel channel = null;
-                    for (int k = 0; k < 10; k++) {
-                        Channel[] channels = (Channel[]) connection.channels;
-                        if (channels != null) {
-                            channel = channels[partitionIdToCpu(partitionId)];
-                            break;
-                        }
-
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-
-                    if (channel == null) {
-                        throw new RuntimeException("Could not connect to " + targetAddress + " partitionId:" + partitionId);
-                    }
+                    TcpServerConnection connection = getConnection(address);
+                    Channel channel = connection.channels[partitionIdToCpu(partitionId)];
 
                     Packet packet = request.toPacket();
                     ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
@@ -162,17 +147,20 @@ public class ReactorFrontEnd {
             if (shuttingdown) {
                 throw new RuntimeException("Can't make invocation, frontend shutting down");
             }
-
         }
     }
 
-    private TcpServerConnection getConnection(Address targetAddress) {
-        TcpServerConnection connection = (TcpServerConnection) connectionManager.get(targetAddress);
+    private TcpServerConnection getConnection(Address address) {
+        if (connectionManager == null) {
+            connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        }
+
+        TcpServerConnection connection = (TcpServerConnection) connectionManager.get(address);
         if (connection == null) {
-            connectionManager.getOrConnect(targetAddress);
+            connectionManager.getOrConnect(address);
             try {
                 if (!connectionManager.blockOnConnect(thisAddress, SECONDS.toMillis(10), 0)) {
-                    throw new RuntimeException("Failed to connect to:"+targetAddress);
+                    throw new RuntimeException("Failed to connect to:" + address);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -182,16 +170,21 @@ public class ReactorFrontEnd {
         if (connection.channels == null) {
             synchronized (connection) {
                 if (connection.channels == null) {
-                    Channel[] channels = new Channel[channelsPerNodeCount];
-                    Address remoteAddress = connection.getRemoteAddress();
+                    Channel[] channels = new Channel[channelCount];
+
+                    List<SocketAddress> reactorAddresses = new ArrayList<>(channelCount);
+                    List<Future<Channel>> futures = new ArrayList<>(channelCount);
+                    for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
+                        SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
+                        reactorAddresses.add(reactorAddress);
+                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].enqueue(reactorAddress, connection));
+                    }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
-                        SocketAddress socketAddress = new InetSocketAddress(remoteAddress.getHost(), toPort(remoteAddress, channelIndex));
-                        Future<Channel> f = reactors[HashUtil.hashToIndex(channelIndex, reactors.length)].enqueue(socketAddress, connection);
                         try {
-                            channels[channelIndex] = f.get();
+                            channels[channelIndex] = futures.get(channelIndex).get();
                         } catch (Exception e) {
-                            throw new RuntimeException("Failed to connect to :" + socketAddress, e);
+                            throw new RuntimeException("Failed to connect to :" + reactorAddresses.get(channelIndex), e);
                         }
                         //todo: assignment of the socket to the channels.
                     }

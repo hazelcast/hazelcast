@@ -358,8 +358,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                     break;
                 }
 
-                ///channel.packetsRead++;
-
                 packet.setConn((ServerConnection) channel.connection);
                 packet.channel = channel;
                 process(packet);
