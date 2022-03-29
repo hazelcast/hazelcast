@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.RemoteCallHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadUtil;
@@ -45,14 +45,14 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private UUID ownerUuid;
     private Operation op;
 
-    private transient NearCachingHook nearCachingHook = NearCachingHook.EMPTY_HOOK;
+    private transient RemoteCallHook nearCachingHook = RemoteCallHook.EMPTY_HOOK;
 
     public MapTransactionLogRecord() {
     }
 
     public MapTransactionLogRecord(String name, Data key, int partitionId,
                                    Operation op, UUID ownerUuid, UUID transactionId,
-                                   @Nonnull NearCachingHook nearCachingHook) {
+                                   @Nonnull RemoteCallHook nearCachingHook) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -67,7 +67,8 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public Operation newPrepareOperation() {
-        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId, name, key, ownerUuid, transactionId);
+        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId,
+                name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -84,7 +85,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void onCommitSuccess() {
-        nearCachingHook.onRemoteCallSuccess();
+        nearCachingHook.onRemoteCallSuccess(op);
     }
 
     @Override
@@ -94,7 +95,8 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public Operation newRollbackOperation() {
-        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId, name, key, ownerUuid, transactionId);
+        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId,
+                name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -134,6 +136,16 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
+    }
+
+    @Override
     public String toString() {
         return "MapTransactionRecord{"
                 + "name='" + name + '\''
@@ -143,15 +155,5 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
                 + ", op=" + op
                 + ", transactionId=" + transactionId
                 + '}';
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }
