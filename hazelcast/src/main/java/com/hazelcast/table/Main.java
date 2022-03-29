@@ -20,7 +20,7 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 6; k++) {
+        for (int k = 0; k < 100; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;

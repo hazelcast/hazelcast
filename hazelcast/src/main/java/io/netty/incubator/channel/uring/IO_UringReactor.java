@@ -253,11 +253,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             } else {
                 int processed = cq.process(this);
                 if (processed > 0) {
-                    System.out.println(getName() + " processed " + processed);
+               //     System.out.println(getName() + " processed " + processed);
                 }
             }
 
-            sleep(500);
+            //sleep(500);
 
             processTasks();
         }
@@ -273,7 +273,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
     private void sq_addRead(IO_UringChannel channel) {
         ByteBuf b = channel.readBuff;
-        System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
+        //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
         sq.addRead(channel.socket.intValue(), b.memoryAddress(), b.writerIndex(), b.capacity(), (short) 0);
     }
 
@@ -295,7 +295,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private void handle_IORING_OP_ACCEPT(int fd, int res) {
         sq_addAccept();
 
-        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
+        //System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
         if (res >= 0) {
             SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
@@ -309,7 +309,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handle_IORING_OP_WRITE(byte op) {
-        System.out.println(getName() + " handle called: opcode:" + op);
+        System.out.println(getName() + " handle called: opcode:" + op+ " OP_WRITE" );
     }
 
     private void handle_IORING_OP_READ(int fd, int res, int flags) {
@@ -323,7 +323,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
      //   System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
-        System.out.println(getName()+" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> bytes read: "+res);
+        //System.out.println(getName()+" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> bytes read: "+res);
 
         IO_UringChannel channel = channels.get(fd);
         // we need to update the writerIndex; not done automatically.
@@ -339,7 +339,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.readBuffer.flip();
         for (; ; ) {
             Packet packet = channel.packetReader.readFrom(channel.readBuffer);
-            System.out.println(this + " ------------------------- read packet: " + packet);
+            //System.out.println(this + " ------------------------- read packet: " + packet);
             if (packet == null) {
                 break;
             }
@@ -375,7 +375,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void processChannel(IO_UringChannel channel) {
-        System.out.println(getName() + " process channel " + channel.remoteAddress);
+        //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
         //channel.writeBuff.clear();
         ByteBuf buf = channel.writeBuff;
@@ -392,7 +392,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             buf.writeBytes(buffer);
         }
 
-        System.out.println(this + " ))))))))))))))))))))) writing: " + buf.readableBytes() + " written from buffer:" + written+" packets written:"+packetsWritten);
+       // System.out.println(this + " ))))))))))))))))))))) writing: " + buf.readableBytes() + " written from buffer:" + written+" packets written:"+packetsWritten);
         // todo: we only keep adding to the buffer.
         sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
     }
@@ -424,7 +424,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void processPacket(Packet packet) {
-        System.out.println(this + " ----------------- process packet: " + packet);
+       // System.out.println(this + " ----------------- process packet: " + packet);
         try {
             if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
                 frontend.handleResponse(packet);
@@ -438,7 +438,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                System.out.println("================== writing " + out.position());
+                //System.out.println("================== writing " + out.position());
 
                 // individual flush might not be smart
 
@@ -467,7 +467,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private void processOp(Op op) {
         try {
             long callId = op.in.readLong();
-            System.out.println("processing callId:"+callId);
+           // System.out.println("processing callId:"+callId);
             op.callId = callId;
             //System.out.println("callId: "+callId);
             int runCode = op.run();
