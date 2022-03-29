@@ -29,20 +29,17 @@ public class NioChannel extends Channel {
     public int writeBuffLen = 0;
 
     public void flush(){
+        //todo: wakeup protection
+
         reactor.wakeup();
     }
 
     public void write(ByteBuffer buffer){
-        checkNotNull(buffer);
-
-        //System.out.println("write:"+buffer);
-
         pending.add(buffer);
     }
 
     public void writeAndFlush(ByteBuffer buffer) {
         write(buffer);
-        reactor.taskQueue.add(this);
         flush();
     }
 

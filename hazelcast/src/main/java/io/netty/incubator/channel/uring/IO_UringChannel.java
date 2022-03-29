@@ -19,47 +19,44 @@ public class IO_UringChannel extends Channel {
     public Connection connection;
     public LinuxSocket socket;
     public IO_UringReactor reactor;
-    public long bytesRead = 0;
     public SocketAddress remoteAddress;
     public ByteBuf readBuff;
-    public ByteBuffer currentWriteBuff;
+    public ByteBuffer current;
     public ByteBuf writeBuff;
     public ByteBuffer readBuffer;
     public PacketIOHelper packetReader = new PacketIOHelper();
     public InetSocketAddress localAddress;
     public long packetsRead;
+    public long bytesRead = 0;
 
     @Override
     public void flush() {
+        //todo: flush isn't needed when already scheduled for flushing
         reactor.wakeup();
     }
 
     @Override
     public void write(ByteBuffer buffer) {
-        checkNotNull(buffer);
-
-        //System.out.println("write:"+buffer);
-
         pending.add(buffer);
     }
 
     @Override
     public void writeAndFlush(ByteBuffer buffer) {
-        write(buffer);
+        pending.add(buffer);
         reactor.taskQueue.add(this);
         flush();
     }
 
     public ByteBuffer next() {
-        if (currentWriteBuff == null) {
-            currentWriteBuff = pending.poll();
+        if (current == null) {
+            current = pending.poll();
         } else {
-            if (!currentWriteBuff.hasRemaining()) {
+            if (!current.hasRemaining()) {
                 //buffersWritten++;
-                currentWriteBuff = null;
+                current = null;
             }
         }
 
-        return currentWriteBuff;
+        return current;
     }
 }

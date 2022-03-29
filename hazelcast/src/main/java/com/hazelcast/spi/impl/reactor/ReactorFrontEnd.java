@@ -195,8 +195,11 @@ public class ReactorFrontEnd {
 
                     connection.channels = channels;
                 }
+
+                System.out.println("channels to "+address+" established");
             }
         }
+
         return connection;
     }
 
@@ -219,18 +222,18 @@ public class ReactorFrontEnd {
     public void handleResponse(Packet packet) {
         try {
             Address remoteAddress = packet.getConn().getRemoteAddress();
-            Invocations targetInvocations = invocationsPerMember.get(remoteAddress);
-            if (targetInvocations == null) {
-                System.out.println("Dropping response " + packet + ", targetInvocations not found");
+            Invocations invocations = invocationsPerMember.get(remoteAddress);
+            if (invocations == null) {
+                System.out.println("Dropping response " + packet + ", invocations not found");
                 return;
             }
 
             ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(packet.toByteArray(), ss, BIG_ENDIAN);
 
             long callId = in.readLong();
-            Invocation invocation = targetInvocations.map.remove(callId);
+            Invocation invocation = invocations.map.remove(callId);
             if (invocation == null) {
-                System.out.println("Dropping response " + packet + ", invocation not found");
+                System.out.println("Dropping response " + packet + ", invocation with id "+callId+" not found");
             } else {
                 invocation.completableFuture.complete(null);
             }

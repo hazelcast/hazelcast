@@ -20,13 +20,23 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 20; k++) {
+        for (int k = 0; k < 6; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;
             item.b = 3;
-            System.out.println("-----------------call: "+k);
+
+            System.out.println("========================================================================");
+            System.out.println("k="+k);
+            System.out.println("========================================================================");
+
             table.upsert(item);
+
+//            try {
+//                Thread.sleep(10000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
 
         }
 

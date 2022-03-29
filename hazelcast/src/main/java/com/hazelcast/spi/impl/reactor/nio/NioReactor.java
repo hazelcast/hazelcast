@@ -7,7 +7,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.reactor.*;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
@@ -21,7 +20,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -209,7 +207,7 @@ public class NioReactor extends Reactor {
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
-            process(packet);
+            processPacket(packet);
         }
         compactOrClear(readBuf);
     }
@@ -232,20 +230,20 @@ public class NioReactor extends Reactor {
             }
 
             if (item instanceof NioChannel) {
-                process((NioChannel) item);
+                processChannel((NioChannel) item);
             } else if (item instanceof ConnectRequest) {
-                process((ConnectRequest) item);
+                processConnectRequest((ConnectRequest) item);
             } else if (item instanceof Op) {
-                proces((Op) item);
+                processOp((Op) item);
             } else if (item instanceof Request) {
-                proces((Request) item);
+                processRequest((Request) item);
             } else {
                 throw new RuntimeException("Unregonized type:" + item.getClass());
             }
         }
     }
 
-    private void process(NioChannel channel) {
+    private void processChannel(NioChannel channel) {
         //System.out.println("Processing channel");
         try {
             for (; ; ) {
@@ -283,7 +281,7 @@ public class NioReactor extends Reactor {
         }
     }
 
-    public void process(ConnectRequest connectRequest) {
+    public void processConnectRequest(ConnectRequest connectRequest) {
         try {
             SocketAddress address = connectRequest.address;
             System.out.println("ConnectRequest address:" + address);
@@ -305,7 +303,7 @@ public class NioReactor extends Reactor {
         }
     }
 
-    private void process(Packet packet) {
+    private void processPacket(Packet packet) {
         //System.out.println(this + " process packet: " + packet);
         try {
             if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
@@ -316,7 +314,7 @@ public class NioReactor extends Reactor {
                 byte opcode = bytes[Packet.DATA_OFFSET];
                 Op op = allocateOp(opcode);
                 op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-                proces(op);
+                processOp(op);
 
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
@@ -329,7 +327,7 @@ public class NioReactor extends Reactor {
     }
 
     // local call
-    private void proces(Request request) {
+    private void processRequest(Request request) {
 
         //System.out.println("request: " + request);
         try {
@@ -337,14 +335,14 @@ public class NioReactor extends Reactor {
             byte opcode = data[0];
             Op op = allocateOp(opcode);
             op.in.init(data, 1);
-            proces(op);
+            processOp(op);
             request.invocation.completableFuture.complete(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void proces(Op op) {
+    private void processOp(Op op) {
         try {
             long callId = op.in.readLong();
             op.callId = callId;
@@ -359,8 +357,6 @@ public class NioReactor extends Reactor {
                 default:
                     throw new RuntimeException();
             }
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
