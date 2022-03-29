@@ -113,14 +113,14 @@ public class LateItemsDropPTest extends SqlTestSupport {
                         wm(3L),
                         jetRow(2L, 2L),
                         jetRow(1L, 3L),
-                        wm(4L)
+                        wm(5L)
                 ))
                 .expectOutput(asList(
                         wm(0L),
                         jetRow(0L, 1L),
                         jetRow(1L, 2L),
                         wm(3L),
-                        wm(4L)
+                        wm(5L)
                 ));
     }
 
