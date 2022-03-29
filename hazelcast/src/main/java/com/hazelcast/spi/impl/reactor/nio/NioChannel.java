@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 
@@ -25,6 +26,7 @@ public class NioChannel extends Channel {
     public long packetsRead = 0;
     public long bytesRead = 0;
     public long bytesWritten = 0;
+    public final PacketIOHelper packetIOHelper = new PacketIOHelper();
 
     public ByteBuffer[] writeBuffs = new ByteBuffer[128];
     public int writeBuffLen = 0;

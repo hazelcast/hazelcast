@@ -40,12 +40,11 @@ public class ReactorFrontEnd {
     private final int reactorCount;
     private final int channelCount;
     private final boolean reactorSpin;
-    private final boolean ioUring;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
     public final Managers managers = new Managers();
-    private final ConcurrentMap<Address, MemberInvocations> invocationsPerMember = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Address, Invocations> invocationsPerMember = new ConcurrentHashMap<>();
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -53,13 +52,12 @@ public class ReactorFrontEnd {
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        String reactorType = System.getProperty("reactor.type", "nio");
+        String reactorType = System.getProperty("reactor.type", "iouring");
         this.channelCount = 1;//Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
-        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.threadaffinity");
+        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         printReactorInfo(reactorType);
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
-        this.ioUring = true;
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
@@ -79,7 +77,7 @@ public class ReactorFrontEnd {
         logger.info("reactor.spin:" + reactorSpin);
         logger.info("reactor.channels:" + channelCount);
         logger.info("reactor.type:" + reactorType);
-        logger.info("reactor.threadaffinity:"+System.getProperty("reactor.threadaffinity"));
+        logger.info("reactor.cpu-affinity:"+System.getProperty("reactor.cpu-affinity"));
     }
 
     public int toPort(Address address, int cpu) {
@@ -103,7 +101,7 @@ public class ReactorFrontEnd {
 
         shuttingdown = true;
 
-        for (MemberInvocations invocations : invocationsPerMember.values()) {
+        for (Invocations invocations : invocationsPerMember.values()) {
             for (Invocation i : invocations.map.values()) {
                 i.completableFuture.completeExceptionally(new RuntimeException("Shutting down"));
             }
@@ -120,7 +118,7 @@ public class ReactorFrontEnd {
 
             if (partitionId >= 0) {
                 Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                MemberInvocations invocations = getMemberInvocations(address);
+                Invocations invocations = getInvocations(address);
                 Invocation invocation = new Invocation();
                 invocation.callId = invocations.counter.incrementAndGet();
                 request.out.writeLong(Request.OFFSET_CALL_ID, invocation.callId);
@@ -202,31 +200,26 @@ public class ReactorFrontEnd {
         return connection;
     }
 
-    public MemberInvocations getMemberInvocations(Address address) {
-        MemberInvocations invocations = invocationsPerMember.get(address);
+    public Invocations getInvocations(Address address) {
+        Invocations invocations = invocationsPerMember.get(address);
         if (invocations != null) {
             return invocations;
         }
 
-        MemberInvocations newInvocations = new MemberInvocations(address);
-        MemberInvocations foundInvocations = invocationsPerMember.putIfAbsent(address, newInvocations);
+        Invocations newInvocations = new Invocations();
+        Invocations foundInvocations = invocationsPerMember.putIfAbsent(address, newInvocations);
         return foundInvocations == null ? newInvocations : foundInvocations;
     }
 
-    private class MemberInvocations {
-        private final Address target;
+    private class Invocations {
         private final ConcurrentMap<Long, Invocation> map = new ConcurrentHashMap<>();
         private final AtomicLong counter = new AtomicLong(500);
-
-        public MemberInvocations(Address target) {
-            this.target = target;
-        }
     }
 
     public void handleResponse(Packet packet) {
         try {
             Address remoteAddress = packet.getConn().getRemoteAddress();
-            MemberInvocations targetInvocations = invocationsPerMember.get(remoteAddress);
+            Invocations targetInvocations = invocationsPerMember.get(remoteAddress);
             if (targetInvocations == null) {
                 System.out.println("Dropping response " + packet + ", targetInvocations not found");
                 return;
@@ -245,5 +238,4 @@ public class ReactorFrontEnd {
             e.printStackTrace();
         }
     }
-
 }

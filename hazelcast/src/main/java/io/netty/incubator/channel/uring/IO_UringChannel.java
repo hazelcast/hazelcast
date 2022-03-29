@@ -5,6 +5,7 @@ import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
 import io.netty.buffer.ByteBuf;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -19,12 +20,14 @@ public class IO_UringChannel extends Channel {
     public LinuxSocket socket;
     public IO_UringReactor reactor;
     public long bytesRead = 0;
-    public SocketAddress address;
+    public SocketAddress remoteAddress;
     public ByteBuf readBuff;
     public ByteBuffer currentWriteBuff;
     public ByteBuf writeBuff;
     public ByteBuffer readBuffer;
     public PacketIOHelper packetIOHelper = new PacketIOHelper();
+    public InetSocketAddress localAddress;
+    public long packetsRead;
 
     @Override
     public void flush() {

@@ -47,8 +47,7 @@ public class NioReactor extends Reactor {
     private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
     public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
-    private final PacketIOHelper packetIOHelper = new PacketIOHelper();
-    private BitSet allowedCpus;
+     private BitSet allowedCpus;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
     private long nextPrint = System.currentTimeMillis() + 1000;
 
@@ -173,29 +172,11 @@ public class NioReactor extends Reactor {
             it.remove();
 
             if (key.isValid() && key.isAcceptable()) {
-                SocketChannel socketChannel = serverSocketChannel.accept();
-                socketChannel.configureBlocking(false);
-                SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
-                selectionKey.attach(newChannel(socketChannel, null));
-
-                logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+                handleAccept();
             }
 
             if (key.isValid() && key.isReadable()) {
-                SocketChannel socketChannel = (SocketChannel) key.channel();
-                NioChannel channel = (NioChannel) key.attachment();
-                ByteBuffer readBuf = channel.readBuff;
-                int bytesRead = socketChannel.read(readBuf);
-                //System.out.println(this + " bytes read: " + bytesRead);
-                if (bytesRead == -1) {
-                    socketChannel.close();
-                    key.cancel();
-                } else {
-                    channel.bytesRead += bytesRead;
-                    readBuf.flip();
-                    process(readBuf, channel);
-                    compactOrClear(readBuf);
-                }
+                handleRead(key);
             }
 
             if (!key.isValid()) {
@@ -203,6 +184,46 @@ public class NioReactor extends Reactor {
                 key.cancel();
             }
         }
+    }
+
+    private void handleRead(SelectionKey key) throws IOException {
+        SocketChannel socketChannel = (SocketChannel) key.channel();
+        NioChannel channel = (NioChannel) key.attachment();
+        ByteBuffer readBuf = channel.readBuff;
+        int bytesRead = socketChannel.read(readBuf);
+        //System.out.println(this + " bytes read: " + bytesRead);
+        if (bytesRead == -1) {
+            socketChannel.close();
+            key.cancel();
+        } else {
+            channel.bytesRead += bytesRead;
+            readBuf.flip();
+
+            for (; ; ) {
+                Packet packet = channel.packetIOHelper.readFrom(channel.readBuff);
+                //System.out.println(this + " read packet: " + packet);
+                if (packet == null) {
+                    break;
+                }
+
+                channel.packetsRead++;
+
+                packet.setConn((ServerConnection) channel.connection);
+                packet.channel = channel;
+                process(packet);
+            }
+
+            compactOrClear(readBuf);
+        }
+    }
+
+    private void handleAccept() throws IOException {
+        SocketChannel socketChannel = serverSocketChannel.accept();
+        socketChannel.configureBlocking(false);
+        SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
+        selectionKey.attach(newChannel(socketChannel, null));
+
+        logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
     }
 
     private NioChannel newChannel(SocketChannel socketChannel, Connection connection) {
@@ -296,21 +317,7 @@ public class NioReactor extends Reactor {
         }
     }
 
-    private void process(ByteBuffer buffer, NioChannel channel) {
-        for (; ; ) {
-            Packet packet = packetIOHelper.readFrom(buffer);
-            //System.out.println(this + " read packet: " + packet);
-            if (packet == null) {
-                return;
-            }
 
-            channel.packetsRead++;
-
-            packet.setConn((ServerConnection) channel.connection);
-            packet.channel = channel;
-            process(packet);
-        }
-    }
 
     private void process(Packet packet) {
         //System.out.println(this + " process packet: " + packet);
@@ -328,7 +335,7 @@ public class NioReactor extends Reactor {
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                ((NioChannel)packet.channel).writeAndFlush(byteBuffer);
+                packet.channel.writeAndFlush(byteBuffer);
             }
         } catch (Exception e) {
             e.printStackTrace();
