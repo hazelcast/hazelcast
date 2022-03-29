@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateCombineByKeyPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.ProjectPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -52,10 +52,10 @@ public class LogicalStreamAggTest extends OptimizerTestSupport {
                 "GROUP BY window_start, window_end, __key, this";
 
         assertPlan(optimizePhysical(sql, parameterTypes, table).getPhysical(), plan(
-                planRow(0, ProjectPhysicalRel.class),
+                planRow(0, CalcPhysicalRel.class),
                 planRow(1, AggregateCombineByKeyPhysicalRel.class),
                 planRow(2, AggregateAccumulateByKeyPhysicalRel.class),
-                planRow(3, ProjectPhysicalRel.class),
+                planRow(3, CalcPhysicalRel.class),
                 planRow(4, SlidingWindowPhysicalRel.class),
                 planRow(5, FullScanPhysicalRel.class)
         ));

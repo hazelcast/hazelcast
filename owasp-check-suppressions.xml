@@ -106,6 +106,7 @@
        <vulnerabilityName>CVE-2020-25694</vulnerabilityName>
        <vulnerabilityName>CVE-2020-25695</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3393</vulnerabilityName>
+       <vulnerabilityName>CVE-2021-23214</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
@@ -222,6 +223,7 @@
        <vulnerabilityName>CVE-2021-23841</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3536</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3712</vulnerabilityName>
+       <vulnerabilityName>CVE-2022-0778</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[

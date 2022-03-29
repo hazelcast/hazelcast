@@ -282,8 +282,14 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_SYMBOLS.add(SqlJsonConstructorNullClause.ABSENT_ON_NULL);
     }
 
+    private final boolean isValidated;
+
     // The top level select is used to filter out nested selects with FETCH/OFFSET
     private SqlSelect topLevelSelect;
+
+    public UnsupportedOperationVisitor(boolean isValidated) {
+        this.isValidated = isValidated;
+    }
 
     @Override
     public Void visit(SqlCall call) {
@@ -418,6 +424,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
 
+            case ORDER_BY:
+            case EXPLICIT_TABLE:
+            case MAP_VALUE_CONSTRUCTOR:
+                // these kinds do not occur after validation
+                if (isValidated) {
+                    throw unsupported(call, kind);
+                }
+                break;
+
             default:
                 throw unsupported(call, kind);
         }
@@ -448,6 +463,13 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     private void processOther(SqlCall call) {
+        // Before the validation, some function calls are SqlUnresolvedFunction, some have the calcite
+        // representation, such as SqlJsonValueFunction instead of HazelcastJsonValueFunction etc.
+        // They will be validated after validation, ignore it in the pre-validation check.
+        if (!isValidated) {
+            return;
+        }
+
         SqlOperator operator = call.getOperator();
 
         if (SUPPORTED_OPERATORS.contains(operator)) {

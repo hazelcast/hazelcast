@@ -27,9 +27,9 @@ import org.immutables.value.Value;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * A rule that replaces any streaming aggregation with {@link CannotExecuteRel}.
+ * A rule that replaces any streaming aggregation with {@link ShouldNotExecuteRel}.
  * This is to handle cases when the aggregation isn't implemented by replacing
- * it with {@link CannotExecuteRel}, which has infinity cost. If no other rule
+ * it with {@link ShouldNotExecuteRel}, which has huge cost. If no other rule
  * replaces the aggregation with something that can be executed, the error will
  * be thrown to the user.
  * <p>
@@ -67,7 +67,7 @@ public final class StreamAggregateCannotExecuteRule extends RelRule<Config> {
     public void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel aggr = call.rel(0);
         call.transformTo(
-                new CannotExecuteRel(aggr.getCluster(), OptUtils.toPhysicalConvention(aggr.getTraitSet()), aggr.getRowType(),
+                new ShouldNotExecuteRel(aggr.getCluster(), OptUtils.toPhysicalConvention(aggr.getTraitSet()), aggr.getRowType(),
                         "Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
                                 "(see TUMBLE/HOP and IMPOSE_ORDER functions)"));
     }
