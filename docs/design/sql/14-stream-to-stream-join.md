@@ -23,7 +23,7 @@
 
 In streaming data processing, there are several scenarios for joins:
 
-- static to stream: one source can be static (e.g. table), and the other source can be streaming data source.
+- batch to stream: one source can be batch (e.g. table), and the other source can be streaming data source.
 - stream to stream, both data sources can be streaming (e.g. messaging topics) that need to be joined.
 
 #### Goals
@@ -81,90 +81,45 @@ Consider having two streams - __S1__ and __S2__.
 
 Let's describe all possible scenarios for joining these two streams:
 
-| Behavior                                                   | Outcome                           |
-|------------------------------------------------------------|-----------------------------------|
-| Both __S1__ **and** __S2__ don't have watermarks           | exception during query processing |
-| At least one input stream doesn't have watermarks          | exception during query processing |
-| Both __S1__ and __S2__ have watermarks with same lag times | Example in Table 3                |
-| __S1__ has zero lag and __S2__ has non-zero lag            | Example in Table 4                |
-| ---                                                        | ---                               |
+| Behavior                                                   | Outcome                            |
+|------------------------------------------------------------|------------------------------------|
+| Both input streams don't have watermarks                   | exception during query processing  |
+| At least one input stream doesn't have watermarks          | exception during query processing  |
+| At least one input stream has zero lag                     | result set would be empty          |
+| Both __S1__ and __S2__ have watermarks with same lag times | Example in Table 3                 |
+| ---                                                        | ---                                |
 
 __Table 2__
 
-Let define lag time for both inputs as 1. Consider streams have the following input:
+Let's lag time be equal for both inputs. Consider streams have the following input:
 
 | S1          | S2          |
 |-------------|-------------|
 | s1_event(1) | s2_event(1) |
 | s1_wm(2)    | s2_wm(2)    |
-| s1_event(2) | s2_event(3) |
+| s1_event(3) | s2_event(3) |
 | s1_wm(4)    | s2_wm(4)    |
 | -           | s2_event(4) |
+| -           | s2_wm(6)    |
+| -           | s2_event(7) |
+| -           | s2_wm(8)    |
 
-After applying the `FULL JOIN` operation we expect next output:
+After applying the `CROSS JOIN` operation we expect next output:
 
 | JOIN(S1, S2)               |
 |----------------------------|
 | [s1_event(1), s2_event(1)] |
-| s1_wm(2)`[*]`              |                
+| s1_wm(2)`[*]`              |
 | s2_wm(2)`[*]`              |  
-| [s1_event(2), s2_event(3)] |
-| [s1_event(2), s2_event(4)] |
-| s1_wm(4)`[*]`              |                
-| s2_wm(4)`[*]`              |  
+| [s1_event(3), s2_event(3)] |
+| [s1_event(3), s2_event(4)] |
+| s1_wm(4)                   |
+| s2_wm(4)                   |  
+| s2_wm(6)                   |  
+| [NULL, s2_event(7)]`[**]`  |  
+| s2_wm(8)                   |  
 
 __Table 3__
-
-Note, that each event is processed independently within allowed lag window.
-
-Let define zero lag time for input S1, and lag for input S2 as 3. Consider streams have the following input:
-
-| S1                     |
-|------------------------|
-| s1_event(0)            |
-| s1_wm(0)               |
-| s1_event(1)            |
-| s1_wm(1)               |
-| s1_event(2)            |
-| s1_wm(2)               |
-| s1_event(3)            |
-| s1_wm(3)               |
-| _...only wm events..._ |
-| s1_wm(6)               |
-
-| S2                     |
-|------------------------|
-| s2_wm(0)               |
-| s2_event(1)            |
-| s2_wm(1)               |
-| s2_event(2)            |
-| s2_wm(2)               |
-| s2_event(0)            |
-| s2_wm(3)               |
-| _...only wm events..._ |
-| s2_wm(6)               |
-
-After applying the `FULL JOIN` operation we expect next output:
-
-| JOIN(S1, S2)                   |
-|--------------------------------|
-| [s1_event(0), s2_event(0)] (!) |
-| s1_wm(0)                       |                      
-| s2_wm(0)                       |
-| [s1_event(1), s2_event(1)]     |
-| s1_wm(1)                       |                     
-| s2_wm(1)                       |
-| [s1_event(2), s2_event(2)]     |
-| s1_wm(2)                       |                      
-| s2_wm(2)                       |
-| [s1_event(3), `NULL` `[**]`]   |
-| s1_wm(3)                       |
-| s2_wm(3)                       |
-| _...only wm events..._         |
-| s1_wm(6)                       |
-| s2_wm(6)                       |
-
-__Table 4__
 
 #### Watermarks
 
@@ -176,8 +131,10 @@ Non-watermarked streams are not allowed to be joined.
 
 `[*]` __Note__: each watermark event should stay as a separate event in joined stream.
 
-_Q: Should we support only timestamps as JOIN condition? (Yes) How to convert the JOIN condition into deletion rule, if
-it does not touch timestamp?_
+_Q: Should we support only timestamps as JOIN condition?_
+**Answer: Yes**
+
+_Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
 
 _Q: What semantics should we consider for queries with zero lag for both inputs?_
 
