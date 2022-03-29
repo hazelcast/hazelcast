@@ -233,7 +233,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
                         "WHERE window_start != window_end " +
                         "GROUP BY window_start")
-        ).hasRootCauseMessage("Can't apply filter criteria to window bounds");
+        ).hasMessageEndingWith("Can't apply filter criteria to window bounds");
 
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT 1 " +
@@ -242,7 +242,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
                         "WHERE EXTRACT(DAY FROM window_start) != EXTRACT(DAY FROM window_end) " +
                         "GROUP BY window_start")
-        ).hasRootCauseMessage("Can't apply filter criteria to window bounds");
+        ).hasMessageEndingWith("Can't apply filter criteria to window bounds");
     }
 
     @Test
