@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -226,11 +227,19 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, type);
 
-        return new KvMetadata(
-                fields,
-                GenericQueryTargetDescriptor.DEFAULT,
-                PrimitiveUpsertTargetDescriptor.INSTANCE
-        );
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            return new KvMetadata(
+                    fields,
+                    GenericQueryTargetDescriptor.DEFAULT,
+                    new HazelcastObjectUpsertTargetDescriptor(type)
+            );
+        } else {
+            return new KvMetadata(
+                    fields,
+                    GenericQueryTargetDescriptor.DEFAULT,
+                    PrimitiveUpsertTargetDescriptor.INSTANCE
+            );
+        }
     }
 
     private KvMetadata resolveObjectMetadata(

@@ -184,12 +184,25 @@ public class HazelcastObjectTypeReference implements RelDataType {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-        // TODO: proper equality
+        assert original != null;
         return obj != null && obj.equals(original);
     }
 
     @Override
     public int hashCode() {
+        assert original != null;
         return original.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        assert original != null;
+        return original.toString();
+    }
+
+    @Override
+    public boolean equalsSansFieldNames(@Nullable final RelDataType that) {
+        assert original != null;
+        return original.equalsSansFieldNames(that);
     }
 }

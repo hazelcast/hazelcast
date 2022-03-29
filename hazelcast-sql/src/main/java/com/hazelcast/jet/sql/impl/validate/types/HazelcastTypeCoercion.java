@@ -200,6 +200,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return true;
         }
 
+        if (targetHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT) &&
+                (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
+                        sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT))) {
+            // TODO: validate row
+            return true;
+        }
+
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
                 || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)

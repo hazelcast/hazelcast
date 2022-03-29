@@ -37,6 +37,7 @@ import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
+import static org.apache.calcite.sql.type.SqlTypeName.ROW;
 
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
@@ -95,6 +96,9 @@ public final class HazelcastTypeUtils {
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, OTHER);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.HZ_OBJECT, OTHER);
+        // TODO: proper conversion
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.ROW, ROW);
+        CALCITE_TO_HZ.put(ROW, QueryDataType.ROW);
     }
 
     private HazelcastTypeUtils() {
@@ -332,7 +336,8 @@ public final class HazelcastTypeUtils {
 
             // if they're different kinds of structs, probably going to be supported in the future
             if (sourceType.getSqlTypeName() != targetType.getSqlTypeName()) {
-                return false;
+//                return false;
+                // TODO: check if Source = HZ_OBJECT and Target is ROW
             }
 
             int n = targetType.getFieldCount();

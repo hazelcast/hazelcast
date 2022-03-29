@@ -179,7 +179,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     // TODO: fix
     @Test
-    @Ignore
     public void test_deepUpdate() {
         TypeRegistry.INSTANCE.registerType("AType", A.class);
         TypeRegistry.INSTANCE.registerType("BType", B.class);
@@ -194,14 +193,16 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         c.a = a;
 
         createMapping("public", Long.class, A.class);
+
+//        instance().getSql().execute("CREATE MAPPING public TYPE IMap OPTIONS " +
+//                "('keyFormat'='bigint'," +
+//                "'valueFormat'='AType')");
+
         IMap<Long, A> map = instance().getMap("public");
         map.put(1L, a);
 
-//        instance().getSql().execute("UPDATE public SET name = 'a_2'");
-        // update persons set address=(address.street, 'new city')
-        instance().getSql().execute("UPDATE public SET this = (public.this.b.c, 'test')");
-        System.out.println("hello");
-//        assertRowsAnyOrder("SELECT name, public.public.b.c.a.b.c.a.b.name FROM public", rows(2, "a_2", "b"));
+        instance().getSql().execute("UPDATE public SET this = (public.this.b, 'a_2')");
+        assertRowsAnyOrder("SELECT public.public.this.name, public.public.this.b.c.a.b.c.a.b.name FROM public", rows(2, "a_2", "b"));
     }
 
     private User initDefault() {

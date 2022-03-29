@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 public class RowConverter extends Converter {
@@ -27,11 +28,11 @@ public class RowConverter extends Converter {
 
     @Override
     public Class<?> getValueClass() {
-        return null;
+        return RowValue.class;
     }
 
     @Override
     public Object convertToSelf(final Converter converter, final Object val) {
-        return null;
+        return (RowValue) val;
     }
 }

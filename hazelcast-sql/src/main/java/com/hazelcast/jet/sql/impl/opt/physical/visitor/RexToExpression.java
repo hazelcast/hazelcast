@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.RowExpression;
 import com.hazelcast.sql.impl.expression.SearchableExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
@@ -489,6 +490,8 @@ public final class RexToExpression {
                 }
 
                 break;
+            case ROW:
+                return RowExpression.create(operands);
             default:
                 break;
         }
