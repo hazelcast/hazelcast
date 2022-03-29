@@ -1283,7 +1283,8 @@
             "additionalProperties": false,
             "properties": {
               "name": {
-                "type": "string"
+                "type": "string",
+                "default": "default"
               },
               "time-to-live-seconds": {
                 "type": "integer",

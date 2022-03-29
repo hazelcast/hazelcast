@@ -229,11 +229,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 memberCount,
                 iMapResolver);
 
-        // 2. Parse SQL string and validate it.
-        QueryParseResult parseResult = context.parse(task.getSql());
+        try {
+            OptimizerContext.setThreadContext(context);
 
-        // 3. Create plan.
-        return createPlan(task, parseResult, context);
+            // 2. Parse SQL string and validate it.
+            QueryParseResult parseResult = context.parse(task.getSql());
+
+            // 3. Create plan.
+            return createPlan(task, parseResult, context);
+        } finally {
+            OptimizerContext.setThreadContext(null);
+        }
     }
 
     @SuppressWarnings("checkstyle:returncount")

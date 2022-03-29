@@ -33,6 +33,7 @@ public class EqualityTest {
     public void testEqualsAndHashCode_whenJobConfig() {
         EqualsVerifier.forClass(JobConfig.class)
                       .suppress(Warning.NONFINAL_FIELDS)
+                      .withIgnoredFields("locked")
                       .usingGetClass()
                       .verify();
     }

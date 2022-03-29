@@ -74,6 +74,8 @@ public final class PhysicalRules {
 
                 StreamingInsertMustNotExecuteRule.INSTANCE,
 
+                MustNotExecuteRule.INSTANCE,
+
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
     }
