@@ -233,7 +233,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.writeData(out);
         out.writeString(onEmpty.name());
         out.writeString(onError.name());
-        out.writeObject(constantPathCache);
     }
 
     @Override
@@ -241,10 +240,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.readData(in);
         this.onEmpty = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
         this.onError = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
-        this.constantPathCache = in.readObject();
-        if (this.constantPathCache == null) {
-            this.pathCache = JsonPathUtil.makePathCache();
-        }
+        prepareCache();
     }
 
     @Override
