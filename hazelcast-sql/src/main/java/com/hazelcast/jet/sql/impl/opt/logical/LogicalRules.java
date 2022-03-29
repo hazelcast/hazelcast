@@ -47,6 +47,7 @@ public final class LogicalRules {
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
