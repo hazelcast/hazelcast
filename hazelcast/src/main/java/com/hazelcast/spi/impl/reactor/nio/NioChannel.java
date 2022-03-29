@@ -4,7 +4,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -17,17 +16,15 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class NioChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
-
     public Connection connection;
-    public ByteBuffer readBuff;
+    public ByteBuffer readBuffer;
     public SocketChannel socketChannel;
     public NioReactor reactor;
     public long buffersWritten = 0;
     public long packetsRead = 0;
     public long bytesRead = 0;
     public long bytesWritten = 0;
-    public final PacketIOHelper packetIOHelper = new PacketIOHelper();
-
+    public final PacketIOHelper packetReader = new PacketIOHelper();
     public ByteBuffer[] writeBuffs = new ByteBuffer[128];
     public int writeBuffLen = 0;
 
@@ -49,19 +46,6 @@ public class NioChannel extends Channel {
         flush();
     }
 
-//    public ByteBuffer next() {
-//        if (currentWriteBuff == null) {
-//            currentWriteBuff = pending.poll();
-//        } else {
-//            if (!currentWriteBuff.hasRemaining()) {
-//                buffersWritten++;
-//                currentWriteBuff = null;
-//            }
-//        }
-//
-//        return currentWriteBuff;
-//    }
-
     public String toDebugString() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
@@ -79,10 +63,10 @@ public class NioChannel extends Channel {
 //            sb.append(IOUtil.toDebugString("currentWriteBuff", currentWriteBuff));
 //        }
         sb.append(" ");
-        if(readBuff == null){
+        if(readBuffer == null){
             sb.append("readBuff=null");
         }else{
-            sb.append(IOUtil.toDebugString("readBuff", readBuff));
+            sb.append(IOUtil.toDebugString("readBuff", readBuffer));
         }
         return sb.toString();
     }

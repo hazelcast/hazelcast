@@ -25,7 +25,7 @@ public class IO_UringChannel extends Channel {
     public ByteBuffer currentWriteBuff;
     public ByteBuf writeBuff;
     public ByteBuffer readBuffer;
-    public PacketIOHelper packetIOHelper = new PacketIOHelper();
+    public PacketIOHelper packetReader = new PacketIOHelper();
     public InetSocketAddress localAddress;
     public long packetsRead;
 
