@@ -55,7 +55,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareWatermarkedRowLists)
+                .outputChecker(SqlTestSupport::compareRowLists)
                 .disableSnapshots()
                 .input(asList(
                         wm(0L),
@@ -80,7 +80,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareWatermarkedRowLists)
+                .outputChecker(SqlTestSupport::compareRowLists)
                 .disableSnapshots()
                 .input(asList(
                         wm(0L),
@@ -104,7 +104,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareWatermarkedRowLists)
+                .outputChecker(SqlTestSupport::compareRowLists)
                 .disableSnapshots()
                 .input(asList(
                         wm(0L),
@@ -131,7 +131,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareWatermarkedRowLists)
+                .outputChecker(SqlTestSupport::compareRowLists)
                 .disableSnapshots()
                 .input(asList(
                         wm(0L),

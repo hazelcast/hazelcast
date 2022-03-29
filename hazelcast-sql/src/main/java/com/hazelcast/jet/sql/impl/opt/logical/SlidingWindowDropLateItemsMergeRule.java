@@ -27,7 +27,8 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
 /**
- * Logical rule that eliminates a {@link DropLateItemsLogicalRel} as an input of {@link SlidingWindow}.
+ * Logical rule that eliminates a {@link DropLateItemsLogicalRel} as an input of {@link SlidingWindow},
+ * because {@link SlidingWindow} performs late items dropping itself.
  * <p>
  * Before:
  * <pre>
