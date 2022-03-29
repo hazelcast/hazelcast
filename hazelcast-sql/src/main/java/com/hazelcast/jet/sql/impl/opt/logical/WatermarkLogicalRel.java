@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -31,12 +32,11 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
-import java.util.function.ToLongFunction;
 
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
 
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final ToLongFunction<ExpressionEvalContext> lagTimeProvider;
+    private final ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider;
     private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
@@ -44,7 +44,7 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
             RelTraitSet traits,
             RelNode input,
             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            ToLongFunction<ExpressionEvalContext> lagTimeProvider,
+            ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
@@ -58,7 +58,7 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
         return eventTimePolicyProvider;
     }
 
-    public ToLongFunction<ExpressionEvalContext> lagTimeProvider() {
+    public ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider() {
         return lagTimeProvider;
     }
 

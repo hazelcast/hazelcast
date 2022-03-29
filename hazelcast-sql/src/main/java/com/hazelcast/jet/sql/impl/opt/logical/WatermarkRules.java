@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.google.common.collect.Iterables;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
@@ -40,7 +41,6 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Map;
-import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
@@ -122,7 +122,7 @@ final class WatermarkRules {
             };
         }
 
-        private ToLongFunction<ExpressionEvalContext> lagTimeProvider(LogicalTableFunctionScan function) {
+        private ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider(LogicalTableFunctionScan function) {
             Expression<?> lagExpression = lagExpression(function);
             return context -> WindowUtils.extractMillis(lagExpression, context);
         }

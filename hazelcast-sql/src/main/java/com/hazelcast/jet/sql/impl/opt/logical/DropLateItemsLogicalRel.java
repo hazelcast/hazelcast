@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -29,7 +30,6 @@ import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
-import java.util.function.ToLongFunction;
 
 /**
  * Relational operator that returns items from its input, with late items
@@ -38,14 +38,14 @@ import java.util.function.ToLongFunction;
  */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     private final RexNode wmField;
-    private final ToLongFunction<ExpressionEvalContext> allowedLagProvider;
+    private final ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider;
 
     protected DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
             RexNode wmField,
-            ToLongFunction<ExpressionEvalContext> allowedLagProvider
+            ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
@@ -56,7 +56,7 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
         return wmField;
     }
 
-    public ToLongFunction<ExpressionEvalContext> allowedLagProvider() {
+    public ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider() {
         return allowedLagProvider;
     }
 

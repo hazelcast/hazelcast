@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -36,20 +37,19 @@ import org.apache.calcite.rex.RexVisitor;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
-import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRexToExpressionVisitor;
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
     private final RexNode wmField;
-    private final ToLongFunction<ExpressionEvalContext> allowedLagProvider;
+    private final ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider;
 
     protected DropLateItemsPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
             RexNode wmField,
-            ToLongFunction<ExpressionEvalContext> allowedLagProvider
+            ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
@@ -62,7 +62,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
         return wmField.accept(visitor);
     }
 
-    public ToLongFunction<ExpressionEvalContext> allowedLagProvider() {
+    public ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider() {
         return allowedLagProvider;
     }
 
