@@ -24,6 +24,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.test.DockerTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -46,7 +47,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.DockerClientFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * Base class for running Elasticsearch connector tests
@@ -83,7 +83,7 @@ public abstract class BaseElasticTest {
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeFalse(DockerTestUtil.dockerDisabled());
     }
 
     @Before

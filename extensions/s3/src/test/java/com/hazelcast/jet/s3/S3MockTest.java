@@ -23,6 +23,7 @@ import com.hazelcast.jet.s3.S3Sinks.S3SinkContext;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.DockerTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,8 +34,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.DockerClientFactory;
-
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -47,7 +46,7 @@ import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeFalse;
 import static software.amazon.awssdk.core.sync.ResponseTransformer.toInputStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -71,7 +70,7 @@ public class S3MockTest extends S3TestBase {
 
     @BeforeClass
     public static void setupS3() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeFalse(DockerTestUtil.dockerDisabled());
         s3MockContainer = new S3MockContainer();
         s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));

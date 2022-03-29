@@ -33,13 +33,13 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.DockerTestUtil;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
@@ -81,7 +81,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @BeforeClass
     public static void beforeClass() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeFalse(DockerTestUtil.dockerDisabled());
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))

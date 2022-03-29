@@ -26,7 +26,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.IMap;
-
+import com.hazelcast.test.DockerTestUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeFalse;
 
 @Category({IgnoreInJenkinsOnWindows.class})
 public class AbstractCdcIntegrationTest extends JetTestSupport {
@@ -58,7 +58,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeFalse(DockerTestUtil.dockerDisabled());
     }
 
     @Nonnull
