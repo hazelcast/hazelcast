@@ -73,7 +73,8 @@ __Table 1__
 
 _This is the technical portion of the design document. Explain the design in sufficient detail._
 
-SQL engine should use a specialized Jet processor to perform JOIN operation for two input stream events.
+SQL engine should use a specialized Jet processor to perform JOIN operation for two input stream events. JOIN condition
+allows suppose to be time-bounded. Non-time-bounded JOIN condition is not allowed to be used.
 
 #### Overall design
 
@@ -147,8 +148,9 @@ Consider the following query:
    1 (stream S2).
 3. Receive event E from the ordinal.
     1. If received event is watermark:
-        1. Clear buffer B0, if received from ordinal 0, clear B1 otherwise.
-        2. Emit watermark event to the outbox.
+        1. If watermark received from ordinal 0 clean all expired events in B0.
+        2. Else, clean all expired events in B1.
+        3. Emit watermark event to the outbox.
     2. Else:
         1. Extract timestamp from event E.
         2. If extract attempt was failed - throw an exception.
