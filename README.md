@@ -329,7 +329,7 @@ take a considerable amount of time. Hazelcast has 3 testing profiles:
 * All Tests: Type `mvn test -P all-tests` to run all tests serially using
   network.
 
-Some tests require Docker to run. Set `-Ddisable.docker.tests` system property to ignore them.
+Some tests require Docker to run. Set `-Dhazelcast.disable.docker.tests` system property to ignore them.
 
 ## Trigger Phrases in the Pull Request Conversation
 

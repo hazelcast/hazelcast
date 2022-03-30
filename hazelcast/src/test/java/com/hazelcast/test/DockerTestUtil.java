@@ -19,7 +19,7 @@ import static org.junit.Assume.assumeTrue;
 
 public class DockerTestUtil {
     public static boolean dockerEnabled() {
-        return !System.getProperties().containsKey("disable.docker.tests");
+        return !System.getProperties().containsKey("hazelcast.disable.docker.tests");
     }
 
     public static void assumeDockerEnabled() {
