@@ -7,7 +7,11 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.spi.impl.reactor.*;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 
@@ -63,6 +67,11 @@ public class NioReactor extends Reactor {
     @Override
     public void enqueue(Request request) {
         taskQueue.add(request);
+        wakeup();
+    }
+
+    public void schedule(Channel channel) {
+        taskQueue.add(channel);
         wakeup();
     }
 
@@ -276,6 +285,8 @@ public class NioReactor extends Reactor {
                     channel.writeBuffs[pos] = null;
                 }
             }
+
+           channel.unschedule();
         } catch (IOException e) {
             e.printStackTrace();
         }

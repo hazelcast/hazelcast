@@ -32,7 +32,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ReactorFrontEnd {
 
-    private final NodeEngineImpl nodeEngine;
+    public final NodeEngineImpl nodeEngine;
     public final InternalSerializationService ss;
     public final ILogger logger;
     private final Address thisAddress;
@@ -46,14 +46,15 @@ public class ReactorFrontEnd {
     public final Managers managers = new Managers();
     private final ConcurrentMap<Address, Invocations> invocationsPerMember = new ConcurrentHashMap<>();
 
+
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.reactorCount = 1;//Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        String reactorType = System.getProperty("reactor.type", "iouring");
-        this.channelCount = 1;//Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
+        String reactorType = System.getProperty("reactor.type", "nio");
+        this.channelCount = Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         printReactorInfo(reactorType);
         this.reactors = new Reactor[reactorCount];
@@ -73,11 +74,11 @@ public class ReactorFrontEnd {
     }
 
     private void printReactorInfo(String reactorType) {
-        logger.info("reactor.count:" + reactorCount);
-        logger.info("reactor.spin:" + reactorSpin);
-        logger.info("reactor.channels:" + channelCount);
-        logger.info("reactor.type:" + reactorType);
-        logger.info("reactor.cpu-affinity:"+System.getProperty("reactor.cpu-affinity"));
+        System.out.println("reactor.count:" + reactorCount);
+        System.out.println("reactor.spin:" + reactorSpin);
+        System.out.println("reactor.channels:" + channelCount);
+        System.out.println("reactor.type:" + reactorType);
+        System.out.println("reactor.cpu-affinity:"+System.getProperty("reactor.cpu-affinity"));
     }
 
     public int toPort(Address address, int cpu) {
@@ -120,7 +121,7 @@ public class ReactorFrontEnd {
                 Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
                 Invocations invocations = getInvocations(address);
                 Invocation invocation = new Invocation();
-                invocation.callId = invocations.counter.incrementAndGet();
+                invocation.callId = invocations.callId.incrementAndGet();
                 request.out.writeLong(Request.OFFSET_CALL_ID, invocation.callId);
                 invocation.request = request;
                 request.invocation = invocation;
@@ -216,7 +217,7 @@ public class ReactorFrontEnd {
 
     private class Invocations {
         private final ConcurrentMap<Long, Invocation> map = new ConcurrentHashMap<>();
-        private final AtomicLong counter = new AtomicLong(500);
+        private final AtomicLong callId = new AtomicLong(500);
     }
 
     public void handleResponse(Packet packet) {

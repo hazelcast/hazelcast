@@ -20,7 +20,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     public Reactor(ReactorFrontEnd frontend, Address thisAddress, int port, String name) {
         super(name);
         this.frontend = frontend;
-        this.logger = frontend.logger;
+        this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
     }

@@ -2,16 +2,18 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.spi.impl.reactor.*;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.Request;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.FileDescriptor;
@@ -173,6 +175,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         wakeup();
     }
 
+    public void schedule(IO_UringChannel channel) {
+        taskQueue.add(channel);
+        wakeup();
+    }
+
     @Override
     public Future<Channel> enqueue(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
@@ -217,9 +224,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.localAddress = socket.localAddress();
         channel.reactor = this;
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
-        channel.readBuff = allocator.directBuffer(1024*64);
-        channel.writeBuff = allocator.directBuffer(1024*64);
-        channel.readBuffer = ByteBuffer.allocate(1024*64);
+        channel.readBuff = allocator.directBuffer(1024 * 64);
+        channel.writeBuff = allocator.directBuffer(1024 * 64);
+        channel.readBuffer = ByteBuffer.allocate(1024 * 64);
         channel.connection = connection;
         return channel;
     }
@@ -253,7 +260,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             } else {
                 int processed = cq.process(this);
                 if (processed > 0) {
-               //     System.out.println(getName() + " processed " + processed);
+                    //     System.out.println(getName() + " processed " + processed);
                 }
             }
 
@@ -277,7 +284,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq.addRead(channel.socket.intValue(), b.memoryAddress(), b.writerIndex(), b.capacity(), (short) 0);
     }
 
-    private void sq_addWrite(IO_UringChannel channel){
+    private void sq_addWrite(IO_UringChannel channel) {
         ByteBuf buf = channel.writeBuff;
         sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
     }
@@ -314,7 +321,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handle_IORING_OP_WRITE(int fd, int res, int flags, byte op, short data) {
-        System.out.println(getName() + " handle called: opcode:" + op+ " OP_WRITE" );
+        System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
     }
 
     private void handle_IORING_OP_READ(int fd, int res, int flags, byte op, short data) {
@@ -326,7 +333,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-     //   System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
+        //   System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
         //System.out.println(getName()+" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> bytes read: "+res);
 
@@ -399,6 +406,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
 
         sq_addWrite(channel);
+
+        channel.unschedule();
     }
 
     private void processConnectRequest(ConnectRequest request) {
@@ -427,7 +436,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void processPacket(Packet packet) {
-       // System.out.println(this + " ----------------- process packet: " + packet);
+        // System.out.println(this + " ----------------- process packet: " + packet);
         try {
             if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
                 frontend.handleResponse(packet);
@@ -470,7 +479,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private void processOp(Op op) {
         try {
             long callId = op.in.readLong();
-           // System.out.println("processing callId:"+callId);
+            // System.out.println("processing callId:"+callId);
             op.callId = callId;
             //System.out.println("callId: "+callId);
             int runCode = op.run();

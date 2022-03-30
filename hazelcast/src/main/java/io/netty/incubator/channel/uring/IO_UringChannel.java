@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -29,11 +30,27 @@ public class IO_UringChannel extends Channel {
     public long packetsRead;
     public long bytesRead = 0;
     public long packetsWritten;
+    public AtomicBoolean scheduled = new AtomicBoolean();
 
     @Override
     public void flush() {
-        //todo: flush isn't needed when already scheduled for flushing
-        reactor.wakeup();
+        if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
+            reactor.schedule(this);
+        }
+    }
+
+    public void unschedule() {
+        if (!pending.isEmpty()) {
+            reactor.taskQueue.add(this);
+            return;
+        }
+
+        scheduled.set(false);
+        if (!pending.isEmpty()) {
+            if (scheduled.compareAndSet(false, true)) {
+                reactor.taskQueue.add(this);
+            }
+        }
     }
 
     @Override

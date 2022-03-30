@@ -10,8 +10,7 @@ import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioChannel extends Channel {
 
@@ -27,17 +26,35 @@ public class NioChannel extends Channel {
     public final PacketIOHelper packetReader = new PacketIOHelper();
     public ByteBuffer[] writeBuffs = new ByteBuffer[128];
     public int writeBuffLen = 0;
+    public AtomicBoolean scheduled = new AtomicBoolean();
 
-    public void flush(){
-        //todo: wakeup protection
-
-        reactor.wakeup();
+    @Override
+    public void flush() {
+        if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
+            reactor.schedule(this);
+        }
     }
 
-    public void write(ByteBuffer buffer){
+    public void unschedule() {
+        if (!pending.isEmpty()) {
+            reactor.taskQueue.add(this);
+            return;
+        }
+
+        scheduled.set(false);
+        if (!pending.isEmpty()) {
+            if (scheduled.compareAndSet(false, true)) {
+                reactor.taskQueue.add(this);
+            }
+        }
+    }
+
+    @Override
+    public void write(ByteBuffer buffer) {
         pending.add(buffer);
     }
 
+    @Override
     public void writeAndFlush(ByteBuffer buffer) {
         write(buffer);
         flush();
@@ -47,22 +64,22 @@ public class NioChannel extends Channel {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
 
-        StringBuffer sb = new StringBuffer(dtf.format(now)+" "+this +" ");
+        StringBuffer sb = new StringBuffer(dtf.format(now) + " " + this + " ");
 
-        sb.append("pending="+pending.size()).append(' ');
-        sb.append("written="+buffersWritten).append(' ');
-        sb.append("read="+packetsRead).append(' ');
-        sb.append("bytes-written="+bytesWritten).append(' ');
-        sb.append("bytes-read="+bytesRead).append(' ');
+        sb.append("pending=" + pending.size()).append(' ');
+        sb.append("written=" + buffersWritten).append(' ');
+        sb.append("read=" + packetsRead).append(' ');
+        sb.append("bytes-written=" + bytesWritten).append(' ');
+        sb.append("bytes-read=" + bytesRead).append(' ');
 //        if(currentWriteBuff == null){
 //            sb.append("currentWriteBuff=null");
 //        }else{
 //            sb.append(IOUtil.toDebugString("currentWriteBuff", currentWriteBuff));
 //        }
         sb.append(" ");
-        if(readBuffer == null){
+        if (readBuffer == null) {
             sb.append("readBuff=null");
-        }else{
+        } else {
             sb.append(IOUtil.toDebugString("readBuff", readBuffer));
         }
         return sb.toString();
