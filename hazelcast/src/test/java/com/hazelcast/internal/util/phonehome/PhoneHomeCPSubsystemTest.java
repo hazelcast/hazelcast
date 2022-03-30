@@ -89,8 +89,7 @@ public class PhoneHomeCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void testSemaphoresCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.CP_SEMAPHORES_COUNT.getRequestParameterName())).isEqualTo("0");
 
         node.hazelcastInstance.getCPSubsystem().getSemaphore("hazelcast@firstGroup").init(1);
@@ -105,8 +104,7 @@ public class PhoneHomeCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void testFencedLocksCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.CP_FENCED_LOCKS_COUNT.getRequestParameterName())).isEqualTo("0");
 
         node.hazelcastInstance.getCPSubsystem().getLock("hazelcast@firstGroup").lock();
@@ -121,8 +119,7 @@ public class PhoneHomeCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void testCountdownLatchesCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.CP_COUNTDOWN_LATCHES_COUNT.getRequestParameterName()))
                 .isEqualTo("0");
 
@@ -154,8 +151,7 @@ public class PhoneHomeCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void testAtomicRefsCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.CP_ATOMIC_REFS_COUNT.getRequestParameterName())).isEqualTo("0");
 
         node.hazelcastInstance.getCPSubsystem().getAtomicReference("hazelcast@firstGroup").set(42L);
