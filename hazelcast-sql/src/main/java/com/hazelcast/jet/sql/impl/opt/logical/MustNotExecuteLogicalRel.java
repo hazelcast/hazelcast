@@ -14,34 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.physical.MustNotExecutePhysicalRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.AbstractRelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * A RelNode that is used to replace another RelNode, if a rule determines that
- * the rel it matched cannot be executed without some transformation. It is used
- * to avoid throwing directly from the rule, but unlike {@link ShouldNotExecuteRel},
- * it should interrupt execution unconditionally.
- * That's why this rel has zero cost.
+ * See {@link MustNotExecutePhysicalRel}.
  */
-public class MustNotExecuteRel extends ShouldNotExecuteRel {
-    public MustNotExecuteRel(
+public class MustNotExecuteLogicalRel extends AbstractRelNode implements LogicalRel {
+    private final String exceptionMessage;
+
+    protected MustNotExecuteLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,
-            String exceptionMessage) {
-        super(cluster, traitSet, type, exceptionMessage);
+            String exceptionMessage
+    ) {
+        super(cluster, traitSet);
+        this.rowType = type;
+        this.exceptionMessage = exceptionMessage;
+    }
+
+    public String getExceptionMessage() {
+        return exceptionMessage;
     }
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return planner.getCostFactory().makeZeroCost();
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw).item("traitSet", traitSet);
     }
 }

@@ -21,12 +21,14 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
@@ -43,6 +45,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -374,6 +377,17 @@ public class CreateDagVisitor {
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
             return vertex2;
         }
+    }
+
+    public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
+        Expression<?> timestampExpression = rel.timestampExpression();
+        ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider = rel.allowedLagProvider();
+
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression, allowedLagProvider);
+        Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
+
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {

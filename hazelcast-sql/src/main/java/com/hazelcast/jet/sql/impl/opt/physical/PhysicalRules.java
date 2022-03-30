@@ -38,6 +38,7 @@ public final class PhysicalRules {
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
+                DropLateItemsPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
@@ -72,6 +73,8 @@ public final class PhysicalRules {
                 DeleteByKeyMapPhysicalRule.INSTANCE,
 
                 StreamingInsertMustNotExecuteRule.INSTANCE,
+
+                MustNotExecuteRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

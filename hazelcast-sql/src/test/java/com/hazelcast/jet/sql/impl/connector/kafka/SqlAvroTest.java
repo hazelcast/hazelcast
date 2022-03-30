@@ -78,12 +78,12 @@ public class SqlAvroTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
 
         Properties properties = new Properties();
         properties.put("listeners", "http://0.0.0.0:0");
-        properties.put("kafkastore.connection.url", kafkaTestSupport.getZookeeperConnectionString());
+        properties.put("kafkastore.bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
         schemaRegistry = schemaRegistryApplication.createServer();
@@ -92,8 +92,12 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        schemaRegistry.stop();
-        kafkaTestSupport.shutdownKafkaCluster();
+        if (schemaRegistry != null) {
+            schemaRegistry.stop();
+        }
+        if (kafkaTestSupport != null) {
+            kafkaTestSupport.shutdownKafkaCluster();
+        }
     }
 
     @Test

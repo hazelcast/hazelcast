@@ -143,7 +143,7 @@ public class DataSerializableImplementsVersionedTest {
 
         try {
             dataSerializable.writeData(out);
-        } catch (NullPointerException | UnsupportedOperationException ignored) {
+        } catch (NullPointerException | UnsupportedOperationException | AssertionError ignored) {
         }
 
         return isGetVersionCalled(out);
