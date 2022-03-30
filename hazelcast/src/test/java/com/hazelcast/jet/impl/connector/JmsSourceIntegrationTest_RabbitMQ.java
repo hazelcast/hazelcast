@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
-import com.hazelcast.test.DockerTestUtil;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
@@ -29,7 +28,7 @@ import org.testcontainers.containers.RabbitMQContainer;
 
 import javax.jms.ConnectionFactory;
 
-import static org.junit.Assume.assumeFalse;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 @Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestBase {
@@ -45,7 +44,7 @@ public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestB
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeFalse(DockerTestUtil.dockerDisabled());
+        assumeDockerEnabled();
     }
 
     @Override

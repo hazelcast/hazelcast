@@ -15,8 +15,14 @@
  */
 package com.hazelcast.test;
 
+import static org.junit.Assume.assumeTrue;
+
 public class DockerTestUtil {
-    public static boolean dockerDisabled() {
-        return System.getProperties().containsKey("disable.docker.tests");
+    public static boolean dockerEnabled() {
+        return !System.getProperties().containsKey("disable.docker.tests");
+    }
+
+    public static void assumeDockerEnabled() {
+        assumeTrue(DockerTestUtil.dockerEnabled());
     }
 }

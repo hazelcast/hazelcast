@@ -61,7 +61,7 @@ public abstract class KafkaTestSupport {
     private KafkaProducer<String, String> stringStringProducer;
 
     public static KafkaTestSupport create() {
-        if (DockerTestUtil.dockerDisabled() || OsHelper.isArmMac()) {
+        if (!DockerTestUtil.dockerEnabled() || OsHelper.isArmMac()) {
             if (System.getProperties().containsKey("test.kafka.version")) {
                 throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
             }

@@ -26,7 +26,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.DockerTestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -48,10 +47,10 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assume.assumeFalse;
 import static org.testcontainers.shaded.org.apache.commons.lang.StringUtils.repeat;
 import static org.testcontainers.utility.DockerImageName.parse;
 
@@ -75,7 +74,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     @BeforeClass
     public static void beforeClass() {
-        assumeFalse(DockerTestUtil.dockerDisabled());
+        assumeDockerEnabled();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))

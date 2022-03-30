@@ -24,7 +24,6 @@ import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
-import com.hazelcast.test.DockerTestUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -53,8 +52,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeFalse;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -73,7 +72,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeFalse(DockerTestUtil.dockerDisabled());
+        assumeDockerEnabled();
     }
 
     @BeforeClass
