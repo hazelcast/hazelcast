@@ -170,28 +170,6 @@ have limited amount of memory to store input events. In that case, we require wa
 to drop overdue items. For that, Hazelcast SQL engine supports `IMPOSE_ORDER` function to add watermarks to stream.
 Non-watermarked streams are not allowed to be joined.
 
-`[*]` __Note__: each watermark event should stay as a separate event in joined stream.
-
-_Q: Should we support only timestamps as JOIN condition?_
-**Answer: Yes**
-
-_Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
-
-_Q: What semantics should we consider for queries with zero lag for both inputs?_
-
-```sql
-SELECT * FROM orders_with_0_lag o 
-JOIN deliveries_with_0_lag d ON o.order_id = d.order_id
-```
-
-_Q: Time bounds should be constant or variable size? Example:_
-
-```sql
-SELECT * FROM orders o
-JOIN deliveries d ON d.time BETWEEN o.time 
-                  AND o.time + o.delivery_deadline + interval '1' day 
-```
-
 Separate JOIN processor should also emit watermarks. For that, we should extend `Watermark` class in such manner:
 
 ```java
@@ -202,6 +180,25 @@ public final class Watermark implements BroadcastItem {
     private final long timestamp;
     // ...
 }
+```
+
+`[*]` __Note__: each watermark event should stay as a separate event in joined stream.
+
+_Q: Should we support only timestamps as JOIN condition?_
+**Sasha's proposition: Yes. Non-timestamp JOIN condition is exceptionally non-trivial to support.**
+
+_Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
+**Sasha's proposition: Watch below, my proposition is not to support them.**
+
+_Q: What semantics should we consider for queries with zero lag for both inputs?_
+**Sasha's proposition: We would not have any available events to join with very high probability. Need mates thoughts.**
+
+_Q: Time bounds should be constant or variable size? Example:_
+
+```sql
+SELECT * FROM orders o
+JOIN deliveries d ON d.time BETWEEN o.time 
+                  AND o.time + o.delivery_deadline + interval '1' day 
 ```
 
 #### Processor API change to to handle multiple watermarks
@@ -223,7 +220,8 @@ In case of OUTER JOIN, we should fill empty side with NULLs if no input events h
 
 #### Memory management
 
-Fixed number of stored keys.
+Platform would manage fixed number of stored events in buffer.
+__TODO: define limit amount of events__
 
 ### Testing Criteria
 
