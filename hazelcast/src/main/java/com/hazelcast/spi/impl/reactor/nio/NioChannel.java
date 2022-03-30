@@ -35,6 +35,7 @@ public class NioChannel extends Channel {
         }
     }
 
+    // called by the Reactor.
     public void unschedule() {
         if (!pending.isEmpty()) {
             reactor.taskQueue.add(this);
