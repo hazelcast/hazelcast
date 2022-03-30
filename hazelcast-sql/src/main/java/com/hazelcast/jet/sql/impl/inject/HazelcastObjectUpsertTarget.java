@@ -41,50 +41,58 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
         final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
-        final String className = type.getJavaClassName();
         return value -> {
-            // TODO pre-compute injectors etc
-            final Class<?> targetClass = ReflectionUtils.loadClass(className);
-            if (value.getClass().isAssignableFrom(targetClass)) {
-                object = value;
-                return;
-            }
-
-            if (!(value instanceof RowValue)) {
-                throw QueryException.error("Can not assign value of class " + value.getClass().getName()
-                        + " to HZ_OBJECT field.");
-            }
-            final RowValue rowValue = (RowValue) value;
-            final Object result = ReflectionUtils.newInstance(Thread.currentThread().getContextClassLoader(), className);
-            for (int i = 0; i < type.getFields().size(); i++) {
-                final Type.TypeField typeField = type.getFields().get(i);
-                final Class<?> typeFieldClass = getTypeFieldClass(typeField);
-
-                final Method setter = ReflectionUtils
-                        .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
-                if (setter != null) {
-                    try {
-                        setter.invoke(result, rowValue.getValues().get(i));
-                        continue;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw QueryException.error("Can not use setter for field " + typeField.getName(), e);
-                    }
-                }
-
-                final Field field = ReflectionUtils.findPropertyField(targetClass, typeField.getName());
-                if (field == null) {
-                    throw QueryException.error("Can not find field: " + typeField.getName());
-                }
-
-                try {
-                    field.set(result, rowValue.getValues().get(i));
-                } catch (IllegalAccessException e) {
-                    throw QueryException.error("Can not set value for field " + typeField.getName(), e);
-                }
-            }
-            // TODO: FIX CIRCULAR REFERENCES!
-            this.object = result;
+            this.object = convertRowToTargetType(value, type);
         };
+    }
+
+    private Object convertRowToTargetType(final Object value, final Type type) {
+        final Class<?> targetClass = ReflectionUtils.loadClass(type.getJavaClassName());
+        if (value.getClass().isAssignableFrom(targetClass)) {
+            object = value;
+            return value;
+        }
+
+        if (!(value instanceof RowValue)) {
+            throw QueryException.error("Can not assign value of class " + value.getClass().getName()
+                    + " to HZ_OBJECT field.");
+        }
+
+        final RowValue rowValue = (RowValue) value;
+        final Object result = ReflectionUtils.newInstance(Thread.currentThread().getContextClassLoader(), targetClass.getName());
+
+        for (int i = 0; i < type.getFields().size(); i++) {
+            final Type.TypeField typeField = type.getFields().get(i);
+            final Class<?> typeFieldClass = getTypeFieldClass(typeField);
+
+            final Method setter = ReflectionUtils
+                    .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
+            final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
+                    ? convertRowToTargetType(rowValue.getValues().get(i), TypeRegistry.INSTANCE.getTypeByName(typeField.getQueryDataType().getTypeName()))
+                    : rowValue.getValues().get(i);
+
+            if (setter != null) {
+                try {
+                    setter.invoke(result, fieldValue);
+                    continue;
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw QueryException.error("Can not use setter for field " + typeField.getName(), e);
+                }
+            }
+
+            final Field field = ReflectionUtils.findPropertyField(targetClass, typeField.getName());
+            if (field == null) {
+                throw QueryException.error("Can not find field: " + typeField.getName());
+            }
+
+            try {
+                field.set(result, fieldValue);
+            } catch (IllegalAccessException e) {
+                throw QueryException.error("Can not set value for field " + typeField.getName(), e);
+            }
+        }
+
+        return result;
     }
 
     private Class<?> getTypeFieldClass(final Type.TypeField typeField) {

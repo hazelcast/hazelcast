@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -177,7 +176,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         // TODO: ROW-literal?
     }
 
-    // TODO: fix
     @Test
     public void test_deepUpdate() {
         TypeRegistry.INSTANCE.registerType("AType", A.class);
@@ -201,8 +199,8 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         IMap<Long, A> map = instance().getMap("public");
         map.put(1L, a);
 
-        instance().getSql().execute("UPDATE public SET this = (public.this.b, 'a_2')");
-        assertRowsAnyOrder("SELECT public.public.this.name, public.public.this.b.c.a.b.c.a.b.name FROM public", rows(2, "a_2", "b"));
+        instance().getSql().execute("UPDATE public SET this = (((public.this, 'c_2'), 'b_2'), 'a_2')");
+        assertRowsAnyOrder("SELECT public.public.this.name, public.public.this.b.name, public.public.this.b.c.name FROM public", rows(3, "a_2", "b_2", "c_2"));
     }
 
     private User initDefault() {
