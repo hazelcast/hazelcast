@@ -118,6 +118,7 @@ public abstract class HazelcastTestSupport {
 
     public static final String JAVA_VERSION = System.getProperty("java.version");
     public static final String JVM_NAME = System.getProperty("java.vm.name");
+    public static final String JAVA_VENDOR = System.getProperty("java.vendor");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
@@ -720,13 +721,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitInstanceForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually(() -> {
-            isInstanceInSafeState(instance);
-        });
+        assertTrueEventually(() -> assertTrue(isInstanceInSafeState(instance)));
     }
 
     public static void waitClusterForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually((() -> assertTrue(isClusterInSafeState(instance))));
+        assertTrueEventually(() -> assertTrue(isClusterInSafeState(instance)));
     }
 
     public static void waitUntilClusterState(HazelcastInstance hz, ClusterState state, int timeoutSeconds) {
@@ -1608,6 +1607,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatNotZingJDK6() {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
+    }
+
+    public static void assumeThatNotIBMJDK17() {
+        assumeFalse("Skipping on IBM JDK 17", JAVA_VERSION.startsWith("17.") && JAVA_VENDOR.contains("IBM"));
     }
 
     public static void assumeThatNoWindowsOS() {

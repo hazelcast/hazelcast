@@ -14,38 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.jet.sql.impl.opt.logical.MustNotExecuteLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rel.logical.LogicalFilter;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.toPhysicalConvention;
 
-final class FilterLogicalRule extends ConverterRule {
+public final class MustNotExecuteRule extends ConverterRule {
+    static final RelOptRule INSTANCE = new MustNotExecuteRule();
 
-    static final RelOptRule INSTANCE = new FilterLogicalRule();
-
-    private FilterLogicalRule() {
+    private MustNotExecuteRule() {
         super(
-                LogicalFilter.class, Convention.NONE, LOGICAL,
-                FilterLogicalRule.class.getSimpleName()
+                MustNotExecuteLogicalRel.class, LOGICAL, PHYSICAL,
+                MustNotExecuteRule.class.getSimpleName()
         );
     }
 
+
     @Override
     public RelNode convert(RelNode rel) {
-        Filter filter = (LogicalFilter) rel;
-
-        return new FilterLogicalRel(
-                filter.getCluster(),
-                OptUtils.toLogicalConvention(filter.getTraitSet()),
-                OptUtils.toLogicalInput(filter.getInput()),
-                filter.getCondition()
+        MustNotExecuteLogicalRel logicalRel = (MustNotExecuteLogicalRel) rel;
+        return new MustNotExecutePhysicalRel(
+                logicalRel.getCluster(),
+                toPhysicalConvention(logicalRel.getTraitSet()),
+                logicalRel.getRowType(),
+                logicalRel.getExceptionMessage()
         );
     }
 }

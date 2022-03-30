@@ -16,37 +16,38 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Project;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class ProjectPhysicalRule extends ConverterRule {
+public final class DropLateItemsPhysicalRule extends ConverterRule {
 
-    /** Default configuration. */
-    private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
+    static final RelOptRule INSTANCE = new DropLateItemsPhysicalRule();
 
-    @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new ProjectPhysicalRule();
-
-    private ProjectPhysicalRule() {
-        super(DEFAULT_CONFIG);
+    private DropLateItemsPhysicalRule() {
+        super(
+                DropLateItemsLogicalRel.class, LOGICAL, PHYSICAL,
+                DropLateItemsPhysicalRule.class.getSimpleName()
+        );
     }
 
+    @Nonnull
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
-
-        RelNode transformedInput = RelOptRule.convert(project.getInput(), project.getInput().getTraitSet().replace(PHYSICAL));
-        return new ProjectPhysicalRel(
-                project.getCluster(),
-                transformedInput.getTraitSet(),
-                transformedInput,
-                project.getProjects(),
-                project.getRowType());
+        DropLateItemsLogicalRel logicalRel = (DropLateItemsLogicalRel) rel;
+        return new DropLateItemsPhysicalRel(
+                rel.getCluster(),
+                OptUtils.toPhysicalConvention(logicalRel.getTraitSet()),
+                OptUtils.toPhysicalInput(logicalRel.getInput()),
+                logicalRel.wmField(),
+                logicalRel.allowedLagProvider()
+        );
     }
 }

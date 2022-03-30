@@ -21,32 +21,32 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.logical.LogicalCalc;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-final class ProjectLogicalRule extends ConverterRule {
+public final class CalcLogicalRule extends ConverterRule {
+    static final RelOptRule INSTANCE = new CalcLogicalRule();
 
-    static final RelOptRule INSTANCE = new ProjectLogicalRule();
-
-    private ProjectLogicalRule() {
+    private CalcLogicalRule() {
         super(
-                LogicalProject.class, Convention.NONE, LOGICAL,
-                ProjectLogicalRule.class.getSimpleName()
+                LogicalCalc.class, Convention.NONE, LOGICAL,
+                CalcLogicalRule.class.getSimpleName()
         );
     }
 
+    @Nonnull
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
-
-        return new ProjectLogicalRel(
-                project.getCluster(),
-                OptUtils.toLogicalConvention(project.getTraitSet()),
-                OptUtils.toLogicalInput(project.getInput()),
-                project.getProjects(),
-                project.getRowType()
+        LogicalCalc calc = (LogicalCalc) rel;
+        return new CalcLogicalRel(
+                calc.getCluster(),
+                OptUtils.toLogicalConvention(calc.getTraitSet()),
+                calc.getHints(),
+                OptUtils.toLogicalInput(calc.getInput()),
+                calc.getProgram()
         );
     }
 }

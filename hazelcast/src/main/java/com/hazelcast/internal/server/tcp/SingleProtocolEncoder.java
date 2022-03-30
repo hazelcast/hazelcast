@@ -44,11 +44,11 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
 
-    private boolean isDecoderVerifiedProtocol;
-    private boolean isDecoderReceivedProtocol;
     private boolean clusterProtocolBuffered;
 
-    private String exceptionMessage;
+    private volatile boolean isDecoderVerifiedProtocol;
+    private volatile boolean isDecoderReceivedProtocol;
+    private volatile String exceptionMessage;
 
     public SingleProtocolEncoder(OutboundHandler next) {
         this(new OutboundHandler[]{next});
@@ -117,19 +117,25 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         return dst.position() == 0;
     }
 
+
+    // The signal methods below are called from the protocol decoder
+    // side that is run on IO input threads. We must synchronize the
+    // accesses of the variables which these methods share with
+    // SingleProtocolEncoder#onWrite that is run on IO output threads.
+
     // Used by SingleProtocolDecoder in order to swap
     // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = true;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
     public void signalWrongProtocol(String exceptionMessage) {
         this.exceptionMessage = exceptionMessage;
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 

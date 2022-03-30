@@ -49,6 +49,9 @@ import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFo
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
+/**
+ * The tasklet that sends the data associated with a single edge through network.
+ */
 public class SenderTasklet implements Tasklet {
     private static final int BUFFER_INITIAL_SIZE = 1 << 10;
     private static final int BUFFER_FIRST_GROWTH_SIZE = 1 << 15;

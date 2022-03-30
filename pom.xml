@@ -50,7 +50,7 @@
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
 
-        <maven.compiler.plugin.version>3.9.0</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
@@ -101,10 +101,10 @@
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>0.10</json-surfer.version>
+        <json-surfer.version>0.11-SNAPSHOT</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>2.2.2</kafka.version>
+        <kafka.version>2.8.1</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
@@ -116,7 +116,7 @@
         <picocli.version>4.4.0</picocli.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
-        <scala.version>2.12</scala.version>
+        <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.30</snakeyaml.version>
@@ -141,7 +141,6 @@
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.15.3</testcontainers.version>
-        <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -306,8 +305,13 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
-                    <!-- Exclude package-info.java from compiler's scope to avoid recompiling all classes every time. -->
-                    <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
+                    <!--
+                    Workaround for compilation failure on Windows in hazelcast-sql module:
+                    Compilation failure
+                    org.immutables.value.internal.$processor$.$Processor threw com.sun.tools.javac.jvm.ClassReader$BadClassFile: bad class file: hazelcast\target\hazelcast-5.2-SNAPSHOT.jar(com/hazelcast/jet/package-info.class)
+                    class file contains wrong class: com\hazelcast\jet\package-info
+                    Please remove or make sure it appears in the correct subdirectory of the classpath.
+                    -->
                     <excludes>
                         <exclude>**/package-info.java</exclude>
                     </excludes>
@@ -646,7 +650,7 @@
                 <plugin>
                     <groupId>com.hazelcast.maven</groupId>
                     <artifactId>attribution-maven-plugin</artifactId>
-                    <version>1.0.1</version>
+                    <version>1.0.2</version>
                     <configuration>
                         <exclusionPatterns>
                         <!--
@@ -1424,6 +1428,10 @@
             <id>central</id>
             <name>Central Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -1442,6 +1450,10 @@
         <repository>
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -1452,6 +1464,7 @@
             <url>https://repository.hazelcast.com/security-maven/</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
@@ -1463,6 +1476,7 @@
             <url>https://maven.repository.redhat.com/ga/</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>

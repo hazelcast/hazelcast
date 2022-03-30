@@ -19,22 +19,24 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.hint.RelHint;
+import org.apache.calcite.rex.RexProgram;
 
-public class FilterLogicalRel extends Filter implements LogicalRel {
+import java.util.List;
 
-    FilterLogicalRel(
+public class CalcLogicalRel extends Calc implements LogicalRel {
+    protected CalcLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
-            RelNode input,
-            RexNode condition
-    ) {
-        super(cluster, traits, input, condition);
+            List<RelHint> hints,
+            RelNode child,
+            RexProgram program) {
+        super(cluster, traits, hints, child, program);
     }
 
     @Override
-    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
-        return new FilterLogicalRel(getCluster(), traitSet, input, condition);
+    public Calc copy(RelTraitSet traitSet, RelNode child, RexProgram program) {
+        return new CalcLogicalRel(getCluster(), traitSet, getHints(), child, program);
     }
 }

@@ -159,10 +159,10 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map2", Integer.class, Person.class);
 
         assertRowsOrdered(sql, asList(
-                new Row("ProjectPhysicalRel(__key=[$0], name=[$2])"),
-                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $1)], joinType=[inner])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[$0]]]])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[$1, $2]]]])")
+                new Row("CalcPhysicalRel(expr#0..5=[{inputs}], __key=[$t0], name=[$t4])"),
+                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $3)], joinType=[inner])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[$0, $1]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[$0, $1, $2, $3]]]])")
         ));
     }
 
@@ -271,19 +271,5 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("Incorrect syntax near the keyword 'SHOW'");
-    }
-
-    @Test
-    public void test_explainInvalidOrderingQuery() {
-        createMapping("map", Integer.class, Integer.class);
-
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "EXPLAIN SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(" +
-                        "  (SELECT __key + 1 AS ts FROM map)" +
-                        "  , DESCRIPTOR(ts)" +
-                        "  , 1" +
-                        "))"
-        )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
     }
 }

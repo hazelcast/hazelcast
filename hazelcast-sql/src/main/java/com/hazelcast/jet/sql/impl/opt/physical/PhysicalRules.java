@@ -29,10 +29,7 @@ public final class PhysicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
-                FilterPhysicalRule.INSTANCE,
-
-                // Project rules
-                ProjectPhysicalRule.INSTANCE,
+                CalcPhysicalRule.INSTANCE,
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,
@@ -41,18 +38,21 @@ public final class PhysicalRules {
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
+                DropLateItemsPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
-                AggregateSlidingWindowPhysicalRule.PROJECT_INSTANCE,
-                AggregateSlidingWindowPhysicalRule.NO_PROJECT_INSTANCE,
+                AggregateSlidingWindowPhysicalRule.WITH_CALC_INSTANCE,
+                AggregateSlidingWindowPhysicalRule.NO_CALC_INSTANCE,
                 StreamAggregateCannotExecuteRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
+                StreamingSortMustNotExecuteRule.INSTANCE,
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
+                JoinValidationRule.INSTANCE,
 
                 // Union rules
                 UnionPhysicalRule.INSTANCE,
@@ -71,6 +71,10 @@ public final class PhysicalRules {
                 SinkMapPhysicalRule.INSTANCE,
                 UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
+
+                StreamingInsertMustNotExecuteRule.INSTANCE,
+
+                MustNotExecuteRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

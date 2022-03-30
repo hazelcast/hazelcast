@@ -40,7 +40,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected Operation prepareOperation() {
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig,
+        return new SubmitJobOperation(parameters.jobId, null, null, parameters.dag, parameters.jobConfig,
                 parameters.lightJobCoordinator != null, endpoint.getSubject());
     }
 

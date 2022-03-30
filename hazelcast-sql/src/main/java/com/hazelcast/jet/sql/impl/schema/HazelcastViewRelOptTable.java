@@ -22,21 +22,15 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 
 public class HazelcastViewRelOptTable extends HazelcastRelOptTable {
-    private final String viewQuery;
+    private final RelNode viewRel;
 
-    public HazelcastViewRelOptTable(Prepare.PreparingTable delegate, String viewQuery) {
+    public HazelcastViewRelOptTable(Prepare.PreparingTable delegate, RelNode viewRel) {
         super(delegate);
-        this.viewQuery = viewQuery;
+        this.viewRel = viewRel;
     }
 
     @Override
     public final RelNode toRel(RelOptTable.ToRelContext context) {
-        RelNode original = context.expandView(
-                getRowType(),
-                viewQuery,
-                getQualifiedName().subList(0, 2),
-                getQualifiedName()
-        ).project();
-        return RelOptUtil.createCastRel(original, getRowType(), true);
+        return RelOptUtil.createCastRel(viewRel, getRowType(), true);
     }
 }
