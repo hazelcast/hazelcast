@@ -28,6 +28,7 @@ public class IO_UringChannel extends Channel {
     public InetSocketAddress localAddress;
     public long packetsRead;
     public long bytesRead = 0;
+    public long packetsWritten;
 
     @Override
     public void flush() {
@@ -42,8 +43,7 @@ public class IO_UringChannel extends Channel {
 
     @Override
     public void writeAndFlush(ByteBuffer buffer) {
-        pending.add(buffer);
-        reactor.taskQueue.add(this);
+        write(buffer);
         flush();
     }
 

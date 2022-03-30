@@ -277,22 +277,27 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq.addRead(channel.socket.intValue(), b.memoryAddress(), b.writerIndex(), b.capacity(), (short) 0);
     }
 
+    private void sq_addWrite(IO_UringChannel channel){
+        ByteBuf buf = channel.writeBuff;
+        sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
+    }
+
     @Override
     public void handle(int fd, int res, int flags, byte op, short data) {
         //System.out.println(getName() + " handle called: opcode:" + op);
 
         if (op == IORING_OP_READ) {
-            handle_IORING_OP_READ(fd, res, flags);
+            handle_IORING_OP_READ(fd, res, flags, op, data);
         } else if (op == IORING_OP_WRITE) {
-            handle_IORING_OP_WRITE(op);
+            handle_IORING_OP_WRITE(op, res, flags, op, data);
         } else if (op == IORING_OP_ACCEPT) {
-            handle_IORING_OP_ACCEPT(fd, res);
+            handle_IORING_OP_ACCEPT(op, res, flags, op, data);
         } else {
             System.out.println(this + " handle Unknown opcode:" + op);
         }
     }
 
-    private void handle_IORING_OP_ACCEPT(int fd, int res) {
+    private void handle_IORING_OP_ACCEPT(int fd, int res, int flags, byte op, short data) {
         sq_addAccept();
 
         //System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
@@ -308,11 +313,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
-    private void handle_IORING_OP_WRITE(byte op) {
+    private void handle_IORING_OP_WRITE(int fd, int res, int flags, byte op, short data) {
         System.out.println(getName() + " handle called: opcode:" + op+ " OP_WRITE" );
     }
 
-    private void handle_IORING_OP_READ(int fd, int res, int flags) {
+    private void handle_IORING_OP_READ(int fd, int res, int flags, byte op, short data) {
         // res is the number of bytes read
 
         if (fd == eventfd.intValue()) {
@@ -352,7 +357,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         compactOrClear(channel.readBuffer);
     }
 
-
     private void processTasks() {
         for (; ; ) {
             Object item = taskQueue.poll();
@@ -377,24 +381,24 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private void processChannel(IO_UringChannel channel) {
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
-        //channel.writeBuff.clear();
+        // todo: if 'processChannel' gets called while a write is under way, we would be writing
+        // to the same buffer, the kernel is currently reading from.
+
         ByteBuf buf = channel.writeBuff;
         buf.clear();
-        int written = 0;
-        int packetsWritten = 0;
+        //channel.bytesWritten = 0;
         for (; ; ) {
             ByteBuffer buffer = channel.next();
             if (buffer == null) {
                 break;
             }
-            packetsWritten++;
-            written += buffer.remaining();
+            channel.packetsWritten++;
+            //packetsWritten++;
+            //written += buffer.remaining();
             buf.writeBytes(buffer);
         }
 
-       // System.out.println(this + " ))))))))))))))))))))) writing: " + buf.readableBytes() + " written from buffer:" + written+" packets written:"+packetsWritten);
-        // todo: we only keep adding to the buffer.
-        sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
+        sq_addWrite(channel);
     }
 
     private void processConnectRequest(ConnectRequest request) {
@@ -412,7 +416,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 return;
             }
             logger.info(getName() + "Socket connected to " + address);
-
             IO_UringChannel channel = newChannel(socket, request.connection);
             channel.remoteAddress = request.address;
             channels.put(socket.intValue(), channel);
