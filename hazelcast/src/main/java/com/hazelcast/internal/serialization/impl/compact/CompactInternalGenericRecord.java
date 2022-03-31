@@ -355,19 +355,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                   Reader<T> reader) {
-        int currentPos = in.position();
-        try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
-            if (pos == NULL_OFFSET) {
-                return null;
-            }
-            in.position(pos);
-            return reader.read(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        return getVariableSize(fd, reader);
     }
 
     @Override
@@ -867,17 +856,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return fd;
     }
 
-    private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldKind fieldKind) {
-        try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
-            int index = fd.getIndex();
-            int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
-            return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
     private int readVariableSizeFieldPosition(FieldDescriptor fd) {
         try {
             int index = fd.getIndex();
@@ -908,7 +886,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
-        int position = readVariableSizeFieldPosition(fieldName, ARRAY_OF_BOOLEAN);
+        FieldDescriptor fd = getFieldDefinition(fieldName, ARRAY_OF_BOOLEAN);
+        int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -955,8 +934,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                              Reader<T> reader, int index) {
         checkNotNegative(index, "Array indexes can not be negative");
-
-        int position = readVariableSizeFieldPosition(fieldName, fieldKind);
+        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -1069,7 +1048,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader, int index) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
+            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+            int pos = readVariableSizeFieldPosition(fd);
 
             if (pos == NULL_OFFSET) {
                 return null;
