@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static java.nio.ByteOrder.BIG_ENDIAN;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ReactorFrontEnd {
 
@@ -40,6 +39,7 @@ public class ReactorFrontEnd {
     private final int reactorCount;
     private final int channelCount;
     private final boolean reactorSpin;
+    private final ChannelConfig channelConfig;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -60,12 +60,14 @@ public class ReactorFrontEnd {
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
 
+        this.channelConfig = new ChannelConfig();
+
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                reactors[reactor] = new IO_UringReactor(this, thisAddress, port, reactorSpin);
+                reactors[reactor] = new IO_UringReactor(this, channelConfig, thisAddress, port, reactorSpin);
             } else if (reactorType.equals("nio")) {
-                reactors[reactor] = new NioReactor(this, thisAddress, port, reactorSpin);
+                reactors[reactor] = new NioReactor(this, channelConfig, thisAddress, port, reactorSpin);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -78,7 +80,7 @@ public class ReactorFrontEnd {
         System.out.println("reactor.spin:" + reactorSpin);
         System.out.println("reactor.channels:" + channelCount);
         System.out.println("reactor.type:" + reactorType);
-        System.out.println("reactor.cpu-affinity:"+System.getProperty("reactor.cpu-affinity"));
+        System.out.println("reactor.cpu-affinity:" + System.getProperty("reactor.cpu-affinity"));
     }
 
     public int toPort(Address address, int cpu) {
@@ -163,12 +165,20 @@ public class ReactorFrontEnd {
         TcpServerConnection connection = (TcpServerConnection) connectionManager.get(address);
         if (connection == null) {
             connectionManager.getOrConnect(address);
-            try {
-                if (!connectionManager.blockOnConnect(thisAddress, SECONDS.toMillis(10), 0)) {
-                    throw new RuntimeException("Failed to connect to:" + address);
+            for (int k = 0; k < 60; k++) {
+                try {
+                    System.out.println("Waiting for connection: " + address);
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                connection = (TcpServerConnection) connectionManager.get(address);
+                if (connection != null) {
+                    break;
+                }
+            }
+
+            if (connection == null) {
+                throw new RuntimeException("Could not connect to : " + address);
             }
         }
 
@@ -197,7 +207,7 @@ public class ReactorFrontEnd {
                     connection.channels = channels;
                 }
 
-                System.out.println("channels to "+address+" established");
+                System.out.println("channels to " + address + " established");
             }
         }
 
@@ -234,7 +244,7 @@ public class ReactorFrontEnd {
             long callId = in.readLong();
             Invocation invocation = invocations.map.remove(callId);
             if (invocation == null) {
-                System.out.println("Dropping response " + packet + ", invocation with id "+callId+" not found");
+                System.out.println("Dropping response " + packet + ", invocation with id " + callId + " not found");
             } else {
                 invocation.completableFuture.complete(null);
             }

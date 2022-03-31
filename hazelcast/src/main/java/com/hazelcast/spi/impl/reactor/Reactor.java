@@ -8,7 +8,6 @@ import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOperation;
 
@@ -16,7 +15,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
@@ -29,10 +27,12 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final ILogger logger;
     protected final Address thisAddress;
     protected final int port;
+    protected final ChannelConfig channelConfig;
 
-    public Reactor(ReactorFrontEnd frontend, Address thisAddress, int port, String name) {
+    public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
         this.frontend = frontend;
+        this.channelConfig = channelConfig;
         this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
@@ -99,7 +99,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     }
 
     // local call
-    protected void handleRequest(Request request) {
+    protected void handleLocalRequest(Request request) {
 
         //System.out.println("request: " + request);
         try {

@@ -73,6 +73,8 @@ public class NioChannel extends Channel {
     public void unschedule() {
         scheduled.set(false);
 
+        // todo: it could be that there are byte buffers we didn't manage to write
+        // so we would end up with dirty work being undetected
         if (pending.isEmpty()) {
             return;
         }

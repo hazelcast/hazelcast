@@ -5,7 +5,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
@@ -121,7 +121,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private LinuxSocket serverSocket;
     private final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
-    private final AtomicBoolean blocked = new AtomicBoolean();
+    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private ByteBuffer acceptedAddressMemory;
     private long acceptedAddressMemoryAddress;
     private ByteBuffer acceptedAddressLengthMemory;
@@ -130,8 +130,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final IntObjectMap<IO_UringChannel> channels = new IntObjectHashMap<>(4096);
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
 
-    public IO_UringReactor(ReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
-        super(frontend, thisAddress, port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
+    public IO_UringReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
+        super(frontend, channelConfig, thisAddress, port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.spin = spin;
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
@@ -153,7 +153,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-        if (blocked.get() && blocked.compareAndSet(true, false)) {
+        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
             // write to the evfd which will then wake-up epoll_wait(...)
             Native.eventFdWrite(eventfd.intValue(), 1L);
         }
@@ -194,6 +194,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
         serverSocket.setTcpQuickAck(false);
+        System.out.println(getName()+" serverSocket.rcv buffer size:"+serverSocket.getReceiveBufferSize());
+        System.out.println(getName()+" serverSocket.snd buffer size:"+serverSocket.getSendBufferSize());
         serverSocket.setTcpNoDelay(true);
         serverSocket.bind(serverAddress);
         System.out.println(getName() + " Bind success " + serverAddress);
@@ -224,19 +226,21 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq.submit();
 
         while (!frontend.shuttingdown) {
+            runTasks();
+
             // Check there were any completion events to process
             if (!cq.hasCompletions()) {
                 if (spin) {
                     sq.submit();
                 } else {
                     //System.out.println(getName() + " submitAndWait:started");
-                    blocked.set(true);
+                    wakeupNeeded.set(true);
                     if (runQueue.isEmpty()) {
                         sq.submitAndWait();
                     } else {
                         sq.submit();
                     }
-                    blocked.set(false);
+                    wakeupNeeded.set(false);
                 }
                 //System.out.println(getName() + " submitAndWait:completed");
             } else {
@@ -247,8 +251,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             }
 
             //sleep(500);
-
-            runTasks();
         }
     }
 
@@ -293,9 +295,20 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         if (res >= 0) {
             SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
+
+
             System.out.println(this + " new connected accepted: " + address);
 
-            IO_UringChannel channel = newChannel(new LinuxSocket(res), null);
+            LinuxSocket socket = new LinuxSocket(res);
+            try {
+                socket.setTcpNoDelay(channelConfig.tcpNoDelay);
+                socket.setTcpQuickAck(channelConfig.tcpQuickAck);
+                socket.setSendBufferSize(channelConfig.sendBufferSize);
+                socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+            }catch (IOException e){
+                throw new RuntimeException(e);
+            }
+            IO_UringChannel channel = newChannel(socket, null);
             channel.remoteAddress = address;
             channels.put(res, channel);
             sq_addRead(channel);
@@ -357,10 +370,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 handleChannel((IO_UringChannel) item);
             } else if (item instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) item);
-            } else if (item instanceof Op) {
-                handleOp((Op) item);
+//            } else if (item instanceof Op) {
+//                handleOp((Op) item);
             } else if (item instanceof Request) {
-                handleRequest((Request) item);
+                handleLocalRequest((Request) item);
             } else {
                 throw new RuntimeException("Unrecognized type:" + item.getClass());
             }
@@ -399,8 +412,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
-            socket.setTcpNoDelay(true);
-            socket.setTcpQuickAck(false);
+            socket.setTcpNoDelay(channelConfig.tcpNoDelay);
+            socket.setTcpQuickAck(channelConfig.tcpQuickAck);
+            socket.setSendBufferSize(channelConfig.sendBufferSize);
+            socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
 
             if (!socket.connect(request.address)) {
                 request.future.completeExceptionally(new IOException("Could not connect to " + request.address));

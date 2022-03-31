@@ -33,22 +33,22 @@ public class IO_UringChannel extends Channel {
 
     @Override
     public void flush() {
-        //if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
+        if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
             reactor.schedule(this);
-        //}
+        }
     }
 
     // called by the Reactor.
     public void unschedule() {
-//        scheduled.set(false);
-//
-//        if (pending.isEmpty()) {
-//            return;
-//        }
-//
-//        if (scheduled.compareAndSet(false, true)) {
-//            reactor.schedule(this);
-//        }
+        scheduled.set(false);
+
+        if (current == null && pending.isEmpty()) {
+            return;
+        }
+
+        if (scheduled.compareAndSet(false, true)) {
+            reactor.schedule(this);
+        }
     }
 
     @Override
