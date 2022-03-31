@@ -16,7 +16,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class IO_UringChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
-
     public Connection connection;
     public LinuxSocket socket;
     public IO_UringReactor reactor;
@@ -30,28 +29,26 @@ public class IO_UringChannel extends Channel {
     public long packetsRead;
     public long bytesRead = 0;
     public long packetsWritten;
-    public AtomicBoolean scheduled = new AtomicBoolean();
+    public AtomicBoolean scheduled = new AtomicBoolean(false);
 
     @Override
     public void flush() {
-        if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
+        //if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
             reactor.schedule(this);
-        }
+        //}
     }
 
     // called by the Reactor.
     public void unschedule() {
-        if (!pending.isEmpty()) {
-            reactor.taskQueue.add(this);
-            return;
-        }
-
-        scheduled.set(false);
-        if (!pending.isEmpty()) {
-            if (scheduled.compareAndSet(false, true)) {
-                reactor.taskQueue.add(this);
-            }
-        }
+//        scheduled.set(false);
+//
+//        if (pending.isEmpty()) {
+//            return;
+//        }
+//
+//        if (scheduled.compareAndSet(false, true)) {
+//            reactor.schedule(this);
+//        }
     }
 
     @Override

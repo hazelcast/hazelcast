@@ -9,10 +9,40 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioChannel extends Channel {
+
+    public final static List<NioChannel> channels = new CopyOnWriteArrayList<>();
+    public final static MonitorThread thread = new MonitorThread();
+
+    static {
+        thread.start();
+    }
+
+    public final static class MonitorThread extends Thread {
+        public void run() {
+            for (; ; ) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                for (NioChannel channel : channels) {
+                    System.out.println("channel.scheduled:" + channel.scheduled
+                            + " channel.pending:" + channel.pending.size()
+                            + " channel.bytesWritten:" + channel.bytesWritten
+                            + " channel.bytesRead:" + channel.bytesRead
+                            + " reactor.wakeup-needed:" + channel.reactor.wakeupNeeded
+                            + " reactor.task-queue:" + channel.reactor.runQueue.size());
+                }
+            }
+        }
+    }
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
     public Connection connection;
@@ -28,6 +58,10 @@ public class NioChannel extends Channel {
     public int writeBuffLen = 0;
     public AtomicBoolean scheduled = new AtomicBoolean();
 
+    public NioChannel() {
+        channels.add(this);
+    }
+
     @Override
     public void flush() {
         if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
@@ -37,16 +71,14 @@ public class NioChannel extends Channel {
 
     // called by the Reactor.
     public void unschedule() {
-        if (!pending.isEmpty()) {
-            reactor.taskQueue.add(this);
+        scheduled.set(false);
+
+        if (pending.isEmpty()) {
             return;
         }
 
-        scheduled.set(false);
-        if (!pending.isEmpty()) {
-            if (scheduled.compareAndSet(false, true)) {
-                reactor.taskQueue.add(this);
-            }
+        if (scheduled.compareAndSet(false, true)) {
+            reactor.schedule(this);
         }
     }
 

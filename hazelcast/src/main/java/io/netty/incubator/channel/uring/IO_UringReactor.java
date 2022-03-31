@@ -3,16 +3,12 @@ package io.netty.incubator.channel.uring;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
-import com.hazelcast.table.impl.SelectByKeyOperation;
-import com.hazelcast.table.impl.UpsertOperation;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.Buffer;
@@ -32,16 +28,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_FOO;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
-import static java.nio.ByteOrder.BIG_ENDIAN;
 
 
 /**
@@ -124,13 +115,13 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 //    }
 
     private final boolean spin;
-    public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
+    public final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
     private LinuxSocket serverSocket;
     private final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
-    private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
+    private final AtomicBoolean blocked = new AtomicBoolean();
     private ByteBuffer acceptedAddressMemory;
     private long acceptedAddressMemoryAddress;
     private ByteBuffer acceptedAddressLengthMemory;
@@ -157,64 +148,57 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 
-    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
         }
 
-        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
+        if (blocked.get() && blocked.compareAndSet(true, false)) {
             // write to the evfd which will then wake-up epoll_wait(...)
             Native.eventFdWrite(eventfd.intValue(), 1L);
         }
     }
 
     @Override
-    public void enqueue(Request request) {
-        taskQueue.add(request);
+    public void schedule(Request request) {
+        runQueue.add(request);
         wakeup();
     }
 
     public void schedule(IO_UringChannel channel) {
-        taskQueue.add(channel);
+        runQueue.add(channel);
         wakeup();
     }
 
     @Override
-    public Future<Channel> enqueue(SocketAddress address, Connection connection) {
-        logger.info("Connect to " + address);
+    public Future<Channel> asyncConnect(SocketAddress address, Connection connection) {
+        System.out.println("asyncConnect connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
         connectRequest.address = address;
         connectRequest.connection = connection;
         connectRequest.future = new CompletableFuture<>();
-        taskQueue.add(connectRequest);
+        runQueue.add(connectRequest);
 
         wakeup();
 
         return connectRequest.future;
     }
 
-    private boolean setupServerSocket() {
-        InetSocketAddress serverAddress = null;
-        try {
-            this.serverSocket = LinuxSocket.newSocketStream(false);
-            this.serverSocket.setBlocking();
-            this.serverSocket.setReuseAddress(true);
-            System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
+    @Override
+    public void setupServerSocket() throws Exception {
+        this.serverSocket = LinuxSocket.newSocketStream(false);
+        this.serverSocket.setBlocking();
+        this.serverSocket.setReuseAddress(true);
+        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
 
-            serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            serverSocket.setTcpQuickAck(false);
-            serverSocket.setTcpNoDelay(true);
-            serverSocket.bind(serverAddress);
-            System.out.println(getName() + " Bind success " + serverAddress);
-            serverSocket.listen(10);
-            System.out.println(getName() + " Listening on " + serverAddress);
-            return true;
-        } catch (IOException e) {
-            logger.severe(getName() + " Could not bind to " + serverAddress);
-        }
-        return false;
+        InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
+        serverSocket.setTcpQuickAck(false);
+        serverSocket.setTcpNoDelay(true);
+        serverSocket.bind(serverAddress);
+        System.out.println(getName() + " Bind success " + serverAddress);
+        serverSocket.listen(10);
+        System.out.println(getName() + " Listening on " + serverAddress);
     }
 
     @NotNull
@@ -232,17 +216,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public void executeRun() {
-        try {
-            if (setupServerSocket()) {
-                eventLoop();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void eventLoop() throws Exception {
+    protected void eventLoop() {
         sq_addEventRead();
         sq_addAccept();
 
@@ -252,10 +226,18 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         while (!frontend.shuttingdown) {
             // Check there were any completion events to process
             if (!cq.hasCompletions()) {
-                //System.out.println(getName() + " submitAndWait:started");
-                wakeupNeeded.set(true);
-                sq.submitAndWait();
-                wakeupNeeded.set(false);
+                if (spin) {
+                    sq.submit();
+                } else {
+                    //System.out.println(getName() + " submitAndWait:started");
+                    blocked.set(true);
+                    if (runQueue.isEmpty()) {
+                        sq.submitAndWait();
+                    } else {
+                        sq.submit();
+                    }
+                    blocked.set(false);
+                }
                 //System.out.println(getName() + " submitAndWait:completed");
             } else {
                 int processed = cq.process(this);
@@ -266,7 +248,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             //sleep(500);
 
-            processTasks();
+            runTasks();
         }
     }
 
@@ -321,7 +303,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handle_IORING_OP_WRITE(int fd, int res, int flags, byte op, short data) {
-        System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
+        //System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
     }
 
     private void handle_IORING_OP_READ(int fd, int res, int flags, byte op, short data) {
@@ -359,33 +341,33 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
-            processPacket(packet);
+            handlePacket(packet);
         }
         compactOrClear(channel.readBuffer);
     }
 
-    private void processTasks() {
+    private void runTasks() {
         for (; ; ) {
-            Object item = taskQueue.poll();
+            Object item = runQueue.poll();
             if (item == null) {
                 return;
             }
 
             if (item instanceof IO_UringChannel) {
-                processChannel((IO_UringChannel) item);
+                handleChannel((IO_UringChannel) item);
             } else if (item instanceof ConnectRequest) {
-                processConnectRequest((ConnectRequest) item);
+                handleConnectRequest((ConnectRequest) item);
             } else if (item instanceof Op) {
-                processOp((Op) item);
+                handleOp((Op) item);
             } else if (item instanceof Request) {
-                processRequest((Request) item);
+                handleRequest((Request) item);
             } else {
                 throw new RuntimeException("Unrecognized type:" + item.getClass());
             }
         }
     }
 
-    private void processChannel(IO_UringChannel channel) {
+    private void handleChannel(IO_UringChannel channel) {
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
         // todo: if 'processChannel' gets called while a write is under way, we would be writing
@@ -410,7 +392,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.unschedule();
     }
 
-    private void processConnectRequest(ConnectRequest request) {
+    private void handleConnectRequest(ConnectRequest request) {
         try {
             SocketAddress address = request.address;
             System.out.println(getName() + " connectRequest to address:" + address);
@@ -433,93 +415,5 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void processPacket(Packet packet) {
-        // System.out.println(this + " ----------------- process packet: " + packet);
-        try {
-            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
-                frontend.handleResponse(packet);
-            } else {
-                byte[] bytes = packet.toByteArray();
-                byte opcode = bytes[Packet.DATA_OFFSET];
-                Op op = allocateOp(opcode);
-                op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-                processOp(op);
-
-                //System.out.println("We need to send response to "+op.callId);
-                ByteArrayObjectDataOutput out = op.out;
-                ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                //System.out.println("================== writing " + out.position());
-
-                // individual flush might not be smart
-
-                packet.channel.writeAndFlush(byteBuffer);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // local call
-    private void processRequest(Request request) {
-        //System.out.println("request: " + request);
-        try {
-            byte[] data = request.out.toByteArray();
-            byte opcode = data[0];
-            Op op = allocateOp(opcode);
-            op.in.init(data, 1);
-            processOp(op);
-            request.invocation.completableFuture.complete(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void processOp(Op op) {
-        try {
-            long callId = op.in.readLong();
-            // System.out.println("processing callId:"+callId);
-            op.callId = callId;
-            //System.out.println("callId: "+callId);
-            int runCode = op.run();
-            switch (runCode) {
-                case RUN_CODE_DONE:
-                    free(op);
-                    return;
-                case RUN_CODE_FOO:
-                    throw new RuntimeException();
-                default:
-                    throw new RuntimeException();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // use pool
-    private Op allocateOp(int opcode) {
-        Op op;
-        switch (opcode) {
-            case TABLE_UPSERT:
-                op = new UpsertOperation();
-                break;
-            case TABLE_SELECT_BY_KEY:
-                op = new SelectByKeyOperation();
-                break;
-            default://hack
-                op = new UpsertOperation();
-                //throw new RuntimeException("Unrecognized opcode:" + opcode);
-        }
-        op.in = new ByteArrayObjectDataInput(null, frontend.ss, BIG_ENDIAN);
-        op.out = new ByteArrayObjectDataOutput(64, frontend.ss, BIG_ENDIAN);
-        op.managers = frontend.managers;
-        return op;
-    }
-
-    private void free(Op op) {
-        op.cleanup();
-
-        //we should return it to the pool.
     }
 }

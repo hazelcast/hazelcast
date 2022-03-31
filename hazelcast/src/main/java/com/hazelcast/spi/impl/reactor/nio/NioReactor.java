@@ -4,22 +4,17 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Request;
-import com.hazelcast.table.impl.SelectByKeyOperation;
-import com.hazelcast.table.impl.UpsertOperation;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -31,18 +26,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_FOO;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 public class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
-    public final ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
-    private final AtomicBoolean wakeupNeeded = new AtomicBoolean();
+    public final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
+    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private long nextPrint = System.currentTimeMillis() + 1000;
 
     public NioReactor(ReactorFrontEnd frontend, Address thisAddress, int port, boolean spin) {
@@ -53,7 +44,6 @@ public class NioReactor extends Reactor {
         this.selector = SelectorOptimizer.newSelector(frontend.logger);
     }
 
-    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -65,65 +55,40 @@ public class NioReactor extends Reactor {
     }
 
     @Override
-    public void enqueue(Request request) {
-        taskQueue.add(request);
+    public void schedule(Request request) {
+        runQueue.add(request);
         wakeup();
     }
 
     public void schedule(Channel channel) {
-        taskQueue.add(channel);
+        runQueue.add(channel);
         wakeup();
     }
 
     @Override
-    public Future<Channel> enqueue(SocketAddress address, Connection connection) {
+    public Future<Channel> asyncConnect(SocketAddress address, Connection connection) {
         logger.info("Connect to " + address);
 
         ConnectRequest connectRequest = new ConnectRequest();
         connectRequest.address = address;
         connectRequest.connection = connection;
         connectRequest.future = new CompletableFuture<>();
-        taskQueue.add(connectRequest);
 
+        runQueue.add(connectRequest);
         wakeup();
 
         return connectRequest.future;
     }
 
-    static class ConnectRequest {
-        Connection connection;
-        SocketAddress address;
-        CompletableFuture<Channel> future;
-    }
-
     @Override
-    public void executeRun() {
-        try {
-            if (setupServerSocket()) {
-                eventLoop();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(getName() + " Died: frontend shutting down:" + frontend.shuttingdown);
-    }
-
-    private boolean setupServerSocket() {
-        InetSocketAddress serverAddress = null;
-        try {
-            serverSocketChannel = ServerSocketChannel.open();
-            serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            System.out.println(getName() + " Binding to " + serverAddress);
-            serverSocketChannel.bind(serverAddress);
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            logger.info(getName() + " ServerSocket listening at " + serverAddress);
-            return true;
-        } catch (IOException e) {
-            logger.severe(getName() + " Could not bind to " + serverAddress);
-        }
-        return false;
+    public void setupServerSocket() throws Exception {
+        serverSocketChannel = ServerSocketChannel.open();
+        InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
+        System.out.println(getName() + " Binding to " + serverAddress);
+        serverSocketChannel.bind(serverAddress);
+        serverSocketChannel.configureBlocking(false);
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+        System.out.println(getName() + " ServerSocket listening at " + serverAddress);
     }
 
     private NioChannel newChannel(SocketChannel socketChannel, Connection connection) {
@@ -137,57 +102,63 @@ public class NioReactor extends Reactor {
         return channel;
     }
 
-    private void eventLoop() throws Exception {
+    @Override
+    public void eventLoop() throws Exception {
         while (!frontend.shuttingdown) {
+            //Thread.sleep(100);
+            //System.out.println(this+" eventLoop");
+
             int keyCount;
             if (spin) {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                keyCount = selector.select();
+                if (runQueue.isEmpty()) {
+                    keyCount = selector.select();
+                } else {
+                    keyCount = selector.selectNow();
+                }
                 wakeupNeeded.set(false);
             }
 
-
-            //System.out.println(this + " selectionCount:" + keyCount);
-
             if (keyCount > 0) {
-                handleSelectionKeys();
-            }
+                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                while (it.hasNext()) {
+                    SelectionKey key = it.next();
+                    it.remove();
 
-            processTasks();
-        }
-    }
+                    if (key.isValid() && key.isAcceptable()) {
+                        handleAccept();
+                    }
 
-    private void printChannelsDebug() {
-        if (System.currentTimeMillis() > nextPrint) {
-            for (SelectionKey key : selector.keys()) {
-                NioChannel channel = (NioChannel) key.attachment();
-                if (channel != null) {
-                    System.out.println(channel.toDebugString());
+                    if (key.isValid() && key.isReadable()) {
+                        handleRead(key);
+                    }
+
+                    if (!key.isValid()) {
+                        //System.out.println("sk not valid");
+                        key.cancel();
+                    }
                 }
             }
-            nextPrint = System.currentTimeMillis() + 1000;
-        }
-    }
 
-    private void handleSelectionKeys() throws IOException {
-        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-        while (it.hasNext()) {
-            SelectionKey key = it.next();
-            it.remove();
+            for (; ; ) {
+                Object task = runQueue.poll();
+                if (task == null) {
+                    break;
+                }
 
-            if (key.isValid() && key.isAcceptable()) {
-                handleAccept();
-            }
-
-            if (key.isValid() && key.isReadable()) {
-                handleRead(key);
-            }
-
-            if (!key.isValid()) {
-                //System.out.println("sk not valid");
-                key.cancel();
+                if (task instanceof NioChannel) {
+                    handleChannel((NioChannel) task);
+                } else if (task instanceof Op) {
+                    handleOp((Op) task);
+                } else if (task instanceof Request) {
+                    handleRequest((Request) task);
+                } else if (task instanceof ConnectRequest) {
+                    handleConnectRequest((ConnectRequest) task);
+                } else {
+                    throw new RuntimeException("Unrecognized type:" + task.getClass());
+                }
             }
         }
     }
@@ -216,7 +187,7 @@ public class NioReactor extends Reactor {
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
-            processPacket(packet);
+            handlePacket(packet);
         }
         compactOrClear(readBuf);
     }
@@ -231,28 +202,7 @@ public class NioReactor extends Reactor {
         logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
     }
 
-    private void processTasks() {
-        for (; ; ) {
-            Object item = taskQueue.poll();
-            if (item == null) {
-                return;
-            }
-
-            if (item instanceof NioChannel) {
-                processChannel((NioChannel) item);
-            } else if (item instanceof ConnectRequest) {
-                processConnectRequest((ConnectRequest) item);
-            } else if (item instanceof Op) {
-                processOp((Op) item);
-            } else if (item instanceof Request) {
-                processRequest((Request) item);
-            } else {
-                throw new RuntimeException("Unregonized type:" + item.getClass());
-            }
-        }
-    }
-
-    private void processChannel(NioChannel channel) {
+    private void handleChannel(NioChannel channel) {
         //System.out.println("Processing channel");
         try {
             for (; ; ) {
@@ -266,6 +216,7 @@ public class NioReactor extends Reactor {
             }
 
             long written = channel.socketChannel.write(channel.writeBuffs, 0, channel.writeBuffLen);
+            //System.out.println(getName()+" bytes written:"+written);
             channel.bytesWritten += written;
 
             int toIndex = 0;
@@ -286,15 +237,15 @@ public class NioReactor extends Reactor {
                 }
             }
 
-           channel.unschedule();
+            channel.unschedule();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void processConnectRequest(ConnectRequest connectRequest) {
+    public void handleConnectRequest(ConnectRequest request) {
         try {
-            SocketAddress address = connectRequest.address;
+            SocketAddress address = request.address;
             System.out.println("ConnectRequest address:" + address);
 
             SocketChannel socketChannel = SocketChannel.open();
@@ -304,98 +255,13 @@ public class NioReactor extends Reactor {
             socketChannel.configureBlocking(false);
             SelectionKey key = socketChannel.register(selector, OP_READ);
 
-            NioChannel channel = newChannel(socketChannel, connectRequest.connection);
+            NioChannel channel = newChannel(socketChannel, request.connection);
             key.attach(channel);
 
             logger.info("Socket listening at " + address);
-            connectRequest.future.complete(channel);
+            request.future.complete(channel);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void processPacket(Packet packet) {
-        //System.out.println(this + " process packet: " + packet);
-        try {
-            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
-                //System.out.println("Received remote response: "+packet);
-                frontend.handleResponse(packet);
-            } else {
-                byte[] bytes = packet.toByteArray();
-                byte opcode = bytes[Packet.DATA_OFFSET];
-                Op op = allocateOp(opcode);
-                op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-                processOp(op);
-
-                //System.out.println("We need to send response to "+op.callId);
-                ByteArrayObjectDataOutput out = op.out;
-                ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                packet.channel.writeAndFlush(byteBuffer);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // local call
-    private void processRequest(Request request) {
-
-        //System.out.println("request: " + request);
-        try {
-            byte[] data = request.out.toByteArray();
-            byte opcode = data[0];
-            Op op = allocateOp(opcode);
-            op.in.init(data, 1);
-            processOp(op);
-            request.invocation.completableFuture.complete(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void processOp(Op op) {
-        try {
-            long callId = op.in.readLong();
-            op.callId = callId;
-            //System.out.println("callId: "+callId);
-            int runCode = op.run();
-            switch (runCode) {
-                case RUN_CODE_DONE:
-                    free(op);
-                    return;
-                case RUN_CODE_FOO:
-                    throw new RuntimeException();
-                default:
-                    throw new RuntimeException();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // use pool
-    private Op allocateOp(int opcode) {
-        Op op;
-        switch (opcode) {
-            case TABLE_UPSERT:
-                op = new UpsertOperation();
-                break;
-            case TABLE_SELECT_BY_KEY:
-                op = new SelectByKeyOperation();
-                break;
-            default://hack
-                op = new UpsertOperation();
-                //throw new RuntimeException("Unrecognized opcode:" + opcode);
-        }
-        op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.out = new ByteArrayObjectDataOutput(64, frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.managers = frontend.managers;
-        return op;
-    }
-
-    private void free(Op op) {
-        op.cleanup();
-
-        //we should return it to the pool.
     }
 }

@@ -129,7 +129,7 @@ public class ReactorFrontEnd {
 
                 if (address.equals(thisAddress)) {
                     //System.out.println("local invoke");
-                    reactors[partitionIdToCpu(partitionId)].enqueue(request);
+                    reactors[partitionIdToCpu(partitionId)].schedule(request);
                 } else {
                     //System.out.println("remove invoke");
                     TcpServerConnection connection = getConnection(address);
@@ -182,7 +182,7 @@ public class ReactorFrontEnd {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].enqueue(reactorAddress, connection));
+                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].asyncConnect(reactorAddress, connection));
                     }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
