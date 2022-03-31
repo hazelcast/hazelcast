@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.function.BooleanSupplier;
 
 /**
- * Once instance created per map during migration.
+ * Once instance created per record-store during migration.
  */
 class MapChunkSupplier implements ChunkSupplier {
 
