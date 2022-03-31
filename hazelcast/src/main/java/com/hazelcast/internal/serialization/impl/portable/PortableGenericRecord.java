@@ -23,7 +23,10 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class PortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
+public abstract class PortableGenericRecord extends AbstractGenericRecord {
 
     /**
      * Returns the schema associated with this GenericRecord.
