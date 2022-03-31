@@ -18,10 +18,6 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -34,7 +30,6 @@ import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -136,7 +131,7 @@ public final class JsonPathUtil {
      * the purpose of optimizing the read performance. The amount the size can
      * exceed the limit is bounded by the number of concurrent writers.
      */
-    public static class ConcurrentInitialSetCache<K, V> implements IdentifiedDataSerializable, Serializable {
+    public static class ConcurrentInitialSetCache<K, V> {
         Map<K, V> cache;
         private int capacity;
 
@@ -160,28 +155,6 @@ public final class JsonPathUtil {
                 }
             }
             return value;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(capacity);
-            out.writeObject(cache);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            capacity = in.readInt();
-            cache = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetSqlSerializerHook.CONCURRENT_INITIAL_SET_CACHE;
         }
     }
 }

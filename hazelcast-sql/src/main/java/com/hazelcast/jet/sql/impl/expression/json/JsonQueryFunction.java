@@ -49,7 +49,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private final ConcurrentInitialSetCache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -108,6 +108,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
         final JsonPath jsonPath;
         try {
+            prepareCacheIfNeeded();
             jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
             // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
@@ -118,6 +119,13 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         }
 
         return wrap(execute(json, jsonPath));
+    }
+
+    private void prepareCacheIfNeeded() {
+        if (this.pathCache != null) {
+            return;
+        }
+        this.pathCache = JsonPathUtil.makePathCache();
     }
 
     private String onErrorResponse(final Exception exception) {

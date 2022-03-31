@@ -50,8 +50,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private static final int DEFAULT_ON_ERROR_OPERAND_INDEX = 3;
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private ConcurrentInitialSetCache<String, JsonPath> pathCache;
-    private JsonPath constantPathCache;
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
+    private transient JsonPath constantPathCache;
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
@@ -68,7 +68,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super(operands, resultType);
         this.onEmpty = onEmpty;
         this.onError = onError;
-        prepareCache();
     }
 
     public static JsonValueFunction<?> create(
@@ -117,6 +116,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
         final JsonPath jsonPath;
         try {
+            prepareCacheIfNeeded();
             jsonPath = constantPathCache != null ? constantPathCache :
                     pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
@@ -149,6 +149,19 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         @SuppressWarnings("unchecked")
         T result = (T) convertResultType(onlyResult);
         return result;
+    }
+
+    private void prepareCacheIfNeeded() {
+        if (this.constantPathCache != null || this.pathCache != null) {
+            return;
+        }
+
+        if (this.operands[1] instanceof ConstantExpression<?>) {
+            String path = (String) this.operands[1].eval(null, null);
+            this.constantPathCache = JsonPathUtil.compile(path);
+        } else {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -219,15 +232,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
     }
 
-    private void prepareCache() {
-        if (this.operands[1] instanceof ConstantExpression<?>) {
-            String path = (String) this.operands[1].eval(null, null);
-            this.constantPathCache = JsonPathUtil.compile(path);
-        } else {
-            this.pathCache = JsonPathUtil.makePathCache();
-        }
-    }
-
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         super.writeData(out);
@@ -240,7 +244,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.readData(in);
         this.onEmpty = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
         this.onError = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
-        prepareCache();
     }
 
     @Override
