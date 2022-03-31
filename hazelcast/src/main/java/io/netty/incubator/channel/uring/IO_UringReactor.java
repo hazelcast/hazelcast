@@ -4,7 +4,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
@@ -20,13 +19,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -203,9 +198,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.localAddress = socket.localAddress();
         channel.reactor = this;
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
-        channel.readBuff = allocator.directBuffer(1024 * 64);
-        channel.writeBuff = allocator.directBuffer(1024 * 64);
-        channel.readBuffer = ByteBuffer.allocate(1024 * 64);
+        channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
+        channel.sendBufferBuff = allocator.directBuffer(channelConfig.sendBufferSize);
+        channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
         return channel;
     }
@@ -256,13 +251,13 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void sq_addRead(IO_UringChannel channel) {
-        ByteBuf b = channel.readBuff;
+        ByteBuf b = channel.receiveBuff;
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
         sq.addRead(channel.socket.intValue(), b.memoryAddress(), b.writerIndex(), b.capacity(), (short) 0);
     }
 
     private void sq_addWrite(IO_UringChannel channel) {
-        ByteBuf buf = channel.writeBuff;
+        ByteBuf buf = channel.sendBufferBuff;
         sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
     }
 
@@ -327,9 +322,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         //todo: we need to deal with res=0 and res<0
         int oldLimit = channel.readBuffer.limit();
         channel.readBuffer.limit(res);
-        channel.readBuff.writerIndex(channel.readBuff.writerIndex() + res);
-        channel.readBuff.readBytes(channel.readBuffer);
-        channel.readBuff.clear();
+        channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
+        channel.receiveBuff.readBytes(channel.readBuffer);
+        channel.receiveBuff.clear();
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
 
@@ -376,7 +371,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         // todo: if 'processChannel' gets called while a write is under way, we would be writing
         // to the same buffer, the kernel is currently reading from.
 
-        ByteBuf buf = channel.writeBuff;
+        ByteBuf buf = channel.sendBufferBuff;
         buf.clear();
         //channel.bytesWritten = 0;
         for (; ; ) {

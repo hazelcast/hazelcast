@@ -89,7 +89,7 @@ public class NioReactor extends Reactor {
 
         NioChannel channel = new NioChannel();
         channel.reactor = this;
-        channel.readBuffer = ByteBuffer.allocate(256 * 1024);
+        channel.readBuffer = ByteBuffer.allocate(channelConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
         return channel;
@@ -273,7 +273,7 @@ public class NioReactor extends Reactor {
 
         String id = socket.getLocalAddress() + "->" + socket.getRemoteSocketAddress();
         System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getTcpNoDelay());
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getReceiveBufferSize());
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getSendBufferSize());
+        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 }

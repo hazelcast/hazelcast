@@ -20,9 +20,9 @@ public class IO_UringChannel extends Channel {
     public LinuxSocket socket;
     public IO_UringReactor reactor;
     public SocketAddress remoteAddress;
-    public ByteBuf readBuff;
+    public ByteBuf receiveBuff;
     public ByteBuffer current;
-    public ByteBuf writeBuff;
+    public ByteBuf sendBufferBuff;
     public ByteBuffer readBuffer;
     public PacketIOHelper packetReader = new PacketIOHelper();
     public InetSocketAddress localAddress;
