@@ -14,7 +14,11 @@ import com.hazelcast.table.impl.UpsertOperation;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
@@ -28,6 +32,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final Address thisAddress;
     protected final int port;
     protected final ChannelConfig channelConfig;
+    protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
@@ -81,6 +86,10 @@ public abstract class Reactor extends HazelcastManagedThread {
      * @param request
      */
     public abstract void schedule(Request request);
+
+    public Collection<Channel> channels() {
+        return channels;
+    }
 
     public static class ConnectRequest {
         public Connection connection;

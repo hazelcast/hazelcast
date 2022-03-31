@@ -8,13 +8,17 @@ import io.netty.buffer.ByteBuf;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
 public class IO_UringChannel extends Channel {
+    public final static List<IO_UringChannel> channels = new CopyOnWriteArrayList<>();
 
+
+    public long prevPacketsRead = 0;
+    public long prevBytesRead = 0;
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
     public Connection connection;
     public LinuxSocket socket;
@@ -30,6 +34,10 @@ public class IO_UringChannel extends Channel {
     public long bytesRead = 0;
     public long packetsWritten;
     public AtomicBoolean scheduled = new AtomicBoolean(false);
+
+    public IO_UringChannel() {
+        channels.add(this);
+    }
 
     @Override
     public void flush() {

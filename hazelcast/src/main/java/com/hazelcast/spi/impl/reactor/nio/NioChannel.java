@@ -23,6 +23,10 @@ public class NioChannel extends Channel {
         thread.start();
     }
 
+    public long prevPacketsRead;
+    public boolean remoteAddress;
+    public long prevBytesRead;
+
     public final static class MonitorThread extends Thread {
         public void run() {
             for (; ; ) {

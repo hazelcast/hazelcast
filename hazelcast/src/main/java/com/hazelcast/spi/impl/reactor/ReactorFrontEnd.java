@@ -13,6 +13,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import io.netty.incubator.channel.uring.IO_UringReactor;
+import io.netty.incubator.channel.uring.MonitorThread;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -40,6 +41,7 @@ public class ReactorFrontEnd {
     private final int channelCount;
     private final boolean reactorSpin;
     private final ChannelConfig channelConfig;
+    private final MonitorThread monitorThread;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -58,7 +60,6 @@ public class ReactorFrontEnd {
         printReactorInfo(reactorType);
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
-
         this.channelConfig = new ChannelConfig();
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
@@ -72,6 +73,8 @@ public class ReactorFrontEnd {
             }
             reactors[reactor].setThreadAffinity(threadAffinity);
         }
+
+         this.monitorThread = new MonitorThread(reactors);
     }
 
     private void printReactorInfo(String reactorType) {
@@ -96,6 +99,8 @@ public class ReactorFrontEnd {
         for (Reactor r : reactors) {
             r.start();
         }
+
+        monitorThread.start();
     }
 
     public void shutdown() {
@@ -108,6 +113,8 @@ public class ReactorFrontEnd {
                 i.completableFuture.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
+
+        monitorThread.shutdown();
     }
 
     public CompletableFuture invoke(Request request) {

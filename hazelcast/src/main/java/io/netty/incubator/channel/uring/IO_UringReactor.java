@@ -124,8 +124,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private ByteBuffer acceptedAddressLengthMemory;
     private long acceptedAddressLengthMemoryAddress;
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
-    private final IntObjectMap<IO_UringChannel> channels = new IntObjectHashMap<>(4096);
+    private final IntObjectMap<IO_UringChannel> channelMap = new IntObjectHashMap<>(4096);
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
+
 
     public IO_UringReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
         super(frontend, channelConfig, thisAddress, port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
@@ -168,7 +169,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public void schedule(ConnectRequest request){
+    public void schedule(ConnectRequest request) {
         runQueue.add(request);
         wakeup();
     }
@@ -181,14 +182,23 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
 
         InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-        serverSocket.setTcpQuickAck(false);
-        System.out.println(getName()+" serverSocket.rcv buffer size:"+serverSocket.getReceiveBufferSize());
-        System.out.println(getName()+" serverSocket.snd buffer size:"+serverSocket.getSendBufferSize());
-        serverSocket.setTcpNoDelay(true);
         serverSocket.bind(serverAddress);
         System.out.println(getName() + " Bind success " + serverAddress);
         serverSocket.listen(10);
         System.out.println(getName() + " Listening on " + serverAddress);
+    }
+
+    private void configure(LinuxSocket socket) throws IOException {
+        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
+        socket.setSendBufferSize(channelConfig.sendBufferSize);
+        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+        socket.setTcpQuickAck(channelConfig.tcpQuickAck);
+
+        String id = socket.localAddress() + "->" + socket.remoteAddress();
+        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 
     @NotNull
@@ -196,12 +206,14 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         IO_UringChannel channel = new IO_UringChannel();
         channel.socket = socket;
         channel.localAddress = socket.localAddress();
+        channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
         channel.sendBufferBuff = allocator.directBuffer(channelConfig.sendBufferSize);
         channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
+        channels.add(channel);
         return channel;
     }
 
@@ -284,18 +296,17 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         if (res >= 0) {
             SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
 
-
             System.out.println(this + " new connected accepted: " + address);
 
             LinuxSocket socket = new LinuxSocket(res);
             try {
                 configure(socket);
-            }catch (IOException e){
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             IO_UringChannel channel = newChannel(socket, null);
             channel.remoteAddress = address;
-            channels.put(res, channel);
+            channelMap.put(res, channel);
             sq_addRead(channel);
         }
     }
@@ -317,10 +328,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         //System.out.println(getName()+" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> bytes read: "+res);
 
-        IO_UringChannel channel = channels.get(fd);
+        IO_UringChannel channel = channelMap.get(fd);
         // we need to update the writerIndex; not done automatically.
         //todo: we need to deal with res=0 and res<0
         int oldLimit = channel.readBuffer.limit();
+        channel.bytesRead += res;
         channel.readBuffer.limit(res);
         channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
         channel.receiveBuff.readBytes(channel.readBuffer);
@@ -406,24 +418,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             logger.info(getName() + "Socket connected to " + address);
             IO_UringChannel channel = newChannel(socket, request.connection);
             channel.remoteAddress = request.address;
-            channels.put(socket.intValue(), channel);
+            channelMap.put(socket.intValue(), channel);
             request.future.complete(channel);
             sq_addRead(channel);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void configure(LinuxSocket socket) throws IOException {
-        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-        socket.setSendBufferSize(channelConfig.sendBufferSize);
-        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
-        socket.setTcpQuickAck(channelConfig.tcpQuickAck);
-
-        String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 }

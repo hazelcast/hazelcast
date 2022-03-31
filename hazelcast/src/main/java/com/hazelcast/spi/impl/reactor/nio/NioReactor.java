@@ -92,6 +92,7 @@ public class NioReactor extends Reactor {
         channel.readBuffer = ByteBuffer.allocate(channelConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
+        channels.add(channel);
         return channel;
     }
 
