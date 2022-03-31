@@ -6,4 +6,5 @@ public class ChannelConfig {
     public int sendBufferSize = 64 * 1024;
     public boolean tcpNoDelay = true;
     public boolean tcpQuickAck = true;
+
 }

@@ -46,7 +46,6 @@ public class ReactorFrontEnd {
     public final Managers managers = new Managers();
     private final ConcurrentMap<Address, Invocations> invocationsPerMember = new ConcurrentHashMap<>();
 
-
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);

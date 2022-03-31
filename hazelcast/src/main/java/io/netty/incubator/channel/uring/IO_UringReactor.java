@@ -20,7 +20,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -171,18 +173,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public Future<Channel> asyncConnect(SocketAddress address, Connection connection) {
-        System.out.println("asyncConnect connect to " + address);
-
-        ConnectRequest connectRequest = new ConnectRequest();
-        connectRequest.address = address;
-        connectRequest.connection = connection;
-        connectRequest.future = new CompletableFuture<>();
-        runQueue.add(connectRequest);
-
+    public void schedule(ConnectRequest request){
+        runQueue.add(request);
         wakeup();
-
-        return connectRequest.future;
     }
 
     @Override
@@ -301,10 +294,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             LinuxSocket socket = new LinuxSocket(res);
             try {
-                socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-                socket.setTcpQuickAck(channelConfig.tcpQuickAck);
-                socket.setSendBufferSize(channelConfig.sendBufferSize);
-                socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+                configure(socket);
             }catch (IOException e){
                 throw new RuntimeException(e);
             }
@@ -412,10 +402,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
-            socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-            socket.setTcpQuickAck(channelConfig.tcpQuickAck);
-            socket.setSendBufferSize(channelConfig.sendBufferSize);
-            socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+            configure(socket);
 
             if (!socket.connect(request.address)) {
                 request.future.completeExceptionally(new IOException("Could not connect to " + request.address));
@@ -430,5 +417,18 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void configure(LinuxSocket socket) throws IOException {
+        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
+        socket.setSendBufferSize(channelConfig.sendBufferSize);
+        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+        socket.setTcpQuickAck(channelConfig.tcpQuickAck);
+
+        String id = socket.localAddress() + "->" + socket.remoteAddress();
+        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 }

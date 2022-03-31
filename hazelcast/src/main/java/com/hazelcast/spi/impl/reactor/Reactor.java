@@ -38,6 +38,21 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.port = port;
     }
 
+    public Future<Channel> asyncConnect(SocketAddress address, Connection connection) {
+        System.out.println("asyncConnect connect to " + address);
+
+        ConnectRequest request = new ConnectRequest();
+        request.address = address;
+        request.connection = connection;
+        request.future = new CompletableFuture<>();
+
+        schedule(request);
+
+        return request.future;
+    }
+
+    protected abstract void schedule(ConnectRequest request);
+
     @Override
     public final void executeRun() {
         try {
@@ -66,8 +81,6 @@ public abstract class Reactor extends HazelcastManagedThread {
      * @param request
      */
     public abstract void schedule(Request request);
-
-    public abstract Future<Channel> asyncConnect(SocketAddress address, Connection connection);
 
     public static class ConnectRequest {
         public Connection connection;
