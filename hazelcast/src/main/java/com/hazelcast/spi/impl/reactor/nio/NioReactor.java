@@ -84,7 +84,7 @@ public class NioReactor extends Reactor {
         System.out.println(getName() + " ServerSocket listening at " + serverAddress);
     }
 
-    private NioChannel newChannel(SocketChannel socketChannel, Connection connection) {
+    private NioChannel newChannel(SocketChannel socketChannel, Connection connection) throws IOException {
         System.out.println(this + " newChannel: " + socketChannel);
 
         NioChannel channel = new NioChannel();
@@ -92,6 +92,8 @@ public class NioReactor extends Reactor {
         channel.readBuffer = ByteBuffer.allocate(channelConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
+        channel.remoteAddress = socketChannel.getRemoteAddress();
+        channel.localAddress = socketChannel.getLocalAddress();
         channels.add(channel);
         return channel;
     }
@@ -146,8 +148,6 @@ public class NioReactor extends Reactor {
 
             if (task instanceof NioChannel) {
                 handleChannel((NioChannel) task);
-//            } else if (task instanceof Op) {
-//                handleOp((Op) task);
             } else if (task instanceof Request) {
                 handleLocalRequest((Request) task);
             } else if (task instanceof ConnectRequest) {
@@ -161,6 +161,7 @@ public class NioReactor extends Reactor {
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         NioChannel channel = (NioChannel) key.attachment();
+        channel.readEvents++;
         ByteBuffer readBuf = channel.readBuffer;
         int bytesRead = socketChannel.read(readBuf);
         //System.out.println(this + " bytes read: " + bytesRead);
@@ -192,9 +193,6 @@ public class NioReactor extends Reactor {
         socketChannel.configureBlocking(false);
         configure(socketChannel.socket());
 
-//        socketChannel.setOption(SO_SNDBUF, channelConfig.sendBufferSize);
-//        socketChannel.setOption(TCP_NODELAY, channelConfig.tcpNoDelay);
-
         SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
         selectionKey.attach(newChannel(socketChannel, null));
 
@@ -202,6 +200,7 @@ public class NioReactor extends Reactor {
     }
 
     private void handleChannel(NioChannel channel) {
+        channel.handleCalls++;
         //System.out.println("Processing channel");
         try {
             for (; ; ) {

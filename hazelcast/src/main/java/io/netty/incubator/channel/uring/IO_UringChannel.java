@@ -19,6 +19,8 @@ public class IO_UringChannel extends Channel {
 
     public long prevPacketsRead = 0;
     public long prevBytesRead = 0;
+    public long handleCalls = 0;
+    public long prevHandleCalls = 0;
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
     public Connection connection;
     public LinuxSocket socket;
@@ -34,6 +36,8 @@ public class IO_UringChannel extends Channel {
     public long bytesRead = 0;
     public long packetsWritten;
     public AtomicBoolean scheduled = new AtomicBoolean(false);
+    public long readEvents;
+    public long prevReadEvents;
 
     public IO_UringChannel() {
         channels.add(this);

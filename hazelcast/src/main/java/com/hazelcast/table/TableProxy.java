@@ -15,7 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
@@ -51,7 +54,11 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
             throw new RuntimeException(e);
         }
         CompletableFuture f = reactorFrontEnd.invoke(request);
-        f.join();
+        try {
+            f.get(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

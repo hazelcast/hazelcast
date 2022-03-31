@@ -127,7 +127,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final IntObjectMap<IO_UringChannel> channelMap = new IntObjectHashMap<>(4096);
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
 
-
     public IO_UringReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
         super(frontend, channelConfig, thisAddress, port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
         this.spin = spin;
@@ -315,6 +314,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         //System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
     }
 
+    private long nextMeasure = System.currentTimeMillis()+1000;
+
     private void handle_IORING_OP_READ(int fd, int res, int flags, byte op, short data) {
         // res is the number of bytes read
 
@@ -332,7 +333,14 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         // we need to update the writerIndex; not done automatically.
         //todo: we need to deal with res=0 and res<0
         int oldLimit = channel.readBuffer.limit();
+        channel.readEvents +=1;
         channel.bytesRead += res;
+
+        if(System.currentTimeMillis()>nextMeasure){
+            System.out.println("read "+res+" bytes");
+            nextMeasure = System.currentTimeMillis() + 1000;
+        }
+
         channel.readBuffer.limit(res);
         channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
         channel.receiveBuff.readBytes(channel.readBuffer);
@@ -367,8 +375,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 handleChannel((IO_UringChannel) item);
             } else if (item instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) item);
-//            } else if (item instanceof Op) {
-//                handleOp((Op) item);
             } else if (item instanceof Request) {
                 handleLocalRequest((Request) item);
             } else {
@@ -378,6 +384,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handleChannel(IO_UringChannel channel) {
+        channel.handleCalls++;
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
         // todo: if 'processChannel' gets called while a write is under way, we would be writing

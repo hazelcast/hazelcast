@@ -5,49 +5,21 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
 
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioChannel extends Channel {
 
-    public final static List<NioChannel> channels = new CopyOnWriteArrayList<>();
-    public final static MonitorThread thread = new MonitorThread();
-
-    static {
-        thread.start();
-    }
-
     public long prevPacketsRead;
-    public boolean remoteAddress;
+    public SocketAddress remoteAddress;
     public long prevBytesRead;
-
-    public final static class MonitorThread extends Thread {
-        public void run() {
-            for (; ; ) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                for (NioChannel channel : channels) {
-                    System.out.println("channel.scheduled:" + channel.scheduled
-                            + " channel.pending:" + channel.pending.size()
-                            + " channel.bytesWritten:" + channel.bytesWritten
-                            + " channel.bytesRead:" + channel.bytesRead
-                            + " reactor.wakeup-needed:" + channel.reactor.wakeupNeeded
-                            + " reactor.task-queue:" + channel.reactor.runQueue.size());
-                }
-            }
-        }
-    }
-
+    public long handleCalls;
+    public long prevHandleCalls;
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
     public Connection connection;
     public ByteBuffer readBuffer;
@@ -61,10 +33,9 @@ public class NioChannel extends Channel {
     public ByteBuffer[] writeBuffs = new ByteBuffer[128];
     public int writeBuffLen = 0;
     public AtomicBoolean scheduled = new AtomicBoolean();
-
-    public NioChannel() {
-        channels.add(this);
-    }
+    public SocketAddress localAddress;
+    public long readEvents;
+    public long prevReadEvents;
 
     @Override
     public void flush() {
