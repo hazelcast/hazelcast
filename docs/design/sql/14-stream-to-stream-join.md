@@ -83,13 +83,13 @@ of that event.
 
 Let's describe all possible scenarios for joining these two streams:
 
-| Behavior                                                   | Outcome                           |
-|------------------------------------------------------------|-----------------------------------|
-| Both input streams don't have watermarks                   | exception during query processing |
-| At least one input stream doesn't have watermarks          | exception during query processing |
-| At least one input stream has zero lag                     | result set would be empty         |
-| Both __S1__ and __S2__ have watermarks with same lag times | Example in Table 3,4              |
-| ---                                                        | ---                               |
+| Behavior                                                       | Outcome                           |
+|----------------------------------------------------------------|-----------------------------------|
+| Both input streams don't have watermarks                       | exception during query processing |
+| At least one input stream doesn't have watermarks              | exception during query processing |
+| At least one input stream has zero lag                         | result set would be empty         |
+| Both __S1__ and __S2__ have watermarks with non-zero lag times | Example in Table 3, 4             |
+| ---                                                            | ---                               |
 
 __Table 2__
 
@@ -149,7 +149,7 @@ Consider the following query:
 3. Receive event E from the ordinal.
     1. If received event is watermark:
         1. If watermark received from ordinal 0 clean all expired events in B0.
-        2. Else, clean all expired events in B1.
+        2. Else, clean all _expired_ events in B1.
         3. Emit watermark event to the outbox.
     2. Else:
         1. Extract timestamp from event E.
@@ -185,7 +185,8 @@ public final class Watermark implements BroadcastItem {
 `[*]` __Note__: each watermark event should stay as a separate event in joined stream.
 
 _Q: Should we support only timestamps as JOIN condition?_
-**Sasha's proposition: Yes. Non-timestamp JOIN condition is exceptionally non-trivial to support.**
+**Sasha's proposition: JOIN condition must contain a time boundness and it'd be possible to have additional
+non-timestamp condition(s).**
 
 _Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
 **Sasha's proposition: Watch below, my proposition is not to support them.**
@@ -204,12 +205,15 @@ JOIN deliveries d ON d.time BETWEEN o.time
 #### Processor API change to to handle multiple watermarks
 
 We should also change/extend `Processor` API to handle multiple watermarks. Consider having that new method
-within `Processor` class:
+within `Processor` class with default implementation to keep backward compatibility:
 
 ```java
 interface Processor {
     // ...
-    boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark);
+    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        assert (ordinal == 0);
+        return tryProcessWatermark(watermark);
+    }
     // ...
 }
 ```
