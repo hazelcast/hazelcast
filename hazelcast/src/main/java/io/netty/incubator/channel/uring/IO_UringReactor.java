@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
@@ -358,8 +359,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         int oldLimit = channel.readBuffer.limit();
         channel.readEvents += 1;
         channel.bytesRead += res;
-
-
         channel.readBuffer.limit(res);
         channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
         channel.receiveBuff.readBytes(channel.readBuffer);
@@ -367,6 +366,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
 
+        Packet responseChain = null;
         channel.readBuffer.flip();
         for (; ; ) {
             Packet packet = channel.packetReader.readFrom(channel.readBuffer);
@@ -377,15 +377,25 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
-            handlePacket(packet);
+
+            if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
+                packet.next = responseChain;
+                responseChain = packet;
+                //frontend.handleResponse(packet);
+            } else {
+                handleRemoteOp(packet);
+            }
         }
 
+        if (responseChain != null) {
+            frontend.handleResponse(responseChain);
+        }
 
         //channel.flush();not needed
         compactOrClear(channel.readBuffer);
 
         //todo: respnses get unwanted handleChannel
-        if(channel.scheduled.compareAndSet(false, true)) {
+        if (!channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
             // if it is already scheduled, we don't need to process outbound since
             // it is guaranteed to be done at some point in the future.
             handleOutbound(channel);
@@ -404,7 +414,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
             } else if (task instanceof Request) {
-                handleLocalRequest((Request) task);
+                handleLocalOp((Request) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }

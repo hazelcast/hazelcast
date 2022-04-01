@@ -149,7 +149,7 @@ public class NioReactor extends Reactor {
             if (task instanceof NioChannel) {
                 handleOutbound((NioChannel) task);
             } else if (task instanceof Request) {
-                handleLocalRequest((Request) task);
+                handleLocalOp((Request) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
             } else {
@@ -173,6 +173,7 @@ public class NioReactor extends Reactor {
 
         channel.bytesRead += bytesRead;
         readBuf.flip();
+        Packet responseChain = null;
         for (; ; ) {
             Packet packet = channel.packetReader.readFrom(channel.readBuffer);
             //System.out.println(this + " read packet: " + packet);
@@ -183,13 +184,25 @@ public class NioReactor extends Reactor {
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
-            handlePacket(packet);
-        }
 
+            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
+                packet.next = responseChain;
+                responseChain = packet;
+                //frontend.handleResponse(packet);
+            } else {
+                handleRemoteOp(packet);
+            }
+        }
         compactOrClear(readBuf);
 
+        if (responseChain != null) {
+            frontend.handleResponse(responseChain);
+        }
+
         // unwanted outbound in case of only responses.
-        handleOutbound(channel);
+        if (!channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
+            handleOutbound(channel);
+        }
     }
 
     private void handleAccept() throws IOException {

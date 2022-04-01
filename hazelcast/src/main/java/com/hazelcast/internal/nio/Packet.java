@@ -37,6 +37,8 @@ import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 @SuppressWarnings({"checkstyle:declarationorder", "checkstyle:magicnumber"})
 public final class Packet extends HeapData implements OutboundFrame {
 
+    public Packet next;
+
     public Channel channel;
 
     public static final byte VERSION = 4;

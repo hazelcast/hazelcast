@@ -15,12 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
 
@@ -50,12 +48,17 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
             for (int k = 0; k < name.length(); k++) {
                 request.out.writeChar(name.charAt(k));
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         CompletableFuture f = reactorFrontEnd.invoke(request);
         try {
-            f.get(23, TimeUnit.SECONDS);
+            Packet packet = (Packet) f.get(23, SECONDS);
+
+            if (packet != null && packet.next != null) {
+                reactorFrontEnd.handleResponse(packet.next);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

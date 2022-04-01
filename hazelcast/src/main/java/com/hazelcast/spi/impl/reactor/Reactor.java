@@ -17,7 +17,6 @@ import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
@@ -43,7 +42,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.port = port;
     }
 
-    public Future<Channel> asyncConnect(SocketAddress address, Connection connection) {
+    public Future<Channel> schedule(SocketAddress address, Connection connection) {
         System.out.println("asyncConnect connect to " + address);
 
         ConnectRequest request = new ConnectRequest();
@@ -57,6 +56,12 @@ public abstract class Reactor extends HazelcastManagedThread {
     }
 
     protected abstract void schedule(ConnectRequest request);
+
+    public static class ConnectRequest {
+        public Connection connection;
+        public SocketAddress address;
+        public CompletableFuture<Channel> future;
+    }
 
     @Override
     public final void executeRun() {
@@ -91,38 +96,25 @@ public abstract class Reactor extends HazelcastManagedThread {
         return channels;
     }
 
-    public static class ConnectRequest {
-        public Connection connection;
-        public SocketAddress address;
-        public CompletableFuture<Channel> future;
-    }
-
-    protected void handlePacket(Packet packet) {
+    protected void handleRemoteOp(Packet packet) {
         //System.out.println(this + " process packet: " + packet);
         try {
-            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
-                //System.out.println("Received remote response: "+packet);
-                frontend.handleResponse(packet);
-            } else {
-                byte[] bytes = packet.toByteArray();
-                byte opcode = bytes[Packet.DATA_OFFSET];
-                Op op = allocateOp(opcode);
-                op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-                handleOp(op);
+            byte[] bytes = packet.toByteArray();
+            byte opcode = bytes[Packet.DATA_OFFSET];
+            Op op = allocateOp(opcode);
+            op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
+            handleOp(op);
 
-                //System.out.println("We need to send response to "+op.callId);
-                ByteArrayObjectDataOutput out = op.out;
-                ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                packet.channel.write(byteBuffer);
-            }
+            ByteArrayObjectDataOutput out = op.out;
+            ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
+            packet.channel.write(byteBuffer);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     // local call
-    protected void handleLocalRequest(Request request) {
-
+    protected void handleLocalOp(Request request) {
         //System.out.println("request: " + request);
         try {
             byte[] data = request.out.toByteArray();

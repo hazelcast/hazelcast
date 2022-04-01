@@ -73,7 +73,7 @@ public class ReactorFrontEnd {
             reactors[reactor].setThreadAffinity(threadAffinity);
         }
 
-         this.monitorThread = new MonitorThread(reactors);
+        this.monitorThread = new MonitorThread(reactors);
     }
 
     private void printReactorInfo(String reactorType) {
@@ -197,7 +197,7 @@ public class ReactorFrontEnd {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].asyncConnect(reactorAddress, connection));
+                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].schedule(reactorAddress, connection));
                     }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
@@ -251,7 +251,7 @@ public class ReactorFrontEnd {
             if (invocation == null) {
                 System.out.println("Dropping response " + packet + ", invocation with id " + callId + " not found");
             } else {
-                invocation.completableFuture.complete(null);
+                invocation.completableFuture.complete(packet);
             }
         } catch (Exception e) {
             e.printStackTrace();

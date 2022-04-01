@@ -29,8 +29,6 @@ public class IO_UringChannel extends Channel {
         }
     }
 
-
-
     // called by the Reactor.
     public void unschedule() {
         scheduled.set(false);
