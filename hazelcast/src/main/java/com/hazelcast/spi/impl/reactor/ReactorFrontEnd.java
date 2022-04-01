@@ -109,47 +109,45 @@ public class ReactorFrontEnd {
 
         for (Invocations invocations : invocationsPerMember.values()) {
             for (Invocation i : invocations.map.values()) {
-                i.completableFuture.completeExceptionally(new RuntimeException("Shutting down"));
+                i.future.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
 
         monitorThread.shutdown();
     }
 
-    public CompletableFuture invoke(Request request) {
+    public CompletableFuture invoke(Invocation inv) {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
 
         try {
-            int partitionId = request.partitionId;
+            int partitionId = inv.partitionId;
 
             if (partitionId >= 0) {
                 Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                Invocations invocations = getInvocations(address);
-                Invocation invocation = new Invocation();
-                invocation.callId = invocations.callId.incrementAndGet();
-                request.out.writeLong(Request.OFFSET_CALL_ID, invocation.callId);
-                invocation.request = request;
-                request.invocation = invocation;
-                invocations.map.put(invocation.callId, invocation);
-
+                
                 if (address.equals(thisAddress)) {
                     //System.out.println("local invoke");
-                    reactors[partitionIdToCpu(partitionId)].schedule(request);
+                    reactors[partitionIdToCpu(partitionId)].schedule(inv);
                 } else {
+                    Invocations invocations = getInvocations(address);
+                    long callId = invocations.callId.incrementAndGet();
+                    inv.callId = callId;
+                    inv.out.writeLong(Invocation.OFFSET_CALL_ID, callId);
+                    invocations.map.put(callId, inv);
                     //System.out.println("remove invoke");
                     TcpServerConnection connection = getConnection(address);
                     Channel channel = connection.channels[partitionIdToCpu(partitionId)];
 
-                    Packet packet = request.toPacket();
+                    Packet packet = inv.toPacket();
                     ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
                     new PacketIOHelper().writeTo(packet, buffer);
                     buffer.flip();
                     channel.writeAndFlush(buffer);
                 }
 
-                return invocation.completableFuture;
+                return inv.future;
             } else {
                 throw new RuntimeException("Negative partition id not supported:" + partitionId);
             }
@@ -247,11 +245,11 @@ public class ReactorFrontEnd {
             ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(packet.toByteArray(), ss, BIG_ENDIAN);
 
             long callId = in.readLong();
-            Invocation invocation = invocations.map.remove(callId);
-            if (invocation == null) {
+            Invocation request = invocations.map.remove(callId);
+            if (request == null) {
                 System.out.println("Dropping response " + packet + ", invocation with id " + callId + " not found");
             } else {
-                invocation.completableFuture.complete(packet);
+                request.future.complete(packet);
             }
         } catch (Exception e) {
             e.printStackTrace();

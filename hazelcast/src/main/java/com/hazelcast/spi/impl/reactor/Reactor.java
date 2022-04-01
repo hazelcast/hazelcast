@@ -90,7 +90,7 @@ public abstract class Reactor extends HazelcastManagedThread {
      *
      * @param request
      */
-    public abstract void schedule(Request request);
+    public abstract void schedule(Invocation request);
 
     public Collection<Channel> channels() {
         return channels;
@@ -114,15 +114,15 @@ public abstract class Reactor extends HazelcastManagedThread {
     }
 
     // local call
-    protected void handleLocalOp(Request request) {
+    protected void handleLocalOp(Invocation inv) {
         //System.out.println("request: " + request);
         try {
-            byte[] data = request.out.toByteArray();
+            byte[] data = inv.out.toByteArray();
             byte opcode = data[0];
             Op op = allocateOp(opcode);
             op.in.init(data, 1);
             handleOp(op);
-            request.invocation.completableFuture.complete(null);
+            inv.future.complete(null);
         } catch (Exception e) {
             e.printStackTrace();
         }

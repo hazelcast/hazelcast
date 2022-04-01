@@ -7,7 +7,7 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.Request;
+import com.hazelcast.spi.impl.reactor.Invocation;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.Buffer;
@@ -161,7 +161,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public void schedule(Request request) {
+    public void schedule(Invocation request) {
         runQueue.add(request);
         wakeup();
     }
@@ -413,8 +413,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 handleOutbound((IO_UringChannel) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
-            } else if (task instanceof Request) {
-                handleLocalOp((Request) task);
+            } else if (task instanceof Invocation) {
+                handleLocalOp((Invocation) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }

@@ -9,7 +9,7 @@ import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.Request;
+import com.hazelcast.spi.impl.reactor.Invocation;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,7 +55,7 @@ public class NioReactor extends Reactor {
     }
 
     @Override
-    public void schedule(Request request) {
+    public void schedule(Invocation request) {
         runQueue.add(request);
         wakeup();
     }
@@ -148,8 +148,8 @@ public class NioReactor extends Reactor {
 
             if (task instanceof NioChannel) {
                 handleOutbound((NioChannel) task);
-            } else if (task instanceof Request) {
-                handleLocalOp((Request) task);
+            } else if (task instanceof Invocation) {
+                handleLocalOp((Invocation) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
             } else {
