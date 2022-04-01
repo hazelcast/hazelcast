@@ -39,6 +39,8 @@ import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -68,6 +70,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super(operands, resultType);
         this.onEmpty = onEmpty;
         this.onError = onError;
+        prepareCache();
     }
 
     public static JsonValueFunction<?> create(
@@ -116,7 +119,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
         final JsonPath jsonPath;
         try {
-            prepareCacheIfNeeded();
             jsonPath = constantPathCache != null ? constantPathCache :
                     pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
@@ -151,11 +153,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         return result;
     }
 
-    private void prepareCacheIfNeeded() {
-        if (this.constantPathCache != null || this.pathCache != null) {
-            return;
-        }
-
+    private void prepareCache() {
         if (this.operands[1] instanceof ConstantExpression<?>) {
             String path = (String) this.operands[1].eval(null, null);
             this.constantPathCache = JsonPathUtil.compile(path);
@@ -237,6 +235,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.writeData(out);
         out.writeString(onEmpty.name());
         out.writeString(onError.name());
+        out.writeObject(constantPathCache);
     }
 
     @Override
@@ -244,6 +243,19 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.readData(in);
         this.onEmpty = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
         this.onError = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
+        this.constantPathCache = in.readObject();
+        if (this.constantPathCache == null) {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
+    private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
+        stream.defaultReadObject();
+        prepareCache();
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        stream.defaultWriteObject();
     }
 
     @Override

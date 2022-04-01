@@ -36,6 +36,8 @@ import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -49,7 +51,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -108,7 +110,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
         final JsonPath jsonPath;
         try {
-            prepareCacheIfNeeded();
             jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
             // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
@@ -119,13 +120,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         }
 
         return wrap(execute(json, jsonPath));
-    }
-
-    private void prepareCacheIfNeeded() {
-        if (this.pathCache != null) {
-            return;
-        }
-        this.pathCache = JsonPathUtil.makePathCache();
     }
 
     private String onErrorResponse(final Exception exception) {
@@ -211,6 +205,15 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.wrapperBehavior = SqlJsonQueryWrapperBehavior.values()[in.readInt()];
         this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
         this.onError = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
+    }
+
+    private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
+        stream.defaultReadObject();
+        this.pathCache = JsonPathUtil.makePathCache();
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        stream.defaultWriteObject();
     }
 
     @Override
