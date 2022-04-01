@@ -59,7 +59,7 @@ public final class MonitorThread extends Thread {
             System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
             channel.prevBytesRead = bytesRead;
 
-            long handleCalls = channel.handleCalls;
+            long handleCalls = channel.handleOutboundCalls;
             System.out.println(channel.remoteAddress + " " + thp(handleCalls, channel.prevHandleCalls, elapsed) + " handle-calls/second");
             channel.prevHandleCalls = handleCalls;
 
@@ -80,7 +80,7 @@ public final class MonitorThread extends Thread {
             System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
             channel.prevBytesRead = bytesRead;
 
-            long handleCalls = channel.handleCalls;
+            long handleCalls = channel.handleOutboundCalls;
             System.out.println(channel.remoteAddress + " " + thp(handleCalls, channel.prevHandleCalls, elapsed) + " handle-calls/second");
             channel.prevHandleCalls = handleCalls;
 
