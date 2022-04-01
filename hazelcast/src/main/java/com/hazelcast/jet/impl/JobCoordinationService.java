@@ -1135,7 +1135,7 @@ public class JobCoordinationService {
         assert jobRepository.getJobResult(jobId) == null : "jobResult should not exist at this point";
 
         if (finalizeJobIfAutoScalingOff(masterContext)) {
-            masterContext.jobContext().jobCompletionFuture();
+            return masterContext.jobContext().jobCompletionFuture();
         }
 
         if (jobExecutionRecord.isSuspended()) {
