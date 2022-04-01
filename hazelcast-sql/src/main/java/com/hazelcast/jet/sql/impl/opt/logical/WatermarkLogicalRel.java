@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -36,7 +35,6 @@ import java.util.List;
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
 
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider;
     private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
@@ -44,22 +42,16 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
             RelTraitSet traits,
             RelNode input,
             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
 
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.lagTimeProvider = lagTimeProvider;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
-    }
-
-    public ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider() {
-        return lagTimeProvider;
     }
 
     public int watermarkedColumnIndex() {
@@ -70,7 +62,6 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
                 .item("eventTimePolicyProvider", eventTimePolicyProvider)
-                .item("lagTimeProvider", lagTimeProvider)
                 .item("watermarkedColumnIndex", watermarkedColumnIndex);
     }
 
@@ -87,7 +78,6 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
                 traitSet,
                 sole(inputs),
                 eventTimePolicyProvider,
-                lagTimeProvider,
                 watermarkedColumnIndex
         );
     }
