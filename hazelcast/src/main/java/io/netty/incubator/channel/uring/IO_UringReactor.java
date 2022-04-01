@@ -385,7 +385,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         compactOrClear(channel.readBuffer);
 
         //todo: respnses get unwanted handleChannel
-        handleOutbound(channel);
+        if(channel.scheduled.compareAndSet(false, true)) {
+            // if it is already scheduled, we don't need to process outbound since
+            // it is guaranteed to be done at some point in the future.
+            handleOutbound(channel);
+        }
     }
 
     private void runTasks() {
