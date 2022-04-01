@@ -26,6 +26,9 @@ public abstract class Channel {
     public long readEvents;
     public long prevReadEvents;
 
+    public int bytesWrittenConfirmed;
+    public int prevBytesWrittenConfirmed;
+
     public abstract void flush();
 
     public abstract void write(ByteBuffer buffer);

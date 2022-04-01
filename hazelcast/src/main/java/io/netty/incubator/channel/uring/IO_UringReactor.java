@@ -289,6 +289,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handle_IORING_OP_ACCEPT(int fd, int res, int flags, short data) {
+        sq_addAccept();
 
         System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
@@ -310,12 +311,23 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
+    private long handle_IORING_OP_WRITE = 0;
+
     private void handle_IORING_OP_WRITE(int fd, int res, int flags, short data) {
+        if (handle_IORING_OP_WRITE < 1000) {
+            System.out.println(" fd " + fd + " res:" + res + " data: " + data);
+            handle_IORING_OP_WRITE++;
+        }
+
+
+        //todo: deal with negative res.
+
         // data is the index in the channel.writeBufsInUse array.
 
         //System.out.println("handle_IORING_OP_WRITE fd:"+fd);
         //System.out.println("res:"+res);
         IO_UringChannel channel = channelMap.get(fd);
+        channel.bytesWrittenConfirmed += res;
 
         ByteBuf buf = channel.writeBufs[data];
         if (buf.readableBytes() != res) {
@@ -327,18 +339,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         //System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
     }
 
-    private long nextMeasure = System.currentTimeMillis() + 1000;
-
-    private int lastBatchedReads = 0;
-
-    public int handle_read = 0;
-
     private void handle_IORING_OP_READ(int fd, int res, int flags, short data) {
-        handle_read++;
-        if (handle_read < 1000) {
-            System.out.println("handle_IORING_OP_READ------------------------");
-        }
-
         // res is the number of bytes read
 
         if (fd == eventfd.intValue()) {
@@ -366,7 +367,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
 
-        lastBatchedReads = 0;
         channel.readBuffer.flip();
         for (; ; ) {
             Packet packet = channel.packetReader.readFrom(channel.readBuffer);
@@ -374,12 +374,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 break;
             }
 
-            if (handle_read < 1000) {
-                System.out.println("handle read: reading packet");
-            }
-
-
-            lastBatchedReads++;
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
@@ -413,14 +407,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
-    private int handleOutbound = 0;
+    //   private int handleOutbound = 0;
 
     private void handleOutbound(IO_UringChannel channel) {
-        if (handleOutbound < 1000) {
-            handleOutbound++;
-            System.out.println("handleOutbound--------------: pending " + channel.pending.size());
-        }
-
         channel.handleOutboundCalls++;
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
@@ -437,8 +426,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         ByteBuf buf = channel.writeBufs[bufIndex];
         buf.clear();
 
-        long w = 0;
-        long p = 0;
+        int bytesWritten = 0;
 
         for (; ; ) {
             ByteBuffer buffer = channel.current;
@@ -451,15 +439,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 break;
             }
 
-            handleOutbound++;
-            if (handleOutbound < 1000) {
-                System.out.println("handle outbound: writing packet");
-            }
-
             channel.packetsWritten++;
             channel.bytesWritten += buffer.remaining();
-            w += buffer.remaining();
-            p++;
+            bytesWritten += buffer.remaining();
             buf.writeBytes(buffer);
 
             if (buffer.hasRemaining()) {
@@ -469,15 +451,14 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             }
         }
 
-        if (handleOutbound < 10000) {
-            System.out.println("written " + w + " bytes, sending packets:" + p + " lastBatchedReads:" + lastBatchedReads);
+        if (handle_IORING_OP_WRITE < 1000) {
+            System.out.println(" fd " + channel.socket.intValue() + " bytesWritten:" + bytesWritten + " index: " + bufIndex);
+            handle_IORING_OP_WRITE++;
         }
 
-        if (System.currentTimeMillis() > nextMeasure) {
-            System.out.println("written " + w + " bytes, sending packets:" + p + " lastBatchedReads:" + lastBatchedReads);
-            nextMeasure = System.currentTimeMillis() + 1000;
+        if (buf.readableBytes() != bytesWritten) {
+            throw new RuntimeException("Data lost: " + buf + " bytes written:" + bytesWritten);
         }
-
 
         sq_addWrite(channel, buf, bufIndex);
 

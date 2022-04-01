@@ -1,5 +1,7 @@
 package com.hazelcast.spi.impl.reactor;
 
+import io.netty.incubator.channel.uring.IO_UringChannel;
+
 import static java.lang.System.currentTimeMillis;
 
 public final class MonitorThread extends Thread {
@@ -44,6 +46,11 @@ public final class MonitorThread extends Thread {
     }
 
     private void displayChannel(Channel channel, long elapsed) {
+        if(channel instanceof IO_UringChannel ) {
+            IO_UringChannel u = (IO_UringChannel) channel;
+            System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled +" pending:"+u.pending.size());
+        }
+
         long packetsRead = channel.packetsRead;
         System.out.println(channel.remoteAddress + " " + thp(packetsRead, channel.prevPacketsRead, elapsed) + " packets/second");
         channel.prevPacketsRead = packetsRead;
@@ -66,6 +73,8 @@ public final class MonitorThread extends Thread {
 
         System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (handleOutboundCalls + 1)) + " packets/handleOutbound-call");
         System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (readEvents + 1)) + " packets/read-events");
+
+        System.out.println(channel.remoteAddress + " " + (channel.bytesWritten-channel.bytesWrittenConfirmed) + " byte write diff");
     }
 
     public static float thp(long current, long previous, long elapsed) {

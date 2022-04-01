@@ -33,7 +33,7 @@ public class IO_UringChannel extends Channel {
     public void unschedule() {
         scheduled.set(false);
 
-        if ((current == null || !current.hasRemaining()) && pending.isEmpty()) {
+        if (current == null && pending.isEmpty()) {
             return;
         }
 
