@@ -55,7 +55,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         }
         CompletableFuture f = reactorFrontEnd.invoke(request);
         try {
-            f.get(30, TimeUnit.SECONDS);
+            f.get(23, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

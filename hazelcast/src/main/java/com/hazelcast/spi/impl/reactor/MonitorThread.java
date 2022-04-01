@@ -1,9 +1,4 @@
-package io.netty.incubator.channel.uring;
-
-
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
+package com.hazelcast.spi.impl.reactor;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -48,51 +43,29 @@ public final class MonitorThread extends Thread {
         }
     }
 
-    private void displayChannel(Channel c, long elapsed) {
-        if (c instanceof NioChannel) {
-            NioChannel channel = (NioChannel) c;
-            long packetsRead = channel.packetsRead;
-            System.out.println(channel.remoteAddress + " " + thp(packetsRead, channel.prevPacketsRead, elapsed) + " packets/second");
-            channel.prevPacketsRead = packetsRead;
+    private void displayChannel(Channel channel, long elapsed) {
+        long packetsRead = channel.packetsRead;
+        System.out.println(channel.remoteAddress + " " + thp(packetsRead, channel.prevPacketsRead, elapsed) + " packets/second");
+        channel.prevPacketsRead = packetsRead;
 
-            long bytesRead = channel.bytesRead;
-            System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
-            channel.prevBytesRead = bytesRead;
+        long bytesRead = channel.bytesRead;
+        System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
+        channel.prevBytesRead = bytesRead;
 
-            long handleCalls = channel.handleOutboundCalls;
-            System.out.println(channel.remoteAddress + " " + thp(handleCalls, channel.prevHandleCalls, elapsed) + " handle-calls/second");
-            channel.prevHandleCalls = handleCalls;
+        long bytesWritten = channel.bytesWritten;
+        System.out.println(channel.remoteAddress + " " + thp(bytesWritten, channel.prevBytesWritten, elapsed) + " bytes-written/second");
+        channel.prevBytesWritten = bytesWritten;
 
-            long readEvents = channel.readEvents;
-            System.out.println(channel.remoteAddress + " " + thp(readEvents, channel.prevReadEvents, elapsed) + " read-events/second");
-            channel.prevReadEvents = readEvents;
+        long handleOutboundCalls = channel.handleOutboundCalls;
+        System.out.println(channel.remoteAddress + " " + thp(handleOutboundCalls, channel.prevHandleOutboundCalls, elapsed) + " handleOutbound-calls/second");
+        channel.prevHandleOutboundCalls = handleOutboundCalls;
 
-            System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (handleCalls + 1)) + " packets/handle-call");
-            System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (readEvents + 1)) + " packets/read-events");
-        } else if (c instanceof IO_UringChannel) {
-            IO_UringChannel channel = (IO_UringChannel) c;
+        long readEvents = channel.readEvents;
+        System.out.println(channel.remoteAddress + " " + thp(readEvents, channel.prevReadEvents, elapsed) + " read-events/second");
+        channel.prevReadEvents = readEvents;
 
-            long packetsRead = channel.packetsRead;
-            System.out.println(channel.remoteAddress + " " + thp(packetsRead, channel.prevPacketsRead, elapsed) + " packets/second");
-            channel.prevPacketsRead = packetsRead;
-
-            long bytesRead = channel.bytesRead;
-            System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
-            channel.prevBytesRead = bytesRead;
-
-            long handleCalls = channel.handleOutboundCalls;
-            System.out.println(channel.remoteAddress + " " + thp(handleCalls, channel.prevHandleCalls, elapsed) + " handle-calls/second");
-            channel.prevHandleCalls = handleCalls;
-
-            long readEvents = channel.readEvents;
-            System.out.println(channel.remoteAddress + " " + thp(readEvents, channel.prevReadEvents, elapsed) + " read-events/second");
-            channel.prevReadEvents = readEvents;
-
-            System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f) / (handleCalls + 1) + " packets/handle-call");
-            System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (readEvents + 1)) + " packets/read-events");
-        } else {
-            throw new IllegalArgumentException();
-        }
+        System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (handleOutboundCalls + 1)) + " packets/handleOutbound-call");
+        System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (readEvents + 1)) + " packets/read-events");
     }
 
     public static float thp(long current, long previous, long elapsed) {

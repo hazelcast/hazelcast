@@ -51,17 +51,4 @@ public class UpsertOperation extends Op {
 
         return Op.RUN_CODE_DONE;
     }
-
-/**
- *
- byte version = src.get();
- if (VERSION != version) {
- throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
- + VERSION + ", Incoming -> " + version);
- }
-
- flags = src.getChar();
- partitionId = src.getInt();
- size = src.getInt();
- */
 }

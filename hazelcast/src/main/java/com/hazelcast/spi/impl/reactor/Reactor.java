@@ -113,7 +113,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 //System.out.println("We need to send response to "+op.callId);
                 ByteArrayObjectDataOutput out = op.out;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
-                packet.channel.writeAndFlush(byteBuffer);
+                packet.channel.write(byteBuffer);
             }
         } catch (Exception e) {
             e.printStackTrace();

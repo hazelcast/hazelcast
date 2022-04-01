@@ -124,8 +124,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private ByteBuffer acceptedAddressLengthMemory;
     private long acceptedAddressLengthMemoryAddress;
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
+
+    // we could use an array.
     private final IntObjectMap<IO_UringChannel> channelMap = new IntObjectHashMap<>(4096);
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
+    private final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
 
     public IO_UringReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
         super(frontend, channelConfig, thisAddress, port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
@@ -163,6 +166,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     public void schedule(IO_UringChannel channel) {
+        if (runQueue.contains(channel)) {
+            throw new RuntimeException("duplicate");
+        }
+
         runQueue.add(channel);
         wakeup();
     }
@@ -207,9 +214,12 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.localAddress = socket.localAddress();
         channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
-        UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
-        channel.sendBufferBuff = allocator.directBuffer(channelConfig.sendBufferSize);
+        channel.writeBufs = new ByteBuf[128];
+        channel.writeBufsInUse = new boolean[channel.writeBufs.length];
+        for (int k = 0; k < channel.writeBufs.length; k++) {
+            channel.writeBufs[k] = allocator.directBuffer(4096);
+        }
         channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
         channels.add(channel);
@@ -221,18 +231,13 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq_addEventRead();
         sq_addAccept();
 
-        // not needed
-        sq.submit();
-
         while (!frontend.shuttingdown) {
             runTasks();
 
-            // Check there were any completion events to process
             if (!cq.hasCompletions()) {
                 if (spin) {
                     sq.submit();
                 } else {
-                    //System.out.println(getName() + " submitAndWait:started");
                     wakeupNeeded.set(true);
                     if (runQueue.isEmpty()) {
                         sq.submitAndWait();
@@ -241,15 +246,12 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                     }
                     wakeupNeeded.set(false);
                 }
-                //System.out.println(getName() + " submitAndWait:completed");
             } else {
                 int processed = cq.process(this);
                 if (processed > 0) {
                     //     System.out.println(getName() + " processed " + processed);
                 }
             }
-
-            //sleep(500);
         }
     }
 
@@ -267,9 +269,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq.addRead(channel.socket.intValue(), b.memoryAddress(), b.writerIndex(), b.capacity(), (short) 0);
     }
 
-    private void sq_addWrite(IO_UringChannel channel) {
-        ByteBuf buf = channel.sendBufferBuff;
-        sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), (short) 0);
+    private void sq_addWrite(IO_UringChannel channel, ByteBuf buf, short index) {
+        sq.addWrite(channel.socket.intValue(), buf.memoryAddress(), buf.readerIndex(), buf.writerIndex(), index);
     }
 
     @Override
@@ -277,20 +278,19 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         //System.out.println(getName() + " handle called: opcode:" + op);
 
         if (op == IORING_OP_READ) {
-            handle_IORING_OP_READ(fd, res, flags, op, data);
+            handle_IORING_OP_READ(fd, res, flags, data);
         } else if (op == IORING_OP_WRITE) {
-            handle_IORING_OP_WRITE(op, res, flags, op, data);
+            handle_IORING_OP_WRITE(fd, res, flags, data);
         } else if (op == IORING_OP_ACCEPT) {
-            handle_IORING_OP_ACCEPT(op, res, flags, op, data);
+            handle_IORING_OP_ACCEPT(fd, res, flags, data);
         } else {
             System.out.println(this + " handle Unknown opcode:" + op);
         }
     }
 
-    private void handle_IORING_OP_ACCEPT(int fd, int res, int flags, byte op, short data) {
-        sq_addAccept();
+    private void handle_IORING_OP_ACCEPT(int fd, int res, int flags, short data) {
 
-        //System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
+        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
         if (res >= 0) {
             SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
@@ -310,13 +310,35 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
-    private void handle_IORING_OP_WRITE(int fd, int res, int flags, byte op, short data) {
+    private void handle_IORING_OP_WRITE(int fd, int res, int flags, short data) {
+        // data is the index in the channel.writeBufsInUse array.
+
+        //System.out.println("handle_IORING_OP_WRITE fd:"+fd);
+        //System.out.println("res:"+res);
+        IO_UringChannel channel = channelMap.get(fd);
+
+        ByteBuf buf = channel.writeBufs[data];
+        if (buf.readableBytes() != res) {
+            throw new RuntimeException("Readable bytes doesn't match res. Buffer:" + buf + " res:" + res);
+        }
+        channel.writeBufsInUse[data] = false;
+
+
         //System.out.println(getName() + " handle called: opcode:" + op + " OP_WRITE");
     }
 
-    private long nextMeasure = System.currentTimeMillis()+1000;
+    private long nextMeasure = System.currentTimeMillis() + 1000;
 
-    private void handle_IORING_OP_READ(int fd, int res, int flags, byte op, short data) {
+    private int lastBatchedReads = 0;
+
+    public int handle_read = 0;
+
+    private void handle_IORING_OP_READ(int fd, int res, int flags, short data) {
+        handle_read++;
+        if (handle_read < 1000) {
+            System.out.println("handle_IORING_OP_READ------------------------");
+        }
+
         // res is the number of bytes read
 
         if (fd == eventfd.intValue()) {
@@ -333,13 +355,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         // we need to update the writerIndex; not done automatically.
         //todo: we need to deal with res=0 and res<0
         int oldLimit = channel.readBuffer.limit();
-        channel.readEvents +=1;
+        channel.readEvents += 1;
         channel.bytesRead += res;
 
-        if(System.currentTimeMillis()>nextMeasure){
-            System.out.println("read "+res+" bytes");
-            nextMeasure = System.currentTimeMillis() + 1000;
-        }
 
         channel.readBuffer.limit(res);
         channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
@@ -348,63 +366,120 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
 
+        lastBatchedReads = 0;
         channel.readBuffer.flip();
         for (; ; ) {
             Packet packet = channel.packetReader.readFrom(channel.readBuffer);
-            //System.out.println(this + " ------------------------- read packet: " + packet);
             if (packet == null) {
                 break;
             }
 
+            if (handle_read < 1000) {
+                System.out.println("handle read: reading packet");
+            }
+
+
+            lastBatchedReads++;
             channel.packetsRead++;
             packet.setConn((ServerConnection) channel.connection);
             packet.channel = channel;
             handlePacket(packet);
         }
+
+
+        //channel.flush();not needed
         compactOrClear(channel.readBuffer);
+
+        //todo: respnses get unwanted handleChannel
+        handleOutbound(channel);
     }
 
     private void runTasks() {
         for (; ; ) {
-            Object item = runQueue.poll();
-            if (item == null) {
+            Object task = runQueue.poll();
+            if (task == null) {
                 return;
             }
 
-            if (item instanceof IO_UringChannel) {
-                handleChannel((IO_UringChannel) item);
-            } else if (item instanceof ConnectRequest) {
-                handleConnectRequest((ConnectRequest) item);
-            } else if (item instanceof Request) {
-                handleLocalRequest((Request) item);
+            if (task instanceof IO_UringChannel) {
+                handleOutbound((IO_UringChannel) task);
+            } else if (task instanceof ConnectRequest) {
+                handleConnectRequest((ConnectRequest) task);
+            } else if (task instanceof Request) {
+                handleLocalRequest((Request) task);
             } else {
-                throw new RuntimeException("Unrecognized type:" + item.getClass());
+                throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
         }
     }
 
-    private void handleChannel(IO_UringChannel channel) {
-        channel.handleCalls++;
+    private int handleOutbound = 0;
+
+    private void handleOutbound(IO_UringChannel channel) {
+        if (handleOutbound < 1000) {
+            handleOutbound++;
+            System.out.println("handleOutbound--------------: pending " + channel.pending.size());
+        }
+
+        channel.handleOutboundCalls++;
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
-        // todo: if 'processChannel' gets called while a write is under way, we would be writing
-        // to the same buffer, the kernel is currently reading from.
+        short bufIndex = -1;
+        for (short k = 0; k < channel.writeBufsInUse.length; k++) {
+            if (!channel.writeBufsInUse[k]) {
+                bufIndex = k;
+                break;
+            }
+        }
 
-        ByteBuf buf = channel.sendBufferBuff;
+        //System.out.println("index:"+index);
+        channel.writeBufsInUse[bufIndex] = true;
+        ByteBuf buf = channel.writeBufs[bufIndex];
         buf.clear();
-        //channel.bytesWritten = 0;
+
+        long w = 0;
+        long p = 0;
+
         for (; ; ) {
-            ByteBuffer buffer = channel.next();
+            ByteBuffer buffer = channel.current;
+
+            if (buffer == null) {
+                buffer = channel.pending.poll();
+            }
+
             if (buffer == null) {
                 break;
             }
+
+            handleOutbound++;
+            if (handleOutbound < 1000) {
+                System.out.println("handle outbound: writing packet");
+            }
+
             channel.packetsWritten++;
-            //packetsWritten++;
-            //written += buffer.remaining();
+            channel.bytesWritten += buffer.remaining();
+            w += buffer.remaining();
+            p++;
             buf.writeBytes(buffer);
+
+            if (buffer.hasRemaining()) {
+                channel.current = buffer;
+            } else {
+                channel.current = null;
+            }
         }
 
-        sq_addWrite(channel);
+        if (handleOutbound < 10000) {
+            System.out.println("written " + w + " bytes, sending packets:" + p + " lastBatchedReads:" + lastBatchedReads);
+        }
+
+        if (System.currentTimeMillis() > nextMeasure) {
+            System.out.println("written " + w + " bytes, sending packets:" + p + " lastBatchedReads:" + lastBatchedReads);
+            nextMeasure = System.currentTimeMillis() + 1000;
+        }
+
+
+        sq_addWrite(channel, buf, bufIndex);
 
         channel.unschedule();
     }

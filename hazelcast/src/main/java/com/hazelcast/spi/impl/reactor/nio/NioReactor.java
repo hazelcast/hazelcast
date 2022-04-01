@@ -147,7 +147,7 @@ public class NioReactor extends Reactor {
             }
 
             if (task instanceof NioChannel) {
-                handleChannel((NioChannel) task);
+                handleOutbound((NioChannel) task);
             } else if (task instanceof Request) {
                 handleLocalRequest((Request) task);
             } else if (task instanceof ConnectRequest) {
@@ -185,7 +185,11 @@ public class NioReactor extends Reactor {
             packet.channel = channel;
             handlePacket(packet);
         }
+
         compactOrClear(readBuf);
+
+        // unwanted outbound in case of only responses.
+        handleOutbound(channel);
     }
 
     private void handleAccept() throws IOException {
@@ -199,8 +203,8 @@ public class NioReactor extends Reactor {
         logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
     }
 
-    private void handleChannel(NioChannel channel) {
-        channel.handleCalls++;
+    private void handleOutbound(NioChannel channel) {
+        channel.handleOutboundCalls++;
         //System.out.println("Processing channel");
         try {
             for (; ; ) {

@@ -13,7 +13,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import io.netty.incubator.channel.uring.IO_UringReactor;
-import io.netty.incubator.channel.uring.MonitorThread;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
