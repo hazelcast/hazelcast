@@ -18,6 +18,9 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.sql.impl.QueryException;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -25,6 +28,7 @@ import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.exception.JsonSurfingException;
 import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
@@ -37,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public final class JsonPathUtil {
+    private static final ILogger LOGGER = Logger.getLogger(JsonPathUtil.class);
     private static final int CACHE_SIZE = 100;
     private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
         @Override
@@ -59,7 +64,15 @@ public final class JsonPathUtil {
     }
 
     public static JsonPath compile(String path) {
-        return JsonPathCompiler.compile(path);
+        try {
+            return JsonPathCompiler.compile(path);
+        } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
+        }
     }
 
     public static Collection<Object> read(String json, JsonPath path) {

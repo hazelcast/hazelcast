@@ -35,12 +35,10 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
-import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -105,9 +103,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     public T eval(final Row row, final ExpressionEvalContext context) {
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
-        if (path == null) {
-            throw QueryException.error("SQL/JSON path expression cannot be null");
-        }
+        validatePath(path);
 
         final Object operand0 = operands[0].eval(row, context);
         String json = operand0 instanceof HazelcastJsonValue
@@ -117,17 +113,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             json = "";
         }
 
-        final JsonPath jsonPath;
-        try {
-            jsonPath = constantPathCache != null ? constantPathCache :
-                    pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
-        } catch (JsonPathCompilerException e) {
-            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
-            // serializable, they can contain references to parser context and other objects, which are not.
-            // That's why we also log the exception here.
-            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
-            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
-        }
+        final JsonPath jsonPath = constantPathCache != null ? constantPathCache :
+                pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
 
         Collection<Object> resultColl;
         try {
@@ -156,9 +143,16 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private void prepareCache() {
         if (this.operands[1] instanceof ConstantExpression<?>) {
             String path = (String) this.operands[1].eval(null, null);
-            this.constantPathCache = JsonPathUtil.compile(path);
+            validatePath(path);
+            this.constantPathCache = COMPILE_FUNCTION.apply(path);
         } else {
             this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
+    private void validatePath(String path) {
+        if (path == null) {
+            throw QueryException.error("SQL/JSON path expression cannot be null");
         }
     }
 
@@ -252,10 +246,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
         prepareCache();
-    }
-
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        stream.defaultWriteObject();
     }
 
     @Override

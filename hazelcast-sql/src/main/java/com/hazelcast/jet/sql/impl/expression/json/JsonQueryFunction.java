@@ -32,12 +32,10 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
-import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -108,16 +106,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             json = "";
         }
 
-        final JsonPath jsonPath;
-        try {
-            jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
-        } catch (JsonPathCompilerException e) {
-            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
-            // serializable, they can contain references to parser context and other objects, which are not.
-            // That's why we also log the exception here.
-            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
-            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
-        }
+        final JsonPath jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
 
         return wrap(execute(json, jsonPath));
     }
@@ -209,11 +198,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
+        // The transient fields are not initialized during Java deserialization, so we need to do it manually.
         this.pathCache = JsonPathUtil.makePathCache();
-    }
-
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        stream.defaultWriteObject();
     }
 
     @Override
