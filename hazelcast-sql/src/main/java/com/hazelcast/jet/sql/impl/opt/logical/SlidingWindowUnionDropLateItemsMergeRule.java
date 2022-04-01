@@ -61,7 +61,9 @@ public class SlidingWindowUnionDropLateItemsMergeRule extends RelRule<RelRule.Co
                         .operand(SlidingWindow.class)
                         .trait(LOGICAL)
                         .inputs(b1 -> b1
-                                .operand(Union.class).anyInputs()))
+                                .operand(Union.class)
+                                .predicate(union -> union.all)
+                                .anyInputs()))
                 .build();
 
         @Override
@@ -89,10 +91,9 @@ public class SlidingWindowUnionDropLateItemsMergeRule extends RelRule<RelRule.Co
                 if (best instanceof DropLateItemsLogicalRel) {
                     inputs.add(((DropLateItemsLogicalRel) best).getInput());
                 } else {
-                    inputs.add(node);
+                    // if at least one input is not watermarked - we can't apply that rule.
+                    return;
                 }
-            } else {
-                inputs.add(node);
             }
         }
 
