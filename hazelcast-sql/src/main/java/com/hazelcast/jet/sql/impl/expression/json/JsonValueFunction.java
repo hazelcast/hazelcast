@@ -144,7 +144,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         if (this.operands[1] instanceof ConstantExpression<?>) {
             String path = (String) this.operands[1].eval(null, null);
             validatePath(path);
-            this.constantPathCache = COMPILE_FUNCTION.apply(path);
+            this.constantPathCache = JsonPathUtil.compile(path);
         } else {
             this.pathCache = JsonPathUtil.makePathCache();
         }
