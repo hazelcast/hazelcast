@@ -216,7 +216,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
         channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
-        channel.writeBufs = new ByteBuf[128];
+        channel.writeBufs = new ByteBuf[1024];
         channel.writeBufsInUse = new boolean[channel.writeBufs.length];
         for (int k = 0; k < channel.writeBufs.length; k++) {
             channel.writeBufs[k] = allocator.directBuffer(8192);

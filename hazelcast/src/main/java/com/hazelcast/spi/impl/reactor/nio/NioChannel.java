@@ -17,7 +17,7 @@ public class NioChannel extends Channel {
     public SocketChannel socketChannel;
     public NioReactor reactor;
     public final PacketIOHelper packetReader = new PacketIOHelper();
-    public ByteBuffer[] writeBuffs = new ByteBuffer[128];
+    public ByteBuffer[] writeBuffs = new ByteBuffer[4096];
     public int writeBuffLen = 0;
     public AtomicBoolean scheduled = new AtomicBoolean();
 

@@ -169,9 +169,8 @@ public abstract class Reactor extends HazelcastManagedThread {
             case TABLE_NOOP:
                 op = new NoOp();
                 break;
-            default://hack
-                op = new UpsertOp();
-                //throw new RuntimeException("Unrecognized opcode:" + opcode);
+            default:
+                throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
         op.out = new ByteArrayObjectDataOutput(64, frontend.ss, ByteOrder.BIG_ENDIAN);
