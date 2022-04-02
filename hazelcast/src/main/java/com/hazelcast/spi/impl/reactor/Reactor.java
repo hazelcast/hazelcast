@@ -8,8 +8,9 @@ import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.table.impl.NoOp;
 import com.hazelcast.table.impl.SelectByKeyOperation;
-import com.hazelcast.table.impl.UpsertOperation;
+import com.hazelcast.table.impl.UpsertOp;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -22,6 +23,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_FOO;
+import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 
@@ -106,6 +108,9 @@ public abstract class Reactor extends HazelcastManagedThread {
             handleOp(op);
 
             ByteArrayObjectDataOutput out = op.out;
+
+            // todo: because we wrap the out; we don't know when it is safe to reuse
+            // the operation.
             ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
             packet.channel.write(byteBuffer);
         } catch (Exception e) {
@@ -138,6 +143,9 @@ public abstract class Reactor extends HazelcastManagedThread {
                 case RUN_CODE_DONE:
                     free(op);
                     return;
+                case TABLE_NOOP:
+                    free(op);
+                    return;
                 case RUN_CODE_FOO:
                     throw new RuntimeException();
                 default:
@@ -153,13 +161,16 @@ public abstract class Reactor extends HazelcastManagedThread {
         Op op;
         switch (opcode) {
             case TABLE_UPSERT:
-                op = new UpsertOperation();
+                op = new UpsertOp();
                 break;
             case TABLE_SELECT_BY_KEY:
                 op = new SelectByKeyOperation();
                 break;
+            case TABLE_NOOP:
+                op = new NoOp();
+                break;
             default://hack
-                op = new UpsertOperation();
+                op = new UpsertOp();
                 //throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);

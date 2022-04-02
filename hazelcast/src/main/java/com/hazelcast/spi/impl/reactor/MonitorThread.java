@@ -52,33 +52,38 @@ public final class MonitorThread extends Thread {
         }
 
         long packetsRead = channel.packetsRead;
-        System.out.println(channel.remoteAddress + " " + thp(packetsRead, channel.prevPacketsRead, elapsed) + " packets/second");
+        long packetsReadDelta = packetsRead - channel.prevPacketsRead;
+        System.out.println(channel.remoteAddress + " " + thp(packetsReadDelta, elapsed) + " packets/second");
         channel.prevPacketsRead = packetsRead;
 
         long bytesRead = channel.bytesRead;
-        System.out.println(channel.remoteAddress + " " + thp(bytesRead, channel.prevBytesRead, elapsed) + " bytes-read/second");
+        long bytesReadDelta = bytesRead - channel.prevBytesRead;
+        System.out.println(channel.remoteAddress + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
         channel.prevBytesRead = bytesRead;
 
         long bytesWritten = channel.bytesWritten;
-        System.out.println(channel.remoteAddress + " " + thp(bytesWritten, channel.prevBytesWritten, elapsed) + " bytes-written/second");
+        long bytesWrittenDelta = channel.prevBytesWritten;
+        System.out.println(channel.remoteAddress + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
         channel.prevBytesWritten = bytesWritten;
 
         long handleOutboundCalls = channel.handleOutboundCalls;
-        System.out.println(channel.remoteAddress + " " + thp(handleOutboundCalls, channel.prevHandleOutboundCalls, elapsed) + " handleOutbound-calls/second");
+        long handleOutboundCallsDelta = handleOutboundCalls - channel.prevHandleOutboundCalls;
+        System.out.println(channel.remoteAddress + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
         channel.prevHandleOutboundCalls = handleOutboundCalls;
 
         long readEvents = channel.readEvents;
-        System.out.println(channel.remoteAddress + " " + thp(readEvents, channel.prevReadEvents, elapsed) + " read-events/second");
+        long readEventsDelta = readEvents - channel.prevReadEvents;
+        System.out.println(channel.remoteAddress + " " + thp(readEventsDelta, elapsed) + " read-events/second");
         channel.prevReadEvents = readEvents;
 
-        System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (handleOutboundCalls + 1)) + " packets/handleOutbound-call");
-        System.out.println(channel.remoteAddress + " " + (packetsRead * 1.0f / (readEvents + 1)) + " packets/read-events");
-
+        System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
+        System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
+        System.out.println(channel.remoteAddress + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
         System.out.println(channel.remoteAddress + " " + (channel.bytesWritten-channel.bytesWrittenConfirmed) + " byte write diff");
     }
 
-    public static float thp(long current, long previous, long elapsed) {
-        return ((current - previous) * 1000f) / elapsed;
+    public static float thp(long delta, long elapsed) {
+        return (delta * 1000f) / elapsed;
     }
 
     public void shutdown() {

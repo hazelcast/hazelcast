@@ -219,7 +219,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.writeBufs = new ByteBuf[128];
         channel.writeBufsInUse = new boolean[channel.writeBufs.length];
         for (int k = 0; k < channel.writeBufs.length; k++) {
-            channel.writeBufs[k] = allocator.directBuffer(4096);
+            channel.writeBufs[k] = allocator.directBuffer(8192);
         }
         channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
@@ -315,12 +315,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private long handle_IORING_OP_WRITE = 0;
 
     private void handle_IORING_OP_WRITE(int fd, int res, int flags, short data) {
-        if (handle_IORING_OP_WRITE < 1000) {
-            System.out.println(" fd " + fd + " res:" + res + " data: " + data);
-            handle_IORING_OP_WRITE++;
-        }
-
-
         //todo: deal with negative res.
 
         // data is the index in the channel.writeBufsInUse array.
@@ -463,11 +457,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             } else {
                 channel.current = null;
             }
-        }
-
-        if (handle_IORING_OP_WRITE < 1000) {
-            System.out.println(" fd " + channel.socket.intValue() + " bytesWritten:" + bytesWritten + " index: " + bufIndex);
-            handle_IORING_OP_WRITE++;
         }
 
         if (buf.readableBytes() != bytesWritten) {

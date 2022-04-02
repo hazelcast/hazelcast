@@ -4,14 +4,15 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.OpCodes;
+import com.hazelcast.table.Item;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.nio.Packet.VERSION;
 
-public class UpsertOperation extends Op {
+public class UpsertOp extends Op {
 
-    public UpsertOperation() {
+    public UpsertOp() {
         super(OpCodes.TABLE_UPSERT);
     }
 
@@ -22,6 +23,12 @@ public class UpsertOperation extends Op {
         TableManager tableManager = managers.tableManager;
         Map map = tableManager.get(partitionId, name);
 
+        Item item = new Item();
+        item.key = in.readLong();
+        item.a = in.readInt();
+        item.b = in.readInt();
+        map.put(item.key, item);
+
         //System.out.println("write: begin offset:"+out.position());
 
         out.writeByte(VERSION);
@@ -29,7 +36,7 @@ public class UpsertOperation extends Op {
         out.writeChar(Packet.FLAG_OP_RESPONSE);
 
         // partitionId
-        out.writeInt(33);
+        out.writeInt(partitionId);
 
         // fake position
         int sizePos = out.position();
