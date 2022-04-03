@@ -15,8 +15,8 @@ public class NioChannel extends Channel {
     public SocketChannel socketChannel;
     public NioReactor reactor;
     public final PacketIOHelper packetReader = new PacketIOHelper();
-    public ByteBuffer[] writeBuffs = new ByteBuffer[4096];
-    public int writeBuffLen = 0;
+    public ByteBuffer[] buffs = new ByteBuffer[4096];
+    public int buffsLen = 0;
     public AtomicBoolean scheduled = new AtomicBoolean();
 
     @Override
@@ -50,5 +50,31 @@ public class NioChannel extends Channel {
     public void writeAndFlush(ByteBuffer buffer) {
         write(buffer);
         flush();
+    }
+
+    public void addBuffer(ByteBuffer buffer){
+        //todo: we could add growing or size constraint.
+        buffs[buffsLen] = buffer;
+        buffsLen++;
+    }
+
+    public void discardWrittenBuffers() {
+        int toIndex = 0;
+        int length = buffsLen;
+        for (int pos = 0; pos < length; pos++) {
+            if (buffs[pos].hasRemaining()) {
+                if (pos == 0) {
+                    // the first one is not empty, we are done
+                    break;
+                } else {
+                    buffs[toIndex] = buffs[pos];
+                    buffs[pos] = null;
+                    toIndex++;
+                }
+            } else {
+                buffsLen--;
+                buffs[pos] = null;
+            }
+        }
     }
 }

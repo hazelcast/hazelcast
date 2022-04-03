@@ -226,32 +226,16 @@ public class NioReactor extends Reactor {
                     break;
                 }
 
-                channel.writeBuffs[channel.writeBuffLen] = buffer;
-                channel.writeBuffLen++;
+                channel.addBuffer(buffer);
             }
 
-            long written = channel.socketChannel.write(channel.writeBuffs, 0, channel.writeBuffLen);
+            long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
             //System.out.println(getName()+" bytes written:"+written);
             channel.bytesWritten += written;
 
-            int toIndex = 0;
-            int length = channel.writeBuffLen;
-            for (int pos = 0; pos < length; pos++) {
-                if (channel.writeBuffs[pos].hasRemaining()) {
-                    if (pos == 0) {
-                        // the first one is not empty, we are done
-                        break;
-                    } else {
-                        channel.writeBuffs[toIndex] = channel.writeBuffs[pos];
-                        channel.writeBuffs[pos] = null;
-                        toIndex++;
-                    }
-                } else {
-                    channel.writeBuffLen--;
-                    channel.writeBuffs[pos] = null;
-                }
-            }
+            channel.discardWrittenBuffers();
 
+            // todo: we should only unschedule if there is nothing left to write.
             channel.unschedule();
         } catch (IOException e) {
             e.printStackTrace();
