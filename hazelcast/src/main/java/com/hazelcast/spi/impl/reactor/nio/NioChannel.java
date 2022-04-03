@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class NioChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
-    public ByteBuffer readBuffer;
+    public ByteBuffer receiveBuffer;
     public SocketChannel socketChannel;
     public NioReactor reactor;
     public final PacketIOHelper packetReader = new PacketIOHelper();

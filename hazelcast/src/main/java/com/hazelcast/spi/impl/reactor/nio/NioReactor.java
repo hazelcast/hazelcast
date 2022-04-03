@@ -89,7 +89,7 @@ public class NioReactor extends Reactor {
 
         NioChannel channel = new NioChannel();
         channel.reactor = this;
-        channel.readBuffer = ByteBuffer.allocate(channelConfig.receiveBufferSize);
+        channel.receiveBuffer = ByteBuffer.allocateDirect(channelConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
         channel.remoteAddress = socketChannel.getRemoteAddress();
@@ -162,7 +162,7 @@ public class NioReactor extends Reactor {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         NioChannel channel = (NioChannel) key.attachment();
         channel.readEvents++;
-        ByteBuffer readBuf = channel.readBuffer;
+        ByteBuffer readBuf = channel.receiveBuffer;
         int bytesRead = socketChannel.read(readBuf);
         //System.out.println(this + " bytes read: " + bytesRead);
         if (bytesRead == -1) {
@@ -175,7 +175,7 @@ public class NioReactor extends Reactor {
         readBuf.flip();
         Packet responseChain = null;
         for (; ; ) {
-            Packet packet = channel.packetReader.readFrom(channel.readBuffer);
+            Packet packet = channel.packetReader.readFrom(channel.receiveBuffer);
             //System.out.println(this + " read packet: " + packet);
             if (packet == null) {
                 break;
