@@ -15,20 +15,20 @@ public class NoOp extends Op {
 
     @Override
     public int run() throws Exception {
-        out.writeByte(VERSION);
+        response.writeByte(VERSION);
 
-        out.writeChar(Packet.FLAG_OP_RESPONSE);
+        response.writeChar(Packet.FLAG_OP_RESPONSE);
 
         // partitionId
-        out.writeInt(partitionId);
+        response.writeInt(partitionId);
 
         // fake position
-        int sizePos = out.position();
-        out.writeInt(-1);
+        int sizePos = response.position();
+        response.writeInt(-1);
 
-        out.writeLong(callId);
-        int len = out.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
-        out.writeInt(sizePos, len);
+        response.writeLong(callId);
+        int len = response.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
+        response.writeInt(sizePos, len);
         return Op.RUN_CODE_DONE;
     }
 }

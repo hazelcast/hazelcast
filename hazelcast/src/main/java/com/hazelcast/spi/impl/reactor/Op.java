@@ -14,8 +14,8 @@ public abstract class Op {
     public Managers managers;
     public int opcode;
     public StringBuffer name = new StringBuffer();
-    public ByteArrayObjectDataInput in;
-    public ByteArrayObjectDataOutput out;
+    public ByteArrayObjectDataInput request;
+    public ByteArrayObjectDataOutput response;
     public long callId;
 
     public Op(int opcode) {
@@ -23,11 +23,11 @@ public abstract class Op {
     }
 
     public void readName() throws EOFException {
-        int size = in.readInt();
+        int size = request.readInt();
         //System.out.println("size:"+size);
 
         for (int k = 0; k < size; k++) {
-            name.append(in.readChar());
+            name.append(request.readChar());
         }
 
         //System.out.println("Read name: "+name);
@@ -36,7 +36,7 @@ public abstract class Op {
     public abstract int run() throws Exception;
 
     public void cleanup() {
-        in.clear();
+        request.clear();
         name.setLength(0);
     }
 }

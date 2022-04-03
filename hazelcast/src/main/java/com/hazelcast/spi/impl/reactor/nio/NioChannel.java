@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
 
@@ -12,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class NioChannel extends Channel {
 
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
-    public Connection connection;
     public ByteBuffer readBuffer;
     public SocketChannel socketChannel;
     public NioReactor reactor;

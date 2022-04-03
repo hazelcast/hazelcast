@@ -24,33 +24,33 @@ public class UpsertOp extends Op {
         Map map = tableManager.get(partitionId, name);
 
         Item item = new Item();
-        item.key = in.readLong();
-        item.a = in.readInt();
-        item.b = in.readInt();
+        item.key = request.readLong();
+        item.a = request.readInt();
+        item.b = request.readInt();
         map.put(item.key, item);
 
         //System.out.println("write: begin offset:"+out.position());
 
-        out.writeByte(VERSION);
+        response.writeByte(VERSION);
 
-        out.writeChar(Packet.FLAG_OP_RESPONSE);
+        response.writeChar(Packet.FLAG_OP_RESPONSE);
 
         // partitionId
-        out.writeInt(partitionId);
+        response.writeInt(partitionId);
 
         // fake position
-        int sizePos = out.position();
-        out.writeInt(-1);
+        int sizePos = response.position();
+        response.writeInt(-1);
 
         //System.out.println("write: position call id: "+out.position());
         //System.out.println("write: data offset:"+Packet.DATA_OFFSET);
         // callId
-        out.writeLong(callId);
+        response.writeLong(callId);
 
         // the length of the packet
-        int len = out.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
+        int len = response.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
         //System.out.println("len: " + len);
-        out.writeInt(sizePos, len);
+        response.writeInt(sizePos, len);
 
         //here we load the key
         //here we load the value

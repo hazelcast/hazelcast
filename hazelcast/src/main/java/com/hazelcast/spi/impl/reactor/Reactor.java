@@ -104,14 +104,14 @@ public abstract class Reactor extends HazelcastManagedThread {
             byte[] bytes = packet.toByteArray();
             byte opcode = bytes[Packet.DATA_OFFSET];
             Op op = allocateOp(opcode);
-            op.in.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
+            op.request.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
             handleOp(op);
 
-            ByteArrayObjectDataOutput out = op.out;
+            ByteArrayObjectDataOutput response = op.response;
 
-            // todo: because we wrap the out; we don't know when it is safe to reuse
+            // todo: because we wrap the response; we don't know when it is safe to reuse
             // the operation.
-            ByteBuffer byteBuffer = ByteBuffer.wrap(out.toByteArray(), 0, out.position());
+            ByteBuffer byteBuffer = ByteBuffer.wrap(response.toByteArray(), 0, response.position());
             packet.channel.write(byteBuffer);
         } catch (Exception e) {
             e.printStackTrace();
@@ -125,7 +125,7 @@ public abstract class Reactor extends HazelcastManagedThread {
             byte[] data = inv.out.toByteArray();
             byte opcode = data[0];
             Op op = allocateOp(opcode);
-            op.in.init(data, 1);
+            op.request.init(data, 1);
             handleOp(op);
             inv.future.complete(null);
         } catch (Exception e) {
@@ -135,7 +135,7 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected void handleOp(Op op) {
         try {
-            long callId = op.in.readLong();
+            long callId = op.request.readLong();
             op.callId = callId;
             //System.out.println("callId: "+callId);
             int runCode = op.run();
@@ -156,30 +156,52 @@ public abstract class Reactor extends HazelcastManagedThread {
         }
     }
 
-    // use pool
+
+    // Hacky caching.
+    private UpsertOp upsertOp;
+    private NoOp noOp;
+    private SelectByKeyOperation selectByKeyOperation;
+
     protected final Op allocateOp(int opcode) {
         Op op;
         switch (opcode) {
             case TABLE_UPSERT:
-                op = new UpsertOp();
+                if (upsertOp == null) {
+                    upsertOp = new UpsertOp();
+                    upsertOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    upsertOp.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    upsertOp.managers = frontend.managers;
+                }
+                op = upsertOp;
                 break;
             case TABLE_SELECT_BY_KEY:
-                op = new SelectByKeyOperation();
+                if (selectByKeyOperation == null) {
+                    selectByKeyOperation = new SelectByKeyOperation();
+                    selectByKeyOperation.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    selectByKeyOperation.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    selectByKeyOperation.managers = frontend.managers;
+                }
+                op = selectByKeyOperation;
                 break;
             case TABLE_NOOP:
-                op = new NoOp();
+                if (noOp == null) {
+                    noOp = new NoOp();
+                    noOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    noOp.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    noOp.managers = frontend.managers;
+                }
+                op = noOp;
                 break;
             default:
                 throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.in = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.out = new ByteArrayObjectDataOutput(64, frontend.ss, ByteOrder.BIG_ENDIAN);
-        op.managers = frontend.managers;
+        op.response.init(new byte[64], 0);
         return op;
     }
 
     private void free(Op op) {
         op.cleanup();
+
 
         //we should return it to the pool.
     }

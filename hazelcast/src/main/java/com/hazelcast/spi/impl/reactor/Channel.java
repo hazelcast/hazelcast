@@ -1,9 +1,12 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.internal.nio.Connection;
+
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
 public abstract class Channel {
+    public Connection connection;
 
     public SocketAddress remoteAddress;
     public SocketAddress localAddress;

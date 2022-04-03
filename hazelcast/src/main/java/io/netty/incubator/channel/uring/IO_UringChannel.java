@@ -1,6 +1,5 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
 import io.netty.buffer.ByteBuf;
@@ -11,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IO_UringChannel extends Channel {
     public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
-    public Connection connection;
     public LinuxSocket socket;
     public IO_UringReactor reactor;
     public ByteBuf receiveBuff;
