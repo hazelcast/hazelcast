@@ -1,6 +1,5 @@
 package com.hazelcast.table;
 
-import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
@@ -18,6 +17,9 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
+import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -50,14 +52,14 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     private CompletableFuture asyncUpsert(V v) {
         Item item = (Item)v;
         Invocation inv = new Invocation();
-        inv.opcode = OpCodes.TABLE_UPSERT;
+        inv.opcode = TABLE_UPSERT;
         inv.partitionId = HashUtil.hashToIndex(Long.hashCode(item.key), partitionCount);
         inv.out = new ByteArrayObjectDataOutput(128, ss, BIG_ENDIAN);
         inv.out.position(Packet.DATA_OFFSET);
 
         try {
-            inv.out.writeByte(OpCodes.TABLE_UPSERT);
-            inv.out.position(inv.out.position() + Bits.LONG_SIZE_IN_BYTES);
+            inv.out.writeByte(TABLE_UPSERT);
+            inv.out.position(inv.out.position() + LONG_SIZE_IN_BYTES);
             inv.out.writeInt(name.length());
             for (int k = 0; k < name.length(); k++) {
                 inv.out.writeChar(name.charAt(k));
@@ -100,14 +102,14 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     private CompletableFuture asyncNoop() {
         Invocation inv = new Invocation();
-        inv.opcode = OpCodes.TABLE_NOOP;
+        inv.opcode = TABLE_NOOP;
         inv.partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
         inv.out = new ByteArrayObjectDataOutput(128, ss, BIG_ENDIAN);
         inv.out.position(Packet.DATA_OFFSET);
 
         try {
-            inv.out.writeByte(OpCodes.TABLE_NOOP);
-            inv.out.position(inv.out.position() + Bits.LONG_SIZE_IN_BYTES);
+            inv.out.writeByte(TABLE_NOOP);
+            inv.out.position(inv.out.position() + LONG_SIZE_IN_BYTES);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
