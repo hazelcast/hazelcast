@@ -1659,6 +1659,11 @@
                 <version>${mysql.connector.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>42.2.25</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.htrace</groupId>
                 <artifactId>htrace-core4</artifactId>
                 <version>4.2.0-incubating.hazelcast-2</version>
