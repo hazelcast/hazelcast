@@ -1,7 +1,7 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
-import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Frame;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -10,14 +10,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioChannel extends Channel {
 
-    public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<Frame> pending = new ConcurrentLinkedQueue<>();
     public ByteBuffer receiveBuffer;
     public SocketChannel socketChannel;
     public NioReactor reactor;
-    public final PacketIOHelper packetReader = new PacketIOHelper();
     public ByteBuffer[] buffs = new ByteBuffer[4096];
+    public Frame[] frames = new Frame[buffs.length];
     public int buffsLen = 0;
     public AtomicBoolean scheduled = new AtomicBoolean();
+    public Frame inboundFrame;
 
     @Override
     public void flush() {
@@ -42,19 +43,20 @@ public class NioChannel extends Channel {
     }
 
     @Override
-    public void write(ByteBuffer buffer) {
-        pending.add(buffer);
+    public void write(Frame frame) {
+        pending.add(frame);
     }
 
     @Override
-    public void writeAndFlush(ByteBuffer buffer) {
-        write(buffer);
+    public void writeAndFlush(Frame frame) {
+        write(frame);
         flush();
     }
 
-    public void addBuffer(ByteBuffer buffer){
+    public void addFrame(Frame frame) {
         //todo: we could add growing or size constraint.
-        buffs[buffsLen] = buffer;
+        buffs[buffsLen] = frame.getByteBuffer();
+        frames[buffsLen] = frame;
         buffsLen++;
     }
 
@@ -69,11 +71,16 @@ public class NioChannel extends Channel {
                 } else {
                     buffs[toIndex] = buffs[pos];
                     buffs[pos] = null;
+
+                    frames[toIndex] = frames[pos];
+                    frames[pos] = null;
+
                     toIndex++;
                 }
             } else {
                 buffsLen--;
                 buffs[pos] = null;
+                frames[pos] = null;
             }
         }
     }

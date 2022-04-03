@@ -1,7 +1,5 @@
 package com.hazelcast.spi.impl.reactor;
 
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
-
 import java.io.EOFException;
 
 public abstract class Op {
@@ -13,21 +11,16 @@ public abstract class Op {
     public Managers managers;
     public int opcode;
     public StringBuffer name = new StringBuffer();
-    public ByteArrayObjectDataInput request;
-    public Out response;
-    public long callId;
+    public Frame request;
+    public Frame response;
 
     public Op(int opcode) {
         this.opcode = opcode;
     }
 
     public void readName() throws EOFException {
-        int size = request.readInt();
-        //System.out.println("size:"+size);
-
-        for (int k = 0; k < size; k++) {
-            name.append(request.readChar());
-        }
+        name.setLength(0);
+        request.readString(name);
 
         //System.out.println("Read name: "+name);
     }
@@ -35,7 +28,5 @@ public abstract class Op {
     public abstract int run() throws Exception;
 
     public void cleanup() {
-        request.clear();
-        name.setLength(0);
     }
 }

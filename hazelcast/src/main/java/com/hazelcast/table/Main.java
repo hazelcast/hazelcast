@@ -12,7 +12,7 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 10_000_000; k++) {
+        for (int k = 0; k < 1000; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;
@@ -26,8 +26,8 @@ public class Main {
                 System.out.println("at k:"+k);
             }
 
-            table.upsert(item);
-
+            //table.upsert(item);
+            table.concurrentNoop(100);
 //            try {
 //                Thread.sleep(10000);
 //            } catch (InterruptedException e) {

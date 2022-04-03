@@ -2,14 +2,16 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Frame;
 import io.netty.buffer.ByteBuf;
+
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IO_UringChannel extends Channel {
-    public final ConcurrentLinkedQueue<ByteBuffer> pending = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<Frame> pending = new ConcurrentLinkedQueue<>();
     public LinuxSocket socket;
     public IO_UringReactor reactor;
     public ByteBuf receiveBuff;
@@ -41,13 +43,13 @@ public class IO_UringChannel extends Channel {
     }
 
     @Override
-    public void write(ByteBuffer buffer) {
-        pending.add(buffer);
+    public void write(Frame frame) {
+        pending.add(frame);
     }
 
     @Override
-    public void writeAndFlush(ByteBuffer buffer) {
-        pending.add(buffer);
+    public void writeAndFlush(Frame frame) {
+        pending.add(frame);
         flush();
     }
 }

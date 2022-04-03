@@ -51,7 +51,7 @@ public final class MonitorThread extends Thread {
             System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled +" pending:"+u.pending.size());
         }
 
-        long packetsRead = channel.packetsRead;
+        long packetsRead = channel.framesRead;
         long packetsReadDelta = packetsRead - channel.prevPacketsRead;
         System.out.println(channel.remoteAddress + " " + thp(packetsReadDelta, elapsed) + " packets/second");
         channel.prevPacketsRead = packetsRead;

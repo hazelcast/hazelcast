@@ -15,7 +15,6 @@ import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -108,7 +107,7 @@ public class ReactorFrontEnd {
             r.start();
         }
 
-        monitorThread.start();
+        //monitorThread.start();
         responseThread.start();
     }
 
@@ -127,50 +126,35 @@ public class ReactorFrontEnd {
         monitorThread.shutdown();
     }
 
-    public CompletableFuture invoke(Invocation inv) {
+    public CompletableFuture invoke(Invocation inv, int partitionId) {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
 
-        try {
-            int partitionId = inv.partitionId;
-
-            if (partitionId >= 0) {
-                Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-
-                if (address.equals(thisAddress)) {
-                    //System.out.println("local invoke");
-                    // todo: hack with the assignment of a partition to a local cpu.
-                    reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(inv);
-                } else {
-                    Invocations invocations = getInvocations(address);
-                    long callId = invocations.callId.incrementAndGet();
-                    inv.callId = callId;
-                    inv.out.writeLong(Invocation.OFFSET_CALL_ID, callId);
-                    invocations.map.put(callId, inv);
-                    //System.out.println("remove invoke");
-                    TcpServerConnection connection = getConnection(address);
-                    Channel channel = connection.channels[partitionIdToChannel(partitionId)];
-
-                    Packet packet = inv.toPacket();
-                    ByteBuffer buffer = ByteBuffer.allocate(packet.totalSize() + 30);
-                    new PacketIOHelper().writeTo(packet, buffer);
-                    buffer.flip();
-                    channel.writeAndFlush(buffer);
-                }
-
-                return inv.future;
-            } else {
-                throw new RuntimeException("Negative partition id not supported:" + partitionId);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (shuttingdown) {
-                throw new RuntimeException("Can't make invocation, frontend shutting down");
-            }
+        if (partitionId < 0) {
+            throw new RuntimeException("Negative partition id not supported:" + partitionId);
         }
+
+        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+
+        if (address.equals(thisAddress)) {
+            //System.out.println("local invoke");
+            // todo: hack with the assignment of a partition to a local cpu.
+            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(inv);
+        } else {
+            Invocations invocations = getInvocations(address);
+            long callId = invocations.callId.incrementAndGet();
+            inv.request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+            invocations.map.put(callId, inv);
+            //System.out.println("remove invoke");
+            TcpServerConnection connection = getConnection(address);
+            Channel channel = connection.channels[partitionIdToChannel(partitionId)];
+            channel.writeAndFlush(inv.request);
+        }
+
+        return inv.future;
     }
+
 
     private TcpServerConnection getConnection(Address address) {
         if (connectionManager == null) {
@@ -245,28 +229,26 @@ public class ReactorFrontEnd {
         private final AtomicLong callId = new AtomicLong(500);
     }
 
-    public void handleResponse(Packet packet) {
-        if (packet.next != null) {
-            responseThread.queue.add(packet);
+    public void handleResponse(Frame response) {
+        if (response.next != null) {
+            responseThread.queue.add(response);
             return;
         }
 
         try {
-            Address remoteAddress = packet.getConn().getRemoteAddress();
+            Address remoteAddress = response.connection.getRemoteAddress();
             Invocations invocations = invocationsPerMember.get(remoteAddress);
             if (invocations == null) {
-                System.out.println("Dropping response " + packet + ", invocations not found");
+                System.out.println("Dropping response " + response + ", invocations not found");
                 return;
             }
 
-            ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(packet.toByteArray(), ss, BIG_ENDIAN);
-
-            long callId = in.readLong();
+            long callId = response.getLong(Frame.OFFSET_RESPONSE_CALL_ID);
             Invocation request = invocations.map.remove(callId);
             if (request == null) {
-                System.out.println("Dropping response " + packet + ", invocation with id " + callId + " not found");
+                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
             } else {
-                request.future.complete(packet);
+                request.future.complete(response);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -274,7 +256,7 @@ public class ReactorFrontEnd {
     }
 
     public class ResponseThread extends Thread {
-        public final BlockingQueue<Packet> queue = new LinkedBlockingQueue();
+        public final BlockingQueue<Frame> queue = new LinkedBlockingQueue();
 
         public ResponseThread() {
             super("ResponseThread");
@@ -284,13 +266,13 @@ public class ReactorFrontEnd {
         public void run() {
             try {
                 while (!shuttingdown) {
-                    Packet packet = queue.take();
+                    Frame frame = queue.take();
                     do {
-                        Packet next = packet.next;
-                        packet.next = null;
-                        handleResponse(packet);
-                        packet = next;
-                    } while (packet != null);
+                        Frame next = frame.next;
+                        frame.next = null;
+                        handleResponse(frame);
+                        frame = next;
+                    } while (frame != null);
                 }
             } catch (InterruptedException e) {
                 // ignore

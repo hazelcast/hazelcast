@@ -3,8 +3,6 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.table.impl.NoOp;
@@ -12,8 +10,6 @@ import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOp;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -97,18 +93,10 @@ public abstract class Reactor extends HazelcastManagedThread {
         return channels;
     }
 
-    protected void handleRemoteOp(Packet packet) {
-        //System.out.println(this + " process packet: " + packet);
+    protected void handleRemoteOp(Frame request) {
         try {
-            byte[] bytes = packet.toByteArray();
-            byte opcode = bytes[Packet.DATA_OFFSET];
-            Op op = allocateOp(opcode);
-            op.request.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
-            handleOp(op);
-
-            ByteBuffer byteBuffer = op.response.getByteBuffer();
-            byteBuffer.flip();
-            packet.channel.write(byteBuffer);
+            Frame response = handleOp(request);
+            request.channel.write(response);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -116,56 +104,45 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     // local call
     protected void handleLocalOp(Invocation inv) {
-        //System.out.println("request: " + request);
         try {
-            byte[] data = inv.out.toByteArray();
-            byte opcode = data[0];
-            Op op = allocateOp(opcode);
-            op.request.init(data, 1);
-            handleOp(op);
-            inv.future.complete(null);
+            Frame response = handleOp(inv.request);
+            inv.future.complete(response);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    protected void handleOp(Op op) {
+    protected Frame handleOp(Frame request) throws Exception {
+        Op op = allocateOp(request);
+
+        int runCode = op.run();
         try {
-            long callId = op.request.readLong();
-            op.callId = callId;
-            //System.out.println("callId: "+callId);
-            int runCode = op.run();
             switch (runCode) {
                 case RUN_CODE_DONE:
-                    free(op);
-                    return;
-                case TABLE_NOOP:
-                    free(op);
-                    return;
+                    return op.response;
                 case RUN_CODE_FOO:
                     throw new RuntimeException();
                 default:
                     throw new RuntimeException();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } finally {
+            free(op);
         }
     }
-
 
     // Hacky caching.
     private UpsertOp upsertOp;
     private NoOp noOp;
     private SelectByKeyOperation selectByKeyOperation;
 
-    protected final Op allocateOp(int opcode) {
+    protected final Op allocateOp(Frame request) {
+        int opcode = request.getInt(Frame.OFFSET_REQUEST_OPCODE);
         Op op;
         switch (opcode) {
             case TABLE_UPSERT:
                 if (upsertOp == null) {
                     upsertOp = new UpsertOp();
-                    upsertOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    upsertOp.response = new Out();
+                    upsertOp.response = new Frame();
                     upsertOp.managers = frontend.managers;
                 }
                 op = upsertOp;
@@ -173,8 +150,7 @@ public abstract class Reactor extends HazelcastManagedThread {
             case TABLE_SELECT_BY_KEY:
                 if (selectByKeyOperation == null) {
                     selectByKeyOperation = new SelectByKeyOperation();
-                    selectByKeyOperation.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    selectByKeyOperation.response = new Out();
+                    selectByKeyOperation.response = new Frame();
                     selectByKeyOperation.managers = frontend.managers;
                 }
                 op = selectByKeyOperation;
@@ -182,8 +158,7 @@ public abstract class Reactor extends HazelcastManagedThread {
             case TABLE_NOOP:
                 if (noOp == null) {
                     noOp = new NoOp();
-                    noOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    noOp.response = new Out();
+                    noOp.response = new Frame();
                     noOp.managers = frontend.managers;
                 }
                 op = noOp;
@@ -191,13 +166,16 @@ public abstract class Reactor extends HazelcastManagedThread {
             default:
                 throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.response.init(64);
+        op.request = request;
+        op.request.position(Frame.OFFSET_REQUEST_PAYLOAD);
+        op.response = new Frame(20);
         return op;
     }
 
     private void free(Op op) {
         op.cleanup();
-
+        op.request = null;
+        op.response = null;
 
         //we should return it to the pool.
     }

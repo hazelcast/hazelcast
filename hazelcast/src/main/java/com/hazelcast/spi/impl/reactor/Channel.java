@@ -3,7 +3,7 @@ package com.hazelcast.spi.impl.reactor;
 import com.hazelcast.internal.nio.Connection;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+
 
 public abstract class Channel {
     public Connection connection;
@@ -20,7 +20,7 @@ public abstract class Channel {
     public long bytesWritten;
     public long prevBytesWritten;
 
-    public long packetsRead;
+    public long framesRead;
     public long prevPacketsRead ;
 
     public long handleOutboundCalls;
@@ -34,7 +34,7 @@ public abstract class Channel {
 
     public abstract void flush();
 
-    public abstract void write(ByteBuffer buffer);
+    public abstract void write(Frame frame);
 
-    public abstract void writeAndFlush(ByteBuffer buffer);
+    public abstract void writeAndFlush(Frame frame);
 }

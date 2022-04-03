@@ -3,13 +3,12 @@ package com.hazelcast.spi.impl.reactor.nio;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
+import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.Invocation;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.Invocation;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -25,7 +24,9 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -173,24 +174,41 @@ public class NioReactor extends Reactor {
 
         channel.bytesRead += bytesRead;
         readBuf.flip();
-        Packet responseChain = null;
+        Frame responseChain = null;
         for (; ; ) {
-            Packet packet = channel.packetReader.readFrom(channel.receiveBuffer);
-            //System.out.println(this + " read packet: " + packet);
-            if (packet == null) {
+            if (channel.inboundFrame == null) {
+                if (readBuf.remaining() < INT_SIZE_IN_BYTES) {
+                    break;
+                }
+
+                int size = readBuf.getInt();
+                channel.inboundFrame = new Frame(size);
+                channel.inboundFrame.writeInt(size);
+                channel.inboundFrame.connection = channel.connection;
+                channel.inboundFrame.channel = channel;
+            }
+
+            // todo: we need to copy.
+
+            int size = channel.inboundFrame.size();
+            int remaining = size - channel.inboundFrame.position();
+            channel.inboundFrame.write(readBuf, remaining);
+
+            if (!channel.inboundFrame.isComplete()) {
                 break;
             }
 
-            channel.packetsRead++;
-            packet.setConn((ServerConnection) channel.connection);
-            packet.channel = channel;
+            channel.inboundFrame.completeReceive();
+            Frame frame = channel.inboundFrame;
+            channel.inboundFrame = null;
+            channel.framesRead++;
 
-            if (packet.isFlagRaised(Packet.FLAG_OP_RESPONSE)) {
-                packet.next = responseChain;
-                responseChain = packet;
+            if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
+                frame.next = responseChain;
+                responseChain = frame;
                 //frontend.handleResponse(packet);
             } else {
-                handleRemoteOp(packet);
+                handleRemoteOp(frame);
             }
         }
         compactOrClear(readBuf);
@@ -199,8 +217,7 @@ public class NioReactor extends Reactor {
             frontend.handleResponse(responseChain);
         }
 
-        // unwanted outbound in case of only responses.
-        if (!channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
+        if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
             handleOutbound(channel);
         }
     }
@@ -221,16 +238,16 @@ public class NioReactor extends Reactor {
         //System.out.println("Processing channel");
         try {
             for (; ; ) {
-                ByteBuffer buffer = channel.pending.poll();
-                if (buffer == null) {
+                Frame frame = channel.pending.poll();
+                if (frame == null) {
                     break;
                 }
 
-                channel.addBuffer(buffer);
+                channel.addFrame(frame);
             }
 
             long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
-            //System.out.println(getName()+" bytes written:"+written);
+            //System.out.println(getName() + " bytes written:" + written);
             channel.bytesWritten += written;
 
             channel.discardWrittenBuffers();

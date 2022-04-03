@@ -360,30 +360,30 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
 
-        Packet responseChain = null;
-        channel.readBuffer.flip();
-        for (; ; ) {
-            Packet packet = channel.packetReader.readFrom(channel.readBuffer);
-            if (packet == null) {
-                break;
-            }
-
-            channel.packetsRead++;
-            packet.setConn((ServerConnection) channel.connection);
-            packet.channel = channel;
-
-            if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
-                packet.next = responseChain;
-                responseChain = packet;
-                //frontend.handleResponse(packet);
-            } else {
-                handleRemoteOp(packet);
-            }
-        }
-
-        if (responseChain != null) {
-            frontend.handleResponse(responseChain);
-        }
+//        Packet responseChain = null;
+//        channel.readBuffer.flip();
+//        for (; ; ) {
+//            Packet packet = channel.packetReader.readFrom(channel.readBuffer);
+//            if (packet == null) {
+//                break;
+//            }
+//
+//            channel.framesRead++;
+//            packet.setConn((ServerConnection) channel.connection);
+//            packet.channel = channel;
+//
+//            if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
+//                packet.next = responseChain;
+//                responseChain = packet;
+//                //frontend.handleResponse(packet);
+//            } else {
+//                handleRemoteOp(packet);
+//            }
+//        }
+//
+//        if (responseChain != null) {
+//            frontend.handleResponse(responseChain);
+//        }
 
         //channel.flush();not needed
         compactOrClear(channel.readBuffer);
@@ -435,29 +435,29 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         buf.clear();
 
         int bytesWritten = 0;
-
-        for (; ; ) {
-            ByteBuffer buffer = channel.current;
-
-            if (buffer == null) {
-                buffer = channel.pending.poll();
-            }
-
-            if (buffer == null) {
-                break;
-            }
-
-            channel.packetsWritten++;
-            channel.bytesWritten += buffer.remaining();
-            bytesWritten += buffer.remaining();
-            buf.writeBytes(buffer);
-
-            if (buffer.hasRemaining()) {
-                channel.current = buffer;
-            } else {
-                channel.current = null;
-            }
-        }
+//
+//        for (; ; ) {
+//            ByteBuffer buffer = channel.current;
+//
+//            if (buffer == null) {
+//                buffer = channel.pending.poll();
+//            }
+//
+//            if (buffer == null) {
+//                break;
+//            }
+//
+//            channel.packetsWritten++;
+//            channel.bytesWritten += buffer.remaining();
+//            bytesWritten += buffer.remaining();
+//            buf.writeBytes(buffer);
+//
+//            if (buffer.hasRemaining()) {
+//                channel.current = buffer;
+//            } else {
+//                channel.current = null;
+//            }
+//        }
 
         if (buf.readableBytes() != bytesWritten) {
             throw new RuntimeException("Data lost: " + buf + " bytes written:" + bytesWritten);

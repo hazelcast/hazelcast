@@ -1,14 +1,13 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.OpCodes;
 import com.hazelcast.table.Item;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.nio.Packet.VERSION;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_CALL_ID;
 
 public class UpsertOp extends Op {
 
@@ -29,32 +28,9 @@ public class UpsertOp extends Op {
         item.b = request.readInt();
         map.put(item.key, item);
 
-        //System.out.println("write: begin offset:"+out.position());
+        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
+                .completeWriting();
 
-        response.writeByte(VERSION);
-
-        response.writeChar((char)Packet.FLAG_OP_RESPONSE);
-
-        // partitionId
-        response.writeInt(partitionId);
-
-        // fake position
-        int sizePos = response.position();
-        response.writeInt(-1);
-
-        //System.out.println("write: position call id: "+out.position());
-        //System.out.println("write: data offset:"+Packet.DATA_OFFSET);
-        // callId
-        response.writeLong(callId);
-
-        // the length of the packet
-        int len = response.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
-        //System.out.println("len: " + len);
-        response.setInt(sizePos, len);
-
-        //here we load the key
-        //here we load the value
-        // and insert it.
 
         return Op.RUN_CODE_DONE;
     }

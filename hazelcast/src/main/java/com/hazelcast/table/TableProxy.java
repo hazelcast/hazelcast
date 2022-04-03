@@ -1,26 +1,22 @@
 package com.hazelcast.table;
 
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.reactor.OpCodes;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Invocation;
+import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.TableService;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
-import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
@@ -38,7 +34,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
     }
 
-
     @Override
     public void upsert(V v) {
         CompletableFuture f = asyncUpsert(v);
@@ -50,28 +45,18 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     private CompletableFuture asyncUpsert(V v) {
-        Item item = (Item)v;
+        Item item = (Item) v;
         Invocation inv = new Invocation();
-        inv.opcode = TABLE_UPSERT;
-        inv.partitionId = HashUtil.hashToIndex(Long.hashCode(item.key), partitionCount);
-        inv.out = new ByteArrayObjectDataOutput(128, ss, BIG_ENDIAN);
-        inv.out.position(Packet.DATA_OFFSET);
+        int partitionId = HashUtil.hashToIndex(Long.hashCode(item.key), partitionCount);
+        inv.request = new Frame(60)
+                .writeRequestHeader(partitionId, TABLE_UPSERT)
+                .writeString(name)
+                .writeLong(item.key)
+                .writeInt(item.a)
+                .writeInt(item.b)
+                .completeWriting();
 
-        try {
-            inv.out.writeByte(TABLE_UPSERT);
-            inv.out.position(inv.out.position() + LONG_SIZE_IN_BYTES);
-            inv.out.writeInt(name.length());
-            for (int k = 0; k < name.length(); k++) {
-                inv.out.writeChar(name.charAt(k));
-            }
-            inv.out.writeLong(item.key);
-            inv.out.writeInt(item.a);
-            inv.out.writeInt(item.b);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return reactorFrontEnd.invoke(inv);
+        return reactorFrontEnd.invoke(inv, partitionId);
     }
 
     @Override
@@ -101,20 +86,12 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     private CompletableFuture asyncNoop() {
+        int partitionId = ThreadLocalRandom.current().nextInt(271);
         Invocation inv = new Invocation();
-        inv.opcode = TABLE_NOOP;
-        inv.partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
-        inv.out = new ByteArrayObjectDataOutput(128, ss, BIG_ENDIAN);
-        inv.out.position(Packet.DATA_OFFSET);
-
-        try {
-            inv.out.writeByte(TABLE_NOOP);
-            inv.out.position(inv.out.position() + LONG_SIZE_IN_BYTES);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return reactorFrontEnd.invoke(inv);
+        inv.request = new Frame(32)
+                .writeRequestHeader(partitionId, TABLE_NOOP)
+                .completeWriting();
+        return reactorFrontEnd.invoke(inv, partitionId);
     }
 
 
@@ -137,11 +114,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void selectByKey(K key) {
-        Invocation request = new Invocation();
-        request.opcode = OpCodes.TABLE_SELECT_BY_KEY;
-        request.partitionId = 0;
-        CompletableFuture f = reactorFrontEnd.invoke(request);
-        f.join();
+        throw new RuntimeException();
     }
 
     @Override
