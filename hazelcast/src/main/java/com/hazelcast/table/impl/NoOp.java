@@ -17,7 +17,7 @@ public class NoOp extends Op {
     public int run() throws Exception {
         response.writeByte(VERSION);
 
-        response.writeChar(Packet.FLAG_OP_RESPONSE);
+        response.writeChar((char)Packet.FLAG_OP_RESPONSE);
 
         // partitionId
         response.writeInt(partitionId);
@@ -28,7 +28,7 @@ public class NoOp extends Op {
 
         response.writeLong(callId);
         int len = response.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
-        response.writeInt(sizePos, len);
+        response.setInt(sizePos, len);
         return Op.RUN_CODE_DONE;
     }
 }

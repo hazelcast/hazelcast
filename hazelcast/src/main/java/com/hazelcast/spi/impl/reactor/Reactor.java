@@ -5,7 +5,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.table.impl.NoOp;
@@ -107,11 +106,8 @@ public abstract class Reactor extends HazelcastManagedThread {
             op.request.init(packet.toByteArray(), Packet.DATA_OFFSET + 1);
             handleOp(op);
 
-            ByteArrayObjectDataOutput response = op.response;
-
-            // todo: because we wrap the response; we don't know when it is safe to reuse
-            // the operation.
-            ByteBuffer byteBuffer = ByteBuffer.wrap(response.toByteArray(), 0, response.position());
+            ByteBuffer byteBuffer = op.response.getByteBuffer();
+            byteBuffer.flip();
             packet.channel.write(byteBuffer);
         } catch (Exception e) {
             e.printStackTrace();
@@ -169,7 +165,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 if (upsertOp == null) {
                     upsertOp = new UpsertOp();
                     upsertOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    upsertOp.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    upsertOp.response = new Out();
                     upsertOp.managers = frontend.managers;
                 }
                 op = upsertOp;
@@ -178,7 +174,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 if (selectByKeyOperation == null) {
                     selectByKeyOperation = new SelectByKeyOperation();
                     selectByKeyOperation.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    selectByKeyOperation.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    selectByKeyOperation.response = new Out();
                     selectByKeyOperation.managers = frontend.managers;
                 }
                 op = selectByKeyOperation;
@@ -187,7 +183,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 if (noOp == null) {
                     noOp = new NoOp();
                     noOp.request = new ByteArrayObjectDataInput(null, frontend.ss, ByteOrder.BIG_ENDIAN);
-                    noOp.response = new ByteArrayObjectDataOutput(-1, frontend.ss, ByteOrder.BIG_ENDIAN);
+                    noOp.response = new Out();
                     noOp.managers = frontend.managers;
                 }
                 op = noOp;
@@ -195,7 +191,7 @@ public abstract class Reactor extends HazelcastManagedThread {
             default:
                 throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
-        op.response.init(new byte[64], 0);
+        op.response.init(64);
         return op;
     }
 

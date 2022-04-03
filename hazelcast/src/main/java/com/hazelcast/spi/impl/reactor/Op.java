@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 
 import java.io.EOFException;
 
@@ -15,7 +14,7 @@ public abstract class Op {
     public int opcode;
     public StringBuffer name = new StringBuffer();
     public ByteArrayObjectDataInput request;
-    public ByteArrayObjectDataOutput response;
+    public Out response;
     public long callId;
 
     public Op(int opcode) {

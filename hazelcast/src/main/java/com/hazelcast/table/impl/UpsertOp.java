@@ -33,7 +33,7 @@ public class UpsertOp extends Op {
 
         response.writeByte(VERSION);
 
-        response.writeChar(Packet.FLAG_OP_RESPONSE);
+        response.writeChar((char)Packet.FLAG_OP_RESPONSE);
 
         // partitionId
         response.writeInt(partitionId);
@@ -50,7 +50,7 @@ public class UpsertOp extends Op {
         // the length of the packet
         int len = response.position() - sizePos - Bits.INT_SIZE_IN_BYTES;
         //System.out.println("len: " + len);
-        response.writeInt(sizePos, len);
+        response.setInt(sizePos, len);
 
         //here we load the key
         //here we load the value
