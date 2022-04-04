@@ -97,7 +97,7 @@
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.3</hadoop.version>
-        <jackson.version>2.12.6</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
