@@ -16,13 +16,15 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowExpression extends VariExpressionWithType<RowValue> {
+public class RowExpression extends VariExpressionWithType<RowValue> implements IdentifiedDataSerializable {
 
     public RowExpression() { }
 
@@ -47,5 +49,16 @@ public class RowExpression extends VariExpressionWithType<RowValue> {
     @Override
     public QueryDataType getType() {
         return QueryDataType.ROW;
+    }
+
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_ROW;
     }
 }

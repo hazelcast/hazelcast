@@ -32,6 +32,8 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.RowExpression;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.expression.SearchableExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
@@ -174,8 +176,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FIELD_ACCESS = 62;
     public static final int TYPE = 63;
     public static final int TYPE_FIELD = 64;
+    public static final int EXPRESSION_ROW = 65;
+    public static final int ROW_VALUE = 66;
 
-    public static final int LEN = TYPE_FIELD + 1;
+    public static final int LEN = ROW_VALUE + 1;
 
     @Override
     public int getFactoryId() {
@@ -265,6 +269,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[TYPE] = arg -> new Type();
         constructors[TYPE_FIELD] = arg -> new Type.TypeField();
+        constructors[EXPRESSION_ROW] = arg -> new RowExpression();
+        constructors[ROW_VALUE] = arg -> new RowValue();
 
         return new ArrayDataSerializableFactory(constructors);
     }

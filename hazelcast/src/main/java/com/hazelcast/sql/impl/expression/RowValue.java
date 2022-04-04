@@ -16,13 +16,18 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowValue implements Serializable, HazelcastObjectMarker {
+public class RowValue implements Serializable, HazelcastObjectMarker, IdentifiedDataSerializable {
     private List<Object> values;
 
     public RowValue() {
@@ -39,5 +44,32 @@ public class RowValue implements Serializable, HazelcastObjectMarker {
 
     public void setValues(final List<Object> values) {
         this.values = values;
+    }
+
+    @Override
+    public void writeData(final ObjectDataOutput out) throws IOException {
+        out.writeInt(values.size());
+        for (final Object value : values) {
+            out.writeObject(value);
+        }
+    }
+
+    @Override
+    public void readData(final ObjectDataInput in) throws IOException {
+        this.values = new ArrayList<>();
+        final int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            this.values.add(in.readObject());
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.ROW_VALUE;
     }
 }
