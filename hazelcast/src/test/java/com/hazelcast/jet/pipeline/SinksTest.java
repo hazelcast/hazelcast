@@ -920,14 +920,14 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteReliableTopicSinkClosesClient() {
         // Check we are in a clean state
-        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(0);
+        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(1);
 
         // When
         Sink<Object> sink = Sinks.remoteReliableTopic(sinkName, clientConfig);
         p.readFrom(Sources.list(srcName)).writeTo(sink);
         execute();
 
-        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(0);
+        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(1);
     }
 
     @Test
