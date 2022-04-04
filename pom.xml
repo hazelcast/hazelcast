@@ -83,6 +83,8 @@
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
         <owasp.dependency-check.version>7.1.0</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
+        <maven.docker.plugin.version>0.39.1</maven.docker.plugin.version>
+        <maven.exec.plugin.version>3.0.0</maven.exec.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
@@ -490,7 +492,7 @@
                                 <licenseMerge>
                                     BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
                                     New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
-                                    BSD-3-Clause
+                                    BSD-3-Clause|BSD Licence 3
                                 </licenseMerge>
                                 <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
                                 <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>
@@ -1401,6 +1403,13 @@
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <maven.source.skip>true</maven.source.skip>
             </properties>
+        </profile>
+        <profile>
+            <id>kubernetes-tests</id>
+            <modules>
+                <module>hazelcast-it-k8s</module>
+                <module>hazelcast-it-k8s-tests</module>
+            </modules>
         </profile>
     </profiles>
 

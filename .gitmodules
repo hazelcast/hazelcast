@@ -1,0 +1,3 @@
+[submodule "hazelcast-it-k8s-tests/hazelcast-docker"]
+	path = hazelcast-it-k8s-tests/hazelcast-docker
+	url = https://github.com/hazelcast/hazelcast-docker.git
