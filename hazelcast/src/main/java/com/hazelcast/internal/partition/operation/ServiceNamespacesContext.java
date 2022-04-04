@@ -59,7 +59,7 @@ import static java.util.Collections.singleton;
  * \---------/      \---------/      \---------/
  * </pre>
  */
-public class ServiceNamespacesContext {
+final class ServiceNamespacesContext {
 
     private final Iterator<ServiceNamespace> namespaceIterator;
     private final Set<ServiceNamespace> allNamespaces = new HashSet<>();
@@ -67,7 +67,7 @@ public class ServiceNamespacesContext {
 
     private ServiceNamespace currentNamespace;
 
-    public ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
+    ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
         nodeEngine.forEachMatchingService(FragmentedMigrationAwareService.class, serviceInfo -> {
             // get all namespaces of a service
             Collection<ServiceNamespace> namespaces = getAllServiceNamespaces(serviceInfo, event);
@@ -108,24 +108,24 @@ public class ServiceNamespacesContext {
                 .getService()).getAllServiceNamespaces(event);
     }
 
-    public boolean hasNext() {
+    boolean hasNext() {
         return namespaceIterator.hasNext();
     }
 
-    public ServiceNamespace current() {
+    ServiceNamespace current() {
         return currentNamespace;
     }
 
-    public ServiceNamespace next() {
+    ServiceNamespace next() {
         currentNamespace = namespaceIterator.next();
         return currentNamespace;
     }
 
-    public Collection<String> getServiceNames(ServiceNamespace ns) {
+    Collection<String> getServiceNames(ServiceNamespace ns) {
         return namespaceToServices.get(ns);
     }
 
-    public Set<ServiceNamespace> getAllNamespaces() {
+    Set<ServiceNamespace> getAllNamespaces() {
         return allNamespaces;
     }
 }
