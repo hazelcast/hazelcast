@@ -51,6 +51,8 @@ public class ClientExecutorSplitBrainProtectionWriteTest extends ExecutorSplitBr
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
