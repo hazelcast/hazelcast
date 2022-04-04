@@ -133,11 +133,12 @@ public abstract class Reactor extends HazelcastManagedThread {
                 throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.request = request.position(OFFSET_REQUEST_PAYLOAD);
-        //if (request.future != null) {
+        if (request.future != null) {
             op.response = new Frame(20);
-        //} else {
-        //    op.response = responseFrameAllocator.allocate();
-       // }
+        } else {
+            op.response = responseFrameAllocator.allocate();
+            //System.out.println(responseFrameAllocator);
+        }
 
         return op;
     }
