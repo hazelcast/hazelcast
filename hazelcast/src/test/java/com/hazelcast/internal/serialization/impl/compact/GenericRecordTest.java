@@ -96,8 +96,19 @@ public class GenericRecordTest {
     }
 
     @Test
-    public void testCloneObjectConvertedFromData() {
-        SerializationService serializationService = createSerializationService();
+    public void testCloneDeserializedGenericRecord() {
+        GenericRecordBuilder builder = compact("fooBarTypeName");
+        builder.setInt32("foo", 1);
+        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
+        builder.setInt64("bar", 1231L);
+        DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
+
+        verifyCloneWithBuilder(genericRecord);
+    }
+
+    @Test
+    public void testCloneCompactInternalGenericRecord() throws IOException {
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
@@ -106,10 +117,13 @@ public class GenericRecordTest {
         GenericRecord expectedGenericRecord = builder.build();
 
         Data data = serializationService.toData(expectedGenericRecord);
+        CompactInternalGenericRecord genericRecord = (CompactInternalGenericRecord)
+                serializationService.readAsInternalGenericRecord(data);
 
-        Object object = serializationService.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
+        verifyCloneWithBuilder(genericRecord);
+    }
 
+    private void verifyCloneWithBuilder(GenericRecord genericRecord) {
         GenericRecordBuilder cloneBuilder = genericRecord.cloneWithBuilder();
         cloneBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
@@ -132,28 +146,8 @@ public class GenericRecordTest {
     }
 
     @Test
-    public void testCloneObjectCreatedViaAPI() {
-        GenericRecordBuilder builder = compact("fooBarTypeName");
-        builder.setInt32("foo", 1);
-        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
-        builder.setInt64("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
-
-        GenericRecordBuilder cloneBuilder = genericRecord.cloneWithBuilder();
-        cloneBuilder.setInt32("foo", 2);
-        assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
-
-        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
-
-        GenericRecord clone = cloneBuilder.build();
-
-        assertEquals(2, clone.getInt32("foo"));
-        assertEquals(1231L, clone.getInt64("bar"));
-    }
-
-    @Test
-    public void testBuildFromObjectConvertedFromData() {
-        SerializationService serializationService = createSerializationService();
+    public void testBuildFromCompactInternalGenericRecord() throws IOException {
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
@@ -163,9 +157,13 @@ public class GenericRecordTest {
 
         Data data = serializationService.toData(expectedGenericRecord);
 
-        Object object = serializationService.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
+        CompactInternalGenericRecord genericRecord = (CompactInternalGenericRecord)
+                serializationService.readAsInternalGenericRecord(data);
 
+        verifyNewBuilder(genericRecord);
+    }
+
+    private void verifyNewBuilder(GenericRecord genericRecord) {
         GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
         recordBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
@@ -181,25 +179,14 @@ public class GenericRecordTest {
     }
 
     @Test
-    public void testBuildFromObjectCreatedViaAPI() {
+    public void testBuildFromDeserializedGenericRecord() {
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);
         GenericRecord genericRecord = builder.build();
 
-        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
-        recordBuilder.setInt32("foo", 2);
-        assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
-
-        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Invalid field name"));
-        assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
-
-        recordBuilder.setInt64("bar", 100);
-        GenericRecord newRecord = recordBuilder.build();
-
-        assertEquals(2, newRecord.getInt32("foo"));
-        assertEquals(100, newRecord.getInt64("bar"));
+        verifyNewBuilder(genericRecord);
     }
 
     @Test

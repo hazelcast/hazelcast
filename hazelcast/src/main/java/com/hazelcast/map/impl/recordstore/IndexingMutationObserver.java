@@ -108,16 +108,19 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      */
     private void clearGlobalIndexes(boolean destroy) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.isGlobal()) {
-            if (destroy) {
-                indexes.destroyIndexes();
-            } else {
-                if (indexes.haveAtLeastOneIndex()) {
-                    // clears indexed data of this partition
-                    // from shared global index.
-                    fullScanLocalDataToClear(indexes);
-                }
-            }
+        if (!indexes.isGlobal()) {
+            return;
+        }
+
+        if (destroy) {
+            indexes.destroyIndexes();
+            return;
+        }
+
+        if (indexes.haveAtLeastOneIndex()) {
+            // clears indexed data of this partition
+            // from shared global index.
+            fullScanLocalDataToClear(indexes);
         }
     }
 
@@ -132,9 +135,10 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
         if (destroy) {
             indexes.destroyIndexes();
-        } else {
-            indexes.clearAll();
+            return;
         }
+
+        indexes.clearAll();
     }
 
     /**

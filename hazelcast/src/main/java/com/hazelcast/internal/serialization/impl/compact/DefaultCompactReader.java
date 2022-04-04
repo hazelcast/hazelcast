@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 
 import javax.annotation.Nonnull;
@@ -72,6 +73,8 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
 
 /**
  * Adapter to make CompactInternalGenericRecord provide `CompactReader` API.
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
 public class DefaultCompactReader extends CompactInternalGenericRecord implements CompactReader {
 
@@ -79,7 +82,6 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
                                 @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         super(serializer, in, schema, associatedClass, schemaIncludedInBinary);
     }
-
 
     @Override
     public boolean readBoolean(@Nonnull String fieldName) {
