@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.reactor.nio;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Frame;
@@ -21,7 +20,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -34,8 +32,7 @@ public class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
-    public final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
-    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
+    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
     public NioReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
         super(frontend, channelConfig, thisAddress, port,
@@ -45,6 +42,7 @@ public class NioReactor extends Reactor {
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -56,24 +54,7 @@ public class NioReactor extends Reactor {
     }
 
     @Override
-    public void schedule(Frame request) {
-        runQueue.add(request);
-        wakeup();
-    }
-
-    public void schedule(Channel channel) {
-        runQueue.add(channel);
-        wakeup();
-    }
-
-    @Override
-    protected void schedule(ConnectRequest request) {
-        runQueue.add(request);
-        wakeup();
-    }
-
-    @Override
-    public void setupServerSocket() throws Exception {
+    protected void setupServerSocket() throws Exception {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.setOption(SO_RCVBUF, channelConfig.receiveBufferSize);
 
@@ -99,8 +80,19 @@ public class NioReactor extends Reactor {
         return channel;
     }
 
+    private void configure(Socket socket) throws SocketException {
+        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
+        socket.setSendBufferSize(channelConfig.sendBufferSize);
+        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+
+        String id = socket.getLocalAddress() + "->" + socket.getRemoteSocketAddress();
+        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getTcpNoDelay());
+        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+    }
+
     @Override
-    public void eventLoop() throws Exception {
+    protected void eventLoop() throws Exception {
         while (!frontend.shuttingdown) {
             runTasks();
 
@@ -136,25 +128,6 @@ public class NioReactor extends Reactor {
                         key.cancel();
                     }
                 }
-            }
-        }
-    }
-
-    private void runTasks() {
-        for (; ; ) {
-            Object task = runQueue.poll();
-            if (task == null) {
-                break;
-            }
-
-            if (task instanceof NioChannel) {
-                handleOutbound((NioChannel) task);
-            } else if (task instanceof Frame) {
-                handleRequest((Frame) task);
-            } else if (task instanceof ConnectRequest) {
-                handleConnectRequest((ConnectRequest) task);
-            } else {
-                throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
         }
     }
@@ -233,7 +206,9 @@ public class NioReactor extends Reactor {
         logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
     }
 
-    private void handleOutbound(NioChannel channel) {
+    @Override
+    protected void handleOutbound(Channel c) {
+        NioChannel channel = (NioChannel) c;
         channel.handleOutboundCalls++;
         //System.out.println("Processing channel");
         try {
@@ -253,13 +228,15 @@ public class NioReactor extends Reactor {
             channel.discardWrittenBuffers();
 
             // todo: we should only unschedule if there is nothing left to write.
+            // otherwise we need to schedule for a OP_WRITE
             channel.unschedule();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void handleConnectRequest(ConnectRequest request) {
+    @Override
+    protected void handleConnectRequest(ConnectRequest request) {
         try {
             SocketAddress address = request.address;
             System.out.println("ConnectRequest address:" + address);
@@ -282,16 +259,5 @@ public class NioReactor extends Reactor {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void configure(Socket socket) throws SocketException {
-        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-        socket.setSendBufferSize(channelConfig.sendBufferSize);
-        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
-
-        String id = socket.getLocalAddress() + "->" + socket.getRemoteSocketAddress();
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getTcpNoDelay());
-        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 }

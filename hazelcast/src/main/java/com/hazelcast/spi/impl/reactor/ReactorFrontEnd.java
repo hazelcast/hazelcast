@@ -43,7 +43,7 @@ public class ReactorFrontEnd {
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
     public final Managers managers;
-    private final ConcurrentMap<Address, Invocations> invocationsPerMember = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Address, Requests> requestsPerMember = new ConcurrentHashMap<>();
     public ResponseThread responseThread;
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
@@ -102,7 +102,7 @@ public class ReactorFrontEnd {
             r.start();
         }
 
-        //monitorThread.start();
+        monitorThread.start();
         responseThread.start();
     }
 
@@ -111,8 +111,8 @@ public class ReactorFrontEnd {
 
         shuttingdown = true;
 
-        for (Invocations invocations : invocationsPerMember.values()) {
-            for (Frame request : invocations.map.values()) {
+        for (Requests requests : requestsPerMember.values()) {
+            for (Frame request : requests.map.values()) {
                 request.future.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
@@ -139,7 +139,7 @@ public class ReactorFrontEnd {
                 reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
             }
         } else {
-            Invocations invocations = getInvocations(address);
+            Requests invocations = getRequests(address);
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel(partitionId)];
 
@@ -170,7 +170,7 @@ public class ReactorFrontEnd {
             // todo: hack with the assignment of a partition to a local cpu.
             reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
         } else {
-            Invocations invocations = getInvocations(address);
+            Requests invocations = getRequests(address);
             long callId = invocations.callId.incrementAndGet();
             request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
             invocations.map.put(callId, request);
@@ -240,18 +240,18 @@ public class ReactorFrontEnd {
         return connection;
     }
 
-    public Invocations getInvocations(Address address) {
-        Invocations invocations = invocationsPerMember.get(address);
-        if (invocations != null) {
-            return invocations;
+    public Requests getRequests(Address address) {
+        Requests requests = requestsPerMember.get(address);
+        if (requests != null) {
+            return requests;
         }
 
-        Invocations newInvocations = new Invocations();
-        Invocations foundInvocations = invocationsPerMember.putIfAbsent(address, newInvocations);
-        return foundInvocations == null ? newInvocations : foundInvocations;
+        Requests newRequests = new Requests();
+        Requests foundRequests = requestsPerMember.putIfAbsent(address, newRequests);
+        return foundRequests == null ? newRequests : foundRequests;
     }
 
-    public static class Invocations {
+    public static class Requests {
         private final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
         private final AtomicLong callId = new AtomicLong(500);
     }
@@ -264,14 +264,14 @@ public class ReactorFrontEnd {
 
         try {
             Address remoteAddress = response.connection.getRemoteAddress();
-            Invocations invocations = invocationsPerMember.get(remoteAddress);
-            if (invocations == null) {
-                System.out.println("Dropping response " + response + ", invocations not found");
+            Requests requests = requestsPerMember.get(remoteAddress);
+            if (requests == null) {
+                System.out.println("Dropping response " + response + ", requests not found");
                 return;
             }
 
             long callId = response.getLong(Frame.OFFSET_RESPONSE_CALL_ID);
-            Frame request = invocations.map.remove(callId);
+            Frame request = requests.map.remove(callId);
             if (request == null) {
                 System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
             } else {

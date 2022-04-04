@@ -2,6 +2,7 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
@@ -112,7 +113,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 //    }
 
     private final boolean spin;
-    public final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
     private LinuxSocket serverSocket;
@@ -148,6 +148,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -157,27 +158,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             // write to the evfd which will then wake-up epoll_wait(...)
             Native.eventFdWrite(eventfd.intValue(), 1L);
         }
-    }
-
-    @Override
-    public void schedule(Frame request) {
-        runQueue.add(request);
-        wakeup();
-    }
-
-    public void schedule(IO_UringChannel channel) {
-        if (runQueue.contains(channel)) {
-            throw new RuntimeException("duplicate");
-        }
-
-        runQueue.add(channel);
-        wakeup();
-    }
-
-    @Override
-    public void schedule(ConnectRequest request) {
-        runQueue.add(request);
-        wakeup();
     }
 
     @Override
@@ -413,29 +393,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
-    private void runTasks() {
-        for (; ; ) {
-            Object task = runQueue.poll();
-            if (task == null) {
-                return;
-            }
-
-            if (task instanceof Frame) {
-                handleRequest((Frame) task);
-            } else if (task instanceof IO_UringChannel) {
-                handleOutbound((IO_UringChannel) task);
-            } else if (task instanceof ConnectRequest) {
-                handleConnectRequest((ConnectRequest) task);
-            } else {
-                throw new RuntimeException("Unrecognized type:" + task.getClass());
-            }
-        }
-    }
 
 
-    //   private int handleOutbound = 0;
-
-    private void handleOutbound(IO_UringChannel channel) {
+    @Override
+    protected void handleOutbound(Channel c) {
+        IO_UringChannel channel = (IO_UringChannel)c;
         channel.handleOutboundCalls++;
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
@@ -489,7 +451,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.unschedule();
     }
 
-    private void handleConnectRequest(ConnectRequest request) {
+    @Override
+    protected void handleConnectRequest(ConnectRequest request) {
         try {
             SocketAddress address = request.address;
             System.out.println(getName() + " connectRequest to address:" + address);

@@ -11,9 +11,11 @@ public final class MonitorThread extends Thread {
     private long prevMillis = currentTimeMillis();
 
     public MonitorThread(Reactor[] reactors) {
+        super("MonitorThread");
         this.reactors = reactors;
     }
 
+    @Override
     public void run() {
         try {
             long nextWakeup = currentTimeMillis() + 1000;
@@ -35,9 +37,13 @@ public final class MonitorThread extends Thread {
                 this.prevMillis = currentMillis;
 
                 for (Reactor reactor : reactors) {
-                    for (Channel c : reactor.channels()) {
-                        displayChannel(c, elapsed);
+                    for (Channel channel : reactor.channels()) {
+                        displayChannel(channel, elapsed);
                     }
+                }
+
+                for (Reactor reactor : reactors) {
+                    displayReactor(reactor);
                 }
             }
         } catch (Exception e) {
@@ -45,10 +51,15 @@ public final class MonitorThread extends Thread {
         }
     }
 
+    private void displayReactor(Reactor reactor) {
+        System.out.println(reactor + " processed-request-count:" + reactor.processedRequestCount);
+        System.out.println(reactor + " channel-count:" + reactor.channels().size());
+    }
+
     private void displayChannel(Channel channel, long elapsed) {
-        if(channel instanceof IO_UringChannel ) {
+        if (channel instanceof IO_UringChannel) {
             IO_UringChannel u = (IO_UringChannel) channel;
-            System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled +" pending:"+u.pending.size());
+            System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled + " pending:" + u.pending.size());
         }
 
         long packetsRead = channel.framesRead;
@@ -79,7 +90,7 @@ public final class MonitorThread extends Thread {
         System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
         System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
         System.out.println(channel.remoteAddress + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
-        System.out.println(channel.remoteAddress + " " + (channel.bytesWritten-channel.bytesWrittenConfirmed) + " byte write diff");
+        System.out.println(channel.remoteAddress + " " + (channel.bytesWritten - channel.bytesWrittenConfirmed) + " byte write diff");
     }
 
     public static float thp(long delta, long elapsed) {

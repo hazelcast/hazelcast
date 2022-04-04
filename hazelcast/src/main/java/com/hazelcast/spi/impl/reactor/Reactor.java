@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.table.impl.NoOp;
@@ -13,9 +14,11 @@ import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_OPCODE;
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
@@ -31,6 +34,9 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
     protected final FrameAllocator responseFrameAllocator;
+    protected final FrameAllocator requestFrameAllocator;
+    protected final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
+    protected final SwCounter processedRequestCount = newSwCounter();
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
@@ -40,6 +46,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.thisAddress = thisAddress;
         this.port = port;
         this.responseFrameAllocator = new PooledFrameAllocator(this, 128);
+        this.requestFrameAllocator = new PooledFrameAllocator(this, 128);
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -55,7 +62,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         return request.future;
     }
 
-    protected abstract void schedule(ConnectRequest request);
+    protected abstract void wakeup();
 
     public static class ConnectRequest {
         public Connection connection;
@@ -67,13 +74,32 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected abstract void eventLoop() throws Exception;
 
-    public abstract void schedule(Frame request);
+    public void schedule(Frame request) {
+        runQueue.add(request);
+        wakeup();
+    }
+
+    public void schedule(Channel channel) {
+        runQueue.add(channel);
+        wakeup();
+    }
+
+    public void schedule(ConnectRequest request) {
+        runQueue.add(request);
+        wakeup();
+    }
 
     public Collection<Channel> channels() {
         return channels;
     }
 
+    protected abstract void handleConnectRequest(ConnectRequest task);
+
+    protected abstract void handleOutbound(Channel task);
+
     protected void handleRequest(Frame request) {
+        processedRequestCount.inc();
+
         Op op = null;
         try {
             op = allocateOp(request);
@@ -137,7 +163,6 @@ public abstract class Reactor extends HazelcastManagedThread {
             op.response = new Frame(20);
         } else {
             op.response = responseFrameAllocator.allocate();
-            //System.out.println(responseFrameAllocator);
         }
 
         return op;
@@ -147,6 +172,25 @@ public abstract class Reactor extends HazelcastManagedThread {
         op.cleanup();
         op.request = null;
         op.response = null;
+    }
+
+    protected void runTasks() {
+        for (; ; ) {
+            Object task = runQueue.poll();
+            if (task == null) {
+                break;
+            }
+
+            if (task instanceof Channel) {
+                handleOutbound((Channel) task);
+            } else if (task instanceof Frame) {
+                handleRequest((Frame) task);
+            } else if (task instanceof ConnectRequest) {
+                handleConnectRequest((ConnectRequest) task);
+            } else {
+                throw new RuntimeException("Unrecognized type:" + task.getClass());
+            }
+        }
     }
 
     @Override
