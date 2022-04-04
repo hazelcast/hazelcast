@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -23,15 +22,18 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     private final ReactorFrontEnd reactorFrontEnd;
     private final String name;
-    private final InternalSerializationService ss;
-    private final int partitionCount;
+   private final int partitionCount;
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
         this.reactorFrontEnd = nodeEngine.getReactorFrontEnd();
         this.name = name;
-        this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+    }
+
+    @Override
+    public void newPipeline() {
+
     }
 
     @Override

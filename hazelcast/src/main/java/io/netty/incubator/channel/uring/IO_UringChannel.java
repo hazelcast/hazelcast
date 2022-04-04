@@ -19,8 +19,8 @@ public class IO_UringChannel extends Channel {
     public ByteBuffer readBuffer;
     public ByteBuf[] writeBufs;
     public boolean[] writeBufsInUse;
-    public PacketIOHelper packetReader = new PacketIOHelper();
     public AtomicBoolean scheduled = new AtomicBoolean(false);
+    public Frame inboundFrame;
 
     @Override
     public void flush() {

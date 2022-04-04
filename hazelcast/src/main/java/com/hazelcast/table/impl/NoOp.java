@@ -19,7 +19,7 @@ public class NoOp extends Op {
 
     @Override
     public int run() throws Exception {
-        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
+         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
                 .completeWriting();
 
         return Op.RUN_CODE_DONE;

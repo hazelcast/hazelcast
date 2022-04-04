@@ -2,22 +2,19 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
+import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -29,7 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public class ReactorFrontEnd {
 
@@ -66,7 +62,6 @@ public class ReactorFrontEnd {
         this.managers = new Managers();
         //hack
         managers.tableManager = new TableManager(271);
-
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
@@ -107,7 +102,7 @@ public class ReactorFrontEnd {
             r.start();
         }
 
-        //monitorThread.start();
+        monitorThread.start();
         responseThread.start();
     }
 
@@ -124,6 +119,39 @@ public class ReactorFrontEnd {
 
         responseThread.shutdown();
         monitorThread.shutdown();
+    }
+
+    public void invoke(PipelineImpl pipeline) {
+        if (shuttingdown) {
+            throw new RuntimeException("Can't make invocation, frontend shutting down");
+        }
+
+        if (pipeline.getInvocations().isEmpty()) {
+            return;
+        }
+
+        int partitionId = pipeline.getPartitionId();
+        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+        if (address.equals(thisAddress)) {
+            for (Invocation inv : pipeline.getInvocations()) {
+                //System.out.println("local invoke");
+                // todo: hack with the assignment of a partition to a local cpu.
+                reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(inv);
+            }
+        } else {
+            Invocations invocations = getInvocations(address);
+            TcpServerConnection connection = getConnection(address);
+            Channel channel = connection.channels[partitionIdToChannel(partitionId)];
+
+            for (Invocation inv : pipeline.getInvocations()) {
+                long callId = invocations.callId.incrementAndGet();
+                invocations.map.put(callId, inv);
+                inv.request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+                channel.write(inv.request);
+            }
+
+            channel.flush();
+        }
     }
 
     public CompletableFuture invoke(Invocation inv, int partitionId) {
@@ -146,7 +174,6 @@ public class ReactorFrontEnd {
             long callId = invocations.callId.incrementAndGet();
             inv.request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
             invocations.map.put(callId, inv);
-            //System.out.println("remove invoke");
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel(partitionId)];
             channel.writeAndFlush(inv.request);

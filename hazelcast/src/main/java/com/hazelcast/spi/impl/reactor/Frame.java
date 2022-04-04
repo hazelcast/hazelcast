@@ -2,7 +2,6 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 
 import java.nio.ByteBuffer;
 
@@ -25,7 +24,7 @@ public class Frame {
 
     public Frame next;
     public Connection connection;
-    public NioChannel channel;
+    public Channel channel;
 
     public static final int OFFSET_SIZE = 0;
     public static final int OFFSET_FLAGS = OFFSET_SIZE + INT_SIZE_IN_BYTES;
@@ -150,10 +149,11 @@ public class Frame {
 
     public boolean isComplete() {
         if (buff.position() < INT_SIZE_IN_BYTES) {
+            // not enough bytes.
             return false;
+        } else {
+            return buff.position() == buff.getInt(0);
         }
-
-        return buff.position() == buff.getInt(OFFSET_SIZE);
     }
 
     public Frame completeReceive() {
@@ -177,7 +177,7 @@ public class Frame {
     }
 
     public Frame write(ByteBuffer src, int count) {
-        if (src.remaining()<=count) {
+        if (src.remaining() <= count) {
             buff.put(src);
         } else {
             int limit = src.limit();
@@ -190,5 +190,9 @@ public class Frame {
 
     public void position(int position) {
         buff.position(position);
+    }
+
+    public int remaining() {
+        return buff.remaining();
     }
 }

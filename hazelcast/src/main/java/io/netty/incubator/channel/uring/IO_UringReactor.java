@@ -5,6 +5,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
+import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.Invocation;
@@ -24,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
@@ -319,7 +321,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         // data is the index in the channel.writeBufsInUse array.
 
-        //System.out.println("handle_IORING_OP_WRITE fd:"+fd);
+        // System.out.println("handle_IORING_OP_WRITE fd:"+fd +" bytes written: "+res);
         //System.out.println("res:"+res);
         IO_UringChannel channel = channelMap.get(fd);
         channel.bytesWrittenConfirmed += res;
@@ -359,37 +361,56 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.receiveBuff.clear();
         channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
+        ByteBuffer readBuf = channel.readBuffer;
+        channel.readBuffer.flip();
 
-//        Packet responseChain = null;
-//        channel.readBuffer.flip();
-//        for (; ; ) {
-//            Packet packet = channel.packetReader.readFrom(channel.readBuffer);
-//            if (packet == null) {
-//                break;
-//            }
-//
-//            channel.framesRead++;
-//            packet.setConn((ServerConnection) channel.connection);
-//            packet.channel = channel;
-//
-//            if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
-//                packet.next = responseChain;
-//                responseChain = packet;
-//                //frontend.handleResponse(packet);
-//            } else {
-//                handleRemoteOp(packet);
-//            }
-//        }
-//
-//        if (responseChain != null) {
-//            frontend.handleResponse(responseChain);
-//        }
+        Frame responseChain = null;
+        for (; ; ) {
+            if (channel.inboundFrame == null) {
+                if (readBuf.remaining() < INT_SIZE_IN_BYTES) {
+                    break;
+                }
 
-        //channel.flush();not needed
+                int size = readBuf.getInt();
+                channel.inboundFrame = new Frame(size);
+                channel.inboundFrame.writeInt(size);
+                channel.inboundFrame.connection = channel.connection;
+                channel.inboundFrame.channel = channel;
+            }
+
+            // todo: we need to copy.
+
+            int size = channel.inboundFrame.size();
+            int remaining = size - channel.inboundFrame.position();
+            channel.inboundFrame.write(readBuf, remaining);
+
+            if (!channel.inboundFrame.isComplete()) {
+                break;
+            }
+
+            channel.inboundFrame.completeReceive();
+            Frame frame = channel.inboundFrame;
+            channel.inboundFrame = null;
+            channel.framesRead++;
+
+            if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
+                frame.next = responseChain;
+                responseChain = frame;
+                //frontend.handleResponse(packet);
+            } else {
+                handleRemoteOp(frame);
+            }
+        }
+
         compactOrClear(channel.readBuffer);
 
-        //todo: respnses get unwanted handleChannel
-        if (!channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
+        if (responseChain != null) {
+            frontend.handleResponse(responseChain);
+        }
+
+
+
+        if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
             // if it is already scheduled, we don't need to process outbound since
             // it is guaranteed to be done at some point in the future.
             handleOutbound(channel);
@@ -435,29 +456,32 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         buf.clear();
 
         int bytesWritten = 0;
-//
-//        for (; ; ) {
-//            ByteBuffer buffer = channel.current;
-//
-//            if (buffer == null) {
-//                buffer = channel.pending.poll();
-//            }
-//
-//            if (buffer == null) {
-//                break;
-//            }
-//
-//            channel.packetsWritten++;
-//            channel.bytesWritten += buffer.remaining();
-//            bytesWritten += buffer.remaining();
-//            buf.writeBytes(buffer);
-//
-//            if (buffer.hasRemaining()) {
-//                channel.current = buffer;
-//            } else {
-//                channel.current = null;
-//            }
-//        }
+
+        for (; ; ) {
+            ByteBuffer buffer = channel.current;
+
+            if (buffer == null) {
+                Frame frame = channel.pending.poll();
+                if(frame != null){
+                    buffer = frame.getByteBuffer();
+                }
+            }
+
+            if (buffer == null) {
+                break;
+            }
+
+            channel.packetsWritten++;
+            channel.bytesWritten += buffer.remaining();
+            bytesWritten += buffer.remaining();
+            buf.writeBytes(buffer);
+
+            if (buffer.hasRemaining()) {
+                channel.current = buffer;
+            } else {
+                channel.current = null;
+            }
+        }
 
         if (buf.readableBytes() != bytesWritten) {
             throw new RuntimeException("Data lost: " + buf + " bytes written:" + bytesWritten);

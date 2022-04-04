@@ -2,6 +2,8 @@ package com.hazelcast.table;
 
 public interface Table<K,E> {
 
+    void newPipeline();
+
     void upsert(E item);
 
     void upsertAll(E[] items);
