@@ -80,6 +80,7 @@ public class NioChannel extends Channel {
             } else {
                 buffsLen--;
                 buffs[pos] = null;
+                frames[pos].release();
                 frames[pos] = null;
             }
         }

@@ -4,6 +4,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
@@ -22,6 +23,7 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 // call id: long 12
 public class Frame {
 
+    public CompletableFuture future;
     public Frame next;
     public Connection connection;
     public Channel channel;
@@ -38,12 +40,22 @@ public class Frame {
     public static final int OFFSET_RESPONSE_PAYLOAD = OFFSET_RESPONSE_CALL_ID + LONG_SIZE_IN_BYTES;
 
     private ByteBuffer buff;
+    public FrameAllocator allocator;
 
     public Frame() {
     }
 
     public Frame(int size) {
         this.buff = ByteBuffer.allocate(size);
+    }
+
+    public Frame newFuture(){
+        this.future = new CompletableFuture();
+        return this;
+    }
+
+    public void clear() {
+        buff.clear();
     }
 
     public Frame writeRequestHeader(int partitionId, int opcode) {
@@ -188,11 +200,18 @@ public class Frame {
         return this;
     }
 
-    public void position(int position) {
+    public Frame position(int position) {
         buff.position(position);
+        return this;
     }
 
     public int remaining() {
         return buff.remaining();
+    }
+
+    public void release() {
+        if (allocator != null) {
+            allocator.release(this);
+        }
     }
 }

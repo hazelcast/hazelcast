@@ -1,7 +1,6 @@
 package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.Invocation;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.table.Pipeline;
 
@@ -14,7 +13,7 @@ import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 public class PipelineImpl implements Pipeline {
 
     private final ReactorFrontEnd frontEnd;
-    private List<Invocation> invocations = new LinkedList<>();
+    private List<Frame> requests = new LinkedList<>();
     private int partitionId = -1;
 
     public PipelineImpl(ReactorFrontEnd frontEnd) {
@@ -32,12 +31,12 @@ public class PipelineImpl implements Pipeline {
             throw new RuntimeException("Cross partition request detected; expected " + this.partitionId + " found: " + partitionId);
         }
 
-        Invocation inv = new Invocation();
-        inv.request = new Frame(32)
+        Frame request = new Frame(32)
+                .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();
 
-        invocations.add(inv);
+        requests.add(request);
     }
 
     @Override
@@ -49,7 +48,7 @@ public class PipelineImpl implements Pipeline {
         return partitionId;
     }
 
-    public List<Invocation> getInvocations() {
-        return invocations;
+    public List<Frame> getRequests() {
+        return requests;
     }
 }

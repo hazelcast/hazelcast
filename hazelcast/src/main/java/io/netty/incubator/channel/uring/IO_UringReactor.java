@@ -2,13 +2,10 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.Invocation;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.Buffer;
@@ -163,7 +160,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     @Override
-    public void schedule(Invocation request) {
+    public void schedule(Frame request) {
         runQueue.add(request);
         wakeup();
     }
@@ -398,7 +395,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 responseChain = frame;
                 //frontend.handleResponse(packet);
             } else {
-                handleRemoteOp(frame);
+                handleRequest(frame);
             }
         }
 
@@ -407,7 +404,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         if (responseChain != null) {
             frontend.handleResponse(responseChain);
         }
-
 
 
         if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
@@ -424,17 +420,18 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 return;
             }
 
-            if (task instanceof IO_UringChannel) {
+            if (task instanceof Frame) {
+                handleRequest((Frame) task);
+            } else if (task instanceof IO_UringChannel) {
                 handleOutbound((IO_UringChannel) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
-            } else if (task instanceof Invocation) {
-                handleLocalOp((Invocation) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
         }
     }
+
 
     //   private int handleOutbound = 0;
 
@@ -462,7 +459,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             if (buffer == null) {
                 Frame frame = channel.pending.poll();
-                if(frame != null){
+                if (frame != null) {
                     buffer = frame.getByteBuffer();
                 }
             }

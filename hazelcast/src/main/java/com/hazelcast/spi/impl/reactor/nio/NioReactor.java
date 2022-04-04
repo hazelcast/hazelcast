@@ -3,10 +3,10 @@ package com.hazelcast.spi.impl.reactor.nio;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.Invocation;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 
@@ -56,7 +56,7 @@ public class NioReactor extends Reactor {
     }
 
     @Override
-    public void schedule(Invocation request) {
+    public void schedule(Frame request) {
         runQueue.add(request);
         wakeup();
     }
@@ -149,8 +149,8 @@ public class NioReactor extends Reactor {
 
             if (task instanceof NioChannel) {
                 handleOutbound((NioChannel) task);
-            } else if (task instanceof Invocation) {
-                handleLocalOp((Invocation) task);
+            } else if (task instanceof Frame) {
+                handleRequest((Frame) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnectRequest((ConnectRequest) task);
             } else {
@@ -208,7 +208,7 @@ public class NioReactor extends Reactor {
                 responseChain = frame;
                 //frontend.handleResponse(packet);
             } else {
-                handleRemoteOp(frame);
+                handleRequest(frame);
             }
         }
         compactOrClear(readBuf);

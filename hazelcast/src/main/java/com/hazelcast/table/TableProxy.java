@@ -1,11 +1,9 @@
 package com.hazelcast.table;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.Invocation;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.TableService;
@@ -48,9 +46,10 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     private CompletableFuture asyncUpsert(V v) {
         Item item = (Item) v;
-        Invocation inv = new Invocation();
+
         int partitionId = HashUtil.hashToIndex(Long.hashCode(item.key), partitionCount);
-        inv.request = new Frame(60)
+        Frame request = new Frame(60)
+                .newFuture()
                 .writeRequestHeader(partitionId, TABLE_UPSERT)
                 .writeString(name)
                 .writeLong(item.key)
@@ -58,7 +57,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeInt(item.b)
                 .completeWriting();
 
-        return reactorFrontEnd.invoke(inv, partitionId);
+        return reactorFrontEnd.invoke(request, partitionId);
     }
 
     @Override
@@ -89,11 +88,11 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     private CompletableFuture asyncNoop() {
         int partitionId = ThreadLocalRandom.current().nextInt(271);
-        Invocation inv = new Invocation();
-        inv.request = new Frame(32)
+        Frame frame = new Frame(32)
+                .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();
-        return reactorFrontEnd.invoke(inv, partitionId);
+        return reactorFrontEnd.invoke(frame, partitionId);
     }
 
 

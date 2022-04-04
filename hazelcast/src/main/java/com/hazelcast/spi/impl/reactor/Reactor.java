@@ -16,8 +16,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_OPCODE;
+import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
 import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_FOO;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
@@ -29,6 +30,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final int port;
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
+    protected final FrameAllocator responseFrameAllocator;
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
@@ -37,6 +39,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
+        this.responseFrameAllocator = new PooledFrameAllocator(this, 128);
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -60,6 +63,91 @@ public abstract class Reactor extends HazelcastManagedThread {
         public CompletableFuture<Channel> future;
     }
 
+    protected abstract void setupServerSocket() throws Exception;
+
+    protected abstract void eventLoop() throws Exception;
+
+    public abstract void schedule(Frame request);
+
+    public Collection<Channel> channels() {
+        return channels;
+    }
+
+    protected void handleRequest(Frame request) {
+        Op op = null;
+        try {
+            op = allocateOp(request);
+            int runCode = op.run();
+            switch (runCode) {
+                case RUN_CODE_DONE:
+                    break;
+                default:
+                    throw new RuntimeException();
+            }
+
+            if (request.future == null) {
+                request.channel.write(op.response);
+            } else {
+                request.future.complete(op.response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (op != null) {
+                free(op);
+            }
+        }
+    }
+
+    // Hacky pooling.
+    private UpsertOp upsertOp;
+    private NoOp noOp;
+    private SelectByKeyOperation selectByKeyOperation;
+
+    protected final Op allocateOp(Frame request) {
+        int opcode = request.getInt(OFFSET_REQUEST_OPCODE);
+        Op op;
+        switch (opcode) {
+            case TABLE_UPSERT:
+                if (upsertOp == null) {
+                    upsertOp = new UpsertOp();
+                    upsertOp.managers = frontend.managers;
+                }
+                op = upsertOp;
+                break;
+            case TABLE_SELECT_BY_KEY:
+                if (selectByKeyOperation == null) {
+                    selectByKeyOperation = new SelectByKeyOperation();
+                    selectByKeyOperation.managers = frontend.managers;
+                }
+                op = selectByKeyOperation;
+                break;
+            case TABLE_NOOP:
+                if (noOp == null) {
+                    noOp = new NoOp();
+                    noOp.managers = frontend.managers;
+                }
+                op = noOp;
+                break;
+            default:
+                throw new RuntimeException("Unrecognized opcode:" + opcode);
+        }
+        op.request = request.position(OFFSET_REQUEST_PAYLOAD);
+        //if (request.future != null) {
+            op.response = new Frame(20);
+        //} else {
+        //    op.response = responseFrameAllocator.allocate();
+       // }
+
+        return op;
+    }
+
+    private void free(Op op) {
+        op.cleanup();
+        op.request = null;
+        op.response = null;
+    }
+
     @Override
     public final void executeRun() {
         try {
@@ -75,108 +163,5 @@ public abstract class Reactor extends HazelcastManagedThread {
             e.printStackTrace();
             logger.severe(e);
         }
-    }
-
-
-    protected abstract void setupServerSocket() throws Exception;
-
-    protected abstract void eventLoop() throws Exception;
-
-    /**
-     * Is called for local requests.
-     *
-     * @param request
-     */
-    public abstract void schedule(Invocation request);
-
-    public Collection<Channel> channels() {
-        return channels;
-    }
-
-    protected void handleRemoteOp(Frame request) {
-        try {
-            Frame response = handleOp(request);
-            request.channel.write(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // local call
-    protected void handleLocalOp(Invocation inv) {
-        try {
-            Frame response = handleOp(inv.request);
-            inv.future.complete(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    protected Frame handleOp(Frame request) throws Exception {
-        Op op = allocateOp(request);
-
-        int runCode = op.run();
-        try {
-            switch (runCode) {
-                case RUN_CODE_DONE:
-                    return op.response;
-                case RUN_CODE_FOO:
-                    throw new RuntimeException();
-                default:
-                    throw new RuntimeException();
-            }
-        } finally {
-            free(op);
-        }
-    }
-
-    // Hacky caching.
-    private UpsertOp upsertOp;
-    private NoOp noOp;
-    private SelectByKeyOperation selectByKeyOperation;
-
-    protected final Op allocateOp(Frame request) {
-        int opcode = request.getInt(Frame.OFFSET_REQUEST_OPCODE);
-        Op op;
-        switch (opcode) {
-            case TABLE_UPSERT:
-                if (upsertOp == null) {
-                    upsertOp = new UpsertOp();
-                    upsertOp.response = new Frame();
-                    upsertOp.managers = frontend.managers;
-                }
-                op = upsertOp;
-                break;
-            case TABLE_SELECT_BY_KEY:
-                if (selectByKeyOperation == null) {
-                    selectByKeyOperation = new SelectByKeyOperation();
-                    selectByKeyOperation.response = new Frame();
-                    selectByKeyOperation.managers = frontend.managers;
-                }
-                op = selectByKeyOperation;
-                break;
-            case TABLE_NOOP:
-                if (noOp == null) {
-                    noOp = new NoOp();
-                    noOp.response = new Frame();
-                    noOp.managers = frontend.managers;
-                }
-                op = noOp;
-                break;
-            default:
-                throw new RuntimeException("Unrecognized opcode:" + opcode);
-        }
-        op.request = request;
-        op.request.position(Frame.OFFSET_REQUEST_PAYLOAD);
-        op.response = new Frame(20);
-        return op;
-    }
-
-    private void free(Op op) {
-        op.cleanup();
-        op.request = null;
-        op.response = null;
-
-        //we should return it to the pool.
     }
 }

@@ -102,7 +102,7 @@ public class ReactorFrontEnd {
             r.start();
         }
 
-        monitorThread.start();
+        //monitorThread.start();
         responseThread.start();
     }
 
@@ -112,8 +112,8 @@ public class ReactorFrontEnd {
         shuttingdown = true;
 
         for (Invocations invocations : invocationsPerMember.values()) {
-            for (Invocation i : invocations.map.values()) {
-                i.future.completeExceptionally(new RuntimeException("Shutting down"));
+            for (Frame request : invocations.map.values()) {
+                request.future.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
 
@@ -126,35 +126,35 @@ public class ReactorFrontEnd {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
 
-        if (pipeline.getInvocations().isEmpty()) {
+        if (pipeline.getRequests().isEmpty()) {
             return;
         }
 
         int partitionId = pipeline.getPartitionId();
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            for (Invocation inv : pipeline.getInvocations()) {
+            for (Frame request : pipeline.getRequests()) {
                 //System.out.println("local invoke");
                 // todo: hack with the assignment of a partition to a local cpu.
-                reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(inv);
+                reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
             }
         } else {
             Invocations invocations = getInvocations(address);
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel(partitionId)];
 
-            for (Invocation inv : pipeline.getInvocations()) {
+            for (Frame request : pipeline.getRequests()) {
                 long callId = invocations.callId.incrementAndGet();
-                invocations.map.put(callId, inv);
-                inv.request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
-                channel.write(inv.request);
+                invocations.map.put(callId, request);
+                request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+                channel.write(request);
             }
 
             channel.flush();
         }
     }
 
-    public CompletableFuture invoke(Invocation inv, int partitionId) {
+    public CompletableFuture invoke(Frame request, int partitionId) {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
@@ -168,18 +168,18 @@ public class ReactorFrontEnd {
         if (address.equals(thisAddress)) {
             //System.out.println("local invoke");
             // todo: hack with the assignment of a partition to a local cpu.
-            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(inv);
+            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
         } else {
             Invocations invocations = getInvocations(address);
             long callId = invocations.callId.incrementAndGet();
-            inv.request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
-            invocations.map.put(callId, inv);
+            request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+            invocations.map.put(callId, request);
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel(partitionId)];
-            channel.writeAndFlush(inv.request);
+            channel.writeAndFlush(request);
         }
 
-        return inv.future;
+        return request.future;
     }
 
 
@@ -252,7 +252,7 @@ public class ReactorFrontEnd {
     }
 
     public static class Invocations {
-        private final ConcurrentMap<Long, Invocation> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
         private final AtomicLong callId = new AtomicLong(500);
     }
 
@@ -271,7 +271,7 @@ public class ReactorFrontEnd {
             }
 
             long callId = response.getLong(Frame.OFFSET_RESPONSE_CALL_ID);
-            Invocation request = invocations.map.remove(callId);
+            Frame request = invocations.map.remove(callId);
             if (request == null) {
                 System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
             } else {
@@ -279,6 +279,8 @@ public class ReactorFrontEnd {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            response.release();
         }
     }
 
