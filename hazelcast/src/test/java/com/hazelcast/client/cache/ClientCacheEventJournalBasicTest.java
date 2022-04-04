@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.impl.journal.CacheEventJournalBasicTest;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -63,6 +62,5 @@ public class ClientCacheEventJournalBasicTest extends CacheEventJournalBasicTest
         if (factory != null) {
             factory.terminateAll();
         }
-        HazelcastClient.shutdownAll();
     }
 }

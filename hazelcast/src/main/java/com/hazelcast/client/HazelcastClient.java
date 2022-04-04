@@ -487,4 +487,8 @@ public final class HazelcastClient {
         }
         return instanceName;
     }
+
+    static ConcurrentMap<String, InstanceFuture<HazelcastClientProxy>> getClients() {
+        return CLIENTS;
+    }
 }

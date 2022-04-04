@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 
 public class HazelcastClientUtil {
 
@@ -29,6 +30,15 @@ public class HazelcastClientUtil {
 
     public static String getInstanceName(ClientConfig config) {
         return HazelcastClient.getInstanceName(config, null);
+    }
+
+    public static void registerProxyFuture(String instanceName,
+                                           HazelcastInstanceFactory.InstanceFuture future) {
+        HazelcastClient.getClients().put(instanceName, future);
+    }
+
+    public static boolean hasRegisteredClientWithName(String instanceName) {
+        return HazelcastClient.getClients().containsKey(instanceName);
     }
 
     public static ClientMessage.Frame fastForwardToEndFrame(ClientMessage.ForwardFrameIterator iterator) {

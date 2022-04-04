@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheReadWriteThroughTest;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -86,7 +85,6 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
     @Override
     protected void onTearDown() {
         serverCachingProvider.close();
-        HazelcastClient.shutdownAll();
     }
 
     // https://github.com/hazelcast/hazelcast/issues/6676

@@ -219,4 +219,8 @@ public final class OutOfMemoryErrorDispatcher {
         }
     }
 
+    // Only used for testing purposes
+    public static AtomicReference<HazelcastInstance[]> getClientInstancesRef() {
+        return CLIENT_INSTANCES_REF;
+    }
 }

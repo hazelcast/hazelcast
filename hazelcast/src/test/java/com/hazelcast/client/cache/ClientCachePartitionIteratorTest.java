@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -42,11 +41,5 @@ public class ClientCachePartitionIteratorTest extends AbstractClientCachePartiti
 
         HazelcastInstance client = factory.newHazelcastClient();
         cachingProvider = createClientCachingProvider(client);
-    }
-
-    @Override
-    public void teardown() {
-        super.teardown();
-        HazelcastClient.shutdownAll();
     }
 }
