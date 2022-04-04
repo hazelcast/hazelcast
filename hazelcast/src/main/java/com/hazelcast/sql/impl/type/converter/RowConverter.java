@@ -31,6 +31,7 @@ public class RowConverter extends Converter {
         return RowValue.class;
     }
 
+    // TODO: HZ_OBJECT conversion?
     @Override
     public Object convertToSelf(final Converter converter, final Object val) {
         return (RowValue) val;

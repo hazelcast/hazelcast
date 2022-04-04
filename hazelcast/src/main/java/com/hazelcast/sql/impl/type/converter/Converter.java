@@ -215,6 +215,7 @@ public abstract class Converter implements Serializable {
         throw cannotConvertError(QueryDataTypeFamily.ROW);
     }
 
+    @NotConvertible
     public HazelcastObjectMarker asHzObject(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.HZ_OBJECT);
     }
