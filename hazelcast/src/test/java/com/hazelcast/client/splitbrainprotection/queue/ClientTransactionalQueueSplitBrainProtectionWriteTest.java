@@ -49,6 +49,8 @@ public class ClientTransactionalQueueSplitBrainProtectionWriteTest extends Trans
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
