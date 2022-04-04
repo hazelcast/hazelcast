@@ -185,14 +185,25 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+
         // getting rid of Indexes object in case it has been initialized
         indexes.remove(name);
 
+        destroyMapContainer(mapContainer);
+        mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+    }
+
+    /**
+     * @return {@code true} if destruction is successful, otherwise
+     * return {@code false} if it is already destroyed.
+     */
+    public boolean destroyMapContainer(MapContainer mapContainer) {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (mapServiceContext.removeMapContainer(mapContainer)) {
             mapContainer.onDestroy();
+            return true;
         }
-        mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+        return false;
     }
 
     private void clearLockStore(String name) {

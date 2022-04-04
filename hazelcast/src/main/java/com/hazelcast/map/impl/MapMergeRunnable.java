@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.internal.serialization.Data;
@@ -66,12 +65,6 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
         MapConfig mapConfig = getMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
         return mergePolicyConfig.getBatchSize();
-    }
-
-    @Override
-    protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        MapConfig mapConfig = getMapConfig(dataStructureName);
-        return mapConfig.getInMemoryFormat();
     }
 
     @Override
