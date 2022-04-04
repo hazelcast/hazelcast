@@ -49,6 +49,8 @@ public class ClientCardinalityEstimatorSplitBrainProtectionWriteTest extends Car
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
