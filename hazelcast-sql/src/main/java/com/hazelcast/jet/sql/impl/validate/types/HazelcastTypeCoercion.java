@@ -203,8 +203,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         if (targetHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT) &&
                 (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
                         sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT))) {
-            // TODO: validate row
-            return true;
+
+            return customTypesCompatible(sourceType, targetType);
         }
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
@@ -221,6 +221,50 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         // Types are in the same group, cast source to target.
         coerceNode(scope, rowElement, targetType, replaceFn);
+        return true;
+    }
+
+    private static boolean customTypesCompatible(final RelDataType source, final RelDataType target) {
+        if (source.getFieldCount() != target.getFieldCount()) {
+            // Partial field lists are not supported for now.
+            return false;
+        }
+
+        if (HazelcastTypeUtils.isHzObjectType(source)) {
+            return HazelcastTypeUtils.extractHzObjectType(source).getTypeName()
+                    .equals(HazelcastTypeUtils.extractHzObjectType(target).getTypeName());
+        }
+
+        for (int i = 0; i < source.getFieldList().size(); i++) {
+            final RelDataTypeField sourceField = source.getFieldList().get(i);
+            final RelDataTypeField targetField = target.getFieldList().get(i);
+            if (HazelcastTypeUtils.isHzObjectType(targetField.getType())) {
+                if (!customTypesCompatible(sourceField.getType(), targetField.getType())) {
+                    return false;
+                } else {
+                    continue;
+                }
+            }
+
+            final QueryDataType sourceFieldHzType = HazelcastTypeUtils.toHazelcastType(sourceField.getType());
+            final QueryDataType targetFieldHzType = HazelcastTypeUtils.toHazelcastType(targetField.getType());
+
+            if (targetFieldHzType.getTypeFamily().equals(sourceFieldHzType.getTypeFamily())) {
+                continue;
+            }
+
+            boolean valid = sourceAndTargetAreNumeric(targetFieldHzType, sourceFieldHzType)
+                    || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetFieldHzType, sourceFieldHzType)
+                    // TODO: temporal types
+//                    || targetIsTemporalAndSourceIsVarcharLiteral(targetFieldHzType, sourceHzType, rowElement)
+                    || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.NULL
+                    || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                    && targetFieldHzType.getTypeFamily() == QueryDataTypeFamily.JSON;
+            if (!valid) {
+                return false;
+            }
+        }
+
         return true;
     }
 

@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.validate.types;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -124,11 +127,20 @@ public final class HazelcastTypeUtils {
         }
 
         if (typeFamily instanceof HazelcastObjectType) {
-            // TODO: full conversion
-            return QueryDataType.HZ_OBJECT;
+            return convertHazelcastObjectType(relDataType);
         }
 
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
+    }
+
+    private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
+        final HazelcastObjectType hazelcastObjectType = extractHzObjectType(relDataType);
+        final Type type = TypeRegistry.INSTANCE.getTypeByName(hazelcastObjectType.getTypeName());
+        if (type == null) {
+            throw new HazelcastException("Type " + hazelcastObjectType.getTypeName() + " does not exist.");
+        }
+
+        return type.getQueryDataType();
     }
 
     public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {
@@ -173,6 +185,16 @@ public final class HazelcastTypeUtils {
 
     public static boolean isJsonType(RelDataType type) {
         return SqlTypeName.OTHER.equals(type.getSqlTypeName()) && HazelcastJsonType.FAMILY.equals(type.getFamily());
+    }
+
+    public static boolean isHzObjectType(final RelDataType type) {
+        return type instanceof HazelcastObjectType || type instanceof HazelcastObjectTypeReference;
+    }
+
+    public static HazelcastObjectType extractHzObjectType(final RelDataType relDataType) {
+        return relDataType instanceof HazelcastObjectTypeReference
+                ? (HazelcastObjectType) ((HazelcastObjectTypeReference) relDataType).getOriginal()
+                : (HazelcastObjectType) relDataType;
     }
 
     /**
@@ -335,10 +357,10 @@ public final class HazelcastTypeUtils {
             }
 
             // if they're different kinds of structs, probably going to be supported in the future
-            if (sourceType.getSqlTypeName() != targetType.getSqlTypeName()) {
-//                return false;
-                // TODO: check if Source = HZ_OBJECT and Target is ROW
-            }
+//            if (sourceType.getSqlTypeName() != targetType.getSqlTypeName()) {
+////                return false;
+//                // TODO: check if Source = HZ_OBJECT and Target is ROW
+//            }
 
             int n = targetType.getFieldCount();
             if (sourceType.getFieldCount() != n) {

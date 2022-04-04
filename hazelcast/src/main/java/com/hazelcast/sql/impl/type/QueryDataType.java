@@ -100,8 +100,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     private Converter converter;
     private String typeName = "";
 
-    // TODO: introduce centralized storage here and resolve references on SerDe?
-
     public QueryDataType() {
         // No-op.
     }

@@ -42,6 +42,10 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         this.nullable = nullable;
     }
 
+    public String getTypeName() {
+        return name;
+    }
+
     @Override
     protected void generateTypeString(final StringBuilder sb, final boolean withDetail) {
         sb.append("HZ_OBJECT(")

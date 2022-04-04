@@ -59,7 +59,10 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
         }
 
         final RowValue rowValue = (RowValue) value;
-        final Object result = ReflectionUtils.newInstance(Thread.currentThread().getContextClassLoader(), targetClass.getName());
+        final Object result = ReflectionUtils.newInstance(
+                Thread.currentThread().getContextClassLoader(),
+                targetClass.getName()
+        );
 
         for (int i = 0; i < type.getFields().size(); i++) {
             final Type.TypeField typeField = type.getFields().get(i);
@@ -68,7 +71,8 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
             final Method setter = ReflectionUtils
                     .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
             final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
-                    ? convertRowToTargetType(rowValue.getValues().get(i), TypeRegistry.INSTANCE.getTypeByName(typeField.getQueryDataType().getTypeName()))
+                    ? convertRowToTargetType(rowValue.getValues().get(i),
+                    TypeRegistry.INSTANCE.getTypeByName(typeField.getQueryDataType().getTypeName()))
                     : rowValue.getValues().get(i);
 
             if (setter != null) {
