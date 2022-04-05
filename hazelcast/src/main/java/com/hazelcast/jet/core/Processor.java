@@ -49,7 +49,7 @@ import javax.annotation.Nonnull;
  * processor should work.
  *
  * <h3>Processing methods</h3>
- *
+ * <p>
  * When the documentation in this class refers to <em>processing methods,</em>
  * we mean all methods except for these:
  * <ul>
@@ -59,7 +59,7 @@ import javax.annotation.Nonnull;
  * </ul>
  *
  * <h3>Transactional processors</h3>
- *
+ * <p>
  * If this processor communicates with an external transactional store, after
  * the snapshot is restored and before it executes any code in a <em>processing
  * method</em>, it should rollback all transactions that this processor
@@ -86,7 +86,7 @@ import javax.annotation.Nonnull;
  * </ul>
  *
  * <h3>How the methods are called</h3>
- *
+ * <p>
  * Besides {@link #init}, {@link #close} and {@link #isCooperative} the methods
  * are called in a tight loop with a possibly short back-off if the method does
  * no work. "No work" is defined as adding nothing to outbox and taking nothing
@@ -121,7 +121,7 @@ public interface Processor {
      *     rejects an item (that is when the {@link Outbox#offer(Object)
      *     offer()} method returns {@code false}).
      * </ul>
-     *
+     * <p>
      * Non-cooperative processors are allowed to block, but still must return
      * at least once per second (that is, they should not block
      * indeterminately). If they block longer, snapshots will take longer to
@@ -206,9 +206,14 @@ public interface Processor {
      *
      * @param watermark watermark to be processed
      * @return {@code true} if this watermark has now been processed,
-     *         {@code false} to call this method again with the same watermark
+     * {@code false} to call this method again with the same watermark
      */
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
+
+    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        assert ordinal == 0;
+        return tryProcessWatermark(watermark);
+    }
 
     /**
      * This method will be called periodically and only when the current batch
@@ -235,7 +240,7 @@ public interface Processor {
      * next call.
      *
      * @return {@code true} if the processor is now done completing the edge,
-     *         {@code false} to call this method again
+     * {@code false} to call this method again
      */
     default boolean completeEdge(int ordinal) {
         return true;
@@ -258,7 +263,7 @@ public interface Processor {
      * the latency of snapshots and job cancellations.
      *
      * @return {@code true} if the completing step is now done, {@code false}
-     *         to call this method again
+     * to call this method again
      */
     default boolean complete() {
         return true;
@@ -279,7 +284,7 @@ public interface Processor {
      * The default implementation does nothing and returns {@code true}.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     *      method again
+     * method again
      */
     default boolean saveToSnapshot() {
         return true;
@@ -314,13 +319,13 @@ public interface Processor {
      *     is called. If the implementation doesn't start a new active
      *     transaction, it can opt to not process more input or emit any output
      * </ul>
-     *
+     * <p>
      * This method is skipped if the snapshot was initiated using {@link
      * Job#exportSnapshot}. If this method is skipped, {@link
      * #snapshotCommitFinish} will be skipped too.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     *      method again
+     * method again
      * @since Jet 4.0
      */
     default boolean snapshotCommitPrepare() {
@@ -359,7 +364,7 @@ public interface Processor {
      * returns {@code true}.
      *
      * <h4>Error handling</h4>
-     *
+     * <p>
      * The two-phase commit protocol requires that the second phase must
      * eventually succeed. If you're not able to commit your transactions now,
      * you should either return {@code false} and try again later, or you can
@@ -373,7 +378,7 @@ public interface Processor {
      *
      * @param success true, if the first snapshot phase completed successfully
      * @return {@code true} if this step is done, {@code false} to call this
-     *      method again
+     * method again
      * @since Jet 4.0
      */
     default boolean snapshotCommitFinish(boolean success) {
@@ -427,7 +432,7 @@ public interface Processor {
      * The default implementation takes no action and returns {@code true}.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     *      method again
+     * method again
      */
     default boolean finishSnapshotRestore() {
         return true;
@@ -474,7 +479,7 @@ public interface Processor {
     interface Context extends ProcessorSupplier.Context {
 
         /**
-         *  Return a logger for the processor
+         * Return a logger for the processor
          */
         @Nonnull
         ILogger logger();

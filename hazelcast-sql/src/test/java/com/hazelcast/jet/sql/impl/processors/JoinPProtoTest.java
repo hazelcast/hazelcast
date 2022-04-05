@@ -24,18 +24,36 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class JoinPProtoTest extends SimpleTestInClusterSupport {
+    private HashMap<Byte, Long>[] postponeTimeMap;
+
+    @Before
+    public void before() {
+        //noinspection unchecked
+        postponeTimeMap = new HashMap[2];
+        postponeTimeMap[0] = new HashMap<>();
+        postponeTimeMap[1] = new HashMap<>();
+    }
+
     @Test
     public void simpleTest() {
-        SupplierEx<Processor> supplier = JoinPProto::new;
+        postponeTimeMap[0].put((byte) 0, 1L);
+        postponeTimeMap[1].put((byte) 1, 1L);
+
+        SupplierEx<Processor> supplier =
+                () -> new JoinPProto<Long, Long>(Objects::equals, postponeTimeMap, l -> l, r -> r);
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .inputs(asList(
@@ -68,7 +86,11 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testWatermarkCleanup() {
-        SupplierEx<Processor> supplier = JoinPProto::new;
+        postponeTimeMap[0].put((byte) 0, 2L);
+        postponeTimeMap[1].put((byte) 1, 2L);
+
+        SupplierEx<Processor> supplier =
+                () -> new JoinPProto<Long, Long>(Objects::equals, postponeTimeMap, l -> l, r -> r);
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .inputs(asList(

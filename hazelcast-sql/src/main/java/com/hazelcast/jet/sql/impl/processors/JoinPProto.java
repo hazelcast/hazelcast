@@ -17,45 +17,53 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-public class JoinPProto extends AbstractProcessor {
-    private final BiPredicateEx<Long, Long> predicate;
-    private final Map<Byte, Long> postponeTimeMap = new HashMap<>();
-    private final long postponeTimeDiff;
+public class JoinPProto<T, S> extends AbstractProcessor {
+    /**
+     * <p>
+     * JOIN condition should be transformed into such form:
+     * <pre>
+     *  l.time >= r.time - constant1
+     *  r.time >= l.time - constant2
+     * </pre>
+     */
+    private final BiPredicateEx<T, S> joinCondition;
+    private final ToLongFunctionEx<T> leftTimestampExtractor;
+    private final ToLongFunctionEx<S> rightTimestampExtractor;
+    private final Map<Byte, Long>[] postponeTimeMap;
 
-    private final PriorityQueue<Long> leftBuffer = new PriorityQueue<>();
-    private final PriorityQueue<Long> rightBuffer = new PriorityQueue<>();
+    private final PriorityQueue<T> leftBuffer = new PriorityQueue<>();
+    private final PriorityQueue<S> rightBuffer = new PriorityQueue<>();
 
-    private Iterator<Long> leftPos;
-    private Iterator<Long> rightPos;
+    private Iterator<T> leftPos;
+    private Iterator<S> rightPos;
 
-    private Long leftItem;
-    private Long rightItem;
+    private T leftItem;
+    private S rightItem;
 
-    private Tuple2<Long, Long> pendingLeftOutput;
-    private Tuple2<Long, Long> pendingRightOutput;
+    private Tuple2<T, S> pendingLeftOutput;
+    private Tuple2<T, S> pendingRightOutput;
     private Watermark pendingWatermark;
 
-    private long lastLeftWatermark = Long.MIN_VALUE;
-    private long lastRightWatermark = Long.MIN_VALUE;
-
-    public JoinPProto() {
-        this.predicate = (left, right) -> right >= left - 2L;
-        this.postponeTimeDiff = 2L;
-    }
-
-    public JoinPProto(BiPredicateEx<Long, Long> predicate, long postponeTimeDiff) {
-        this.predicate = predicate;
-        this.postponeTimeDiff = postponeTimeDiff;
+    public JoinPProto(
+            BiPredicateEx<T, S> joinCondition,
+            Map<Byte, Long>[] postponeTimeMap,
+            ToLongFunctionEx<T> leftTimestampExtractor,
+            ToLongFunctionEx<S> rightTimestampExtractor
+    ) {
+        this.joinCondition = joinCondition;
+        this.postponeTimeMap = postponeTimeMap;
+        this.leftTimestampExtractor = leftTimestampExtractor;
+        this.rightTimestampExtractor = rightTimestampExtractor;
     }
 
     @Override
@@ -69,7 +77,7 @@ public class JoinPProto extends AbstractProcessor {
 
         // left input, traverse right buffer
         if (leftItem == null) {
-            leftItem = (Long) item;
+            leftItem = (T) item;
             leftBuffer.offer(leftItem);
             rightPos = rightBuffer.iterator();
         }
@@ -79,6 +87,8 @@ public class JoinPProto extends AbstractProcessor {
             return true;
         }
 
+        // TODO: use JOIN condition
+        // TODO: tuple -> real join operation.
         pendingLeftOutput = Tuple2.tuple2(leftItem, rightPos.next());
         if (tryEmit(pendingLeftOutput)) {
             pendingLeftOutput = null;
@@ -97,7 +107,7 @@ public class JoinPProto extends AbstractProcessor {
 
         // right input, traverse left buffer
         if (rightItem == null) {
-            rightItem = (Long) item;
+            rightItem = (S) item;
             rightBuffer.offer(rightItem);
             leftPos = leftBuffer.iterator();
         }
@@ -107,6 +117,8 @@ public class JoinPProto extends AbstractProcessor {
             return true;
         }
 
+        // TODO: use JOIN condition
+        // TODO: tuple -> real join operation.
         pendingRightOutput = Tuple2.tuple2(leftPos.next(), rightItem);
         if (tryEmit(pendingRightOutput)) {
             pendingRightOutput = null;
@@ -115,7 +127,7 @@ public class JoinPProto extends AbstractProcessor {
     }
 
     @Override
-    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
         if (pendingWatermark != null) {
             if (tryEmit(pendingWatermark)) {
                 pendingWatermark = null;
@@ -124,50 +136,49 @@ public class JoinPProto extends AbstractProcessor {
         }
 
         byte key = watermark.key();
-        long wm = watermark.timestamp();
-
-        if (key == 0) {
-            if (lastLeftWatermark == Long.MIN_VALUE) {
-                lastLeftWatermark = wm;
-                postponeTimeMap.put(key, wm + postponeTimeDiff);
-                if (!tryEmit(watermark)) {
-                    pendingWatermark = watermark;
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-            clearExpiredBufferEvents(leftBuffer, postponeTimeMap.get(key));
-            postponeTimeMap.put(key, lastLeftWatermark);
-            lastLeftWatermark = wm;
-        } else {
-            if (lastRightWatermark == Long.MIN_VALUE) {
-                lastRightWatermark = wm;
-                postponeTimeMap.put(key, wm + postponeTimeDiff);
-                if (!tryEmit(watermark)) {
-                    pendingWatermark = watermark;
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-            clearExpiredBufferEvents(rightBuffer, postponeTimeMap.get(key));
-            postponeTimeMap.put(key, wm + postponeTimeDiff);
-            lastRightWatermark = wm;
-        }
+        long ts = watermark.timestamp();
 
         // TODO: wm coalescing -- research.
+        clearExpiredItemsInBuffer(ordinal, ts - postponeTimeMap[ordinal].get(key));
+
         if (!tryEmit(watermark)) {
             pendingWatermark = watermark;
-        } else {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
-    private void clearExpiredBufferEvents(PriorityQueue<Long> buffer, Long postponeTime) {
-        while (!buffer.isEmpty() && buffer.peek() <= postponeTime) {
-            buffer.poll();
+    private void clearExpiredItemsInBuffer(int ordinal, long postponeTime) {
+        if (ordinal == 0) {
+            clearLeftBuffer(postponeTime);
+        } else {
+            clearRightBuffer(postponeTime);
+        }
+    }
+
+    private void clearLeftBuffer(long postponeTime) {
+        // since leftBuffer is a priority queue, we may do
+        // just linear scan to first non-matched item.
+        while (!leftBuffer.isEmpty()) {
+            long ts = leftTimestampExtractor.applyAsLong(leftBuffer.peek());
+            if (ts <= postponeTime) {
+                leftBuffer.poll();
+            } else {
+                return;
+            }
+        }
+    }
+
+    private void clearRightBuffer(long evictionTimestamp) {
+        // since rightBuffer is a priority queue, we may do
+        // just linear scan to first non-matched item.
+        while (!rightBuffer.isEmpty()) {
+            long ts = rightTimestampExtractor.applyAsLong(rightBuffer.peek());
+            if (ts <= evictionTimestamp) {
+                rightBuffer.poll();
+            } else {
+                return;
+            }
         }
     }
 }
