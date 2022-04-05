@@ -51,7 +51,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
     private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
-    private transient JsonPath constantPathCache;
+    private JsonPath constantPathCache;
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
@@ -245,7 +245,9 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
-        prepareCache();
+        if (this.constantPathCache == null) {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
     }
 
     @Override
