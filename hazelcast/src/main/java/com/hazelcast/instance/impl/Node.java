@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -511,9 +511,6 @@ public class Node {
             waitIfAlreadyShuttingDown();
             return;
         }
-        if (nodeExtension != null) {
-            nodeExtension.shutdown();
-        }
 
         if (!terminate) {
             int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
@@ -588,6 +585,9 @@ public class Node {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
+        if (nodeExtension != null) {
+            nodeExtension.shutdown();
+        }
         if (textCommandService != null) {
             textCommandService.stop();
         }

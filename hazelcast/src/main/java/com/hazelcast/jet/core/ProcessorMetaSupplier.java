@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.Permission;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -444,64 +445,98 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier,
             @Nonnull Address memberAddress
     ) {
+        return new SpecificMemberPms(supplier, memberAddress);
+    }
 
-        /**
-         * A meta-supplier that will only use the given {@code ProcessorSupplier}
-         * on a node with given {@link Address}.
-         */
-        @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
-        @SerializableByConvention
-        class SpecificMemberPms implements ProcessorMetaSupplier, DataSerializable {
+    /**
+     * A meta-supplier that will only use the given {@code ProcessorSupplier}
+     * on a node with given {@link Address}.
+     */
+    @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
+    @SerializableByConvention
+    class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
 
-            private ProcessorSupplier supplier;
-            private Address memberAddress;
+        private ProcessorSupplier supplier;
+        private Address memberAddress;
 
-            @SuppressWarnings("unused")
-            private SpecificMemberPms() {
-            }
+        SpecificMemberPms() {
+        }
 
-            private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
-                this.supplier = supplier;
-                this.memberAddress = memberAddress;
-            }
+        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+            this.supplier = supplier;
+            this.memberAddress = memberAddress;
+        }
 
-            @Override
-            public void init(@Nonnull Context context) throws Exception {
-                PermissionsUtil.checkPermission(supplier, context);
-                if (context.localParallelism() != 1) {
-                    throw new IllegalArgumentException(
-                            "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
-                                    + "supports only total parallelism of 1. Local parallelism must be 1.");
-                }
-            }
-
-            @Nonnull @Override
-            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                if (!addresses.contains(memberAddress)) {
-                    throw new JetException("Cluster does not contain the required member: " + memberAddress);
-                }
-                return addr -> addr.equals(memberAddress) ? supplier : count -> singletonList(new ExpectNothingP());
-            }
-
-            @Override
-            public int preferredLocalParallelism() {
-                return 1;
-            }
-
-            @Override
-            public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeObject(supplier);
-                out.writeObject(memberAddress);
-            }
-
-            @Override
-            public void readData(ObjectDataInput in) throws IOException {
-                supplier = in.readObject();
-                memberAddress = in.readObject();
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            PermissionsUtil.checkPermission(supplier, context);
+            if (context.localParallelism() != 1) {
+                throw new IllegalArgumentException(
+                        "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
+                                + "supports only total parallelism of 1. Local parallelism must be 1.");
             }
         }
 
-        return new SpecificMemberPms(supplier, memberAddress);
+        @Nonnull @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            if (!addresses.contains(memberAddress)) {
+                throw new JetException("Cluster does not contain the required member: " + memberAddress);
+            }
+            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return 1;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(supplier);
+            out.writeObject(memberAddress);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            supplier = in.readObject();
+            memberAddress = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER;
+        }
+    }
+
+    class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+        @Override @Nonnull
+        public Collection<? extends Processor> get(int count) {
+            assert count == 1;
+            return singletonList(new ExpectNothingP());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EXPECT_NOTHING_PROCESSOR_SUPPLIER;
+        }
     }
 
     /**

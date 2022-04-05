@@ -52,12 +52,12 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
-                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])")
         ));
 
         sql = "EXPLAIN PLAN FOR SELECT * FROM map";
         assertRowsOrdered(sql, singletonList(
-                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])")
         ));
     }
 
@@ -72,7 +72,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         SqlStatement statement = new SqlStatement(sql).addParameter(1);
         SqlResult result = instance().getSql().execute(statement);
 
-        String expectedScanRes = "SelectByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1], " +
+        String expectedScanRes = "SelectByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1], " +
                 "filter==($0, ?0)]]], keyCondition=[?0], projections=[__key=[$0], this=[$1]])";
         assertEquals(result.iterator().next().getObject(0), expectedScanRes);
     }
@@ -91,7 +91,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
-                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
                         "index=[map_hash_this], indexExp=[=($1, 10)], remainderExp=[null])")
         ));
     }
@@ -108,7 +108,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
-                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
                         "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
         ));
     }
@@ -126,8 +126,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, asList(
                 new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC], requiresSort=[true])"),
                 new Row("  UnionPhysicalRel(all=[true])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])")
         ));
     }
 
@@ -141,8 +141,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, asList(
                 new Row("UnionPhysicalRel(all=[true])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])"),
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]])")
         ));
     }
 
@@ -159,10 +159,10 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map2", Integer.class, Person.class);
 
         assertRowsOrdered(sql, asList(
-                new Row("ProjectPhysicalRel(__key=[$0], name=[$2])"),
-                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $1)], joinType=[inner])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[0]]]])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[1, 2]]]])")
+                new Row("CalcPhysicalRel(expr#0..5=[{inputs}], __key=[$t0], name=[$t4])"),
+                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $3)], joinType=[inner])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[$0, $1]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[$0, $1, $2, $3]]]])")
         ));
     }
 
@@ -176,7 +176,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
 
         assertRowsOrdered(sql, singletonList(
-                new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=[{" +
+                new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=[{" +
                         "expressions=[[" +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
@@ -187,7 +187,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         sql = "EXPLAIN PLAN FOR INSERT INTO map VALUES (3, 3), (4, 4)";
         assertRowsOrdered(sql, asList(
                 new Row("InsertPhysicalRel(" +
-                        "table=[[hazelcast, public, map[projects=[0, 1]]]], operation=[INSERT], flattened=[false])"),
+                        "table=[[hazelcast, public, map[projects=[$0, $1]]]], operation=[INSERT], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[" +
                         "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}, " +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}], " +
@@ -205,7 +205,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         String sql = "EXPLAIN PLAN FOR SINK INTO map(__key, this) VALUES (2, 2)";
         assertRowsOrdered(sql, singletonList(
-                new Row("SinkMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=" +
+                new Row("SinkMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=" +
                         "[[{expressions=[[" +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}]])"
@@ -223,14 +223,14 @@ public class ExplainStatementTest extends SqlTestSupport {
         // (Optimized) Update by single key
         String sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1";
         assertRowsOrdered(sql, singletonList(
-                new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1], " +
+                new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1, 2], " +
                         "filter==($0, 1)]]], keyCondition=[1], updatedColumns=[[this]], sourceExpressions=[[2]])")
         ));
 
         // Update by multiple keys
         sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1 AND __key = 2";
         assertRowsOrdered(sql, asList(
-                new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], operation=[UPDATE], " +
+                new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], operation=[UPDATE], " +
                         "updateColumnList=[[this]], sourceExpressionList=[[2]], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[]}])")
         ));
@@ -248,16 +248,16 @@ public class ExplainStatementTest extends SqlTestSupport {
         // (Optimized) Delete by single key
         String sql = "EXPLAIN PLAN FOR DELETE FROM map WHERE __key = 1";
         assertRowsOrdered(sql, singletonList(
-                new Row("DeleteByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0], " +
+                new Row("DeleteByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0], " +
                         "filter==($0, 1)]]], keyCondition=[1])")
         ));
 
         // Common Delete by single key
         sql = "EXPLAIN PLAN FOR DELETE FROM map";
         assertRowsOrdered(sql, asList(
-                new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
                         "operation=[DELETE], flattened=[false])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0]]]])")
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0]]]])")
 
         ));
     }
@@ -271,19 +271,5 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("Incorrect syntax near the keyword 'SHOW'");
-    }
-
-    @Test
-    public void test_explainInvalidOrderingQuery() {
-        createMapping("map", Integer.class, Integer.class);
-
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "EXPLAIN SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(" +
-                        "  (SELECT __key + 1 AS ts FROM map)" +
-                        "  , DESCRIPTOR(ts)" +
-                        "  , 1" +
-                        "))"
-        )).hasMessageContaining("Ordering function cannot be applied to input table");
     }
 }

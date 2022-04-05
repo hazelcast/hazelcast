@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -175,10 +174,6 @@ public class SqlServiceImpl implements SqlService {
         }
 
         try {
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
-                throw QueryException.error("SQL queries cannot be executed until the cluster fully updates to 5.0");
-            }
-
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
@@ -250,23 +245,16 @@ public class SqlServiceImpl implements SqlService {
 
     private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
-
         PlanKey planKey = new PlanKey(searchPaths, sql);
-
         SqlPlan plan = planCache.get(planKey);
-
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(optimizer.tableResolvers());
-
             plan = optimizer.prepare(new OptimizationTask(sql, arguments, searchPaths, catalog));
-
             if (plan.isCacheable()) {
                 planCache.put(planKey, plan);
             }
         }
-
         checkReturnType(plan, expectedResultType);
-
         return plan;
     }
 

@@ -475,7 +475,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_projectFilterProjectExpression() {
+    public void test_projectFilterProjectExpression()  {
         TestBatchSqlConnector.create(sqlService, "t", 3);
 
         assertRowsAnyOrder(
@@ -615,6 +615,17 @@ public class SqlFilterProjectTest extends SqlTestSupport {
                         new Row(6L)
                 )
         );
+    }
+
+    @Test
+    public void test_explicitTable() {
+        TestBatchSqlConnector.create(sqlService, "t", 2);
+        assertRowsAnyOrder("table t",
+                rows(1, 0, 1));
+        assertRowsAnyOrder("(table t)",
+                rows(1, 0, 1));
+        assertRowsAnyOrder("select * from (table t) t",
+                rows(1, 0, 1));
     }
 
     @Test

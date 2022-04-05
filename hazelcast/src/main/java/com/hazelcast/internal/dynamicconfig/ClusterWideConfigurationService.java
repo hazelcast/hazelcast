@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -84,7 +85,6 @@ public class ClusterWideConfigurationService implements
         ConfigurationService,
         SplitBrainHandlerService {
 
-    public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
 
     // RU_COMPAT
@@ -206,12 +206,17 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public ConfigUpdateResult update() {
-        return update(null);
+    public void updateLicense(String licenseKey) {
+        throw new UnsupportedOperationException("Updating the license requires Hazelcast Enterprise");
     }
 
     @Override
     public ConfigUpdateResult update(@Nullable Config newConfig) {
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+    }
+
+    @Override
+    public UUID updateAsync(String configPatch) {
         throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
@@ -326,7 +331,7 @@ public class ClusterWideConfigurationService implements
         persist(newConfig);
     }
 
-    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
+    protected void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
         if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
             return;
         }
@@ -352,7 +357,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void persist(IdentifiedDataSerializable subConfig) {
+    public void persist(Object subConfig) {
         if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
             // Code should never come here. We should fast fail in
             // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()

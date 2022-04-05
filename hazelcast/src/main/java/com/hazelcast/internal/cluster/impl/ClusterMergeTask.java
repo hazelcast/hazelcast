@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -76,6 +77,11 @@ class ClusterMergeTask implements Runnable {
                 } finally {
                     disposeTasks(coreTasks, nonCoreTasks);
                 }
+            }
+
+            ILogger logger = node.getLogger(getClass());
+            if (logger.isFineEnabled()) {
+                logger.fine("Finished merge tasks.");
             }
         } finally {
             lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);

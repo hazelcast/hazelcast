@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public Boolean call() throws InterruptedException {
-            sleepAtLeastSeconds((int) sleepSeconds);
+            sleepSeconds((int) sleepSeconds);
             return true;
         }
 

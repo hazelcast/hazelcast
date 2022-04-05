@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ public class ConfigFactoryTest {
         registrations.put("b", registration);
         CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
         assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ConfigFactoryTest {
         registrations.put("a", registration);
         CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
         assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
     }
 
     private static void invalidEvictionConfig(boolean isNearCache, boolean isIMap) {

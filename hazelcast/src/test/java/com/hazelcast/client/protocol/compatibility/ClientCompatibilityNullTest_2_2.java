@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6127,6 +6127,7 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.evictionPolicy));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertFalse(parameters.isGlobalIndexesExists);
     }
 
     @Test
@@ -6811,7 +6812,7 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_JetGetJobConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 865;
-        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong);
+        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

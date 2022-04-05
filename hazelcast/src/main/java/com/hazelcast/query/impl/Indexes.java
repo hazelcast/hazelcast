@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class Indexes {
     private final IndexCopyBehavior indexCopyBehavior;
     private final Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory;
     private final QueryContextProvider queryContextProvider;
-    private final InternalSerializationService serializationService;
+    private final InternalSerializationService ss;
 
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
@@ -82,7 +82,7 @@ public class Indexes {
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
-    private Indexes(InternalSerializationService serializationService,
+    private Indexes(InternalSerializationService ss,
                     IndexCopyBehavior indexCopyBehavior,
                     Extractors extractors,
                     IndexProvider indexProvider,
@@ -94,10 +94,10 @@ public class Indexes {
                     Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
-        this.serializationService = serializationService;
+        this.ss = ss;
         this.usesCachedQueryableEntries = usesCachedQueryableEntries;
         this.stats = createStats(global, inMemoryFormat, statisticsEnabled);
-        this.extractors = extractors == null ? Extractors.newBuilder(serializationService).build() : extractors;
+        this.extractors = extractors == null ? Extractors.newBuilder(ss).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
         this.partitionCount = partitionCount;
@@ -159,7 +159,7 @@ public class Indexes {
         index = indexProvider.createIndex(
                 indexConfig,
                 extractors,
-                serializationService,
+                ss,
                 indexCopyBehavior,
                 stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
                 partitionCount);
@@ -315,7 +315,7 @@ public class Indexes {
             newEntry = (CachedQueryEntry) entryToStore;
         } else {
             newEntry = cachedEntries[0];
-            newEntry.init(serializationService, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
+            newEntry.init(ss, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
         }
 
         CachedQueryEntry oldEntry;
@@ -323,7 +323,7 @@ public class Indexes {
             oldEntry = null;
         } else {
             oldEntry = cachedEntries[1];
-            oldEntry.init(serializationService, entryToStore.getKeyData(), oldValue, extractors);
+            oldEntry.init(ss, entryToStore.getKeyData(), oldValue, extractors);
         }
 
         putEntry(newEntry, oldEntry, entryToStore, operationSource);
@@ -377,7 +377,7 @@ public class Indexes {
      */
     public void removeEntry(Data key, Object value, Index.OperationSource operationSource) {
         CachedQueryEntry entry = CACHED_ENTRIES.get()[0];
-        entry.init(serializationService, key, value, extractors);
+        entry.init(ss, key, value, extractors);
 
         removeEntry(entry, operationSource);
     }

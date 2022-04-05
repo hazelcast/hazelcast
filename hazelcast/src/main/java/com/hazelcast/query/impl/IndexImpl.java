@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,18 +57,12 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public void clear() {
-        super.clear();
-        partitionTracker.clear();
-    }
-
-    @Override
-    public boolean hasPartitionIndexed(int partitionId) {
+    public final boolean hasPartitionIndexed(int partitionId) {
         return partitionTracker.isIndexed(partitionId);
     }
 
     @Override
-    public boolean allPartitionsIndexed(int ownedPartitionCount) {
+    public final boolean allPartitionsIndexed(int ownedPartitionCount) {
         // This check guarantees that all partitions are indexed
         // only if there is no concurrent migrations. Check migration stamp
         // to detect concurrent migrations if needed.
@@ -76,27 +70,34 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public void beginPartitionUpdate() {
+    public final void beginPartitionUpdate() {
         partitionTracker.beginPartitionUpdate();
     }
 
     @Override
-    public void markPartitionAsIndexed(int partitionId) {
+    public final void markPartitionAsIndexed(int partitionId) {
         partitionTracker.partitionIndexed(partitionId);
     }
 
     @Override
-    public void markPartitionAsUnindexed(int partitionId) {
+    public final void markPartitionAsUnindexed(int partitionId) {
         partitionTracker.partitionUnindexed(partitionId);
     }
 
     @Override
-    public PartitionStamp getPartitionStamp() {
+    public final void clear() {
+        partitionTracker.clear();
+
+        super.clear();
+    }
+
+    @Override
+    public final PartitionStamp getPartitionStamp() {
         return partitionTracker.getPartitionStamp();
     }
 
     @Override
-    public boolean validatePartitionStamp(long stamp) {
+    public final boolean validatePartitionStamp(long stamp) {
         return partitionTracker.validatePartitionStamp(stamp);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
-        return new PortableInternalGenericRecord(this, input, cd, true);
+        return new PortableInternalGenericRecord(this, input, cd);
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
@@ -193,6 +193,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         BufferObjectDataOutput output = (BufferObjectDataOutput) out;
         DefaultPortableWriter writer = new DefaultPortableWriter(this, output, cd);
         Set<String> fieldNames = cd.getFieldNames();
+        //TODO sancar why not use field operaitons
         for (String fieldName : fieldNames) {
             switch (cd.getFieldType(fieldName)) {
                 case PORTABLE:
@@ -308,28 +309,25 @@ public final class PortableSerializer implements StreamSerializer<Object> {
             final ManagedContext managedContext = context.getManagedContext();
             return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
         }
-        GenericRecord genericRecord = readPortableGenericRecord(in, factoryId, classId);
+        GenericRecord genericRecord = readAsGenericRecord(in, factoryId, classId);
         assert genericRecord instanceof PortableGenericRecord;
         return (T) genericRecord;
     }
 
-    <T> T readAsGenericRecord(BufferObjectDataInput in, int factoryId, int classId,
-                              boolean readGenericLazy) throws IOException {
-        if (readGenericLazy) {
-            int version = in.readInt();
-            ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-            PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, true);
-            return (T) reader;
-        }
-        return readPortableGenericRecord(in, factoryId, classId);
+    <T> T readAsInternalGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+        int version = in.readInt();
+        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
+        PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd);
+        return (T) reader;
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
-    private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+    <T> T readAsGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-        PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
+        PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd);
         GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
+        //TODO sancar why not use field operaitons
         for (String fieldName : cd.getFieldNames()) {
             switch (cd.getFieldType(fieldName)) {
                 case PORTABLE:

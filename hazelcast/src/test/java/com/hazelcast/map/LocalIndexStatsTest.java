@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -383,7 +383,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(keyEmptyCost > 0);
         assertTrue(valueEmptyCost > 0);
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 10000; ++i) {
             map.put(i, i);
         }
         long keyFullCost = keyStats().getMemoryCost();
@@ -391,21 +391,25 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(keyFullCost > keyEmptyCost);
         assertTrue(valueFullCost > valueEmptyCost);
 
-        for (int i = 0; i < 50; ++i) {
+        for (int i = 0; i < 5000; ++i) {
             map.remove(i);
         }
         long keyHalfFullCost = keyStats().getMemoryCost();
         long valueHalfFullCost = valueStats().getMemoryCost();
-        assertTrue(keyHalfFullCost > keyEmptyCost && keyHalfFullCost < keyFullCost);
+        // keyHalfFullCost < keyFullCost does not necessarily hold, since
+        // keys are inlined and b+ tree nodes are deleted only when they become
+        // fully empty
+        assertTrue(keyHalfFullCost > keyEmptyCost);
         assertTrue(valueHalfFullCost > valueEmptyCost && valueHalfFullCost < valueFullCost);
 
-        for (int i = 0; i < 50; ++i) {
+        // 'force' some extra pages to be allocated
+        for (int i = 10000; i < 15000; ++i) {
             map.put(i, i);
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
         assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
 
-        for (int i = 0; i < 50; ++i) {
+        for (int i = 0; i < 5000; ++i) {
             map.set(i, i * i);
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,10 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     UnsafeObjectDataOutput(int size, InternalSerializationService service) {
         super(size, service, ByteOrder.nativeOrder());
+    }
+
+    UnsafeObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
+        super(initialSize, firstGrowthSize, service, ByteOrder.nativeOrder());
     }
 
     @Override

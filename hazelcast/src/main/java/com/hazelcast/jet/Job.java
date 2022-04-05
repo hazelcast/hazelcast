@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,10 +155,7 @@ public interface Job {
 
     /**
      * Returns the configuration this job was submitted with. Changes made to
-     * the returned config object will not have any effect. Not supported for
-     * light jobs.
-     *
-     * @throws UnsupportedOperationException if called for a light job
+     * the returned config object will not have any effect.
      */
     @Nonnull
     JobConfig getConfig();

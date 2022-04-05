@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,15 +114,22 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @AfterClass
     public static void supportAfterClass() throws Exception {
-        if (factory != null) {
-            SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
-            spawn(() -> factory.terminateAll())
-                    .get(1, TimeUnit.MINUTES);
+        try {
+            if (factory != null) {
+                SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
+                spawn(() -> factory.terminateAll())
+                        .get(1, TimeUnit.MINUTES);
+            }
+        } catch (Exception e) {
+            // Log the exception, so it is visible in log file for the test class,
+            // otherwise it is only visible in surefire test report
+            SUPPORT_LOGGER.warning("Terminating instance factory failed", e);
+            throw e;
+        } finally {
+            factory = null;
+            instances = null;
+            client = null;
         }
-
-        factory = null;
-        instances = null;
-        client = null;
     }
 
     @Nonnull

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("1f103ad8424355aa8a082b2df6d38f6e")
+@Generated("df9be78e9246c7f4bc73582dd835de30")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -148,9 +148,20 @@ public final class MCGetMapConfigCodec {
          * Classname of the SplitBrainMergePolicy for the map.
          */
         public java.lang.String mergePolicy;
+
+        /**
+         * Global indexs of the map.
+         */
+        public java.util.List<com.hazelcast.config.IndexConfig> globalIndexes;
+
+        /**
+         * True if the globalIndexes is received from the member, false otherwise.
+         * If this is false, globalIndexes has the default value for its type.
+         */
+        public boolean isGlobalIndexesExists;
     }
 
-    public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy) {
+    public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy, java.util.Collection<com.hazelcast.config.IndexConfig> globalIndexes) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -166,6 +177,7 @@ public final class MCGetMapConfigCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, mergePolicy);
+        ListMultiFrameCodec.encode(clientMessage, globalIndexes, IndexConfigCodec::encode);
         return clientMessage;
     }
 
@@ -183,6 +195,12 @@ public final class MCGetMapConfigCodec {
         response.readBackupData = decodeBoolean(initialFrame.content, RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET);
         response.evictionPolicy = decodeInt(initialFrame.content, RESPONSE_EVICTION_POLICY_FIELD_OFFSET);
         response.mergePolicy = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.globalIndexes = ListMultiFrameCodec.decode(iterator, IndexConfigCodec::decode);
+            response.isGlobalIndexesExists = true;
+        } else {
+            response.isGlobalIndexesExists = false;
+        }
         return response;
     }
 }

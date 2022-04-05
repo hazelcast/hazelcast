@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
-import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ValuesLogicalRules;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.rules.CoreRules;
@@ -34,7 +33,6 @@ public final class NoJobShortcutRules {
     public static Collection<RelOptRule> getRules() {
         return asList(
                 SelectByKeyMapRules.INSTANCE,
-                SelectByKeyMapRules.PROJECT_INSTANCE,
                 InsertMapRule.INSTANCE,
                 SinkMapRule.INSTANCE,
                 UpdateByKeyMapRule.INSTANCE,
@@ -42,15 +40,12 @@ public final class NoJobShortcutRules {
                 MapSizeRule.INSTANCE,
 
                 // auxiliary rules
-                ProjectIntoScanLogicalRule.INSTANCE,
-                FilterIntoScanLogicalRule.INSTANCE,
+                CalcIntoScanLogicalRule.INSTANCE,
                 CoreRules.PROJECT_MERGE,
                 CoreRules.FILTER_MERGE,
 
                 ValuesLogicalRules.CONVERT_INSTANCE,
-                ValuesLogicalRules.FILTER_INSTANCE,
-                ValuesLogicalRules.PROJECT_INSTANCE,
-                ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
+                ValuesLogicalRules.CALC_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE
         );
     }

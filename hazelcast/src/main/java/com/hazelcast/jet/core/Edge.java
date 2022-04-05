@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,7 +69,6 @@ import static java.util.Objects.requireNonNull;
  * @since Jet 3.0
  */
 public class Edge implements IdentifiedDataSerializable {
-
     /**
      * An address returned by {@link #getDistributedTo()} denoting an edge that
      * distributes the items among all members.
@@ -85,6 +85,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
+    private transient boolean locked;
     private Vertex source; // transient field, restored during DAG deserialization
     private String sourceName;
     private int sourceOrdinal;
@@ -150,6 +151,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination) {
+        throwIfLocked();
         return to(destination, 0);
     }
 
@@ -158,6 +160,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination, int ordinal) {
+        throwIfLocked();
         if (this.destination != null) {
             throw new IllegalStateException("destination already set");
         }
@@ -265,6 +268,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge priority(int priority) {
+        throwIfLocked();
         if (priority == MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
             throw new IllegalArgumentException("priority must not be Integer.MIN_VALUE ("
                     + MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
@@ -287,6 +291,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge unicast() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.UNICAST;
         return this;
     }
@@ -299,6 +304,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T> Edge partitioned(@Nonnull FunctionEx<T, ?> extractKeyFn) {
+        throwIfLocked();
         // optimization for ConstantFunctionEx
         if (extractKeyFn instanceof ConstantFunctionEx) {
             return allToOne(extractKeyFn.apply(null));
@@ -316,6 +322,7 @@ public class Edge implements IdentifiedDataSerializable {
             @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull Partitioner<? super K> partitioner
     ) {
+        throwIfLocked();
         checkSerializable(extractKeyFn, "extractKeyFn");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
@@ -335,6 +342,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge allToOne(Object key) {
+        throwIfLocked();
         return partitioned(wholeItem(), new Single(key));
     }
 
@@ -343,6 +351,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge broadcast() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.BROADCAST;
         return this;
     }
@@ -356,6 +365,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge isolated() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.ISOLATED;
         return this;
     }
@@ -375,6 +385,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @since Jet 4.3
      */
     public Edge ordered(@Nonnull ComparatorEx<?> comparator) {
+        throwIfLocked();
         this.comparator = comparator;
         return this;
     }
@@ -386,6 +397,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge fanout() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.FANOUT;
         return this;
     }
@@ -430,8 +442,16 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge local() {
+        throwIfLocked();
         distributedTo = null;
         return this;
+    }
+
+    /**
+     * Returning if the edge is local.
+     */
+    public boolean isLocal() {
+        return distributedTo == null;
     }
 
     /**
@@ -455,6 +475,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributed() {
+        throwIfLocked();
         distributedTo = DISTRIBUTE_TO_ALL;
         return this;
     }
@@ -479,6 +500,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributeTo(@Nonnull Address targetMember) {
+        throwIfLocked();
         if (requireNonNull(targetMember).equals(DISTRIBUTE_TO_ALL)) {
             throw new IllegalArgumentException();
         }
@@ -526,6 +548,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge setConfig(@Nullable EdgeConfig config) {
+        throwIfLocked();
         this.config = config;
         return this;
     }
@@ -611,7 +634,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
         out.writeObject(getDistributedTo());
-        out.writeObject(getRoutingPolicy());
+        out.writeString(getRoutingPolicy().name());
         out.writeObject(getConfig());
         CustomClassLoadedObject.write(out, getPartitioner());
         CustomClassLoadedObject.write(out, getOrderComparator());
@@ -625,7 +648,7 @@ public class Edge implements IdentifiedDataSerializable {
         destOrdinal = in.readInt();
         priority = in.readInt();
         distributedTo = in.readObject();
-        routingPolicy = in.readObject();
+        routingPolicy = RoutingPolicy.valueOf(in.readString());
         config = in.readObject();
         try {
             partitioner = CustomClassLoadedObject.read(in);
@@ -656,7 +679,7 @@ public class Edge implements IdentifiedDataSerializable {
      * the reasoning we introduce the concept of the <em>set of candidate
      * downstream processors</em>, or the <em>candidate set</em> for short. On
      * a local edge the candidate set contains only local processors and on a
-     * distributed edge it contain all the processors.
+     * distributed edge it contains all the processors.
      */
     public enum RoutingPolicy implements Serializable {
         /**
@@ -711,12 +734,15 @@ public class Edge implements IdentifiedDataSerializable {
         FANOUT
     }
 
-    private static class Single implements Partitioner<Object> {
+    static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final Object key;
+        private Object key;
         private int partition;
+
+        Single() {
+        }
 
         Single(Object key) {
             this.key = key;
@@ -731,16 +757,42 @@ public class Edge implements IdentifiedDataSerializable {
         public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(key);
+            out.writeInt(partition);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            key = in.readObject();
+            partition = in.readInt();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_SINGLE_PARTITIONER;
+        }
     }
 
-    private static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware {
+    static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
+            IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final FunctionEx<T, K> keyExtractor;
-        private final Partitioner<? super K> partitioner;
-        private final String edgeDebugName;
+        private FunctionEx<T, K> keyExtractor;
+        private Partitioner<? super K> partitioner;
+        private String edgeDebugName;
         private SerializationService serializationService;
+
+        KeyPartitioner() {
+        }
 
         KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
                        String edgeDebugName) {
@@ -770,5 +822,45 @@ public class Edge implements IdentifiedDataSerializable {
         public void setSerializationService(SerializationService serializationService) {
             this.serializationService = serializationService;
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keyExtractor);
+            out.writeObject(partitioner);
+            out.writeString(edgeDebugName);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keyExtractor = in.readObject();
+            partitioner = in.readObject();
+            edgeDebugName = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.EDGE_KEY_PARTITIONER;
+        }
+    }
+
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("Edge is already locked");
+        }
+    }
+
+    /**
+     * Used to prevent further mutations this instance after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
+    @PrivateApi
+    void lock() {
+        locked = true;
     }
 }

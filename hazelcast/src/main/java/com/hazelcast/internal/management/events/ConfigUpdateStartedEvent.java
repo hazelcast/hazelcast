@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.internal.management.events;
 
 import java.util.UUID;
 
-public class ConfigUpdateStartedEvent extends AbstractIdentifiedEvent {
-    public ConfigUpdateStartedEvent(UUID uuid) {
-        super(uuid);
+public class ConfigUpdateStartedEvent extends AbstractConfigUpdateEvent {
+    public ConfigUpdateStartedEvent(UUID configUpdateProcessId) {
+        super(configUpdateProcessId);
     }
 
     @Override

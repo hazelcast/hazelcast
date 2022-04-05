@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,12 @@ import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFo
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
+/**
+ * The tasklet that sends the data associated with a single edge through network.
+ */
 public class SenderTasklet implements Tasklet {
-
-    private static final int BUFFER_SIZE = 1 << 15;
+    private static final int BUFFER_INITIAL_SIZE = 1 << 10;
+    private static final int BUFFER_FIRST_GROWTH_SIZE = 1 << 15;
 
     private final Connection connection;
     private final Queue<Object> inbox = new ArrayDeque<>();
@@ -96,7 +99,7 @@ public class SenderTasklet implements Tasklet {
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = connection;
-        this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_SIZE);
+        this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_INITIAL_SIZE, BUFFER_FIRST_GROWTH_SIZE);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(nodeEngine,
                 executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();

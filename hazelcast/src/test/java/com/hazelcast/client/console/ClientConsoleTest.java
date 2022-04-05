@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,19 @@
 
 package com.hazelcast.client.console;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.internal.util.StringUtil.stringToBytes;
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
-import static com.hazelcast.test.Accessors.getAddress;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.TestAwareInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,20 +39,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * End-to-end test(s) for {@link ClientConsoleApp}. The tests use real network.
@@ -96,6 +96,11 @@ public class ClientConsoleTest {
             LineEndingsInputStream bqIn = new LineEndingsInputStream();
             System.setIn(bqIn);
             tp.execute(() -> ClientConsoleApp.run(HazelcastClient.newHazelcastClient()));
+
+            // Give some time to executor work otherwise,
+            // HazelcastClient.shutdownAll() can be quicker
+            sleepSeconds(5);
+
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
             HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
             assertNotNull(client);
@@ -104,7 +109,7 @@ public class ClientConsoleTest {
         } finally {
             System.setIn(origIn);
             HazelcastClient.shutdownAll();
-            tp.shutdown();
+            tp.shutdownNow();
         }
     }
 

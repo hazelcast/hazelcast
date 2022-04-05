@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,15 @@ public final class XmlUtil {
      * Returns {@link XMLInputFactory} with XXE protection enabled.
      */
     public static XMLInputFactory getXMLInputFactory() {
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        return getProtectedFactory(XMLInputFactory.newInstance());
+    }
+
+    /**
+     * Returns {@link XMLInputFactory} with XXE protection enabled.
+     *
+     * @param xmlInputFactory {@link XMLInputFactory} to protect
+     */
+    public static XMLInputFactory getProtectedFactory(XMLInputFactory xmlInputFactory) {
         setProperty(xmlInputFactory, XMLInputFactory.SUPPORT_DTD, false);
         return xmlInputFactory;
     }

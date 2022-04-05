@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -49,13 +49,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A test connector. It emits rows of provided types and values. It
@@ -72,24 +69,14 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     private static final String VALUES_DELIMITER = "\n";
     private static final String NULL = "null";
 
-    /**
-     * Creates a table with single column named "v" with INT type.
-     * The rows contain the sequence {@code 0 .. itemCount-1}.
-     */
-    static void create(SqlService sqlService, String connectorType, String tableName, int itemCount) {
-        List<String[]> values = IntStream.range(0, itemCount)
-                .mapToObj(i -> new String[]{String.valueOf(i)})
-                .collect(toList());
-        create(sqlService, connectorType, tableName, singletonList("v"), singletonList(QueryDataTypeFamily.INTEGER), values);
-    }
-
     static void create(
             SqlService sqlService,
             String connectorType,
             String tableName,
             List<String> names,
             List<QueryDataTypeFamily> types,
-            List<String[]> values
+            List<String[]> values,
+            boolean streamingActual
     ) {
         if (names.stream().anyMatch(n -> n.contains(DELIMITER) || n.contains("'"))) {
             throw new IllegalArgumentException("'" + DELIMITER + "' and apostrophe not supported in names");
@@ -110,14 +97,12 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         String typesSerialized = types.stream().map(QueryDataTypeFamily::name).collect(joining(DELIMITER));
         String valuesSerialized = values.stream().map(row -> join(DELIMITER, row)).collect(joining(VALUES_DELIMITER));
 
-        boolean streaming = !connectorType.equals(TestBatchSqlConnector.TYPE_NAME);
-
         String sql = "CREATE MAPPING " + tableName + " TYPE " + connectorType
                 + " OPTIONS ("
                 + '\'' + OPTION_NAMES + "'='" + namesSerialized + "'"
                 + ", '" + OPTION_TYPES + "'='" + typesSerialized + "'"
                 + ", '" + OPTION_VALUES + "'='" + valuesSerialized + "'"
-                + ", '" + OPTION_STREAMING + "'='" + streaming + "'"
+                + ", '" + OPTION_STREAMING + "'='" + streamingActual + "'"
                 + ")";
         System.out.println(sql);
         sqlService.execute(sql).updateCount();

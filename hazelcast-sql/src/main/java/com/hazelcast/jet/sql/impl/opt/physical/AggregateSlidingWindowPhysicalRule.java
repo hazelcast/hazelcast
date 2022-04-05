@@ -20,7 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
@@ -29,13 +29,15 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
-import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
+import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -46,36 +48,47 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
 
+@Value.Enclosing
 public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractPhysicalRule {
 
-    private static final Config CONFIG_PROJECT = Config.EMPTY
-            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
-            .withOperandSupplier(b0 -> b0
-                    .operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
-                    .inputs(b1 -> b1
-                            .operand(ProjectLogicalRel.class)
-                            .inputs(b2 -> b2
-                                    .operand(SlidingWindowLogicalRel.class).anyInputs())));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config CONFIG_WITH_CALC = ImmutableAggregateSlidingWindowPhysicalRule.Config.builder()
+                .description(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
+                .operandSupplier(b0 -> b0
+                        .operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
+                        .inputs(b1 -> b1
+                                .operand(CalcLogicalRel.class)
+                                .inputs(b2 -> b2
+                                        .operand(SlidingWindowLogicalRel.class).anyInputs())))
+                .build();
 
-    private static final Config CONFIG_NO_PROJECT = Config.EMPTY
-            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
-            .withOperandSupplier(b0 -> b0
-                    .operand(AggregateLogicalRel.class)
-                    .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)
-                    .inputs(b1 -> b1
-                            .operand(SlidingWindowLogicalRel.class).anyInputs()));
+        Config CONFIG_NO_CALC = ImmutableAggregateSlidingWindowPhysicalRule.Config.builder()
+                .description(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
+                .operandSupplier(b0 -> b0
+                        .operand(AggregateLogicalRel.class)
+                        .trait(LOGICAL)
+                        .predicate(OptUtils::isUnbounded)
+                        .inputs(b1 -> b1
+                                .operand(SlidingWindowLogicalRel.class).anyInputs()))
+                .build();
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_PROJECT, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_PROJECT, true);
+        @Override
+        default RelOptRule toRule() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
-    private final boolean hasProject;
+    static final RelOptRule NO_CALC_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_NO_CALC, false);
+    static final RelOptRule WITH_CALC_INSTANCE = new AggregateSlidingWindowPhysicalRule(Config.CONFIG_WITH_CALC, true);
 
-    private AggregateSlidingWindowPhysicalRule(Config config, boolean hasProject) {
+    private final boolean hasCalc;
+
+    private AggregateSlidingWindowPhysicalRule(Config config, boolean hasCalc) {
         super(config);
-        this.hasProject = hasProject;
+        this.hasCalc = hasCalc;
     }
 
     @Override
@@ -89,32 +102,31 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         List<RexNode> projections;
         RelDataType projectRowType;
         SlidingWindowLogicalRel windowRel;
-        if (hasProject) {
-            Project projectRel = call.rel(1);
-            projections = new ArrayList<>(projectRel.getProjects());
-            projectRowType = projectRel.getRowType();
+
+        RexProgram program;
+        if (hasCalc) {
+            Calc calc = call.rel(1);
+            program = calc.getProgram();
+            projections = new ArrayList<>(program.expandList(program.getProjectList()));
+            projectRowType = calc.getProgram().getOutputRowType();
             windowRel = call.rel(2);
         } else {
             windowRel = call.rel(1);
             // create an identity projection
-            List<RelDataTypeField> fields = windowRel.getRowType().getFieldList();
-            projections = new ArrayList<>(fields.size());
-            for (int i = 0; i < fields.size(); i++) {
-                RelDataTypeField field = fields.get(i);
-                projections.add(call.builder().getRexBuilder().makeInputRef(field.getType(), i));
-            }
-            projectRowType = windowRel.getRowType();
+            program = RexProgram.createIdentity(windowRel.getRowType());
+            projectRowType = program.getOutputRowType();
+            projections = new ArrayList<>(program.expandList(program.getProjectList()));
         }
 
         // Our input hierarchy is, for example:
         // -Aggregate(group=[$0], EXPR$1=[AVG($1)])
-        // --Project(rowType=[window_start, field1])
+        // --Calc(rowType=[window_start, field1])
         // ---SlidingWindowRel(rowType=[field1, field2, timestamp, window_start, window_end])
         //
         // We need to preserve the column used to generate window bounds and remove the window
         // bounds from the projection to get input projection such as this:
         // -SlidingWindowAggregatePhysicalRel(group=[$0], EXPR$1=[AVG($1)])
-        // --Project(rowType=[timestamp, field1])
+        // --Calc(rowType=[timestamp, field1])
         //
         // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
         // but it works for us for now - the superclass uses it only to calculate the output type.
@@ -156,11 +168,22 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
 
         for (RelNode transformedInput : transformedInputs) {
             // todo [viliam] change the name for window bound replaced with timestamps
-            RelDataType newRowType = projectRowType;
-            RelNode newProject = new ProjectPhysicalRel(transformedInput.getCluster(), transformedInput.getTraitSet(),
-                    transformedInput, projections, newRowType);
+            program = RexProgram.create(
+                    convertedInput.getRowType(),
+                    projections,
+                    program.getCondition() != null ? program.expandLocalRef(program.getCondition()) : null,
+                    projectRowType,
+                    call.builder().getRexBuilder()
+            );
 
-            RelNode transformedRel = transform(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
+            RelNode newCalc = new CalcPhysicalRel(
+                    transformedInput.getCluster(),
+                    transformedInput.getTraitSet(),
+                    transformedInput,
+                    program
+            );
+
+            RelNode transformedRel = transform(newCalc, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);

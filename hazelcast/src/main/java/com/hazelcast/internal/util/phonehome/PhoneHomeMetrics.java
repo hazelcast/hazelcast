@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ public enum PhoneHomeMetrics {
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),
+    PARTITION_COUNT("parct"),
 
     //OS INFO METRICS
     OPERATING_SYSTEM_NAME("osn"),
@@ -143,8 +144,25 @@ public enum PhoneHomeMetrics {
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
 
+    // DYNAMIC CONFIG PERSISTENCE
+    DYNAMIC_CONFIG_PERSISTENCE_ENABLED("dcpe"),
+
+    // STORAGE METRICS
+    HD_MEMORY_ENABLED("hdme"),
+    MEMORY_USED_HEAP_SIZE("muhs"),
+    MEMORY_USED_NATIVE_SIZE("muns"),
+    TIERED_STORAGE_ENABLED("tse"),
+    DATA_MEMORY_COST("dmc"),
+
     //CP SUBSYSTEM METRICS
     CP_SUBSYSTEM_ENABLED("cp"),
+    CP_MEMBERS_COUNT("cpmc"),
+    CP_GROUPS_COUNT("cpgct"),
+    CP_SEMAPHORES_COUNT("cpsect"),
+    CP_COUNTDOWN_LATCHES_COUNT("cpclct"),
+    CP_FENCED_LOCKS_COUNT("cpflct"),
+    CP_ATOMIC_LONGS_COUNT("cpalct"),
+    CP_ATOMIC_REFS_COUNT("cparct"),
 
     // REST API metrics
     REST_ENABLED("restenabled"),
@@ -165,6 +183,11 @@ public enum PhoneHomeMetrics {
     REST_QUEUE_DELETE_FAILURE("restqueuedeletefail"),
     REST_QUEUE_TOTAL_REQUEST_COUNT("restqueuerequestct"),
     REST_ACCESSED_QUEUE_COUNT("restqueuect"),
+
+    REST_CONFIG_UPDATE_SUCCESS("restconfigupdatesucc"),
+    REST_CONFIG_UPDATE_FAILURE("restconfigupdatefail"),
+    REST_CONFIG_RELOAD_SUCCESS("restconfigreloadsucc"),
+    REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
 
     REST_REQUEST_COUNT("restrequestct"),
     REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");

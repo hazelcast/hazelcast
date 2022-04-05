@@ -21,8 +21,8 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.logical.LogicalTableModify;
-import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
 
 /**
@@ -36,14 +36,14 @@ import org.apache.calcite.rex.RexNode;
  */
 public final class DeleteByKeyMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new DeleteByKeyMapRule();
+    public static final RelOptRule INSTANCE = new DeleteByKeyMapRule();
 
     private DeleteByKeyMapRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isDelete(),
+                        TableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isDelete(),
                         operandJ(
-                                LogicalTableScan.class,
+                                TableScan.class,
                                 null,
                                 scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
                                 none()
@@ -55,8 +55,8 @@ public final class DeleteByKeyMapRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        LogicalTableModify delete = call.rel(0);
-        LogicalTableScan scan = call.rel(1);
+        TableModify delete = call.rel(0);
+        TableScan scan = call.rel(1);
 
         RelOptTable table = scan.getTable();
         RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, call.builder().getRexBuilder());

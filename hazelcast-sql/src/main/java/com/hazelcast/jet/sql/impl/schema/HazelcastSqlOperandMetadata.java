@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.jet.sql.impl.validate.operand.NamedOperandCheckerProgram;
@@ -33,8 +34,6 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
 import javax.annotation.Nullable;
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 public abstract class HazelcastSqlOperandMetadata implements SqlOperandMetadata, HazelcastOperandTypeCheckerAware {
 
@@ -64,9 +63,7 @@ public abstract class HazelcastSqlOperandMetadata implements SqlOperandMetadata,
 
     @Override
     public final List<String> paramNames() {
-        return parameters.stream()
-                .map(HazelcastTableFunctionParameter::name)
-                .collect(toList());
+        return Util.toList(parameters, HazelcastTableFunctionParameter::name);
     }
 
     @Override

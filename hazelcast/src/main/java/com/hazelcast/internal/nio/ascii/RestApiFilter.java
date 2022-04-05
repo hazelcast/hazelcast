@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import com.hazelcast.logging.LoggingService;
 
 import java.util.StringTokenizer;
 
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
+import static java.lang.String.format;
+
 /**
  * This class is a policy enforcement point for HTTP REST API. It checks incoming command lines and validates if the command can
  * be processed. If the command is unknown or not allowed the connection is closed.
@@ -48,14 +51,12 @@ public class RestApiFilter implements TextProtocolFilter {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {
                 String name = restEndpointGroup.name();
                 connection.close("REST endpoint group is not enabled - " + restEndpointGroup
-                        + ". To enable it, please do one of the following:\n"
-                        + "- Change member config using JAVA API: "
-                        + " config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");\n"
-                        + "- Change XML/YAML configuration property: "
-                        + "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true\n"
-                        + "- Add system property: "
-                        + "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true\n"
-                        + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true",
+                        + ". To enable it, do one of the following:\n"
+                        + format(CONFIG_CHANGE_TEMPLATE,
+                        "config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");",
+                        "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true",
+                        "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true",
+                        "HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true"),
                         null);
             }
         } else if (!commandLine.isEmpty()) {

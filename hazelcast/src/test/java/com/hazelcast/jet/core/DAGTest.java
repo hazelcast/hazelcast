@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,11 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
@@ -41,6 +43,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -384,5 +387,79 @@ public class DAGTest {
 
         // When
         dag.edge(from(b).to(c, 1));
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedDag_then_fail() {
+        DAG dag = new DAG();
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> dag.newVertex(null, (SupplierEx<? extends Processor>) null),
+                () -> dag.newVertex(null, (ProcessorSupplier) null),
+                () -> dag.newVertex(null, (ProcessorMetaSupplier) null),
+                () -> dag.newUniqueVertex(null, (SupplierEx<? extends Processor>) null),
+                () -> dag.newUniqueVertex(null, (ProcessorSupplier) null),
+                () -> dag.newUniqueVertex(null, (ProcessorMetaSupplier) null),
+                () -> dag.vertex(null),
+                () -> dag.edge(null)
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedVertexInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex = dag.newVertex("", (ProcessorMetaSupplier) addresses -> address -> null);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> vertex.localParallelism(1),
+                () -> {
+                    vertex.updateMetaSupplier(null);
+                    return null;
+                }
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedEdgeInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex1 = dag.newVertex("1", (ProcessorMetaSupplier) addresses -> address -> null);
+        Vertex vertex2 = dag.newVertex("2", (ProcessorMetaSupplier) addresses -> address -> null);
+        Edge edge = between(vertex1, vertex2);
+        dag.edge(edge);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> edge.to(null),
+                () -> edge.to(null, 0),
+                () -> edge.priority(0),
+                () -> edge.unicast(),
+                () -> edge.partitioned(null),
+                () -> edge.partitioned(null, null),
+                () -> edge.allToOne(null),
+                () -> edge.broadcast(),
+                () -> edge.isolated(),
+                () -> edge.ordered(null),
+                () -> edge.fanout(),
+                () -> edge.local(),
+                () -> edge.distributed(),
+                () -> edge.distributeTo(null),
+                () -> edge.setConfig(null)
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
     }
 }

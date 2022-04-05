@@ -46,6 +46,11 @@ public final class WatermarkedFields implements Serializable {
     }
 
     @Nullable
+    public Map.Entry<Integer, RexNode> findFirst() {
+        return propertiesByIndex.entrySet().iterator().next();
+    }
+
+    @Nullable
     public Map.Entry<Integer, RexNode> findFirst(ImmutableBitSet indices) {
         for (Entry<Integer, RexNode> entry : propertiesByIndex.entrySet()) {
             if (indices.get(entry.getKey())) {
@@ -55,7 +60,10 @@ public final class WatermarkedFields implements Serializable {
         return null;
     }
 
-    // TODO [viliam] delete unused?
+    public boolean isEmpty() {
+        return propertiesByIndex.isEmpty();
+    }
+
     public Map<Integer, RexNode> getPropertiesByIndex() {
         return propertiesByIndex;
     }

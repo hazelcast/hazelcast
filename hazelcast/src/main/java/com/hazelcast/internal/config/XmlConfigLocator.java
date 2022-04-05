@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,6 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_S
  */
 public class XmlConfigLocator extends AbstractConfigLocator {
 
-    public static final String DEFAULT_CONFIG_NAME = "hazelcast-default.xml";
-
     @Override
     public boolean locateFromSystemProperty() {
         return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, XML_ACCEPTED_SUFFIXES);
@@ -56,7 +54,7 @@ public class XmlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath(DEFAULT_CONFIG_NAME);
+        loadDefaultConfigurationFromClasspath("hazelcast-default.xml");
         return true;
     }
 }

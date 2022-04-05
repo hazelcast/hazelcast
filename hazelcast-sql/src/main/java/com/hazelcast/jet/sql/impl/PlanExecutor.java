@@ -47,7 +47,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -68,7 +67,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -78,7 +77,6 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -91,6 +89,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
@@ -173,7 +173,10 @@ public class PlanExecutor {
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = plan.getJobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+        JobConfig jobConfig = plan.getJobConfig()
+                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows());
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -265,15 +268,7 @@ public class PlanExecutor {
             fieldTypes.add(toHazelcastType(field.getType()));
         }
 
-        View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
-
-        if (plan.isReplace()) {
-            View existingView = catalog.getView(plan.viewName());
-            if (existingView != null) {
-                checkViewNewRowType(existingView, view);
-            }
-        }
-
+        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes);
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -309,10 +304,10 @@ public class PlanExecutor {
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new StaticQueryResultProducerImpl(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                new StaticQueryResultProducerImpl(
+                        rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
                 metadata,
-                false,
-                serializationService
+                false
         );
     }
 
@@ -328,18 +323,19 @@ public class PlanExecutor {
         planRows = Arrays.stream(plan.getRel().explain().split(LE));
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
+                new StaticQueryResultProducerImpl(
+                        planRows.map(rel -> new JetSqlRow(serializationService, new Object[]{rel})).iterator()),
                 metadata,
-                false,
-                serializationService
+                false
         );
     }
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
@@ -350,6 +346,9 @@ public class PlanExecutor {
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
+                // make sure the queryResultProducer is cleaned up after the job completes. This normally
+                // takes effect when the job fails before the QRP is removed by the RootResultConsumerSink
+                resultRegistry.remove(jobId);
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);
@@ -365,8 +364,7 @@ public class PlanExecutor {
                 queryId,
                 queryResultProducer,
                 plan.getRowMetadata(),
-                plan.isStreaming(),
-                serializationService
+                plan.isStreaming()
         );
     }
 
@@ -374,6 +372,8 @@ public class PlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
@@ -398,8 +398,7 @@ public class PlanExecutor {
                 queryId,
                 new StaticQueryResultProducerImpl(row),
                 plan.rowMetadata(),
-                false,
-                serializationService
+                false
         );
     }
 
@@ -478,38 +477,6 @@ public class PlanExecutor {
         }
 
         return arguments;
-    }
-
-    /**
-     * When a view is replaced, the new view must contain all the
-     * original columns with the same types. Adding new columns or
-     * reordering them is allowed.
-     * <p>
-     * This is an interim mitigation for
-     * https://github.com/hazelcast/hazelcast/issues/20032. It disallows
-     * incompatible changes when doing CREATE OR REPLACE VIEW, however
-     * incompatible changes are still possible with DROP VIEW followed
-     * by a CREATE VIEW.
-     */
-    private static void checkViewNewRowType(View original, View replacement) {
-        Map<String, QueryDataType> newTypes = new HashMap<>();
-        for (int i = 0; i < replacement.viewColumnNames().size(); i++) {
-            newTypes.put(replacement.viewColumnNames().get(i), replacement.viewColumnTypes().get(i));
-        }
-
-        // each original name must be present and have the same type
-        for (int i = 0; i < original.viewColumnNames().size(); i++) {
-            QueryDataType origType = original.viewColumnTypes().get(i);
-            String origName = original.viewColumnNames().get(i);
-            QueryDataType newType = newTypes.get(origName);
-            if (newType == null) {
-                throw QueryException.error("Can't replace view, the new view doesn't contain column '" + origName + "'");
-            }
-            if (newType.getTypeFamily() != origType.getTypeFamily()) {
-                throw QueryException.error("Can't replace view, the type for column '" + origName + "' changed from "
-                        + origType.getTypeFamily() + " to " + newType.getTypeFamily());
-            }
-        }
     }
 
     private static int findQueryExceptionCode(Throwable t) {

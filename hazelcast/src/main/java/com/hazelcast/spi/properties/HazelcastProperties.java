@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,13 +93,18 @@ public class HazelcastProperties {
 
     /**
      * Returns the value for the given key.
+     * If this {@code HazelcastProperties} object is initialized with a
+     * "compromised" {@link Properties} object (ie one where keys/values of types
+     * other than {@code String} have been inserted), then {@code get} on {@code String} keys
+     * mapped to non-{@code String} values will return {@code null},
+     * similarly to {@link Properties#getProperty(String)}.
      *
      * @param key the key
      * @return the value for the given key, or {@code null} if no value is found
      * @throws NullPointerException if key is {@code null}
      */
     public String get(String key) {
-        return (String) properties.get(key);
+        return properties.getProperty(key);
     }
 
     /**

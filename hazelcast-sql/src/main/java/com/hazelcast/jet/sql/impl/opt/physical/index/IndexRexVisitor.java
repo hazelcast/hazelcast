@@ -42,7 +42,7 @@ import org.apache.calcite.rex.RexVisitorImpl;
  * index lookup. To contrast, for the original filter {@code a > b + 1}, the expression {@code b + 1}
  * is not valid.
  */
-public final class IndexRexVisitor extends RexVisitorImpl<Void> {
+final class IndexRexVisitor extends RexVisitorImpl<Void> {
 
     private boolean valid = true;
 
@@ -53,7 +53,7 @@ public final class IndexRexVisitor extends RexVisitorImpl<Void> {
     /**
      * @return {@code true} if passed rex could be used as index condition, {@code false} otherwise
      */
-    public static boolean isValid(RexNode rex) {
+    static boolean isValid(RexNode rex) {
         IndexRexVisitor visitor = new IndexRexVisitor();
 
         rex.accept(visitor);

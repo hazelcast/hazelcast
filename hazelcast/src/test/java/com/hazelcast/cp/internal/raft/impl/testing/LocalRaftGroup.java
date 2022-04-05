@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -500,6 +500,7 @@ public class LocalRaftGroup {
     public void split(int... indexes) {
         assertThat(indexes.length, greaterThan(0));
         assertThat(indexes.length, lessThan(size()));
+        Arrays.sort(indexes);
 
         int runningMemberCount = 0;
         for (int i = 0; i < size(); i++) {

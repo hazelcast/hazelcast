@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,9 +42,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
-import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.Collections.emptyList;
@@ -78,6 +79,9 @@ import static java.util.stream.Collectors.joining;
  * @since Jet 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
+    //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
+    // objects like processor suppliers or various lambdas.
+    private transient boolean locked;
 
     private final Set<Edge> edges = new LinkedHashSet<>();
     private final Map<String, Vertex> nameToVertex = new HashMap<>();
@@ -96,6 +100,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public Vertex newVertex(
             @Nonnull String name, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        throwIfLocked();
         return addVertex(new Vertex(name, simpleSupplier));
     }
 
@@ -114,6 +119,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public Vertex newUniqueVertex(
             @Nonnull String namePrefix, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), simpleSupplier));
     }
 
@@ -127,6 +133,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(name, processorSupplier));
     }
 
@@ -143,6 +150,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorSupplier processorSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), processorSupplier));
     }
 
@@ -157,6 +165,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(name, metaSupplier));
     }
 
@@ -173,6 +182,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), metaSupplier));
     }
 
@@ -181,6 +191,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public DAG vertex(@Nonnull Vertex vertex) {
+        throwIfLocked();
         addVertex(vertex);
         return this;
     }
@@ -193,10 +204,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * one inbound and one outbound.
      * <p>
      * Jet supports multigraphs, that is you can add two edges between the same
-     * tow vertices. However, they have to have different ordinals.
+     * two vertices. However, they have to have different ordinals.
      */
     @Nonnull
     public DAG edge(@Nonnull Edge edge) {
+        throwIfLocked();
         if (edge.getDestination() == null) {
             throw new IllegalArgumentException("Edge has no destination");
         }
@@ -584,5 +596,23 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Override
     public int getClassId() {
         return JetDataSerializerHook.DAG;
+    }
+
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("DAG is already locked");
+        }
+    }
+
+    /**
+     * Used to prevent further mutations to the DAG after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
+    @PrivateApi
+    public void lock() {
+        locked = true;
+        verticesByIdentity.forEach(Vertex::lock);
+        edges.forEach(Edge::lock);
     }
 }

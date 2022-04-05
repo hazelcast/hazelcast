@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -227,27 +226,11 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Object deserializeRowValue(Object value) {
-        try {
-            return getSerializationService().toObject(value);
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
-    Object deserializeRowValue(LazyTarget value) {
-        try {
-            return value.deserialize(getSerializationService());
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
     public UUID getClientId() {
         return client.getLocalEndpoint().getUuid();
     }
 
-    private InternalSerializationService getSerializationService() {
+    InternalSerializationService getSerializationService() {
         return client.getSerializationService();
     }
 

@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -29,26 +28,26 @@ import static java.util.Collections.singletonList;
 
 public class StaticQueryResultProducerImpl implements QueryResultProducer {
 
-    private final Iterator<? extends Row> iterator;
+    private final Iterator<JetSqlRow> iterator;
 
     private boolean iteratorRequested;
 
     public StaticQueryResultProducerImpl(JetSqlRow row) {
-        this(singletonList(row.getRow()).iterator());
+        this(singletonList(row).iterator());
     }
 
-    public StaticQueryResultProducerImpl(Iterator<? extends Row> iterator) {
+    public StaticQueryResultProducerImpl(Iterator<JetSqlRow> iterator) {
         this.iterator = iterator;
     }
 
     @Override
-    public ResultIterator<Row> iterator() {
+    public ResultIterator<JetSqlRow> iterator() {
         if (iteratorRequested) {
             throw new IllegalStateException("the iterator can be requested only once");
         }
         iteratorRequested = true;
 
-        return new ResultIterator<Row>() {
+        return new ResultIterator<JetSqlRow>() {
             @Override
             public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
                 return iterator.hasNext() ? HasNextResult.YES : HasNextResult.DONE;
@@ -60,7 +59,7 @@ public class StaticQueryResultProducerImpl implements QueryResultProducer {
             }
 
             @Override
-            public Row next() {
+            public JetSqlRow next() {
                 return iterator.next();
             }
         };

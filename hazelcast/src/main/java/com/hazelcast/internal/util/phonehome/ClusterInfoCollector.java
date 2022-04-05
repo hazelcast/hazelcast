@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ class ClusterInfoCollector implements MetricsCollector {
         ClusterServiceImpl clusterService = node.getClusterService();
         int clusterSize = clusterService.getMembers().size();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
+        int partitionCount = node.getPartitionService().getPartitionCount();
         RuntimeMXBean rt = ManagementFactory.getRuntimeMXBean();
 
         metricsConsumer.accept(PhoneHomeMetrics.UUID_OF_CLUSTER, node.getThisUuid().toString());
@@ -42,5 +43,6 @@ class ClusterInfoCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP, Long.toString(clusterUpTime));
         metricsConsumer.accept(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN, Long.toString(rt.getUptime()));
         metricsConsumer.accept(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME, rt.getVmName());
+        metricsConsumer.accept(PhoneHomeMetrics.PARTITION_COUNT, String.valueOf(partitionCount));
     }
 }

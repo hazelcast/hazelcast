@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -84,7 +85,9 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  * A base class that has the capability of representing Compact serialized
  * objects as {@link InternalGenericRecord}s. This class is not instantiated
  * directly, but its subclass {@link DefaultCompactReader} is used in the
- * query system, as well as in returning a GenericRecord to the user.
+ * query system.
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
@@ -98,8 +101,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final @Nullable
     Class associatedClass;
 
-    public CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
-                                        @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
+    protected CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
+                                           @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         this.in = in;
         this.serializer = serializer;
         this.schema = schema;
@@ -153,19 +156,27 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public GenericRecordBuilder newBuilder() {
-        return serializer.createGenericRecordBuilder(schema);
+        return new DeserializedSchemaBoundGenericRecordBuilder(schema);
     }
 
     @Override
     @Nonnull
     public GenericRecordBuilder cloneWithBuilder() {
-        return serializer.createGenericRecordCloner(schema, this);
+        TreeMap<String, Object> objects = new TreeMap<>();
+        for (String fieldName : getFieldNames()) {
+            objects.put(fieldName, readAny(fieldName));
+        }
+        return new DeserializedGenericRecordCloner(schema, objects);
     }
 
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return schema.getField(fieldName).getKind();
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+        }
+        return field.getKind();
     }
 
     @Override
@@ -351,19 +362,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                   Reader<T> reader) {
-        int currentPos = in.position();
-        try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
-            if (pos == NULL_OFFSET) {
-                return null;
-            }
-            in.position(pos);
-            return reader.read(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        return getVariableSize(fd, reader);
     }
 
     @Override
@@ -400,6 +400,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
         return getVariableSize(fieldName, COMPACT, in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName) {
+        return getVariableSize(fieldName, COMPACT, serializer::readAsInternalGenericRecord);
     }
 
     @Override
@@ -515,8 +521,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
+    @Nullable
+    @Override
+    public InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName) {
+        return getArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, InternalGenericRecord[]::new,
+                serializer::readAsInternalGenericRecord);
+    }
+
     private <T> T getArrayOfPrimitive(@Nonnull String fieldName, Reader<T> reader, FieldKind primitiveKind,
-                                       FieldKind nullableKind, String methodSuffix) {
+                                      FieldKind nullableKind, String methodSuffix) {
         FieldDescriptor fd = getFieldDefinition(fieldName);
         FieldKind fieldKind = fd.getKind();
         if (fieldKind == primitiveKind) {
@@ -743,8 +756,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getArrayOfNullable(@Nonnull String fieldName, Reader<T> reader,
-                                        Function<Integer, T[]> constructor, FieldKind primitiveKind,
-                                        FieldKind nullableKind) {
+                                       Function<Integer, T[]> constructor, FieldKind primitiveKind,
+                                       FieldKind nullableKind) {
         FieldDescriptor fd = getFieldDefinition(fieldName);
         FieldKind fieldKind = fd.getKind();
         if (fieldKind == primitiveKind) {
@@ -791,8 +804,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getArrayOfVariableSize(FieldDescriptor fieldDescriptor,
-                                            Function<Integer, T[]> constructor,
-                                            Reader<T> reader) {
+                                           Function<Integer, T[]> constructor,
+                                           Reader<T> reader) {
         int currentPos = in.position();
         try {
             int position = readVariableSizeFieldPosition(fieldDescriptor);
@@ -824,8 +837,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
 
     private <T> T[] getArrayOfVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
-                                            Function<Integer, T[]> constructor,
-                                            Reader<T> reader) {
+                                           Function<Integer, T[]> constructor,
+                                           Reader<T> reader) {
         FieldDescriptor fieldDefinition = getFieldDefinition(fieldName, fieldKind);
         return getArrayOfVariableSize(fieldDefinition, constructor, reader);
     }
@@ -863,17 +876,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return fd;
     }
 
-    private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldKind fieldKind) {
-        try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
-            int index = fd.getIndex();
-            int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
-            return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
     private int readVariableSizeFieldPosition(FieldDescriptor fd) {
         try {
             int index = fd.getIndex();
@@ -904,7 +906,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
-        int position = readVariableSizeFieldPosition(fieldName, ARRAY_OF_BOOLEAN);
+        FieldDescriptor fd = getFieldDefinition(fieldName, ARRAY_OF_BOOLEAN);
+        int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -951,8 +954,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                              Reader<T> reader, int index) {
         checkNotNegative(index, "Array indexes can not be negative");
-
-        int position = readVariableSizeFieldPosition(fieldName, fieldKind);
+        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -981,6 +984,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, ARRAY_OF_COMPACT,
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary), index);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecordFromArray(@Nonnull String fieldName, int index) {
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_COMPACT,
+                serializer::readAsInternalGenericRecord, index);
     }
 
     @Override
@@ -1065,7 +1075,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader, int index) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
+            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+            int pos = readVariableSizeFieldPosition(fd);
 
             if (pos == NULL_OFFSET) {
                 return null;

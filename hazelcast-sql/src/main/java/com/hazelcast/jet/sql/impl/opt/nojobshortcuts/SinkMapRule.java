@@ -35,7 +35,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  */
 public final class SinkMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new SinkMapRule();
+    public static final RelOptRule INSTANCE = new SinkMapRule();
 
     private SinkMapRule() {
         super(

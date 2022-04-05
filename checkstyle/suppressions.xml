@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -266,6 +266,7 @@
     <suppress checks="ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]InnerPortable"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]GenericRecord"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]InternalGenericRecord"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]ClassDefinitionBuilder"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]GenericRecordBuilder"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]PortableReader"/>
@@ -300,6 +301,8 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordBuilder"/>
     <suppress checks="MethodLength|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]ReflectiveCompactSerializer"/>
+    <suppress checks="MethodLength|CyclomaticComplexity"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]record[\\/]JavaRecordSerializer"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactWriter"/>
     <suppress checks="MethodCount"

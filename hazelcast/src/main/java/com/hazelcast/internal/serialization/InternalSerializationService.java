@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,19 +83,26 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
 
-    BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder);
-
     BufferObjectDataInput createObjectDataInput(byte[] data, int offset);
 
     BufferObjectDataInput createObjectDataInput(Data data);
 
     BufferObjectDataOutput createObjectDataOutput(int size);
 
-    BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder);
+    /**
+     * Creating new {@link BufferObjectDataOutput}. The size of the internal buffer is set to initialSize at construction.
+     * When the buffer is too small to accept new bytes the buffer will grow to at least firstGrowthSize.
+     */
+    BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize);
 
     BufferObjectDataOutput createObjectDataOutput();
 
     /**
+     * The returned InternalGenericRecord is not thread safe.
+     * It is not meant to return to the user from our API's like IMap, IQueue etc.
+     * It will only be used with {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} for
+     * query purposes
+     *
      * @param data
      * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
      * IllegalArgumentException

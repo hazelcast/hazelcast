@@ -16,28 +16,32 @@
 
 package com.hazelcast.jet.sql.impl.connector.virtual;
 
+import com.hazelcast.jet.sql.impl.OptimizerContext;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
-import com.hazelcast.sql.impl.schema.view.View;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.sql.SqlNode;
 
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 /**
  * Table object to represent virtual (view) table.
  */
 public class ViewTable extends Table {
-    private final View view;
+    private final String viewQuery;
+    private RelNode viewRel;
 
-    public ViewTable(
-            String schemaName,
-            View view,
-            List<TableField> fields,
-            TableStatistics statistics
-    ) {
-        super(schemaName, view.name(), fields, statistics);
-        this.view = view;
+    public ViewTable(String schemaName, String viewName, String viewQuery, TableStatistics statistics) {
+        super(schemaName, viewName, null, statistics);
+        this.viewQuery = viewQuery;
     }
 
     @Override
@@ -47,12 +51,29 @@ public class ViewTable extends Table {
         return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
 
-    public String getViewQuery() {
-        return view.query();
+    @Override
+    protected List<TableField> initFields() {
+        OptimizerContext context = OptimizerContext.getThreadContext();
+        Deque<String> expansionStack = context.getViewExpansionStack();
+        String viewPath = getSchemaName() + "." + getSqlName();
+        if (expansionStack.contains(viewPath)) {
+            throw QueryException.error("Cycle detected in view references");
+        }
+        expansionStack.push(viewPath);
+        SqlNode sqlNode = context.parse(viewQuery).getNode();
+        viewRel = context.convertView(sqlNode);
+        expansionStack.pop();
+        List<RelDataTypeField> fieldList = viewRel.getRowType().getFieldList();
+        List<TableField> res = new ArrayList<>(fieldList.size());
+        for (RelDataTypeField f : fieldList) {
+            res.add(new TableField(f.getName(), toHazelcastType(f.getType()), false));
+        }
+        return res;
     }
 
-    public boolean isStream() {
-        return view.isStream();
+    public RelNode getViewRel() {
+        getFields(); // called for the side effect of calling initFields()
+        assert viewRel != null;
+        return viewRel;
     }
-
 }

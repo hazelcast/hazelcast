@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public <T> T createService(Class<T> type, Object... params) {
-        return nodeExtension.createService(type);
+        return nodeExtension.createService(type, params);
     }
 
     @Override
@@ -294,16 +294,12 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
-                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
-                + " samples. Please exclude this Jet test from the sampling process.");
+        return nodeExtension.getJet();
     }
 
     @Nullable
     @Override
     public JetServiceBackend getJetServiceBackend() {
-        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
-                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
-                + " samples. Please exclude this Jet test from the sampling process.");
+        return nodeExtension.getJetServiceBackend();
     }
 }

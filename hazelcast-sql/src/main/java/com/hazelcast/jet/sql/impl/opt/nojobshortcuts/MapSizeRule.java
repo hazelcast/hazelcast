@@ -27,6 +27,7 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.sql.SqlKind;
+import org.immutables.value.Value;
 
 import java.util.List;
 
@@ -38,22 +39,32 @@ import static org.apache.calcite.plan.Convention.NONE;
  * Such aggregation is translated to direct `map.size()` call which does not
  * involve starting of any job.
  */
+@Value.Enclosing
 public final class MapSizeRule extends RelRule<RelRule.Config> {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(MapSizeRule.class.getSimpleName())
-            .withOperandSupplier(
-                    b0 -> b0.operand(Aggregate.class)
-                            .trait(NONE)
-                            .oneInput(b1 -> b1.operand(TableScan.class)
-                                    .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
-                                    .noInputs()));
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableMapSizeRule.Config.builder()
+                .description(MapSizeRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(Aggregate.class)
+                        .trait(NONE)
+                        .inputs(b1 -> b1
+                                .operand(TableScan.class)
+                                .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
+                                .noInputs()))
+                .build();
+
+        @Override
+        default RelOptRule toRule() {
+            return new MapSizeRule(this);
+        }
+    }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new MapSizeRule();
+    static final RelOptRule INSTANCE = new MapSizeRule(Config.DEFAULT);
 
-    private MapSizeRule() {
-        super(RULE_CONFIG);
+    private MapSizeRule(Config config) {
+        super(config);
     }
 
     @Override

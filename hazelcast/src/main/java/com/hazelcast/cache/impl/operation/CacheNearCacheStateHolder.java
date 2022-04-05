@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,8 +44,8 @@ import static java.util.Collections.emptyList;
  */
 public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
 
-    private UUID partitionUuid;
-    private List<Object> cacheNameSequencePairs = emptyList();
+    private volatile UUID partitionUuid;
+    private volatile List<Object> cacheNameSequencePairs = emptyList();
     private Operation cacheReplicationOperation;
 
     public CacheNearCacheStateHolder() {
@@ -61,7 +62,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = segment.getPartitionId();
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
-        cacheNameSequencePairs = new ArrayList(namespaces.size());
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(namespaces.size()));
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
             String cacheName = ns.getObjectName();
@@ -115,7 +116,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        cacheNameSequencePairs = new ArrayList(size);
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(size));
         for (int i = 0; i < size; i++) {
             cacheNameSequencePairs.add(in.readObject());
         }

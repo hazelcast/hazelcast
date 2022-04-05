@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,17 @@ public class HazelcastPropertiesTest {
         HazelcastProperties properties = new HazelcastProperties(props);
 
         assertEquals("value1", properties.get("key1"));
+    }
+
+    @Test
+    public void testGet_whenValueNotString() {
+        // given a "compromised" Properties object
+        Properties props = new Properties();
+        props.put("key", 1);
+
+        // HazelcastProperties.get returns null
+        HazelcastProperties hzProperties = new HazelcastProperties(props);
+        assertNull(hzProperties.get("key"));
     }
 
     @Test

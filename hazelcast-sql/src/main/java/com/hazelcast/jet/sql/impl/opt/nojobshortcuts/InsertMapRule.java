@@ -34,7 +34,7 @@ import org.apache.calcite.plan.RelOptRuleCall;
  */
 public final class InsertMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new InsertMapRule();
+    public static final RelOptRule INSTANCE = new InsertMapRule();
 
     private InsertMapRule() {
         super(

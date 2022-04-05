@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,13 @@ public final class CompactTestUtil {
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
-                .setArrayOfInt8("b", inner.bb)
-                .setArrayOfInt16("s", inner.ss)
-                .setArrayOfInt32("i", inner.ii)
-                .setArrayOfInt64("l", inner.ll)
-                .setArrayOfFloat32("f", inner.ff)
-                .setArrayOfFloat64("d", inner.dd)
+                .setArrayOfInt8("b", inner.bytes)
+                .setArrayOfInt16("s", inner.shorts)
+                .setArrayOfInt32("i", inner.ints)
+                .setArrayOfInt64("l", inner.longs)
+                .setArrayOfFloat32("f", inner.floats)
+                .setArrayOfFloat64("d", inner.doubles)
+                .setArrayOfString("strings", inner.strings)
                 .setArrayOfGenericRecord("nn", namedRecords)
                 .setArrayOfDecimal("bigDecimals", inner.bigDecimals)
                 .setArrayOfTime("localTimes", inner.localTimes)
@@ -90,7 +91,7 @@ public final class CompactTestUtil {
                 .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
                 .setNullableInt8("nullable_b", mainDTO.b)
                 .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableint16("nullable_s", mainDTO.s)
+                .setNullableInt16("nullable_s", mainDTO.s)
                 .setNullableInt32("nullable_i", mainDTO.i)
                 .setNullableInt64("nullable_l", mainDTO.l)
                 .setNullableFloat32("nullable_f", mainDTO.f)
@@ -105,20 +106,17 @@ public final class CompactTestUtil {
         nn[1] = new NamedDTO("name", 123);
         InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
+                new String[]{"test", null}, nn,
                 new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
-                new LocalTime[]{LocalTime.now(), LocalTime.now()},
-                new LocalDate[]{LocalDate.now(), LocalDate.now()},
-                new LocalDateTime[]{LocalDateTime.now()},
+                new LocalTime[]{LocalTime.now(), null, LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), null, LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now(), null},
                 new OffsetDateTime[]{OffsetDateTime.now()},
                 new Boolean[]{true, false, null},
                 new Byte[]{0, 1, 2, null},
                 new Short[]{3, 4, 5, null}, new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L},
-                new Float[]{0.6543f, -3.56f, 45.67f}, new Double[]{456.456, 789.789, 321.321},
-                new LocalTime[]{LocalTime.now(), LocalTime.now()},
-                new LocalDate[]{LocalDate.now(), LocalDate.now(), null},
-                new LocalDateTime[]{LocalDateTime.now(), null},
-                new OffsetDateTime[]{OffsetDateTime.now()});
+                new Float[]{0.6543f, -3.56f, 45.67f}, new Double[]{456.456, 789.789, 321.321});
 
         return new MainDTO((byte) 113, true, (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,

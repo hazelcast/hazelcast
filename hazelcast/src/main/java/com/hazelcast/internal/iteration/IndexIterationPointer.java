@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
@@ -127,8 +127,8 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
             result.add(create(value, true, value, true, descending, null));
-        } else if (indexFilter instanceof IndexInFilter) {
-            IndexInFilter inFilter = (IndexInFilter) indexFilter;
+        } else if (indexFilter instanceof IndexCompositeFilter) {
+            IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
                 createFromIndexFilterInt(filter, descending, evalContext, result);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
@@ -43,11 +44,11 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
 
-    private boolean isDecoderVerifiedProtocol;
-    private boolean isDecoderReceivedProtocol;
     private boolean clusterProtocolBuffered;
 
-    private String exceptionMessage;
+    private volatile boolean isDecoderVerifiedProtocol;
+    private volatile boolean isDecoderReceivedProtocol;
+    private volatile String exceptionMessage;
 
     public SingleProtocolEncoder(OutboundHandler next) {
         this(new OutboundHandler[]{next});
@@ -87,7 +88,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
             return CLEAN;
         } finally {
-            dst.flip();
+            upcast(dst).flip();
         }
     }
 
@@ -116,19 +117,25 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         return dst.position() == 0;
     }
 
+
+    // The signal methods below are called from the protocol decoder
+    // side that is run on IO input threads. We must synchronize the
+    // accesses of the variables which these methods share with
+    // SingleProtocolEncoder#onWrite that is run on IO output threads.
+
     // Used by SingleProtocolDecoder in order to swap
     // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = true;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
     public void signalWrongProtocol(String exceptionMessage) {
         this.exceptionMessage = exceptionMessage;
-        isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
+        isDecoderReceivedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,9 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the name and default value for Hazelcast properties.
@@ -1756,7 +1759,7 @@ public final class ClusterProperty {
      * @since 5.0
      */
     public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
-            !OsHelper.isWindows());
+            StandardCharsets.UTF_8.equals(Charset.defaultCharset()) && !OsHelper.isWindows());
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The

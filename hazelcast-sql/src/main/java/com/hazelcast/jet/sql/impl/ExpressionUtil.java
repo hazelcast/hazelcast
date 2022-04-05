@@ -20,14 +20,19 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.row.Row;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +57,21 @@ public final class ExpressionUtil {
     public static ComparatorEx<JetSqlRow> comparisonFn(
             @Nonnull List<FieldCollation> fieldCollationList
     ) {
-        return (JetSqlRow row1, JetSqlRow row2) -> {
+        return new SqlRowComparator(fieldCollationList);
+    }
+
+    public static class SqlRowComparator implements IdentifiedDataSerializable, ComparatorEx<JetSqlRow> {
+        private List<FieldCollation> fieldCollationList;
+
+        public SqlRowComparator() {
+        }
+
+        public SqlRowComparator(List<FieldCollation> fieldCollationList) {
+            this.fieldCollationList = fieldCollationList;
+        }
+
+        @Override
+        public int compareEx(JetSqlRow row1, JetSqlRow row2) {
             // Comparison of row values:
             // - Compare the rows according to field collations starting from left to right.
             // - If one of the field comparison returns the non-zero value, then return it.
@@ -100,7 +119,34 @@ public final class ExpressionUtil {
 
             }
             return 0;
-        };
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(fieldCollationList.size());
+            for (FieldCollation fieldCollation : fieldCollationList) {
+                out.writeObject(fieldCollation);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            fieldCollationList = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                fieldCollationList.add(in.readObject());
+            }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.SQL_ROW_COMPARATOR;
+        }
     }
 
     public static FunctionEx<JetSqlRow, JetSqlRow> projectionFn(
@@ -114,6 +160,25 @@ public final class ExpressionUtil {
                 result[i] = evaluate(projections.get(i), row, context);
             }
             return new JetSqlRow(context.getSerializationService(), result);
+        };
+    }
+
+    public static FunctionEx<JetSqlRow, JetSqlRow> calcFn(
+            @Nonnull List<Expression<?>> projections,
+            @Nonnull Expression<Boolean> predicate,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return row0 -> {
+            Row row = row0.getRow();
+            if (Boolean.TRUE.equals(evaluate(predicate, row, context))) {
+                Object[] result = new Object[projections.size()];
+                for (int i = 0; i < projections.size(); i++) {
+                    result[i] = evaluate(projections.get(i), row, context);
+                }
+                return new JetSqlRow(context.getSerializationService(), result);
+            } else {
+                return null;
+            }
         };
     }
 
@@ -203,11 +268,11 @@ public final class ExpressionUtil {
         return new JetSqlRow(context.getSerializationService(), result);
     }
 
-    public static <T> T evaluate(
-            @Nonnull Expression<T> expression,
+    public static Object evaluate(
+            @Nonnull Expression<?> expression,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
-        return expression.eval(row, context);
+        return expression.evalTop(row, context);
     }
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -401,7 +401,7 @@ hazelcast:
             value: 256
         disk-tier:
           enabled: true
-          device-name: my-local-device
+          device-name: default-tiered-store-device
 
   multimap:
     default:
@@ -939,12 +939,11 @@ hazelcast:
 
   dynamic-configuration:
     persistence-enabled: true
-    persistence-file: /mnt/persistence-file
     backup-dir: /mnt/backup-dir
     backup-count: 7
 
   local-device:
-    my-local-device:
+    default-tiered-store-device:
       base-dir: base-dir
       block-size: 4096
       read-io-thread-count: 4

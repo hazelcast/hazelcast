@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,7 +281,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
 
         // Then
         tasklets.forEach(MockTasklet::assertNotDone);
-        assertTrueEventually(f::isDone);
+        assertTrueEventually(() -> assertTrue(f.isDone()), 10);
 
         exceptionRule.expect(CancellationException.class);
         cancellationFuture.get();
@@ -411,9 +411,11 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
             }
             if (isSleeping) {
                 try {
-                    Thread.currentThread().join();
+                    Thread.sleep(500);
+                    return NO_PROGRESS;
                 } catch (InterruptedException e) {
-                    return DONE;
+                    throw new RuntimeException("Sleeping interrupted, this should not happen because " +
+                            "we don't interrupt blocking workers", e);
                 }
             }
             if (latch != null) {

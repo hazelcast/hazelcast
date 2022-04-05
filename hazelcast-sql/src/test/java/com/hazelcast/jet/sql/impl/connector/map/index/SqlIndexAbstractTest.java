@@ -137,9 +137,21 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1=" + toLiteral(f1, f1.valueFrom())), c_notHashComposite(), eq(f1.valueFrom()));
         check(query(toLiteral(f1, f1.valueFrom()) + "=field1"), c_notHashComposite(), eq(f1.valueFrom()));
 
+        // WHERE f1=literal1 or f1=literal2
+        check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1=" + toLiteral(f1, f1.valueTo())),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+        check(query(toLiteral(f1, f1.valueFrom()) + "=field1 or " + toLiteral(f1, f1.valueTo()) + "=field1"),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+
         // WHERE f1=?
         check(query("field1=?", f1.valueFrom()), c_notHashComposite(), eq(f1.valueFrom()));
         check(query("?=field1", f1.valueFrom()), c_notHashComposite(), eq(f1.valueFrom()));
+
+        // WHERE f1=? or f1=?
+        check(query("field1=? or field1=?", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+        check(query("?=field1 or ?=field1", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
 
         // WHERE f1!=literal
         check(query("field1!=" + toLiteral(f1, f1.valueFrom())), c_booleanComponent() && c_notHashComposite(), neq(f1.valueFrom()));
@@ -181,32 +193,89 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1<=?", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
         check(query("?>=field1", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
 
-        // WHERE f1>(=)? AND f1<(=)?
-        // Do not use literals here, because this is already tested with simple conditions
-        // Do not exchange operand positions, because this is already tested with simple conditions
+        if (!(f1 instanceof ExpressionType.BooleanType)) {
+            // WHERE f1>literal AND f1<literal
+            check(
+                    query("field1>" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gt(f1.valueFrom()), lt(f1.valueTo()))
+            );
+
+            // WHERE f1>literal AND f1<=literal
+            check(
+                    query("field1>" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gt(f1.valueFrom()), lte(f1.valueTo()))
+            );
+
+            // WHERE f1>=literal AND f1<literal
+            check(
+                    query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gte(f1.valueFrom()), lt(f1.valueTo()))
+            );
+        }
+
+        // WHERE f1>=literal AND f1<=literal
+        check(
+                query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
+                c_sorted(),
+                and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+
+        // WHERE f1>? AND f1<?
         check(
                 query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
 
+        // WHERE f1>? AND f1<=?
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lte(f1.valueTo()))
         );
 
+        // WHERE f1>=? AND f1<?
         check(
                 query("field1>=? AND field1<?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lt(f1.valueTo()))
         );
 
+        // WHERE f1>=? AND f1<=?
         check(
                 query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
+
+        // WHERE f1<literal OR f1>literal (range from -inf..val1 and val2..+inf)
+        check(
+                query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
+                c_sorted(),
+                or(lt(f1.valueFrom()), gt(f1.valueTo()))
+        );
+
+        if (!(f1 instanceof ExpressionType.BooleanType)) {
+            // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality)
+            check(
+                    query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueMiddle()) +
+                            ") OR field1=" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
+            );
+
+            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges)
+            check(
+                    query("(field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueMiddle()) +
+                            ") OR (field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
+                            ")"),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+        }
 
         // IN
         check(

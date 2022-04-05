@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,14 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     }
 
     @Override
-    public T evalTop(Row row, ExpressionEvalContext context) {
-        return row.get(index);
+    public Object evalTop(Row row, ExpressionEvalContext context) {
+        Object res = row.get(index);
+        if (res instanceof LazyTarget) {
+            assert type.equals(QueryDataType.OBJECT);
+            LazyTarget lazyTarget = (LazyTarget) res;
+            res = lazyTarget.getDeserialized() != null ? lazyTarget.getDeserialized() : lazyTarget.getSerialized();
+        }
+        return res;
     }
 
     @SuppressWarnings("unchecked")
@@ -68,16 +74,11 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         Object res = row.get(index);
 
         if (res instanceof LazyTarget) {
-            res = unwrapLazyValue((LazyTarget) res, context);
+            assert type.equals(QueryDataType.OBJECT);
+            res = ((LazyTarget) res).deserialize(context.getSerializationService());
         }
 
         return (T) res;
-    }
-
-    private Object unwrapLazyValue(LazyTarget lazyValue, ExpressionEvalContext context) {
-        assert type.equals(QueryDataType.OBJECT);
-
-        return lazyValue.deserialize(context.getSerializationService());
     }
 
     @Override

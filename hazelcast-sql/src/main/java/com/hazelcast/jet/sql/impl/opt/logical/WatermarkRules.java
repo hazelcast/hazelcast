@@ -24,26 +24,28 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import java.util.Map;
+
+import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
+import static org.apache.calcite.plan.RelOptRule.operandJ;
 
 final class WatermarkRules {
 
@@ -53,21 +55,50 @@ final class WatermarkRules {
      * {@link #WATERMARK_INTO_SCAN_INSTANCE}.
      */
     @SuppressWarnings("AnonInnerLength")
-    static final RelOptRule IMPOSE_ORDER_INSTANCE = new ConverterRule(
-            LogicalTableFunctionScan.class, scan -> extractImposeOrderFunction(scan) != null,
-            Convention.NONE, LOGICAL,
+    static final RelOptRule IMPOSE_ORDER_INSTANCE = new RelOptRule(
+            operandJ(
+                    LogicalTableFunctionScan.class,
+                    Convention.NONE,
+                    scan -> extractImposeOrderFunction(scan) != null,
+                    none()
+            ),
             WatermarkRules.class.getSimpleName() + "(Impose Order)"
     ) {
         @Override
-        public RelNode convert(RelNode rel) {
-            LogicalTableFunctionScan function = (LogicalTableFunctionScan) rel;
+        public void onMatch(RelOptRuleCall call) {
+            LogicalTableFunctionScan scan = call.rel(0);
 
-            return new WatermarkLogicalRel(
-                    function.getCluster(),
-                    OptUtils.toLogicalConvention(function.getTraitSet()),
-                    Iterables.getOnlyElement(Util.toList(function.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(function),
-                    orderingColumnFieldIndex(function));
+            int wmIndex = orderingColumnFieldIndex(scan);
+            WatermarkLogicalRel wmRel = new WatermarkLogicalRel(
+                    scan.getCluster(),
+                    OptUtils.toLogicalConvention(scan.getTraitSet()),
+                    Iterables.getOnlyElement(Util.toList(scan.getInputs(), OptUtils::toLogicalInput)),
+                    toEventTimePolicyProvider(scan),
+                    wmIndex);
+
+            if (wmIndex < 0) {
+                call.transformTo(wmRel);
+                return;
+            }
+            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmRel, wmIndex);
+            if (watermarkedFields == null || watermarkedFields.isEmpty()) {
+                call.transformTo(wmRel);
+                return;
+            }
+
+            Map.Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst();
+            if (watermarkedField == null) {
+                call.transformTo(wmRel);
+                return;
+            }
+
+            DropLateItemsLogicalRel dropLateItemsRel = new DropLateItemsLogicalRel(
+                    scan.getCluster(),
+                    OptUtils.toLogicalConvention(scan.getTraitSet()),
+                    wmRel,
+                    watermarkedField.getValue()
+            );
+            call.transformTo(dropLateItemsRel);
         }
 
         private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
@@ -112,14 +143,14 @@ final class WatermarkRules {
             WatermarkLogicalRel logicalWatermark = call.rel(0);
             FullScanLogicalRel logicalScan = call.rel(1);
 
-            RelNode rel = new FullScanLogicalRel(
+            FullScanLogicalRel scan = new FullScanLogicalRel(
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
                     logicalWatermark.eventTimePolicyProvider(),
                     logicalWatermark.watermarkedColumnIndex()
             );
-            call.transformTo(rel);
+            call.transformTo(scan);
         }
     };
 

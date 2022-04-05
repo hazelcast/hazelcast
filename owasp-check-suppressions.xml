@@ -60,6 +60,13 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
+       False positive. The flaws are relatated to the FasterXML jackson version (2+) and not the codehaus one.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
+       <vulnerabilityName>CVE-2018-1000873</vulnerabilityName>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
        False positive. The flaws are relatated to the postgres version and not the debezium-connector-postgres.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-postgres@.*$</packageUrl>
@@ -99,6 +106,7 @@
        <vulnerabilityName>CVE-2020-25694</vulnerabilityName>
        <vulnerabilityName>CVE-2020-25695</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3393</vulnerabilityName>
+       <vulnerabilityName>CVE-2021-23214</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
@@ -215,6 +223,7 @@
        <vulnerabilityName>CVE-2021-23841</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3536</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3712</vulnerabilityName>
+       <vulnerabilityName>CVE-2022-0778</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
@@ -222,5 +231,13 @@
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@1\.0\.12.*$</packageUrl>
        <cve>CVE-2020-25644</cve>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+       <cve>CVE-2020-9488</cve>
+       <cve>CVE-2022-23307</cve>
     </suppress>
 </suppressions>

@@ -47,17 +47,7 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
         List<String[]> stringValues = stream(values)
                 .map(row -> stream(row).map(value -> value == null ? null : value.toString()).toArray(String[]::new))
                 .collect(Collectors.toList());
-        create(sqlService, tableName, names, types, stringValues);
-    }
-
-    public static void create(
-            SqlService sqlService,
-            String tableName,
-            List<String> names,
-            List<QueryDataTypeFamily> types,
-            List<String[]> values
-    ) {
-        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, values);
+        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, stringValues, true);
     }
 
     @Override

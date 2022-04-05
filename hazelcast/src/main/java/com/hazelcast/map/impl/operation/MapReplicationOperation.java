@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class MapReplicationOperation extends Operation
 
         this.mapNearCacheStateHolder = new MapNearCacheStateHolder();
         this.mapNearCacheStateHolder.setMapReplicationOperation(this);
-        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces);
     }
 
     @Override
@@ -74,27 +74,14 @@ public class MapReplicationOperation extends Operation
                 mapNearCacheStateHolder.applyState();
             }
         } catch (Throwable e) {
-            getLogger().severe("map replication operation failed for partitionId=" + getPartitionId(), e);
+            getLogger().severe("map replication operation failed for partitionId="
+                    + getPartitionId(), e);
 
             disposePartition();
 
             if (e instanceof NativeOutOfMemoryError) {
                 oome = (NativeOutOfMemoryError) e;
             }
-        }
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        try {
-            if (mapReplicationStateHolder.storesByMapName == null) {
-                return;
-            }
-            for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
-                recordStore.beforeOperation();
-            }
-        } finally {
-            super.beforeRun();
         }
     }
 
@@ -108,20 +95,6 @@ public class MapReplicationOperation extends Operation
             }
         } finally {
             super.afterRun();
-        }
-    }
-
-    @Override
-    public void afterRunFinal() {
-        try {
-            if (mapReplicationStateHolder.storesByMapName == null) {
-                return;
-            }
-            for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
-                recordStore.afterOperation();
-            }
-        } finally {
-            super.afterRunFinal();
         }
     }
 
