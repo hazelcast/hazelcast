@@ -115,7 +115,7 @@
         <parquet.version>1.12.2</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <prometheus.version>0.14.0</prometheus.version>
-        <protobuf.version>3.19.4</protobuf.version>
+        <protobuf.version>3.20.0</protobuf.version>
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
