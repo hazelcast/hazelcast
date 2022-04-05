@@ -45,7 +45,7 @@ import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTar
 class MetricsCollectionCycle {
     private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
 
-    private final PoolingMetricDescriptorSupplier descriptorSupplier = new PoolingMetricDescriptorSupplier();
+    private final PoolingMetricDescriptorSupplier descriptorSupplier;
     private final Function<Class, SourceMetadata> lookupMetadataFn;
     private final Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn;
     private final MetricsCollector metricsCollector;
@@ -57,11 +57,16 @@ class MetricsCollectionCycle {
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
                            Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
                            MetricsCollector metricsCollector,
-                           ProbeLevel minimumLevel) {
+                           ProbeLevel minimumLevel, MetricDescriptorReuseableData metricDescriptorReuseableData) {
         this.lookupMetadataFn = lookupMetadataFn;
         this.lookupMetricValueCatcherFn = lookupMetricValueCatcherFn;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
+        if (metricDescriptorReuseableData == null) {
+            this.descriptorSupplier = new PoolingMetricDescriptorSupplier();
+        } else {
+            this.descriptorSupplier = new PoolingMetricDescriptorSupplier(metricDescriptorReuseableData);
+        }
     }
 
     void collectStaticMetrics(Map<MetricDescriptorImpl.LookupView, ProbeInstance> probeInstanceEntries) {
@@ -171,8 +176,8 @@ class MetricsCollectionCycle {
         }
     }
 
-    public void cleanUp() {
-        descriptorSupplier.close();
+    public MetricDescriptorReuseableData cleanUp() {
+        return descriptorSupplier.close();
     }
 
     private class MetricsContext implements MetricsCollectionContext {
