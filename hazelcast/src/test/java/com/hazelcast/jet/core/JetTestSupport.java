@@ -345,6 +345,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return new Watermark(timestamp);
     }
 
+    public static Watermark wm(byte key, long timestamp) {
+        return new Watermark(timestamp, key);
+    }
+
     public void waitForFirstSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
         long[] snapshotId = {-1};
         assertTrueEventually(() -> {
