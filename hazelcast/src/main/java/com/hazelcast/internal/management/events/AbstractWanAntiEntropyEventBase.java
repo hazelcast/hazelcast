@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public abstract class AbstractWanAntiEntropyEventBase extends AbstractIdentifiedEvent {
+public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEvent {
     protected final String wanReplicationName;
     protected final String wanPublisherId;
     protected final String mapName;

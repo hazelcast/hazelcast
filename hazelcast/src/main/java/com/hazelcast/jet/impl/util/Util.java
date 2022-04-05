@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -38,7 +39,10 @@ import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -100,17 +104,22 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+    public static final String CONFIG_OVERRIDE_WARNING = "(for Hazelcast embedded, works only when " +
+            "loading config via Config.load)";
+    public static final String CONFIG_OVERRIDE_WARNING_ENV = "(recommended when running container image. " +
+            "For Hazelcast embedded, works only when loading config via Config.load)";
+
     public static final String CONFIG_CHANGE_TEMPLATE =
-            "  - Change member config using Java API: %s;\n" +
+            "  - Change member config using Java API: %s\n" +
                     "  - Change XML/YAML configuration property: Set %s\n" +
-                    "  - Add system property: %s\n" +
-                    "  - Add environment variable: %s";
+                    "  - Add system property: %s " + CONFIG_OVERRIDE_WARNING + "\n" +
+                    "  - Add environment variable: %s " + CONFIG_OVERRIDE_WARNING_ENV;
 
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
-            "To enable the Jet engine on the members, please do one of the following:\n" +
+            "To enable the Jet engine on the members, do one of the following:\n" +
             format(CONFIG_CHANGE_TEMPLATE,
-                    "config.getJetConfig().setEnabled(true);",
-                    "Set hazelcast.jet.enabled to true",
+                    "config.getJetConfig().setEnabled(true)",
+                    "hazelcast.jet.enabled to true",
                     "-Dhz.jet.enabled=true",
                     "HZ_JET_ENABLED=true"
             );
@@ -120,12 +129,10 @@ public final class Util {
             "resource upload on the members, using one of the following:\n" +
             format(CONFIG_CHANGE_TEMPLATE,
                     "config.getJetConfig().setResourceUploadEnabled(true);",
-                    "Set hazelcast.jet.resource-upload-enabled to true",
+                    "hazelcast.jet.resource-upload-enabled to true",
                     "-Dhz.jet.resource-upload-enabled=true",
                     "HZ_JET_RESOURCEUPLOADENABLED=true"
             );
-
-
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -772,6 +779,33 @@ public final class Util {
     public static void checkJetIsEnabled(NodeEngine nodeEngine) {
         if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
             throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
+        }
+    }
+
+    public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {
+        public static final Identity INSTANCE = new Identity<>();
+
+        @Override
+        public T applyEx(T t) throws Exception {
+            return t;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FunctionsSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return FunctionsSerializerHook.FUNCTION_IDENTITY;
         }
     }
 }

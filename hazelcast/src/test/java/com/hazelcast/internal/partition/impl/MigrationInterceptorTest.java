@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -64,6 +66,11 @@ public class MigrationInterceptorTest extends HazelcastTestSupport {
         config2.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config2.addListenerConfig(new ListenerConfig(listener));
         final HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
+
+        // Wait for the partition state is initialized on the second member.
+        // Otherwise, some migrations can fail with a PartitionStateVersionMismatchException
+        // with message "Local partition stamp is not equal to master's stamp! Local: 0, Master: 1"
+        assertTrueEventually(() -> assertTrue(Accessors.isPartitionStateInitialized(hz2)));
 
         migrationStartLatch.countDown();
 

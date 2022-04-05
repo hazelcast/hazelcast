@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -117,28 +119,49 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     private final LineReader lineReader;
     private final PrintWriter writer;
-    private volatile boolean running;
-
     private final HazelcastInstance client;
 
+    private volatile boolean running;
+
     public ClientConsoleApp(@Nonnull HazelcastInstance client) {
-       this(client, null);
+        this(client, null);
     }
 
     public ClientConsoleApp(@Nonnull HazelcastInstance client, @Nullable PrintWriter writer) {
         this.client = client;
+
+        Terminal terminal = createTerminal();
+
         lineReader = LineReaderBuilder.builder()
-                .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
-                        .style(AttributedStyle.BOLD.foreground(COLOR)).append("%M%P > ").toAnsi())
+                // Check whether a real or dumb terminal. Dumb terminal enters an endless loop.
+                // see issue: https://github.com/jline/jline3/issues/751
+                .variable(LineReader.SECONDARY_PROMPT_PATTERN, isRealTerminal(terminal)
+                        ? new AttributedStringBuilder().style(AttributedStyle.BOLD.foreground(COLOR))
+                        .append("%M%P > ").toAnsi() : "")
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
                 .appName("hazelcast-console-app")
+                .terminal(terminal)
                 .build();
+
         if (writer == null) {
             this.writer = lineReader.getTerminal().writer();
         } else {
             this.writer = writer;
         }
+    }
+
+    private Terminal createTerminal() {
+        try {
+            return TerminalBuilder.terminal();
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    private static boolean isRealTerminal(Terminal terminal) {
+        return !Terminal.TYPE_DUMB.equals(terminal.getType())
+                && !Terminal.TYPE_DUMB_COLOR.equals(terminal.getType());
     }
 
     public IQueue<Object> getQueue() {
@@ -175,30 +198,40 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     public void start() {
-        println(startPrompt(client));
-        writer.flush();
-        running = true;
-        while (running) {
-            try {
-                final String command = lineReader.readLine(
-                        new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(COLOR))
-                                .append("hazelcast[")
-                                .append(namespace)
-                                .append("] > ").toAnsi());
-                handleCommand(command);
-            } catch (EndOfFileException | IOError e) {
-                // Ctrl+D, and kill signals result in exit
-                println("Exiting from the client console application.");
-                writer.flush();
-                break;
-            } catch (UserInterruptException e) {
-                // Ctrl+C cancels the not-yet-submitted command
-                continue;
-            } catch (Throwable e) {
-                e.printStackTrace(writer);
-                writer.flush();
+        try {
+            println(startPrompt(client));
+            writer.flush();
+            running = true;
+            while (running) {
+                try {
+                    final String command = lineReader.readLine(
+                            new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(COLOR))
+                                    .append("hazelcast[")
+                                    .append(namespace)
+                                    .append("] > ").toAnsi());
+                    handleCommand(command);
+                } catch (EndOfFileException | IOError e) {
+                    // Ctrl+D, and kill signals result in exit
+                    println("Exiting from the client console application.");
+                    writer.flush();
+                    break;
+                } catch (UserInterruptException e) {
+                    // Handle thread interruption for dumb terminal
+                    if (!isRealTerminal(lineReader.getTerminal())) {
+                        writer.flush();
+                        break;
+                    } else {
+                        // Ctrl+C cancels the not-yet-submitted command
+                        continue;
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace(writer);
+                    writer.flush();
+                }
+                running = running && client.getLifecycleService().isRunning();
             }
-            running = running && client.getLifecycleService().isRunning();
+        } finally {
+            IOUtil.closeResource(lineReader.getTerminal());
         }
     }
 

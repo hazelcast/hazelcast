@@ -28,24 +28,15 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Filter rules
-                PruneEmptyRules.FILTER_INSTANCE,
-                FilterLogicalRule.INSTANCE,
-                CoreRules.FILTER_MERGE,
-                CoreRules.FILTER_PROJECT_TRANSPOSE,
-                FilterIntoScanLogicalRule.INSTANCE,
-                CoreRules.FILTER_AGGREGATE_TRANSPOSE,
-                CoreRules.FILTER_INTO_JOIN,
-                CoreRules.FILTER_REDUCE_EXPRESSIONS,
-                SlidingWindowFilterTransposeRule.STREAMING_FILTER_TRANSPOSE,
-
-                // Project rules
-                PruneEmptyRules.PROJECT_INSTANCE,
-                ProjectLogicalRule.INSTANCE,
-                CoreRules.PROJECT_MERGE,
-                CoreRules.PROJECT_REMOVE,
-                CoreRules.PROJECT_FILTER_TRANSPOSE,
-                ProjectIntoScanLogicalRule.INSTANCE,
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+                CalcIntoScanLogicalRule.INSTANCE,
+                CalcMergeRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+                CoreRules.CALC_REDUCE_EXPRESSIONS,
+                // We need it to transpose RIGHT JOIN to the LEFT JOIN
+                CoreRules.PROJECT_TO_CALC,
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
 
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
@@ -56,6 +47,7 @@ public final class LogicalRules {
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -65,7 +57,6 @@ public final class LogicalRules {
 
                 // Join rules
                 JoinLogicalRule.INSTANCE,
-                CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 //                STREAMING_JOIN_TRANSPOSE,
 
@@ -77,21 +68,19 @@ public final class LogicalRules {
 
                 // Value rules
                 ValuesLogicalRules.CONVERT_INSTANCE,
-                ValuesLogicalRules.FILTER_INSTANCE,
-                ValuesLogicalRules.PROJECT_INSTANCE,
-                ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
+                ValuesLogicalRules.CALC_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules
+                TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRules.INSTANCE,
-                UpdateLogicalRules.NOOP_INSTANCE,
+                UpdateLogicalRules.SCAN_INSTANCE,
+                UpdateLogicalRules.VALUES_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
                 SelectByKeyMapLogicalRules.INSTANCE,
-                SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,

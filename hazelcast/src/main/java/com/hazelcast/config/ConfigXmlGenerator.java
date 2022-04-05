@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -57,26 +58,26 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.aliasedDiscoveryConfigsGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.cacheXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.cardinalityEstimatorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.classNameOrImplClass;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.discoveryStrategyConfigXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.durableExecutorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.executorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.flakeIdGeneratorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.listXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.mapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.multiMapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.pnCounterXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.queueXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.reliableTopicXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.replicatedMapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.ringbufferXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.setXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.topicXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.aliasedDiscoveryConfigsGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cacheXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cardinalityEstimatorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.discoveryStrategyConfigXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.durableExecutorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.executorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.flakeIdGeneratorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.listXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.mapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.multiMapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.pnCounterXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.queueXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.reliableTopicXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.replicatedMapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.ringbufferXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.setXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -149,9 +150,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMajor())
-                .append('.')
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMinor())
+                .append(Versions.CURRENT_CLUSTER_VERSION.toString())
                 .append(".xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
@@ -327,7 +326,7 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(gen.open("ldap"), c)
                 .node("url", c.getUrl())
                 .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("parse-dn", c.getParseDn())
                 .nodeIfContents("role-context", c.getRoleContext())
                 .nodeIfContents("role-filter", c.getRoleFilter())
                 .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
@@ -536,9 +535,10 @@ public class ConfigXmlGenerator {
 
         gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries
+                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
         if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
             gen.open("registered-classes");
             appendRegisteredClasses(gen, registries);
@@ -721,8 +721,11 @@ public class ConfigXmlGenerator {
                 .filter(DeviceConfig::isLocal)
                 .forEach(deviceConfig -> {
                     LocalDeviceConfig localDeviceConfig = (LocalDeviceConfig) deviceConfig;
+                    Capacity capacity = localDeviceConfig.getCapacity();
                     gen.open("local-device", "name", localDeviceConfig.getName())
                             .node("base-dir", localDeviceConfig.getBaseDir().getAbsolutePath())
+                            .node("capacity", null,
+                                    "unit", capacity.getUnit(), "value", capacity.getValue())
                             .node("block-size", localDeviceConfig.getBlockSize())
                             .node("read-io-thread-count", localDeviceConfig.getReadIOThreadCount())
                             .node("write-io-thread-count", localDeviceConfig.getWriteIOThreadCount())
@@ -897,10 +900,6 @@ public class ConfigXmlGenerator {
 
         gen.open("dynamic-configuration")
                 .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
-
-        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
-            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
-        }
 
         if (dynamicConfigurationConfig.getBackupDir() != null) {
             gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());

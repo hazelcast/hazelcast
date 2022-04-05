@@ -772,7 +772,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(VARCHAR, columnType),
                 asList(
                         new String[]{"A", "1"},
                         new String[]{"B", "2"},
@@ -940,7 +940,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(VARCHAR, columnType),
                 asList(
                         new String[]{"A", "1"},
                         new String[]{"B", "2"},
@@ -1028,8 +1028,8 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                   .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                           "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1045,7 +1045,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY ROLLUP(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'ROLLUP' does not exist");
+                .hasMessageContaining("ROLLUP not supported");
     }
 
     @Test
@@ -1054,7 +1054,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY CUBE(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'CUBE' does not exist");
+                .hasMessageContaining("CUBE not supported");
     }
 
     @Test
@@ -1063,7 +1063,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY GROUPING SETS ((name), (distance))"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Function 'GROUPING SETS' does not exist");
+                .hasMessageContaining("GROUPING SETS not supported");
     }
 
     @Test
@@ -1078,7 +1078,7 @@ public class SqlAggregateTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 sqlService.execute("SELECT COUNT(name) " +
-                        "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY ts"))
                 .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                         " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
@@ -1090,7 +1090,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataTypeFamily.VARCHAR, QueryDataTypeFamily.INTEGER),
+                asList(VARCHAR, INTEGER),
                 asList(values)
         );
         return name;

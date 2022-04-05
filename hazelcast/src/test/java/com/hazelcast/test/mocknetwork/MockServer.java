@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ class MockServer implements Server {
                 return null;
             }
 
-            return createConnection(targetNode);
+            return getOrCreateConnection(targetNode);
         }
 
         @Override
@@ -154,7 +154,7 @@ class MockServer implements Server {
                     () -> server.node.getClusterService().suspectAddressIfNotConnected(endpointAddress));
         }
 
-        private synchronized MockServerConnection createConnection(Node targetNode) {
+        private synchronized MockServerConnection getOrCreateConnection(Node targetNode) {
             if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");
             }
@@ -166,6 +166,11 @@ class MockServer implements Server {
             UUID localMemberUuid = node.getThisUuid();
             UUID remoteMemberUuid = targetNode.getThisUuid();
 
+            // To avoid duplicate connection creation, we need to check available connections again
+            MockServerConnection conn = server.connectionMap.get(remoteMemberUuid);
+            if (conn != null && conn.isAlive()) {
+                return conn;
+            }
 
             // Create a unidirectional connection that is split into
             // two distinct connection objects (one for the local member

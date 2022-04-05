@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -316,12 +316,13 @@ public final class ClientConfigXmlGenerator {
 
         gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<Class, String, CompactSerializer>> registrations
+                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
-        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
+                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
+        if (!MapUtil.isNullOrEmpty(registrations) || !MapUtil.isNullOrEmpty(namedRegistries)) {
             gen.open("registered-classes");
-            appendRegisteredClasses(gen, registries);
+            appendRegisteredClasses(gen, registrations);
             appendNamedRegisteredClasses(gen, namedRegistries);
             gen.close();
         }

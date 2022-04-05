@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.sql.impl.client.SqlPage.PageState;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DATE;
@@ -178,7 +179,7 @@ public class SqlPageCodecTest {
                 value = serializationService.toData(value);
             }
 
-            rows.add(new SqlRowImpl(rowMetadata, HeapRow.of(value), null));
+            rows.add(new SqlRowImpl(rowMetadata, new JetSqlRow(TEST_SS, new Object[]{value})));
         }
 
         SqlPage originalPage = SqlPage.fromRows(

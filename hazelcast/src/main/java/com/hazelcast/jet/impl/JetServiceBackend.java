@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,7 +263,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Returns the job config or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public JobConfig getJobConfig(long jobId) {
+    public JobConfig getJobConfig(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            return jobCoordinationService.getLightJobConfig(jobId);
+        }
+
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return jobRecord.getConfig();
@@ -288,7 +292,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        jobExecutionService.onMemberRemoved(event.getMember().getAddress());
+        jobExecutionService.onMemberRemoved(event.getMember());
         jobCoordinationService.onMemberRemoved(event.getMember().getUuid());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,6 +63,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -131,10 +133,13 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         terminateInstance(hz2);
         terminateInstance(hz3);
 
-        hz3 = factory.newHazelcastInstance(hz3Address);
-        final Member newMember3 = getClusterService(hz3).getLocalMember();
+        HazelcastInstance newInstance = factory.newHazelcastInstance(hz3Address);
+        hz3 = newInstance;
+        Member newMember3 = getClusterService(hz3).getLocalMember();
 
         assertClusterSizeEventually(2, hz1, hz3);
+        // ensure partition state is applied on the new member
+        assertTrueEventually(() -> assertTrue(Accessors.isPartitionStateInitialized(newInstance)));
 
         final List<HazelcastInstance> instanceList = asList(hz1, hz3);
         assertTrueAllTheTime(new AssertTask() {

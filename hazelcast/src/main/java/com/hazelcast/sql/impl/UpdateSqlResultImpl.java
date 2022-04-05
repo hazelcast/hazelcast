@@ -74,14 +74,4 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
         // not implemented for IMDG engine
         return false;
     }
-
-    @Override
-    public Object deserialize(Object value) {
-        throw new IllegalStateException("This result contains only update count");
-    }
-
-    @Override
-    public Object deserialize(LazyTarget value) {
-        throw new IllegalStateException("This result contains only update count");
-    }
 }

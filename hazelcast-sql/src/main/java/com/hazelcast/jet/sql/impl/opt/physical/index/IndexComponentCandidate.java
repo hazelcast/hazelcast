@@ -26,7 +26,7 @@ import org.apache.calcite.rex.RexNode;
  * created: one for the {@code name=?} expression, and another for the {@code age=?} expression. If there is an index
  * on any of those columns, the engine will attempt to apply the candidate to the index to form an {@link IndexComponentFilter}.
  */
-public class IndexComponentCandidate {
+class IndexComponentCandidate {
     /** Original Calcite expression that formed this candidate. */
     private final RexNode expression;
 
@@ -36,7 +36,7 @@ public class IndexComponentCandidate {
     /** Index filter created from the Calcite expression. */
     private final IndexFilter filter;
 
-    public IndexComponentCandidate(
+    IndexComponentCandidate(
             RexNode expression,
             int columnIndex,
             IndexFilter filter
@@ -46,15 +46,15 @@ public class IndexComponentCandidate {
         this.filter = filter;
     }
 
-    public RexNode getExpression() {
+    RexNode getExpression() {
         return expression;
     }
 
-    public int getColumnIndex() {
+    int getColumnIndex() {
         return columnIndex;
     }
 
-    public IndexFilter getFilter() {
+    IndexFilter getFilter() {
         return filter;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                         || returnTypeName.equals("com.hazelcast.collection.QueueStore")
                         || returnTypeName.equals("com.hazelcast.collection.QueueStoreFactory")) {
                     cloneStoreInstance(classloader, method, setter, thisConfigObject, otherConfigObject, returnTypeName);
-                } else if (returnTypeName.startsWith("com.hazelcast.memory.MemorySize")) {
+                } else if (returnTypeName.startsWith("com.hazelcast.memory.MemorySize")
+                        || returnTypeName.startsWith("com.hazelcast.memory.Capacity")) {
                     // ignore
                 } else if (returnTypeName.startsWith("com.hazelcast")) {
                     Object thisSubConfigObject = method.invoke(thisConfigObject, null);

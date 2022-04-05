@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -440,8 +440,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     if (persistenceEnabled) {
                         throw new InvalidConfigurationException("Dynamic Configuration Persistence isn't available for Spring.");
                     }
-                } else if ("persistence-file".equals(name)) {
-                    dynamicConfigBuilder.addPropertyValue("persistenceFile", getTextContent(n));
                 } else if ("backup-dir".equals(name)) {
                     dynamicConfigBuilder.addPropertyValue("backupDir", getTextContent(n));
                 } else if ("backup-count".equals(name)) {
@@ -464,6 +462,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(n);
                 if ("base-dir".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("baseDir", getTextContent(n));
+                } else if ("capacity".equals(name)) {
+                    handleCapacity(n, deviceConfigBuilder);
                 } else if ("block-size".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("blockSize",
                             getIntegerValue("block-size", getTextContent(n)));
@@ -1377,14 +1377,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("capacity".equals(name)) {
-                    handleMemorySizeConfig(child, memoryTierConfigBuilder);
+                    handleCapacity(child, memoryTierConfigBuilder);
                 }
             }
 
             configBuilder.addPropertyValue("memoryTierConfig", memoryTierConfigBuilder.getBeanDefinition());
         }
 
-        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+        private void handleCapacity(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
             BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map maps one or more keys to the specified value.
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
-@Generated("4fe071d5df22318f46ccde13bcfaf3f3")
+@Generated("f03c5fb258212cf8971347ba10c7e45c")
 public final class ReplicatedMapContainsValueCodec {
     //hex: 0x0D0500
     public static final int REQUEST_MESSAGE_TYPE = 853248;

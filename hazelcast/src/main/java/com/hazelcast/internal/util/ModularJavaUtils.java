@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public final class ModularJavaUtils {
         if (JavaVm.CURRENT_VM == JavaVm.OPENJ9) {
             return packages(
                     open("com.sun.management.internal"),
-                    open("com.ibm.lang.management.internal")
+                    export("com.ibm.lang.management.internal")
             );
         }
         return packages(open("com.sun.management.internal"));

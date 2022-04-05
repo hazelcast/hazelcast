@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,13 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.LazyDeserializer;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage.PageState;
-import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -42,7 +39,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
  */
-public class SqlClientResult implements SqlResult, LazyDeserializer {
+public class SqlClientResult implements SqlResult {
 
     private final SqlClientService service;
     private final int cursorBufferSize;
@@ -197,16 +194,6 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
                 closed = true;
             }
         }
-    }
-
-    @Override
-    public Object deserialize(Object value) {
-        return service.deserializeRowValue(value);
-    }
-
-    @Override
-    public Object deserialize(LazyTarget value) {
-        return service.deserializeRowValue(value);
     }
 
     /**
@@ -380,9 +367,9 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
                 throw new NoSuchElementException();
             }
 
-            Row row = getCurrentRow();
+            JetSqlRow row = getCurrentRow();
             currentPosition++;
-            return new SqlRowImpl(rowMetadata, row, SqlClientResult.this);
+            return new SqlRowImpl(rowMetadata, row);
         }
 
         private void onNextPage(SqlPage page) {
@@ -400,14 +387,14 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
             }
         }
 
-        private Row getCurrentRow() {
+        private JetSqlRow getCurrentRow() {
             Object[] values = new Object[rowMetadata.getColumnCount()];
 
             for (int i = 0; i < currentPage.getColumnCount(); i++) {
                 values[i] = currentPage.getColumnValueForClient(i, currentPosition);
             }
 
-            return new HeapRow(values);
+            return new JetSqlRow(service.getSerializationService(), values);
         }
     }
 }

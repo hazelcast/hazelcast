@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,8 +183,11 @@ public interface JetService {
      * It substantially reduces the overhead for jobs that take milliseconds to
      * complete.
      * <p>
-     * A light job will not be cancelled if the client disconnects. It's
+     * A light job will not be cancelled if the client disconnects. Its
      * potential failure will be only logged in member logs.
+     * <p>
+     * You should not mutate the {@link JobConfig} or {@link Pipeline} instances
+     * after submitting them to this method.
      */
     Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config);
 

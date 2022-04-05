@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -121,6 +122,12 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     protected HazelcastInstance getDriver() {
         return members[members.length - 1];
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddWanReplicationConfigIsNotSupported() {
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
     }
 
     @Test

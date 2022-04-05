@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -44,6 +45,8 @@ public final class Address implements IdentifiedDataSerializable {
 
     private String scopeId;
     private boolean hostSet;
+
+    private transient int hashCode;
 
     public Address() {
     }
@@ -79,6 +82,7 @@ public final class Address implements IdentifiedDataSerializable {
         }
         this.port = port;
         hostSet = !AddressUtil.isIpAddress(host);
+        this.hashCode = hashCodeInternal();
     }
 
     public Address(Address address) {
@@ -87,6 +91,7 @@ public final class Address implements IdentifiedDataSerializable {
         this.type = address.type;
         this.scopeId = address.scopeId;
         this.hostSet = address.hostSet;
+        this.hashCode = hashCodeInternal();
     }
 
     public String getHost() {
@@ -150,6 +155,7 @@ public final class Address implements IdentifiedDataSerializable {
         port = in.readInt();
         type = in.readByte();
         host = in.readString();
+        hashCode = hashCodeInternal();
     }
 
     @Override
@@ -161,11 +167,16 @@ public final class Address implements IdentifiedDataSerializable {
             return false;
         }
         final Address address = (Address) o;
-        return port == address.port && this.type == address.type && this.host.equals(address.host);
+        return hashCode == address.hashCode && port == address.port && this.host.equals(address.host);
     }
 
     @Override
     public int hashCode() {
+        return hashCode;
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private int hashCodeInternal() {
         int result = port;
         result = 31 * result + host.hashCode();
         return result;
@@ -183,6 +194,25 @@ public final class Address implements IdentifiedDataSerializable {
         if (address == null) {
             throw new IllegalArgumentException("Can't resolve address: " + inetSocketAddress);
         }
+        return address;
+    }
+
+
+    /**
+     * Creates an unresolved address. This API is used by the client for the case where the hostname can not be resolved.
+     * Members achieve the same thing via Serialization where we don't resolve the hostname when Address comes as Data
+     * from another member.
+     *
+     * @param host hostname or IP
+     * @param port port
+     * @return an unresolved address
+     */
+    @PrivateApi
+    public static Address createUnresolvedAddress(String host, int port) {
+        Address address = new Address();
+        address.host = host;
+        address.port = port;
+        address.hashCode = address.hashCodeInternal();
         return address;
     }
 }

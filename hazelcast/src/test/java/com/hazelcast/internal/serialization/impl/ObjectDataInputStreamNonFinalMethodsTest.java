@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.util.Random;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
@@ -50,7 +49,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
         when(mockSerializationService.getByteOrder()).thenReturn(BIG_ENDIAN);
 
         inputStream = spy(new TestInputStream(INIT_DATA));
-        in = new ObjectDataInputStream(new DataInputStream(inputStream), mockSerializationService);
+        in = new ObjectDataInputStream(inputStream, mockSerializationService);
     }
 
     @Test

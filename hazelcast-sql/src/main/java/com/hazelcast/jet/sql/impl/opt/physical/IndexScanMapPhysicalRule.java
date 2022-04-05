@@ -25,24 +25,35 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
+import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
+@Value.Enclosing
 final class IndexScanMapPhysicalRule extends RelRule<RelRule.Config> {
 
-    private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(IndexScanMapPhysicalRule.class.getSimpleName())
-            .withOperandSupplier(
-                    b -> b.operand(FullScanLogicalRel.class)
-                            .trait(LOGICAL)
-                            .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
-                            .noInputs());
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        Config DEFAULT = ImmutableIndexScanMapPhysicalRule.Config.builder()
+                .description(IndexScanMapPhysicalRule.class.getSimpleName())
+                .operandSupplier(
+                        b -> b.operand(FullScanLogicalRel.class)
+                                .trait(LOGICAL)
+                                .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
+                                .noInputs())
+                .build();
+
+        @Override
+        default RelOptRule toRule() {
+            return new IndexScanMapPhysicalRule(this);
+        }
+    }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new IndexScanMapPhysicalRule();
+    static final RelOptRule INSTANCE = new IndexScanMapPhysicalRule(Config.DEFAULT);
 
-    private IndexScanMapPhysicalRule() {
-        super(RULE_CONFIG);
+    private IndexScanMapPhysicalRule(Config config) {
+        super(config);
     }
 
     @Override

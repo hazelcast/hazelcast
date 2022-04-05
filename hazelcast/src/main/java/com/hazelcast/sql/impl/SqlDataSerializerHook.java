@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -195,7 +195,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
-        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexCompositeFilter();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();

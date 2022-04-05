@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -206,6 +208,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  It should be composed of only alpha-numeric characters.
@@ -223,6 +227,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  It should be composed of only alpha-numeric characters.
@@ -241,6 +247,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -252,11 +260,13 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value);
+    GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -273,6 +283,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -289,6 +301,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -305,6 +319,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -434,7 +450,6 @@ interface GenericRecordBuilder {
      *                                         the type of the field does not match the one in the class definition or
      *                                         Same field is trying to be set without using
      *                                         {@link GenericRecord#cloneWithBuilder()}.
-     *
      */
     @Nonnull
     GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
@@ -472,6 +487,8 @@ interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
+     * Supported only for {@link Portable}. Not applicable for {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     * <p>
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
      *
@@ -570,6 +587,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -586,6 +605,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -602,6 +623,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -618,6 +641,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -634,6 +659,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -650,6 +677,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
@@ -666,6 +695,8 @@ interface GenericRecordBuilder {
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
      * Otherwise, it is illegal to set to the same field twice.
+     * <p>
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      *
      * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}

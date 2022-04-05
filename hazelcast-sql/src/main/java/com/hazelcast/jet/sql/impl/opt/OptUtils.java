@@ -56,6 +56,7 @@ import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.rex.RexVisitorImpl;
@@ -371,7 +372,7 @@ public final class OptUtils {
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
     }
 
-    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+    public static HazelcastTable extractHazelcastTable(RelNode rel) {
         HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
         assert table != null;
         return table;
@@ -458,5 +459,37 @@ public final class OptUtils {
             }
         });
         return res[0];
+    }
+
+    /**
+     * Inlines `inlinedExpressions` into `expr` and returns the modified expression.
+     * <p>
+     * Example:
+     * {@code
+     * inlinedExpressions: [UPPER($1), LOWER($0)]
+     * expr: $1 || $0
+     * result: LOWER($0) || UPPER($1)
+     * }
+     */
+    @SuppressWarnings("checkstyle:AnonInnerLength")
+    public static RexNode inlineExpression(List<RexNode> inlinedExpressions, RexNode expr) {
+        return expr.accept(new RexShuttle() {
+            @Override
+            public RexNode visitInputRef(RexInputRef inputRef) {
+                return inlinedExpressions.get(inputRef.getIndex());
+            }
+        });
+    }
+
+    /**
+     * Same as {@link #inlineExpression(List, RexNode)}, but applied to all
+     * expressions in {@code exprs}.
+     */
+    public static List<RexNode> inlineExpressions(List<RexNode> inlinedExpressions, List<RexNode> exprs) {
+        List<RexNode> res = new ArrayList<>(exprs.size());
+        for (RexNode expr : exprs) {
+            res.add(inlineExpression(inlinedExpressions, expr));
+        }
+        return res;
     }
 }

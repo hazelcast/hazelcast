@@ -20,20 +20,21 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.logical.LogicalTableModify;
-import org.apache.calcite.rel.logical.LogicalTableScan;
-import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.operandJ;
@@ -43,21 +44,18 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
 final class UpdateLogicalRules {
 
     @SuppressWarnings("checkstyle:anoninnerlength")
-    static final RelOptRule INSTANCE =
+    static final RelOptRule SCAN_INSTANCE =
             new RelOptRule(
                     operandJ(
-                            LogicalTableModify.class, null, TableModify::isUpdate,
-                            operand(
-                                    LogicalProject.class,
-                                    operand(LogicalTableScan.class, none())
-                            )
+                            TableModifyLogicalRel.class, LOGICAL, TableModify::isUpdate,
+                            operand(FullScanLogicalRel.class, none())
                     ),
                     UpdateLogicalRules.class.getSimpleName()
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    LogicalTableModify update = call.rel(0);
-                    LogicalTableScan scan = call.rel(2);
+                    TableModifyLogicalRel update = call.rel(0);
+                    FullScanLogicalRel scan = call.rel(1);
 
                     UpdateLogicalRel rel = new UpdateLogicalRel(
                             update.getCluster(),
@@ -73,44 +71,54 @@ final class UpdateLogicalRules {
                 }
 
                 // rewrites existing project to just primary keys project
-                private RelNode rewriteScan(LogicalTableScan scan) {
+                private RelNode rewriteScan(FullScanLogicalRel scan) {
                     HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
-                    HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
+                    HazelcastTable hzTable = relTable.unwrap(HazelcastTable.class);
+
+                    List<RexNode> keyProjects = keyProjects(scan.getCluster().getRexBuilder(), hzTable.getTarget());
+                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(relTable,
+                            hzTable.withProject(keyProjects, null), scan.getCluster().getTypeFactory());
 
                     return new FullScanLogicalRel(
                             scan.getCluster(),
                             OptUtils.toLogicalConvention(scan.getTraitSet()),
-                            OptUtils.createRelTable(
-                                    relTable.getDelegate().getQualifiedName(),
-                                    hazelcastTable.withProject(keyProjects(hazelcastTable.getTarget())),
-                                    scan.getCluster().getTypeFactory()),
+                            convertedTable,
                             null,
-                            -1);
+                            -1
+                    );
                 }
 
-                private List<Integer> keyProjects(Table table) {
+                public List<RexNode> keyProjects(RexBuilder rexBuilder, Table table) {
                     List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
-                    return IntStream.range(0, table.getFieldCount())
-                            .filter(i -> primaryKey.contains(table.getField(i).getName()))
-                            .boxed()
-                            .collect(toList());
+                    List<RexNode> res = new ArrayList<>(primaryKey.size());
+                    for (int i = 0; i < table.getFieldCount(); i++) {
+                        TableField field = table.getField(i);
+                        if (primaryKey.contains(field.getName())) {
+                            RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                            res.add(rexBuilder.makeInputRef(type, i));
+                        }
+                    }
+                    return res;
                 }
             };
 
-    // no-updates case, i.e. '... WHERE __key = 1 AND __key = 2'
+    // Calcite replaces the table scan with empty VALUES when the WHERE clause
+    // is always false
+    // i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
-    static final RelOptRule NOOP_INSTANCE =
+    @SuppressWarnings("checkstyle:DeclarationOrder")
+    static final RelOptRule VALUES_INSTANCE =
             new RelOptRule(
                     operandJ(
-                            LogicalTableModify.class, null, TableModify::isUpdate,
-                            operand(LogicalValues.class, none())
+                            TableModifyLogicalRel.class, null, TableModify::isUpdate,
+                            operand(ValuesLogicalRel.class, none())
                     ),
                     UpdateLogicalRules.class.getSimpleName() + "(NOOP)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    LogicalTableModify update = call.rel(0);
-                    LogicalValues values = call.rel(1);
+                    TableModifyLogicalRel update = call.rel(0);
+                    ValuesLogicalRel values = call.rel(1);
 
                     UpdateLogicalRel rel = new UpdateLogicalRel(
                             update.getCluster(),

@@ -20,14 +20,13 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -44,6 +43,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -97,7 +97,6 @@ import static org.junit.Assert.assertTrue;
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
-    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     @After
     public void tearDown() {
@@ -524,7 +523,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Compares two lists. The lists are expected to contain elements of type
-     * Object[]. Useful for {@link TestSupport#outputChecker(BiPredicate)}.
+     * {@link JetSqlRow} or {@link Watermark}.
+     * Useful for {@link TestSupport#outputChecker(BiPredicate)}.
      */
     public static boolean compareRowLists(List<?> expected, List<?> actual) {
         if (expected.size() != actual.size()) {
@@ -532,9 +532,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         for (int i = 0; i < expected.size(); i++) {
-            JetSqlRow expectedItem = (JetSqlRow) expected.get(i);
-            JetSqlRow actualItem = (JetSqlRow) actual.get(i);
-            if (!Objects.equals(expectedItem, actualItem)) {
+            if (expected.get(i) instanceof JetSqlRow) {
+                JetSqlRow expectedItem = (JetSqlRow) expected.get(i);
+                JetSqlRow actualItem = (JetSqlRow) actual.get(i);
+                if (!Objects.equals(expectedItem, actualItem)) {
+                    return false;
+                }
+            } else if (expected.get(i) instanceof Watermark) {
+                Watermark expectedItem = (Watermark) expected.get(i);
+                Watermark actualItem = (Watermark) actual.get(i);
+                if (!Objects.equals(expectedItem, actualItem)) {
+                    return false;
+                }
+            } else {
                 return false;
             }
         }
@@ -605,6 +615,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static JetSqlRow jetRow(Object... values) {
         return new JetSqlRow(TEST_SS, values);
+    }
+
+    protected static Object[] row(Object... values) {
+        return values;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,6 +206,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                long callTimeoutMillis,
                boolean deserialize,
                ServerConnectionManager connectionManager) {
+        super(context.logger);
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -395,8 +396,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             return;
         }
 
-        if (context.logger.isFinestEnabled()) {
-            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
         long oldWaitTimeout = op.getWaitTimeout();
@@ -692,8 +693,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
         if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
-            if (context.logger.isLoggable(level)) {
-                context.logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
+            if (logger.isLoggable(level)) {
+                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
             }
         }
 
@@ -717,8 +718,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
     private void completeWhenRetryRejected(RejectedExecutionException e) {
-        if (context.logger.isFinestEnabled()) {
-            context.logger.finest(e);
+        if (logger.isFinestEnabled()) {
+            logger.finest(e);
         }
         completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
@@ -782,8 +783,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     return;
                 }
 
-                if (context.logger.isFinestEnabled()) {
-                    context.logger.finest("Node is not joined. Re-scheduling " + this
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Node is not joined. Re-scheduling " + this
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
                 try {

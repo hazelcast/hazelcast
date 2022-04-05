@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ public interface GenericTargetAccessor {
     /**
      * Gets the target in the form suitable for field access.
      * <p>
-     * For normal objects, the target is deserialized. For Portable and JSON objects, it is returned as {@code Data}.
+     * For normal objects, the target is deserialized. For Portable and Compact objects, it is returned as {@code Data}.
      *
      * @return target in the form suitable for field access
      */

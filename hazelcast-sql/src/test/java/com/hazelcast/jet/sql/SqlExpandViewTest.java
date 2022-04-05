@@ -116,7 +116,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     public void test_viewWithStreamingQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_STREAM(10))");
 
-        assertRowsEventuallyInAnyOrder("SELECT * FROM v", rows(1, 0L, 1L, 2L));
+        assertTipOfStream("SELECT * FROM v", rows(1, 0L, 1L, 2L));
         assertRowsAnyOrder("SELECT * FROM v LIMIT 1", rows(1, 0L));
 
         assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v ORDER BY 1"))
@@ -139,7 +139,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 .hasMessageContaining("DML operations not supported for views");
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
     @Test
     public void test_referencedViewChanged() {
         // We create a view v2 as reading from v1, and then change v1.
@@ -149,19 +148,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE or replace VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME);
 
         assertRowsAnyOrder("select * from v2", rows(1, "key=1"));
-    }
-
-    @Test
-    // remove after https://github.com/hazelcast/hazelcast/issues/20032 is properly fixed
-    public void when_incompatibleViewChange_then_notAllowed() {
-        instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME))
-                .hasMessage("Can't replace view, the type for column '__key' changed from INTEGER to VARCHAR");
-
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "CREATE or REPLACE VIEW v1 AS SELECT __key AS a FROM " + MAP_NAME))
-                .hasMessage("Can't replace view, the new view doesn't contain column '__key'");
     }
 
     @Test
@@ -304,12 +290,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
         );
 
         instance().getSql().execute("CREATE VIEW v " +
-                "AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND))"
+                "AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))"
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(distance) " +
-                        "FROM TABLE(TUMBLE(TABLE(v), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "FROM TABLE(TUMBLE(TABLE v, DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY window_start",
                 asList(
                         new Row(timestampTz(0L), 1L),
@@ -407,10 +393,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
 
         assertRowsAnyOrder("SELECT * FROM vv WHERE __key = 1", singletonList(new Row(1)));
-    }
-
-    private static Object[] row(Object... values) {
-        return values;
     }
 
     private static String createStreamingTable(SqlService service, Object[]... values) {

@@ -26,16 +26,13 @@ public class QueryParseResult {
 
     private final SqlNode node;
     private final QueryParameterMetadata parameterMetadata;
-    private final boolean isInfiniteRows;
 
     public QueryParseResult(
             SqlNode node,
-            QueryParameterMetadata parameterMetadata,
-            boolean isInfiniteRows
+            QueryParameterMetadata parameterMetadata
     ) {
         this.node = node;
         this.parameterMetadata = parameterMetadata;
-        this.isInfiniteRows = isInfiniteRows;
     }
 
     public SqlNode getNode() {
@@ -44,9 +41,5 @@ public class QueryParseResult {
 
     public QueryParameterMetadata getParameterMetadata() {
         return parameterMetadata;
-    }
-
-    public boolean isInfiniteRows() {
-        return isInfiniteRows;
     }
 }

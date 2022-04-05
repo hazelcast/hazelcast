@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,6 @@ public class FirewallingServer
     Collection getConnections() {
         return delegate.getConnections();
     }
-
 
     @Override
     public void addConnectionListener(ConnectionListener listener) {
@@ -271,6 +270,10 @@ public class FirewallingServer
             return delegate.getConnections();
         }
 
+        @Override
+        public int connectionCount() {
+            return delegate.connectionCount();
+        }
 
         @Override
         public ServerConnection get(@Nonnull Address address, int streamId) {
@@ -295,6 +298,12 @@ public class FirewallingServer
         @Override
         public synchronized ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
             return wrap(delegate.getOrConnect(address, streamId));
+        }
+
+        @Override
+        public boolean blockOnConnect(Address address,
+                                      long timeoutMillis, int streamId) throws InterruptedException {
+            return delegate.blockOnConnect(address, timeoutMillis, streamId);
         }
 
         @Override

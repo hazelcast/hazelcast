@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
@@ -38,7 +39,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
@@ -129,27 +129,11 @@ public class PartitionContainer {
     }
 
     public Collection<ServiceNamespace> getNamespaces(Predicate<MapConfig> predicate, int replicaIndex) {
-        if (maps.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (RecordStore recordStore : maps.values()) {
+        return NameSpaceUtil.getAllNamespaces(maps, recordStore -> {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
-
-            if (mapConfig.getTotalBackupCount() < replicaIndex
-                    || !predicate.test(mapConfig)) {
-                continue;
-            }
-
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
-            }
-            namespaces.add(mapContainer.getObjectNamespace());
-        }
-
-        return namespaces;
+            return mapConfig.getTotalBackupCount() >= replicaIndex && predicate.test(mapConfig);
+        }, recordStore -> recordStore.getMapContainer().getObjectNamespace());
     }
 
     public int getPartitionId() {
@@ -161,7 +145,8 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, recordStoreConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name,
+                contextMutexFactory, recordStoreConstructor);
     }
 
     public RecordStore getRecordStore(String name, boolean skipLoadingOnCreate) {
@@ -170,7 +155,8 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStoreForHotRestart(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, recordStoreConstructorForHotRestart);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name,
+                contextMutexFactory, recordStoreConstructorForHotRestart);
     }
 
     @Nullable
@@ -179,9 +165,12 @@ public class PartitionContainer {
     }
 
     public void destroyMap(MapContainer mapContainer) {
-        // Mark map container destroyed before the underlying data structures are destroyed. We need this to ensure that every
-        // reader that observed non-destroyed state may use previously read data. E.g. if the reader returned only Key1 it
-        // is guaranteed that it hadn't missed Key2 because it was destroyed earlier.
+        // Mark map container destroyed before the underlying
+        // data structures are destroyed. We need this to
+        // ensure that every reader that observed non-destroyed
+        // state may use previously read data. E.g. if the
+        // reader returned only Key1 it is guaranteed that it
+        // hadn't missed Key2 because it was destroyed earlier.
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
@@ -196,14 +185,25 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+
         // getting rid of Indexes object in case it has been initialized
         indexes.remove(name);
 
+        destroyMapContainer(mapContainer);
+        mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+    }
+
+    /**
+     * @return {@code true} if destruction is successful, otherwise
+     * return {@code false} if it is already destroyed.
+     */
+    public boolean destroyMapContainer(MapContainer mapContainer) {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (mapServiceContext.removeMapContainer(mapContainer)) {
             mapContainer.onDestroy();
+            return true;
         }
-        mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+        return false;
     }
 
     private void clearLockStore(String name) {

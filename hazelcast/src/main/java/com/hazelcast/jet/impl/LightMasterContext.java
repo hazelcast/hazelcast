@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,10 +74,10 @@ public class LightMasterContext {
 
     private final NodeEngine nodeEngine;
     private final long jobId;
-    private final JobConfig config;
 
     private final ILogger logger;
     private final String jobIdString;
+    private final JobConfig jobConfig;
     private final long startTime = System.currentTimeMillis();
 
     private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
@@ -92,7 +92,7 @@ public class LightMasterContext {
     ) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
-        this.config = config;
+        this.jobConfig = config;
 
         jobCompletionFuture = new NamedCompletableFuture<>("light job " + idToString(jobId));
         logger = nodeEngine.getLogger(LightMasterContext.class);
@@ -121,6 +121,11 @@ public class LightMasterContext {
         }
         assert members.stream().filter(m -> m.getUuid().equals(nodeEngine.getLocalMember().getUuid())).count() == 1
                 : "schizophrenia: local member not a member";
+        if (members.size() < membersView.size()) {
+            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
+                    idToString(jobId), members.size(), membersView.size(), localMemberVersion);
+        }
+
         if (logger.isFineEnabled()) {
             logger.info("aaa job " + jobIdString + " will use members: " + members); // TODO [viliam] remove
             String dotRepresentation = dag.toDotString();
@@ -217,7 +222,7 @@ public class LightMasterContext {
         if (!hasParticipant(uuid)) {
             return null;
         }
-        if (!config.isPreventShutdown()) {
+        if (!jobConfig.isPreventShutdown()) {
             requestTermination();
         }
         return jobCompletionFuture;
@@ -329,5 +334,9 @@ public class LightMasterContext {
 
     public CompletableFuture<Void> getCompletionFuture() {
         return jobCompletionFuture;
+    }
+
+    public JobConfig getJobConfig() {
+        return jobConfig;
     }
 }

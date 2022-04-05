@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -39,6 +40,8 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
 
     final int initialSize;
 
+    final int firstGrowthSize;
+
     byte[] buffer;
 
     int pos;
@@ -48,8 +51,13 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     private final boolean isBigEndian;
 
     ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
-        this.initialSize = size;
-        this.buffer = new byte[size];
+        this(size, -1, service, byteOrder);
+    }
+
+    ByteArrayObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service, ByteOrder byteOrder) {
+        this.initialSize = initialSize;
+        this.firstGrowthSize = firstGrowthSize;
+        this.buffer = new byte[initialSize];
         this.service = service;
         isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
@@ -387,10 +395,8 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     final void ensureAvailable(int len) {
         if (available() < len) {
             if (buffer != null) {
-                int newCap = Math.max(buffer.length << 1, buffer.length + len);
-                byte[] newBuffer = new byte[newCap];
-                System.arraycopy(buffer, 0, newBuffer, 0, pos);
-                buffer = newBuffer;
+                int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), firstGrowthSize);
+                buffer = Arrays.copyOf(buffer, newCap);
             } else {
                 buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
             }

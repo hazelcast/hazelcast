@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -34,7 +35,6 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
@@ -49,10 +49,8 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -308,21 +306,9 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
         int partitionId = event.getPartitionId();
         Map<ObjectNamespace, RingbufferContainer> partitionContainers = containers.get(partitionId);
 
-        if (MapUtil.isNullOrEmpty(partitionContainers)) {
-            return Collections.EMPTY_LIST;
-        }
-
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (RingbufferContainer container : partitionContainers.values()) {
-            if (container.getConfig().getTotalBackupCount() < event.getReplicaIndex()) {
-                continue;
-            }
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
-            }
-            namespaces.add(container.getNamespace());
-        }
-        return namespaces;
+        return NameSpaceUtil.getAllNamespaces(partitionContainers,
+                container -> container.getConfig().getTotalBackupCount() >= event.getReplicaIndex(),
+                RingbufferContainer::getNamespace);
     }
 
     @Override

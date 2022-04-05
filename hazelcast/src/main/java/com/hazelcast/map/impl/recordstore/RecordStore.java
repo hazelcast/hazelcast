@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -57,7 +57,7 @@ import java.util.function.BiConsumer;
  */
 public interface RecordStore<R extends Record> {
 
-    ExpirySystemIf getExpirySystem();
+    ExpirySystem getExpirySystem();
 
     LocalRecordStoreStats getLocalRecordStoreStats();
 

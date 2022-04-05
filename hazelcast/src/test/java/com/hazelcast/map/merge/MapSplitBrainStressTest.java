@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
     static final Class<PassThroughMergePolicy> MERGE_POLICY = PassThroughMergePolicy.class;
 
     static final int TEST_TIMEOUT_IN_MILLIS = 15 * 60 * 1000;
-    static final String MAP_NAME_PREFIX = MapSplitBrainStressTest.class.getSimpleName() + "-";
+    static final String MAP_NAME_PREFIX = "map";
     static final ILogger LOGGER = Logger.getLogger(MapSplitBrainStressTest.class);
 
     final Map<HazelcastInstance, UUID> listenerRegistry = new ConcurrentHashMap<>();
@@ -105,7 +105,7 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
         if (iteration == 1) {
             for (int mapIndex = 0; mapIndex < MAP_COUNT; mapIndex++) {
                 LOGGER.info("Filling map " + mapIndex + "/" + MAP_COUNT + " with " + ENTRY_COUNT + " entries");
-                String mapName = MAP_NAME_PREFIX + randomMapName();
+                String mapName = MAP_NAME_PREFIX + "_" + (mapIndex + 1);
                 mapNames.put(mapIndex, mapName);
 
                 IMap<Integer, Integer> mapOnFirstBrain = instances[0].getMap(mapName);
@@ -143,12 +143,12 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
             String mapName = mapNames.get(mapIndex);
             IMap<Integer, Integer> map = instances[0].getMap(mapName);
             assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
-                    ENTRY_COUNT, mapIndex, MAP_COUNT, iteration),
+                            ENTRY_COUNT, mapIndex, MAP_COUNT, iteration),
                     ENTRY_COUNT, map.size());
             for (int key = 0; key < ENTRY_COUNT; key++) {
                 int value = map.get(key);
                 assertEquals(format("expected value %d for key %d in map %d/%d (iteration %d)",
-                        value, key, mapIndex, MAP_COUNT, iteration),
+                                value, key, mapIndex, MAP_COUNT, iteration),
                         key, value);
             }
         }

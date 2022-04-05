@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dynamic configurations.
@@ -47,6 +48,8 @@ import java.util.Map;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface ConfigurationService {
+
+    String SERVICE_NAME = "hz:configurationService";
 
     /**
      * Registers a dynamic configurations to all cluster members.
@@ -59,6 +62,13 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
+     * Update the license for the cluster.
+     *
+     * @param licenseKey new license key to set
+     */
+    void updateLicense(String licenseKey);
+
+    /**
      * Persists any dynamically changeable sub configuration to this member's
      * declarative configuration. Preserves file format of the existing dynamic
      * configuration persistence file. Also note that this method is
@@ -66,7 +76,7 @@ public interface ConfigurationService {
      *
      * @param subConfig configuration to persist
      */
-    void persist(IdentifiedDataSerializable subConfig);
+    void persist(Object subConfig);
 
     /**
      * Updates the configuration with the given configuration. Updating means
@@ -83,7 +93,23 @@ public interface ConfigurationService {
      *
      * @return update result which includes added and ignored configurations
      */
-    ConfigUpdateResult update();
+    default ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    /**
+     * Starts a configuration update process asynchronously. Updates the configuration with the given configuration. Updating
+     * means dynamically changing all the differences dynamically changeable.
+     *
+     * @param configPatch string representation of the config patch, to find any new dynamically changeable sub configs
+     * @return the unique identifier of the config update process. The MC Events emitted during the process will have the same
+     * {@link com.hazelcast.internal.management.events.AbstractConfigUpdateEvent#getConfigUpdateProcessId()}.
+     */
+    UUID updateAsync(String configPatch);
+
+    default UUID updateAsync() {
+        return updateAsync(null);
+    }
 
     /**
      * Finds existing Multimap config.

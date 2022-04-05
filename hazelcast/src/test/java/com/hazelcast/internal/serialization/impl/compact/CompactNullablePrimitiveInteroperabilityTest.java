@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsNullable(serializedRecord);
     }
 
@@ -104,7 +104,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact("test");
         builder.setNullableBoolean("boolean", true);
         builder.setNullableInt8("byte", (byte) 4);
-        builder.setNullableint16("short", (short) 6);
+        builder.setNullableInt16("short", (short) 6);
         builder.setNullableInt32("int", 8);
         builder.setNullableInt64("long", 4444L);
         builder.setNullableFloat32("float", 8321.321F);
@@ -125,7 +125,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsPrimitive(serializedRecord);
     }
 
@@ -152,7 +152,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact("test");
         builder.setNullableBoolean("boolean", null);
         builder.setNullableInt8("byte", null);
-        builder.setNullableint16("short", null);
+        builder.setNullableInt16("short", null);
         builder.setNullableInt32("int", null);
         builder.setNullableInt64("long", null);
         builder.setNullableFloat32("float", null);
@@ -171,7 +171,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadNullAsPrimitiveThrowsException(serializedRecord);
     }
 
@@ -200,7 +200,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact(PrimitiveObject.class.getName());
         builder.setNullableBoolean("boolean_", true);
         builder.setNullableInt8("byte_", (byte) 2);
-        builder.setNullableint16("short_", (short) 4);
+        builder.setNullableInt16("short_", (short) 4);
         builder.setNullableInt32("int_", 8);
         builder.setNullableInt64("long_", 4444L);
         builder.setNullableFloat32("float_", 8321.321F);

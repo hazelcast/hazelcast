@@ -229,11 +229,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 memberCount,
                 iMapResolver);
 
-        // 2. Parse SQL string and validate it.
-        QueryParseResult parseResult = context.parse(task.getSql());
+        try {
+            OptimizerContext.setThreadContext(context);
 
-        // 3. Create plan.
-        return createPlan(task, parseResult, context);
+            // 2. Parse SQL string and validate it.
+            QueryParseResult parseResult = context.parse(task.getSql());
+
+            // 3. Create plan.
+            return createPlan(task, parseResult, context);
+        } finally {
+            OptimizerContext.setThreadContext(null);
+        }
     }
 
     @SuppressWarnings("checkstyle:returncount")
@@ -255,7 +261,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlDropIndex) {
             return toDropIndexPlan(planKey, (SqlDropIndex) node);
         } else if (node instanceof SqlCreateJob) {
-            return toCreateJobPlan(planKey, parseResult, context);
+            return toCreateJobPlan(planKey, parseResult, context, task.getSql());
         } else if (node instanceof SqlAlterJob) {
             return toAlterJobPlan(planKey, (SqlAlterJob) node);
         } else if (node instanceof SqlDropJob) {
@@ -280,9 +286,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
-                    parseResult.isInfiniteRows(),
-                    false
-            );
+                    false,
+                    task.getSql());
         }
     }
 
@@ -328,21 +333,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
     }
 
-    private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context) {
+    private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context, String query) {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
-        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
+        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
+        boolean infiniteRows = OptUtils.isUnbounded(dmlConvertedResult.getRel());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
                 dmlConvertedResult.getFieldNames(),
                 context,
-                dmlParseResult.isInfiniteRows(),
-                true
-        );
+                true,
+                query);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -350,6 +355,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.jobConfig(),
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
+                query,
+                infiniteRows,
                 planExecutor
         );
     }
@@ -387,7 +394,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 context,
                 sqlNode.name(),
                 sql,
-                sqlNode.isStream(),
                 replace,
                 ifNotExists,
                 planExecutor
@@ -426,8 +432,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
-            boolean isInfiniteRows,
-            boolean isCreateJob
+            boolean isCreateJob,
+            String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -510,6 +516,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
+                    query,
+                    OptUtils.isUnbounded(physicalRel),
                     planExecutor,
                     permissions
             );
@@ -525,7 +533,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
-                    isInfiniteRows,
+                    query,
+                    OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
                     permissions
@@ -581,6 +590,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
+
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -643,6 +653,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     ) {
         CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
+        visitor.optimizeFinishedDag();
         return visitor;
     }
 

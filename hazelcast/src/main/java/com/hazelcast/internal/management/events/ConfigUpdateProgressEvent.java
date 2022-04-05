@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigUpdateProgressEvent extends AbstractIdentifiedEvent {
+public class ConfigUpdateProgressEvent extends AbstractConfigUpdateEvent {
 
     // total number of dynamic changes to be applied to this cluster during this reload
     private final int totalChangeCount;
@@ -31,8 +31,9 @@ public class ConfigUpdateProgressEvent extends AbstractIdentifiedEvent {
 
     private final ConfigNamespace namespace;
 
-    public ConfigUpdateProgressEvent(UUID uuid, int totalChangeCount, int appliedChangeCount, ConfigNamespace namespace) {
-        super(uuid);
+    public ConfigUpdateProgressEvent(UUID configUpdateProcessId, int totalChangeCount, int appliedChangeCount,
+                                     ConfigNamespace namespace) {
+        super(configUpdateProcessId);
         this.totalChangeCount = totalChangeCount;
         this.appliedChangeCount = appliedChangeCount;
         this.namespace = namespace;

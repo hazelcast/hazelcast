@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
@@ -32,7 +34,9 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -109,6 +113,19 @@ public class MergeOperation extends MapOperation
             invalidationKeys = new ArrayList<>(mergingEntries.size());
         }
 
+        // This marking is needed because otherwise after split-brain heal, we can
+        // end up not marked partitions even they have indexed data.
+        //
+        // Problematic case definition:
+        // - you have two partitions 0,1
+        // - add index
+        // - do split (now each brain has its own partitions as 0,1 but also each
+        //   brain has one-not-indexed-partition 1 and 0 respectively)
+        // - heal split
+        // - merging starts and merging transfers data to un-marked partition 1.
+        // - since 1 is unmarked, it will not be available for indexed searches.
+        Queue<InternalIndex> notMarkedIndexes = beginIndexMarking();
+
         // if currentIndex is not zero, this is a
         // continuation of the operation after a NativeOOME
         int size = mergingEntries.size();
@@ -116,6 +133,31 @@ public class MergeOperation extends MapOperation
             merge(mergingEntries.get(currentIndex));
             currentIndex++;
         }
+
+        finishIndexMarking(notMarkedIndexes);
+    }
+
+    private void finishIndexMarking(Queue<InternalIndex> notIndexedPartitions) {
+        InternalIndex indexToMark;
+        while ((indexToMark = notIndexedPartitions.poll()) != null) {
+            indexToMark.markPartitionAsIndexed(getPartitionId());
+        }
+    }
+
+    private Queue<InternalIndex> beginIndexMarking() {
+        int partitionId = getPartitionId();
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+
+        Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
+        for (InternalIndex internalIndex : indexesSnapshot) {
+            if (!internalIndex.hasPartitionIndexed(partitionId)) {
+                internalIndex.beginPartitionUpdate();
+
+                notIndexedPartitions.add(internalIndex);
+            }
+        }
+        return notIndexedPartitions;
     }
 
     private static boolean shouldCheckNow(AtomicLong lastLogTime) {

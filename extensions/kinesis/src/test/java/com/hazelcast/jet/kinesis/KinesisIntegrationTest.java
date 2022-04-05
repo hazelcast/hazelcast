@@ -36,11 +36,9 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -59,20 +57,17 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZO
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
-    @ClassRule
-    public static final LocalStackContainer LOCALSTACK = new LocalStackContainer(parse("localstack/localstack")
-            .withTag("0.12.3"))
-            .withServices(Service.KINESIS);
+    public static LocalStackContainer localStack;
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
@@ -84,12 +79,14 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     }
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
-
-    @BeforeClass
     public static void beforeClass() {
+        assumeDockerEnabled();
+
+        localStack = new LocalStackContainer(parse("localstack/localstack")
+                .withTag("0.12.3"))
+                .withServices(Service.KINESIS);
+        localStack.start();
+
         // To run with real kinesis AWS credentials need be available
         // to be loaded by DefaultAWSCredentialsProviderChain.
         // Keep in mind the real Kinesis is paid service and once you
@@ -106,9 +103,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .withRegion("us-east-1");
         } else {
             AWS_CONFIG = new AwsConfig()
-                    .withEndpoint("http://" + LOCALSTACK.getHost() + ":" + LOCALSTACK.getMappedPort(4566))
-                    .withRegion(LOCALSTACK.getRegion())
-                    .withCredentials(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey());
+                    .withEndpoint("http://" + localStack.getHost() + ":" + localStack.getMappedPort(4566))
+                    .withRegion(localStack.getRegion())
+                    .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         }
         KINESIS = AWS_CONFIG.buildClient();
         HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
@@ -116,7 +113,13 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @AfterClass
     public static void afterClass() {
-        KINESIS.shutdown();
+        if (KINESIS != null) {
+            KINESIS.shutdown();
+        }
+
+        if (localStack != null) {
+            localStack.stop();
+        }
     }
 
     @Test

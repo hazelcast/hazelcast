@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,31 +49,13 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service,
-                                             boolean isCompatibility, ByteOrder byteOrder) {
-        //if explicitly selected byte order is same as nativeOrder we can use unsafe.
-        //otherwise we fallback to safe one
-        if (byteOrder == ByteOrder.nativeOrder()) {
-            return new UnsafeObjectDataInput(buffer, 0, service, isCompatibility);
-        } else {
-            return new ByteArrayObjectDataInput(buffer, 0, service, byteOrder, isCompatibility);
-        }
-    }
-
-    @Override
     public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
         return new UnsafeObjectDataOutput(size, service);
     }
 
     @Override
-    public BufferObjectDataOutput createOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
-        //if explicitly selected byte order is same as nativeOrder we can use unsafe.
-        //otherwise we fallback to safe one
-        if (byteOrder == ByteOrder.nativeOrder()) {
-            return new UnsafeObjectDataOutput(size, service);
-        } else {
-            return new ByteArrayObjectDataOutput(size, service, byteOrder);
-        }
+    public BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
+        return new UnsafeObjectDataOutput(initialSize, firstGrowthSize, service);
     }
 
     @Override

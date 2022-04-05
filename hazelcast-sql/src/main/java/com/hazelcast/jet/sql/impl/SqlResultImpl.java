@@ -16,19 +16,17 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.LightMasterContext;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,24 +41,21 @@ public class SqlResultImpl extends AbstractSqlResult {
     private final LightMasterContext jobMasterContext;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
-    private final InternalSerializationService serializationService;
 
     private ResultIterator<SqlRow> iterator;
 
     SqlResultImpl(
-            @Nonnull QueryId queryId,
-            @Nonnull QueryResultProducer rootResultConsumer,
+            QueryId queryId,
+            QueryResultProducer rootResultConsumer,
             @Nullable LightMasterContext jobMasterContext,
-            @Nonnull SqlRowMetadata rowMetadata,
-            boolean isInfiniteRows,
-            InternalSerializationService serializationService
+            SqlRowMetadata rowMetadata,
+            boolean isInfiniteRows
     ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.jobMasterContext = jobMasterContext;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
-        this.serializationService = serializationService;
     }
 
     @Override
@@ -103,24 +98,6 @@ public class SqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public Object deserialize(Object value) {
-        try {
-            return serializationService.toObject(value);
-        } catch (Exception e) {
-            throw QueryUtils.toPublicException(e, queryId.getMemberId());
-        }
-    }
-
-    @Override
-    public Object deserialize(LazyTarget value) {
-        try {
-            return value.deserialize(serializationService);
-        } catch (Exception e) {
-            throw QueryUtils.toPublicException(e, queryId.getMemberId());
-        }
-    }
-
-    @Override
     public boolean onParticipantGracefulShutdown(UUID memberId) {
         if (jobMasterContext != null) {
             return jobMasterContext.onParticipantGracefulShutdown(memberId) != null;
@@ -130,9 +107,9 @@ public class SqlResultImpl extends AbstractSqlResult {
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {
 
-        private final ResultIterator<Row> delegate;
+        private final ResultIterator<JetSqlRow> delegate;
 
-        private RowToSqlRowIterator(ResultIterator<Row> delegate) {
+        private RowToSqlRowIterator(ResultIterator<JetSqlRow> delegate) {
             this.delegate = delegate;
         }
 
@@ -157,7 +134,7 @@ public class SqlResultImpl extends AbstractSqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(getRowMetadata(), delegate.next(), SqlResultImpl.this);
+                return new SqlRowImpl(getRowMetadata(), delegate.next());
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

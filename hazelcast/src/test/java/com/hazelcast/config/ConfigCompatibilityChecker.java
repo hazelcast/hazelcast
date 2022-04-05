@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -96,6 +95,7 @@ public class ConfigCompatibilityChecker {
                 new HotRestartConfigChecker());
         checkCompatibleConfigs("persistence", c1.getPersistenceConfig(), c2.getPersistenceConfig(),
                 new PersistenceConfigChecker());
+        checkCompatibleConfigs("device", c1, c2, c1.getDeviceConfigs(), c2.getDeviceConfigs(), new DeviceConfigChecker());
         checkCompatibleConfigs("CRDT replication", c1.getCRDTReplicationConfig(), c2.getCRDTReplicationConfig(),
                 new CRDTReplicationConfigChecker());
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
@@ -978,7 +978,8 @@ public class ConfigCompatibilityChecker {
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig());
+                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig())
+                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig());
         }
 
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
@@ -1015,7 +1016,11 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
-                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
+                && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
+                && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
+                && nullSafeEqual(c1.getInitialLoadMode(), c2.getInitialLoadMode());
         }
 
         @Override
@@ -1038,9 +1043,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DeviceConfigChecker extends ConfigChecker<LocalDeviceConfig> {
+    private static class DeviceConfigChecker extends ConfigChecker<DeviceConfig> {
         @Override
-        boolean check(LocalDeviceConfig t1, LocalDeviceConfig t2) {
+        boolean check(DeviceConfig t1, DeviceConfig t2) {
             return Objects.equals(t1, t2);
         }
     }
@@ -1345,9 +1350,9 @@ public class ConfigCompatibilityChecker {
         boolean check(Collection<String> portDefinitions1, Collection<String> portDefinitions2) {
             String[] defaultValues = {"0", "*"};
             boolean defaultDefinition1 = CollectionUtil.isEmpty(portDefinitions1)
-                    || (portDefinitions1.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions1.iterator().next()));
+                    || (portDefinitions1.size() == 1 && contains(defaultValues, portDefinitions1.iterator().next()));
             boolean defaultDefinition2 = CollectionUtil.isEmpty(portDefinitions2)
-                    || (portDefinitions2.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions2.iterator().next()));
+                    || (portDefinitions2.size() == 1 && contains(defaultValues, portDefinitions2.iterator().next()));
             return (defaultDefinition1 && defaultDefinition2) || nullSafeEqual(portDefinitions1, portDefinitions2);
         }
     }
@@ -1860,6 +1865,14 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    private static class LocalDeviceConfigChecker extends ConfigChecker<LocalDeviceConfig> {
+
+        @Override
+        boolean check(LocalDeviceConfig t1, LocalDeviceConfig t2) {
+            return Objects.equals(t1, t2);
+        }
+    }
+
     private static class CRDTReplicationConfigChecker extends ConfigChecker<CRDTReplicationConfig> {
         @Override
         boolean check(CRDTReplicationConfig c1, CRDTReplicationConfig c2) {
@@ -1914,5 +1927,17 @@ public class ConfigCompatibilityChecker {
             }
             return (c1.isEnabled() == c2.isEnabled());
         }
+    }
+
+    private static boolean contains(Object[] values, Object toFind) {
+        if (values == null || values.length == 0) {
+            return false;
+        }
+        for (int i = 0; i < values.length; i++) {
+            if (toFind == values[i] || (toFind != null && toFind.equals(values[i]))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("4bf8791027b1d9a40372d5521475d02f")
+@Generated("c4a7845e21435ccc626da89f31aaf869")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;

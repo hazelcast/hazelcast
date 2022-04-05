@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
-import static com.hazelcast.internal.config.XmlConfigLocator.DEFAULT_CONFIG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
@@ -142,7 +141,7 @@ public class DefaultNodeExtension implements NodeExtension {
             + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
             + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
@@ -231,12 +230,6 @@ public class DefaultNodeExtension implements NodeExtension {
                 throw new InvalidConfigurationException(
                         "Dynamic Configuration Persistence is enabled but config file couldn't be found."
                                 + " This is probably because declarative configuration isn't used."
-                );
-            }
-
-            if (config.getConfigurationFile().getName().equals(DEFAULT_CONFIG_NAME)) {
-                throw new InvalidConfigurationException(
-                        "Please don't use default configuration with Dynamic Configuration Persistence."
                 );
             }
         }

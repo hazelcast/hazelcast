@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,11 +56,14 @@ public interface OutboundCollector {
         throw new UnsupportedOperationException();
     }
 
-
     static OutboundCollector compositeCollector(
-            OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount, boolean local
+            OutboundCollector[] collectors,
+            EdgeDef outboundEdge,
+            int partitionCount,
+            boolean local,
+            boolean forceWrapping
     ) {
-        if (collectors.length == 1) {
+        if (!forceWrapping && collectors.length == 1) {
             return collectors[0];
         }
         switch (outboundEdge.routingPolicy()) {

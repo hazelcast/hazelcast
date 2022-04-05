@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 
 public class CompactGetter extends Getter {
     private final InternalSerializationService serializationService;
@@ -33,7 +33,7 @@ public class CompactGetter extends Getter {
     @Override
     Object getValue(Object target, String fieldPath) throws Exception {
         InternalGenericRecord record;
-        if (target instanceof CompactInternalGenericRecord) {
+        if (target instanceof CompactGenericRecord) {
             record = (InternalGenericRecord) target;
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeString(@Nonnull String fieldName, String str) {
+    public void writeString(@Nonnull String fieldName, @Nullable String str) {
         addField(new FieldDescriptor(fieldName, FieldKind.STRING));
     }
 
