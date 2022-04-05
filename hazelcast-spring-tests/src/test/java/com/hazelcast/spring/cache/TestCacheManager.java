@@ -124,6 +124,8 @@ public class TestCacheManager extends HazelcastTestSupport {
         Collection<String> test = cacheManager.getCacheNames();
         assertContains(test, testMap);
         testInstance.shutdown();
+        // Wait for the cluster to scale down, so it doesn't affect other tests
+        assertClusterSizeEventually(1, instance);
     }
 
     public static class DummyBean implements IDummyBean {

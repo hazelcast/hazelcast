@@ -152,6 +152,7 @@ public class JobCoordinationService {
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
+    private final Context pipelineToDagContext;
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
@@ -186,6 +187,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
+        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -247,12 +249,7 @@ public class JobCoordinationService {
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = config.getCooperativeThreadCount();
-                    dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                        @Override public int defaultLocalParallelism() {
-                            return coopThreadCount;
-                        }
-                    });
+                    dag = ((PipelineImpl) jobDefinition).toDag(pipelineToDagContext);
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
@@ -313,21 +310,20 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> submitLightJob(
             long jobId,
+            Object deserializedJobDefinition,
             Data serializedJobDefinition,
             JobConfig jobConfig,
             Subject subject
     ) {
-        Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+        if (deserializedJobDefinition == null) {
+            deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+        }
+
         DAG dag;
-        if (jobDefinition instanceof DAG) {
-            dag = (DAG) jobDefinition;
+        if (deserializedJobDefinition instanceof DAG) {
+            dag = (DAG) deserializedJobDefinition;
         } else {
-            int coopThreadCount = config.getCooperativeThreadCount();
-            dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                @Override public int defaultLocalParallelism() {
-                    return coopThreadCount;
-                }
-            });
+            dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
         }
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
@@ -943,7 +939,7 @@ public class JobCoordinationService {
                             ? masterContext.jobContext().jobMetrics()
                             : null;
             jobRepository.completeJob(masterContext, jobMetrics, error, completionTime);
-            if (masterContexts.remove(masterContext.jobId(), masterContext)) {
+            if (removeMasterContext(masterContext)) {
                 completeObservables(masterContext.jobRecord().getOwnedObservables(), error);
                 logger.fine(masterContext.jobIdString() + " is completed");
                 (error == null ? jobCompletedSuccessfully : jobCompletedWithFailure).inc();
@@ -958,6 +954,12 @@ public class JobCoordinationService {
             }
             unscheduleJobTimeout(masterContext.jobId());
         });
+    }
+
+    private boolean removeMasterContext(MasterContext masterContext) {
+        synchronized (lock) {
+            return masterContexts.remove(masterContext.jobId(), masterContext);
+        }
     }
 
     /**
@@ -1102,15 +1104,20 @@ public class JobCoordinationService {
     ) {
         // the order of operations is important.
         long jobId = jobRecord.getJobId();
-        JobResult jobResult = jobRepository.getJobResult(jobId);
-        if (jobResult != null) {
-            logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
-            return jobResult.asCompletableFuture();
-        }
 
         MasterContext masterContext;
         MasterContext oldMasterContext;
         synchronized (lock) {
+            // We check the JobResult while holding the lock to avoid this scenario:
+            // 1. We find no job result
+            // 2. Another thread creates the result and removes the master context in completeJob
+            // 3. We re-create the master context below
+            JobResult jobResult = jobRepository.getJobResult(jobId);
+            if (jobResult != null) {
+                logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
+                return jobResult.asCompletableFuture();
+            }
+
             checkOperationalState();
 
             masterContext = createMasterContext(jobRecord, jobExecutionRecord);
@@ -1121,10 +1128,9 @@ public class JobCoordinationService {
             return oldMasterContext.jobContext().jobCompletionFuture();
         }
 
-        // If job is not currently running, it might be that it just completed.
-        // Since we've put the MasterContext into the masterContexts map, someone else could
-        // have joined to the job in the meantime so we should notify its future.
-        if (completeMasterContextIfJobAlreadyCompleted(masterContext)) {
+        assert jobRepository.getJobResult(jobId) == null : "jobResult should not exist at this point";
+
+        if (finalizeJobIfAutoScalingOff(masterContext)) {
             return masterContext.jobContext().jobCompletionFuture();
         }
 
@@ -1146,16 +1152,19 @@ public class JobCoordinationService {
             logger.fine("Completing master context for " + masterContext.jobIdString()
                     + " since already completed with result: " + jobResult);
             masterContext.jobContext().setFinalResult(jobResult.getFailureAsThrowable());
-            return masterContexts.remove(jobId, masterContext);
+            return removeMasterContext(masterContext);
         }
 
+        return finalizeJobIfAutoScalingOff(masterContext);
+    }
+
+    private boolean finalizeJobIfAutoScalingOff(MasterContext masterContext) {
         if (!masterContext.jobConfig().isAutoScaling() && masterContext.jobExecutionRecord().executed()) {
             logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
             masterContext.jobContext().finalizeJob(new TopologyChangedException());
             return true;
         }
-
         return false;
     }
 

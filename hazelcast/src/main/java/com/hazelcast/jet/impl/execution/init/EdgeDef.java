@@ -30,22 +30,24 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
+@SuppressWarnings("checkstyle:declarationorder")
 public class EdgeDef implements IdentifiedDataSerializable {
 
     private int oppositeVertexId;
     private int sourceOrdinal;
     private int destOrdinal;
     private int priority;
-    private Address distributedTo;
     private RoutingPolicy routingPolicy;
     private Partitioner<?> partitioner;
     private EdgeConfig config;
     private ComparatorEx<?> comparator;
+    protected Address distributedTo;
 
     // transient fields populated and used after deserialization
-    private transient String id;
-    private transient VertexDef sourceVertex;
-    private transient VertexDef destVertex;
+    // non-private for tests
+    protected transient String id;
+    protected transient VertexDef sourceVertex;
+    protected transient VertexDef destVertex;
 
     EdgeDef() {
     }

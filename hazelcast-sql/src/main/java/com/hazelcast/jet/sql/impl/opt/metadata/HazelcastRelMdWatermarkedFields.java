@@ -26,9 +26,9 @@ import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
-import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.Metadata;
 import org.apache.calcite.rel.metadata.MetadataDef;
 import org.apache.calcite.rel.metadata.MetadataHandler;
@@ -40,9 +40,11 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapAsOperatorOperand;
@@ -73,7 +75,8 @@ public final class HazelcastRelMdWatermarkedFields
         return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
     }
 
-    private static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
+    @Nullable
+    public static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
         if (watermarkedFieldIndex < 0) {
             return null;
         }
@@ -100,7 +103,7 @@ public final class HazelcastRelMdWatermarkedFields
     }
 
     @SuppressWarnings("unused")
-    public WatermarkedFields extractWatermarkedFields(Project rel, RelMetadataQuery mq) {
+    public WatermarkedFields extractWatermarkedFields(Calc rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         WatermarkedFields inputWmFields = query.extractWatermarkedFields(rel.getInput());
         if (inputWmFields == null) {
@@ -108,8 +111,9 @@ public final class HazelcastRelMdWatermarkedFields
         }
 
         Map<Integer, RexNode> outputWmFields = new HashMap<>();
-        for (int i = 0; i < rel.getProjects().size(); i++) {
-            RexNode project = rel.getProjects().get(i);
+        List<RexNode> projectList = rel.getProgram().expandList(rel.getProgram().getProjectList());
+        for (int i = 0; i < projectList.size(); i++) {
+            RexNode project = projectList.get(i);
             RexNode project2 = unwrapAsOperatorOperand(project);
             // TODO [viliam] we currently handle only direct input references. We should handle also monotonic
             //  transformations of input references.

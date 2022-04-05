@@ -16,37 +16,34 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.logical.MustNotExecuteLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Project;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.toPhysicalConvention;
 
-final class ProjectPhysicalRule extends ConverterRule {
+public final class MustNotExecuteRule extends ConverterRule {
+    static final RelOptRule INSTANCE = new MustNotExecuteRule();
 
-    /** Default configuration. */
-    private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
-
-    @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new ProjectPhysicalRule();
-
-    private ProjectPhysicalRule() {
-        super(DEFAULT_CONFIG);
+    private MustNotExecuteRule() {
+        super(
+                MustNotExecuteLogicalRel.class, LOGICAL, PHYSICAL,
+                MustNotExecuteRule.class.getSimpleName()
+        );
     }
+
 
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
-
-        RelNode transformedInput = RelOptRule.convert(project.getInput(), project.getInput().getTraitSet().replace(PHYSICAL));
-        return new ProjectPhysicalRel(
-                project.getCluster(),
-                transformedInput.getTraitSet(),
-                transformedInput,
-                project.getProjects(),
-                project.getRowType());
+        MustNotExecuteLogicalRel logicalRel = (MustNotExecuteLogicalRel) rel;
+        return new MustNotExecutePhysicalRel(
+                logicalRel.getCluster(),
+                toPhysicalConvention(logicalRel.getTraitSet()),
+                logicalRel.getRowType(),
+                logicalRel.getExceptionMessage()
+        );
     }
 }

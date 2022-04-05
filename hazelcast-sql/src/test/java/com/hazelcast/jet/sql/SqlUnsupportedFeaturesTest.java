@@ -113,4 +113,10 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("DELETE FROM b WHERE v=1"))
                 .hasMessageContaining("PRIMARY KEY not supported by connector: TestBatch");
     }
+
+    @Test
+    public void test_upsert() {
+        assertThatThrownBy(() -> sqlService.execute("UPSERT INTO foo VALUES(1, 2, 3)"))
+                .hasMessageEndingWith("UPSERT is not supported");
+    }
 }

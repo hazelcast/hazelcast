@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
 import com.hazelcast.jet.sql.impl.schema.HazelcastViewExpander;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -28,15 +29,21 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.rules.CoreRules;
+import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
 
 import javax.annotation.Nullable;
@@ -87,19 +94,13 @@ public class QueryConverter {
     }
 
     public QueryConvertResult convert(SqlNode node) {
-        SqlToRelConverter converter = new HazelcastSqlToRelConverter(
-                viewExpander,
-                validator,
-                catalogReader,
-                cluster,
-                StandardConvertletTable.INSTANCE,
-                CONFIG
-        );
+        SqlToRelConverter converter = createSqlToRelConverter();
+
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
         // 2. Remove subquery expressions, converting them to Correlate nodes.
-        RelNode relNoSubqueries = rewriteSubqueries(root.project());
+        RelNode relNoSubqueries = performUnconditionalRewrites(root.project());
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
@@ -115,25 +116,54 @@ public class QueryConverter {
             result = converter.trimUnusedFields(true, result);
         }
 
-        // 5. Collect original field names.
+        // 5. Transform projects and filters to Calc.
+        result = transformProjectAndFilterIntoCalc(result);
+
+        // 6. Collect original field names.
         return new QueryConvertResult(result, Pair.right(root.fields));
     }
 
+    public RelNode convertView(SqlNode node) {
+        HazelcastSqlToRelConverter sqlToRelConverter = createSqlToRelConverter();
+
+        final RelRoot root = sqlToRelConverter.convertQuery(node, true, true);
+        final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));
+
+        final RelBuilder relBuilder = QueryConverter.CONFIG.getRelBuilderFactory().create(cluster, null);
+        RelRoot root3 = root2.withRel(RelDecorrelator.decorrelateQuery(root.rel, relBuilder));
+        return root3.project();
+    }
+
+    private HazelcastSqlToRelConverter createSqlToRelConverter() {
+        return new HazelcastSqlToRelConverter(viewExpander, validator, catalogReader, cluster,
+                StandardConvertletTable.INSTANCE, QueryConverter.CONFIG);
+    }
+
     /**
-     * Special substep of an initial query conversion which eliminates correlated subqueries, converting them to various forms
-     * of joins. It is used instead of "expand" flag due to bugs in Calcite (see {@link #EXPAND}).
+     * Initial query optimization step. It includes
+     * <ul>
+     * <li>
+     *  Correlated subqueries elimination, converting them to various forms of joins.
+     *  It is used instead of "expand" flag due to bugs in Calcite (see {@link #EXPAND}).
+     * </li>
+     * <li>
+     *  Transformation of distinct UNION to UNION ALL, merging the neighboring UNION relations.
+     * </li>
+     *
+     * </ul>
      *
      * @param rel Initial relation.
      * @return Resulting relation.
      */
-    private static RelNode rewriteSubqueries(RelNode rel) {
+    private static RelNode performUnconditionalRewrites(RelNode rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
+        // Correlated subqueries elimination rules
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
         hepProgramBuilder.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
 
-        // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
+        // Union optimization rules
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
@@ -146,7 +176,55 @@ public class QueryConverter {
         );
 
         planner.setRoot(rel);
+        return planner.findBestExp();
+    }
 
+    /**
+     * Second unconditional query optimization step. It includes
+     * <ul>
+     * <li>
+     *  Transformation of {@link Project} and {@link Filter} relations to {@link Calc}
+     * </li>
+     * </ul>
+     *
+     * @param rel Initial relation.
+     * @return Resulting relation.
+     */
+    private static RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Filter rules
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_INTO_JOIN);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.FILTER_INSTANCE);
+
+        // Project rules
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_REMOVE);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
+
+        // Join rules
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER);
+
+        // Calc rules
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_TO_CALC);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
+        hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
+        hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
+
+        // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
         return planner.findBestExp();
     }
 

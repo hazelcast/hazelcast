@@ -49,6 +49,8 @@ public class ClientCardinalityEstimatorSplitBrainProtectionReadTest extends Card
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

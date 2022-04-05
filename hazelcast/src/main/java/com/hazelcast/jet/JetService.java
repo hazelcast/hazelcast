@@ -185,6 +185,9 @@ public interface JetService {
      * <p>
      * A light job will not be cancelled if the client disconnects. Its
      * potential failure will be only logged in member logs.
+     * <p>
+     * You should not mutate the {@link JobConfig} or {@link Pipeline} instances
+     * after submitting them to this method.
      */
     Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config);
 

@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -50,7 +51,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
-
     public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
         super(nodeEngine, jobId, coordinator);
     }
@@ -106,8 +106,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), isLightJob()));
+    protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
+        if (isLightJob()) {
+            if (jobDefinition instanceof DAG) {
+                ((DAG) jobDefinition).lock();
+            }
+            config.lock();
+            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, isLightJob(), null));
+        }
+        Data configData = serializationService().toData(config);
+        Data jobDefinitionData = serializationService().toData(jobDefinition);
+        return invokeOp(new SubmitJobOperation(getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
     }
 
     @Override

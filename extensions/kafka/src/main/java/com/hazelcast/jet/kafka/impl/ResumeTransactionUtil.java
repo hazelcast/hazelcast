@@ -18,7 +18,9 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.internal.util.Preconditions;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.internals.TransactionManager;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,38 +32,44 @@ import java.lang.reflect.Method;
  */
 final class ResumeTransactionUtil {
 
+    private static final String TRANSACTION_MANAGER_FIELD_NAME = "transactionManager";
+    private static final String TRANSACTION_MANAGER_STATE_ENUM =
+            "org.apache.kafka.clients.producer.internals.TransactionManager$State";
+    private static final String PRODUCER_ID_AND_EPOCH_FIELD_NAME = "producerIdAndEpoch";
+
     private ResumeTransactionUtil() {
     }
 
     /**
-     * Instead of obtaining producerId and epoch from the transaction coordinator, re-use previously obtained ones,
-     * so that we can resume transaction after a restart. Implementation of this method is based on
-     * {@link KafkaProducer#initTransactions}.
-     * https://github.com/apache/kafka/commit/5d2422258cb975a137a42a4e08f03573c49a387e
-     * #diff-f4ef1afd8792cd2a2e9069cd7ddea630
+     * Instead of obtaining producerId and epoch from the transaction coordinator, re-use previously
+     * obtained ones, so that we can resume transaction after a restart. Implementation of this
+     * method is based on https://github.com/apache/flink/blob/577648379c2abb429259ac1a46ca6a04550f3dbd/flink-connectors
+     * /flink-connector-kafka/src/main/java/org/apache/flink/connector/kafka/sink/FlinkKafkaInternalProducer.java#L276-L308
      */
-    static void resumeTransaction(KafkaProducer producer, long producerId, short epoch, String txnId) {
+    static void resumeTransaction(KafkaProducer producer, long producerId, short epoch) {
         Preconditions.checkState(producerId >= 0 && epoch >= 0,
                 "Incorrect values for producerId " + producerId + " and epoch " + epoch);
 
-        Object transactionManager = getValue(producer, "transactionManager");
-        Object nextSequence = getValue(transactionManager, "nextSequence");
+        Object transactionManager = getTransactionManager(producer);
+        synchronized (transactionManager) {
+            Object topicPartitionBookkeeper =
+                    getField(transactionManager, "topicPartitionBookkeeper");
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.INITIALIZING"));
-        invoke(nextSequence, "clear");
+            transitionTransactionManagerStateTo(transactionManager, "INITIALIZING");
+            invoke(topicPartitionBookkeeper, "reset");
 
-        Object producerIdAndEpoch = getValue(transactionManager, "producerIdAndEpoch");
-        setValue(producerIdAndEpoch, "producerId", producerId);
-        setValue(producerIdAndEpoch, "epoch", epoch);
+            setField(
+                    transactionManager,
+                    PRODUCER_ID_AND_EPOCH_FIELD_NAME,
+                    createProducerIdAndEpoch(producerId, epoch));
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.READY"));
+            transitionTransactionManagerStateTo(transactionManager, "READY");
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.IN_TRANSACTION"));
-        setValue(transactionManager, "transactionStarted", true);
+            transitionTransactionManagerStateTo(transactionManager, "IN_TRANSACTION");
+            setField(transactionManager, "transactionStarted", true);
+        }
     }
+
 
     static long getProducerId(KafkaProducer kafkaProducer) {
         Object transactionManager = getValue(kafkaProducer, "transactionManager");
@@ -73,22 +81,6 @@ final class ResumeTransactionUtil {
         Object transactionManager = getValue(kafkaProducer, "transactionManager");
         Object producerIdAndEpoch = getValue(transactionManager, "producerIdAndEpoch");
         return (short) getValue(producerIdAndEpoch, "epoch");
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Enum<?> getEnum(String enumFullName) {
-        String[] x = enumFullName.split("\\.(?=[^\\.]+$)");
-        if (x.length == 2) {
-            String enumClassName = x[0];
-            String enumName = x[1];
-            try {
-                Class<Enum> cl = (Class<Enum>) Class.forName(enumClassName);
-                return Enum.valueOf(cl, enumName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Incompatible KafkaProducer version", e);
-            }
-        }
-        return null;
     }
 
     private static Object invoke(Object object, String methodName, Object... args) {
@@ -123,9 +115,75 @@ final class ResumeTransactionUtil {
         }
     }
 
-    private static void setValue(Object object, String fieldName, Object value) {
+    private static Object createProducerIdAndEpoch(long producerId, short epoch) {
         try {
-            Field field = object.getClass().getDeclaredField(fieldName);
+            Field field =
+                    TransactionManager.class.getDeclaredField(PRODUCER_ID_AND_EPOCH_FIELD_NAME);
+            Class<?> clazz = field.getType();
+            Constructor<?> constructor = clazz.getDeclaredConstructor(Long.TYPE, Short.TYPE);
+            constructor.setAccessible(true);
+            return constructor.newInstance(producerId, epoch);
+        } catch (InvocationTargetException
+                | InstantiationException
+                | IllegalAccessException
+                | NoSuchFieldException
+                | NoSuchMethodException e) {
+            throw new RuntimeException("Incompatible KafkaProducer version", e);
+        }
+    }
+
+    private static Object getTransactionManager(KafkaProducer kafkaProducer) {
+        return getField(kafkaProducer, TRANSACTION_MANAGER_FIELD_NAME);
+    }
+
+    /**
+     * Gets and returns the field {@code fieldName} from the given Object {@code object} using
+     * reflection.
+     */
+    private static Object getField(Object object, String fieldName) {
+        return getField(object, object.getClass(), fieldName);
+    }
+
+    /**
+     * Gets and returns the field {@code fieldName} from the given Object {@code object} using
+     * reflection.
+     */
+    private static Object getField(Object object, Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Incompatible KafkaProducer version", e);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Enum<?> getTransactionManagerState(String enumName) {
+        try {
+            Class<Enum> cl = (Class<Enum>) Class.forName(TRANSACTION_MANAGER_STATE_ENUM);
+            return Enum.valueOf(cl, enumName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Incompatible KafkaProducer version", e);
+        }
+    }
+
+    private static void transitionTransactionManagerStateTo(
+            Object transactionManager, String state) {
+        invoke(transactionManager, "transitionTo", getTransactionManagerState(state));
+    }
+
+    /**
+     * Sets the field {@code fieldName} on the given Object {@code object} to {@code value} using
+     * reflection.
+     */
+    private static void setField(Object object, String fieldName, Object value) {
+        setField(object, object.getClass(), fieldName, value);
+    }
+
+    private static void setField(Object object, Class<?> clazz, String fieldName, Object value) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
             field.setAccessible(true);
             field.set(object, value);
         } catch (NoSuchFieldException | IllegalAccessException e) {

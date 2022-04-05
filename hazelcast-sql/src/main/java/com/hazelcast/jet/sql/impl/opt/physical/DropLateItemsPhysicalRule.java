@@ -14,39 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.logical.LogicalProject;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class ProjectLogicalRule extends ConverterRule {
+public final class DropLateItemsPhysicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new ProjectLogicalRule();
+    static final RelOptRule INSTANCE = new DropLateItemsPhysicalRule();
 
-    private ProjectLogicalRule() {
+    private DropLateItemsPhysicalRule() {
         super(
-                LogicalProject.class, Convention.NONE, LOGICAL,
-                ProjectLogicalRule.class.getSimpleName()
+                DropLateItemsLogicalRel.class, LOGICAL, PHYSICAL,
+                DropLateItemsPhysicalRule.class.getSimpleName()
         );
     }
 
+    @Nonnull
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
-
-        return new ProjectLogicalRel(
-                project.getCluster(),
-                OptUtils.toLogicalConvention(project.getTraitSet()),
-                OptUtils.toLogicalInput(project.getInput()),
-                project.getProjects(),
-                project.getRowType()
+        DropLateItemsLogicalRel logicalRel = (DropLateItemsLogicalRel) rel;
+        return new DropLateItemsPhysicalRel(
+                rel.getCluster(),
+                OptUtils.toPhysicalConvention(logicalRel.getTraitSet()),
+                OptUtils.toPhysicalInput(logicalRel.getInput()),
+                logicalRel.wmField()
         );
     }
 }

@@ -43,21 +43,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class LightJobTest extends SimpleTestInClusterSupport {
 
-    @Parameter
-    public boolean useClient;
+    private static HazelcastInstance liteMember;
 
-    @Parameters(name = "useClient={0}")
+    @Parameter
+    public TestMode testMode;
+
+    @Parameters(name = "testMode={0}")
     public static Object[] parameters() {
-        return new Object[]{true, false};
+        return TestMode.values();
     }
 
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(2, null, null);
+        liteMember = factory().newHazelcastInstance(smallInstanceConfig().setLiteMember(true));
     }
 
     private HazelcastInstance submittingInstance() {
-        return useClient ? client() : instance();
+        switch (testMode) {
+            case CLIENT:
+                return client();
+            case MEMBER:
+                return instance();
+            case LITE_MEMBER:
+                return liteMember;
+        }
+        throw new AssertionError("unexpected testMode=" + testMode);
     }
 
     @Test
@@ -85,5 +96,11 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         submittingInstance().getJet().newLightJob(p).join();
         List<Integer> result = instance().getList("sink");
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
+    }
+
+    enum TestMode {
+        CLIENT,
+        MEMBER,
+        LITE_MEMBER
     }
 }

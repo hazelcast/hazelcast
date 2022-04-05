@@ -61,7 +61,7 @@ public class SqlJsonTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
 

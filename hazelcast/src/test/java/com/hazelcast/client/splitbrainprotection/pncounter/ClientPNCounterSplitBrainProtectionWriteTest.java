@@ -49,6 +49,8 @@ public class ClientPNCounterSplitBrainProtectionWriteTest extends PNCounterSplit
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

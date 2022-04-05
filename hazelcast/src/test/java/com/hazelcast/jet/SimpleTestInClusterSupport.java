@@ -36,7 +36,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -119,10 +118,13 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             if (factory != null) {
                 SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
                 spawn(() -> factory.terminateAll())
-                        .get(5, TimeUnit.SECONDS);
+                        .get(1, TimeUnit.MINUTES);
             }
-        } catch (TimeoutException e) {
-            SUPPORT_LOGGER.warning("Terminating instance factory timed out", e);
+        } catch (Exception e) {
+            // Log the exception, so it is visible in log file for the test class,
+            // otherwise it is only visible in surefire test report
+            SUPPORT_LOGGER.warning("Terminating instance factory failed", e);
+            throw e;
         } finally {
             factory = null;
             instances = null;

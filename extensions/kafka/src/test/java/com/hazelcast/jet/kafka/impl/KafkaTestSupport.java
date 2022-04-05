@@ -16,163 +16,83 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import kafka.admin.AdminUtils;
-import kafka.admin.BrokerMetadata;
-import kafka.common.TopicAndPartition;
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.MockTime;
-import kafka.utils.TestUtils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import kafka.zk.EmbeddedZookeeper;
-import org.I0Itec.zkclient.ZkClient;
+import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.test.DockerTestUtil;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.common.utils.Time;
-
-import com.hazelcast.internal.util.StringUtil;
-
-import scala.Option;
-import scala.collection.Seq;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static kafka.admin.RackAwareMode.Disabled$.MODULE$;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static scala.collection.JavaConversions.asScalaSet;
-import static scala.collection.JavaConversions.mapAsJavaMap;
-import static scala.collection.JavaConversions.mapAsScalaMap;
 
-public class KafkaTestSupport {
-
-    private static final String ZK_HOST = "127.0.0.1";
-    private static final String BROKER_HOST = "127.0.0.1";
-    private static final int SESSION_TIMEOUT = 30_000;
-    private static final int CONNECTION_TIMEOUT = 30_000;
-
-    private EmbeddedZookeeper zkServer;
-    private String zkConnect;
-    private ZkUtils zkUtils;
-
-    private KafkaServer kafkaServer;
-    private KafkaProducer<Integer, String> producer;
+public abstract class KafkaTestSupport {
+    protected Admin admin;
+    protected KafkaProducer<Integer, String> producer;
+    protected String brokerConnectionString;
     private KafkaProducer<String, String> stringStringProducer;
-    private int brokerPort = -1;
-    private String brokerConnectionString;
 
-    public void createKafkaCluster() throws IOException {
-        System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
-        zkServer = new EmbeddedZookeeper();
-        zkConnect = ZK_HOST + ':' + zkServer.port();
-        ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
-        zkUtils = ZkUtils.apply(zkClient, false);
-
-        Properties brokerProps = new Properties();
-        brokerProps.setProperty("zookeeper.connect", zkConnect);
-        brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
-        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":0");
-        brokerProps.setProperty("offsets.topic.replication.factor", "1");
-        brokerProps.setProperty("offsets.topic.num.partitions", "1");
-        // we need this due to avoid OOME while running tests, see https://issues.apache.org/jira/browse/KAFKA-3872
-        brokerProps.setProperty("log.cleaner.dedupe.buffer.size", Long.toString(2 * 1024 * 1024L));
-        brokerProps.setProperty("transaction.state.log.replication.factor", "1");
-        brokerProps.setProperty("transaction.state.log.num.partitions", "1");
-        brokerProps.setProperty("transaction.state.log.min.isr", "1");
-        brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
-        brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
-        KafkaConfig config = new KafkaConfig(brokerProps);
-        Time mock = new MockTime();
-        kafkaServer = TestUtils.createServer(config, mock);
-        brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
-
-        brokerConnectionString = BROKER_HOST + ':' + brokerPort;
-    }
-
-    public void shutdownKafkaCluster() {
-        if (kafkaServer != null) {
-            kafkaServer.shutdown();
-            zkUtils.close();
-            if (producer != null) {
-                producer.close();
+    public static KafkaTestSupport create() {
+        if (!DockerTestUtil.dockerEnabled() || OsHelper.isArmMac()) {
+            if (System.getProperties().containsKey("test.kafka.version")) {
+                throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
             }
-            try {
-                zkServer.shutdown();
-            } catch (Exception e) {
-                // ignore error on Windows, it fails there, see https://issues.apache.org/jira/browse/KAFKA-6291
-                if (!isWindows()) {
-                    throw e;
-                }
-            }
-
-            producer = null;
-            kafkaServer = null;
-            zkUtils = null;
-            zkServer = null;
+            return new EmbeddedKafkaTestSupport();
+        } else {
+            return new DockerizedKafkaTestSupport();
         }
     }
 
-    public String getZookeeperConnectionString() {
-        return zkConnect;
-    }
+    public abstract void createKafkaCluster() throws IOException;
+
+    public abstract void shutdownKafkaCluster();
 
     public String getBrokerConnectionString() {
         return brokerConnectionString;
     }
 
-    private static boolean isWindows() {
-        return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows");
-    }
-
     public void createTopic(String topicId, int partitionCount) {
-        AdminUtils.createTopic(zkUtils, topicId, partitionCount, 1, new Properties(), MODULE$);
+        List<NewTopic> newTopics = Collections.singletonList(new NewTopic(topicId, partitionCount, (short) 1));
+        CreateTopicsResult createTopicsResult = admin.createTopics(newTopics);
+        try {
+            createTopicsResult.all().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void setPartitionCount(String topicId, int numPartitions) {
-        Seq<String> topicSeq = asScalaSet(singleton(topicId)).toSeq();
-        Map<TopicAndPartition, Seq<Object>> replicaAssignments = mapAsJavaMap(
-                zkUtils.getReplicaAssignmentForTopics(topicSeq)
-        );
-        Map<Object, Seq<Object>> existingAssignment =
-                replicaAssignments.entrySet().stream()
-                                  .map(e -> entry(e.getKey().partition(), e.getValue()))
-                                  .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
-        Seq<BrokerMetadata> brokerMetadatas =
-                AdminUtils.getBrokerMetadatas(zkUtils, null, Option.apply(zkUtils.getSortedBrokerList()));
-        // doesn't actually add the given number to existing partitions, just sets to it
-        AdminUtils.addPartitions(
-                zkUtils, topicId, mapAsScalaMap(existingAssignment), brokerMetadatas, numPartitions, Option.empty(),
-                false
-        );
+        Map<String, NewPartitions> newPartitions = new HashMap<>();
+        newPartitions.put(topicId, NewPartitions.increaseTo(numPartitions));
+        admin.createPartitions(newPartitions);
     }
 
     public Future<RecordMetadata> produce(String topic, Integer key, String value) {
@@ -190,7 +110,7 @@ public class KafkaTestSupport {
     private KafkaProducer<Integer, String> getProducer() {
         if (producer == null) {
             Properties producerProps = new Properties();
-            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ':' + brokerPort);
+            producerProps.setProperty("bootstrap.servers", brokerConnectionString);
             producerProps.setProperty("key.serializer", IntegerSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
             producer = new KafkaProducer<>(producerProps);
@@ -201,7 +121,7 @@ public class KafkaTestSupport {
     private KafkaProducer<String, String> getStringStringProducer() {
         if (stringStringProducer == null) {
             Properties producerProps = new Properties();
-            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ':' + brokerPort);
+            producerProps.setProperty("bootstrap.servers", brokerConnectionString);
             producerProps.setProperty("key.serializer", StringSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
             stringStringProducer = new KafkaProducer<>(producerProps);

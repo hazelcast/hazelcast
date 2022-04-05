@@ -364,11 +364,13 @@
                         <configuration>
                             <target>
                                 <unzip src="${project.build.directory}/${project.build.finalName}.jar"
-                                    dest="${project.build.directory}/tmp-repack" />
+                                       dest="${project.build.directory}/tmp-repack"/>
                                 <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
                                       tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
-                                <zip basedir="${project.build.directory}/tmp-repack"
-                                    destfile="${project.build.directory}/${project.build.finalName}.jar" />
+                                <jar basedir="${project.build.directory}/tmp-repack"
+                                     destfile="${project.build.directory}/${project.build.finalName}.jar"
+                                     manifest="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"
+                                />
                             </target>
                         </configuration>
                     </execution>
@@ -484,7 +486,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.0</version>
+            <version>1.14.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>

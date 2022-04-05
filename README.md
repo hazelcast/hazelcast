@@ -329,6 +329,8 @@ take a considerable amount of time. Hazelcast has 3 testing profiles:
 * All Tests: Type `mvn test -P all-tests` to run all tests serially using
   network.
 
+Some tests require Docker to run. Set `-Dhazelcast.disable.docker.tests` system property to ignore them.
+
 ## Trigger Phrases in the Pull Request Conversation
 
 When you create a pull request (PR), it must pass a build-and-test
@@ -338,6 +340,7 @@ see used in the comments on your PR:
 
 * `run-lab-run` - run the default PR builder
 * `run-lts-compilers` - compiles the sources with JDK 11 and JDK 17 (without running tests)
+* `run-ee-compile` - compile hazelcast-enterprise with this PR
 * `run-ee-tests` - run tests from hazelcast-enterprise with this PR
 * `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
 * `run-with-jdk17` - run the tests with JDK 17
