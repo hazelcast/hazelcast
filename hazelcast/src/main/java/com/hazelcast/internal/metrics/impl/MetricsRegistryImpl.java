@@ -75,7 +75,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
 
-    private final AtomicReference<MetricDescriptorReuseableData> metricDescriptorReuseableData = new AtomicReference<>(null);
+    private final AtomicReference<MetricDescriptorReusableData> metricDescriptorReusableData = new AtomicReference<>(null);
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -314,15 +314,15 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(collector, "collector can't be null");
 
         MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata,
-                this::lookupMetricValueCatcher, collector, minimumLevel, metricDescriptorReuseableData.getAndSet(null));
+                this::lookupMetricValueCatcher, collector, minimumLevel, metricDescriptorReusableData.getAndSet(null));
 
         collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
         collectionCycle.notifyAllGauges(gauges.values());
-        MetricDescriptorReuseableData cycleReuseableData = collectionCycle.cleanUp();
-        boolean set = metricDescriptorReuseableData.compareAndSet(null, cycleReuseableData);
+        MetricDescriptorReusableData cycleReusableData = collectionCycle.cleanUp();
+        boolean set = metricDescriptorReusableData.compareAndSet(null, cycleReusableData);
         if (!set) {
-            cycleReuseableData.destroy();
+            cycleReusableData.destroy();
         }
     }
 

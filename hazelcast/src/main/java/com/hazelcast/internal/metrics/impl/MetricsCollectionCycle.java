@@ -57,15 +57,15 @@ class MetricsCollectionCycle {
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
                            Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
                            MetricsCollector metricsCollector,
-                           ProbeLevel minimumLevel, MetricDescriptorReuseableData metricDescriptorReuseableData) {
+                           ProbeLevel minimumLevel, MetricDescriptorReusableData metricDescriptorReusableData) {
         this.lookupMetadataFn = lookupMetadataFn;
         this.lookupMetricValueCatcherFn = lookupMetricValueCatcherFn;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
-        if (metricDescriptorReuseableData == null) {
+        if (metricDescriptorReusableData == null) {
             this.descriptorSupplier = new PoolingMetricDescriptorSupplier();
         } else {
-            this.descriptorSupplier = new PoolingMetricDescriptorSupplier(metricDescriptorReuseableData);
+            this.descriptorSupplier = new PoolingMetricDescriptorSupplier(metricDescriptorReusableData);
         }
     }
 
@@ -176,7 +176,7 @@ class MetricsCollectionCycle {
         }
     }
 
-    public MetricDescriptorReuseableData cleanUp() {
+    public MetricDescriptorReusableData cleanUp() {
         return descriptorSupplier.close();
     }
 

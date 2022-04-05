@@ -30,6 +30,7 @@ import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplie
  */
 class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> {
     static final int INITIAL_CAPACITY = 32;
+    private static final int LAST_CAPACITY_GROW = 8;
     private static final double GROW_FACTOR = 1.2D;
 
     private final List<MetricDescriptorImpl> allCreated;
@@ -47,10 +48,10 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
         poolPtr = pool.length - 1;
     }
 
-    PoolingMetricDescriptorSupplier(MetricDescriptorReuseableData reuseableData) {
-        allCreated = new ArrayList<>(reuseableData.getAllCreatedEndSize() + 10);
-        pool = reuseableData.getPool();
-        poolPtr = reuseableData.getPoolPtr();
+    PoolingMetricDescriptorSupplier(MetricDescriptorReusableData reusableData) {
+        allCreated = new ArrayList<>(reusableData.getAllCreatedEndSize() + LAST_CAPACITY_GROW);
+        pool = reusableData.getPool();
+        poolPtr = reusableData.getPoolPtr();
         for (int i = 0; i < poolPtr; i++) {
             pool[i].setSupplier(this);
             allCreated.add(pool[i]);
@@ -85,14 +86,14 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
         pool[++poolPtr] = descriptor;
     }
 
-    MetricDescriptorReuseableData close() {
+    MetricDescriptorReusableData close() {
         closed = true;
         for (MetricDescriptorImpl descriptor : allCreated) {
             descriptor.setSupplier(DEFAULT_DESCRIPTOR_SUPPLIER);
         }
         int allCreatedEndSize = allCreated.size();
         allCreated.clear();
-        return new MetricDescriptorReuseableData(allCreatedEndSize, pool, poolPtr);
+        return new MetricDescriptorReusableData(allCreatedEndSize, pool, poolPtr);
     }
 
     private void ensureCapacity(int poolPtr) {

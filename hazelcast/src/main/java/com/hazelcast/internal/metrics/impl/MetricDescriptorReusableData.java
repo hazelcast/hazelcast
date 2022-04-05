@@ -18,12 +18,12 @@ package com.hazelcast.internal.metrics.impl;
 
 import java.util.Arrays;
 
-class MetricDescriptorReuseableData {
+class MetricDescriptorReusableData {
     private final int allCreatedEndSize;
     private final MetricDescriptorImpl[] pool;
     private final int poolPtr;
 
-    MetricDescriptorReuseableData(int allCreatedEndSize, MetricDescriptorImpl[] pool, int poolPtr) {
+    MetricDescriptorReusableData(int allCreatedEndSize, MetricDescriptorImpl[] pool, int poolPtr) {
         this.allCreatedEndSize = allCreatedEndSize;
         this.pool = pool;
         this.poolPtr = poolPtr;
