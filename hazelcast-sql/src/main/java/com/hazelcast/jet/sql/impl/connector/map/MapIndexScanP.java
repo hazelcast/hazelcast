@@ -39,6 +39,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -127,7 +128,9 @@ final class MapIndexScanP extends AbstractProcessor {
                 metadata.getValueDescriptor(),
                 metadata.getFieldPaths(),
                 metadata.getFieldTypes(),
-                Extractors.newBuilder(evalContext.getSerializationService()).build(),
+                Extractors.newBuilder(evalContext.getSerializationService())
+                        .setGetterCacheType(GetterCache.Type.NOT_EVICTABLE)
+                        .build(),
                 evalContext.getSerializationService()
         );
         isIndexSorted = metadata.getComparator() != null;

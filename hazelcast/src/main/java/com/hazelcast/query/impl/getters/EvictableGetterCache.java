@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
-class EvictableGetterCache {
+class EvictableGetterCache implements GetterCache {
 
     private final SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>> getterCache;
     private final ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>> getterCacheConstructor;
@@ -53,7 +53,8 @@ class EvictableGetterCache {
     }
 
     @Nullable
-    Getter getGetter(Class clazz, String attributeName) {
+    @Override
+    public Getter getGetter(Class clazz, String attributeName) {
         ConcurrentMap<String, Getter> cache = getterCache.get(clazz);
         if (cache == null) {
             return null;
@@ -61,7 +62,8 @@ class EvictableGetterCache {
         return cache.get(attributeName);
     }
 
-    Getter putGetter(Class clazz, String attributeName, Getter getter) {
+    @Override
+    public Getter putGetter(Class clazz, String attributeName, Getter getter) {
         SampleableConcurrentHashMap<String, Getter> cache = getOrPutIfAbsent(getterCache, clazz, getterCacheConstructor);
         Getter foundGetter = cache.putIfAbsent(attributeName, getter);
         evictOnPut(cache);

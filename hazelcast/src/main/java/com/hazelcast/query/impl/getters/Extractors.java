@@ -55,16 +55,31 @@ public final class Extractors {
      */
     private final Map<String, ValueExtractor> extractors;
     private final InternalSerializationService ss;
-    private final EvictableGetterCache getterCache;
+    private final GetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
-    private Extractors(List<AttributeConfig> attributeConfigs,
-                       ClassLoader classLoader, InternalSerializationService ss) {
+    private Extractors(
+            List<AttributeConfig> attributeConfigs,
+            ClassLoader classLoader,
+            InternalSerializationService ss,
+            GetterCache.Type getterCacheType
+    ) {
         this.extractors = attributeConfigs == null
                 ? Collections.<String, ValueExtractor>emptyMap()
                 : instantiateExtractors(attributeConfigs, classLoader);
-        this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
-                MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
+
+        switch (getterCacheType) {
+            case EVICTABLE:
+                this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
+                        MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
+                break;
+            case NOT_EVICTABLE:
+                this.getterCache = new NotEvictableGetterCache();
+                break;
+            default:
+                throw new IllegalStateException("Unsupported getter cache type");
+        }
+
         this.argumentsParser = new DefaultArgumentParser();
         this.ss = ss;
     }
@@ -194,11 +209,17 @@ public final class Extractors {
     public static final class Builder {
         private ClassLoader classLoader;
         private List<AttributeConfig> attributeConfigs;
+        private GetterCache.Type getterCacheType = GetterCache.Type.EVICTABLE;
 
         private final InternalSerializationService ss;
 
         public Builder(InternalSerializationService ss) {
             this.ss = Preconditions.checkNotNull(ss);
+        }
+
+        public Builder setGetterCacheType(GetterCache.Type getterCacheType) {
+            this.getterCacheType = getterCacheType;
+            return this;
         }
 
         public Builder setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
@@ -215,7 +236,7 @@ public final class Extractors {
          * @return a new instance of Extractors
          */
         public Extractors build() {
-            return new Extractors(attributeConfigs, classLoader, ss);
+            return new Extractors(attributeConfigs, classLoader, ss, getterCacheType);
         }
     }
 }
