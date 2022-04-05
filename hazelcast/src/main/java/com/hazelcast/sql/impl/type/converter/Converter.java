@@ -342,6 +342,7 @@ public abstract class Converter implements Serializable {
 
             case ROW:
                 return canConvertToRow();
+
             case HZ_OBJECT:
                 return canConvertToHzObject();
 

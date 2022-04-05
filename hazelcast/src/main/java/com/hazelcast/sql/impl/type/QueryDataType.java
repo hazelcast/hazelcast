@@ -187,6 +187,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
+        // TODO this needs to be backwards-compatible, it's stored as a part of MappingField in the catalog
         out.writeString(typeName);
     }
 

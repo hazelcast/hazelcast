@@ -51,7 +51,6 @@ public class RowExpression extends VariExpressionWithType<RowValue> implements I
         return QueryDataType.ROW;
     }
 
-
     @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;

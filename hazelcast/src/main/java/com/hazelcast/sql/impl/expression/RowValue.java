@@ -56,8 +56,8 @@ public class RowValue implements Serializable, HazelcastObjectMarker, Identified
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
-        this.values = new ArrayList<>();
         final int size = in.readInt();
+        this.values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             this.values.add(in.readObject());
         }
