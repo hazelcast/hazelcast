@@ -219,11 +219,6 @@ public class TranslateToPublicAddressProviderTest {
                 new HazelcastProperties(config.getProperties()), mock(ILogger.class));
     }
 
-//    @Nonnull
-//    private DefaultAddressProvider defaultAddressProvider() {
-//        return new DefaultAddressProvider(config.getNetworkConfig());
-//    }
-
     @Nonnull
     private Member member(String host) {
         try {

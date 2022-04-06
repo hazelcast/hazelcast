@@ -176,7 +176,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         });
 
         //called on cluster restart
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
 
         MemberInfo addedMemberInfo = member("127.0.0.2");
         clusterService.handleMembersViewEvent(1, asList(addedMemberInfo), UUID.randomUUID());
@@ -249,7 +249,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         });
 
         //called on reconnect to same cluster when registering the listener back
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
 
         clusterService.handleMembersViewEvent(1, memberList, clusterUuid);
         assertEquals(1, clusterService.getMemberList().size());
@@ -295,7 +295,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         });
 
         //called on reconnect to same cluster when registering the listener back
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
 
         MemberInfo addedMember1 = member("127.0.0.1", member2uuid);
         MemberInfo addedMember2 = member("127.0.0.2", member1uuid);
@@ -341,7 +341,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         });
 
         //called on reconnect to same cluster when registering the listener back
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
 
         clusterService.handleMembersViewEvent(1, memberList, UUID.randomUUID());
         assertEquals(2, clusterService.getMemberList().size());
@@ -357,7 +357,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster restart
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
         assertEquals(1, clusterService.getMemberList().size());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
@@ -482,11 +482,13 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     public void testGetMembers() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
         MemberInfo masterMember = member("127.0.0.1");
-        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember("127.0.0.2"),
-                member("127.0.0.3")), UUID.randomUUID());
-        assertEquals(3, clusterService.getMemberList().size());
-        assertEquals(1, clusterService.getMembers(Member::isLiteMember).size());
-        assertEquals(2, clusterService.getMembers(member -> !member.isLiteMember()).size());
+        MemberInfo liteMember = liteMember("127.0.0.2");
+        MemberInfo dataMember = member("127.0.0.3");
+        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember,
+                dataMember), UUID.randomUUID());
+        assertCollection(Arrays.asList(masterMember.toMember(), liteMember.toMember(), dataMember.toMember()), clusterService.getMemberList());
+        assertCollection(Arrays.asList(liteMember.toMember()), clusterService.getMembers(Member::isLiteMember));
+        assertCollection(Arrays.asList(masterMember.toMember(), dataMember.toMember()), clusterService.getMembers(member -> !member.isLiteMember()));
     }
 
     @Test

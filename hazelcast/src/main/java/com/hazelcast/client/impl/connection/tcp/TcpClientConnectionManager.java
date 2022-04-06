@@ -914,7 +914,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterRestart();
+                client.onClusterConnect();
             }
             checkClientState(connection, switchingToNextCluster);
 

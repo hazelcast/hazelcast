@@ -174,7 +174,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void onClusterRestart() {
+    public void onClusterConnect() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the member list version ");

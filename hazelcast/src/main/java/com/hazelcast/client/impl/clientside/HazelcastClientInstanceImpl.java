@@ -869,7 +869,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
-        //clear the member lists
+        //reset the member list version
         clusterService.onClusterChange();
         //clear partition service
         partitionService.reset();
@@ -879,12 +879,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterRestart() {
+    public void onClusterConnect() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        clusterService.onClusterRestart();
+        clusterService.onClusterConnect();
     }
 
     public void waitForInitialMembershipEvents() {
