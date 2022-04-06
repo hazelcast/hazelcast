@@ -135,7 +135,7 @@ public class NioReactor extends Reactor {
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         NioChannel channel = (NioChannel) key.attachment();
-        channel.readEvents++;
+        channel.readEvents.inc();
         ByteBuffer readBuf = channel.receiveBuffer;
         int bytesRead = socketChannel.read(readBuf);
         //System.out.println(this + " bytes read: " + bytesRead);
@@ -145,7 +145,7 @@ public class NioReactor extends Reactor {
             return;
         }
 
-        channel.bytesRead += bytesRead;
+        channel.bytesRead.inc(bytesRead);
         readBuf.flip();
         Frame responseChain = null;
         for (; ; ) {
@@ -155,7 +155,8 @@ public class NioReactor extends Reactor {
                 }
 
                 int size = readBuf.getInt();
-                channel.inboundFrame = new Frame(size);
+                // todo: we don't know if request or response
+                channel.inboundFrame = requestFrameAllocator.allocate(size);
                 channel.inboundFrame.writeInt(size);
                 channel.inboundFrame.connection = channel.connection;
                 channel.inboundFrame.channel = channel;
@@ -174,12 +175,11 @@ public class NioReactor extends Reactor {
             channel.inboundFrame.completeReceive();
             Frame frame = channel.inboundFrame;
             channel.inboundFrame = null;
-            channel.framesRead++;
+            channel.framesRead.inc();
 
             if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
                 frame.next = responseChain;
                 responseChain = frame;
-                //frontend.handleResponse(packet);
             } else {
                 handleRequest(frame);
             }
@@ -209,7 +209,7 @@ public class NioReactor extends Reactor {
     @Override
     protected void handleOutbound(Channel c) {
         NioChannel channel = (NioChannel) c;
-        channel.handleOutboundCalls++;
+        channel.handleOutboundCalls.inc();
         //System.out.println("Processing channel");
         try {
             for (; ; ) {
@@ -223,7 +223,7 @@ public class NioReactor extends Reactor {
 
             long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
             //System.out.println(getName() + " bytes written:" + written);
-            channel.bytesWritten += written;
+            channel.bytesWritten.inc(written);
 
             channel.discardWrittenBuffers();
 

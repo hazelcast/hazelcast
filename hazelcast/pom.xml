@@ -440,7 +440,11 @@
             <version>0.0.14.Final-SNAPSHOT</version>
             <classifier>linux-x86_64</classifier>
         </dependency>
-
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+            <version>3.3.0</version>
+        </dependency>
         <!-- needed for thread affinity -->
         <dependency>
             <groupId>net.openhft</groupId>

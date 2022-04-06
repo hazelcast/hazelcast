@@ -26,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_RESPONSE_CALL_ID;
 
 public class ReactorFrontEnd {
 
@@ -102,7 +103,10 @@ public class ReactorFrontEnd {
             r.start();
         }
 
-        monitorThread.start();
+        boolean monitor = Boolean.parseBoolean(System.getProperty("reactor.monitor.enabled", "true"));
+        if(monitor) {
+            monitorThread.start();
+        }
         responseThread.start();
     }
 
@@ -119,6 +123,64 @@ public class ReactorFrontEnd {
 
         responseThread.shutdown();
         monitorThread.shutdown();
+    }
+
+    public void handleResponse(Frame response) {
+        if (response.next != null) {
+            responseThread.queue.add(response);
+            return;
+        }
+
+        try {
+            Address remoteAddress = response.connection.getRemoteAddress();
+            Requests requests = requestsPerMember.get(remoteAddress);
+            if (requests == null) {
+                System.out.println("Dropping response " + response + ", requests not found");
+                return;
+            }
+
+            long callId = response.getLong(OFFSET_RESPONSE_CALL_ID);
+            Frame request = requests.map.remove(callId);
+            if (request == null) {
+                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+            } else {
+                request.future.complete(response);
+                request.release();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            response.release();
+        }
+    }
+
+    public CompletableFuture invoke(Frame request, int partitionId) {
+        if (shuttingdown) {
+            throw new RuntimeException("Can't make invocation, frontend shutting down");
+        }
+
+        if (partitionId < 0) {
+            throw new RuntimeException("Negative partition id not supported:" + partitionId);
+        }
+
+        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+        CompletableFuture future = request.future;
+        if (address.equals(thisAddress)) {
+            //System.out.println("local invoke");
+            // todo: hack with the assignment of a partition to a local cpu.
+            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
+        } else {
+            request.acquire();
+            Requests requests = getRequests(address);
+            long callId = requests.callId.incrementAndGet();
+            request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+            //System.out.println("request.refCount:"+request.refCount());
+            requests.map.put(callId, request);
+            Channel channel = getConnection(address).channels[partitionIdToChannel(partitionId)];
+            channel.writeAndFlush(request);
+        }
+
+        return future;
     }
 
     public void invoke(PipelineImpl pipeline) {
@@ -139,13 +201,13 @@ public class ReactorFrontEnd {
                 reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
             }
         } else {
-            Requests invocations = getRequests(address);
+            Requests requests = getRequests(address);
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel(partitionId)];
 
             for (Frame request : pipeline.getRequests()) {
-                long callId = invocations.callId.incrementAndGet();
-                invocations.map.put(callId, request);
+                long callId = requests.callId.incrementAndGet();
+                requests.map.put(callId, request);
                 request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
                 channel.write(request);
             }
@@ -153,36 +215,6 @@ public class ReactorFrontEnd {
             channel.flush();
         }
     }
-
-    public CompletableFuture invoke(Frame request, int partitionId) {
-        if (shuttingdown) {
-            throw new RuntimeException("Can't make invocation, frontend shutting down");
-        }
-
-        if (partitionId < 0) {
-            throw new RuntimeException("Negative partition id not supported:" + partitionId);
-        }
-
-        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-
-        if (address.equals(thisAddress)) {
-            //System.out.println("local invoke");
-            // todo: hack with the assignment of a partition to a local cpu.
-            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
-        } else {
-            Requests invocations = getRequests(address);
-            long callId = invocations.callId.incrementAndGet();
-            request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
-            invocations.map.put(callId, request);
-            TcpServerConnection connection = getConnection(address);
-            Channel channel = connection.channels[partitionIdToChannel(partitionId)];
-            channel.writeAndFlush(request);
-        }
-
-        return request.future;
-    }
-
-
     private TcpServerConnection getConnection(Address address) {
         if (connectionManager == null) {
             connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
@@ -254,34 +286,6 @@ public class ReactorFrontEnd {
     public static class Requests {
         private final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
         private final AtomicLong callId = new AtomicLong(500);
-    }
-
-    public void handleResponse(Frame response) {
-        if (response.next != null) {
-            responseThread.queue.add(response);
-            return;
-        }
-
-        try {
-            Address remoteAddress = response.connection.getRemoteAddress();
-            Requests requests = requestsPerMember.get(remoteAddress);
-            if (requests == null) {
-                System.out.println("Dropping response " + response + ", requests not found");
-                return;
-            }
-
-            long callId = response.getLong(Frame.OFFSET_RESPONSE_CALL_ID);
-            Frame request = requests.map.remove(callId);
-            if (request == null) {
-                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
-            } else {
-                request.future.complete(response);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            response.release();
-        }
     }
 
     public class ResponseThread extends Thread {

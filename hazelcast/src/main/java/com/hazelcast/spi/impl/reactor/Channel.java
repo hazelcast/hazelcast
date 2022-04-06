@@ -1,36 +1,29 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.net.SocketAddress;
+
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 
 public abstract class Channel {
     public Connection connection;
-
     public SocketAddress remoteAddress;
     public SocketAddress localAddress;
 
-    public long packetsWritten;
-    public long prevPacketsWritten;
+    public final SwCounter packetsWritten = newSwCounter();
 
-    public long bytesRead;
-    public long prevBytesRead;
+    public final SwCounter bytesRead = newSwCounter();
 
-    public long bytesWritten;
-    public long prevBytesWritten;
+    public final SwCounter  bytesWritten = newSwCounter();
 
-    public long framesRead;
-    public long prevPacketsRead ;
+    public final SwCounter  framesRead = newSwCounter();
 
-    public long handleOutboundCalls;
-    public long prevHandleOutboundCalls;
+    public final SwCounter  handleOutboundCalls = newSwCounter();
 
-    public long readEvents;
-    public long prevReadEvents;
-
-    public int bytesWrittenConfirmed;
-    public int prevBytesWrittenConfirmed;
+    public final SwCounter  readEvents = newSwCounter();
 
     public abstract void flush();
 

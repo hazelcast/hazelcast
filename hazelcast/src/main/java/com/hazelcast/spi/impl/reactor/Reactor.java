@@ -33,10 +33,10 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final int port;
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
-    protected final FrameAllocator responseFrameAllocator;
-    protected final FrameAllocator requestFrameAllocator;
+    protected final FrameAllocator responseFrameAllocator = new UnpooledFrameAllocator(128);
+    protected final FrameAllocator requestFrameAllocator = new UnpooledFrameAllocator(128);
     protected final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
-    protected final SwCounter processedRequestCount = newSwCounter();
+    protected final SwCounter processedRequest = newSwCounter();
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
@@ -45,8 +45,6 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
-        this.responseFrameAllocator = new PooledFrameAllocator(this, 128);
-        this.requestFrameAllocator = new PooledFrameAllocator(this, 128);
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -98,7 +96,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected abstract void handleOutbound(Channel task);
 
     protected void handleRequest(Frame request) {
-        processedRequestCount.inc();
+        processedRequest.inc();
 
         Op op = null;
         try {
@@ -115,7 +113,11 @@ public abstract class Reactor extends HazelcastManagedThread {
                 request.channel.write(op.response);
             } else {
                 request.future.complete(op.response);
+                op.response.release();
             }
+            op.request.release();
+            op.request = null;
+            op.response = null;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -159,12 +161,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 throw new RuntimeException("Unrecognized opcode:" + opcode);
         }
         op.request = request.position(OFFSET_REQUEST_PAYLOAD);
-        if (request.future != null) {
-            op.response = new Frame(20);
-        } else {
-            op.response = responseFrameAllocator.allocate();
-        }
-
+        op.response = responseFrameAllocator.allocate(21);
         return op;
     }
 

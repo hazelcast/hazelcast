@@ -301,7 +301,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         // System.out.println("handle_IORING_OP_WRITE fd:"+fd +" bytes written: "+res);
         //System.out.println("res:"+res);
         IO_UringChannel channel = channelMap.get(fd);
-        channel.bytesWrittenConfirmed += res;
 
         ByteBuf buf = channel.writeBufs[data];
         if (buf.readableBytes() != res) {
@@ -330,8 +329,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         // we need to update the writerIndex; not done automatically.
         //todo: we need to deal with res=0 and res<0
         int oldLimit = channel.readBuffer.limit();
-        channel.readEvents += 1;
-        channel.bytesRead += res;
+        channel.readEvents.inc();
+        channel.bytesRead.inc(res);
         channel.readBuffer.limit(res);
         channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
         channel.receiveBuff.readBytes(channel.readBuffer);
@@ -349,7 +348,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 }
 
                 int size = readBuf.getInt();
-                channel.inboundFrame = new Frame(size);
+                //todo: we don't know if we have request or response.
+                channel.inboundFrame = requestFrameAllocator.allocate(size);
                 channel.inboundFrame.writeInt(size);
                 channel.inboundFrame.connection = channel.connection;
                 channel.inboundFrame.channel = channel;
@@ -368,7 +368,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             channel.inboundFrame.completeReceive();
             Frame frame = channel.inboundFrame;
             channel.inboundFrame = null;
-            channel.framesRead++;
+            channel.framesRead.inc();
 
             if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
                 frame.next = responseChain;
@@ -398,7 +398,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     @Override
     protected void handleOutbound(Channel c) {
         IO_UringChannel channel = (IO_UringChannel)c;
-        channel.handleOutboundCalls++;
+        channel.handleOutboundCalls.inc();
         //System.out.println(getName() + " process channel " + channel.remoteAddress);
 
         short bufIndex = -1;
@@ -430,8 +430,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 break;
             }
 
-            channel.packetsWritten++;
-            channel.bytesWritten += buffer.remaining();
+            channel.packetsWritten.inc();
+            //todo: not correct when not all bytes are written.
+            channel.bytesWritten.inc(buffer.remaining());
             bytesWritten += buffer.remaining();
             buf.writeBytes(buffer);
 

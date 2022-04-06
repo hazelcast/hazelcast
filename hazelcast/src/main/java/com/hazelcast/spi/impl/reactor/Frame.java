@@ -5,6 +5,7 @@ import com.hazelcast.internal.nio.Packet;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
@@ -39,8 +40,10 @@ public class Frame {
     public static final int OFFSET_RESPONSE_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
     public static final int OFFSET_RESPONSE_PAYLOAD = OFFSET_RESPONSE_CALL_ID + LONG_SIZE_IN_BYTES;
 
+    public boolean trackRelease;
     private ByteBuffer buff;
     public FrameAllocator allocator;
+    private AtomicInteger refCount = new AtomicInteger();
 
     public Frame() {
     }
@@ -49,7 +52,7 @@ public class Frame {
         this.buff = ByteBuffer.allocate(size);
     }
 
-    public Frame newFuture(){
+    public Frame newFuture() {
         this.future = new CompletableFuture();
         return this;
     }
@@ -209,9 +212,35 @@ public class Frame {
         return buff.remaining();
     }
 
-    public void release() {
+    public int refCount() {
+        return refCount.get();
+    }
+
+    public void acquire() {
         if (allocator != null) {
-            allocator.release(this);
+            refCount.incrementAndGet();
+        }
+    }
+
+    public void release() {
+//        if (trackRelease) {
+//            new Exception("refCount:"+refCount.get()).printStackTrace();
+//        }
+
+        if (allocator != null) {
+            for (; ; ) {
+                int current = refCount.get();
+                if (current <= 0) {
+                    throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
+                }
+                if (!refCount.compareAndSet(current, current - 1)) {
+                    continue;
+                }
+                if (current == 1) {
+                    allocator.release(this);
+                }
+                break;
+            }
         }
     }
 }

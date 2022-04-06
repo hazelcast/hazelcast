@@ -31,6 +31,7 @@ public class PipelineImpl implements Pipeline {
             throw new RuntimeException("Cross partition request detected; expected " + this.partitionId + " found: " + partitionId);
         }
 
+        //todo: usepool
         Frame request = new Frame(32)
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)

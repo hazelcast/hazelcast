@@ -1,6 +1,10 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.internal.util.counters.SwCounter;
 import io.netty.incubator.channel.uring.IO_UringChannel;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -9,10 +13,17 @@ public final class MonitorThread extends Thread {
     private final Reactor[] reactors;
     private volatile boolean shutdown = false;
     private long prevMillis = currentTimeMillis();
+    // There is a memory leak on the counters. When channels die, counters are not removed.
+    private final Map<SwCounter, Prev> prevMap = new HashMap<>();
+
 
     public MonitorThread(Reactor[] reactors) {
         super("MonitorThread");
         this.reactors = reactors;
+    }
+
+    static class Prev {
+        public long value;
     }
 
     @Override
@@ -43,7 +54,7 @@ public final class MonitorThread extends Thread {
                 }
 
                 for (Reactor reactor : reactors) {
-                    displayReactor(reactor);
+                    displayReactor(reactor, elapsed);
                 }
             }
         } catch (Exception e) {
@@ -51,9 +62,15 @@ public final class MonitorThread extends Thread {
         }
     }
 
-    private void displayReactor(Reactor reactor) {
-        System.out.println(reactor + " processed-request-count:" + reactor.processedRequestCount);
+    private void displayReactor(Reactor reactor, long elapsed) {
+        System.out.println(reactor + " processed-request-count:" + reactor.processedRequest.get());
         System.out.println(reactor + " channel-count:" + reactor.channels().size());
+
+        long processedRequest = reactor.processedRequest.get();
+        Prev prevProcessedRequest = getPrev(reactor.processedRequest);
+        long packetsReadDelta = processedRequest - prevProcessedRequest.value;
+        System.out.println(reactor + " " + thp(packetsReadDelta, elapsed) + " processed-requests/second");
+        prevProcessedRequest.value = processedRequest;
     }
 
     private void displayChannel(Channel channel, long elapsed) {
@@ -62,35 +79,48 @@ public final class MonitorThread extends Thread {
             System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled + " pending:" + u.pending.size());
         }
 
-        long packetsRead = channel.framesRead;
-        long packetsReadDelta = packetsRead - channel.prevPacketsRead;
+        long packetsRead = channel.framesRead.get();
+        Prev prevPacketsRead = getPrev(channel.framesRead);
+        long packetsReadDelta = packetsRead - prevPacketsRead.value;
         System.out.println(channel.remoteAddress + " " + thp(packetsReadDelta, elapsed) + " packets/second");
-        channel.prevPacketsRead = packetsRead;
+        prevPacketsRead.value = packetsRead;
 
-        long bytesRead = channel.bytesRead;
-        long bytesReadDelta = bytesRead - channel.prevBytesRead;
+        long bytesRead = channel.bytesRead.get();
+        Prev prevBytesRead = getPrev(channel.bytesRead);
+        long bytesReadDelta = bytesRead - prevBytesRead.value;
         System.out.println(channel.remoteAddress + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
-        channel.prevBytesRead = bytesRead;
+        prevBytesRead.value = bytesRead;
 
-        long bytesWritten = channel.bytesWritten;
-        long bytesWrittenDelta = channel.prevBytesWritten;
+        long bytesWritten = channel.bytesWritten.get();
+        Prev prevBytesWritten = getPrev(channel.bytesWritten);
+        long bytesWrittenDelta = bytesWritten - prevBytesWritten.value;
         System.out.println(channel.remoteAddress + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
-        channel.prevBytesWritten = bytesWritten;
+        prevBytesWritten.value = bytesWritten;
 
-        long handleOutboundCalls = channel.handleOutboundCalls;
-        long handleOutboundCallsDelta = handleOutboundCalls - channel.prevHandleOutboundCalls;
+        long handleOutboundCalls = channel.handleOutboundCalls.get();
+        Prev prevHandleOutboundCalls = getPrev(channel.handleOutboundCalls);
+        long handleOutboundCallsDelta = handleOutboundCalls - prevHandleOutboundCalls.value;
         System.out.println(channel.remoteAddress + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
-        channel.prevHandleOutboundCalls = handleOutboundCalls;
+        prevHandleOutboundCalls.value = handleOutboundCalls;
 
-        long readEvents = channel.readEvents;
-        long readEventsDelta = readEvents - channel.prevReadEvents;
+        long readEvents = channel.readEvents.get();
+        Prev prevReadEvents = getPrev(channel.readEvents);
+        long readEventsDelta = readEvents - prevReadEvents.value;
         System.out.println(channel.remoteAddress + " " + thp(readEventsDelta, elapsed) + " read-events/second");
-        channel.prevReadEvents = readEvents;
+        prevReadEvents.value = readEvents;
 
         System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
         System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
         System.out.println(channel.remoteAddress + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
-        System.out.println(channel.remoteAddress + " " + (channel.bytesWritten - channel.bytesWrittenConfirmed) + " byte write diff");
+    }
+
+    private Prev getPrev(SwCounter counter) {
+        Prev prev = prevMap.get(counter);
+        if (prev == null) {
+            prev = new Prev();
+            prevMap.put(counter, prev);
+        }
+        return prev;
     }
 
     public static float thp(long delta, long elapsed) {

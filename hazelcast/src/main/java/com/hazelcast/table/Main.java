@@ -8,7 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+         HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Table table = node1.getTable("piranaha");
 
@@ -27,7 +27,7 @@ public class Main {
             }
 
             //table.upsert(item);
-            table.concurrentNoop(1);
+            table.concurrentNoop(100);
 //            try {
 //                Thread.sleep(10000);
 //            } catch (InterruptedException e) {
