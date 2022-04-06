@@ -119,6 +119,8 @@ public class LocalAddressRegistry {
                     linkedAddressesRegistrationCountPair = new Pair(linkedAddresses, new AtomicInteger(1));
                     // remove previous addresses from the addressToUuid map
                     previousAddresses.getAllAddresses().forEach(address -> addressToUuid.remove(address, uuid));
+                    logger.warning(previousAddresses + " previously registered for the instance uuid=" + instanceUuid
+                            + " are overridden by a new distinct set of addresses: " + linkedAddresses);
                 }
             }
             linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, instanceUuid));
