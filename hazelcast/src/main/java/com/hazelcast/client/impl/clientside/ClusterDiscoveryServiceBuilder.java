@@ -24,7 +24,9 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.impl.spi.impl.TranslateToPublicAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
@@ -71,10 +73,12 @@ class ClusterDiscoveryServiceBuilder {
     private final Collection<ClientConfig> configs;
     private final LifecycleService lifecycleService;
     private final AddressProvider externalAddressProvider;
+    private final ClientClusterService clusterService;
 
     ClusterDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
                                    AddressProvider externalAddressProvider, HazelcastProperties properties,
-                                   ClientExtension clientExtension, LifecycleService lifecycleService) {
+                                   ClientExtension clientExtension, LifecycleService lifecycleService,
+                                   ClientClusterService clusterService) {
         this.configsTryCount = configsTryCount;
         this.configs = configs;
         this.loggingService = loggingService;
@@ -82,6 +86,7 @@ class ClusterDiscoveryServiceBuilder {
         this.properties = properties;
         this.clientExtension = clientExtension;
         this.lifecycleService = lifecycleService;
+        this.clusterService = clusterService;
     }
 
     public ClusterDiscoveryService build() {
@@ -104,7 +109,8 @@ class ClusterDiscoveryServiceBuilder {
 
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
+            contexts.add(new CandidateClusterContext(config.getClusterName(), provider,
+                    discoveryService, credentialsFactory,
                     interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
@@ -143,7 +149,11 @@ class ClusterDiscoveryServiceBuilder {
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-        return new DefaultAddressProvider(networkConfig);
+        TranslateToPublicAddressProvider toPublicAddressProvider = new TranslateToPublicAddressProvider(networkConfig,
+                properties,
+                loggingService.getLogger(TranslateToPublicAddressProvider.class));
+        clusterService.addMembershipListener(toPublicAddressProvider);
+        return new DefaultAddressProvider(networkConfig, toPublicAddressProvider);
     }
 
     private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {
