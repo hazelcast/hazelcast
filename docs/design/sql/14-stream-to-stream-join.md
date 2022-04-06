@@ -125,28 +125,24 @@ After applying the `CROSS JOIN` operation we expect next output:
 
 __Table 4__
 
-#### Processor algorithm description
+#### JOIN processor design and algorithm description
 
-Consider having two input streams __S1__ and __S2__. Let's define the schema for __S1__ and __S2__ as
+##### Processor design
 
-```sql
-CREATE MAPPING S1 (id BIGINT, payload BIGINT, s1_time TIMESTAMP) TYPE Stream
-CREATE MAPPING S2 (id BIGINT, payload VARCHAR, s2_time TIMESTAMP) TYPE Stream
-```
+Items:
 
-Consider the following query:
+- join condition predicate (`BiPredicateEx<T, S>`)
+- left input stream event timestamp extraction function (`ToLongFunctionEx<T>`)
+- right input stream event timestamp extraction (`ToLongFunctionEx<T>`)
 
-```sql
-> SELECT * FROM IMPOSE_ORDER(TABLE(S1), DESCRIPTOR(s1_time), INTERVAL '1' SECOND) AS s1
-  INNER JOIN 
-  SELECT * FROM IMPOSE_ORDER(TABLE(S2), DESCRIPTOR(s2_time), INTERVAL '1' SECOND) AS s2
-  ON s2.s2_time BETWEEN s1.s1_time AND s1.s1_time + INTERVAL '2' SECOND 
-```
+##### Algorithm
+
+Consider having two input streams __S1__ and __S2__.
 
 1. Perform query analysis, detect timestamp column from both input stream schemas
-2. Prepare two buffers : B0 to store input events from ordinal 0 (stream S1) and B1 to store input events from ordinal
-   1 (stream S2).
-3. Receive event E from the ordinal.
+2. Produce JOIN condition and timestamp extraction functions.
+3. Prepare two buffers : B0 to store input events from ordinal 0 and B1 to store input events from ordinal 1.
+4. Receive event E from the ordinal.
     1. If received event is watermark:
         1. If watermark received from ordinal 0 clean all expired events in B0.
         2. Else, clean all _expired_ events in B1.
@@ -158,7 +154,7 @@ Consider the following query:
         4. For each event in 'parallel' buffer
             1. Test the JOIN condition with received timestamps.
             2. Perform JOIN operation for each event in 'parallel' buffer, perform
-                1. If test was not successful, retry step 3.
+                1. If test was not successful, retry step 4.
             3. If the join type is `OUTER JOIN`, we should fill empty side (no input events received) with NULL.
             4. Emit joined event.
 
@@ -185,11 +181,11 @@ public final class Watermark implements BroadcastItem {
 `[*]` __Note__: each watermark event should stay as a separate event in joined stream.
 
 _Q: Should we support only timestamps as JOIN condition?_
-**Sasha's proposition: JOIN condition must contain a time boundness and it'd be possible to have additional
-non-timestamp condition(s).**
+**Sasha's proposition: JOIN condition must contain a time boundness. Non-timestamp JOIN condition(s) are allowed as
+optional JOIN condition .**
 
 _Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
-**Sasha's proposition: Watch below, my proposition is not to support them.**
+**Sasha's proposition: Watch below, my proposition is to support non-timestamp JOIN condition as optional.**
 
 _Q: What semantics should we consider for queries with zero lag for both inputs?_
 **Sasha's proposition: We would not have any available events to join with very high probability. Need mates thoughts.**
@@ -200,22 +196,6 @@ _Q: Time bounds should be constant or variable size? Example:_
 SELECT * FROM orders o
 JOIN deliveries d ON d.time BETWEEN o.time 
                   AND o.time + o.delivery_deadline + interval '1' day 
-```
-
-#### Processor API change to to handle multiple watermarks
-
-We should also change/extend `Processor` API to handle multiple watermarks. Consider having that new method
-within `Processor` class with default implementation to keep backward compatibility:
-
-```java
-interface Processor {
-    // ...
-    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        assert (ordinal == 0);
-        return tryProcessWatermark(watermark);
-    }
-    // ...
-}
 ```
 
 #### OUTER JOIN handling `[**]`
