@@ -81,7 +81,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
                 throw new ProtocolException(exceptionMessage);
             }
 
-            if (channel.isClientMode()) {
+            if (isDecoderVerifiedProtocol || channel.isClientMode()) {
                 // Set up the next encoder in the pipeline if in client mode
                 setupNextEncoder();
             }
@@ -104,7 +104,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     }
 
     // Swap this encoder with the next one
-    protected void setupNextEncoder() {
+    private void setupNextEncoder() {
         channel.outboundPipeline().replace(this, outboundHandlers);
     }
 

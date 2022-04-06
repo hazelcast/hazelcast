@@ -40,7 +40,7 @@ public class MemberChannelInitializer
 
         SingleProtocolEncoder protocolEncoder = new SingleProtocolEncoder(new MemberProtocolEncoder(outboundHandlers));
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(ProtocolType.MEMBER,
-                inboundHandlers, protocolEncoder, true);
+                inboundHandlers, protocolEncoder);
 
         channel.outboundPipeline().addLast(protocolEncoder);
         channel.inboundPipeline().addLast(protocolDecoder);

@@ -20,12 +20,12 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
@@ -35,9 +35,6 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     private final OutboundHandler[] outboundHandlers;
-    private volatile boolean encoderCanReplace;
-
-    private boolean clusterProtocolBuffered;
 
     /**
      * Decodes first 3 incoming bytes, validates against {@code supportedProtocol} and, when
@@ -53,7 +50,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     @Override
     public void handlerAdded() {
-        initDstBuffer(PROTOCOL_LENGTH);
+        initDstBuffer(PROTOCOL_LENGTH, stringToBytes(CLUSTER));
     }
 
     @Override
@@ -61,34 +58,18 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         compactOrClear(dst);
 
         try {
-            if (!clusterProtocolBuffered) {
-                clusterProtocolBuffered = true;
-                dst.put(stringToBytes(CLUSTER));
-                // Return false because ProtocolEncoder is not ready yet; but first we need to flush protocol
-                return DIRTY;
-            }
-
-            if (!isProtocolBufferDrained()) {
-                // Return false because ProtocolEncoder is not ready yet; but first we need to flush protocol
-                return DIRTY;
-            }
-
-            if (encoderCanReplace) {
+            if (isProtocolBufferDrained()) {
                 // replace!
                 ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
                 connection.setConnectionType(ConnectionType.MEMBER);
                 channel.outboundPipeline().replace(this, outboundHandlers);
             }
 
+            // Return CLEAN as we already have all the necessary data in the destination buffer.
             return CLEAN;
         } finally {
             upcast(dst).flip();
         }
-    }
-
-    public void signalEncoderCanReplace() {
-        encoderCanReplace = true;
-        channel.outboundPipeline().wakeup();
     }
 
     /**
