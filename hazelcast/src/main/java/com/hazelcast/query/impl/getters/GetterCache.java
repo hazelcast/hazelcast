@@ -19,7 +19,6 @@ package com.hazelcast.query.impl.getters;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
-@SuppressWarnings("rawtypes")
 public interface GetterCache {
     int EVICTABLE_CACHE_MAX_CLASSES_IN_CACHE = 1000;
     int EVICTABLE_CACHE_MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
@@ -34,7 +33,7 @@ public interface GetterCache {
     Supplier<GetterCache> NOT_EVICTABLE_GETTER_CACHE_SUPPLIER = NotEvictableGetterCache::new;
 
     @Nullable
-    Getter getGetter(Class clazz, String attributeName);
+    Getter getGetter(Class<?> clazz, String attributeName);
 
-    Getter putGetter(Class clazz, String attributeName, Getter getter);
+    Getter putGetter(Class<?> clazz, String attributeName, Getter getter);
 }

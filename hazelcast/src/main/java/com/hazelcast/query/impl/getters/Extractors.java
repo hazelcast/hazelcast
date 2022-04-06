@@ -56,8 +56,8 @@ public final class Extractors {
      */
     private final Map<String, ValueExtractor> extractors;
     private final InternalSerializationService ss;
-    private final GetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
+    final GetterCache getterCache;
 
     private Extractors(
             List<AttributeConfig> attributeConfigs,

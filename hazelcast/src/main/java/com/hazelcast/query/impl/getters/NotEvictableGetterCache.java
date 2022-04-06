@@ -23,13 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @NotThreadSafe
-@SuppressWarnings("rawtypes")
 class NotEvictableGetterCache implements GetterCache {
-    private final Map<Class, Map<String, Getter>> cache = new HashMap<>();
+    private final Map<Class<?>, Map<String, Getter>> cache = new HashMap<>();
 
     @Nullable
     @Override
-    public Getter getGetter(Class clazz, String attributeName) {
+    public Getter getGetter(Class<?> clazz, String attributeName) {
         Map<String, Getter> getterMapForClass = cache.get(clazz);
         if (getterMapForClass == null) {
             return null;
@@ -38,7 +37,7 @@ class NotEvictableGetterCache implements GetterCache {
     }
 
     @Override
-    public Getter putGetter(Class clazz, String attributeName, Getter getter) {
+    public Getter putGetter(Class<?> clazz, String attributeName, Getter getter) {
         return cache.computeIfAbsent(clazz, aClass -> new HashMap<>()).putIfAbsent(attributeName, getter);
     }
 }

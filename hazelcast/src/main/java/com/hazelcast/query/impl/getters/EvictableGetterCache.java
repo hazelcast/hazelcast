@@ -26,9 +26,8 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 class EvictableGetterCache implements GetterCache {
-
-    private final SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>> getterCache;
-    private final ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>> getterCacheConstructor;
+    private final SampleableConcurrentHashMap<Class<?>, SampleableConcurrentHashMap<String, Getter>> getterCache;
+    private final ConstructorFunction<Class<?>, SampleableConcurrentHashMap<String, Getter>> getterCacheConstructor;
 
     private final int maxClassCount;
     private final int afterEvictionClassCount;
@@ -37,14 +36,8 @@ class EvictableGetterCache implements GetterCache {
 
     EvictableGetterCache(int maxClassCount, final int maxGetterPerClassCount, float evictPercentage, boolean strongReferences) {
         ReferenceType referenceType = strongReferences ? ReferenceType.STRONG : ReferenceType.SOFT;
-        getterCache = new SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>>(maxClassCount,
-                referenceType, referenceType);
-        getterCacheConstructor = new ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>>() {
-            @Override
-            public SampleableConcurrentHashMap<String, Getter> createNew(Class arg) {
-                return new SampleableConcurrentHashMap<String, Getter>(maxGetterPerClassCount);
-            }
-        };
+        getterCache = new SampleableConcurrentHashMap<>(maxClassCount, referenceType, referenceType);
+        getterCacheConstructor = arg -> new SampleableConcurrentHashMap<>(maxGetterPerClassCount);
 
         this.maxClassCount = maxClassCount;
         this.afterEvictionClassCount = (int) (maxClassCount * (1 - evictPercentage));
@@ -54,7 +47,7 @@ class EvictableGetterCache implements GetterCache {
 
     @Nullable
     @Override
-    public Getter getGetter(Class clazz, String attributeName) {
+    public Getter getGetter(Class<?> clazz, String attributeName) {
         ConcurrentMap<String, Getter> cache = getterCache.get(clazz);
         if (cache == null) {
             return null;
@@ -63,7 +56,7 @@ class EvictableGetterCache implements GetterCache {
     }
 
     @Override
-    public Getter putGetter(Class clazz, String attributeName, Getter getter) {
+    public Getter putGetter(Class<?> clazz, String attributeName, Getter getter) {
         SampleableConcurrentHashMap<String, Getter> cache = getOrPutIfAbsent(getterCache, clazz, getterCacheConstructor);
         Getter foundGetter = cache.putIfAbsent(attributeName, getter);
         evictOnPut(cache);
@@ -82,7 +75,7 @@ class EvictableGetterCache implements GetterCache {
         map.purgeStaleEntries();
         int mapSize = map.size();
         if (mapSize - triggeringEvictionSize >= 0) {
-            for (SampleableConcurrentHashMap.SamplingEntry entry : map.getRandomSamples(mapSize - afterEvictionSize)) {
+            for (SampleableConcurrentHashMap.SamplingEntry<?, ?> entry : map.getRandomSamples(mapSize - afterEvictionSize)) {
                 map.remove(entry.getEntryKey());
             }
         }
@@ -92,9 +85,8 @@ class EvictableGetterCache implements GetterCache {
         return getterCache.size();
     }
 
-    int getGetterPerClassCacheSize(Class clazz) {
-        SampleableConcurrentHashMap cacheForClass = getterCache.get(clazz);
+    int getGetterPerClassCacheSize(Class<?> clazz) {
+        SampleableConcurrentHashMap<?, ?> cacheForClass = getterCache.get(clazz);
         return cacheForClass != null ? cacheForClass.size() : -1;
     }
-
 }
