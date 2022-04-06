@@ -105,10 +105,6 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     // Swap this encoder with the next one
     private void setupNextEncoder() {
-        OutboundHandler next = outboundHandlers[0];
-        if (next instanceof MemberProtocolEncoder) {
-            ((MemberProtocolEncoder) next).setEncoderCanReplace();
-        }
         channel.outboundPipeline().replace(this, outboundHandlers);
     }
 
