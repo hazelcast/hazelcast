@@ -45,6 +45,8 @@ public final class Extractors {
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
     private static final float EVICTION_PERCENTAGE = 0.2f;
 
+    final GetterCache getterCache;
+
     private volatile PortableGetter portableGetter;
     private volatile JsonDataGetter jsonDataGetter;
     private volatile CompactGetter compactGetter;
@@ -57,7 +59,6 @@ public final class Extractors {
     private final Map<String, ValueExtractor> extractors;
     private final InternalSerializationService ss;
     private final DefaultArgumentParser argumentsParser;
-    final GetterCache getterCache;
 
     private Extractors(
             List<AttributeConfig> attributeConfigs,

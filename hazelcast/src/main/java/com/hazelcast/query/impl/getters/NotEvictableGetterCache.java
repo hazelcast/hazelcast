@@ -16,8 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
-import org.jetbrains.annotations.Nullable;
-
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.HashMap;
 import java.util.Map;
