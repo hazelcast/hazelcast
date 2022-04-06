@@ -39,7 +39,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -65,6 +64,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.query.impl.getters.GetterCache.NOT_EVICTABLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.emptyList;
@@ -129,7 +129,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 metadata.getFieldPaths(),
                 metadata.getFieldTypes(),
                 Extractors.newBuilder(evalContext.getSerializationService())
-                        .setGetterCacheType(GetterCache.Type.NOT_EVICTABLE)
+                        .setGetterCacheSupplier(NOT_EVICTABLE_GETTER_CACHE_SUPPLIER)
                         .build(),
                 evalContext.getSerializationService()
         );

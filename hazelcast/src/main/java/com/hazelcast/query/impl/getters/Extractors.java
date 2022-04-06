@@ -32,14 +32,15 @@ import com.hazelcast.query.impl.DefaultArgumentParser;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
+import static com.hazelcast.query.impl.getters.GetterCache.EVICTABLE_GETTER_CACHE_SUPPLIER;
 
 // one instance per MapContainer
 public final class Extractors {
-
     private static final int MAX_CLASSES_IN_CACHE = 1000;
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
     private static final float EVICTION_PERCENTAGE = 0.2f;
@@ -62,24 +63,12 @@ public final class Extractors {
             List<AttributeConfig> attributeConfigs,
             ClassLoader classLoader,
             InternalSerializationService ss,
-            GetterCache.Type getterCacheType
+            Supplier<GetterCache> getterCacheSupplier
     ) {
         this.extractors = attributeConfigs == null
                 ? Collections.<String, ValueExtractor>emptyMap()
                 : instantiateExtractors(attributeConfigs, classLoader);
-
-        switch (getterCacheType) {
-            case EVICTABLE:
-                this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
-                        MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
-                break;
-            case NOT_EVICTABLE:
-                this.getterCache = new NotEvictableGetterCache();
-                break;
-            default:
-                throw new IllegalStateException("Unsupported getter cache type");
-        }
-
+        this.getterCache = getterCacheSupplier.get();
         this.argumentsParser = new DefaultArgumentParser();
         this.ss = ss;
     }
@@ -209,7 +198,7 @@ public final class Extractors {
     public static final class Builder {
         private ClassLoader classLoader;
         private List<AttributeConfig> attributeConfigs;
-        private GetterCache.Type getterCacheType = GetterCache.Type.EVICTABLE;
+        private Supplier<GetterCache> getterCacheSupplier = EVICTABLE_GETTER_CACHE_SUPPLIER;
 
         private final InternalSerializationService ss;
 
@@ -217,8 +206,8 @@ public final class Extractors {
             this.ss = Preconditions.checkNotNull(ss);
         }
 
-        public Builder setGetterCacheType(GetterCache.Type getterCacheType) {
-            this.getterCacheType = getterCacheType;
+        public Builder setGetterCacheSupplier(Supplier<GetterCache> getterCacheSupplier) {
+            this.getterCacheSupplier = getterCacheSupplier;
             return this;
         }
 
@@ -236,7 +225,7 @@ public final class Extractors {
          * @return a new instance of Extractors
          */
         public Extractors build() {
-            return new Extractors(attributeConfigs, classLoader, ss, getterCacheType);
+            return new Extractors(attributeConfigs, classLoader, ss, getterCacheSupplier);
         }
     }
 }
