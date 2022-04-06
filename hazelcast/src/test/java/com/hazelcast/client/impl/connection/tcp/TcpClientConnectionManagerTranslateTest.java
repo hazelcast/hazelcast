@@ -203,6 +203,11 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         }
 
         @Override
+        public Address translate(Member member) {
+            return member.getAddress();
+        }
+
+        @Override
         public Addresses loadAddresses() {
             try {
                 return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
