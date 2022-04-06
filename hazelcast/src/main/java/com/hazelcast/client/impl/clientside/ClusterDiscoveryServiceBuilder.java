@@ -24,6 +24,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;

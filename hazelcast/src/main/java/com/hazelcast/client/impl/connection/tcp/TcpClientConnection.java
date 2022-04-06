@@ -77,6 +77,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile String closeReason;
     private String connectedServerVersion;
     private volatile UUID remoteUuid;
+    private volatile UUID clusterUuid;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -285,10 +286,6 @@ public class TcpClientConnection implements ClientConnection {
         this.connectedServerVersion = connectedServerVersion;
     }
 
-    public String getConnectedServerVersion() {
-        return connectedServerVersion;
-    }
-
     @Override
     public EventHandler getEventHandler(long correlationId) {
         return eventHandlerMap.get(correlationId);
@@ -302,6 +299,16 @@ public class TcpClientConnection implements ClientConnection {
     @Override
     public void addEventHandler(long correlationId, EventHandler handler) {
         eventHandlerMap.put(correlationId, handler);
+    }
+
+    @Override
+    public void setClusterUuid(UUID uuid) {
+        clusterUuid = uuid;
+    }
+
+    @Override
+    public UUID getClusterUuid() {
+        return clusterUuid;
     }
 
     // used in tests
