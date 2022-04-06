@@ -202,8 +202,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
             assertNotNull(clientStatistics);
             assertEquals(2, clientStatistics.size());
             List<UUID> expectedUUIDs = new ArrayList<>(2);
-            expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
-            expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
+            expectedUUIDs.add(client1.getLocalEndpoint().getUuid());
+            expectedUUIDs.add(client2.getLocalEndpoint().getUuid());
             for (Map.Entry<UUID, ClientStatistics> clientEntry : clientStatistics.entrySet()) {
                 assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
                 String clientAttributes = clientEntry.getValue().clientAttributes();
@@ -299,7 +299,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
         Set<Map.Entry<UUID, ClientStatistics>> entries = clientStatistics.entrySet();
         Map.Entry<UUID, ClientStatistics> statEntry = entries.iterator().next();
-        assertEquals(client.getClientClusterService().getLocalClient().getUuid(), statEntry.getKey());
+        assertEquals(client.getLocalEndpoint().getUuid(), statEntry.getKey());
         return parseClientAttributeValue(statEntry.getValue().clientAttributes());
     }
 
