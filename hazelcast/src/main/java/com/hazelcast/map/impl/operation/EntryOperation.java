@@ -85,10 +85,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * If the EntryProcessor implements Offloadable the invocation scenario looks as follows:
  * - EntryOperation fetches the entry and locks the given key on partition-thread
  * - Then the processing is offloaded to the given executor
- * - When the processing finishes
+ * - Then the processing finishes
  * if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
  * which sets the new value and unlocks the given key on partition-thread
- * if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the kiven key
+ * if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the given key
  * on partition thread
  * <p>
  * There will not be a conflict on a write due to the pessimistic locking of the key.
