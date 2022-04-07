@@ -531,4 +531,21 @@ public final class StringUtil {
         }
         return s.substring(maxLength - 1) + '…';
     }
+
+    /**
+     * Removes all occurrence of characters from the string.
+     */
+    public static String removeCharacter(String str, char charToRemove) {
+        if (str == null || str.indexOf(charToRemove) == -1) {
+            return str;
+        }
+        char[] chars = str.toCharArray();
+        int pos = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] != charToRemove) {
+                chars[pos++] = chars[i];
+            }
+        }
+        return new String(chars, 0, pos);
+    }
 }

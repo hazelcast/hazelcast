@@ -234,6 +234,19 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertFalse(isAnyNullOrEmptyAfterTrim("", "", null));
     }
 
+    @Test
+    public void when_removingCharactersFromString_then_properValue() {
+        assertEquals("", StringUtil.removeCharacter("-------", '-'));
+        assertEquals("-------", StringUtil.removeCharacter("-------", '0'));
+        assertEquals("-------", StringUtil.removeCharacter("-0-0-0-0-0-0-", '0'));
+        assertEquals("-------", StringUtil.removeCharacter("-00000-0-0000-0000-0-0-", '0'));
+    }
+
+    @Test
+    public void when_removingNotExistingCharactersFromString_then_sameInstanceIsReturned() {
+        assertTrue("-------" == StringUtil.removeCharacter("-------", '0'));
+    }
+
     private void assertResolvePlaceholder(String expected,
                                           String pattern,
                                           String placeholderNamespace,
