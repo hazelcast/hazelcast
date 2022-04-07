@@ -18,16 +18,25 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-public class JoinPProto<T, S> extends AbstractProcessor {
+import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparingLong;
+
+public class StreamToStreamJoinP extends AbstractProcessor {
+    private static final ExpressionEvalContext MOCK_EEC =
+            new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
     /**
      * <p>
      * JOIN condition should be transformed into such form:
@@ -36,34 +45,40 @@ public class JoinPProto<T, S> extends AbstractProcessor {
      *  r.time >= l.time - constant2
      * </pre>
      */
-    private final BiPredicateEx<T, S> joinCondition;
-    private final ToLongFunctionEx<T> leftTimestampExtractor;
-    private final ToLongFunctionEx<S> rightTimestampExtractor;
+    private final BiPredicateEx<JetSqlRow, JetSqlRow> joinCondition;
+    private final JetJoinInfo joinInfo;
+    private final ToLongFunctionEx<JetSqlRow> leftTimestampExtractor;
+    private final ToLongFunctionEx<JetSqlRow> rightTimestampExtractor;
     private final Map<Byte, Long>[] postponeTimeMap;
 
-    private final PriorityQueue<T> leftBuffer = new PriorityQueue<>();
-    private final PriorityQueue<S> rightBuffer = new PriorityQueue<>();
+    private final PriorityQueue<JetSqlRow> leftBuffer;
+    private final PriorityQueue<JetSqlRow> rightBuffer;
 
-    private Iterator<T> leftPos;
-    private Iterator<S> rightPos;
+    private Iterator<JetSqlRow> leftPos;
+    private Iterator<JetSqlRow> rightPos;
 
-    private T leftItem;
-    private S rightItem;
+    private JetSqlRow leftItem;
+    private JetSqlRow rightItem;
 
-    private Tuple2<T, S> pendingLeftOutput;
-    private Tuple2<T, S> pendingRightOutput;
+    private JetSqlRow pendingLeftOutput;
+    private JetSqlRow pendingRightOutput;
     private Watermark pendingWatermark;
 
-    public JoinPProto(
-            BiPredicateEx<T, S> joinCondition,
-            Map<Byte, Long>[] postponeTimeMap,
-            ToLongFunctionEx<T> leftTimestampExtractor,
-            ToLongFunctionEx<S> rightTimestampExtractor
+    public StreamToStreamJoinP(
+            final BiPredicateEx<JetSqlRow, JetSqlRow> joinCondition,
+            final JetJoinInfo joinInfo,
+            final ToLongFunctionEx<JetSqlRow> leftTimestampExtractor,
+            final ToLongFunctionEx<JetSqlRow> rightTimestampExtractor,
+            final Map<Byte, Long>[] postponeTimeMap
     ) {
         this.joinCondition = joinCondition;
-        this.postponeTimeMap = postponeTimeMap;
+        this.joinInfo = joinInfo;
         this.leftTimestampExtractor = leftTimestampExtractor;
         this.rightTimestampExtractor = rightTimestampExtractor;
+        this.postponeTimeMap = postponeTimeMap;
+
+        leftBuffer = new PriorityQueue<>(comparingLong(leftTimestampExtractor));
+        rightBuffer = new PriorityQueue<>(comparingLong(rightTimestampExtractor));
     }
 
     @Override
@@ -77,7 +92,7 @@ public class JoinPProto<T, S> extends AbstractProcessor {
 
         // left input, traverse right buffer
         if (leftItem == null) {
-            leftItem = (T) item;
+            leftItem = (JetSqlRow) item;
             leftBuffer.offer(leftItem);
             rightPos = rightBuffer.iterator();
         }
@@ -87,10 +102,8 @@ public class JoinPProto<T, S> extends AbstractProcessor {
             return true;
         }
 
-        // TODO: use JOIN condition
-        // TODO: tuple -> real join operation.
-        pendingLeftOutput = Tuple2.tuple2(leftItem, rightPos.next());
-        if (tryEmit(pendingLeftOutput)) {
+        pendingLeftOutput = ExpressionUtil.join(leftItem, rightPos.next(), joinInfo.condition(), MOCK_EEC);
+        if (pendingLeftOutput != null && tryEmit(pendingLeftOutput)) {
             pendingLeftOutput = null;
         }
         return false;
@@ -107,7 +120,7 @@ public class JoinPProto<T, S> extends AbstractProcessor {
 
         // right input, traverse left buffer
         if (rightItem == null) {
-            rightItem = (S) item;
+            rightItem = (JetSqlRow) item;
             rightBuffer.offer(rightItem);
             leftPos = leftBuffer.iterator();
         }
@@ -117,10 +130,8 @@ public class JoinPProto<T, S> extends AbstractProcessor {
             return true;
         }
 
-        // TODO: use JOIN condition
-        // TODO: tuple -> real join operation.
-        pendingRightOutput = Tuple2.tuple2(leftPos.next(), rightItem);
-        if (tryEmit(pendingRightOutput)) {
+        pendingRightOutput = ExpressionUtil.join(leftPos.next(), rightItem, joinInfo.condition(), MOCK_EEC);
+        if (pendingRightOutput != null && tryEmit(pendingRightOutput)) {
             pendingRightOutput = null;
         }
         return false;

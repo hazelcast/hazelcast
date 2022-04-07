@@ -92,7 +92,7 @@ import static java.util.stream.Collectors.toMap;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
- *
+ * <p>
  * The {@code init()} and {@code close()} methods of {@link
  * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
  * the {@link #verifyProcessor} using one of these.
@@ -213,7 +213,8 @@ public final class TestSupport {
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
-    private Runnable beforeEachRun = () -> { };
+    private Runnable beforeEachRun = () -> {
+    };
 
     private int localProcessorIndex;
     private int globalProcessorIndex;
@@ -278,9 +279,9 @@ public final class TestSupport {
      * item0 from input0, item0 from input1, item1 from input0 etc.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List, int[])} - if you want to specify input
-     *     priorities
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List, int[])} - if you want to specify input
+     * priorities
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -297,8 +298,8 @@ public final class TestSupport {
      * round-robin fashion.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List)} - if all inputs are of equal priority
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List)} - if all inputs are of equal priority
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -337,7 +338,7 @@ public final class TestSupport {
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
         assertOutput(
-            expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
+                expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
         );
     }
 
@@ -348,7 +349,7 @@ public final class TestSupport {
      * can be used in the assertion message.
      *
      * @param outputOrdinalCount how many output ordinals should be created
-     * @param assertFn an assertion function which takes the current mode and the collected output
+     * @param assertFn           an assertion function which takes the current mode and the collected output
      */
     public void assertOutput(int outputOrdinalCount, BiConsumer<TestMode, List<List<Object>>> assertFn) {
         assertOutputFn = assertFn;
@@ -415,9 +416,9 @@ public final class TestSupport {
      * Has no effect if calling {@code complete()} is {@linkplain
      * #disableCompleteCall() disabled}.
      *
-     * @param timeoutMillis maximum time to wait for the output to match
+     * @param timeoutMillis   maximum time to wait for the output to match
      * @param extraTimeMillis for how long to call {@code complete()}
-     *                       after the output matches
+     *                        after the output matches
      * @return {@code this} instance for fluent API
      */
     public TestSupport runUntilOutputMatches(long timeoutMillis, long extraTimeMillis) {
@@ -568,7 +569,7 @@ public final class TestSupport {
         beforeEachRun.run();
 
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
-            : "Illegal combination: don't do snapshots, but do restore";
+                : "Illegal combination: don't do snapshots, but do restore";
 
         boolean doSnapshots = testMode.doSnapshots;
         int doRestoreEvery = testMode.restoreInterval;
@@ -576,7 +577,7 @@ public final class TestSupport {
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
         int idleCount = 0;
-        System.out.println("### Running the test, mode=" + testMode.toString());
+        System.out.println("### Running the test, mode=" + testMode);
 
         TestInbox inbox = new TestInbox();
         int inboxOrdinal = -1;
@@ -605,11 +606,11 @@ public final class TestSupport {
             if (inbox.isEmpty() && inputPosition < input.size()) {
                 inboxOrdinal = input.get(inputPosition).ordinal;
                 for (int added = 0;
-                        inputPosition < input.size()
-                                && added < testMode.inboxLimit()
-                                && inboxOrdinal == input.get(inputPosition).ordinal
-                                && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
-                        added++
+                     inputPosition < input.size()
+                             && added < testMode.inboxLimit()
+                             && inboxOrdinal == input.get(inputPosition).ordinal
+                             && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
+                     added++
                 ) {
                     ObjectWithOrdinal objectWithOrdinal = input.get(inputPosition++);
                     inbox.queue().add(objectWithOrdinal.item);
@@ -623,7 +624,7 @@ public final class TestSupport {
             String methodName;
             methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor);
             boolean madeProgress = inbox.size() < lastInboxSize ||
-                (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
             if (outbox[0].bucketCount() > 0 && outbox[0].queue(0).size() == 1 && !inbox.isEmpty()) {
@@ -651,7 +652,7 @@ public final class TestSupport {
             do {
                 doCall("complete", isCooperative, () -> done[0] = processor[0].complete());
                 boolean madeProgress = done[0] ||
-                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                        (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
                 if (outbox[0].hasUnfinishedItem()) {
@@ -691,7 +692,7 @@ public final class TestSupport {
         assertOutputFn.accept(testMode, actualOutputs);
     }
 
-    private void assertExpectedOutput(TestMode mode, List<List<?>> expected , List<List<Object>> actual) {
+    private void assertExpectedOutput(TestMode mode, List<List<?>> expected, List<List<Object>> actual) {
         for (int i = 0; i < expected.size(); i++) {
             List<?> expectedOutput = expected.get(i);
             List<?> actualOutput = actual.get(i);
@@ -715,7 +716,7 @@ public final class TestSupport {
         SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
         for (int i = 0; i < priorities.length; i++) {
             ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
-                            .add(i);
+                    .add(i);
         }
 
         List<ObjectWithOrdinal> result = new ArrayList<>();
@@ -746,7 +747,7 @@ public final class TestSupport {
         if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
             doCall("tryProcessWatermark", isCooperative, () -> {
-                if (processor[0].tryProcessWatermark(wm)) {
+                if (processor[0].tryProcessWatermark(inboxOrdinal, wm)) {
                     inbox.remove();
                 }
             });
@@ -838,7 +839,7 @@ public final class TestSupport {
         if (isCooperative) {
             if (cooperativeTimeout > 0) {
                 assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-                        toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
+                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
                         elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
             }
             // print warning
@@ -951,13 +952,13 @@ public final class TestSupport {
      */
     private static String listToString(List<?> list) {
         return list.stream()
-                   .map(obj -> {
-                       if (obj instanceof Object[]) {
-                           return Arrays.toString((Object[]) obj);
-                       }
-                       return String.valueOf(obj);
-                   })
-                   .collect(Collectors.joining("\n"));
+                .map(obj -> {
+                    if (obj instanceof Object[]) {
+                        return Arrays.toString((Object[]) obj);
+                    }
+                    return String.valueOf(obj);
+                })
+                .collect(Collectors.joining("\n"));
     }
 
     private static class ObjectWithOrdinal {
@@ -1025,7 +1026,7 @@ public final class TestSupport {
                 return "snapshots enabled, never restoring them, inboxLimit=" + sInboxSize;
             } else {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
-                    + restoreInterval + ", inboxLimit=" + inboxLimit);
+                        + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
         }
     }

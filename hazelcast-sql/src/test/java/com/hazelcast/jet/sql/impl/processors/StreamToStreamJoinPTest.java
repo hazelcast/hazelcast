@@ -20,10 +20,13 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,12 +35,18 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Objects;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static java.util.Arrays.asList;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class JoinPProtoTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
+    private static final Expression<Boolean> TRUE_PREDICATE =
+            (Expression<Boolean>) ConstantExpression.create(true, BOOLEAN);
+
     private HashMap<Byte, Long>[] postponeTimeMap;
+    private JetJoinInfo joinInfo;
 
     @Before
     public void before() {
@@ -45,6 +54,14 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
         postponeTimeMap = new HashMap[2];
         postponeTimeMap[0] = new HashMap<>();
         postponeTimeMap[1] = new HashMap<>();
+
+        joinInfo = new JetJoinInfo(
+                JoinRelType.INNER,
+                new int[]{0},
+                new int[]{0},
+                null,
+                TRUE_PREDICATE
+        );
     }
 
     @Test
@@ -52,19 +69,23 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
         postponeTimeMap[0].put((byte) 0, 1L);
         postponeTimeMap[1].put((byte) 1, 1L);
 
-        SupplierEx<Processor> supplier =
-                () -> new JoinPProto<Long, Long>(Objects::equals, postponeTimeMap, l -> l, r -> r);
+        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                Objects::equals,
+                joinInfo,
+                l -> l.getRow().get(0),
+                r -> r.getRow().get(0),
+                postponeTimeMap);
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .inputs(asList(
                         asList(
-                                0L,
-                                1L,
+                                jetRow(0L),
+                                jetRow(1L),
                                 wm((byte) 0, 1L)
                         ),
                         asList(
-                                0L,
-                                1L,
+                                jetRow(0L),
+                                jetRow(1L),
                                 wm((byte) 1, 1L)
                         )
                 ))
@@ -72,12 +93,12 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
                         asList(
                                 // left <- 0
                                 // right <- 0
-                                Tuple2.tuple2(0L, 0L),
+                                jetRow(0L, 0L),
                                 // left <- 1
-                                Tuple2.tuple2(1L, 0L),
+                                jetRow(1L, 0L),
                                 // right <- 1
-                                Tuple2.tuple2(0L, 1L),
-                                Tuple2.tuple2(1L, 1L),
+                                jetRow(0L, 1L),
+                                jetRow(1L, 1L),
                                 wm((byte) 0, 1L),
                                 wm((byte) 1, 1L)
                         )
@@ -89,27 +110,32 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
         postponeTimeMap[0].put((byte) 0, 2L);
         postponeTimeMap[1].put((byte) 1, 2L);
 
-        SupplierEx<Processor> supplier =
-                () -> new JoinPProto<Long, Long>(Objects::equals, postponeTimeMap, l -> l, r -> r);
+        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                Objects::equals,
+                joinInfo,
+                l -> l.getRow().get(0),
+                r -> r.getRow().get(0),
+                postponeTimeMap);
+
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .inputs(asList(
                         asList(
-                                0L,
-                                1L,
+                                jetRow(0L),
+                                jetRow(1L),
                                 wm((byte) 0, 1L),
                                 wm((byte) 0, 3L),
-                                5L,
-                                6L,
+                                jetRow(5L),
+                                jetRow(6L),
                                 wm((byte) 0, 6L)
                         ),
                         asList(
-                                0L,
-                                1L,
+                                jetRow(0L),
+                                jetRow(1L),
                                 wm((byte) 1, 1L),
                                 wm((byte) 1, 3L),
-                                5L,
-                                6L,
+                                jetRow(5L),
+                                jetRow(6L),
                                 wm((byte) 1, 6L)
                         )
                 ))
@@ -117,24 +143,24 @@ public class JoinPProtoTest extends SimpleTestInClusterSupport {
                         asList(
                                 // left <- 0
                                 // right <- 0
-                                Tuple2.tuple2(0L, 0L),
+                                jetRow(0L, 0L),
                                 // left <- 1
-                                Tuple2.tuple2(1L, 0L),
+                                jetRow(1L, 0L),
                                 // right <- 1
-                                Tuple2.tuple2(0L, 1L),
-                                Tuple2.tuple2(1L, 1L),
+                                jetRow(0L, 1L),
+                                jetRow(1L, 1L),
                                 wm((byte) 0, 1L),
                                 wm((byte) 1, 1L),
                                 wm((byte) 0, 3L),
                                 wm((byte) 1, 3L),
                                 // left <- 5
                                 // right <- 5
-                                Tuple2.tuple2(5L, 5L),
+                                jetRow(5L, 5L),
                                 // left <- 6
-                                Tuple2.tuple2(6L, 5L),
+                                jetRow(6L, 5L),
                                 // right <- 6
-                                Tuple2.tuple2(5L, 6L),
-                                Tuple2.tuple2(6L, 6L),
+                                jetRow(5L, 6L),
+                                jetRow(6L, 6L),
                                 wm((byte) 0, 6L),
                                 wm((byte) 1, 6L)
                         )
