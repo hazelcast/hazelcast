@@ -319,10 +319,10 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
         collectionCycle.notifyAllGauges(gauges.values());
-        MetricDescriptorReusableData cycleReusableData = collectionCycle.cleanUp();
-        boolean set = metricDescriptorReusableData.compareAndSet(null, cycleReusableData);
+        MetricDescriptorReusableData reusableData = collectionCycle.cleanUp();
+        boolean set = metricDescriptorReusableData.compareAndSet(null, reusableData);
         if (!set) {
-            cycleReusableData.destroy();
+            reusableData.destroy();
         }
     }
 

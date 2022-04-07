@@ -18,19 +18,22 @@ package com.hazelcast.internal.metrics.impl;
 
 import java.util.Arrays;
 
+/**
+ * DTO for data that can be reused for  next metrics collection.
+ */
 class MetricDescriptorReusableData {
-    private final int allCreatedEndSize;
+    private final int allCreatedLastSize;
     private final MetricDescriptorImpl[] pool;
     private final int poolPtr;
 
-    MetricDescriptorReusableData(int allCreatedEndSize, MetricDescriptorImpl[] pool, int poolPtr) {
-        this.allCreatedEndSize = allCreatedEndSize;
+    MetricDescriptorReusableData(int allCreatedLastSize, MetricDescriptorImpl[] pool, int poolPtr) {
+        this.allCreatedLastSize = allCreatedLastSize;
         this.pool = pool;
         this.poolPtr = poolPtr;
     }
 
-    int getAllCreatedEndSize() {
-        return allCreatedEndSize;
+    int getAllCreatedLastSize() {
+        return allCreatedLastSize;
     }
 
     MetricDescriptorImpl[] getPool() {
