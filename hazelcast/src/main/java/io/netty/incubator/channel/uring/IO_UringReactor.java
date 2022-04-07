@@ -216,6 +216,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             boolean moreWork = scheduler.tick();
 
+            flushDirtyChannels();
+
             if (!cq.hasCompletions()) {
                 if (spin || moreWork) {
                     sq.submit();
@@ -387,12 +389,12 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             frontend.handleResponse(responseChain);
         }
 
-
-        if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
-            // if it is already scheduled, we don't need to process outbound since
-            // it is guaranteed to be done at some point in the future.
-            handleOutbound(channel);
-        }
+//
+//        if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
+//            // if it is already scheduled, we don't need to process outbound since
+//            // it is guaranteed to be done at some point in the future.
+//            handleOutbound(channel);
+//        }
     }
 
     @Override

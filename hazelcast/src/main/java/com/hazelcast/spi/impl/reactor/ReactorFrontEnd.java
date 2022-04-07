@@ -6,6 +6,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
@@ -289,10 +290,11 @@ public class ReactorFrontEnd {
     }
 
     public class ResponseThread extends Thread {
-        public final BlockingQueue<Frame> queue = new LinkedBlockingQueue();
+        public final MPSCQueue<Frame> queue;
 
         public ResponseThread() {
             super("ResponseThread");
+            this.queue = new MPSCQueue<>(this, null);
         }
 
         @Override
