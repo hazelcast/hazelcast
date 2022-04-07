@@ -761,7 +761,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.9</version>
+            <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
 
