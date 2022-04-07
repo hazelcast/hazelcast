@@ -52,8 +52,6 @@ public final class Scheduler {
                         op.response.release();
                     }
                     op.request.release();
-                    op.request = null;
-                    op.response = null;
                     op.release();
                     break;
                 default:

@@ -30,7 +30,6 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
-
     protected final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(512);
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
@@ -40,7 +39,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
-        this.scheduler = new Scheduler(4096, Integer.MAX_VALUE);
+        this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {

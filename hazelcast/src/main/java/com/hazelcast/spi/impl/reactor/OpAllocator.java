@@ -10,8 +10,6 @@ import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_OPCODE;
 
 public final class OpAllocator {
 
-    // Hacky pooling.
-
     private final Pool[] pools;
 
     public OpAllocator() {
@@ -21,24 +19,25 @@ public final class OpAllocator {
         pools[2] = new Pool(NoOp::new);
     }
 
-    protected final Op allocate(Frame request) {
+    protected Op allocate(Frame request) {
         int opcode = request.getInt(OFFSET_REQUEST_OPCODE);
         Pool pool = pools[opcode];
-        //pool.allocated++;
+        pool.allocated++;
         Op op;
         if (pool.index == -1) {
             op = pool.supplier.get();
             op.allocator = this;
         } else {
-            //pool.allocatedFromPool++;
             op = pool.array[pool.index];
-            pool.array[pool.index] = null;
+            pool.array[pool.index] = null;//not needed
             pool.index--;
+            pool.allocatedFromPool++;
         }
 
-//        if (pool.allocated % 100 == 0) {
-//            System.out.println("allocate pooled percentage: " + ((pool.allocatedFromPool * 100f) / pool.allocated) + " %");
-//        }
+        if (pool.allocated % 1000000 == 0) {
+            System.out.println("allocate pooled percentage: " +
+                    ((pool.allocatedFromPool * 100f) / pool.allocated) + " %, dropped:"+ pool.dropped);
+        }
 
         return op;
     }
@@ -46,6 +45,7 @@ public final class OpAllocator {
     public void free(Op op) {
         Pool pool = pools[op.opcode];
         if (pool.index == pool.array.length - 1) {
+            pool.dropped++;
             return;
         }
 
@@ -57,11 +57,13 @@ public final class OpAllocator {
     }
 
     private static class Pool {
+        public long dropped;
+        // index points to first item that can be removed.
         private int index = -1;
-        private Op[] array = new Op[256];
+        private Op[] array = new Op[16384];
         private Supplier<Op> supplier;
-        //private long allocatedFromPool = 0;
-        //private long allocated = 0;
+        private long allocatedFromPool = 0;
+        private long allocated = 0;
 
         private Pool(Supplier supplier) {
             this.supplier = supplier;
