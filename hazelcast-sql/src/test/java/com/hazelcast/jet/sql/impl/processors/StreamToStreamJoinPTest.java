@@ -33,7 +33,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
-import java.util.Objects;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
@@ -70,7 +69,6 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
         postponeTimeMap[1].put((byte) 1, 1L);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                Objects::equals,
                 joinInfo,
                 l -> l.getRow().get(0),
                 r -> r.getRow().get(0),
@@ -111,7 +109,6 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
         postponeTimeMap[1].put((byte) 1, 2L);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                Objects::equals,
                 joinInfo,
                 l -> l.getRow().get(0),
                 r -> r.getRow().get(0),

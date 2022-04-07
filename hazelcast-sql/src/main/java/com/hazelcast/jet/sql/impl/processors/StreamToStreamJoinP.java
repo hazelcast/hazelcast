@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
-import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -35,6 +34,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparingLong;
 
 public class StreamToStreamJoinP extends AbstractProcessor {
+    // TODO: replace with ExpressionEvalContext.from(context) in init() method.
     private static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
     /**
@@ -45,7 +45,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
      *  r.time >= l.time - constant2
      * </pre>
      */
-    private final BiPredicateEx<JetSqlRow, JetSqlRow> joinCondition;
     private final JetJoinInfo joinInfo;
     private final ToLongFunctionEx<JetSqlRow> leftTimestampExtractor;
     private final ToLongFunctionEx<JetSqlRow> rightTimestampExtractor;
@@ -65,13 +64,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Watermark pendingWatermark;
 
     public StreamToStreamJoinP(
-            final BiPredicateEx<JetSqlRow, JetSqlRow> joinCondition,
             final JetJoinInfo joinInfo,
             final ToLongFunctionEx<JetSqlRow> leftTimestampExtractor,
             final ToLongFunctionEx<JetSqlRow> rightTimestampExtractor,
             final Map<Byte, Long>[] postponeTimeMap
     ) {
-        this.joinCondition = joinCondition;
         this.joinInfo = joinInfo;
         this.leftTimestampExtractor = leftTimestampExtractor;
         this.rightTimestampExtractor = rightTimestampExtractor;
