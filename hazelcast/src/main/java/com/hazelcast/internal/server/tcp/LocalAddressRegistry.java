@@ -120,12 +120,17 @@ public class LocalAddressRegistry {
                     // remove previous addresses from the addressToUuid map
                     previousAddresses.getAllAddresses().forEach(address -> addressToUuid.remove(address, uuid));
                     logger.warning(previousAddresses + " previously registered for the instance uuid=" + instanceUuid
-                            + " are overridden by a new distinct set of addresses: " + linkedAddresses);
+                            + " are overridden by a new distinct set of addresses: " + linkedAddresses
+                            + ". We expect to see this log only in the hot member restart is performed"
+                            + " where a new member restarts with the same member uuid by picking up"
+                            + " different addresses for itself AND where some stale connections to the"
+                            + " old shutdown member having the same uuid, is not closed yet on this"
+                            + " member.");
                 }
             }
             linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, instanceUuid));
-            if (logger.isFinestEnabled()) {
-                logger.finest(linkedAddresses + " registered for the instance uuid=" + instanceUuid
+            if (logger.isFineEnabled()) {
+                logger.fine(linkedAddresses + " registered for the instance uuid=" + instanceUuid
                         + " currently all registered addresses for this instance uuid: "
                         + linkedAddressesRegistrationCountPair.getAddresses());
             }
