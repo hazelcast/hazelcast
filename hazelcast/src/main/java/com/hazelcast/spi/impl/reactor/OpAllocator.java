@@ -33,11 +33,11 @@ public final class OpAllocator {
             pool.index--;
             pool.allocatedFromPool++;
         }
-
-        if (pool.allocated % 1000000 == 0) {
-            System.out.println("allocate pooled percentage: " +
-                    ((pool.allocatedFromPool * 100f) / pool.allocated) + " %, dropped:"+ pool.dropped);
-        }
+//
+//        if (pool.allocated % 1000000 == 0) {
+//            System.out.println("allocate pooled percentage: " +
+//                    ((pool.allocatedFromPool * 100f) / pool.allocated) + " %, dropped:"+ pool.dropped);
+//        }
 
         return op;
     }
