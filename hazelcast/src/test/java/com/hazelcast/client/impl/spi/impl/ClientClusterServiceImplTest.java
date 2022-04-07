@@ -371,6 +371,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         //called on cluster change
         clusterService.onClusterChange();
         assertEquals(1, clusterService.getMemberList().size());
+        assertEquals(ClientClusterServiceImpl.INITIAL_MEMBER_LIST_VERSION, clusterService.getMemberListVersion());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
     }

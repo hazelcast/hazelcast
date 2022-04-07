@@ -63,14 +63,14 @@ import static java.util.Collections.unmodifiableSet;
  * - firing membership events based on the incoming MemberListSnapshot events.
  */
 public class ClientClusterServiceImpl implements ClientClusterService {
-    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
     /**
      * Initial list version is used at the start and also after cluster has changed with blue-green deployment feature.
      * In both cases, we need to fire InitialMembershipEvent.
      */
-    private static final int INITIAL_LIST_VERSION = -1;
+    public static final int INITIAL_MEMBER_LIST_VERSION = -1;
+    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
     private final AtomicReference<MemberListSnapshot> memberListSnapshot =
-            new AtomicReference<>(new MemberListSnapshot(INITIAL_LIST_VERSION, new LinkedHashMap<>(), null));
+            new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final Object clusterViewLock = new Object();
@@ -183,7 +183,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             // This check is necessary so in order not to override changing cluster information when:
             // - registering cluster view listener back to the new cluster.
             // - on authentication response when cluster uuid change is detected.
-            if (clusterViewSnapshot.version != INITIAL_LIST_VERSION) {
+            if (clusterViewSnapshot.version != INITIAL_MEMBER_LIST_VERSION) {
                 memberListSnapshot.set(new MemberListSnapshot(0,
                         clusterViewSnapshot.members,
                         clusterViewSnapshot.clusterUuid));
@@ -198,10 +198,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             }
             initialListFetchedLatch = new CountDownLatch(1);
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-            memberListSnapshot.set(new MemberListSnapshot(INITIAL_LIST_VERSION,
+            memberListSnapshot.set(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION,
                     clusterViewSnapshot.members,
                     clusterViewSnapshot.clusterUuid));
         }
+    }
+
+    //public for tests on enterprise
+    public int getMemberListVersion() {
+        return memberListSnapshot.get().version;
     }
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
@@ -297,10 +302,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                     + membersString(snapshot));
         }
         MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-        if (clusterViewSnapshot.version == INITIAL_LIST_VERSION) {
+        if (clusterViewSnapshot.version == INITIAL_MEMBER_LIST_VERSION) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (clusterViewSnapshot.version == INITIAL_LIST_VERSION) {
+                if (clusterViewSnapshot.version == INITIAL_MEMBER_LIST_VERSION) {
                     //this means this is the first time client connected to cluster/cluster has changed(blue/green)
                     applyInitialState(memberListVersion, memberInfos, clusterUuid);
                     initialListFetchedLatch.countDown();
