@@ -4,8 +4,8 @@ import java.io.EOFException;
 
 public abstract class Op {
 
-    public final static int RUN_CODE_DONE = 0;
-    public final static int RUN_CODE_FOO = 1;
+    public final static int COMPLETED = 0;
+    public final static int RUN_CODE_BLOCK = 1;
 
     public int partitionId;
     public Managers managers;
@@ -13,6 +13,7 @@ public abstract class Op {
     public StringBuffer name = new StringBuffer();
     public Frame request;
     public Frame response;
+    public OpAllocator allocator;
 
     public Op(int opcode) {
         this.opcode = opcode;
@@ -27,6 +28,12 @@ public abstract class Op {
 
     public abstract int run() throws Exception;
 
-    public void cleanup() {
+    public void clear() {
+    }
+
+    public void release(){
+        if(allocator!=null){
+            allocator.free(this);
+        }
     }
 }

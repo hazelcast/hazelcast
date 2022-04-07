@@ -11,10 +11,10 @@ public class SelectByKeyOperation extends Op {
 
     @Override
     public int run() {
-        return Op.RUN_CODE_DONE;
+        return Op.COMPLETED;
     }
 
     @Override
-    public void cleanup() {
+    public void clear() {
     }
 }

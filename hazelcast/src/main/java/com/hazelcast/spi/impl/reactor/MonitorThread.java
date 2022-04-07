@@ -63,14 +63,14 @@ public final class MonitorThread extends Thread {
     }
 
     private void displayReactor(Reactor reactor, long elapsed) {
-        System.out.println(reactor + " processed-request-count:" + reactor.processedRequest.get());
+        System.out.println(reactor + " request-count:" + reactor.requests.get());
         System.out.println(reactor + " channel-count:" + reactor.channels().size());
 
-        long processedRequest = reactor.processedRequest.get();
-        Prev prevProcessedRequest = getPrev(reactor.processedRequest);
-        long packetsReadDelta = processedRequest - prevProcessedRequest.value;
-        System.out.println(reactor + " " + thp(packetsReadDelta, elapsed) + " processed-requests/second");
-        prevProcessedRequest.value = processedRequest;
+        long requests = reactor.requests.get();
+        Prev prevRequests = getPrev(reactor.requests);
+        long requestsDelta = requests - prevRequests.value;
+        System.out.println(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
+        prevRequests.value = requests;
     }
 
     private void displayChannel(Channel channel, long elapsed) {

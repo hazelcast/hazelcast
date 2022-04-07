@@ -44,7 +44,11 @@ public class NioChannel extends Channel {
 
     @Override
     public void write(Frame frame) {
-        pending.add(frame);
+        if (Thread.currentThread() == reactor) {
+            addFrame(frame);
+        } else {
+            pending.add(frame);
+        }
     }
 
     @Override

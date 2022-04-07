@@ -28,7 +28,7 @@ import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_READ;
 
-public class NioReactor extends Reactor {
+public final class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
@@ -96,8 +96,13 @@ public class NioReactor extends Reactor {
         while (!frontend.shuttingdown) {
             runTasks();
 
+            boolean moreWork = scheduler.tick();
+            //todo: dirty channels are not scheduled here.
+
+            flushDirtyChannels();
+
             int keyCount;
-            if (spin) {
+            if (spin || moreWork) {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
@@ -110,24 +115,28 @@ public class NioReactor extends Reactor {
             }
 
             if (keyCount > 0) {
-                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-                while (it.hasNext()) {
-                    SelectionKey key = it.next();
-                    it.remove();
+                handleSelectedKeys();
+            }
+        }
+    }
 
-                    if (key.isValid() && key.isAcceptable()) {
-                        handleAccept();
-                    }
+    private void handleSelectedKeys() throws IOException {
+        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+        while (it.hasNext()) {
+            SelectionKey key = it.next();
+            it.remove();
 
-                    if (key.isValid() && key.isReadable()) {
-                        handleRead(key);
-                    }
+            if (key.isValid() && key.isAcceptable()) {
+                handleAccept();
+            }
 
-                    if (!key.isValid()) {
-                        //System.out.println("sk not valid");
-                        key.cancel();
-                    }
-                }
+            if (key.isValid() && key.isReadable()) {
+                handleRead(key);
+            }
+
+            if (!key.isValid()) {
+                //System.out.println("sk not valid");
+                key.cancel();
             }
         }
     }
@@ -188,10 +197,6 @@ public class NioReactor extends Reactor {
 
         if (responseChain != null) {
             frontend.handleResponse(responseChain);
-        }
-
-        if (!channel.pending.isEmpty() && !channel.scheduled.get() && channel.scheduled.compareAndSet(false, true)) {
-            handleOutbound(channel);
         }
     }
 

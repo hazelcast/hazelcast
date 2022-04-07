@@ -6,7 +6,6 @@ import com.hazelcast.table.Item;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_CALL_ID;
 
 public class UpsertOp extends Op {
@@ -32,6 +31,6 @@ public class UpsertOp extends Op {
                 .completeWriting();
 
 
-        return Op.RUN_CODE_DONE;
+        return Op.COMPLETED;
     }
 }

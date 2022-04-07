@@ -214,8 +214,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         while (!frontend.shuttingdown) {
             runTasks();
 
+            boolean moreWork = scheduler.tick();
+
             if (!cq.hasCompletions()) {
-                if (spin) {
+                if (spin || moreWork) {
                     sq.submit();
                 } else {
                     wakeupNeeded.set(true);
@@ -392,8 +394,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             handleOutbound(channel);
         }
     }
-
-
 
     @Override
     protected void handleOutbound(Channel c) {

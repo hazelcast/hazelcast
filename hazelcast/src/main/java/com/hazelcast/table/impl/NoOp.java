@@ -19,9 +19,11 @@ public class NoOp extends Op {
 
     @Override
     public int run() throws Exception {
+        //System.out.println("NoOp.run");
+
          response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
                 .completeWriting();
 
-        return Op.RUN_CODE_DONE;
+        return Op.COMPLETED;
     }
 }

@@ -6,9 +6,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.table.impl.NoOp;
-import com.hazelcast.table.impl.SelectByKeyOperation;
-import com.hazelcast.table.impl.UpsertOp;
 
 import java.net.SocketAddress;
 import java.util.Collection;
@@ -18,13 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_OPCODE;
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
-import static com.hazelcast.spi.impl.reactor.Op.RUN_CODE_DONE;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_SELECT_BY_KEY;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 
 public abstract class Reactor extends HazelcastManagedThread {
     protected final ReactorFrontEnd frontend;
@@ -33,10 +24,14 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final int port;
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
-    protected final FrameAllocator responseFrameAllocator = new UnpooledFrameAllocator(128);
     protected final FrameAllocator requestFrameAllocator = new UnpooledFrameAllocator(128);
+    protected final FrameAllocator responseFrameAllocator = new UnpooledFrameAllocator(128);
     protected final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
-    protected final SwCounter processedRequest = newSwCounter();
+    protected final SwCounter requests = SwCounter.newSwCounter();
+    protected final Scheduler scheduler;
+    private final OpAllocator opAllocator = new OpAllocator();
+
+    protected final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(512);
 
     public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
         super(name);
@@ -45,6 +40,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.logger = frontend.nodeEngine.getLogger(getClass());
         this.thisAddress = thisAddress;
         this.port = port;
+        this.scheduler = new Scheduler(4096, Integer.MAX_VALUE);
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -78,8 +74,12 @@ public abstract class Reactor extends HazelcastManagedThread {
     }
 
     public void schedule(Channel channel) {
-        runQueue.add(channel);
-        wakeup();
+        if (Thread.currentThread() == this) {
+            dirtyChannels.enqueue(channel);
+        } else {
+            runQueue.add(channel);
+            wakeup();
+        }
     }
 
     public void schedule(ConnectRequest request) {
@@ -95,80 +95,32 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected abstract void handleOutbound(Channel task);
 
-    protected void handleRequest(Frame request) {
-        processedRequest.inc();
-
-        Op op = null;
+    @Override
+    public final void executeRun() {
         try {
-            op = allocateOp(request);
-            int runCode = op.run();
-            switch (runCode) {
-                case RUN_CODE_DONE:
-                    break;
-                default:
-                    throw new RuntimeException();
-            }
+            setupServerSocket();
+        } catch (Throwable e) {
+            logger.severe(e);
+            return;
+        }
 
-            if (request.future == null) {
-                request.channel.write(op.response);
-            } else {
-                request.future.complete(op.response);
-                op.response.release();
-            }
-            op.request.release();
-            op.request = null;
-            op.response = null;
-        } catch (Exception e) {
+        try {
+            eventLoop();
+        } catch (Throwable e) {
             e.printStackTrace();
-        } finally {
-            if (op != null) {
-                free(op);
+            logger.severe(e);
+        }
+    }
+
+    protected void flushDirtyChannels() {
+        for (; ; ) {
+            Channel channel = dirtyChannels.dequeue();
+            if (channel == null) {
+                break;
             }
+
+            handleOutbound(channel);
         }
-    }
-
-    // Hacky pooling.
-    private UpsertOp upsertOp;
-    private NoOp noOp;
-    private SelectByKeyOperation selectByKeyOperation;
-
-    protected final Op allocateOp(Frame request) {
-        int opcode = request.getInt(OFFSET_REQUEST_OPCODE);
-        Op op;
-        switch (opcode) {
-            case TABLE_UPSERT:
-                if (upsertOp == null) {
-                    upsertOp = new UpsertOp();
-                    upsertOp.managers = frontend.managers;
-                }
-                op = upsertOp;
-                break;
-            case TABLE_SELECT_BY_KEY:
-                if (selectByKeyOperation == null) {
-                    selectByKeyOperation = new SelectByKeyOperation();
-                    selectByKeyOperation.managers = frontend.managers;
-                }
-                op = selectByKeyOperation;
-                break;
-            case TABLE_NOOP:
-                if (noOp == null) {
-                    noOp = new NoOp();
-                    noOp.managers = frontend.managers;
-                }
-                op = noOp;
-                break;
-            default:
-                throw new RuntimeException("Unrecognized opcode:" + opcode);
-        }
-        op.request = request.position(OFFSET_REQUEST_PAYLOAD);
-        op.response = responseFrameAllocator.allocate(21);
-        return op;
-    }
-
-    private void free(Op op) {
-        op.cleanup();
-        op.request = null;
-        op.response = null;
     }
 
     protected void runTasks() {
@@ -190,20 +142,12 @@ public abstract class Reactor extends HazelcastManagedThread {
         }
     }
 
-    @Override
-    public final void executeRun() {
-        try {
-            setupServerSocket();
-        } catch (Throwable e) {
-            logger.severe(e);
-            return;
-        }
-
-        try {
-            eventLoop();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            logger.severe(e);
-        }
+    protected void handleRequest(Frame request) {
+        requests.inc();
+        Op op = opAllocator.allocate(request);
+        op.managers = frontend.managers;
+        op.response = responseFrameAllocator.allocate(21);
+        op.request = request.position(OFFSET_REQUEST_PAYLOAD);
+        scheduler.schedule(op);
     }
 }
