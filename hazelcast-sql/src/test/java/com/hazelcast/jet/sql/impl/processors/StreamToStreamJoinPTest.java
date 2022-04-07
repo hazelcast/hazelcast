@@ -73,6 +73,7 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
                 l -> l.getRow().get(0),
                 r -> r.getRow().get(0),
                 postponeTimeMap);
+
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .inputs(asList(

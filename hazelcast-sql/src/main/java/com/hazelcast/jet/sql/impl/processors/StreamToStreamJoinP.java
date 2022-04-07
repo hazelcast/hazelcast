@@ -147,7 +147,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         long ts = watermark.timestamp();
 
         // TODO: wm coalescing -- research.
-        clearExpiredItemsInBuffer(ordinal, ts - postponeTimeMap[ordinal].get(key));
+        long postponeTime = ts - postponeTimeMap[ordinal].get(key);
+        clearExpiredItemsInBuffer(
+                ordinal == 0 ? leftBuffer : rightBuffer,
+                postponeTime,
+                ordinal == 0 ? leftTimestampExtractor : rightTimestampExtractor);
 
         if (!tryEmit(watermark)) {
             pendingWatermark = watermark;
@@ -156,34 +160,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    private void clearExpiredItemsInBuffer(int ordinal, long postponeTime) {
-        if (ordinal == 0) {
-            clearLeftBuffer(postponeTime);
-        } else {
-            clearRightBuffer(postponeTime);
-        }
-    }
-
-    private void clearLeftBuffer(long postponeTime) {
-        // since leftBuffer is a priority queue, we may do
-        // just linear scan to first non-matched item.
-        while (!leftBuffer.isEmpty()) {
-            long ts = leftTimestampExtractor.applyAsLong(leftBuffer.peek());
-            if (ts <= postponeTime) {
-                leftBuffer.poll();
-            } else {
-                return;
-            }
-        }
-    }
-
-    private void clearRightBuffer(long evictionTimestamp) {
-        // since rightBuffer is a priority queue, we may do
-        // just linear scan to first non-matched item.
-        while (!rightBuffer.isEmpty()) {
-            long ts = rightTimestampExtractor.applyAsLong(rightBuffer.peek());
-            if (ts <= evictionTimestamp) {
-                rightBuffer.poll();
+    private void clearExpiredItemsInBuffer(
+            PriorityQueue<JetSqlRow> buffer,
+            long timeLimit,
+            ToLongFunctionEx<JetSqlRow> tsExtractor) {
+        // since buffer is a priority queue, we may do just linear scan to first non-matched item.
+        while (!buffer.isEmpty()) {
+            long ts = tsExtractor.applyAsLong(buffer.peek());
+            if (ts <= timeLimit) {
+                buffer.poll();
             } else {
                 return;
             }
