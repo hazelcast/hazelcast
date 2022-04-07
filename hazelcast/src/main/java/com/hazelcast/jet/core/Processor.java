@@ -211,7 +211,6 @@ public interface Processor {
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
 
     default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        assert ordinal == 0;
         return tryProcessWatermark(watermark);
     }
 
