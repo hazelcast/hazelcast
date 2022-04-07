@@ -21,6 +21,8 @@ public final class Scheduler {
             //todo: return false and send some kind of rejection message
             throw new RuntimeException("Scheduler overloaded");
         }
+
+        runSingle();
     }
 
     public boolean tick() {
