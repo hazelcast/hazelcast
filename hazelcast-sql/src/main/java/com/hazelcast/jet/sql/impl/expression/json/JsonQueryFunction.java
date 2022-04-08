@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
@@ -49,7 +50,9 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
+    private JsonPath constantPathCache;
+
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -66,6 +69,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.wrapperBehavior = wrapperBehavior;
         this.onEmpty = onEmpty;
         this.onError = onError;
+        prepareCache();
     }
 
     public static JsonQueryFunction create(
@@ -94,9 +98,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
-        if (path == null) {
-            throw QueryException.error("SQL/JSON path expression cannot be null");
-        }
+        validatePath(path);
 
         final Object operand0 = operands[0].eval(row, context);
         String json = operand0 instanceof HazelcastJsonValue
@@ -106,9 +108,26 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             json = "";
         }
 
-        final JsonPath jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
+        final JsonPath jsonPath = constantPathCache != null ? constantPathCache :
+                pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
 
         return wrap(execute(json, jsonPath));
+    }
+
+    private void prepareCache() {
+        if (this.operands[1] instanceof ConstantExpression<?>) {
+            String path = (String) this.operands[1].eval(null, null);
+            validatePath(path);
+            this.constantPathCache = JsonPathUtil.compile(path);
+        } else {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
+    private void validatePath(String path) {
+        if (path == null) {
+            throw QueryException.error("SQL/JSON path expression cannot be null");
+        }
     }
 
     private String onErrorResponse(final Exception exception) {
@@ -186,6 +205,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         out.writeInt(wrapperBehavior.ordinal());
         out.writeInt(onEmpty.ordinal());
         out.writeInt(onError.ordinal());
+        out.writeObject(constantPathCache);
     }
 
     @Override
@@ -194,12 +214,18 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.wrapperBehavior = SqlJsonQueryWrapperBehavior.values()[in.readInt()];
         this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
         this.onError = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
+        this.constantPathCache = in.readObject();
+        if (this.constantPathCache == null) {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
     }
 
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
-        // The transient fields are not initialized during Java deserialization, so we need to do it manually.
-        this.pathCache = JsonPathUtil.makePathCache();
+        if (this.constantPathCache == null) {
+            // The transient fields are not initialized during Java deserialization, so we need to do it manually.
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
     }
 
     @Override

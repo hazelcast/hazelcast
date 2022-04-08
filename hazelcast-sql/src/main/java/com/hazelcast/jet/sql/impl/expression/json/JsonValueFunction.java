@@ -246,6 +246,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
         if (this.constantPathCache == null) {
+            // The transient fields are not initialized during Java deserialization, so we need to do it manually.
             this.pathCache = JsonPathUtil.makePathCache();
         }
     }
