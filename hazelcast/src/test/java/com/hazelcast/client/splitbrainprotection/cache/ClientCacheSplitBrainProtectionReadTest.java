@@ -49,6 +49,8 @@ public class ClientCacheSplitBrainProtectionReadTest extends CacheSplitBrainProt
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

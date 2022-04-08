@@ -49,6 +49,8 @@ public class ClientTransactionalQueueSplitBrainProtectionReadTest extends Transa
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

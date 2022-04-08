@@ -50,7 +50,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_noEventIsLate_then_successful() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx, c -> 0L);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -75,7 +75,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_oneEventIsLate_then_dropEvent() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx, c -> 0L);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -99,7 +99,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_fewEventsAreLate_then_dropEvents() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx, c -> 0L);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -121,31 +121,6 @@ public class LateItemsDropPTest extends SqlTestSupport {
                         jetRow(1L, 2L),
                         wm(3L),
                         wm(5L)
-                ));
-    }
-
-    @Test
-    public void when_oneEventIsLateWithAllowedLag_then_doNotDropEvent() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx, c -> 2L);
-
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareRowLists)
-                .disableSnapshots()
-                .input(asList(
-                        wm(0L),
-                        jetRow(0L, 1L),
-                        jetRow(1L, 2L),
-                        wm(3L),
-                        jetRow(2L, 3L)
-                ))
-                .expectOutput(asList(
-                        wm(0L),
-                        jetRow(0L, 1L),
-                        jetRow(1L, 2L),
-                        wm(3L),
-                        jetRow(2L, 3L)
                 ));
     }
 }

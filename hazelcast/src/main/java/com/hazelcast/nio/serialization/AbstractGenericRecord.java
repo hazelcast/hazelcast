@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.FieldOperations;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -27,8 +28,10 @@ import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOpe
 
 /**
  * Implementation of GenericRecord interface to give common equals and hashcode implementation
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
-public abstract class AbstractGenericRecord implements GenericRecord {
+public abstract class AbstractGenericRecord implements InternalGenericRecord {
 
     protected abstract Object getClassIdentifier();
 
