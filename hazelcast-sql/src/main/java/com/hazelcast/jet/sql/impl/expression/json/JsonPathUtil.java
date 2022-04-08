@@ -145,11 +145,9 @@ public final class JsonPathUtil {
      * exceed the limit is bounded by the number of concurrent writers.
      */
     public static class ConcurrentInitialSetCache<K, V> {
-        Map<K, V> cache;
-        private int capacity;
-
-        public ConcurrentInitialSetCache() {
-        }
+        // package-visible for tests
+        final Map<K, V> cache;
+        private final int capacity;
 
         public ConcurrentInitialSetCache(int capacity) {
             Preconditions.checkPositive("capacity", capacity);
