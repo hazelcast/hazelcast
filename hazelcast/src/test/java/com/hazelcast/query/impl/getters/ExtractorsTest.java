@@ -34,7 +34,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.query.impl.getters.GetterCache.NOT_EVICTABLE_GETTER_CACHE_SUPPLIER;
+import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -153,9 +153,9 @@ public class ExtractorsTest {
     }
 
     @Test
-    public void when_creatingWithBuilderWithNotEvictableCache_then_notEvictableCacheIsUsed() {
-        Extractors extractors = Extractors.newBuilder(ss).setGetterCacheSupplier(NOT_EVICTABLE_GETTER_CACHE_SUPPLIER).build();
-        assertInstanceOf(NotEvictableGetterCache.class, extractors.getterCache);
+    public void when_creatingWithBuilderWithSimpleGetterCache_then_simpleGetterCacheIsUsed() {
+        Extractors extractors = Extractors.newBuilder(ss).setGetterCacheSupplier(SIMPLE_GETTER_CACHE_SUPPLIER).build();
+        assertInstanceOf(SimpleGetterCache.class, extractors.getterCache);
     }
 
     private Extractors createExtractors(AttributeConfig config) {

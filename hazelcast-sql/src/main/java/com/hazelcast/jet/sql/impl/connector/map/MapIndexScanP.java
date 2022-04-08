@@ -64,7 +64,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.query.impl.getters.GetterCache.NOT_EVICTABLE_GETTER_CACHE_SUPPLIER;
+import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.emptyList;
@@ -129,7 +129,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 metadata.getFieldPaths(),
                 metadata.getFieldTypes(),
                 Extractors.newBuilder(evalContext.getSerializationService())
-                        .setGetterCacheSupplier(NOT_EVICTABLE_GETTER_CACHE_SUPPLIER)
+                        .setGetterCacheSupplier(SIMPLE_GETTER_CACHE_SUPPLIER)
                         .build(),
                 evalContext.getSerializationService()
         );

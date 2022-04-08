@@ -30,7 +30,7 @@ public interface GetterCache {
             EVICTABLE_CACHE_EVICTION_PERCENTAGE,
             false
     );
-    Supplier<GetterCache> NOT_EVICTABLE_GETTER_CACHE_SUPPLIER = NotEvictableGetterCache::new;
+    Supplier<GetterCache> SIMPLE_GETTER_CACHE_SUPPLIER = SimpleGetterCache::new;
 
     @Nullable
     Getter getGetter(Class<?> clazz, String attributeName);

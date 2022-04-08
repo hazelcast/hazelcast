@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @NotThreadSafe
-class NotEvictableGetterCache implements GetterCache {
+class SimpleGetterCache implements GetterCache {
     private final Map<Class<?>, Map<String, Getter>> cache = new HashMap<>();
 
     @Nullable
