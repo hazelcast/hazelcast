@@ -48,7 +48,6 @@ public final class LogicalRules {
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
                 SlidingWindowDropLateItemsMergeRule.INSTANCE,
-                SlidingWindowUnionDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -65,6 +64,7 @@ public final class LogicalRules {
                 PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionDropLateItemsTransposeRule.INSTANCE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
