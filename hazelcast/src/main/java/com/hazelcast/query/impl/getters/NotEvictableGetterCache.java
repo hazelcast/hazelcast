@@ -21,6 +21,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A {@link GetterCache} that uses simple, non-concurrent HashMaps.
+ */
 @NotThreadSafe
 class NotEvictableGetterCache implements GetterCache {
     private final Map<Class<?>, Map<String, Getter>> cache = new HashMap<>();
