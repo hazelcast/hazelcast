@@ -32,8 +32,9 @@ import java.util.Objects;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * Logical rule that eliminates all input {@link DropLateItemsLogicalRel} for {@link Union}.
- * Note: <b>every</b> Union's input rel should be {@link DropLateItemsLogicalRel}.
+ * Logical rule that transposes {@link DropLateItemsLogicalRel} from all inputs
+ * of {@link Union} and puts it after the Union. Note: <b>every</b> Union's
+ * input rel must be {@link DropLateItemsLogicalRel}.
  * <p>
  * Before:
  * <pre>
@@ -47,6 +48,18 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * DropLateItemsLogicalRel[...]
  *  Union[all=true]
  * </pre>
+ * <p>
+ * Note that the transformed relexp is not strictly the equivalent to the
+ * original one: it moves the late item evaluation from individual input streams
+ * of UNION to the merged output of UNION. This means that some items that would
+ * originally be dropped, will end up not being dropped, because items from
+ * another streams are all delayed. In real life, if a bus is delayed due to
+ * waiting for a connecting line, then a passenger that would otherwise be late
+ * can still catch the bus.
+ * <p>
+ * This is how we handled watermarks in Jet - we dropped watermarks as late as
+ * possible. Not sure it's consistent with the SQL model where we drop even if
+ * we don't need to, if IMPOSE_ORDER is used.
  */
 @Value.Enclosing
 public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> implements TransformationRule {
@@ -94,7 +107,6 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
 
         for (RelNode node : union.getInputs()) {
             inputs.add(((DropLateItemsLogicalRel) Objects.requireNonNull(((RelSubset) node).getBest())).getInput());
-
         }
 
         Union newUnion = (Union) union.copy(union.getTraitSet(), inputs);
@@ -102,8 +114,7 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
                 dropRel.getCluster(),
                 dropRel.getTraitSet(),
                 newUnion,
-                dropRel.wmField(),
-                dropRel.allowedLagProvider()
+                dropRel.wmField()
         );
         call.transformTo(dropLateItemsRel);
     }
