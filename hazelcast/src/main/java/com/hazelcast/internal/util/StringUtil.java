@@ -533,7 +533,7 @@ public final class StringUtil {
     }
 
     /**
-     * Removes all occurrence of characters from the string.
+     * Removes all occurrence of {@code charToRemove} from {@code str}.
      */
     public static String removeCharacter(String str, char charToRemove) {
         if (str == null || str.indexOf(charToRemove) == -1) {
