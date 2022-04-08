@@ -6,5 +6,5 @@ public interface FrameAllocator {
 
     Frame allocate(int minSize);
 
-    void release(Frame frame);
+    void free(Frame frame);
 }

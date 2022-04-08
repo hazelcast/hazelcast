@@ -19,6 +19,6 @@ public class UnpooledFrameAllocator implements FrameAllocator{
     }
 
     @Override
-    public void release(Frame frame) {
+    public void free(Frame frame) {
     }
 }

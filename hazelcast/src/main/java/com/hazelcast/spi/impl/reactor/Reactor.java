@@ -28,7 +28,8 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
     protected final FrameAllocator requestFrameAllocator;
-    protected final FrameAllocator responseFrameAllocator;
+    protected final FrameAllocator remoteResponseFrameAllocator;
+    protected final FrameAllocator localResponseFrameAllocator;
     protected final ConcurrentLinkedQueue publicRunQueue = new ConcurrentLinkedQueue();
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
@@ -49,8 +50,9 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.thisAddress = thisAddress;
         this.port = port;
         this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
-        this.requestFrameAllocator = poolRequests ? new PooledFrameAllocator(128): new UnpooledFrameAllocator();
-        this.responseFrameAllocator = poolResponses ? new PooledFrameAllocator(128):new UnpooledFrameAllocator();
+        this.requestFrameAllocator = poolRequests ? new NonConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
+        this.remoteResponseFrameAllocator = poolResponses ? new ConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
+        this.localResponseFrameAllocator = poolResponses ? new NonConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -156,7 +158,11 @@ public abstract class Reactor extends HazelcastManagedThread {
         requests.inc();
         Op op = opAllocator.allocate(request);
         op.managers = frontend.managers;
-        op.response = responseFrameAllocator.allocate(21);
+        if (request.future == null) {
+            op.response = localResponseFrameAllocator.allocate(21);
+        } else {
+            op.response = remoteResponseFrameAllocator.allocate(21);
+        }
         op.request = request.position(OFFSET_REQUEST_PAYLOAD);
         scheduler.schedule(op);
     }

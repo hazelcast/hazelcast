@@ -4,9 +4,10 @@ package com.hazelcast.spi.impl.reactor;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpscArrayQueue;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PooledFrameAllocator implements FrameAllocator {
+public class ConcurrentPooledFrameAllocator implements FrameAllocator {
 
     private final MpscArrayQueue<Frame> queue = new MpscArrayQueue<>(4096);
 
@@ -14,10 +15,11 @@ public class PooledFrameAllocator implements FrameAllocator {
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
     private static final AtomicLong allocateCalls = new AtomicLong();
     private static final AtomicLong releaseCalls = new AtomicLong();
+    private final boolean direct;
 
     static class Pool {
-        private long newAllocates = 0;
-        private long allocates = 0;
+        private long newAllocateCnt = 0;
+        private long allocateCnt = 0;
         private Frame[] frames = new Frame[4096];
         private int index = -1;
         private final MessagePassingQueue.Consumer<Frame> consumer = frame -> {
@@ -29,8 +31,13 @@ public class PooledFrameAllocator implements FrameAllocator {
     private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
 
-    public PooledFrameAllocator(int minSize) {
+    public ConcurrentPooledFrameAllocator(int minSize) {
+        this(minSize, false);
+    }
+
+    public ConcurrentPooledFrameAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
+        this.direct = direct;
     }
 
     @Override
@@ -46,7 +53,7 @@ public class PooledFrameAllocator implements FrameAllocator {
             pool = new Pool();
             POOL.set(pool);
         }
-        pool.allocates++;
+        pool.allocateCnt++;
         if (pool.index == -1) {
             // the pool is empty.
 
@@ -58,16 +65,18 @@ public class PooledFrameAllocator implements FrameAllocator {
             for (int k = count; k < pool.frames.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new frame");
-                Frame frame = new Frame(minSize);
-                pool.newAllocates++;
+                ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
+                Frame frame = new Frame(buffer);
+                frame.concurrent = true;
+                pool.newAllocateCnt++;
                 frame.allocator = this;
                 pool.index++;
                 pool.frames[k] = frame;
             }
         }
 
-        if (pool.allocates % 10_000_000 == 0) {
-            System.out.println("New allocate percentage:" + (pool.newAllocates * 100f) / pool.allocates + "%");
+        if (pool.allocateCnt % 10_000_000 == 0) {
+            System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
         }
 
         Frame frame = pool.frames[pool.index];
@@ -78,13 +87,13 @@ public class PooledFrameAllocator implements FrameAllocator {
     }
 
     @Override
-    public void release(Frame frame) {
+    public void free(Frame frame) {
         frame.clear();
         frame.next = null;
         frame.future = null;
 
         Pool pool = POOL.get();
-        if(pool == null){
+        if (pool == null) {
             // if pool == null:
             // if the thread has never allocated anything, we don't want to create
             // a pool for that thread.

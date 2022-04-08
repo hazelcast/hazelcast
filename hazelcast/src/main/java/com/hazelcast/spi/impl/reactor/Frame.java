@@ -43,6 +43,7 @@ public class Frame {
     public boolean trackRelease;
     private ByteBuffer buff;
     public FrameAllocator allocator;
+    public boolean concurrent = false;
     private AtomicInteger refCount = new AtomicInteger();
 
     public Frame() {
@@ -50,6 +51,10 @@ public class Frame {
 
     public Frame(int size) {
         this.buff = ByteBuffer.allocate(size);
+    }
+
+    public Frame(ByteBuffer buffer) {
+        this.buff = buffer;
     }
 
     public Frame newFuture() {
@@ -171,7 +176,7 @@ public class Frame {
         }
     }
 
-    public Frame completeReceive() {
+    public Frame complete() {
         buff.flip();
         return this;
     }
@@ -217,17 +222,33 @@ public class Frame {
     }
 
     public void acquire() {
-        if (allocator != null) {
+        if (allocator == null) {
+            return;
+        }
+
+        if (!concurrent) {
+            refCount.lazySet(refCount.get() + 1);
+        } else {
             refCount.incrementAndGet();
         }
     }
 
     public void release() {
-//        if (trackRelease) {
-//            new Exception("refCount:"+refCount.get()).printStackTrace();
-//        }
+        if (allocator == null) {
+            return;
+        }
 
-        if (allocator != null) {
+        if (!concurrent) {
+            int current = refCount.get();
+            if (current == 1) {
+                refCount.lazySet(0);
+                allocator.free(this);
+            } else if (current <= 0) {
+                throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
+            } else {
+                refCount.lazySet(current - 1);
+            }
+        } else {
             for (; ; ) {
                 int current = refCount.get();
                 if (current <= 0) {
@@ -237,7 +258,7 @@ public class Frame {
                     continue;
                 }
                 if (current == 1) {
-                    allocator.release(this);
+                    allocator.free(this);
                 }
                 break;
             }

@@ -5,7 +5,6 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.FrameAllocator;
-import com.hazelcast.spi.impl.reactor.PooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.UnpooledFrameAllocator;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;

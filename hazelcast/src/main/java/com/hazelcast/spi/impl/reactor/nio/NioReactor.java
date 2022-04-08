@@ -66,7 +66,7 @@ public final class NioReactor extends Reactor {
         serverSocketChannel.setOption(SO_RCVBUF, channelConfig.receiveBufferSize);
 
         InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-       // System.out.println(getName() + " Binding to " + serverAddress);
+        // System.out.println(getName() + " Binding to " + serverAddress);
         serverSocketChannel.bind(serverAddress);
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -166,14 +166,20 @@ public final class NioReactor extends Reactor {
         Frame responseChain = null;
         for (; ; ) {
             if (channel.inboundFrame == null) {
-                if (readBuf.remaining() < INT_SIZE_IN_BYTES) {
+                if (readBuf.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
 
                 int size = readBuf.getInt();
-                // todo: we don't know if request or response
-                channel.inboundFrame = requestFrameAllocator.allocate(size);
+                int flags = readBuf.getInt();
+                if ((flags & FLAG_OP_RESPONSE) == 0) {
+                    channel.inboundFrame = requestFrameAllocator.allocate(size);
+                } else {
+                    channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                }
+
                 channel.inboundFrame.writeInt(size);
+                channel.inboundFrame.writeInt(flags);
                 channel.inboundFrame.connection = channel.connection;
                 channel.inboundFrame.channel = channel;
             }
@@ -187,7 +193,7 @@ public final class NioReactor extends Reactor {
                 break;
             }
 
-            channel.inboundFrame.completeReceive();
+            channel.inboundFrame.complete();
             Frame frame = channel.inboundFrame;
             channel.inboundFrame = null;
             channel.framesRead.inc();
@@ -244,7 +250,7 @@ public final class NioReactor extends Reactor {
         try {
             long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
             channel.bytesWritten.inc(written);
-          //  System.out.println(getName() + " bytes written:" + written);
+            //  System.out.println(getName() + " bytes written:" + written);
 
             channel.discardWrittenBuffers();
 

@@ -345,7 +345,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             }
 
             Frame frame = channel.inboundFrame;
-            channel.inboundFrame.completeReceive();
+            channel.inboundFrame.complete();
             channel.inboundFrame = null;
             channel.framesRead.inc();
 
