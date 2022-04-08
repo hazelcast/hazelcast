@@ -107,6 +107,4 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
         );
         call.transformTo(dropLateItemsRel);
     }
-
-
 }
