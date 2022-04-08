@@ -69,7 +69,7 @@ class EvictableGetterCache implements GetterCache {
     }
 
     /**
-     * It works on best effort basis. If multi-threaded calls involved it may evict all elements, but it's unlikely.
+     * It works on best effort basis. If concurrent calls are involved, it may evict all elements, but it's unlikely.
      */
     private void evictMap(SampleableConcurrentHashMap<?, ?> map, int triggeringEvictionSize, int afterEvictionSize) {
         map.purgeStaleEntries();

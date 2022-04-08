@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 /**
  * Base class for extraction of values from object instances.
- * Each sub-class encapsulates extraction strategy.
+ * Each subclass encapsulates extraction strategy.
  */
 abstract class Getter {
     protected final Getter parent;

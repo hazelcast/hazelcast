@@ -41,9 +41,6 @@ import static com.hazelcast.query.impl.getters.GetterCache.EVICTABLE_GETTER_CACH
 
 // one instance per MapContainer
 public final class Extractors {
-    private static final int MAX_CLASSES_IN_CACHE = 1000;
-    private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
-    private static final float EVICTION_PERCENTAGE = 0.2f;
 
     final GetterCache getterCache;
 
