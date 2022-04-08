@@ -6,38 +6,64 @@ import com.hazelcast.spi.impl.reactor.Frame;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+
+// add padding around Nio channel
 public class NioChannel extends Channel {
 
-    public final ConcurrentLinkedQueue<Frame> pending = new ConcurrentLinkedQueue<>();
-    public ByteBuffer receiveBuffer;
-    public SocketChannel socketChannel;
-    public NioReactor reactor;
-    public ByteBuffer[] buffs = new ByteBuffer[4096];
-    public Frame[] frames = new Frame[buffs.length];
-    public int buffsLen = 0;
-    public AtomicBoolean scheduled = new AtomicBoolean();
-    public Frame inboundFrame;
+    // immutable state
+    protected SocketChannel socketChannel;
+    protected NioReactor reactor;
+
+    // ======================================================
+    // reading side of the channel.
+    // ======================================================
+    protected Frame inboundFrame;
+    protected ByteBuffer receiveBuffer;
+
+    // ======================================================
+    // writing side of the channel.
+    // ======================================================
+    // private
+    protected ByteBuffer[] buffs = new ByteBuffer[4096];
+    protected Frame[] flushedFrames = new Frame[buffs.length];
+    protected int buffsLen = 0;
+
+    //  concurrent
+    protected AtomicReference<Thread> flushThread = new AtomicReference<>();
+    protected final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     @Override
     public void flush() {
-        if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
-            reactor.schedule(this);
+        if (flushThread.get() != null) {
+            return;
+        }
+
+        Thread currentThread = Thread.currentThread();
+        if (flushThread.compareAndSet(null, currentThread)) {
+            if (currentThread == reactor) {
+                boolean offered = reactor.dirtyChannels.offer(this);
+                if (!offered) {
+                    throw new RuntimeException("overload");//todo
+                }
+            } else {
+                reactor.schedule(this);
+            }
         }
     }
 
     // called by the Reactor.
-    public void unschedule() {
-        scheduled.set(false);
+    public void resetFlushed() {
+        flushThread.set(null);
 
         // todo: it could be that there are byte buffers we didn't manage to write
         // so we would end up with dirty work being undetected
-        if (pending.isEmpty()) {
+        if (unflushedFrames.isEmpty()) {
             return;
         }
 
-        if (scheduled.compareAndSet(false, true)) {
+        if (flushThread.compareAndSet(null, reactor)) {
             reactor.schedule(this);
         }
     }
@@ -45,22 +71,28 @@ public class NioChannel extends Channel {
     @Override
     public void write(Frame frame) {
         if (Thread.currentThread() == reactor) {
-            addFrame(frame);
+            addFlushedFrame(frame);
         } else {
-            pending.add(frame);
+            unflushedFrames.add(frame);
         }
     }
 
     @Override
     public void writeAndFlush(Frame frame) {
-        write(frame);
-        flush();
+        // Ideally we want to directly write to the
+      //  Thread currentFlushThread = flushThread.get();
+//        if (currentFlushThread == reactor) {
+//            addFlushedFrame(frame);
+//        } else {
+            write(frame);
+            flush();
+        //}
     }
 
-    public void addFrame(Frame frame) {
+    public void addFlushedFrame(Frame frame) {
         //todo: we could add growing or size constraint.
-        buffs[buffsLen] = frame.getByteBuffer();
-        frames[buffsLen] = frame;
+        buffs[buffsLen] = frame.byteBuffer();
+        flushedFrames[buffsLen] = frame;
         buffsLen++;
     }
 
@@ -76,8 +108,8 @@ public class NioChannel extends Channel {
                     buffs[toIndex] = buffs[pos];
                     buffs[pos] = null;
 
-                    frames[toIndex] = frames[pos];
-                    frames[pos] = null;
+                    flushedFrames[toIndex] = flushedFrames[pos];
+                    flushedFrames[pos] = null;
 
                     toIndex++;
                 }
@@ -85,8 +117,8 @@ public class NioChannel extends Channel {
                 buffsLen--;
                 buffs[pos] = null;
 
-                frames[pos].release();
-                frames[pos] = null;
+                flushedFrames[pos].release();
+                flushedFrames[pos] = null;
             }
         }
     }

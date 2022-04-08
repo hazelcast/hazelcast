@@ -74,11 +74,6 @@ public final class MonitorThread extends Thread {
     }
 
     private void displayChannel(Channel channel, long elapsed) {
-        if (channel instanceof IO_UringChannel) {
-            IO_UringChannel u = (IO_UringChannel) channel;
-            System.out.println(channel.remoteAddress + " scheduled:" + u.scheduled + " pending:" + u.pending.size());
-        }
-
         long packetsRead = channel.framesRead.get();
         Prev prevPacketsRead = getPrev(channel.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;

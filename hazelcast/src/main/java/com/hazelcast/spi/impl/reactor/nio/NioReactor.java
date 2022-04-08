@@ -32,11 +32,18 @@ public final class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
     private ServerSocketChannel serverSocketChannel;
-    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
+    private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
-    public NioReactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, boolean spin) {
+    public NioReactor(ReactorFrontEnd frontend,
+                      ChannelConfig channelConfig,
+                      Address thisAddress,
+                      int port,
+                      boolean spin,
+                      boolean poolRequests,
+                      boolean poolResponses) {
         super(frontend, channelConfig, thisAddress, port,
-                "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port);
+                "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port,
+                poolRequests, poolResponses);
 
         this.spin = spin;
         this.selector = SelectorOptimizer.newSelector(logger);
@@ -59,7 +66,7 @@ public final class NioReactor extends Reactor {
         serverSocketChannel.setOption(SO_RCVBUF, channelConfig.receiveBufferSize);
 
         InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-        System.out.println(getName() + " Binding to " + serverAddress);
+       // System.out.println(getName() + " Binding to " + serverAddress);
         serverSocketChannel.bind(serverAddress);
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -106,7 +113,7 @@ public final class NioReactor extends Reactor {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (runQueue.isEmpty()) {
+                if (publicRunQueue.isEmpty()) {
                     keyCount = selector.select();
                 } else {
                     keyCount = selector.selectNow();
@@ -172,7 +179,6 @@ public final class NioReactor extends Reactor {
             }
 
             // todo: we need to copy.
-
             int size = channel.inboundFrame.size();
             int remaining = size - channel.inboundFrame.position();
             channel.inboundFrame.write(readBuf, remaining);
@@ -213,29 +219,40 @@ public final class NioReactor extends Reactor {
 
     @Override
     protected void handleOutbound(Channel c) {
+        // Either an public write could have triggered this
+        // But also internal read of the socket could have triggered this.
+
+        // So how can we prevent
+
         NioChannel channel = (NioChannel) c;
+
+        if (channel.flushThread.get() == null) {
+            throw new RuntimeException("Channel is not in flushed state");
+        }
+
         channel.handleOutboundCalls.inc();
         //System.out.println("Processing channel");
-        try {
-            for (; ; ) {
-                Frame frame = channel.pending.poll();
-                if (frame == null) {
-                    break;
-                }
-
-                channel.addFrame(frame);
+        for (; ; ) {
+            Frame frame = channel.unflushedFrames.poll();
+            if (frame == null) {
+                break;
             }
 
+            channel.addFlushedFrame(frame);
+        }
+
+        try {
             long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
-            //System.out.println(getName() + " bytes written:" + written);
             channel.bytesWritten.inc(written);
+          //  System.out.println(getName() + " bytes written:" + written);
 
             channel.discardWrittenBuffers();
 
             // todo: we should only unschedule if there is nothing left to write.
             // otherwise we need to schedule for a OP_WRITE
-            channel.unschedule();
+            channel.resetFlushed();
         } catch (IOException e) {
+            //todo: we need to get rid of the channel.
             e.printStackTrace();
         }
     }

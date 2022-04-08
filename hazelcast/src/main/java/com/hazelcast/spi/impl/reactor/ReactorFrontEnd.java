@@ -29,6 +29,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_RESPONSE_CALL_ID;
 
+
+/**
+ * The Reactor is very specific to requests/responses. It isn't a flexible framework unlike Seastar.
+ */
 public class ReactorFrontEnd {
 
     public final NodeEngineImpl nodeEngine;
@@ -41,6 +45,8 @@ public class ReactorFrontEnd {
     private final boolean reactorSpin;
     private final ChannelConfig channelConfig;
     private final MonitorThread monitorThread;
+    private final boolean poolRequests;
+    private final boolean poolResponses;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -54,6 +60,8 @@ public class ReactorFrontEnd {
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
+        this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "false"));
+        this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "false"));
         String reactorType = System.getProperty("reactor.type", "nio");
         this.channelCount = Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
@@ -68,9 +76,9 @@ public class ReactorFrontEnd {
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                reactors[reactor] = new IO_UringReactor(this, channelConfig, thisAddress, port, reactorSpin);
+                reactors[reactor] = new IO_UringReactor(this, channelConfig, thisAddress, port, reactorSpin, poolRequests, poolResponses);
             } else if (reactorType.equals("nio")) {
-                reactors[reactor] = new NioReactor(this, channelConfig, thisAddress, port, reactorSpin);
+                reactors[reactor] = new NioReactor(this, channelConfig, thisAddress, port, reactorSpin, poolRequests, poolResponses);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -86,6 +94,8 @@ public class ReactorFrontEnd {
         System.out.println("reactor.spin:" + reactorSpin);
         System.out.println("reactor.channels:" + channelCount);
         System.out.println("reactor.type:" + reactorType);
+        System.out.println("reactor.pool-requests:" + poolRequests);
+        System.out.println("reactor.pool-responses:" + poolResponses);
         System.out.println("reactor.cpu-affinity:" + System.getProperty("reactor.cpu-affinity"));
     }
 
@@ -167,10 +177,12 @@ public class ReactorFrontEnd {
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         CompletableFuture future = request.future;
         if (address.equals(thisAddress)) {
+            //System.out.println("invoke:local");
             //System.out.println("local invoke");
             // todo: hack with the assignment of a partition to a local cpu.
             reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
         } else {
+            //System.out.println("invoke:remote");
             request.acquire();
             Requests requests = getRequests(address);
             long callId = requests.callId.incrementAndGet();

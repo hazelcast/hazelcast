@@ -17,7 +17,7 @@ public final class Scheduler {
     }
 
     public void schedule(Op op) {
-        if (!runQueue.enqueue(op)) {
+        if (!runQueue.offer(op)) {
             //todo: return false and send some kind of rejection message
             throw new RuntimeException("Scheduler overloaded");
         }
@@ -38,7 +38,7 @@ public final class Scheduler {
     public boolean runSingle() {
         ticks.inc();
 
-        Op op = runQueue.dequeue();
+        Op op = runQueue.poll();
         if (op == null) {
             return false;
         }
@@ -48,6 +48,9 @@ public final class Scheduler {
             switch (runCode) {
                 case COMPLETED:
                     if (op.request.future == null) {
+                        // todo: perhaps call as specific flush that
+                        // add the frame to the flushed frames and ensures
+                        // that the channel is flushed.
                         op.request.channel.writeAndFlush(op.response);
                     } else {
                         op.request.future.complete(op.response);

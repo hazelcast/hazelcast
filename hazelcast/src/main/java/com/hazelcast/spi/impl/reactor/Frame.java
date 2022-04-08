@@ -78,7 +78,7 @@ public class Frame {
         return this;
     }
 
-    public ByteBuffer getByteBuffer() {
+    public ByteBuffer byteBuffer() {
         return buff;
     }
 

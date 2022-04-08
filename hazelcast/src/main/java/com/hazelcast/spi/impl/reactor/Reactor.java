@@ -17,6 +17,9 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
 
+/**
+ * A Reactor is a thread that is an event loop.
+ */
 public abstract class Reactor extends HazelcastManagedThread {
     protected final ReactorFrontEnd frontend;
     protected final ILogger logger;
@@ -24,15 +27,21 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final int port;
     protected final ChannelConfig channelConfig;
     protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
-    protected final FrameAllocator requestFrameAllocator = new UnpooledFrameAllocator(128);
-    protected final FrameAllocator responseFrameAllocator = new UnpooledFrameAllocator(128);
-    protected final ConcurrentLinkedQueue runQueue = new ConcurrentLinkedQueue();
+    protected final FrameAllocator requestFrameAllocator;
+    protected final FrameAllocator responseFrameAllocator;
+    protected final ConcurrentLinkedQueue publicRunQueue = new ConcurrentLinkedQueue();
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
-    protected final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(512);
+    public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(512);
 
-    public Reactor(ReactorFrontEnd frontend, ChannelConfig channelConfig, Address thisAddress, int port, String name) {
+    public Reactor(ReactorFrontEnd frontend,
+                   ChannelConfig channelConfig,
+                   Address thisAddress,
+                   int port,
+                   String name,
+                   boolean poolRequests,
+                   boolean poolResponses) {
         super(name);
         this.frontend = frontend;
         this.channelConfig = channelConfig;
@@ -40,6 +49,8 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.thisAddress = thisAddress;
         this.port = port;
         this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
+        this.requestFrameAllocator = poolRequests ? new PooledFrameAllocator(128): new UnpooledFrameAllocator();
+        this.responseFrameAllocator = poolResponses ? new PooledFrameAllocator(128):new UnpooledFrameAllocator();
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -68,21 +79,21 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected abstract void eventLoop() throws Exception;
 
     public void schedule(Frame request) {
-        runQueue.add(request);
+        publicRunQueue.add(request);
         wakeup();
     }
 
     public void schedule(Channel channel) {
         if (Thread.currentThread() == this) {
-            dirtyChannels.enqueue(channel);
+            dirtyChannels.offer(channel);
         } else {
-            runQueue.add(channel);
+            publicRunQueue.add(channel);
             wakeup();
         }
     }
 
     public void schedule(ConnectRequest request) {
-        runQueue.add(request);
+        publicRunQueue.add(request);
         wakeup();
     }
 
@@ -113,7 +124,7 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected void flushDirtyChannels() {
         for (; ; ) {
-            Channel channel = dirtyChannels.dequeue();
+            Channel channel = dirtyChannels.poll();
             if (channel == null) {
                 break;
             }
@@ -124,7 +135,7 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected void runTasks() {
         for (; ; ) {
-            Object task = runQueue.poll();
+            Object task = publicRunQueue.poll();
             if (task == null) {
                 break;
             }

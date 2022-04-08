@@ -1,7 +1,6 @@
 package com.hazelcast.table.impl;
 
 
-
 import com.hazelcast.spi.impl.reactor.Op;
 import com.hazelcast.spi.impl.reactor.OpCodes;
 
@@ -21,7 +20,7 @@ public class NoOp extends Op {
     public int run() throws Exception {
         //System.out.println("NoOp.run");
 
-         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
+        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
                 .completeWriting();
 
         return Op.COMPLETED;

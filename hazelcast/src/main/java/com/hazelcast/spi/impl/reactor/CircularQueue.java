@@ -8,13 +8,40 @@ public final class CircularQueue<E> {
     private final int mask;
     private final int capacity;
 
+    // Capacity should be power of 2
     public CircularQueue(int capacity) {
         this.array = (E[]) new Object[capacity];
         this.capacity = capacity;
         this.mask = capacity - 1;
     }
 
-    public boolean enqueue(E item) {
+    public boolean isFull() {
+        return tail - head + 1 == capacity;
+    }
+
+    public int remaining(){
+        return capacity - size();
+    }
+
+    public int size() {
+        return (int) (tail - head + 1);
+    }
+
+    public boolean isEmpty() {
+        return tail < head;
+    }
+
+    public E peek() {
+        if (tail < head) {
+            return null;
+        }
+
+        long h = head;
+        int index = (int) (h & mask);
+        return array[index];
+    }
+
+    public boolean offer(E item) {
         if (tail - head + 1 == capacity) {
             return false;
         }
@@ -26,7 +53,7 @@ public final class CircularQueue<E> {
         return true;
     }
 
-    public E dequeue() {
+    public E poll() {
         if (tail < head) {
             return null;
         }
@@ -37,9 +64,5 @@ public final class CircularQueue<E> {
         array[index] = null;
         this.head = h + 1;
         return item;
-    }
-
-    public boolean isEmpty() {
-        return tail < head;
     }
 }

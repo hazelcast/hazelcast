@@ -15,9 +15,10 @@ public class PooledFrameAllocator implements FrameAllocator {
     private static final AtomicLong allocateCalls = new AtomicLong();
     private static final AtomicLong releaseCalls = new AtomicLong();
 
-
     static class Pool {
-        private Frame[] frames = new Frame[32];
+        private long newAllocates = 0;
+        private long allocates = 0;
+        private Frame[] frames = new Frame[4096];
         private int index = -1;
         private final MessagePassingQueue.Consumer<Frame> consumer = frame -> {
             index++;
@@ -40,18 +41,12 @@ public class PooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate() {
-       // allocateCalls.incrementAndGet();
-
-        //  System.out.println("allocate:release " + allocateCalls.get() + ":" + releaseCalls.get());
-
-        //System.out.println("allocate called");
-
         Pool pool = POOL.get();
         if (pool == null) {
             pool = new Pool();
             POOL.set(pool);
         }
-
+        pool.allocates++;
         if (pool.index == -1) {
             // the pool is empty.
 
@@ -64,13 +59,16 @@ public class PooledFrameAllocator implements FrameAllocator {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new frame");
                 Frame frame = new Frame(minSize);
+                pool.newAllocates++;
                 frame.allocator = this;
                 pool.index++;
                 pool.frames[k] = frame;
             }
         }
 
-      //  System.out.println("Allocation: pooled " + ((newAllocations.get() * 100.0f) / allocateCalls.get())+" %");
+        if (pool.allocates % 10_000_000 == 0) {
+            System.out.println("New allocate percentage:" + (pool.newAllocates * 100f) / pool.allocates + "%");
+        }
 
         Frame frame = pool.frames[pool.index];
         pool.frames[pool.index] = null;
@@ -81,23 +79,20 @@ public class PooledFrameAllocator implements FrameAllocator {
 
     @Override
     public void release(Frame frame) {
-        //   System.out.println("release called");
-
-        //       releaseCalls.incrementAndGet();
-
-        //    System.out.println("allocate:release " + allocateCalls.get() + ":" + releaseCalls.get());
-
-        Pool pool = POOL.get();
         frame.clear();
         frame.next = null;
         frame.future = null;
 
-        if (pool == null || pool.index == pool.frames.length - 1) {
+        Pool pool = POOL.get();
+        if(pool == null){
             // if pool == null:
             // if the thread has never allocated anything, we don't want to create
             // a pool for that thread.
+            queue.offer(frame);
+            return;
+        }
 
-            // if  pool.index == pool.frames.length:
+        if (pool.index == pool.frames.length - 1) {
             // the pool of the object is full, so lets toss it in the queue.
             queue.offer(frame);
         } else {
