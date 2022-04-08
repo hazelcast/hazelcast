@@ -26,6 +26,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
@@ -33,6 +34,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
@@ -116,11 +118,13 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         }
 
         if (hasCallback) {
+            ExecutorService asyncExecutor =
+                    nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
             operationService.createInvocationBuilder(SERVICE_NAME, op, target.address())
                     .setTryCount(OPERATION_TRY_COUNT)
                     .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, asyncExecutor);
         } else {
             operationService.send(op, target.address());
         }
