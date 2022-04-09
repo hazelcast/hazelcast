@@ -282,46 +282,50 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
         IO_UringChannel channel = channelMap.get(fd);
+        ByteBuf receiveBuff = channel.receiveBuff;
         // we need to update the writerIndex; not done automatically.
-        int oldLimit = channel.readBuffer.limit();
+        //int oldLimit = channel.readBuffer.limit();
         channel.readEvents.inc();
         channel.bytesRead.inc(res);
-        channel.readBuffer.limit(res);
-        channel.receiveBuff.writerIndex(channel.receiveBuff.writerIndex() + res);
-        channel.receiveBuff.readBytes(channel.readBuffer);
-        channel.receiveBuff.clear();
-        channel.readBuffer.limit(oldLimit);
+        //channel.readBuffer.limit(res);
+        receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
+        //channel.receiveBuff.readBytes(channel.readBuffer);
+        //channel.receiveBuff.clear();
+
+        //channel.readBuffer.limit(oldLimit);
         sq_addRead(channel);
-        ByteBuffer readBuf = channel.readBuffer;
-        channel.readBuffer.flip();
 
         Frame responseChain = null;
         for (; ; ) {
-            if (channel.inboundFrame == null) {
-                if (readBuf.remaining() < INT_SIZE_IN_BYTES) {
+            Frame frame = channel.inboundFrame;
+            if (frame == null) {
+                if (receiveBuff.readableBytes() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
 
-                int size = readBuf.getInt();
+                int frameSize = receiveBuff.readInt();
+                int frameFlags = receiveBuff.readInt();
                 //todo: we don't know if we have request or response.
-                channel.inboundFrame = requestFrameAllocator.allocate(size);
-                channel.inboundFrame.writeInt(size);
-                channel.inboundFrame.connection = channel.connection;
-                channel.inboundFrame.channel = channel;
+                frame = requestFrameAllocator.allocate(frameSize);
+                channel.inboundFrame = frame;
+                frame.writeInt(frameSize);
+                frame.writeInt(frameFlags);
+                frame.connection = channel.connection;
+                frame.channel = channel;
             }
 
-            // todo: we need to copy.
+            int size = frame.size();
+            int remaining = size - frame.position();
 
-            int size = channel.inboundFrame.size();
-            int remaining = size - channel.inboundFrame.position();
-            channel.inboundFrame.write(readBuf, remaining);
+            // todo: we need to cap the
+            receiveBuff.readBytes(frame.byteBuffer());
+            //channel.inboundFrame.write(readBuf, remaining);
 
-            if (!channel.inboundFrame.isComplete()) {
+            if (!frame.isComplete()) {
                 break;
             }
 
-            Frame frame = channel.inboundFrame;
-            channel.inboundFrame.complete();
+            frame.complete();
             channel.inboundFrame = null;
             channel.framesRead.inc();
 
@@ -333,7 +337,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             }
         }
 
-        compactOrClear(channel.readBuffer);
+        receiveBuff.discardReadBytes();
 
         if (responseChain != null) {
             System.out.println("frontend.handleRespons");

@@ -20,7 +20,6 @@ public class IO_UringChannel extends Channel {
     // ======================================================
     // For the reading side of the channel
     // ======================================================
-    protected ByteBuffer readBuffer;
     protected ByteBuf receiveBuff;
     protected Frame inboundFrame;
 
