@@ -44,7 +44,9 @@ public class Frame {
     private ByteBuffer buff;
     public FrameAllocator allocator;
     public boolean concurrent = false;
-    private AtomicInteger refCount = new AtomicInteger();
+
+    // make field?
+    protected AtomicInteger refCount = new AtomicInteger();
 
     public Frame() {
     }
@@ -229,7 +231,16 @@ public class Frame {
         if (!concurrent) {
             refCount.lazySet(refCount.get() + 1);
         } else {
-            refCount.incrementAndGet();
+            for(;;){
+                int current = refCount.get();
+                if(current == 0){
+                    throw new IllegalStateException("Can't acquire a freed frame");
+                }
+
+                if(refCount.compareAndSet(current, current+1)){
+                    break;
+                }
+            }
         }
     }
 
@@ -254,13 +265,12 @@ public class Frame {
                 if (current <= 0) {
                     throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
                 }
-                if (!refCount.compareAndSet(current, current - 1)) {
-                    continue;
+                if (refCount.compareAndSet(current, current - 1)) {
+                    if (current == 1) {
+                        allocator.free(this);
+                    }
+                    break;
                 }
-                if (current == 1) {
-                    allocator.free(this);
-                }
-                break;
             }
         }
     }

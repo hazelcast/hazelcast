@@ -186,8 +186,11 @@ public class ReactorFrontEnd {
             // todo: hack with the assignment of a partition to a local cpu.
             reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
         } else {
-            //System.out.println("invoke:remote");
+            // we need to acquire the frame because storage will release it once written
+            // and we need to keep the frame around for the response.
             request.acquire();
+
+
             Requests requests = getRequests(address);
             long callId = requests.callId.incrementAndGet();
             request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);

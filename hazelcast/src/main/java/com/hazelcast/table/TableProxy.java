@@ -3,6 +3,7 @@ package com.hazelcast.table;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.reactor.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
@@ -31,7 +32,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         this.frontEnd = nodeEngine.getReactorFrontEnd();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        this.frameAllocator = new UnpooledFrameAllocator(128);
+        this.frameAllocator = new ConcurrentPooledFrameAllocator(128, true);
     }
 
     @Override

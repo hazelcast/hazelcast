@@ -2,14 +2,14 @@ package com.hazelcast.spi.impl.reactor;
 
 
 import org.jctools.queues.MessagePassingQueue;
-import org.jctools.queues.MpscArrayQueue;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ConcurrentPooledFrameAllocator implements FrameAllocator {
 
-    private final MpscArrayQueue<Frame> queue = new MpscArrayQueue<>(4096);
+    private final ConcurrentLinkedQueue<Frame> queue = new ConcurrentLinkedQueue<>();
 
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
@@ -20,7 +20,7 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
     static class Pool {
         private long newAllocateCnt = 0;
         private long allocateCnt = 0;
-        private Frame[] frames = new Frame[4096];
+        private Frame[] frames = new Frame[128];
         private int index = -1;
         private final MessagePassingQueue.Consumer<Frame> consumer = frame -> {
             index++;
@@ -30,10 +30,6 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
 
     private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
-
-    public ConcurrentPooledFrameAllocator(int minSize) {
-        this(minSize, false);
-    }
 
     public ConcurrentPooledFrameAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
@@ -57,8 +53,19 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
         if (pool.index == -1) {
             // the pool is empty.
 
+            int count = 0;
+            for (int k = 0; k < pool.frames.length; k++) {
+                Frame frame = queue.poll();
+                if (frame == null) {
+                    break;
+                }
+                count++;
+                pool.index++;
+                pool.frames[pool.index] = frame;
+            }
+
             // Lets gets some frames from the queue.
-            int count = queue.drain(pool.consumer, pool.frames.length);
+            //int count = queue.drain(pool.consumer, pool.frames.length);
 
             // and lets create a bunch of frames ourselves so we don't end up
             // continuously asking the queue for requests.
@@ -68,26 +75,41 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
                 Frame frame = new Frame(buffer);
                 frame.concurrent = true;
-                pool.newAllocateCnt++;
                 frame.allocator = this;
+                pool.newAllocateCnt++;
                 pool.index++;
                 pool.frames[k] = frame;
             }
         }
 
-        if (pool.allocateCnt % 10_000_000 == 0) {
+        if (pool.allocateCnt % 1_000_000 == 0) {
             System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
         }
 
         Frame frame = pool.frames[pool.index];
         pool.frames[pool.index] = null;
         pool.index--;
-        frame.acquire();
+
+        // for debugging; it should not be needed. We should be able to do a lazySet 1
+        for (; ; ) {
+            int c = frame.refCount.get();
+            if (c != 0) {
+                throw new RuntimeException("Ref count should be 0, but was: " + frame.refCount());
+            }
+
+            if (frame.refCount.compareAndSet(0, 1)) {
+                break;
+            }
+        }
         return frame;
     }
 
     @Override
     public void free(Frame frame) {
+        if (frame.refCount.get() != 0) {
+            throw new RuntimeException("Frame refCount should be 0, but was:" + frame.refCount.get());
+        }
+
         frame.clear();
         frame.next = null;
         frame.future = null;
