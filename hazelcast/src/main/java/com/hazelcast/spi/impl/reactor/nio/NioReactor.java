@@ -1,13 +1,10 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.ChannelConfig;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -227,28 +224,20 @@ public final class NioReactor extends Reactor {
     protected void handleWrite(Channel c) {
         NioChannel channel = (NioChannel) c;
         try {
-
             if (channel.flushThread.get() == null) {
                 throw new RuntimeException("Channel is not in flushed state");
             }
-
             channel.handleWriteCnt.inc();
-            for (; ; ) {
-                Frame frame = channel.unflushedFrames.poll();
-                if (frame == null) {
-                    break;
-                }
-                channel.addFlushedFrame(frame);
-            }
 
-            long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
+            IOVector ioVector = channel.ioVector;
+            ioVector.fill(channel.unflushedFrames);
+            long written = ioVector.write(channel.socketChannel);
+
             channel.bytesWritten.inc(written);
             System.out.println(getName() + " bytes written:" + written);
 
-            channel.discardWrittenBuffers();
-
             SelectionKey key = channel.key;
-            if (channel.buffsLen == 0) {
+            if (ioVector.isEmpty()) {
                 int interestOps = key.interestOps();
                 if ((interestOps & OP_WRITE) != 0) {
                     key.interestOps(interestOps & ~OP_WRITE);
@@ -258,7 +247,7 @@ public final class NioReactor extends Reactor {
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             channel.close();
             e.printStackTrace();
         }
@@ -286,7 +275,7 @@ public final class NioReactor extends Reactor {
             logger.info("Socket listening at " + address);
             request.future.complete(channel);
         } catch (Exception e) {
-            e.printStackTrace();
+            request.future.completeExceptionally(e);
         }
     }
 }

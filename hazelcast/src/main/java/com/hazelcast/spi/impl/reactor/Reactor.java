@@ -6,6 +6,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -31,11 +32,11 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final FrameAllocator requestFrameAllocator;
     protected final FrameAllocator remoteResponseFrameAllocator;
     protected final FrameAllocator localResponseFrameAllocator;
-    protected final ConcurrentLinkedQueue publicRunQueue = new ConcurrentLinkedQueue();
+    protected final MpscArrayQueue publicRunQueue = new MpscArrayQueue(1024);
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
-    public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(512);
+    public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
 
     public Reactor(ReactorConfig config) {
         super(config.name);
@@ -45,9 +46,15 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.thisAddress = config.thisAddress;
         this.port = config.port;
         this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
-        this.requestFrameAllocator = config.poolRequests ? new NonConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
-        this.remoteResponseFrameAllocator = config.poolResponses ? new ConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
-        this.localResponseFrameAllocator = config.poolResponses ? new NonConcurrentPooledFrameAllocator(128, true) : new UnpooledFrameAllocator();
+        this.requestFrameAllocator = config.poolRequests
+                ? new NonConcurrentPooledFrameAllocator(128, true)
+                : new UnpooledFrameAllocator();
+        this.remoteResponseFrameAllocator = config.poolResponses
+                ? new ConcurrentPooledFrameAllocator(128, true)
+                : new UnpooledFrameAllocator();
+        this.localResponseFrameAllocator = config.poolResponses
+                ? new NonConcurrentPooledFrameAllocator(128, true)
+                : new UnpooledFrameAllocator();
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {

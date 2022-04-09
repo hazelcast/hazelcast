@@ -31,12 +31,10 @@ public class NioChannel extends Channel {
     // writing side of the channel.
     // ======================================================
     // private
-    protected ByteBuffer[] buffs = new ByteBuffer[4096];
-    protected Frame[] flushedFrames = new Frame[buffs.length];
-    protected int buffsLen = 0;
+    protected final IOVector ioVector = new IOVector();
 
     //  concurrent
-    protected AtomicReference<Thread> flushThread = new AtomicReference<>();
+    protected final AtomicReference<Thread> flushThread = new AtomicReference<>();
     protected final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     @Override
@@ -72,8 +70,11 @@ public class NioChannel extends Channel {
 
     @Override
     public void write(Frame frame) {
-        if (Thread.currentThread() == reactor) {
-            addFlushedFrame(frame);
+        Thread currentThread = Thread.currentThread();
+        if (currentThread == reactor && currentThread == flushThread.get()) {
+            if (!ioVector.add(frame)) {
+                unflushedFrames.add(frame);
+            }
         } else {
             unflushedFrames.add(frame);
         }
@@ -85,39 +86,6 @@ public class NioChannel extends Channel {
         flush();
     }
 
-    public void addFlushedFrame(Frame frame) {
-        //todo: we could add growing or size constraint.
-        buffs[buffsLen] = frame.byteBuffer();
-        flushedFrames[buffsLen] = frame;
-        buffsLen++;
-    }
-
-    public void discardWrittenBuffers() {
-        int toIndex = 0;
-        int length = buffsLen;
-        for (int pos = 0; pos < length; pos++) {
-            if (buffs[pos].hasRemaining()) {
-                if (pos == 0) {
-                    // the first one is not empty, we are done
-                    break;
-                } else {
-                    buffs[toIndex] = buffs[pos];
-                    buffs[pos] = null;
-
-                    flushedFrames[toIndex] = flushedFrames[pos];
-                    flushedFrames[pos] = null;
-
-                    toIndex++;
-                }
-            } else {
-                buffsLen--;
-                buffs[pos] = null;
-
-                flushedFrames[pos].release();
-                flushedFrames[pos] = null;
-            }
-        }
-    }
 
     @Override
     public void close() {

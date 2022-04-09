@@ -1,6 +1,5 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.CircularQueue;
 import com.hazelcast.spi.impl.reactor.Frame;
