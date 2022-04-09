@@ -59,7 +59,11 @@ public final class SpringHazelcastCachingProvider {
         if (instance instanceof HazelcastClientProxy) {
             return new HazelcastClientCachingProvider(instance).getCacheManager(uri, null, props);
         } else {
-            return new HazelcastServerCachingProvider(instance).getCacheManager(uri, null, props);
+            try (HazelcastServerCachingProvider serverCachingProvider =  new HazelcastServerCachingProvider(instance)) {
+                return serverCachingProvider.getCacheManager(uri, null, props);
+            } catch (Exception exception) {
+                throw rethrow(exception);
+            }
         }
     }
 
