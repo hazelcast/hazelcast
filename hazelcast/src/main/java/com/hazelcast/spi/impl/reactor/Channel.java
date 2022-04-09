@@ -21,7 +21,7 @@ public abstract class Channel {
 
     public final SwCounter  framesRead = newSwCounter();
 
-    public final SwCounter  handleOutboundCalls = newSwCounter();
+    public final SwCounter handleWriteCnt = newSwCounter();
 
     public final SwCounter  readEvents = newSwCounter();
 
@@ -30,4 +30,6 @@ public abstract class Channel {
     public abstract void write(Frame frame);
 
     public abstract void writeAndFlush(Frame frame);
+
+    public abstract void close();
 }

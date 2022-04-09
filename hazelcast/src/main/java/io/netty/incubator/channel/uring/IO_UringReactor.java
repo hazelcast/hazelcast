@@ -117,17 +117,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
     private final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
 
-    public IO_UringReactor(ReactorFrontEnd frontend,
-                           ChannelConfig channelConfig,
-                           Address thisAddress,
-                           int port,
-                           boolean spin,
-                           boolean poolRequests,
-                           boolean poolResponses) {
-        super(frontend, channelConfig, thisAddress,
-                port, "IOUringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port,
-                poolRequests, poolResponses);
-        this.spin = spin;
+    public IO_UringReactor(IO_UringReactorConfig config) {
+        super(config);
+        this.spin = config.spin;
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
@@ -368,7 +360,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
     private final UnpooledByteBufAllocator unpooledByteBufAllocator = new UnpooledByteBufAllocator(true);
 
-    protected void handleOutbound(Channel c) {
+    @Override
+    protected void handleWrite(Channel c) {
         IO_UringChannel channel = (IO_UringChannel) c;
         if(!channel.flushed.get()){
             throw new RuntimeException("Channel should be in flushed state");

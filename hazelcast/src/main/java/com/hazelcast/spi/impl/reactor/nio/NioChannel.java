@@ -1,12 +1,16 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Frame;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 
 // add padding around Nio channel
@@ -15,6 +19,8 @@ public class NioChannel extends Channel {
     // immutable state
     protected SocketChannel socketChannel;
     protected NioReactor reactor;
+    protected SelectionKey key;
+    protected boolean writeThrough;
 
     // ======================================================
     // reading side of the channel.
@@ -42,34 +48,37 @@ public class NioChannel extends Channel {
 
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == reactor) {
-                boolean offered = reactor.dirtyChannels.offer(this);
-                if (!offered) {
-                    throw new RuntimeException("overload");//todo
+            if(writeThrough){
+                reactor.handleWrite(this);
+            }else{
+                if (currentThread == reactor) {
+                    boolean offered = reactor.dirtyChannels.offer(this);
+                    if (!offered) {
+                        throw new RuntimeException("overload");//todo
+                    }
+                } else {
+                    reactor.schedule(this);
                 }
-            } else {
-                reactor.schedule(this);
             }
         }
     }
 
-    // called by the Reactor.
     public void resetFlushed() {
         flushThread.set(null);
 
-        // todo: it could be that there are byte buffers we didn't manage to write
-        // so we would end up with dirty work being undetected
         if (unflushedFrames.isEmpty()) {
             return;
         }
 
-        if (flushThread.compareAndSet(null, reactor)) {
+        if (flushThread.compareAndSet(null, Thread.currentThread())) {
             reactor.schedule(this);
         }
     }
 
     @Override
     public void write(Frame frame) {
+
+
         if (Thread.currentThread() == reactor) {
             addFlushedFrame(frame);
         } else {
@@ -80,12 +89,12 @@ public class NioChannel extends Channel {
     @Override
     public void writeAndFlush(Frame frame) {
         // Ideally we want to directly write to the
-      //  Thread currentFlushThread = flushThread.get();
+        //  Thread currentFlushThread = flushThread.get();
 //        if (currentFlushThread == reactor) {
 //            addFlushedFrame(frame);
 //        } else {
-            write(frame);
-            flush();
+        write(frame);
+        flush();
         //}
     }
 
@@ -121,5 +130,11 @@ public class NioChannel extends Channel {
                 flushedFrames[pos] = null;
             }
         }
+    }
+
+    @Override
+    public void close() {
+        closeResource(socketChannel);
+        reactor.removeChannel(this);
     }
 }

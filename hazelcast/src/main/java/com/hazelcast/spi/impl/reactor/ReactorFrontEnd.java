@@ -10,9 +10,11 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
+import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.incubator.channel.uring.IO_UringReactor;
+import io.netty.incubator.channel.uring.IO_UringReactorConfig;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -45,6 +47,7 @@ public class ReactorFrontEnd {
     private final MonitorThread monitorThread;
     private final boolean poolRequests;
     private final boolean poolResponses;
+    private final boolean writeThrough;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -59,6 +62,7 @@ public class ReactorFrontEnd {
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
+        this.writeThrough = Boolean.parseBoolean(System.getProperty("reactor.write-through", "false"));
         this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "false"));
         this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "false"));
         String reactorType = System.getProperty("reactor.type", "nio");
@@ -80,9 +84,28 @@ public class ReactorFrontEnd {
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                reactors[reactor] = new IO_UringReactor(this, channelConfig, thisAddress, port, reactorSpin, poolRequests, poolResponses);
+                IO_UringReactorConfig config = new IO_UringReactorConfig();
+                config.spin = reactorSpin;
+                config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+                config.channelConfig = channelConfig;
+                config.port = port;
+                config.thisAddress = thisAddress;
+                config.poolRequests = poolRequests;
+                config.poolResponses = poolResponses;
+                config.frontend = this;
+                reactors[reactor] = new IO_UringReactor(config);
             } else if (reactorType.equals("nio")) {
-                reactors[reactor] = new NioReactor(this, channelConfig, thisAddress, port, reactorSpin, poolRequests, poolResponses);
+                NioReactorConfig config = new NioReactorConfig();
+                config.spin = reactorSpin;
+                config.writeThrough = writeThrough;
+                config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+                config.channelConfig = channelConfig;
+                config.port = port;
+                config.thisAddress = thisAddress;
+                config.poolRequests = poolRequests;
+                config.poolResponses = poolResponses;
+                config.frontend = this;
+                reactors[reactor] = new NioReactor(config);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -96,6 +119,7 @@ public class ReactorFrontEnd {
     private void printReactorInfo(String reactorType) {
         System.out.println("reactor.count:" + reactorCount);
         System.out.println("reactor.spin:" + reactorSpin);
+        System.out.println("reactor.write-through:" + writeThrough);
         System.out.println("reactor.channels:" + channelCount);
         System.out.println("reactor.type:" + reactorType);
         System.out.println("reactor.pool-requests:" + poolRequests);

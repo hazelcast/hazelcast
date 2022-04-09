@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import io.netty.incubator.channel.uring.IO_UringChannel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -92,8 +91,8 @@ public final class MonitorThread extends Thread {
         System.out.println(channel.remoteAddress + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
         prevBytesWritten.value = bytesWritten;
 
-        long handleOutboundCalls = channel.handleOutboundCalls.get();
-        Prev prevHandleOutboundCalls = getPrev(channel.handleOutboundCalls);
+        long handleOutboundCalls = channel.handleWriteCnt.get();
+        Prev prevHandleOutboundCalls = getPrev(channel.handleWriteCnt);
         long handleOutboundCallsDelta = handleOutboundCalls - prevHandleOutboundCalls.value;
         System.out.println(channel.remoteAddress + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
         prevHandleOutboundCalls.value = handleOutboundCalls;

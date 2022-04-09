@@ -1,11 +1,13 @@
 package io.netty.incubator.channel.uring;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.CircularQueue;
 import com.hazelcast.spi.impl.reactor.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.IovArray;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,20 +54,20 @@ public class IO_UringChannel extends Channel {
 
     // called by the Reactor.
     public boolean resetFlushed() {
-        if(!unflushedFrames.isEmpty() || !flushedFrames.isEmpty()){
+        if (!unflushedFrames.isEmpty() || !flushedFrames.isEmpty()) {
             return false;
         }
 
         flushed.set(false);
 
-        if(unflushedFrames.isEmpty()){
-           return true;
+        if (unflushedFrames.isEmpty()) {
+            return true;
         }
 
         if (flushed.compareAndSet(false, true)) {
             reactor.schedule(this);
             return false;
-        }else{
+        } else {
             return true;
         }
     }
@@ -85,5 +87,21 @@ public class IO_UringChannel extends Channel {
     public void writeAndFlush(Frame frame) {
         unflushedFrames.add(frame);
         flush();
+    }
+
+    @Override
+    public void close() {
+        //todo: also think about releasing the resources like frame buffers
+        // perhaps add a one time close check
+
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        reactor.removeChannel(this);
     }
 }

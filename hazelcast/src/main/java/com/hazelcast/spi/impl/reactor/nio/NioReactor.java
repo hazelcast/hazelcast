@@ -27,25 +27,19 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public final class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
+    private final boolean writeThrough;
     private ServerSocketChannel serverSocketChannel;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
-    public NioReactor(ReactorFrontEnd frontend,
-                      ChannelConfig channelConfig,
-                      Address thisAddress,
-                      int port,
-                      boolean spin,
-                      boolean poolRequests,
-                      boolean poolResponses) {
-        super(frontend, channelConfig, thisAddress, port,
-                "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port,
-                poolRequests, poolResponses);
-
-        this.spin = spin;
+    public NioReactor(NioReactorConfig config) {
+        super(config);
+        this.spin = config.spin;
+        this.writeThrough = config.writeThrough;
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 
@@ -73,11 +67,13 @@ public final class NioReactor extends Reactor {
         System.out.println(getName() + " ServerSocket listening at " + serverAddress);
     }
 
-    private NioChannel newChannel(SocketChannel socketChannel, Connection connection) throws IOException {
+    private NioChannel newChannel(SocketChannel socketChannel, Connection connection, SelectionKey key) throws IOException {
         System.out.println(this + " newChannel: " + socketChannel);
 
         NioChannel channel = new NioChannel();
         channel.reactor = this;
+        channel.writeThrough = writeThrough;
+        channel.key = key;
         channel.receiveBuffer = ByteBuffer.allocateDirect(channelConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
@@ -141,6 +137,10 @@ public final class NioReactor extends Reactor {
                 handleRead(key);
             }
 
+            if (key.isValid() && key.isWritable()) {
+                handleWrite((NioChannel) key.attachment());
+            }
+
             if (!key.isValid()) {
                 //System.out.println("sk not valid");
                 key.cancel();
@@ -154,10 +154,11 @@ public final class NioReactor extends Reactor {
         channel.readEvents.inc();
         ByteBuffer readBuf = channel.receiveBuffer;
         int bytesRead = socketChannel.read(readBuf);
-        //System.out.println(this + " bytes read: " + bytesRead);
+        System.out.println(this + " bytes read: " + bytesRead);
         if (bytesRead == -1) {
             socketChannel.close();
             key.cancel();
+            channels.remove(channel);
             return;
         }
 
@@ -184,7 +185,6 @@ public final class NioReactor extends Reactor {
                 channel.inboundFrame.channel = channel;
             }
 
-            // todo: we need to copy.
             int size = channel.inboundFrame.size();
             int remaining = size - channel.inboundFrame.position();
             channel.inboundFrame.write(readBuf, remaining);
@@ -217,48 +217,48 @@ public final class NioReactor extends Reactor {
         socketChannel.configureBlocking(false);
         configure(socketChannel.socket());
 
-        SelectionKey selectionKey = socketChannel.register(selector, OP_READ);
-        selectionKey.attach(newChannel(socketChannel, null));
+        SelectionKey key = socketChannel.register(selector, OP_READ);
+        key.attach(newChannel(socketChannel, null, key));
 
         logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
     }
 
     @Override
-    protected void handleOutbound(Channel c) {
-        // Either an public write could have triggered this
-        // But also internal read of the socket could have triggered this.
-
-        // So how can we prevent
+    protected void handleWrite(Channel c) {
 
         NioChannel channel = (NioChannel) c;
+        try {
 
-        if (channel.flushThread.get() == null) {
-            throw new RuntimeException("Channel is not in flushed state");
-        }
-
-        channel.handleOutboundCalls.inc();
-        //System.out.println("Processing channel");
-        for (; ; ) {
-            Frame frame = channel.unflushedFrames.poll();
-            if (frame == null) {
-                break;
+            if (channel.flushThread.get() == null) {
+                throw new RuntimeException("Channel is not in flushed state");
             }
 
-            channel.addFlushedFrame(frame);
-        }
+            channel.handleWriteCnt.inc();
+            for (; ; ) {
+                Frame frame = channel.unflushedFrames.poll();
+                if (frame == null) break;
+                channel.addFlushedFrame(frame);
+            }
 
-        try {
             long written = channel.socketChannel.write(channel.buffs, 0, channel.buffsLen);
             channel.bytesWritten.inc(written);
-            //  System.out.println(getName() + " bytes written:" + written);
+            System.out.println(getName() + " bytes written:" + written);
 
             channel.discardWrittenBuffers();
 
-            // todo: we should only unschedule if there is nothing left to write.
-            // otherwise we need to schedule for a OP_WRITE
-            channel.resetFlushed();
-        } catch (IOException e) {
-            //todo: we need to get rid of the channel.
+            SelectionKey key = channel.key;
+            if (channel.buffsLen == 0) {
+                int interestOps = key.interestOps();
+                if ((interestOps & OP_WRITE) != 0) {
+                    key.interestOps(interestOps & ~OP_WRITE);
+                }
+
+                channel.resetFlushed();
+            } else {
+                key.interestOps(key.interestOps() | OP_WRITE);
+            }
+        }catch (IOException e){
+            channel.close();
             e.printStackTrace();
         }
     }
@@ -279,7 +279,7 @@ public final class NioReactor extends Reactor {
 
             SelectionKey key = socketChannel.register(selector, OP_READ);
 
-            NioChannel channel = newChannel(socketChannel, request.connection);
+            NioChannel channel = newChannel(socketChannel, request.connection, key);
             key.attach(channel);
 
             logger.info("Socket listening at " + address);

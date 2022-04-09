@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.reactor;
 
 
 import org.jctools.queues.MessagePassingQueue;
+import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -9,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ConcurrentPooledFrameAllocator implements FrameAllocator {
 
-    private final ConcurrentLinkedQueue<Frame> queue = new ConcurrentLinkedQueue<>();
+    private final MpmcArrayQueue<Frame> queue = new MpmcArrayQueue<>(4096);
 
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
