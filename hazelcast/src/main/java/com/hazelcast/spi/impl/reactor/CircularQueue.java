@@ -1,5 +1,8 @@
 package com.hazelcast.spi.impl.reactor;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public final class CircularQueue<E> {
 
     private long head;
@@ -13,6 +16,23 @@ public final class CircularQueue<E> {
         this.array = (E[]) new Object[capacity];
         this.capacity = capacity;
         this.mask = capacity - 1;
+    }
+
+    public int fill(Queue<E> queue){
+        int remaining = remaining();
+        int count = 0;
+        for(int k=0;k<remaining;k++){
+            E item =queue.poll();
+            if(item == null){
+                break;
+            }
+            count++;
+            long t = tail + 1;
+            int index = (int) (t & mask);
+            array[index] = item;
+            this.tail = t;
+        }
+        return count;
     }
 
     public boolean isFull() {

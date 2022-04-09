@@ -2,11 +2,7 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.ChannelConfig;
-import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.reactor.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -102,14 +98,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final boolean spin;
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
+    private final AcceptMemory acceptMemory = new AcceptMemory();
     private LinuxSocket serverSocket;
     private final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    private ByteBuffer acceptedAddressMemory;
-    private long acceptedAddressMemoryAddress;
-    private ByteBuffer acceptedAddressLengthMemory;
-    private long acceptedAddressLengthMemoryAddress;
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
 
     // we could use an array.
@@ -124,13 +117,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.eventfd = Native.newBlockingEventFd();
-        this.acceptedAddressMemory = Buffer.allocateDirectWithNativeOrder(Native.SIZEOF_SOCKADDR_STORAGE);
-        this.acceptedAddressMemoryAddress = Buffer.memoryAddress(acceptedAddressMemory);
-        this.acceptedAddressLengthMemory = Buffer.allocateDirectWithNativeOrder(Long.BYTES);
-        // Needs to be initialized to the size of acceptedAddressMemory.
-        // See https://man7.org/linux/man-pages/man2/accept.2.html
-        this.acceptedAddressLengthMemory.putLong(0, Native.SIZEOF_SOCKADDR_STORAGE);
-        this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 
     @Override
@@ -180,11 +166,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
         channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
-//        channel.writeBufs = new ByteBuf[1024];
-//        channel.writeBufsInUse = new boolean[channel.writeBufs.length];
-//        for (int k = 0; k < channel.writeBufs.length; k++) {
-//            channel.writeBufs[k] = allocator.directBuffer(8192);
-//        }
         channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
         channels.add(channel);
@@ -196,7 +177,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq_addEventRead();
         sq_addAccept();
 
-        while (!frontend.shuttingdown) {
+        while (running) {
             runTasks();
 
             boolean moreWork = scheduler.tick();
@@ -229,7 +210,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void sq_addAccept() {
-        sq.addAccept(serverSocket.intValue(), acceptedAddressMemoryAddress, acceptedAddressLengthMemoryAddress, (short) 0);
+        sq.addAccept(
+                serverSocket.intValue(),
+                acceptMemory.acceptedAddressMemoryAddress,
+                acceptMemory.acceptedAddressLengthMemoryAddress, (short) 0);
     }
 
     private void sq_addRead(IO_UringChannel channel) {
@@ -268,7 +252,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-        SocketAddress address = SockaddrIn.readIPv4(acceptedAddressMemoryAddress, inet4AddressArray);
+        SocketAddress address = SockaddrIn.readIPv4(acceptMemory.acceptedAddressMemoryAddress, inet4AddressArray);
         System.out.println(this + " new connected accepted: " + address);
         LinuxSocket socket = new LinuxSocket(res);
         try {
@@ -295,7 +279,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-           System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
+        System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
         IO_UringChannel channel = channelMap.get(fd);
         // we need to update the writerIndex; not done automatically.
@@ -363,44 +347,32 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     @Override
     protected void handleWrite(Channel c) {
         IO_UringChannel channel = (IO_UringChannel) c;
-        if(!channel.flushed.get()){
+        if (!channel.flushed.get()) {
             throw new RuntimeException("Channel should be in flushed state");
         }
 
-        //todo: we only neee
+        CircularQueue<Frame> flushedFrames = channel.flushedFrames;
+        flushedFrames.fill(channel.unflushedFrames);
 
-        //todo: currently there is no limit on what we are writing.
-        int localPendingSize = channel.flushedFrames.size();
-        int globalPendingSize = channel.unflushedFrames.size();
-        int pendingSize = localPendingSize + globalPendingSize;
-        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(pendingSize * IovArray.IOV_SIZE);
+        int flushedFrameSize = flushedFrames.size();
+
+        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(flushedFrameSize * IovArray.IOV_SIZE);
         IovArray iovArray = new IovArray(iovArrayBuffer);
         channel.iovArray = iovArray;
         int offset = iovArray.count();
 
-        for (int k = 0; k < localPendingSize; k++) {
-            Frame frame = channel.flushedFrames.poll();
+        for (int k = 0; k < flushedFrameSize; k++) {
+            Frame frame = flushedFrames.poll();
             ByteBuffer byteBuffer = frame.byteBuffer();
             ByteBuf buf = unpooledByteBufAllocator.directBuffer(byteBuffer.limit());
             buf.writeBytes(byteBuffer);
             iovArray.add(buf, 0, buf.readableBytes());
         }
 
-        for (int k = 0; k < globalPendingSize; k++) {
-            Frame frame = channel.unflushedFrames.poll();
-            ByteBuffer byteBuffer = frame.byteBuffer();
-            ByteBuf buf = unpooledByteBufAllocator.directBuffer(byteBuffer.limit());
-            buf.writeBytes(byteBuffer);
-            iovArray.add(buf, 0, buf.readableBytes());
-        }
-
+        // todo: optimize for single write.
         sq.addWritev(channel.socket.intValue(), iovArray.memoryAddress(offset), iovArray.count() - offset, (short) 0);
 
-        if(channel.resetFlushed()){
-
-        }else{
-
-        }
+        channel.resetFlushed();
     }
 
     private void handle_IORING_OP_WRITEV(int fd, int res, int flags, short data) {
@@ -408,7 +380,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         // we need to release the iovArray
 
-        System.out.println("handle_IORING_OP_WRITEV fd:"+fd +" bytes written: "+res);
+        System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
         IO_UringChannel channel = channelMap.get(fd);
         channel.iovArray.release();
 
@@ -506,5 +478,22 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+}
+
+class AcceptMemory {
+    final ByteBuffer acceptedAddressMemory;
+    final long acceptedAddressMemoryAddress;
+    final ByteBuffer acceptedAddressLengthMemory;
+    final long acceptedAddressLengthMemoryAddress;
+
+    AcceptMemory() {
+        this.acceptedAddressMemory = Buffer.allocateDirectWithNativeOrder(Native.SIZEOF_SOCKADDR_STORAGE);
+        this.acceptedAddressMemoryAddress = Buffer.memoryAddress(acceptedAddressMemory);
+        this.acceptedAddressLengthMemory = Buffer.allocateDirectWithNativeOrder(Long.BYTES);
+        // Needs to be initialized to the size of acceptedAddressMemory.
+        // See https://man7.org/linux/man-pages/man2/accept.2.html
+        this.acceptedAddressLengthMemory.putLong(0, Native.SIZEOF_SOCKADDR_STORAGE);
+        this.acceptedAddressLengthMemoryAddress = Buffer.memoryAddress(acceptedAddressLengthMemory);
     }
 }

@@ -81,23 +81,11 @@ public class ReactorFrontEnd {
             partitionIdToChannel[k] = hashToIndex(k, channelCount);
         }
 
-        for (int reactor = 0; reactor < reactors.length; reactor++) {
-            int port = toPort(thisAddress, reactor);
+        for (int k = 0; k < reactors.length; k++) {
+            int port = toPort(thisAddress, k);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
                 IO_UringReactorConfig config = new IO_UringReactorConfig();
                 config.spin = reactorSpin;
-                config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-                config.channelConfig = channelConfig;
-                config.port = port;
-                config.thisAddress = thisAddress;
-                config.poolRequests = poolRequests;
-                config.poolResponses = poolResponses;
-                config.frontend = this;
-                reactors[reactor] = new IO_UringReactor(config);
-            } else if (reactorType.equals("nio")) {
-                NioReactorConfig config = new NioReactorConfig();
-                config.spin = reactorSpin;
-                config.writeThrough = writeThrough;
                 config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
                 config.channelConfig = channelConfig;
                 config.port = port;
@@ -105,11 +93,28 @@ public class ReactorFrontEnd {
                 config.poolRequests = poolRequests;
                 config.poolResponses = poolResponses;
                 config.frontend = this;
-                reactors[reactor] = new NioReactor(config);
+                config.logger = nodeEngine.getLogger(IO_UringReactor.class);
+                config.threadAffinity = threadAffinity;
+                config.managers = managers;
+                reactors[k] = new IO_UringReactor(config);
+            } else if (reactorType.equals("nio")) {
+                NioReactorConfig config = new NioReactorConfig();
+                config.spin = reactorSpin;
+                config.writeThrough = writeThrough;
+                config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+                config.channelConfig = channelConfig;
+                config.port = port;
+                config.thisAddress = thisAddress;
+                config.poolRequests = poolRequests;
+                config.poolResponses = poolResponses;
+                config.frontend = this;
+                config.logger = nodeEngine.getLogger(NioReactor.class);
+                config.threadAffinity = threadAffinity;
+                config.managers = managers;
+                reactors[k] = new NioReactor(config);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
-            reactors[reactor].setThreadAffinity(threadAffinity);
         }
 
         this.monitorThread = new MonitorThread(reactors);
@@ -153,6 +158,10 @@ public class ReactorFrontEnd {
         logger.info("Shutting down ReactorFrontend");
 
         shuttingdown = true;
+
+        for (Reactor r : reactors) {
+            r.shutdown();
+        }
 
         for (Requests requests : requestsPerMember.values()) {
             for (Frame request : requests.map.values()) {

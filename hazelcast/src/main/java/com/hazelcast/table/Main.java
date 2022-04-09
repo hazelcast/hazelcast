@@ -11,7 +11,7 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 100000; k++) {
+        for (int k = 0; k < 1000; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;
@@ -26,7 +26,7 @@ public class Main {
             }
 
             //table.upsert(item);
-            table.concurrentNoop(100);
+            table.concurrentNoop(1);
 //            try {
 //                Thread.sleep(1000);
 //            } catch (InterruptedException e) {

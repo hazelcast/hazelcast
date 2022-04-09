@@ -37,14 +37,17 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
     public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
+    private final Managers managers;
+    protected volatile boolean running = true;
 
     public Reactor(ReactorConfig config) {
         super(config.name);
         this.frontend = config.frontend;
         this.channelConfig = config.channelConfig;
-        this.logger = frontend.nodeEngine.getLogger(getClass());
+        this.logger = config.logger;
         this.thisAddress = config.thisAddress;
         this.port = config.port;
+        this.managers = config.managers;
         this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
         this.requestFrameAllocator = config.poolRequests
                 ? new NonConcurrentPooledFrameAllocator(128, true)
@@ -55,6 +58,11 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.localResponseFrameAllocator = config.poolResponses
                 ? new NonConcurrentPooledFrameAllocator(128, true)
                 : new UnpooledFrameAllocator();
+        setThreadAffinity(config.threadAffinity);
+    }
+
+    public void shutdown(){
+        running = false;
     }
 
     public Future<Channel> schedule(SocketAddress address, Connection connection) {
@@ -163,7 +171,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected void handleRequest(Frame request) {
         requests.inc();
         Op op = opAllocator.allocate(request);
-        op.managers = frontend.managers;
+        op.managers = managers;
         if (request.future == null) {
             op.response = localResponseFrameAllocator.allocate(21);
         } else {

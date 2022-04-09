@@ -11,6 +11,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.netty.channel.unix.Limits.IOV_MAX;
+
 public class IO_UringChannel extends Channel {
     protected LinuxSocket socket;
     protected IO_UringReactor reactor;
@@ -30,19 +32,19 @@ public class IO_UringChannel extends Channel {
     protected final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
     // isolated state.
     public IovArray iovArray;
-    protected CircularQueue<Frame> flushedFrames = new CircularQueue<>(16);
+    protected CircularQueue<Frame> flushedFrames = new CircularQueue<>(IOV_MAX);
 
     @Override
     public void flush() {
         if (!flushed.get() && flushed.compareAndSet(false, true)) {
-            int remaining = flushedFrames.remaining();
-
-            for (int k = 0; k < remaining; k++) {
-                Frame frame = unflushedFrames.poll();
-                boolean offered = flushedFrames.offer(frame);
-                assert offered;
-            }
-
+//            int remaining = flushedFrames.remaining();
+//
+//            for (int k = 0; k < remaining; k++) {
+//                Frame frame = unflushedFrames.poll();
+//                boolean offered = flushedFrames.offer(frame);
+//                assert offered;
+//            }
+//
             System.out.println("Flush: scheduled was false");
 
             reactor.schedule(this);
@@ -52,22 +54,19 @@ public class IO_UringChannel extends Channel {
     }
 
     // called by the Reactor.
-    public boolean resetFlushed() {
+    public void resetFlushed() {
         if (!unflushedFrames.isEmpty() || !flushedFrames.isEmpty()) {
-            return false;
+            return;
         }
 
         flushed.set(false);
 
         if (unflushedFrames.isEmpty()) {
-            return true;
+            return;
         }
 
         if (flushed.compareAndSet(false, true)) {
             reactor.schedule(this);
-            return false;
-        } else {
-            return true;
         }
     }
 
@@ -84,6 +83,8 @@ public class IO_UringChannel extends Channel {
 
     @Override
     public void writeAndFlush(Frame frame) {
+        //todo: can be optimized
+
         unflushedFrames.add(frame);
         flush();
     }

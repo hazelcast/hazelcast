@@ -93,7 +93,7 @@ public final class NioReactor extends Reactor {
 
     @Override
     protected void eventLoop() throws Exception {
-        while (!frontend.shuttingdown) {
+        while (running) {
             runTasks();
 
             boolean moreWork = scheduler.tick() || !publicRunQueue.isEmpty();
