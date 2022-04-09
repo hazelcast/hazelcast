@@ -96,7 +96,7 @@ public final class NioReactor extends Reactor {
         while (!frontend.shuttingdown) {
             runTasks();
 
-            boolean moreWork = scheduler.tick();
+            boolean moreWork = scheduler.tick() || !publicRunQueue.isEmpty();
             //todo: dirty channels are not scheduled here.
 
             flushDirtyChannels();
@@ -106,11 +106,7 @@ public final class NioReactor extends Reactor {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (publicRunQueue.isEmpty()) {
-                    keyCount = selector.select();
-                } else {
-                    keyCount = selector.selectNow();
-                }
+                keyCount = selector.select();
                 wakeupNeeded.set(false);
             }
 
@@ -120,7 +116,7 @@ public final class NioReactor extends Reactor {
         }
     }
 
-    private void handleSelectedKeys() throws IOException {
+    private void handleSelectedKeys() {
         Iterator<SelectionKey> it = selector.selectedKeys().iterator();
         while (it.hasNext()) {
             SelectionKey key = it.next();
@@ -139,85 +135,91 @@ public final class NioReactor extends Reactor {
             }
 
             if (!key.isValid()) {
-                //System.out.println("sk not valid");
                 key.cancel();
             }
         }
     }
 
-    private void handleRead(SelectionKey key) throws IOException {
+    private void handleRead(SelectionKey key) {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         NioChannel channel = (NioChannel) key.attachment();
-        channel.readEvents.inc();
-        ByteBuffer readBuf = channel.receiveBuffer;
-        int bytesRead = socketChannel.read(readBuf);
-        System.out.println(this + " bytes read: " + bytesRead);
-        if (bytesRead == -1) {
-            socketChannel.close();
-            key.cancel();
-            channels.remove(channel);
-            return;
-        }
+        try {
+            channel.readEvents.inc();
+            ByteBuffer readBuf = channel.receiveBuffer;
+            int bytesRead = socketChannel.read(readBuf);
+            System.out.println(this + " bytes read: " + bytesRead);
+            if (bytesRead == -1) {
+                channel.close();
+                return;
+            }
 
-        channel.bytesRead.inc(bytesRead);
-        readBuf.flip();
-        Frame responseChain = null;
-        for (; ; ) {
-            if (channel.inboundFrame == null) {
-                if (readBuf.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+            channel.bytesRead.inc(bytesRead);
+            readBuf.flip();
+            Frame responseChain = null;
+            for (; ; ) {
+                if (channel.inboundFrame == null) {
+                    if (readBuf.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+                        break;
+                    }
+
+                    int size = readBuf.getInt();
+                    int flags = readBuf.getInt();
+                    if ((flags & FLAG_OP_RESPONSE) == 0) {
+                        channel.inboundFrame = requestFrameAllocator.allocate(size);
+                    } else {
+                        channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                    }
+
+                    channel.inboundFrame.writeInt(size);
+                    channel.inboundFrame.writeInt(flags);
+                    channel.inboundFrame.connection = channel.connection;
+                    channel.inboundFrame.channel = channel;
+                }
+
+                int size = channel.inboundFrame.size();
+                int remaining = size - channel.inboundFrame.position();
+                channel.inboundFrame.write(readBuf, remaining);
+
+                if (!channel.inboundFrame.isComplete()) {
                     break;
                 }
 
-                int size = readBuf.getInt();
-                int flags = readBuf.getInt();
-                if ((flags & FLAG_OP_RESPONSE) == 0) {
-                    channel.inboundFrame = requestFrameAllocator.allocate(size);
+                channel.inboundFrame.complete();
+                Frame frame = channel.inboundFrame;
+                channel.inboundFrame = null;
+                channel.framesRead.inc();
+
+                if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
+                    frame.next = responseChain;
+                    responseChain = frame;
                 } else {
-                    channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                    handleRequest(frame);
                 }
-
-                channel.inboundFrame.writeInt(size);
-                channel.inboundFrame.writeInt(flags);
-                channel.inboundFrame.connection = channel.connection;
-                channel.inboundFrame.channel = channel;
             }
+            compactOrClear(readBuf);
 
-            int size = channel.inboundFrame.size();
-            int remaining = size - channel.inboundFrame.position();
-            channel.inboundFrame.write(readBuf, remaining);
-
-            if (!channel.inboundFrame.isComplete()) {
-                break;
+            if (responseChain != null) {
+                frontend.handleResponse(responseChain);
             }
-
-            channel.inboundFrame.complete();
-            Frame frame = channel.inboundFrame;
-            channel.inboundFrame = null;
-            channel.framesRead.inc();
-
-            if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
-                frame.next = responseChain;
-                responseChain = frame;
-            } else {
-                handleRequest(frame);
-            }
-        }
-        compactOrClear(readBuf);
-
-        if (responseChain != null) {
-            frontend.handleResponse(responseChain);
+        } catch (IOException e) {
+            channel.close();
+            e.printStackTrace();
         }
     }
 
-    private void handleAccept() throws IOException {
-        SocketChannel socketChannel = serverSocketChannel.accept();
-        socketChannel.configureBlocking(false);
-        configure(socketChannel.socket());
+    private void handleAccept() {
+        try {
+            SocketChannel socketChannel = serverSocketChannel.accept();
+            socketChannel.configureBlocking(false);
+            configure(socketChannel.socket());
 
-        SelectionKey key = socketChannel.register(selector, OP_READ);
-        key.attach(newChannel(socketChannel, null, key));
+            SelectionKey key = socketChannel.register(selector, OP_READ);
+            key.attach(newChannel(socketChannel, null, key));
 
-        logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+            logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
