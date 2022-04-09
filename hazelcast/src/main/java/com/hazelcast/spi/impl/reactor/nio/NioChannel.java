@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Frame;
 
@@ -48,17 +47,13 @@ public class NioChannel extends Channel {
 
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if(writeThrough){
+            if (currentThread == reactor) {
+                boolean offered = reactor.dirtyChannels.offer(this);
+                assert offered;
+            } else if (writeThrough) {
                 reactor.handleWrite(this);
-            }else{
-                if (currentThread == reactor) {
-                    boolean offered = reactor.dirtyChannels.offer(this);
-                    if (!offered) {
-                        throw new RuntimeException("overload");//todo
-                    }
-                } else {
-                    reactor.schedule(this);
-                }
+            } else {
+                reactor.schedule(this);
             }
         }
     }
@@ -77,8 +72,6 @@ public class NioChannel extends Channel {
 
     @Override
     public void write(Frame frame) {
-
-
         if (Thread.currentThread() == reactor) {
             addFlushedFrame(frame);
         } else {
@@ -88,14 +81,8 @@ public class NioChannel extends Channel {
 
     @Override
     public void writeAndFlush(Frame frame) {
-        // Ideally we want to directly write to the
-        //  Thread currentFlushThread = flushThread.get();
-//        if (currentFlushThread == reactor) {
-//            addFlushedFrame(frame);
-//        } else {
         write(frame);
         flush();
-        //}
     }
 
     public void addFlushedFrame(Frame frame) {

@@ -225,7 +225,6 @@ public final class NioReactor extends Reactor {
 
     @Override
     protected void handleWrite(Channel c) {
-
         NioChannel channel = (NioChannel) c;
         try {
 
@@ -236,7 +235,9 @@ public final class NioReactor extends Reactor {
             channel.handleWriteCnt.inc();
             for (; ; ) {
                 Frame frame = channel.unflushedFrames.poll();
-                if (frame == null) break;
+                if (frame == null) {
+                    break;
+                }
                 channel.addFlushedFrame(frame);
             }
 
