@@ -2,7 +2,7 @@ package com.hazelcast.table;
 
 public interface Table<K,E> {
 
-    void newPipeline();
+    Pipeline newPipeline();
 
     void upsert(E item);
 

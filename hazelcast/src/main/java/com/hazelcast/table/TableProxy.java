@@ -8,6 +8,7 @@ import com.hazelcast.spi.impl.reactor.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.impl.reactor.UnpooledFrameAllocator;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
+import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,8 +35,8 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
-    public void newPipeline() {
-        throw new RuntimeException();
+    public Pipeline newPipeline() {
+        return new PipelineImpl(frontEnd);
     }
 
     @Override

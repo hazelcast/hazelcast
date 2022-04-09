@@ -18,12 +18,10 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
@@ -53,6 +51,7 @@ public class ReactorFrontEnd {
     public final Managers managers;
     private final ConcurrentMap<Address, Requests> requestsPerMember = new ConcurrentHashMap<>();
     public ResponseThread responseThread;
+    private int[] partitionIdToChannel;
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -72,6 +71,11 @@ public class ReactorFrontEnd {
         this.managers = new Managers();
         //hack
         managers.tableManager = new TableManager(271);
+
+        this.partitionIdToChannel = new int[271];
+        for (int k = 0; k < 271; k++) {
+            partitionIdToChannel[k] = hashToIndex(k, channelCount);
+        }
 
         for (int reactor = 0; reactor < reactors.length; reactor++) {
             int port = toPort(thisAddress, reactor);
@@ -115,7 +119,7 @@ public class ReactorFrontEnd {
         }
 
         boolean monitor = Boolean.parseBoolean(System.getProperty("reactor.monitor.enabled", "true"));
-        if(monitor) {
+        if (monitor) {
             monitorThread.start();
         }
         responseThread.start();
@@ -189,7 +193,7 @@ public class ReactorFrontEnd {
             request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
-            Channel channel = getConnection(address).channels[partitionIdToChannel(partitionId)];
+            Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
             channel.writeAndFlush(request);
         }
 
@@ -201,33 +205,37 @@ public class ReactorFrontEnd {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
 
-        if (pipeline.getRequests().isEmpty()) {
+        List<Frame> requestList = pipeline.getRequests();
+        if (requestList.isEmpty()) {
             return;
         }
 
         int partitionId = pipeline.getPartitionId();
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            for (Frame request : pipeline.getRequests()) {
-                //System.out.println("local invoke");
-                // todo: hack with the assignment of a partition to a local cpu.
+            for (Frame request : requestList) {
                 reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
             }
         } else {
             Requests requests = getRequests(address);
             TcpServerConnection connection = getConnection(address);
-            Channel channel = connection.channels[partitionIdToChannel(partitionId)];
+            Channel channel = connection.channels[partitionIdToChannel[partitionId]];
 
-            for (Frame request : pipeline.getRequests()) {
-                long callId = requests.callId.incrementAndGet();
+            long c = requests.callId.addAndGet(requestList.size());
+
+            int k = 0;
+            for (Frame request : requestList) {
+                long callId = c - k;
                 requests.map.put(callId, request);
                 request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
                 channel.write(request);
+                k--;
             }
 
             channel.flush();
         }
     }
+
     private TcpServerConnection getConnection(Address address) {
         if (connectionManager == null) {
             connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);

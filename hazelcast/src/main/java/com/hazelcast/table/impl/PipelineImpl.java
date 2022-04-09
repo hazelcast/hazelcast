@@ -4,16 +4,21 @@ import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.table.Pipeline;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 public class PipelineImpl implements Pipeline {
 
     private final ReactorFrontEnd frontEnd;
-    private List<Frame> requests = new LinkedList<>();
+    private List<Frame> requests = new ArrayList<>();
+    private List<CompletableFuture> futures = new ArrayList<>();
     private int partitionId = -1;
 
     public PipelineImpl(ReactorFrontEnd frontEnd) {
@@ -37,12 +42,23 @@ public class PipelineImpl implements Pipeline {
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();
 
+        futures.add(request.future);
         requests.add(request);
     }
 
     @Override
     public void execute() {
         frontEnd.invoke(this);
+    }
+
+    public void await(){
+        for(Future f: futures){
+            try {
+                f.get(23, SECONDS);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public int getPartitionId() {
