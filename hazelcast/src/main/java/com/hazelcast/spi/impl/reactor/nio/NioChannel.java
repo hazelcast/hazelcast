@@ -17,7 +17,7 @@ public class NioChannel extends Channel {
 
     // immutable state
     protected SocketChannel socketChannel;
-    protected NioReactor reactor;
+    public NioReactor reactor;
     protected SelectionKey key;
     protected boolean writeThrough;
 
@@ -31,23 +31,26 @@ public class NioChannel extends Channel {
     // writing side of the channel.
     // ======================================================
     // private
-    protected final IOVector ioVector = new IOVector();
+    public final IOVector ioVector = new IOVector();
 
     //  concurrent
-    protected final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    protected final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+    public final AtomicReference<Thread> flushThread = new AtomicReference<>();
+    public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     @Override
     public void flush() {
-        if (flushThread.get() != null) {
-            return;
-        }
+//        if (flushThread.get() != null) {
+//            return;
+//        }
+//
+//        if (flushThread.compareAndSet(null, Thread.currentThread())) {
+//            reactor.schedule(this);
+//        }
 
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == reactor) {
-                boolean offered = reactor.dirtyChannels.offer(this);
-                assert offered;
+                reactor.dirtyChannels.add(this);
             } else if (writeThrough) {
                 reactor.handleWrite(this);
             } else {
@@ -59,25 +62,16 @@ public class NioChannel extends Channel {
     public void resetFlushed() {
         flushThread.set(null);
 
-        if (unflushedFrames.isEmpty()) {
-            return;
-        }
-
-        if (flushThread.compareAndSet(null, Thread.currentThread())) {
-            reactor.schedule(this);
+        if (!unflushedFrames.isEmpty()) {
+            if (flushThread.compareAndSet(null, Thread.currentThread())) {
+                reactor.schedule(this);
+            }
         }
     }
 
     @Override
     public void write(Frame frame) {
-        Thread currentThread = Thread.currentThread();
-        if (currentThread == reactor && currentThread == flushThread.get()) {
-            if (!ioVector.add(frame)) {
-                unflushedFrames.add(frame);
-            }
-        } else {
-            unflushedFrames.add(frame);
-        }
+        unflushedFrames.add(frame);
     }
 
     @Override
@@ -86,6 +80,31 @@ public class NioChannel extends Channel {
         flush();
     }
 
+    @Override
+    public void unsafeWriteAndFlush(Frame frame) {
+        Thread currentFlushThread = flushThread.get();
+        Thread currentThread = Thread.currentThread();
+
+        assert currentThread == reactor;
+
+        if (currentFlushThread == null) {
+            if (flushThread.compareAndSet(null, currentThread)) {
+                reactor.dirtyChannels.add(this);
+                if (!ioVector.add(frame)) {
+                    unflushedFrames.add(frame);
+                }
+            } else {
+                unflushedFrames.add(frame);
+            }
+        } else if (currentFlushThread == reactor) {
+            if (!ioVector.add(frame)) {
+                unflushedFrames.add(frame);
+            }
+        } else {
+            unflushedFrames.add(frame);
+            flush();
+        }
+    }
 
     @Override
     public void close() {

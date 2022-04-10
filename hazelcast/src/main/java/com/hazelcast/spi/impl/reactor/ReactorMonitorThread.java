@@ -1,13 +1,14 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
 
-public final class MonitorThread extends Thread {
+public final class ReactorMonitorThread extends Thread {
 
     private final Reactor[] reactors;
     private volatile boolean shutdown = false;
@@ -15,8 +16,7 @@ public final class MonitorThread extends Thread {
     // There is a memory leak on the counters. When channels die, counters are not removed.
     private final Map<SwCounter, Prev> prevMap = new HashMap<>();
 
-
-    public MonitorThread(Reactor[] reactors) {
+    public ReactorMonitorThread(Reactor[] reactors) {
         super("MonitorThread");
         this.reactors = reactors;
     }
@@ -48,12 +48,12 @@ public final class MonitorThread extends Thread {
 
                 for (Reactor reactor : reactors) {
                     for (Channel channel : reactor.channels()) {
-                        displayChannel(channel, elapsed);
+                        monitor(channel, elapsed);
                     }
                 }
 
                 for (Reactor reactor : reactors) {
-                    displayReactor(reactor, elapsed);
+                    monitor(reactor, elapsed);
                 }
             }
         } catch (Exception e) {
@@ -61,51 +61,66 @@ public final class MonitorThread extends Thread {
         }
     }
 
-    private void displayReactor(Reactor reactor, long elapsed) {
-        System.out.println(reactor + " request-count:" + reactor.requests.get());
-        System.out.println(reactor + " channel-count:" + reactor.channels().size());
+    private void monitor(Reactor reactor, long elapsed) {
+        println(reactor + " request-count:" + reactor.requests.get());
+        println(reactor + " channel-count:" + reactor.channels().size());
 
         long requests = reactor.requests.get();
         Prev prevRequests = getPrev(reactor.requests);
         long requestsDelta = requests - prevRequests.value;
-        System.out.println(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
+        println(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
         prevRequests.value = requests;
     }
 
-    private void displayChannel(Channel channel, long elapsed) {
+
+    private void println(String s) {
+        System.out.println("[monitor] " + s);
+    }
+
+    private void monitor(Channel channel, long elapsed) {
         long packetsRead = channel.framesRead.get();
         Prev prevPacketsRead = getPrev(channel.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;
-        System.out.println(channel.remoteAddress + " " + thp(packetsReadDelta, elapsed) + " packets/second");
+        println(channel + " " + thp(packetsReadDelta, elapsed) + " packets/second");
         prevPacketsRead.value = packetsRead;
 
         long bytesRead = channel.bytesRead.get();
         Prev prevBytesRead = getPrev(channel.bytesRead);
         long bytesReadDelta = bytesRead - prevBytesRead.value;
-        System.out.println(channel.remoteAddress + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
+        println(channel + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
         prevBytesRead.value = bytesRead;
 
         long bytesWritten = channel.bytesWritten.get();
         Prev prevBytesWritten = getPrev(channel.bytesWritten);
         long bytesWrittenDelta = bytesWritten - prevBytesWritten.value;
-        System.out.println(channel.remoteAddress + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
+        println(channel + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
         prevBytesWritten.value = bytesWritten;
 
         long handleOutboundCalls = channel.handleWriteCnt.get();
         Prev prevHandleOutboundCalls = getPrev(channel.handleWriteCnt);
         long handleOutboundCallsDelta = handleOutboundCalls - prevHandleOutboundCalls.value;
-        System.out.println(channel.remoteAddress + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
+        println(channel + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
         prevHandleOutboundCalls.value = handleOutboundCalls;
 
         long readEvents = channel.readEvents.get();
         Prev prevReadEvents = getPrev(channel.readEvents);
         long readEventsDelta = readEvents - prevReadEvents.value;
-        System.out.println(channel.remoteAddress + " " + thp(readEventsDelta, elapsed) + " read-events/second");
+        println(channel + " " + thp(readEventsDelta, elapsed) + " read-events/second");
         prevReadEvents.value = readEvents;
 
-        System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
-        System.out.println(channel.remoteAddress + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
-        System.out.println(channel.remoteAddress + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
+        println(channel + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
+        println(channel + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
+        println(channel + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
+
+        if (packetsReadDelta == 0) {
+            if (channel instanceof NioChannel) {
+                NioChannel nioChannel = (NioChannel) channel;
+                boolean hasData = !nioChannel.unflushedFrames.isEmpty() || !nioChannel.ioVector.isEmpty();
+                //if (nioChannel.flushThread.get() == null && hasData) {
+                println(channel + " is stuck: unflushed-frames:" + nioChannel.unflushedFrames.size() + " ioVector.empty:" + nioChannel.ioVector.isEmpty() + " flushed:" + nioChannel.flushThread.get()+" reactor.contains:"+nioChannel.reactor.publicRunQueue.contains(nioChannel));
+                //}
+            }
+        }
     }
 
     private Prev getPrev(SwCounter counter) {

@@ -18,6 +18,12 @@ public final class CircularQueue<E> {
         this.mask = capacity - 1;
     }
 
+    public void add(E item){
+        if(!offer(item)){
+            throw new IllegalStateException("CircularQueue is full");
+        }
+    }
+
     public int fill(Queue<E> queue){
         int remaining = remaining();
         int count = 0;

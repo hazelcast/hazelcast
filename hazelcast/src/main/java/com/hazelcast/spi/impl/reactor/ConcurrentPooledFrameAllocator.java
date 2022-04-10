@@ -83,9 +83,9 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
             }
         }
 
-        if (pool.allocateCnt % 1_000_000 == 0) {
-            System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
-        }
+//        if (pool.allocateCnt % 1_000_000 == 0) {
+//            System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
+//        }
 
         Frame frame = pool.frames[pool.index];
         pool.frames[pool.index] = null;

@@ -1,6 +1,5 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.*;
 import io.netty.buffer.ByteBuf;
@@ -21,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
@@ -166,7 +164,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
         channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
-        channel.readBuffer = ByteBuffer.allocate(channelConfig.sendBufferSize);
         channel.connection = connection;
         channels.add(channel);
         return channel;
@@ -282,11 +279,13 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
         IO_UringChannel channel = channelMap.get(fd);
+        channel.readEvents.inc();
+        channel.bytesRead.inc(res);
+
         ByteBuf receiveBuff = channel.receiveBuff;
         // we need to update the writerIndex; not done automatically.
         //int oldLimit = channel.readBuffer.limit();
-        channel.readEvents.inc();
-        channel.bytesRead.inc(res);
+
         //channel.readBuffer.limit(res);
         receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
         //channel.receiveBuff.readBytes(channel.readBuffer);

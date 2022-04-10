@@ -31,5 +31,17 @@ public abstract class Channel {
 
     public abstract void writeAndFlush(Frame frame);
 
+    /**
+     * Should only be called from within the reactor.
+     *
+     * @param frame
+     */
+    public abstract void unsafeWriteAndFlush(Frame frame);
+
     public abstract void close();
+
+    @Override
+    public String toString(){
+        return getClass().getSimpleName()+"["+localAddress+"->"+remoteAddress+"]";
+    }
 }

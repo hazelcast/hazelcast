@@ -44,7 +44,7 @@ public class ReactorFrontEnd {
     private final int channelCount;
     private final boolean reactorSpin;
     private final ChannelConfig channelConfig;
-    private final MonitorThread monitorThread;
+    private final ReactorMonitorThread monitorThread;
     private final boolean poolRequests;
     private final boolean poolResponses;
     private final boolean writeThrough;
@@ -117,7 +117,7 @@ public class ReactorFrontEnd {
             }
         }
 
-        this.monitorThread = new MonitorThread(reactors);
+        this.monitorThread = new ReactorMonitorThread(reactors);
         this.responseThread = new ResponseThread();
     }
 
@@ -320,9 +320,8 @@ public class ReactorFrontEnd {
                     }
 
                     connection.channels = channels;
+                    System.out.println("channels to " + address + " established");
                 }
-
-                System.out.println("channels to " + address + " established");
             }
         }
 

@@ -48,10 +48,7 @@ public final class Scheduler {
             switch (runCode) {
                 case COMPLETED:
                     if (op.request.future == null) {
-                        // todo: perhaps call as specific flush that
-                        // add the frame to the flushed frames and ensures
-                        // that the channel is flushed.
-                        op.request.channel.writeAndFlush(op.response);
+                        op.request.channel.unsafeWriteAndFlush(op.response);
                     } else {
                         op.request.future.complete(op.response);
                         op.response.release();

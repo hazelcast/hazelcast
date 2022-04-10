@@ -6,9 +6,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import org.jctools.queues.MpscArrayQueue;
 
-import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
@@ -32,7 +30,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final FrameAllocator requestFrameAllocator;
     protected final FrameAllocator remoteResponseFrameAllocator;
     protected final FrameAllocator localResponseFrameAllocator;
-    protected final MpscArrayQueue publicRunQueue = new MpscArrayQueue(1024);
+    public final ConcurrentLinkedQueue publicRunQueue = new ConcurrentLinkedQueue();
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
@@ -82,12 +80,6 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     public void removeChannel(Channel nioChannel) {
         channels.remove(nioChannel);
-    }
-
-    public static class ConnectRequest {
-        public Connection connection;
-        public SocketAddress address;
-        public CompletableFuture<Channel> future;
     }
 
     protected abstract void setupServerSocket() throws Exception;

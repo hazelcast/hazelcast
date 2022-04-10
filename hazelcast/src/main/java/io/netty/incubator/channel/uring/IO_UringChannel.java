@@ -89,6 +89,11 @@ public class IO_UringChannel extends Channel {
     }
 
     @Override
+    public void unsafeWriteAndFlush(Frame frame) {
+        writeAndFlush(frame);
+    }
+
+    @Override
     public void close() {
         //todo: also think about releasing the resources like frame buffers
         // perhaps add a one time close check
