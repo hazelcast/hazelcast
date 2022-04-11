@@ -49,6 +49,8 @@ public class ClientMultiMapSplitBrainProtectionWriteTest extends MultiMapSplitBr
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

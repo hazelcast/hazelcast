@@ -67,7 +67,7 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeString(@Nonnull String fieldName, String str) {
+    public void writeString(@Nonnull String fieldName, @Nullable String str) {
         addField(new FieldDescriptor(fieldName, FieldKind.STRING));
     }
 

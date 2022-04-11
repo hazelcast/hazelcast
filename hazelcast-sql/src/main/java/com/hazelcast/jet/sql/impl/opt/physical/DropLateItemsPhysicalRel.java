@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -42,28 +40,21 @@ import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRexToExpressionVisit
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
     private final RexNode wmField;
-    private final ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider;
 
     protected DropLateItemsPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            RexNode wmField,
-            ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider
+            RexNode wmField
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
-        this.allowedLagProvider = allowedLagProvider;
     }
 
     public Expression<?> timestampExpression() {
         QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
         RexVisitor<Expression<?>> visitor = createRexToExpressionVisitor(schema(parameterMetadata), parameterMetadata);
         return wmField.accept(visitor);
-    }
-
-    public ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider() {
-        return allowedLagProvider;
     }
 
     @Override
@@ -78,7 +69,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmField, allowedLagProvider);
+        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmField);
     }
 
     @Override

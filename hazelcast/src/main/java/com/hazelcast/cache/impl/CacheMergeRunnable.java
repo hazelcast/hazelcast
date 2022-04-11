@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
@@ -76,11 +75,6 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Object, Object, ICacheRec
 
             consumer.accept(partitionId, createMergingEntry(getSerializationService(), key, dataValue, record));
         }
-    }
-
-    @Override
-    protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        return cacheService.getConfigs().get(dataStructureName).getInMemoryFormat();
     }
 
     @Override

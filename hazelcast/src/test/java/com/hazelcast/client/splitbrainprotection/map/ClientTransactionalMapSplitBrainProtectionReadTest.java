@@ -49,6 +49,8 @@ public class ClientTransactionalMapSplitBrainProtectionReadTest extends Transact
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
