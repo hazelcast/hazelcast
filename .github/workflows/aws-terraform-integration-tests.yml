@@ -40,7 +40,7 @@ jobs:
       - run : mkdir ~/lib
 
       # BUILD HAZELCAST AWS SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3.0.0
         with:
           path: hazelcast
 
