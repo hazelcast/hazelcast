@@ -444,6 +444,32 @@ public class SqlTumbleTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_countWithUnionAsInput() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(1), null, null),
+                row(timestampTz(2), "Alice", 1),
+                row(timestampTz(3), "Bob", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        String unionQuery = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))";
+        sqlService.execute("CREATE VIEW v1 AS " + unionQuery);
+        sqlService.execute("CREATE VIEW v2 AS " + unionQuery);
+        sqlService.execute("CREATE VIEW v3 AS (SELECT * FROM v1) UNION ALL (SELECT * FROM v2)");
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start, COUNT(name) FROM " +
+                        "TABLE(TUMBLE(TABLE v3, DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "GROUP BY window_start",
+                asList(
+                        new Row(timestampTz(0L), 2L), // 2x Alice(t=0)
+                        new Row(timestampTz(2L), 4L)  // 2x Alice(t=2) + 2x Bob(t=3)
+                )
+        );
+    }
+
+    @Test
     public void test_countGroupedBy() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),

@@ -747,6 +747,19 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         buildConfig(yaml);
     }
 
+    @Test
+    public void testEmptyYaml() {
+        String yaml = "hazelcast-client:\n";
+        ClientConfig emptyConfig = buildConfig(yaml);
+        ClientConfig defaultConfig = new ClientConfig();
+
+        // Object equality was failing because of the classloaders of
+        // these configs are different, ignoring this exception.
+        emptyConfig.setClassLoader(defaultConfig.getClassLoader());
+
+        assertEquals(defaultConfig, emptyConfig);
+    }
+
     public static ClientConfig buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder(bis);
