@@ -5,6 +5,7 @@ import com.hazelcast.spi.impl.reactor.CircularQueue;
 import com.hazelcast.spi.impl.reactor.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.IovArray;
+import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,7 +29,9 @@ public class IO_UringChannel extends Channel {
     // ======================================================
     // concurrent state
     protected AtomicBoolean flushed = new AtomicBoolean(false);
-    protected final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+    //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+
     // isolated state.
     public IovArray iovArray;
     protected CircularQueue<Frame> flushedFrames = new CircularQueue<>(IOV_MAX);

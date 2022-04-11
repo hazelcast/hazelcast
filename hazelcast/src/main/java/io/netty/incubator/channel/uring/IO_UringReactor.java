@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.spi.impl.reactor.Frame.FLAG_OP_RESPONSE;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
@@ -265,7 +265,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
     private long handle_IORING_OP_WRITE = 0;
 
-
     private void handle_IORING_OP_READ(int fd, int res, int flags, short data) {
         // res is the number of bytes read
         //todo: we need to deal with res=0 and res<0
@@ -459,7 +458,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 //    }
 
     @Override
-    protected void handleConnectRequest(ConnectRequest request) {
+    protected void handleConnect(ConnectRequest request) {
         try {
             SocketAddress address = request.address;
             System.out.println(getName() + " connectRequest to address:" + address);

@@ -7,10 +7,11 @@ import com.hazelcast.spi.impl.reactor.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
-import com.hazelcast.spi.impl.reactor.UnpooledFrameAllocator;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
+import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +38,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public Pipeline newPipeline() {
-        return new PipelineImpl(frontEnd);
+        return new PipelineImpl(frontEnd, frameAllocator);
     }
 
     @Override
@@ -97,7 +98,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();
-        //request.trackRelease=true;
         return frontEnd.invoke(request, partitionId);
     }
 

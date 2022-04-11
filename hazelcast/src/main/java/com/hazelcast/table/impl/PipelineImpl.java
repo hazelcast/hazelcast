@@ -1,6 +1,7 @@
 package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.table.Pipeline;
 
@@ -17,12 +18,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class PipelineImpl implements Pipeline {
 
     private final ReactorFrontEnd frontEnd;
+    private final FrameAllocator frameAllocator;
     private List<Frame> requests = new ArrayList<>();
     private List<CompletableFuture> futures = new ArrayList<>();
     private int partitionId = -1;
 
-    public PipelineImpl(ReactorFrontEnd frontEnd) {
+    public PipelineImpl(ReactorFrontEnd frontEnd, FrameAllocator frameAllocator) {
         this.frontEnd = frontEnd;
+        this.frameAllocator = frameAllocator;
     }
 
     public void noop(int partitionId) {
@@ -36,8 +39,7 @@ public class PipelineImpl implements Pipeline {
             throw new RuntimeException("Cross partition request detected; expected " + this.partitionId + " found: " + partitionId);
         }
 
-        //todo: usepool
-        Frame request = new Frame(32)
+        Frame request = frameAllocator.allocate(32)
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();

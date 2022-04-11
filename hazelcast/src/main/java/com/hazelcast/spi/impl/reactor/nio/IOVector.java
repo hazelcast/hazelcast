@@ -6,6 +6,7 @@ import io.netty.channel.unix.Limits;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class IOVector {
@@ -21,7 +22,7 @@ public final class IOVector {
         return size == 0;
     }
 
-    public void fill(ConcurrentLinkedQueue<Frame> queue) {
+    public void fill(Queue<Frame> queue) {
         int count = IOV_MAX - size;
         for (int k = 0; k < count; k++) {
             Frame frame = queue.poll();

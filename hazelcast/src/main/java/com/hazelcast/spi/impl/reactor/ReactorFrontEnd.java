@@ -13,6 +13,7 @@ import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
+import com.hazelcast.transaction.impl.TransactionImpl;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 import io.netty.incubator.channel.uring.IO_UringReactorConfig;
 
@@ -48,12 +49,13 @@ public class ReactorFrontEnd {
     private final boolean poolRequests;
     private final boolean poolResponses;
     private final boolean writeThrough;
+    private final int responseThreadCount;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
     public final Managers managers;
     private final ConcurrentMap<Address, Requests> requestsPerMember = new ConcurrentHashMap<>();
-    public ResponseThread responseThread;
+    private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
 
     public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
@@ -61,6 +63,7 @@ public class ReactorFrontEnd {
         this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.responseThreadCount = Integer.parseInt(System.getProperty("reactor.responsethread.count", "1"));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(System.getProperty("reactor.write-through", "false"));
         this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "false"));
@@ -118,12 +121,16 @@ public class ReactorFrontEnd {
         }
 
         this.monitorThread = new ReactorMonitorThread(reactors);
-        this.responseThread = new ResponseThread();
+        this.responseThreads = new ResponseThread[responseThreadCount];
+        for (int k = 0; k < responseThreadCount; k++) {
+            this.responseThreads[k] = new ResponseThread();
+        }
     }
 
     private void printReactorInfo(String reactorType) {
         System.out.println("reactor.count:" + reactorCount);
         System.out.println("reactor.spin:" + reactorSpin);
+        System.out.println("reactor.responsethread.count:" + responseThreadCount);
         System.out.println("reactor.write-through:" + writeThrough);
         System.out.println("reactor.channels:" + channelCount);
         System.out.println("reactor.type:" + reactorType);
@@ -143,15 +150,18 @@ public class ReactorFrontEnd {
     public void start() {
         logger.info("Starting ReactorFrontend");
 
-        for (Reactor r : reactors) {
-            r.start();
+        for (Reactor reactor : reactors) {
+            reactor.start();
         }
 
         boolean monitor = Boolean.parseBoolean(System.getProperty("reactor.monitor.enabled", "true"));
         if (monitor) {
             monitorThread.start();
         }
-        responseThread.start();
+
+        for (ResponseThread responseThread : responseThreads) {
+            responseThread.start();
+        }
     }
 
     public void shutdown() {
@@ -169,13 +179,19 @@ public class ReactorFrontEnd {
             }
         }
 
-        responseThread.shutdown();
+        for (ResponseThread responseThread : responseThreads) {
+            responseThread.shutdown();
+        }
         monitorThread.shutdown();
     }
 
     public void handleResponse(Frame response) {
         if (response.next != null) {
-            responseThread.queue.add(response);
+            // probably better to use call-id.
+            int index = responseThreadCount == 0
+                    ? 0
+                    : hashToIndex(response.getInt(Frame.OFFSET_PARTITION_ID), responseThreadCount);
+            responseThreads[index].queue.add(response);
             return;
         }
 

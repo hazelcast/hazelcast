@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.spi.impl.reactor.Frame.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -58,7 +58,6 @@ public final class NioReactor extends Reactor {
             runTasks();
 
             boolean moreWork = scheduler.tick();
-            //todo: dirty channels are not scheduled here.
 
             flushDirtyChannels();
 
@@ -67,9 +66,9 @@ public final class NioReactor extends Reactor {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if(publicRunQueue.isEmpty()){
+                if (publicRunQueue.isEmpty()) {
                     keyCount = selector.select();
-                }else{
+                } else {
                     keyCount = selector.selectNow();
                 }
                 wakeupNeeded.set(false);
@@ -222,7 +221,7 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    protected void handleConnectRequest(ConnectRequest request) {
+    protected void handleConnect(ConnectRequest request) {
         try {
             SocketAddress address = request.address;
             System.out.println("ConnectRequest address:" + address);
@@ -286,5 +285,4 @@ public final class NioReactor extends Reactor {
         System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
         System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
-
 }

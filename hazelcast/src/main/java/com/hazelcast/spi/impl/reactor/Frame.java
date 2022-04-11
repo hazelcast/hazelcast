@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.Packet;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +22,9 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 // response
 // call id: long 12
 public class Frame {
+
+    public static final int FLAG_OP = 1 << 1;
+    public static final int FLAG_OP_RESPONSE = 2 << 1;
 
     public CompletableFuture future;
     public Frame next;
@@ -70,7 +72,7 @@ public class Frame {
 
     public Frame writeRequestHeader(int partitionId, int opcode) {
         buff.putInt(-1); //size
-        buff.putInt(Packet.FLAG_OP_CONTROL);
+        buff.putInt(Frame.FLAG_OP);
         buff.putInt(partitionId);
         buff.putLong(-1); //callid
         buff.putInt(opcode);
@@ -79,7 +81,7 @@ public class Frame {
 
     public Frame writeResponseHeader(int partitionId, long callId) {
         buff.putInt(-1);  //size
-        buff.putInt(Packet.FLAG_OP_RESPONSE);
+        buff.putInt(Frame.FLAG_OP_RESPONSE);
         buff.putInt(partitionId);
         buff.putLong(callId);
         return this;
@@ -231,13 +233,13 @@ public class Frame {
         if (!concurrent) {
             refCount.lazySet(refCount.get() + 1);
         } else {
-            for(;;){
+            for (; ; ) {
                 int current = refCount.get();
-                if(current == 0){
+                if (current == 0) {
                     throw new IllegalStateException("Can't acquire a freed frame");
                 }
 
-                if(refCount.compareAndSet(current, current+1)){
+                if (refCount.compareAndSet(current, current + 1)) {
                     break;
                 }
             }

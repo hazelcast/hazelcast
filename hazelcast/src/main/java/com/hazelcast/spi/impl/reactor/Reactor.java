@@ -109,7 +109,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         return channels;
     }
 
-    protected abstract void handleConnectRequest(ConnectRequest task);
+    protected abstract void handleConnect(ConnectRequest task);
 
     protected abstract void handleWrite(Channel task);
 
@@ -153,7 +153,7 @@ public abstract class Reactor extends HazelcastManagedThread {
             } else if (task instanceof Frame) {
                 handleRequest((Frame) task);
             } else if (task instanceof ConnectRequest) {
-                handleConnectRequest((ConnectRequest) task);
+                handleConnect((ConnectRequest) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }

@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Frame;
+import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -35,7 +36,8 @@ public class NioChannel extends Channel {
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+    //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     @Override
     public void flush() {

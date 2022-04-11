@@ -14,14 +14,14 @@ public final class ReactorMonitorThread extends Thread {
     private volatile boolean shutdown = false;
     private long prevMillis = currentTimeMillis();
     // There is a memory leak on the counters. When channels die, counters are not removed.
-    private final Map<SwCounter, Prev> prevMap = new HashMap<>();
+    private final Map<SwCounter, LongHolder> prevMap = new HashMap<>();
 
     public ReactorMonitorThread(Reactor[] reactors) {
         super("MonitorThread");
         this.reactors = reactors;
     }
 
-    static class Prev {
+    static class LongHolder {
         public long value;
     }
 
@@ -62,71 +62,73 @@ public final class ReactorMonitorThread extends Thread {
     }
 
     private void monitor(Reactor reactor, long elapsed) {
-        println(reactor + " request-count:" + reactor.requests.get());
-        println(reactor + " channel-count:" + reactor.channels().size());
+        log(reactor + " request-count:" + reactor.requests.get());
+        log(reactor + " channel-count:" + reactor.channels().size());
 
         long requests = reactor.requests.get();
-        Prev prevRequests = getPrev(reactor.requests);
+        LongHolder prevRequests = getPrev(reactor.requests);
         long requestsDelta = requests - prevRequests.value;
-        println(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
+        log(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
         prevRequests.value = requests;
     }
 
-
-    private void println(String s) {
+    private void log(String s) {
         System.out.println("[monitor] " + s);
     }
 
     private void monitor(Channel channel, long elapsed) {
         long packetsRead = channel.framesRead.get();
-        Prev prevPacketsRead = getPrev(channel.framesRead);
+        LongHolder prevPacketsRead = getPrev(channel.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;
-        println(channel + " " + thp(packetsReadDelta, elapsed) + " packets/second");
+        log(channel + " " + thp(packetsReadDelta, elapsed) + " packets/second");
         prevPacketsRead.value = packetsRead;
 
         long bytesRead = channel.bytesRead.get();
-        Prev prevBytesRead = getPrev(channel.bytesRead);
+        LongHolder prevBytesRead = getPrev(channel.bytesRead);
         long bytesReadDelta = bytesRead - prevBytesRead.value;
-        println(channel + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
+        log(channel + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
         prevBytesRead.value = bytesRead;
 
         long bytesWritten = channel.bytesWritten.get();
-        Prev prevBytesWritten = getPrev(channel.bytesWritten);
+        LongHolder prevBytesWritten = getPrev(channel.bytesWritten);
         long bytesWrittenDelta = bytesWritten - prevBytesWritten.value;
-        println(channel + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
+        log(channel + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
         prevBytesWritten.value = bytesWritten;
 
         long handleOutboundCalls = channel.handleWriteCnt.get();
-        Prev prevHandleOutboundCalls = getPrev(channel.handleWriteCnt);
+        LongHolder prevHandleOutboundCalls = getPrev(channel.handleWriteCnt);
         long handleOutboundCallsDelta = handleOutboundCalls - prevHandleOutboundCalls.value;
-        println(channel + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
+        log(channel + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
         prevHandleOutboundCalls.value = handleOutboundCalls;
 
         long readEvents = channel.readEvents.get();
-        Prev prevReadEvents = getPrev(channel.readEvents);
+        LongHolder prevReadEvents = getPrev(channel.readEvents);
         long readEventsDelta = readEvents - prevReadEvents.value;
-        println(channel + " " + thp(readEventsDelta, elapsed) + " read-events/second");
+        log(channel + " " + thp(readEventsDelta, elapsed) + " read-events/second");
         prevReadEvents.value = readEvents;
 
-        println(channel + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
-        println(channel + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
-        println(channel + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
+        log(channel + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
+        log(channel + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
+        log(channel + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
 
         if (packetsReadDelta == 0) {
             if (channel instanceof NioChannel) {
                 NioChannel nioChannel = (NioChannel) channel;
                 boolean hasData = !nioChannel.unflushedFrames.isEmpty() || !nioChannel.ioVector.isEmpty();
                 //if (nioChannel.flushThread.get() == null && hasData) {
-                println(channel + " is stuck: unflushed-frames:" + nioChannel.unflushedFrames.size() + " ioVector.empty:" + nioChannel.ioVector.isEmpty() + " flushed:" + nioChannel.flushThread.get()+" reactor.contains:"+nioChannel.reactor.publicRunQueue.contains(nioChannel));
+                log(channel + " is stuck: unflushed-frames:" + nioChannel.unflushedFrames.size()
+                        + " ioVector.empty:" + nioChannel.ioVector.isEmpty()
+                        + " flushed:" + nioChannel.flushThread.get()
+                        + " reactor.contains:" + nioChannel.reactor.publicRunQueue.contains(nioChannel));
                 //}
             }
         }
     }
 
-    private Prev getPrev(SwCounter counter) {
-        Prev prev = prevMap.get(counter);
+    private LongHolder getPrev(SwCounter counter) {
+        LongHolder prev = prevMap.get(counter);
         if (prev == null) {
-            prev = new Prev();
+            prev = new LongHolder();
             prevMap.put(counter, prev);
         }
         return prev;
