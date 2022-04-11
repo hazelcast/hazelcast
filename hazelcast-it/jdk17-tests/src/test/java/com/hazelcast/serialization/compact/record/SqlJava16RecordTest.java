@@ -50,5 +50,5 @@ public class SqlJava16RecordTest extends SqlTestSupport {
         }
     }
 
-    public record Person(String name, int age) {}
+    public record Person(String name, int age) { }
 }
