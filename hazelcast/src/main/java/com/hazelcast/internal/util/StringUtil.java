@@ -533,7 +533,8 @@ public final class StringUtil {
     }
 
     /**
-     * Removes all occurrence of {@code charToRemove} from {@code str}.
+     * Removes all occurrence of {@code charToRemove} from {@code str}. This method is more efficient than
+     * {@link String#replaceAll(String, String)} which compiles a regex from the first parameter every invocation.
      */
     public static String removeCharacter(String str, char charToRemove) {
         if (str == null || str.indexOf(charToRemove) == -1) {
