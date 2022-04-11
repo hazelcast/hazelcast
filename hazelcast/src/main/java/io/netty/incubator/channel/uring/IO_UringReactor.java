@@ -1,7 +1,12 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.reactor.*;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
+import com.hazelcast.spi.impl.reactor.CircularQueue;
+import com.hazelcast.spi.impl.reactor.ConnectRequest;
+import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.Reactor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -97,7 +102,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
     private final AcceptMemory acceptMemory = new AcceptMemory();
-    private LinuxSocket serverSocket;
     private final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
@@ -129,25 +133,23 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
     }
 
-    @Override
-    public void setupServerSocket() throws Exception {
-        this.serverSocket = LinuxSocket.newSocketStream(false);
-        this.serverSocket.setBlocking();
-        this.serverSocket.setReuseAddress(true);
+    public void registerAccept(InetSocketAddress serverAddress, SocketConfig socketConfig) throws IOException {
+        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
+        serverSocket.setBlocking();
+        serverSocket.setReuseAddress(true);
         System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
 
-        InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
         serverSocket.bind(serverAddress);
         System.out.println(getName() + " Bind success " + serverAddress);
         serverSocket.listen(10);
         System.out.println(getName() + " Listening on " + serverAddress);
     }
 
-    private void configure(LinuxSocket socket) throws IOException {
-        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-        socket.setSendBufferSize(channelConfig.sendBufferSize);
-        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
-        socket.setTcpQuickAck(channelConfig.tcpQuickAck);
+    private void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+        socket.setTcpQuickAck(socketConfig.tcpQuickAck);
 
         String id = socket.localAddress() + "->" + socket.remoteAddress();
         System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
@@ -163,7 +165,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.localAddress = socket.localAddress();
         channel.remoteAddress = socket.remoteAddress();
         channel.reactor = this;
-        channel.receiveBuff = allocator.directBuffer(channelConfig.receiveBufferSize);
+        //channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
         channel.connection = connection;
         channels.add(channel);
         return channel;
@@ -172,7 +174,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     @Override
     protected void eventLoop() {
         sq_addEventRead();
-        sq_addAccept();
+
+        //todo
+       // sq_addAccept();
 
         while (running) {
             runTasks();
@@ -206,9 +210,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
     }
 
-    private void sq_addAccept() {
-        sq.addAccept(
-                serverSocket.intValue(),
+    private void sq_addAccept(int serverSocketFd) {
+        sq.addAccept(serverSocketFd,
                 acceptMemory.acceptedAddressMemoryAddress,
                 acceptMemory.acceptedAddressLengthMemoryAddress, (short) 0);
     }
@@ -241,9 +244,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private void handle_IORING_OP_ACCEPT(int fd, int res, int flags, short data) {
-        sq_addAccept();
+        //todo: we need to look at fd because we don't know which server socket did it.
+        sq_addAccept(-1);
 
-        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
+//        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
         if (res < 0) {
             return;
@@ -253,7 +257,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         System.out.println(this + " new connected accepted: " + address);
         LinuxSocket socket = new LinuxSocket(res);
         try {
-            configure(socket);
+            configure(socket, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -465,7 +469,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
-            configure(socket);
+            configure(socket, request.socketConfig);
 
             if (!socket.connect(request.address)) {
                 request.future.completeExceptionally(new IOException("Could not connect to " + request.address));

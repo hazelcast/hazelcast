@@ -13,10 +13,11 @@ import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
-import com.hazelcast.transaction.impl.TransactionImpl;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 import io.netty.incubator.channel.uring.IO_UringReactorConfig;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class ReactorFrontEnd {
     private final int reactorCount;
     private final int channelCount;
     private final boolean reactorSpin;
-    private final ChannelConfig channelConfig;
+    private final SocketConfig socketConfig;
     private final ReactorMonitorThread monitorThread;
     private final boolean poolRequests;
     private final boolean poolResponses;
@@ -74,7 +75,7 @@ public class ReactorFrontEnd {
         printReactorInfo(reactorType);
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
-        this.channelConfig = new ChannelConfig();
+        this.socketConfig = new SocketConfig();
         this.managers = new Managers();
         //hack
         managers.tableManager = new TableManager(271);
@@ -87,34 +88,10 @@ public class ReactorFrontEnd {
         for (int k = 0; k < reactors.length; k++) {
             int port = toPort(thisAddress, k);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                IO_UringReactorConfig config = new IO_UringReactorConfig();
-                config.spin = reactorSpin;
-                config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-                config.channelConfig = channelConfig;
-                config.port = port;
-                config.thisAddress = thisAddress;
-                config.poolRequests = poolRequests;
-                config.poolResponses = poolResponses;
-                config.frontend = this;
-                config.logger = nodeEngine.getLogger(IO_UringReactor.class);
-                config.threadAffinity = threadAffinity;
-                config.managers = managers;
-                reactors[k] = new IO_UringReactor(config);
+                reactors[k] = newIO_UringReactor(nodeEngine, port);
             } else if (reactorType.equals("nio")) {
-                NioReactorConfig config = new NioReactorConfig();
-                config.spin = reactorSpin;
-                config.writeThrough = writeThrough;
-                config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-                config.channelConfig = channelConfig;
-                config.port = port;
-                config.thisAddress = thisAddress;
-                config.poolRequests = poolRequests;
-                config.poolResponses = poolResponses;
-                config.frontend = this;
-                config.logger = nodeEngine.getLogger(NioReactor.class);
-                config.threadAffinity = threadAffinity;
-                config.managers = managers;
-                reactors[k] = new NioReactor(config);
+                NioReactor reactor = newNioReactor(nodeEngine, port);
+                reactors[k] = reactor;
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -124,6 +101,50 @@ public class ReactorFrontEnd {
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreadCount; k++) {
             this.responseThreads[k] = new ResponseThread();
+        }
+    }
+
+    @NotNull
+    private NioReactor newNioReactor(NodeEngineImpl nodeEngine, int port)  {
+        try {
+            NioReactorConfig config = new NioReactorConfig();
+            config.spin = reactorSpin;
+            config.writeThrough = writeThrough;
+            config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+            config.poolRequests = poolRequests;
+            config.poolResponses = poolResponses;
+            config.frontend = this;
+            config.logger = nodeEngine.getLogger(NioReactor.class);
+            config.threadAffinity = threadAffinity;
+            config.managers = managers;
+            NioReactor reactor = new NioReactor(config);
+            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
+            reactor.registerAccept(serverAddress, socketConfig);
+            return reactor;
+        }catch (IOException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private IO_UringReactor newIO_UringReactor(NodeEngineImpl nodeEngine, int port) {
+        try {
+            IO_UringReactorConfig config = new IO_UringReactorConfig();
+            config.spin = reactorSpin;
+            config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+            config.poolRequests = poolRequests;
+            config.poolResponses = poolResponses;
+            config.frontend = this;
+            config.logger = nodeEngine.getLogger(IO_UringReactor.class);
+            config.threadAffinity = threadAffinity;
+            config.managers = managers;
+            IO_UringReactor reactor = new IO_UringReactor(config);
+
+            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
+            reactor.registerAccept(serverAddress, socketConfig);
+            return reactor;
+        }catch (IOException e){
+            throw new RuntimeException();
         }
     }
 
@@ -323,7 +344,7 @@ public class ReactorFrontEnd {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].schedule(reactorAddress, connection));
+                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].schedule(reactorAddress, connection, socketConfig));
                     }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {

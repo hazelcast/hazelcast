@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl.reactor.nio;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
@@ -24,6 +25,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.spi.impl.reactor.Frame.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
@@ -31,7 +33,6 @@ public final class NioReactor extends Reactor {
     private final Selector selector;
     private final boolean spin;
     private final boolean writeThrough;
-    private ServerSocketChannel serverSocketChannel;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
     public NioReactor(NioReactorConfig config) {
@@ -87,7 +88,7 @@ public final class NioReactor extends Reactor {
             it.remove();
 
             if (key.isValid() && key.isAcceptable()) {
-                handleAccept();
+                handleAccept(key);
             }
 
             if (key.isValid() && key.isReadable()) {
@@ -205,19 +206,36 @@ public final class NioReactor extends Reactor {
         }
     }
 
-    private void handleAccept() {
+    private void handleAccept(SelectionKey key) {
+        NioServerChannel serverChannel = (NioServerChannel) key.attachment();
         try {
-            SocketChannel socketChannel = serverSocketChannel.accept();
+            SocketChannel socketChannel = serverChannel.serverSocketChannel.accept();
             socketChannel.configureBlocking(false);
-            configure(socketChannel.socket());
+            configure(socketChannel.socket(), serverChannel.socketConfig);
 
-            SelectionKey key = socketChannel.register(selector, OP_READ);
-            key.attach(newChannel(socketChannel, null, key));
+            SelectionKey channelSelectionKey = socketChannel.register(selector, OP_READ);
+            channelSelectionKey.attach(newChannel(socketChannel, null, key, serverChannel.socketConfig));
 
             logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void registerAccept(InetSocketAddress serverAddress, SocketConfig socketConfig) throws IOException {
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.setOption(SO_RCVBUF, socketConfig.receiveBufferSize);
+        System.out.println(getName() + " Binding to " + serverAddress);
+        serverSocketChannel.bind(serverAddress);
+
+        serverSocketChannel.configureBlocking(false);
+        SelectionKey key = serverSocketChannel.register(selector, OP_ACCEPT);
+        System.out.println(getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+
+        NioServerChannel serverChannel = new NioServerChannel();
+        serverChannel.socketConfig = socketConfig;
+        serverChannel.serverSocketChannel = serverSocketChannel;
+        key.attach(serverChannel);
     }
 
     @Override
@@ -228,7 +246,7 @@ public final class NioReactor extends Reactor {
 
             SocketChannel socketChannel = SocketChannel.open();
             Socket socket = socketChannel.socket();
-            configure(socket);
+            configure(socket, request.socketConfig);
 
             // todo: call is blocking
             socketChannel.connect(address);
@@ -236,7 +254,7 @@ public final class NioReactor extends Reactor {
 
             SelectionKey key = socketChannel.register(selector, OP_READ);
 
-            NioChannel channel = newChannel(socketChannel, request.connection, key);
+            NioChannel channel = newChannel(socketChannel, request.connection, key, request.socketConfig);
             key.attach(channel);
 
             logger.info("Socket listening at " + address);
@@ -246,27 +264,14 @@ public final class NioReactor extends Reactor {
         }
     }
 
-    @Override
-    protected void setupServerSocket() throws Exception {
-        serverSocketChannel = ServerSocketChannel.open();
-        serverSocketChannel.setOption(SO_RCVBUF, channelConfig.receiveBufferSize);
-
-        InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-        // System.out.println(getName() + " Binding to " + serverAddress);
-        serverSocketChannel.bind(serverAddress);
-        serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        System.out.println(getName() + " ServerSocket listening at " + serverAddress);
-    }
-
-    private NioChannel newChannel(SocketChannel socketChannel, Connection connection, SelectionKey key) throws IOException {
+    private NioChannel newChannel(SocketChannel socketChannel, Connection connection, SelectionKey key, SocketConfig socketConfig) throws IOException {
         System.out.println(this + " newChannel: " + socketChannel);
 
         NioChannel channel = new NioChannel();
         channel.reactor = this;
         channel.writeThrough = writeThrough;
         channel.key = key;
-        channel.receiveBuffer = ByteBuffer.allocateDirect(channelConfig.receiveBufferSize);
+        channel.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
         channel.socketChannel = socketChannel;
         channel.connection = connection;
         channel.remoteAddress = socketChannel.getRemoteAddress();
@@ -275,14 +280,15 @@ public final class NioReactor extends Reactor {
         return channel;
     }
 
-    private void configure(Socket socket) throws SocketException {
-        socket.setTcpNoDelay(channelConfig.tcpNoDelay);
-        socket.setSendBufferSize(channelConfig.sendBufferSize);
-        socket.setReceiveBufferSize(channelConfig.receiveBufferSize);
+    private void configure(Socket socket, SocketConfig socketConfig) throws SocketException {
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
 
         String id = socket.getLocalAddress() + "->" + socket.getRemoteSocketAddress();
         System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.getTcpNoDelay());
         System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
         System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
+
 }

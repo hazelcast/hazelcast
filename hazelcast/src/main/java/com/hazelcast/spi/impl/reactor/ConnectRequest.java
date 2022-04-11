@@ -9,4 +9,5 @@ public class ConnectRequest {
     public Connection connection;
     public SocketAddress address;
     public CompletableFuture<Channel> future;
+    public SocketConfig socketConfig;
 }
