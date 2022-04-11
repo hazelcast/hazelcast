@@ -381,9 +381,8 @@ public class CreateDagVisitor {
 
     public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
         Expression<?> timestampExpression = rel.timestampExpression();
-        ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider = rel.allowedLagProvider();
 
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression, allowedLagProvider);
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);

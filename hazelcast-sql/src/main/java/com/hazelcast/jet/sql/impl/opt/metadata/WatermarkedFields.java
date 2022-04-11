@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public final class WatermarkedFields implements Serializable {
 
@@ -58,6 +59,23 @@ public final class WatermarkedFields implements Serializable {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WatermarkedFields that = (WatermarkedFields) o;
+        return Objects.equals(propertiesByIndex, that.propertiesByIndex);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(propertiesByIndex);
     }
 
     public boolean isEmpty() {

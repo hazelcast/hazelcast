@@ -49,6 +49,8 @@ public class ClientSetSplitBrainProtectionWriteTest extends SetSplitBrainProtect
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

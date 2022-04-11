@@ -72,7 +72,7 @@ public class RemoteAddressProviderTest {
     @Test
     public void testTranslate_whenAddressIsNull_thenReturnNull() throws Exception {
         RemoteAddressProvider provider = new RemoteAddressProvider(() -> expectedAddresses, true);
-        Address actual = provider.translate(null);
+        Address actual = provider.translate((Address) null);
         assertNull(actual);
     }
 

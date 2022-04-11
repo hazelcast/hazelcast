@@ -28,6 +28,11 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
+                // Scan rules
+                FullScanLogicalRule.INSTANCE,
+                FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
+                FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
+
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
                 CalcIntoScanLogicalRule.INSTANCE,
@@ -37,11 +42,6 @@ public final class LogicalRules {
                 // We need it to transpose RIGHT JOIN to the LEFT JOIN
                 CoreRules.PROJECT_TO_CALC,
                 SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-
-                // Scan rules
-                FullScanLogicalRule.INSTANCE,
-                FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
-                FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
@@ -64,6 +64,7 @@ public final class LogicalRules {
                 PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionDropLateItemsTransposeRule.INSTANCE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules

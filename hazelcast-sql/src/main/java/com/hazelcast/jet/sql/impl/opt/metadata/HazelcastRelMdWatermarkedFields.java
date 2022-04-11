@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
+import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.hep.HepRelVertex;
@@ -27,8 +29,8 @@ import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Calc;
-import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.metadata.Metadata;
 import org.apache.calcite.rel.metadata.MetadataDef;
 import org.apache.calcite.rel.metadata.MetadataHandler;
@@ -42,6 +44,7 @@ import org.apache.calcite.util.Util;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -129,12 +132,6 @@ public final class HazelcastRelMdWatermarkedFields
     }
 
     @SuppressWarnings("unused")
-    public WatermarkedFields extractWatermarkedFields(Filter rel, RelMetadataQuery mq) {
-        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        return query.extractWatermarkedFields(rel.getInput());
-    }
-
-    @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(SlidingWindowAggregatePhysicalRel rel, RelMetadataQuery mq) {
         return rel.watermarkedFields();
     }
@@ -169,6 +166,31 @@ public final class HazelcastRelMdWatermarkedFields
         // WM in it. WM on the right side isn't forwarded.
         // TODO: When we implement stream-to-stream join, we need to revisit this.
         return query.extractWatermarkedFields(rel.getLeft());
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(Union rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        WatermarkedFields wmFields = new WatermarkedFields(Collections.emptyMap());
+        for (RelNode input : rel.getInputs()) {
+            WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
+            if (!wmFields.equals(watermarkedFields)) {
+                wmFields = wmFields.merge(watermarkedFields);
+            }
+        }
+        return wmFields;
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(DropLateItemsLogicalRel rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        return query.extractWatermarkedFields(rel.getInput());
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(DropLateItemsPhysicalRel rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        return query.extractWatermarkedFields(rel.getInput());
     }
 
     // Volcano planner specific case

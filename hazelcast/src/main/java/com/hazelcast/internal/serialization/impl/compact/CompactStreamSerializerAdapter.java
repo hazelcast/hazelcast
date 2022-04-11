@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.impl.StreamSerializerAdapter;
-import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 
 import java.util.Objects;
 
@@ -30,13 +28,6 @@ public class CompactStreamSerializerAdapter extends StreamSerializerAdapter {
 
     public CompactStreamSerializerAdapter(CompactStreamSerializer compactStreamSerializer) {
         super(compactStreamSerializer);
-    }
-
-    @Override
-    public void conditionallyReturnInputBufferToPool(Object object, BufferObjectDataInput inputBuffer, BufferPool pool) {
-        if (!(object instanceof DefaultCompactReader)) {
-            pool.returnInputBuffer(inputBuffer);
-        }
     }
 
     @Override

@@ -49,6 +49,8 @@ public class ClientTransactionalMultiMapSplitBrainProtectionWriteTest extends Tr
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
