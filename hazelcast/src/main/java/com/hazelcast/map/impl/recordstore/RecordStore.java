@@ -666,4 +666,16 @@ public interface RecordStore<R extends Record> {
     default void afterOperation() {
         // no-op
     }
+
+    default void onRecordCreate(R record) {
+        // no-op
+    }
+
+    default void onRecordUpdate(R record) {
+        // no-op
+    }
+
+    default void onRecordStore(R record) {
+        // no-op
+    }
 }

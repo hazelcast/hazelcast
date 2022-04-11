@@ -199,17 +199,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (newRecord == null) {
             newRecord = createRecord(dataKey, replicatedRecord != null
                     ? replicatedRecord.getValue() : null, now);
+            onRecordCreate(newRecord);
             storage.put(dataKey, newRecord);
         } else {
-            storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
+            newRecord = storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
+            onRecordUpdate(newRecord);
         }
 
-        Records.copyMetadataFrom(replicatedRecord, newRecord);
-        expirySystem.add(dataKey, expiryMetadata, now);
-        mutationObserver.onReplicationPutRecord(dataKey, newRecord, indexesMustBePopulated);
-        updateStatsOnPut(replicatedRecord.getHits(), now);
-
-        return newRecord;
+        try {
+            Records.copyMetadataFrom(replicatedRecord, newRecord);
+            expirySystem.add(dataKey, expiryMetadata, now);
+            mutationObserver.onReplicationPutRecord(dataKey, newRecord, indexesMustBePopulated);
+            updateStatsOnPut(newRecord.getHits(), now);
+            return newRecord;
+        } finally {
+            onRecordStore(newRecord);
+        }
     }
 
     @Override
@@ -926,18 +931,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
         Record record = createRecord(key, newValue, now);
+        onRecordCreate(record);
+
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
-        storage.put(key, record);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        try {
+            storage.put(key, record);
+            expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
 
-        if (entryEventType == EntryEventType.LOADED) {
-            mutationObserver.onLoadRecord(key, record, backup);
-        } else {
-            mutationObserver.onPutRecord(key, record, oldValue, backup);
+            if (entryEventType == EntryEventType.LOADED) {
+                mutationObserver.onLoadRecord(key, record, backup);
+            } else {
+                mutationObserver.onPutRecord(key, record, oldValue, backup);
+            }
+            return record;
+        } finally {
+            onRecordStore(record);
         }
-        return record;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -956,10 +967,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     ttl, maxIdle, now, transactionId);
         }
 
-        storage.updateRecordValue(key, record, newValue);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
-        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
-        return oldValue;
+        Record updated = storage.updateRecordValue(key, record, newValue);
+        onRecordUpdate(updated);
+        try {
+            expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+            return oldValue;
+        } finally {
+            onRecordStore(updated);
+        }
     }
 
     private Record getOrLoadRecord(@Nullable Record record, Data key,
