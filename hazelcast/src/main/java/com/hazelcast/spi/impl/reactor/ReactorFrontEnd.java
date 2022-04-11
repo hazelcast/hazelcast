@@ -51,6 +51,7 @@ public class ReactorFrontEnd {
     private final boolean poolResponses;
     private final boolean writeThrough;
     private final int responseThreadCount;
+    private final boolean monitorSilent;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -70,6 +71,8 @@ public class ReactorFrontEnd {
         this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "false"));
         this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "false"));
         String reactorType = System.getProperty("reactor.type", "nio");
+        this.monitorSilent = Boolean.parseBoolean(System.getProperty("reactor.monitor.silent", "false"));
+
         this.channelCount = Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         printReactorInfo(reactorType);
@@ -97,7 +100,7 @@ public class ReactorFrontEnd {
             }
         }
 
-        this.monitorThread = new ReactorMonitorThread(reactors);
+        this.monitorThread = new ReactorMonitorThread(reactors, monitorSilent);
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreadCount; k++) {
             this.responseThreads[k] = new ResponseThread();
@@ -105,7 +108,7 @@ public class ReactorFrontEnd {
     }
 
     @NotNull
-    private NioReactor newNioReactor(NodeEngineImpl nodeEngine, int port)  {
+    private NioReactor newNioReactor(NodeEngineImpl nodeEngine, int port) {
         try {
             NioReactorConfig config = new NioReactorConfig();
             config.spin = reactorSpin;
@@ -121,7 +124,7 @@ public class ReactorFrontEnd {
             InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
             reactor.registerAccept(serverAddress, socketConfig);
             return reactor;
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -143,7 +146,7 @@ public class ReactorFrontEnd {
             InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
             reactor.registerAccept(serverAddress, socketConfig);
             return reactor;
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException();
         }
     }
@@ -175,10 +178,7 @@ public class ReactorFrontEnd {
             reactor.start();
         }
 
-        boolean monitor = Boolean.parseBoolean(System.getProperty("reactor.monitor.enabled", "true"));
-        if (monitor) {
-            monitorThread.start();
-        }
+        monitorThread.start();
 
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();

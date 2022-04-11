@@ -16,7 +16,7 @@ import static io.netty.channel.unix.Limits.IOV_MAX;
 
 public class IO_UringChannel extends Channel {
     protected LinuxSocket socket;
-    protected IO_UringReactor reactor;
+    public IO_UringReactor reactor;
 
     // ======================================================
     // For the reading side of the channel
@@ -28,59 +28,36 @@ public class IO_UringChannel extends Channel {
     // for the writing side of the channel.
     // ======================================================
     // concurrent state
-    protected AtomicBoolean flushed = new AtomicBoolean(false);
+    public AtomicBoolean flushed = new AtomicBoolean(false);
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     // isolated state.
     public IovArray iovArray;
-    protected CircularQueue<Frame> flushedFrames = new CircularQueue<>(IOV_MAX);
+    public CircularQueue<Frame> flushedFrames = new CircularQueue<>(IOV_MAX);
 
     @Override
     public void flush() {
         if (!flushed.get() && flushed.compareAndSet(false, true)) {
-//            int remaining = flushedFrames.remaining();
-//
-//            for (int k = 0; k < remaining; k++) {
-//                Frame frame = unflushedFrames.poll();
-//                boolean offered = flushedFrames.offer(frame);
-//                assert offered;
-//            }
-//
-            //System.out.println("Flush: scheduled was false");
-
             reactor.schedule(this);
-        } else {
-            //System.out.println("Flush: scheduled was true");
         }
     }
 
     // called by the Reactor.
     public void resetFlushed() {
-        if (!unflushedFrames.isEmpty() || !flushedFrames.isEmpty()) {
-            return;
-        }
-
         flushed.set(false);
 
-        if (unflushedFrames.isEmpty()) {
-            return;
-        }
-
-        if (flushed.compareAndSet(false, true)) {
-            reactor.schedule(this);
+        if (!unflushedFrames.isEmpty()) {
+            if (flushed.compareAndSet(false, true)) {
+                reactor.schedule(this);
+            }
         }
     }
 
     @Override
     public void write(Frame frame) {
-        if (Thread.currentThread() == reactor) {
-            if (!flushedFrames.offer(frame)) {
-                unflushedFrames.add(frame);
-            }
-        } else {
-            unflushedFrames.add(frame);
-        }
+        // can be optimized
+        unflushedFrames.add(frame);
     }
 
     @Override

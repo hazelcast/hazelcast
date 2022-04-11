@@ -22,12 +22,11 @@ public class Main {
 //            System.out.println("========================================================================");
 
 //            if (k % 1000 == 0) {
-//                System.out.println("at k:" + k);
-//                Thread.sleep(3000);
+                System.out.println("at k:" + k);
 //            }
 
             //table.upsert(item);
-            table.concurrentNoop(1);
+            table.concurrentNoop(2);
 //            try {
 //                Thread.sleep(1000);
 //            } catch (InterruptedException e) {

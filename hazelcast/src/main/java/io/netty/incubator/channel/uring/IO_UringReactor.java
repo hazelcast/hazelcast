@@ -16,7 +16,6 @@ import io.netty.channel.unix.IovArray;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.netty.util.internal.PlatformDependent;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -280,12 +279,11 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-        if(res<0){
-            System.out.println("Problem: handle_IORING_OP_READ res:"+res);
+        if (res < 0) {
+            System.out.println("Problem: handle_IORING_OP_READ res:" + res);
         }
 
-
-        //System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
+        // System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
 
         IO_UringChannel channel = channelMap.get(fd);
         channel.readEvents.inc();
@@ -299,7 +297,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             Frame frame = channel.inboundFrame;
             if (frame == null) {
                 if (receiveBuff.readableBytes() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
-                     break;
+                    break;
                 }
 
                 int size = receiveBuff.readInt();
@@ -321,6 +319,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             //channel.inboundFrame.write(readBuf, remaining);
 
             if (!frame.isComplete()) {
+                System.out.println("Frame not complete");
                 break;
             }
 
@@ -336,14 +335,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             }
         }
 
-        if(channel.receiveBuff.readableBytes()>0){
-            System.out.println("Frame not completely read");
-        }
-
         receiveBuff.discardReadBytes();
 
         if (responses != null) {
-          //  System.out.println("frontend.handleRespons");
             frontend.handleResponse(responses);
         }
 
@@ -371,6 +365,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.iovArray = iovArray;
         int offset = iovArray.count();
 
+        //System.out.println(this+" flushed frames: "+flushedFrameSize);
+
         for (int k = 0; k < flushedFrameSize; k++) {
             Frame frame = flushedFrames.poll();
             ByteBuffer byteBuffer = frame.byteBuffer();
@@ -380,17 +376,18 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         }
 
         // todo: optimize for single write.
-        sq.addWritev(channel.socket.intValue(), iovArray.memoryAddress(offset), iovArray.count() - offset, (short) 0);
+        sq.addWritev(channel.socket.intValue(),
+                iovArray.memoryAddress(offset),
+                iovArray.count() - offset,
+                (short) 0);
 
-        channel.resetFlushed();
+
     }
 
     private void handle_IORING_OP_WRITEV(int fd, int res, int flags, short data) {
-        if(res<0){
-            System.out.println("Problem: handle_IORING_OP_WRITEV res: "+res);
+        if (res < 0) {
+            System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
         }
-
-
 
         //todo: deal with negative res.
 
@@ -400,7 +397,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         IO_UringChannel channel = channelMap.get(fd);
         channel.iovArray.release();
 
-
+        channel.resetFlushed();
 //
 //        ByteBuf buf = channel.writeBufs[data];
 //        if (buf.readableBytes() != res) {
