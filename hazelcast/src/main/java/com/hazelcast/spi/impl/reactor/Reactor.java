@@ -6,6 +6,8 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import org.jctools.queues.MpmcArrayQueue;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.net.SocketAddress;
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
 
@@ -30,7 +33,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final FrameAllocator requestFrameAllocator;
     protected final FrameAllocator remoteResponseFrameAllocator;
     protected final FrameAllocator localResponseFrameAllocator;
-    public final ConcurrentLinkedQueue publicRunQueue = new ConcurrentLinkedQueue();
+    public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
     protected final SwCounter requests = SwCounter.newSwCounter();
     protected final Scheduler scheduler;
     private final OpAllocator opAllocator = new OpAllocator();
@@ -109,7 +112,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         return channels;
     }
 
-    protected abstract void handleConnect(ConnectRequest task);
+    protected abstract void handleConnect(ConnectRequest request);
 
     protected abstract void handleWrite(Channel task);
 
