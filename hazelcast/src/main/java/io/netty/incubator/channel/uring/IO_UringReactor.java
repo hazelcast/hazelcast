@@ -9,6 +9,7 @@ import com.hazelcast.spi.impl.reactor.SocketConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.IovArray;
 import io.netty.util.collection.IntObjectHashMap;
@@ -27,6 +28,7 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESH
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
 
@@ -229,8 +231,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         if (op == IORING_OP_READ) {
             handle_IORING_OP_READ(fd, res, flags, data);
-//        } else if (op == IORING_OP_WRITE) {
-//            handle_IORING_OP_WRITE(fd, res, flags, data);
+        } else if (op == IORING_OP_WRITE) {
+            handle_IORING_OP_WRITE(fd, res, flags, data);
         } else if (op == IORING_OP_WRITEV) {
             handle_IORING_OP_WRITEV(fd, res, flags, data);
         } else if (op == IORING_OP_ACCEPT) {
@@ -363,17 +365,27 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         ioVector.fill(channel.unflushedFrames);
 
         int frameCount = ioVector.size();
-        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(frameCount * IovArray.IOV_SIZE);
-        IovArray iovArray = new IovArray(iovArrayBuffer);
-        channel.iovArray = iovArray;
-        int offset = iovArray.count();
+        if(frameCount == 1){
+            ByteBuffer buffer = ioVector.get(0).byteBuffer();
+            sq.addWrite(channel.socket.intValue(),
+                    Buffer.memoryAddress(buffer),
+                    buffer.position(),
+                    buffer.limit(),
+                    (short)0);
+        }else {
+            // Can't we just preallocate?
+            ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(frameCount * IovArray.IOV_SIZE);
+            IovArray iovArray = new IovArray(iovArrayBuffer);
+            channel.iovArray = iovArray;
+            int offset = iovArray.count();
 
-        ioVector.fillIoArray(iovArray);
+            ioVector.fillIoArray(iovArray);
 
-        sq.addWritev(channel.socket.intValue(),
-                iovArray.memoryAddress(offset),
-                iovArray.count() - offset,
-                (short) 0);
+            sq.addWritev(channel.socket.intValue(),
+                    iovArray.memoryAddress(offset),
+                    iovArray.count() - offset,
+                    (short) 0);
+        }
     }
 
     private void handle_IORING_OP_WRITEV(int fd, int res, int flags, short data) {
@@ -382,11 +394,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             return;
         }
 
-        //todo: deal with negative res.
-
         //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
         IO_UringChannel channel = channelMap.get(fd);
-
         channel.ioVector.compact(res);
         channel.iovArray.release();
         channel.iovArray = null;
@@ -396,78 +405,14 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     private void handle_IORING_OP_WRITE(int fd, int res, int flags, short data) {
         if (res < 0) {
             System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
+            return;
         }
 
-//        //todo: deal with negative res.
-//
-//        //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
-//        IO_UringChannel channel = channelMap.get(fd);
-//        channel.iovArray.release();
-//        channel.iovArray = null;
-//        channel.resetFlushed();
+        //System.out.println("handle_IORING_OP_WRITE fd:" + fd + " bytes written: " + res);
+        IO_UringChannel channel = channelMap.get(fd);
+        channel.ioVector.compact(res);
+        channel.resetFlushed();
     }
-
-//    @Override
-//    protected void handleOutbound(Channel c) {
-//        IO_UringChannel channel = (IO_UringChannel) c;
-//
-//        channel.handleOutboundCalls.inc();
-//        //System.out.println(getName() + " process channel " + channel.remoteAddress);
-//
-//        short bufIndex = -1;
-//        for (short k = 0; k < channel.writeBufsInUse.length; k++) {
-//            System.out.println(k);
-//            if (!channel.writeBufsInUse[k]) {
-//                bufIndex = k;
-//                break;
-//            }
-//        }
-//
-//        channel.writeBufsInUse[bufIndex] = true;
-//        ByteBuf buf = channel.writeBufs[bufIndex];
-//        buf.clear();
-//
-//        int bytesWritten = 0;
-//
-//        for (; ; ) {
-//            ByteBuffer buffer = channel.localPending.peek();
-//            if (buffer == null) {
-//                for (; ; ) {
-//                    if (channel.localPending.isFull()) {
-//                        break;
-//                    }
-//
-//                    Frame frame = channel.publicPending.poll();
-//                    if (frame == null) {
-//                        break;
-//                    }
-//                    channel.localPending.offer(frame.getByteBuffer());
-//                }
-//                buffer = channel.localPending.peek();
-//                if (buffer == null) {
-//                    break;
-//                }
-//            }
-//
-//            channel.packetsWritten.inc();
-//            //todo: not correct when not all bytes are written.
-//            channel.bytesWritten.inc(buffer.remaining());
-//            bytesWritten += buffer.remaining();
-//            buf.writeBytes(buffer);
-//
-//            if (!buffer.hasRemaining()) {
-//                channel.localPending.poll();
-//            }
-//        }
-//
-//        if (buf.readableBytes() != bytesWritten) {
-//            throw new RuntimeException("Data lost: " + buf + " bytes written:" + bytesWritten);
-//        }
-//
-//        sq_addWrite(channel, buf, bufIndex);
-//
-//        channel.unschedule();
-//    }
 
     @Override
     protected void handleConnect(ConnectRequest request) {

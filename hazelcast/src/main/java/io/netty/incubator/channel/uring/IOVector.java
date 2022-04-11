@@ -19,6 +19,10 @@ public final class IOVector {
         return size == 0;
     }
 
+    public Frame get(int index){
+        return frames[index];
+    }
+
     public void fill(Queue<Frame> queue) {
         int count = IOV_MAX - size;
         for (int k = 0; k < count; k++) {

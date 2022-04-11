@@ -26,7 +26,7 @@ public class Main {
             }
 
             //table.upsert(item);
-            table.concurrentNoop(100);
+            table.concurrentNoop(1);
 //            try {
 //                Thread.sleep(1000);
 //            } catch (InterruptedException e) {
