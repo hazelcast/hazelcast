@@ -227,7 +227,7 @@ public class SqlUnionTest extends SqlTestSupport {
         expected.add(new Row(timestampTz(14L), 3));
 
         String query = sql + " UNION ALL " + sql;
-        assertRowsEventuallyInAnyOrder(query, expected);
+        assertTipOfStream(query, expected);
     }
 
     private static String createTable(Object[]... values) {
