@@ -202,7 +202,7 @@ public class ProcessorTasklet implements Tasklet {
         Map<Integer, FixedCapacityArrayList<InboundEdgeStream>> priorityToStreams = new TreeMap<>();
         for (Map.Entry<Integer, IntHolder> priorityWithCounter : priorityCounters.entrySet()) {
             FixedCapacityArrayList<InboundEdgeStream> streams =
-                    new FixedCapacityArrayList<>(priorityWithCounter.getValue().getInt());
+                    new FixedCapacityArrayList<>(InboundEdgeStream.class, priorityWithCounter.getValue().getInt());
             priorityToStreams.put(priorityWithCounter.getKey(), streams);
         }
 

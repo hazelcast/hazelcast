@@ -17,8 +17,8 @@
 
 package com.hazelcast.internal.util.collection;
 
+import java.lang.reflect.Array;
 import java.util.AbstractList;
-import java.util.Arrays;
 import java.util.List;
 
 public class FixedCapacityArrayList<E> extends AbstractList<E> implements List<E> {
@@ -27,20 +27,14 @@ public class FixedCapacityArrayList<E> extends AbstractList<E> implements List<E
     private E[] elementData;
     private int size;
 
-    public FixedCapacityArrayList() {
-        this(DEFAULT_CAPACITY);
-    }
-
-    public FixedCapacityArrayList(int initialCapacity) {
-        this.elementData = (E[]) new Object[initialCapacity];
+    @SuppressWarnings("unchecked")
+    public FixedCapacityArrayList(Class<E> eClass, int initialCapacity) {
+        this.elementData = (E[]) Array.newInstance(eClass, initialCapacity);
     }
 
     @Override
     public boolean add(E e) {
         modCount++;
-        if (size == elementData.length) {
-            grow();
-        }
         elementData[size++] = e;
         return true;
     }
@@ -57,10 +51,5 @@ public class FixedCapacityArrayList<E> extends AbstractList<E> implements List<E
 
     public E[] getArray() {
         return elementData;
-    }
-
-    private void grow() {
-        int newCapacity = elementData.length << 1;
-        elementData = Arrays.copyOf(elementData, newCapacity);
     }
 }
