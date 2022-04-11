@@ -122,7 +122,8 @@ public final class NioReactor extends Reactor {
             readBuf.flip();
             Frame responseChain = null;
             for (; ; ) {
-                if (channel.inboundFrame == null) {
+                Frame frame = channel.inboundFrame;
+                if (frame == null) {
                     if (readBuf.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                         break;
                     }
@@ -134,23 +135,23 @@ public final class NioReactor extends Reactor {
                     } else {
                         channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
                     }
-
-                    channel.inboundFrame.writeInt(size);
-                    channel.inboundFrame.writeInt(flags);
-                    channel.inboundFrame.connection = channel.connection;
-                    channel.inboundFrame.channel = channel;
+                    frame = channel.inboundFrame;
+                    frame.byteBuffer().limit(size);
+                    frame.writeInt(size);
+                    frame.writeInt(flags);
+                    frame.connection = channel.connection;
+                    frame.channel = channel;
                 }
 
-                int size = channel.inboundFrame.size();
-                int remaining = size - channel.inboundFrame.position();
-                channel.inboundFrame.write(readBuf, remaining);
+                int size = frame.size();
+                int remaining = size - frame.position();
+                frame.write(readBuf, remaining);
 
-                if (!channel.inboundFrame.isComplete()) {
+                if (!frame.isComplete()) {
                     break;
                 }
 
-                channel.inboundFrame.complete();
-                Frame frame = channel.inboundFrame;
+                frame.complete();
                 channel.inboundFrame = null;
                 channel.framesRead.inc();
 

@@ -7,7 +7,7 @@ import io.netty.channel.unix.IovArray;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class IO_UringChannel extends Channel {
     protected LinuxSocket socket;
@@ -23,7 +23,7 @@ public class IO_UringChannel extends Channel {
     // for the writing side of the channel.
     // ======================================================
     // concurrent state
-    public AtomicBoolean flushed = new AtomicBoolean(false);
+    public AtomicReference<Thread> flushThread = new AtomicReference<>();
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
@@ -33,17 +33,22 @@ public class IO_UringChannel extends Channel {
 
     @Override
     public void flush() {
-        if (!flushed.get() && flushed.compareAndSet(false, true)) {
-            reactor.schedule(this);
+        Thread currentThread = Thread.currentThread();
+        if (flushThread.compareAndSet(null, currentThread)) {
+            if (currentThread == reactor) {
+                reactor.dirtyChannels.add(this);
+            } else {
+                reactor.schedule(this);
+            }
         }
     }
 
     // called by the Reactor.
     public void resetFlushed() {
-        flushed.set(false);
+        flushThread.set(null);
 
         if (!unflushedFrames.isEmpty()) {
-            if (flushed.compareAndSet(false, true)) {
+            if (flushThread.compareAndSet(null, Thread.currentThread())) {
                 reactor.schedule(this);
             }
         }
@@ -57,15 +62,34 @@ public class IO_UringChannel extends Channel {
 
     @Override
     public void writeAndFlush(Frame frame) {
-        //todo: can be optimized
-
         unflushedFrames.add(frame);
         flush();
     }
 
     @Override
     public void unsafeWriteAndFlush(Frame frame) {
-        writeAndFlush(frame);
+        Thread currentFlushThread = flushThread.get();
+        Thread currentThread = Thread.currentThread();
+
+        assert currentThread == reactor;
+
+        if (currentFlushThread == null) {
+            if (flushThread.compareAndSet(null, currentThread)) {
+                reactor.dirtyChannels.add(this);
+                if (!ioVector.add(frame)) {
+                    unflushedFrames.add(frame);
+                }
+            } else {
+                unflushedFrames.add(frame);
+            }
+        } else if (currentFlushThread == reactor) {
+            if (!ioVector.add(frame)) {
+                unflushedFrames.add(frame);
+            }
+        } else {
+            unflushedFrames.add(frame);
+            flush();
+        }
     }
 
     @Override

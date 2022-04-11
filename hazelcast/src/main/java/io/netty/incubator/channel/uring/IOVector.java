@@ -6,6 +6,7 @@ import io.netty.channel.unix.IovArray;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 
+// todo: instead of an 'array' we could use a ring so we don't need to copy to an earlier position
 // TODO: This class assumes direct byte buffers. For future safety we should also allow for non direct
 public final class IOVector {
 

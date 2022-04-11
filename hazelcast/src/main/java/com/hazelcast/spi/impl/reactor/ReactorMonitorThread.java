@@ -135,7 +135,7 @@ public final class ReactorMonitorThread extends Thread {
                 //if (c.flushThread.get() == null && hasData) {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
-                        + " flushed:" + c.flushed.get()
+                        + " flushed:" + c.flushThread.get()
                         + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
                 //}
             }

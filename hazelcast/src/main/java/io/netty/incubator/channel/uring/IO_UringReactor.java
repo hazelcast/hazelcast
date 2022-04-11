@@ -316,10 +316,10 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                 frame.channel = channel;
             }
 
-            if (frame.remaining() > res) {
+            if (frame.remaining() > receiveBuff.readableBytes()) {
                 ByteBuffer buffer = frame.byteBuffer();
                 int oldLimit = buffer.limit();
-                buffer.limit(buffer.position() + res);
+                buffer.limit(buffer.position() + receiveBuff.readableBytes());
                 receiveBuff.readBytes(buffer);
                 buffer.limit(oldLimit);
             } else {
@@ -357,7 +357,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     @Override
     protected void handleWrite(Channel c) {
         IO_UringChannel channel = (IO_UringChannel) c;
-        if (!channel.flushed.get()) {
+        if (channel.flushThread.get() == null) {
             throw new RuntimeException("Channel should be in flushed state");
         }
 
@@ -365,14 +365,14 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         ioVector.fill(channel.unflushedFrames);
 
         int frameCount = ioVector.size();
-        if(frameCount == 1){
+        if (frameCount == 1) {
             ByteBuffer buffer = ioVector.get(0).byteBuffer();
             sq.addWrite(channel.socket.intValue(),
                     Buffer.memoryAddress(buffer),
                     buffer.position(),
                     buffer.limit(),
-                    (short)0);
-        }else {
+                    (short) 0);
+        } else {
             // Can't we just preallocate?
             ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(frameCount * IovArray.IOV_SIZE);
             IovArray iovArray = new IovArray(iovArrayBuffer);
