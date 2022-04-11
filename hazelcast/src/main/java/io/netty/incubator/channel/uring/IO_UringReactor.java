@@ -2,7 +2,6 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.CircularQueue;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
@@ -10,7 +9,6 @@ import com.hazelcast.spi.impl.reactor.SocketConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.IovArray;
 import io.netty.util.collection.IntObjectHashMap;
@@ -302,24 +300,31 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
                 int size = receiveBuff.readInt();
                 int frameFlags = receiveBuff.readInt();
-                //todo: we don't know if we have request or response.
-                frame = requestFrameAllocator.allocate(size);
-                channel.inboundFrame = frame;
+
+                if ((frameFlags & FLAG_OP_RESPONSE) == 0) {
+                    channel.inboundFrame = requestFrameAllocator.allocate(size);
+                } else {
+                    channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                }
+                frame = channel.inboundFrame;
+                frame.byteBuffer().limit(size);
                 frame.writeInt(size);
                 frame.writeInt(frameFlags);
                 frame.connection = channel.connection;
                 frame.channel = channel;
             }
 
-            int size = frame.size();
-            int remaining = size - frame.position();
-
-            // todo: we need to cap the
-            receiveBuff.readBytes(frame.byteBuffer());
-            //channel.inboundFrame.write(readBuf, remaining);
+            if (frame.remaining() > res) {
+                ByteBuffer buffer = frame.byteBuffer();
+                int oldLimit = buffer.limit();
+                buffer.limit(buffer.position() + res);
+                receiveBuff.readBytes(buffer);
+                buffer.limit(oldLimit);
+            } else {
+                receiveBuff.readBytes(frame.byteBuffer());
+            }
 
             if (!frame.isComplete()) {
-                System.out.println("Frame not complete");
                 break;
             }
 
@@ -346,7 +351,6 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 
     private final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
-    private final UnpooledByteBufAllocator unpooledByteBufAllocator = new UnpooledByteBufAllocator(true);
 
     @Override
     protected void handleWrite(Channel c) {
@@ -355,55 +359,52 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
             throw new RuntimeException("Channel should be in flushed state");
         }
 
-        CircularQueue<Frame> flushedFrames = channel.flushedFrames;
-        flushedFrames.fill(channel.unflushedFrames);
+        IOVector ioVector = channel.ioVector;
+        ioVector.fill(channel.unflushedFrames);
 
-        int flushedFrameSize = flushedFrames.size();
-
-        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(flushedFrameSize * IovArray.IOV_SIZE);
+        int frameCount = ioVector.size();
+        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(frameCount * IovArray.IOV_SIZE);
         IovArray iovArray = new IovArray(iovArrayBuffer);
         channel.iovArray = iovArray;
         int offset = iovArray.count();
 
-        //System.out.println(this+" flushed frames: "+flushedFrameSize);
+        ioVector.fillIoArray(iovArray);
 
-        for (int k = 0; k < flushedFrameSize; k++) {
-            Frame frame = flushedFrames.poll();
-            ByteBuffer byteBuffer = frame.byteBuffer();
-            ByteBuf buf = unpooledByteBufAllocator.directBuffer(byteBuffer.limit());
-            buf.writeBytes(byteBuffer);
-            iovArray.add(buf, 0, buf.readableBytes());
-        }
-
-        // todo: optimize for single write.
         sq.addWritev(channel.socket.intValue(),
                 iovArray.memoryAddress(offset),
                 iovArray.count() - offset,
                 (short) 0);
-
-
     }
 
     private void handle_IORING_OP_WRITEV(int fd, int res, int flags, short data) {
         if (res < 0) {
             System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
+            return;
         }
 
         //todo: deal with negative res.
 
-        // we need to release the iovArray
-
         //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
         IO_UringChannel channel = channelMap.get(fd);
-        channel.iovArray.release();
 
+        channel.ioVector.compact(res);
+        channel.iovArray.release();
+        channel.iovArray = null;
         channel.resetFlushed();
+    }
+
+    private void handle_IORING_OP_WRITE(int fd, int res, int flags, short data) {
+        if (res < 0) {
+            System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
+        }
+
+//        //todo: deal with negative res.
 //
-//        ByteBuf buf = channel.writeBufs[data];
-//        if (buf.readableBytes() != res) {
-//            throw new RuntimeException("Readable bytes doesn't match res. Buffer:" + buf + " res:" + res);
-//        }
-//        channel.writeBufsInUse[data] = false;
+//        //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
+//        IO_UringChannel channel = channelMap.get(fd);
+//        channel.iovArray.release();
+//        channel.iovArray = null;
+//        channel.resetFlushed();
     }
 
 //    @Override
@@ -494,19 +495,3 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
     }
 }
 
-class AcceptMemory {
-    final ByteBuffer memory;
-    final long memoryAddress;
-    final ByteBuffer lengthMemory;
-    final long lengthMemoryAddress;
-
-    AcceptMemory() {
-        this.memory = Buffer.allocateDirectWithNativeOrder(Native.SIZEOF_SOCKADDR_STORAGE);
-        this.memoryAddress = Buffer.memoryAddress(memory);
-        this.lengthMemory = Buffer.allocateDirectWithNativeOrder(Long.BYTES);
-        // Needs to be initialized to the size of acceptedAddressMemory.
-        // See https://man7.org/linux/man-pages/man2/accept.2.html
-        this.lengthMemory.putLong(0, Native.SIZEOF_SOCKADDR_STORAGE);
-        this.lengthMemoryAddress = Buffer.memoryAddress(lengthMemory);
-    }
-}

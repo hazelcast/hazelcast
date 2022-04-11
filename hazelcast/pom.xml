@@ -41,6 +41,8 @@
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
         <wiremock.version>2.27.2</wiremock.version>
+
+        <netty.version>5.0.0.Alpha2-SNAPSHOT</netty.version>
     </properties>
 
     <build>
@@ -439,6 +441,28 @@
             <artifactId>netty-incubator-transport-native-io_uring</artifactId>
             <version>0.0.14.Final-SNAPSHOT</version>
             <classifier>linux-x86_64</classifier>
+        </dependency>
+
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>4.1.76.SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+            <version>4.1.76.SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>4.1.76.SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-unix-common</artifactId>
+            <version>4.1.76.SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jctools</groupId>

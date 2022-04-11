@@ -1,6 +1,7 @@
 package com.hazelcast.table;
 
 import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.ConcurrentPooledFrameAllocator;
@@ -10,13 +11,12 @@ import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
 import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -68,16 +68,26 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void concurrentNoop(int concurrency) {
-        CompletableFuture[] futures = new CompletableFuture[concurrency];
-        for (int k = 0; k < futures.length; k++) {
-            futures[k] = asyncNoop();
-        }
+        checkPositive("concurrency", concurrency);
 
-        for (CompletableFuture f : futures) {
+        if (concurrency == 1) {
             try {
-                f.get(23, SECONDS);
+                asyncNoop().get(23, SECONDS);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException();
+            }
+        } else {
+            CompletableFuture[] futures = new CompletableFuture[concurrency];
+            for (int k = 0; k < futures.length; k++) {
+                futures[k] = asyncNoop();
+            }
+
+            for (CompletableFuture f : futures) {
+                try {
+                    f.get(23, SECONDS);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

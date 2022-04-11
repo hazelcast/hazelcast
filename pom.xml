@@ -1517,8 +1517,8 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>${netty.version}</version>
+                <artifactId>netty5-bom</artifactId>
+                <version>5.0.0.Alpha2-SNAPSHOT</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>

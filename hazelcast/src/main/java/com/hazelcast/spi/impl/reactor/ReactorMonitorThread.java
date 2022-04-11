@@ -131,10 +131,10 @@ public final class ReactorMonitorThread extends Thread {
                 //}
             } else if (channel instanceof IO_UringChannel) {
                 IO_UringChannel c = (IO_UringChannel) channel;
-                boolean hasData = !c.unflushedFrames.isEmpty() || !c.flushedFrames.isEmpty();
+                boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (c.flushThread.get() == null && hasData) {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
-                        + " ioVector.empty:" + c.flushedFrames.isEmpty()
+                        + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushed.get()
                         + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
                 //}

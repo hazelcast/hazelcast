@@ -68,8 +68,8 @@ public class ReactorFrontEnd {
         this.responseThreadCount = Integer.parseInt(System.getProperty("reactor.responsethread.count", "1"));
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(System.getProperty("reactor.write-through", "false"));
-        this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "false"));
-        this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "false"));
+        this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "true"));
+        this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "true"));
         String reactorType = System.getProperty("reactor.type", "nio");
         this.monitorSilent = Boolean.parseBoolean(System.getProperty("reactor.monitor.silent", "false"));
 

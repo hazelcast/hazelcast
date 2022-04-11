@@ -6,7 +6,6 @@ import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.ReactorTask;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
 
 import java.io.IOException;

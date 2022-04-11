@@ -1,18 +1,13 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.CircularQueue;
 import com.hazelcast.spi.impl.reactor.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.IovArray;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.netty.channel.unix.Limits.IOV_MAX;
 
 public class IO_UringChannel extends Channel {
     protected LinuxSocket socket;
@@ -34,7 +29,7 @@ public class IO_UringChannel extends Channel {
 
     // isolated state.
     public IovArray iovArray;
-    public CircularQueue<Frame> flushedFrames = new CircularQueue<>(IOV_MAX);
+    public IOVector ioVector = new IOVector();
 
     @Override
     public void flush() {
