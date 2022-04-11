@@ -225,6 +225,8 @@ public class ReactorFrontEnd {
             }
 
             long callId = response.getLong(OFFSET_RESPONSE_CALL_ID);
+            //System.out.println("response with callId:"+callId +" frame: "+response);
+
             Frame request = requests.map.remove(callId);
             if (request == null) {
                 System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");

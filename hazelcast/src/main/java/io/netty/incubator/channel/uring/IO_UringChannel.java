@@ -47,11 +47,11 @@ public class IO_UringChannel extends Channel {
 //                assert offered;
 //            }
 //
-            System.out.println("Flush: scheduled was false");
+            //System.out.println("Flush: scheduled was false");
 
             reactor.schedule(this);
         } else {
-            System.out.println("Flush: scheduled was true");
+            //System.out.println("Flush: scheduled was true");
         }
     }
 

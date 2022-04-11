@@ -5,13 +5,13 @@ import com.hazelcast.core.HazelcastInstance;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 1000; k++) {
+        for (int k = 0; k < 100; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;
@@ -21,9 +21,10 @@ public class Main {
 //            System.out.println("k="+k);
 //            System.out.println("========================================================================");
 
-            if (k % 1000 == 0) {
-                System.out.println("at k:" + k);
-            }
+//            if (k % 1000 == 0) {
+//                System.out.println("at k:" + k);
+//                Thread.sleep(3000);
+//            }
 
             //table.upsert(item);
             table.concurrentNoop(1);

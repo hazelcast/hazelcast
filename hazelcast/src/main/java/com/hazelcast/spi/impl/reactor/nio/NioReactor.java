@@ -3,10 +3,11 @@ package com.hazelcast.spi.impl.reactor.nio;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
 import com.hazelcast.spi.impl.reactor.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.ReactorTask;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -227,15 +228,16 @@ public final class NioReactor extends Reactor {
         serverSocketChannel.setOption(SO_RCVBUF, socketConfig.receiveBufferSize);
         System.out.println(getName() + " Binding to " + serverAddress);
         serverSocketChannel.bind(serverAddress);
-
         serverSocketChannel.configureBlocking(false);
-        SelectionKey key = serverSocketChannel.register(selector, OP_ACCEPT);
-        System.out.println(getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+        schedule(() -> {
+            SelectionKey key = serverSocketChannel.register(selector, OP_ACCEPT);
+            System.out.println(getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
 
-        NioServerChannel serverChannel = new NioServerChannel();
-        serverChannel.socketConfig = socketConfig;
-        serverChannel.serverSocketChannel = serverSocketChannel;
-        key.attach(serverChannel);
+            NioServerChannel serverChannel = new NioServerChannel();
+            serverChannel.socketConfig = socketConfig;
+            serverChannel.serverSocketChannel = serverSocketChannel;
+            key.attach(serverChannel);
+        });
     }
 
     @Override

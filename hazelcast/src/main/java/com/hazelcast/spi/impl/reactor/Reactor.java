@@ -77,6 +77,11 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected abstract void eventLoop() throws Exception;
 
+    public void schedule(ReactorTask task){
+        publicRunQueue.add(task);
+        wakeup();
+    }
+
     public void schedule(Frame request) {
         publicRunQueue.add(request);
         wakeup();
@@ -138,6 +143,12 @@ public abstract class Reactor extends HazelcastManagedThread {
                 handleRequest((Frame) task);
             } else if (task instanceof ConnectRequest) {
                 handleConnect((ConnectRequest) task);
+            } else if(task instanceof ReactorTask){
+                try {
+                    ((ReactorTask)task).run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
