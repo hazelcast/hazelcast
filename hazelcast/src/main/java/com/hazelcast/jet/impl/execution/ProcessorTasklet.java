@@ -24,7 +24,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IntHolder;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.collection.FixedCapacityArrayList;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
@@ -47,9 +50,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
@@ -94,9 +97,6 @@ import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.sum;
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toCollection;
 
 public class ProcessorTasklet implements Tasklet {
 
@@ -170,13 +170,7 @@ public class ProcessorTasklet implements Tasklet {
         this.processor = processor;
         this.numActiveOrdinals = instreams.size();
         this.instreams = instreams;
-        this.instreamGroupQueue = new ArrayDeque<>(instreams.stream()
-                .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new,
-                        collectingAndThen(
-                                toCollection(ArrayList<InboundEdgeStream>::new),
-                                list -> list.toArray(new InboundEdgeStream[0])))
-                )
-                .values());
+        this.instreamGroupQueue = createInstreamGroupQueue(instreams);
         this.outstreams = outstreams.stream()
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
                                     .toArray(OutboundEdgeStream[]::new);
@@ -197,6 +191,31 @@ public class ProcessorTasklet implements Tasklet {
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(instreams.size());
+    }
+
+    private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
+        Int2ObjectHashMap<IntHolder> priorityCounters = new Int2ObjectHashMap<>();
+        for (InboundEdgeStream instream : instreams) {
+            priorityCounters.computeIfAbsent(instream.priority(), priority -> new IntHolder()).increment();
+        }
+
+        Map<Integer, FixedCapacityArrayList<InboundEdgeStream>> priorityToStreams = new TreeMap<>();
+        for (Map.Entry<Integer, IntHolder> priorityWithCounter : priorityCounters.entrySet()) {
+            FixedCapacityArrayList<InboundEdgeStream> streams =
+                    new FixedCapacityArrayList<>(priorityWithCounter.getValue().getInt());
+            priorityToStreams.put(priorityWithCounter.getKey(), streams);
+        }
+
+        for (InboundEdgeStream instream : instreams) {
+            priorityToStreams.get(instream.priority()).add(instream);
+        }
+
+        Queue<InboundEdgeStream[]> queue = new ArrayDeque<>(priorityToStreams.size());
+        for (FixedCapacityArrayList<InboundEdgeStream> streams : priorityToStreams.values()) {
+            queue.add(streams.getArray());
+        }
+
+        return queue;
     }
 
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
