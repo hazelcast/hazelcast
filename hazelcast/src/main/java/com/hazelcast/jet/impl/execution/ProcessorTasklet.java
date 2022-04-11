@@ -94,6 +94,7 @@ import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.sum;
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
@@ -110,7 +111,7 @@ public class ProcessorTasklet implements Tasklet {
     private final BitSet receivedBarriers; // indicates if current snapshot is received on the ordinal
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
-    private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private final Queue<InboundEdgeStream[]> instreamGroupQueue;
     private final WatermarkCoalescer watermarkCoalescer;
     private final ILogger logger;
     private final SerializationService serializationService;
@@ -171,7 +172,10 @@ public class ProcessorTasklet implements Tasklet {
         this.instreams = instreams;
         this.instreamGroupQueue = new ArrayDeque<>(instreams.stream()
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new,
-                        toCollection(ArrayList<InboundEdgeStream>::new)))
+                        collectingAndThen(
+                                toCollection(ArrayList<InboundEdgeStream>::new),
+                                list -> list.toArray(new InboundEdgeStream[0])))
+                )
                 .values());
         this.outstreams = outstreams.stream()
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
@@ -502,12 +506,15 @@ public class ProcessorTasklet implements Tasklet {
 
         // We need to collect metrics before draining the queues into Inbox,
         // otherwise they would appear empty even for slow processors
-        queuesCapacity.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::capacities));
-        queuesSize.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::sizes));
+        queuesCapacity.set(instreamCursor == null ? 0 :
+                sum(instreamCursor.getArray(), InboundEdgeStream::capacities, instreamCursor.getSize()));
+        queuesSize.set(instreamCursor == null ? 0 :
+                sum(instreamCursor.getArray(), InboundEdgeStream::sizes, instreamCursor.getSize()));
 
         if (instreamCursor == null) {
             return;
         }
+
         final InboundEdgeStream first = instreamCursor.value();
         ProgressState result;
         do {
