@@ -682,10 +682,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 socketInterceptor.onConnect(socket);
             }
 
-            channel.start();
-            attributeMap.put(TcpClientConnection.class, this);
-            return new TcpClientConnection(this, lifecycleService,
+            TcpClientConnection connection = new TcpClientConnection(this, lifecycleService,
                     loggingService, connectionIdGen.incrementAndGet(), channel);
+            attributeMap.put(TcpClientConnection.class, connection);
+            channel.start();
+            return connection;
         } catch (Exception e) {
             closeResource(socketChannel);
             logger.finest(e);

@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.core.LifecycleService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -29,20 +30,21 @@ public class ClusterDiscoveryServiceImpl implements ClusterDiscoveryService {
 
     private final int maxTryCount;
     private final LifecycleService lifecycleService;
-    private final List<CandidateClusterContext> candidateClusters;
+    private final List<CandidateClusterContext> candidateClusters = new java.util.ArrayList<>();
     private final AtomicInteger index = new AtomicInteger(0);
     private final boolean failoverEnabled;
 
-    public ClusterDiscoveryServiceImpl(List<CandidateClusterContext> candidateClusters,
-                                       int maxTryCount, LifecycleService lifecycleService, boolean failoverEnabled) {
-        checkNotNull(candidateClusters, "candidateClusters cannot be null");
-        checkTrue(!candidateClusters.isEmpty(), "candidateClusters cannot be empty");
+    public ClusterDiscoveryServiceImpl(int maxTryCount, LifecycleService lifecycleService, boolean failoverEnabled) {
         checkTrue(maxTryCount >= 0, "maxTryCount must be >= 0");
-
-        this.candidateClusters = candidateClusters;
         this.maxTryCount = maxTryCount;
         this.lifecycleService = lifecycleService;
         this.failoverEnabled = failoverEnabled;
+    }
+
+    public void addCandidateClusters(Collection<CandidateClusterContext> candidateClusters) {
+        checkNotNull(candidateClusters, "candidateClusters cannot be null");
+        checkTrue(!candidateClusters.isEmpty(), "candidateClusters cannot be empty");
+        this.candidateClusters.addAll(candidateClusters);
     }
 
     public boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function) {

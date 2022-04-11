@@ -214,8 +214,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
-                                       ClientConnectionManagerFactory clientConnectionManagerFactory,
-                                       AddressProvider externalAddressProvider) {
+                                       ClientConnectionManagerFactory clientConnectionManagerFactory) {
         if (clientConfig != null) {
             this.config = clientConfig;
         } else {
@@ -256,7 +255,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
         clusterService = new ClientClusterServiceImpl(loggingService.getLogger(ClientClusterService.class));
-        clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
+        clusterDiscoveryService = createClusterDiscoveryService();
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
         listenerService = new ClientListenerServiceImpl(this);
@@ -291,20 +290,28 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
     }
 
-    private ClusterDiscoveryServiceImpl initClusterDiscoveryService(AddressProvider externalAddressProvider) {
+    private ClusterDiscoveryServiceImpl createClusterDiscoveryService() {
         int tryCount;
-        List<ClientConfig> configs;
         boolean failoverEnabled = clientFailoverConfig != null;
         if (failoverEnabled) {
             tryCount = clientFailoverConfig.getTryCount();
-            configs = clientFailoverConfig.getClientConfigs();
         } else {
             tryCount = 0;
+        }
+        return new ClusterDiscoveryServiceImpl(tryCount, lifecycleService, failoverEnabled);
+    }
+
+    private void initClusterDiscoveryService(AddressProvider externalAddressProvider) {
+        List<ClientConfig> configs;
+        boolean failoverEnabled = clientFailoverConfig != null;
+        if (failoverEnabled) {
+            configs = clientFailoverConfig.getClientConfigs();
+        } else {
             configs = Collections.singletonList(config);
         }
-        ClusterDiscoveryServiceBuilder builder = new ClusterDiscoveryServiceBuilder(tryCount, configs, loggingService,
-                externalAddressProvider, properties, clientExtension, getLifecycleService(), clusterService, failoverEnabled);
-        return builder.build();
+        Collection<CandidateClusterContext> contexts = CandidateClusterContextBuilder.build(configs, loggingService,
+                externalAddressProvider, properties, clientExtension, clusterService);
+        clusterDiscoveryService.addCandidateClusters(contexts);
     }
 
     private Diagnostics initDiagnostics() {
@@ -356,8 +363,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 config.getClassLoader(), properties, loggingService);
     }
 
-    public void start() {
+    public void start(AddressProvider externalAddressProvider) {
         try {
+            initClusterDiscoveryService(externalAddressProvider);
             lifecycleService.start();
             startMetrics();
             invocationService.start();

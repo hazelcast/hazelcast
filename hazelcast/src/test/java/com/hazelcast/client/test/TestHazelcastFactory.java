@@ -93,9 +93,9 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             }
             String instanceName = getInstanceName(config);
             HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(instanceName, config,
-                    null, clientRegistry.createClientServiceFactory(sourceIp), createAddressProvider(config));
+                    null, clientRegistry.createClientServiceFactory(sourceIp));
             registerJvmNameAndPidMetric(client);
-            client.start();
+            client.start(createAddressProvider(config));
             if (clients.putIfAbsent(client.getName(), client) != null) {
                 throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
                         + "' already exists!");

@@ -456,8 +456,8 @@ public final class HazelcastClient {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
             HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(instanceName, clientConfig,
-                    failoverConfig, factory, addressProvider);
-            client.start();
+                    failoverConfig, factory);
+            client.start(addressProvider);
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
             future.set(proxy);
