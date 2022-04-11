@@ -65,8 +65,8 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void simpleTest() {
-        postponeTimeMap[0].put((byte) 0, 1L);
-        postponeTimeMap[1].put((byte) 1, 1L);
+        postponeTimeMap[0].put((byte) 0, 0L);
+        postponeTimeMap[1].put((byte) 1, 0L);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -76,6 +76,7 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
+                .disableProgressAssertion()
                 .inputs(asList(
                         asList(
                                 jetRow(0L),
@@ -105,9 +106,9 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testWatermarkCleanup() {
-        postponeTimeMap[0].put((byte) 0, 2L);
-        postponeTimeMap[1].put((byte) 1, 2L);
+    public void ordersDeliveriesTest() {
+        postponeTimeMap[0].put((byte) 0, 0L);
+        postponeTimeMap[1].put((byte) 1, 5L);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -117,6 +118,40 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
+                .disableProgressAssertion()
+                .inputs(asList(
+                        asList(
+                                jetRow(5L),
+                                wm((byte) 0, 6L)
+                        ),
+                        asList(
+                                jetRow(8L),
+                                wm((byte) 1, 8L)
+                        )
+                ))
+                .expectOutput(
+                        asList(
+                                jetRow(5L, 8L),
+                                wm((byte) 0, 6L),
+                                wm((byte) 1, 3L)
+                        )
+                );
+    }
+
+    @Test
+    public void testWatermarkCleanup() {
+        postponeTimeMap[0].put((byte) 0, 0L);
+        postponeTimeMap[1].put((byte) 1, 0L);
+
+        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                joinInfo,
+                l -> l.getRow().get(0),
+                r -> r.getRow().get(0),
+                postponeTimeMap);
+
+        TestSupport.verifyProcessor(supplier)
+                .disableSnapshots()
+                .disableProgressAssertion()
                 .inputs(asList(
                         asList(
                                 jetRow(0L),
