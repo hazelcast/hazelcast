@@ -45,8 +45,12 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -113,12 +117,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
-public class TcpClientConnectionManager implements ClientConnectionManager {
+public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
-
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -700,19 +703,22 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
-    private Address translate(Address target) {
+    private Address translate(Address address) {
+        return translate(address, AddressProvider::translate);
+    }
+
+    private <T> Address translate(T target, BiFunctionEx<AddressProvider, T, Address> translateFunction) {
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
         AddressProvider addressProvider = currentContext.getAddressProvider();
         try {
-            Address translatedAddress = addressProvider.translate(target);
+            Address translatedAddress = translateFunction.apply(addressProvider, target);
             if (translatedAddress == null) {
-                throw new NullPointerException("Address Provider " + addressProvider.getClass()
-                        + " could not translate address " + target);
+                throw new HazelcastException("Address Provider " + addressProvider.getClass()
+                        + " could not translate " + target);
             }
-
             return translatedAddress;
         } catch (Exception e) {
-            logger.warning("Failed to translate address " + target + " via address provider " + e.getMessage());
+            logger.warning("Failed to translate " + target + " via address provider " + e.getMessage());
             throw rethrow(e);
         }
     }
@@ -852,9 +858,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                                                 boolean switchingToNextCluster) {
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
-            connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
+            connection.setClusterUuid(response.clusterId);
 
             TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
             if (existingConnection != null) {
@@ -875,7 +881,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterRestart();
+                client.onClusterConnect();
             }
             checkClientState(connection, switchingToNextCluster);
 
@@ -1143,6 +1149,22 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                     }
                 });
             }
+        }
+    }
+
+    @Override
+    public void memberAdded(MembershipEvent membershipEvent) {
+
+    }
+
+    @Override
+    public void memberRemoved(MembershipEvent membershipEvent) {
+        Member member = membershipEvent.getMember();
+        Connection connection = getConnection(member.getUuid());
+        if (connection != null) {
+            connection.close(null,
+                    new TargetDisconnectedException("The client has closed the connection to this member,"
+                            + " after receiving a member left event from the cluster. " + connection));
         }
     }
 }
