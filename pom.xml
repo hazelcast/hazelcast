@@ -90,7 +90,7 @@
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
-        <antlr4.version>4.9.3</antlr4.version>
+        <antlr4.version>4.10</antlr4.version>
         <avro.version>1.11.0</avro.version>
         <aws.sdk.version>1.12.150</aws.sdk.version>
         <classgraph.version>4.8.139</classgraph.version>
