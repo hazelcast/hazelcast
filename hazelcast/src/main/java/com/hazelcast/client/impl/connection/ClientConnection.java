@@ -45,6 +45,10 @@ public interface ClientConnection extends Connection {
 
     void addEventHandler(long correlationId, EventHandler handler);
 
+    void setClusterUuid(UUID uuid);
+
+    UUID getClusterUuid();
+
     // used in tests
     Map<Long, EventHandler> getEventHandlers();
 
