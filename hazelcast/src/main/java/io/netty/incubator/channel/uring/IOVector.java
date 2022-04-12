@@ -20,7 +20,7 @@ public final class IOVector {
         return size == 0;
     }
 
-    public Frame get(int index){
+    public Frame get(int index) {
         return frames[index];
     }
 
@@ -31,7 +31,7 @@ public final class IOVector {
             if (frame == null) {
                 break;
             }
-              ByteBuffer buffer = frame.byteBuffer();
+            ByteBuffer buffer = frame.byteBuffer();
             frames[size] = frame;
             size++;
             pending += buffer.remaining();
@@ -47,7 +47,7 @@ public final class IOVector {
     }
 
     public boolean add(Frame frame) {
-         if (size == IOV_MAX) {
+        if (size == IOV_MAX) {
             return false;
         } else {
             ByteBuffer buffer = frame.byteBuffer();
