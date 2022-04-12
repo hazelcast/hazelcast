@@ -6,7 +6,7 @@ import com.hazelcast.spi.impl.reactor.OpCodes;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_CALL_ID;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_CALL_ID;
 
 public class NoOp extends Op {
 

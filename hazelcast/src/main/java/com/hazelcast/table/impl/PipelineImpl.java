@@ -1,12 +1,11 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.FrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.table.Pipeline;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;

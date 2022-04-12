@@ -9,6 +9,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.table.impl.PipelineImpl;
@@ -29,7 +30,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_RESPONSE_CALL_ID;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_CALL_ID;
 
 
 /**

@@ -1,7 +1,8 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.frame;
 
-import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.spi.impl.reactor.Channel;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -11,6 +12,7 @@ import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 
 // always
@@ -57,6 +59,7 @@ public class Frame {
     }
 
     public Frame(int size) {
+        //todo: allocate power of 2.
         this.buff = ByteBuffer.allocate(size);
     }
 
@@ -104,6 +107,7 @@ public class Frame {
     }
 
     public void setSize(int size) {
+        //ensure capacity?
         buff.putInt(0, size);
     }
 
@@ -128,7 +132,10 @@ public class Frame {
     }
 
     public Frame writeInt(int value) {
+        //System.out.println(IOUtil.toDebugString("before buff", buff));
+
         ensureRemaining(INT_SIZE_IN_BYTES);
+        //System.out.println(IOUtil.toDebugString("after buff", buff));
         buff.putInt(value);
         return this;
     }
@@ -293,23 +300,16 @@ public class Frame {
     }
 
     public void ensureRemaining(int remaining) {
-        if (buff.remaining() >= remaining) {
-            return;
+        if (buff.remaining() < remaining) {
+
+            int newCapacity = nextPowerOfTwo(buff.capacity() + remaining);
+
+            ByteBuffer newBuffer = buff.hasArray()
+                    ? ByteBuffer.allocate(newCapacity)
+                    : ByteBuffer.allocateDirect(newCapacity);
+            buff.flip();
+            newBuffer.put(buff);
+            buff = newBuffer;
         }
-
-        int newCapacity = buff.capacity()*2;
-
-        ByteBuffer newBuffer;
-        if(buff.hasArray()){
-            newBuffer = ByteBuffer.allocate(newCapacity);
-        }else{
-            newBuffer = ByteBuffer.allocateDirect(newCapacity);
-        }
-        newBuffer.limit(buff.limit());
-        newBuffer.position(buff.position());
-
-        buff.flip();
-        newBuffer.put(buff);
-        buff = newBuffer;
     }
 }

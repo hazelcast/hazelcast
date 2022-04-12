@@ -4,7 +4,7 @@ import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
-import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.impl.reactor.Frame.FLAG_OP_RESPONSE;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.nio.channels.SelectionKey.OP_READ;

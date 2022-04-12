@@ -1,7 +1,7 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.IovArray;
 import org.jctools.queues.MpmcArrayQueue;

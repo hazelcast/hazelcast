@@ -1,5 +1,7 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.spi.impl.reactor.frame.Frame;
+
 import java.io.EOFException;
 
 public abstract class Op {

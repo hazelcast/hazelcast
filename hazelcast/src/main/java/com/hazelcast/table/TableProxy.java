@@ -1,12 +1,11 @@
 package com.hazelcast.table;
 
 import com.hazelcast.internal.util.HashUtil;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.reactor.ConcurrentPooledFrameAllocator;
-import com.hazelcast.spi.impl.reactor.Frame;
-import com.hazelcast.spi.impl.reactor.FrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
 import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.PipelineImpl;

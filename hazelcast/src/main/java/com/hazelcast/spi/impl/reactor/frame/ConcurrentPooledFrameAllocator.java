@@ -1,11 +1,10 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.frame;
 
 
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ConcurrentPooledFrameAllocator implements FrameAllocator {
@@ -39,8 +38,9 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate(int minSize) {
-        //todo
-        return allocate();
+        Frame frame = allocate();
+        frame.ensureRemaining(minSize);
+        return frame;
     }
 
     @Override

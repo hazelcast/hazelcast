@@ -1,7 +1,7 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;

@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.frame;
 
 import java.nio.ByteBuffer;
 
@@ -17,7 +17,7 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate() {
-       // allocateCnt++;
+        // allocateCnt++;
 
         if (index == -1) {
             // the pool is empty.
@@ -29,7 +29,7 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
                 Frame frame = new Frame(buffer);
                 frame.concurrent = false;
-             //   newAllocateCnt++;
+                //   newAllocateCnt++;
                 frame.allocator = this;
                 index++;
                 frames[k] = frame;

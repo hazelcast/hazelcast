@@ -6,7 +6,7 @@ import com.hazelcast.table.Item;
 
 import java.util.Map;
 
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_CALL_ID;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_CALL_ID;
 
 public class UpsertOp extends Op {
 

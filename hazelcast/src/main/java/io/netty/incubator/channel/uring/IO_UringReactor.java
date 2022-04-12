@@ -3,7 +3,7 @@ package io.netty.incubator.channel.uring;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.ConnectRequest;
-import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
 import io.netty.buffer.ByteBuf;
@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.spi.impl.reactor.Frame.FLAG_OP_RESPONSE;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;

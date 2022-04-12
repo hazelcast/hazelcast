@@ -1,6 +1,6 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.spi.impl.reactor.Frame;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import io.netty.channel.unix.IovArray;
 
 import java.nio.ByteBuffer;

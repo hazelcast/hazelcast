@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 
 import java.net.SocketAddress;
 

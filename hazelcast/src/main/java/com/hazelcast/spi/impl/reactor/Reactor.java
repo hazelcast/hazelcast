@@ -5,6 +5,11 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.UnpooledFrameAllocator;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.net.SocketAddress;
@@ -14,7 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_PAYLOAD;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_PAYLOAD;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
 
 /**
  * A Reactor is a thread that is an event loop.
@@ -160,9 +166,9 @@ public abstract class Reactor extends HazelcastManagedThread {
         Op op = opAllocator.allocate(request);
         op.managers = managers;
         if (request.future == null) {
-            op.response = localResponseFrameAllocator.allocate(21);
+            op.response = localResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD);
         } else {
-            op.response = remoteResponseFrameAllocator.allocate(21);
+            op.response = remoteResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD);
         }
         op.request = request.position(OFFSET_REQUEST_PAYLOAD);
         scheduler.schedule(op);

@@ -1,12 +1,13 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.table.impl.NoOp;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.UpsertOp;
 
 import java.util.function.Supplier;
 
-import static com.hazelcast.spi.impl.reactor.Frame.OFFSET_REQUEST_OPCODE;
+import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_OPCODE;
 
 public final class OpAllocator {
 

@@ -1,12 +1,13 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.reactor.frame;
 
-public class UnpooledFrameAllocator implements FrameAllocator{
+public class UnpooledFrameAllocator implements FrameAllocator {
 
     public UnpooledFrameAllocator(int i) {
 
     }
 
-    public UnpooledFrameAllocator(){}
+    public UnpooledFrameAllocator() {
+    }
 
     @Override
     public Frame allocate() {
