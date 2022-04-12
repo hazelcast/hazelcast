@@ -1,11 +1,14 @@
 package com.hazelcast.spi.impl.reactor;
 
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
@@ -71,6 +74,7 @@ public class Frame {
     }
 
     public Frame writeRequestHeader(int partitionId, int opcode) {
+        ensureRemaining(OFFSET_REQUEST_PAYLOAD);
         buff.putInt(-1); //size
         buff.putInt(Frame.FLAG_OP);
         buff.putInt(partitionId);
@@ -80,6 +84,7 @@ public class Frame {
     }
 
     public Frame writeResponseHeader(int partitionId, long callId) {
+        ensureRemaining(OFFSET_RESPONSE_PAYLOAD);
         buff.putInt(-1);  //size
         buff.putInt(Frame.FLAG_OP_RESPONSE);
         buff.putInt(partitionId);
@@ -107,11 +112,13 @@ public class Frame {
     }
 
     public Frame writeByte(byte value) {
+        ensureRemaining(BYTE_SIZE_IN_BYTES);
         buff.put(value);
         return this;
     }
 
     public Frame writeChar(char value) {
+        ensureRemaining(CHAR_SIZE_IN_BYTES);
         buff.putChar(value);
         return this;
     }
@@ -121,6 +128,7 @@ public class Frame {
     }
 
     public Frame writeInt(int value) {
+        ensureRemaining(INT_SIZE_IN_BYTES);
         buff.putInt(value);
         return this;
     }
@@ -129,18 +137,14 @@ public class Frame {
         return buff.position();
     }
 
-    public void putLong(int index, long value) {
-        buff.putLong(index, value);
-    }
-
-    public long getLong(int index) {
-        return buff.getLong(index);
-    }
-
     // very inefficient
     public Frame writeString(String s) {
-        buff.putInt(s.length());
-        for (int k = 0; k < s.length(); k++) {
+        int length = s.length();
+
+        ensureRemaining(INT_SIZE_IN_BYTES + length * CHAR_SIZE_IN_BYTES);
+
+        buff.putInt(length);
+        for (int k = 0; k < length; k++) {
             buff.putChar(s.charAt(k));
         }
         return this;
@@ -155,8 +159,17 @@ public class Frame {
     }
 
     public Frame writeLong(long value) {
+        ensureRemaining(LONG_SIZE_IN_BYTES);
         buff.putLong(value);
         return this;
+    }
+
+    public void putLong(int index, long value) {
+        buff.putLong(index, value);
+    }
+
+    public long getLong(int index) {
+        return buff.getLong(index);
     }
 
     public int readInt() {
@@ -201,6 +214,8 @@ public class Frame {
     }
 
     public Frame write(ByteBuffer src, int count) {
+        ensureRemaining(count);
+
         if (src.remaining() <= count) {
             buff.put(src);
         } else {
@@ -275,5 +290,26 @@ public class Frame {
                 }
             }
         }
+    }
+
+    public void ensureRemaining(int remaining) {
+        if (buff.remaining() >= remaining) {
+            return;
+        }
+
+        int newCapacity = buff.capacity()*2;
+
+        ByteBuffer newBuffer;
+        if(buff.hasArray()){
+            newBuffer = ByteBuffer.allocate(newCapacity);
+        }else{
+            newBuffer = ByteBuffer.allocateDirect(newCapacity);
+        }
+        newBuffer.limit(buff.limit());
+        newBuffer.position(buff.position());
+
+        buff.flip();
+        newBuffer.put(buff);
+        buff = newBuffer;
     }
 }
