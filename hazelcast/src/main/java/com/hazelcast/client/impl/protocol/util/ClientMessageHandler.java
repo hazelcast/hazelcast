@@ -20,19 +20,13 @@ import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 
 import java.util.function.Consumer;
 
-public class ClientMessageHandler implements Consumer<ClientMessage> {
+public final class ClientMessageHandler {
 
-    private final ClientListenerServiceImpl listenerService;
-    private final Consumer<ClientMessage> responseHandler;
-
-    public ClientMessageHandler(ClientListenerServiceImpl listenerService,
-                                Consumer<ClientMessage> responseHandler) {
-        this.listenerService = listenerService;
-        this.responseHandler = responseHandler;
+    private ClientMessageHandler() {
     }
 
-    @Override
-    public void accept(ClientMessage message) {
+    public static void accept(ClientListenerServiceImpl listenerService, Consumer<ClientMessage> responseHandler,
+                              ClientMessage message) {
         if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.BACKUP_EVENT_FLAG)) {
             responseHandler.accept(message);
         } else if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {

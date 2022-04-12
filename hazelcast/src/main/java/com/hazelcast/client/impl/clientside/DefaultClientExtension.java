@@ -196,8 +196,8 @@ public class DefaultClientExtension implements ClientExtension {
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
         ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
         Consumer<ClientMessage> responseHandler = client.getInvocationService().getResponseHandler();
-        ClientMessageHandler messageHandler = new ClientMessageHandler(listenerService, responseHandler);
-        return new ClientPlainChannelInitializer(socketOptions, directBuffer, messageHandler);
+        return new ClientPlainChannelInitializer(socketOptions, directBuffer,
+                clientMessage -> ClientMessageHandler.accept(listenerService, responseHandler, clientMessage));
     }
 
     @Override

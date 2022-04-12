@@ -88,18 +88,17 @@ class TestClientRegistry {
 
         @Override
         public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
-            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            Consumer<ClientMessage> responseHandler = client.getInvocationService().getResponseHandler();
-            ClientMessageHandler messageHandler = new ClientMessageHandler(listenerService, responseHandler);
-
             ClientConfig clientConfig = client.getClientConfig();
             HazelcastProperties properties = client.getProperties();
-            boolean failoverEnabled = client.getFailoverConfig() != null;
             ClusterDiscoveryService clusterDiscoveryService = client.getClusterDiscoveryService();
             return new MockTcpClientConnectionManager(client.getLoggingService(), clientConfig, properties,
                     clusterDiscoveryService, client.getName(), null,
                     (LifecycleServiceImpl) client.getLifecycleService(),
-                    client.getClientClusterService(), client, createAuthenticator(client), host, ports, messageHandler);
+                    client.getClientClusterService(), client, createAuthenticator(client), host, ports, clientMessage -> {
+                ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+                Consumer<ClientMessage> responseHandler = client.getInvocationService().getResponseHandler();
+                ClientMessageHandler.accept(listenerService, responseHandler, clientMessage);
+            });
         }
     }
 
@@ -107,7 +106,7 @@ class TestClientRegistry {
             extends TcpClientConnectionManager {
 
         private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<>();
-        private final ClientMessageHandler clientMessageHandler;
+        private final Consumer<ClientMessage> clientMessageHandler;
         private final String host;
         private final AtomicInteger ports;
 
@@ -119,7 +118,7 @@ class TestClientRegistry {
                                        ClientClusterService clientClusterService,
                                        HazelcastClientInstanceImpl client,
                                        Authenticator authenticator, String host, AtomicInteger ports,
-                                       ClientMessageHandler clientMessageHandler) {
+                                       Consumer<ClientMessage> clientMessageHandler) {
             super(loggingService, clientConfig, properties, clusterDiscoveryService, clientName,
                     networking, lifecycleService, clientClusterService, client, authenticator);
             this.host = host;
@@ -218,7 +217,7 @@ class TestClientRegistry {
         private final Address remoteAddress;
         private final TwoWayBlockableExecutor executor;
         private final MockedServerConnection serverConnection;
-        private final ClientMessageHandler clientMessageHandler;
+        private final Consumer<ClientMessage> clientMessageHandler;
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
 
@@ -231,7 +230,7 @@ class TestClientRegistry {
                 Address remoteAddress,
                 UUID serverUuid,
                 LockPair lockPair,
-                ClientMessageHandler clientMessageHandler) {
+                Consumer<ClientMessage> clientMessageHandler) {
             super(connectionManager, lifecycleService, loggingService, connectionId, null);
             this.localAddress = localAddress;
             this.remoteAddress = remoteAddress;
@@ -247,6 +246,11 @@ class TestClientRegistry {
                     this
             );
             this.clientMessageHandler = clientMessageHandler;
+        }
+
+        @Override
+        public Address getInitAddress() {
+            return remoteAddress;
         }
 
         public void handleClientMessage(final ClientMessage clientMessage) {

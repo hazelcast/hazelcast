@@ -17,11 +17,13 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
@@ -44,10 +46,10 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 public class ClientPlainChannelInitializer implements ChannelInitializer {
     private final boolean directBuffer;
     private final SocketOptions socketOptions;
-    private final ClientMessageHandler clientMessageHandler;
+    private final Consumer<ClientMessage> clientMessageHandler;
 
     public ClientPlainChannelInitializer(SocketOptions socketOptions, boolean directBuffer,
-                                         ClientMessageHandler clientMessageHandler) {
+                                         Consumer<ClientMessage> clientMessageHandler) {
         this.socketOptions = socketOptions;
         this.directBuffer = directBuffer;
         this.clientMessageHandler = clientMessageHandler;
