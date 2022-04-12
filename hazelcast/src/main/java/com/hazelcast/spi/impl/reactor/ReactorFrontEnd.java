@@ -14,6 +14,8 @@ import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
+import io.netty.channel.epoll.EpollReactor;
+import io.netty.channel.epoll.EpollReactorConfig;
 import io.netty.incubator.channel.uring.IO_UringReactor;
 import io.netty.incubator.channel.uring.IO_UringReactorConfig;
 import org.jetbrains.annotations.NotNull;
@@ -117,8 +119,9 @@ public class ReactorFrontEnd {
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
                 reactors[k] = newIO_UringReactor(nodeEngine, port);
             } else if (reactorType.equals("nio")) {
-                NioReactor reactor = newNioReactor(nodeEngine, port);
-                reactors[k] = reactor;
+                reactors[k] = newNioReactor(nodeEngine, port);
+            } else if (reactorType.equals("epoll")) {
+                reactors[k] = newEpollReactor(nodeEngine, port);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -168,6 +171,29 @@ public class ReactorFrontEnd {
             config.threadAffinity = threadAffinity;
             config.managers = managers;
             IO_UringReactor reactor = new IO_UringReactor(config);
+
+            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
+            reactor.registerAccept(serverAddress, socketConfig);
+            return reactor;
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
+    }
+
+    @NotNull
+    private EpollReactor newEpollReactor(NodeEngineImpl nodeEngine, int port) {
+        try {
+            EpollReactorConfig config = new EpollReactorConfig();
+            config.spin = reactorSpin;
+            config.name = "EpollReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
+            config.poolRequests = poolRequests;
+            config.poolLocalResponses = poolLocalResponses;
+            config.poolRemoteResponses = poolRemoteResponses;
+            config.frontend = this;
+            config.logger = nodeEngine.getLogger(IO_UringReactor.class);
+            config.threadAffinity = threadAffinity;
+            config.managers = managers;
+            EpollReactor reactor = new EpollReactor(config);
 
             InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
             reactor.registerAccept(serverAddress, socketConfig);

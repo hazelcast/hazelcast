@@ -278,7 +278,7 @@ public final class NioReactor extends Reactor {
         channel.connection = connection;
         channel.remoteAddress = socketChannel.getRemoteAddress();
         channel.localAddress = socketChannel.getLocalAddress();
-        channels.add(channel);
+        registeredChannels.add(channel);
         return channel;
     }
 

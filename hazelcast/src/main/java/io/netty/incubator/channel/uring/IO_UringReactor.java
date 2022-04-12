@@ -172,7 +172,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
 
         ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
         channel.iovArray = new IovArray(iovArrayBuffer);
-        channels.add(channel);
+        registeredChannels.add(channel);
         return channel;
     }
 

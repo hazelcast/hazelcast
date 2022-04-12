@@ -28,7 +28,7 @@ import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_PAYLOAD
 public abstract class Reactor extends HazelcastManagedThread {
     protected final ReactorFrontEnd frontend;
     protected final ILogger logger;
-    protected final Set<Channel> channels = new CopyOnWriteArraySet<>();
+    protected final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
     protected final FrameAllocator requestFrameAllocator;
     protected final FrameAllocator remoteResponseFrameAllocator;
     protected final FrameAllocator localResponseFrameAllocator;
@@ -78,7 +78,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected abstract void wakeup();
 
     public void removeChannel(Channel nioChannel) {
-        channels.remove(nioChannel);
+        registeredChannels.remove(nioChannel);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -108,7 +108,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     }
 
     public Collection<Channel> channels() {
-        return channels;
+        return registeredChannels;
     }
 
     protected abstract void handleConnect(ConnectRequest request);

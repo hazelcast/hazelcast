@@ -1,27 +1,23 @@
-package io.netty.incubator.channel.uring;
+package io.netty.channel.epoll;
 
 import com.hazelcast.spi.impl.reactor.frame.Frame;
-import io.netty.channel.unix.IovArray;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
-// todo: instead of an 'array' we could use a ring so we don't need to copy to an earlier position
-// TODO: This class assumes direct byte buffers. For future safety we should also allow for non direct
 public final class IOVector {
 
     private final static int IOV_MAX = 1024;
 
+    private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
     private final Frame[] frames = new Frame[IOV_MAX];
     private int size = 0;
     private long pending;
 
     public boolean isEmpty() {
         return size == 0;
-    }
-
-    public Frame get(int index) {
-        return frames[index];
     }
 
     public void fill(Queue<Frame> queue) {
@@ -31,18 +27,12 @@ public final class IOVector {
             if (frame == null) {
                 break;
             }
+
             ByteBuffer buffer = frame.byteBuffer();
+            array[size] = buffer;
             frames[size] = frame;
             size++;
             pending += buffer.remaining();
-        }
-    }
-
-    public void fillIoArray(IovArray iovArray) {
-        for (int k = 0; k < size; k++) {
-            Frame frame = frames[k];
-            ByteBuffer byteBuffer = frame.byteBuffer();
-            iovArray.add(byteBuffer, byteBuffer.remaining());
         }
     }
 
@@ -51,6 +41,7 @@ public final class IOVector {
             return false;
         } else {
             ByteBuffer buffer = frame.byteBuffer();
+            array[size] = buffer;
             frames[size] = frame;
             size++;
             pending += buffer.remaining();
@@ -58,40 +49,49 @@ public final class IOVector {
         }
     }
 
-    public void compact(long written) {
+    public long write(LinuxSocket socket) throws IOException {
+        long written;
+        if (size == 1) {
+            ByteBuffer buf = array[0];
+            written = socket.write(buf, buf.position(), buf.remaining());
+        } else {
+            written = socket.writev(array, 0, size, 1024*1024*1024);
+        }
+        compact(written);
+        return written;
+    }
+
+    private void compact(long written) {
         if (written == pending) {
             for (int k = 0; k < size; k++) {
+                array[k] = null;
                 frames[k].release();
                 frames[k] = null;
             }
             size = 0;
             pending = 0;
         } else {
-            long w = written;
             int toIndex = 0;
-            int cachedSize = size;
-            for (int k = 0; k < cachedSize; k++) {
-                Frame frame = frames[k];
-                ByteBuffer byteBuffer = frame.byteBuffer();
-                int bufferRemaining = byteBuffer.remaining();
-                if (w < bufferRemaining) {
-                    byteBuffer.position(byteBuffer.position() + (int) w);
+            int length = size;
+            for (int k = 0; k < length; k++) {
+                if (array[k].hasRemaining()) {
                     if (k == 0) {
                         // the first one is not empty, we are done
                         break;
                     } else {
+                        array[toIndex] = array[k];
+                        array[k] = null;
                         frames[toIndex] = frames[k];
                         frames[k] = null;
                         toIndex++;
                     }
                 } else {
-                    w -= bufferRemaining;
                     size--;
-                    frame.release();
+                    array[k] = null;
+                    frames[k].release();
                     frames[k] = null;
                 }
             }
-
             pending -= written;
         }
     }
