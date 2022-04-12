@@ -7,7 +7,8 @@ public class ReactorConfig {
     public ReactorFrontEnd frontend;
     public String name;
     public boolean poolRequests;
-    public boolean poolResponses;
+    public boolean poolLocalResponses;
+    public boolean poolRemoteResponses;
     public ThreadAffinity threadAffinity;
     public ILogger logger;
     public Managers managers;

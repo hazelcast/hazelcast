@@ -44,10 +44,10 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.requestFrameAllocator = config.poolRequests
                 ? new NonConcurrentPooledFrameAllocator(128, true)
                 : new UnpooledFrameAllocator();
-        this.remoteResponseFrameAllocator = config.poolResponses
+        this.remoteResponseFrameAllocator = config.poolRemoteResponses
                 ? new ConcurrentPooledFrameAllocator(128, true)
                 : new UnpooledFrameAllocator();
-        this.localResponseFrameAllocator = config.poolResponses
+        this.localResponseFrameAllocator = config.poolLocalResponses
                 ? new NonConcurrentPooledFrameAllocator(128, true)
                 : new UnpooledFrameAllocator();
         setThreadAffinity(config.threadAffinity);

@@ -48,7 +48,8 @@ public class ReactorFrontEnd {
     private final SocketConfig socketConfig;
     private final ReactorMonitorThread monitorThread;
     private final boolean poolRequests;
-    private final boolean poolResponses;
+    private final boolean poolLocalResponses;
+    private final boolean poolRemoteResponses;
     private final boolean writeThrough;
     private final int responseThreadCount;
     private final boolean monitorSilent;
@@ -69,7 +70,8 @@ public class ReactorFrontEnd {
         this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(System.getProperty("reactor.write-through", "false"));
         this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "true"));
-        this.poolResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-responses", "true"));
+        this.poolLocalResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-local-responses", "true"));
+        this.poolRemoteResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-remote-responses", "false"));
         String reactorType = System.getProperty("reactor.type", "nio");
         this.monitorSilent = Boolean.parseBoolean(System.getProperty("reactor.monitor.silent", "false"));
 
@@ -115,7 +117,8 @@ public class ReactorFrontEnd {
             config.writeThrough = writeThrough;
             config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
             config.poolRequests = poolRequests;
-            config.poolResponses = poolResponses;
+            config.poolLocalResponses = poolLocalResponses;
+            config.poolRemoteResponses = poolRemoteResponses;
             config.frontend = this;
             config.logger = nodeEngine.getLogger(NioReactor.class);
             config.threadAffinity = threadAffinity;
@@ -136,7 +139,8 @@ public class ReactorFrontEnd {
             config.spin = reactorSpin;
             config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
             config.poolRequests = poolRequests;
-            config.poolResponses = poolResponses;
+            config.poolLocalResponses = poolLocalResponses;
+            config.poolRemoteResponses = poolRemoteResponses;
             config.frontend = this;
             config.logger = nodeEngine.getLogger(IO_UringReactor.class);
             config.threadAffinity = threadAffinity;
@@ -159,7 +163,8 @@ public class ReactorFrontEnd {
         System.out.println("reactor.channels:" + channelCount);
         System.out.println("reactor.type:" + reactorType);
         System.out.println("reactor.pool-requests:" + poolRequests);
-        System.out.println("reactor.pool-responses:" + poolResponses);
+        System.out.println("reactor.pool-local-responses:" + poolLocalResponses);
+        System.out.println("reactor.pool-remote-responses:" + poolRemoteResponses);
         System.out.println("reactor.cpu-affinity:" + System.getProperty("reactor.cpu-affinity"));
     }
 
