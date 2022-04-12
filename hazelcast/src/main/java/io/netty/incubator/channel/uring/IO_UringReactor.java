@@ -169,6 +169,9 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         channel.reactor = this;
         channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
         channel.connection = connection;
+
+        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+        channel.iovArray = new IovArray(iovArrayBuffer);
         channels.add(channel);
         return channel;
     }
@@ -373,12 +376,8 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
                     buffer.limit(),
                     (short) 0);
         } else {
-            // Can't we just preallocate?
-            ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(frameCount * IovArray.IOV_SIZE);
-            IovArray iovArray = new IovArray(iovArrayBuffer);
-            channel.iovArray = iovArray;
+            IovArray iovArray = channel.iovArray;
             int offset = iovArray.count();
-
             ioVector.fillIoArray(iovArray);
 
             sq.addWritev(channel.socket.intValue(),
@@ -397,8 +396,7 @@ public class IO_UringReactor extends Reactor implements IOUringCompletionQueueCa
         //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
         IO_UringChannel channel = channelMap.get(fd);
         channel.ioVector.compact(res);
-        channel.iovArray.release();
-        channel.iovArray = null;
+        channel.iovArray.clear();
         channel.resetFlushed();
     }
 
