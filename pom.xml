@@ -109,7 +109,7 @@
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.74.Final</netty.version>
+        <netty.version>4.1.76.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.2</parquet.version>
