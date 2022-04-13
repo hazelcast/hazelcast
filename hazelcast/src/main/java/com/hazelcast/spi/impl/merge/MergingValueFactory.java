@@ -22,6 +22,7 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.compatibility.map.CompatibilityWanMapEntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
@@ -114,6 +115,24 @@ public final class MergingValueFactory {
         return new MapMergingEntryImpl<>(serializationService)
                 .setKey(entryView.getDataKey())
                 .setValue(entryView.getDataValue())
+                .setCreationTime(entryView.getCreationTime())
+                .setExpirationTime(entryView.getExpirationTime())
+                .setLastStoredTime(entryView.getLastStoredTime())
+                .setLastUpdateTime(entryView.getLastUpdateTime())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setHits(entryView.getHits())
+                .setTtl(entryView.getTtl())
+                .setMaxIdle(entryView.getMaxIdle())
+                .setVersion(entryView.getVersion())
+                .setCost(entryView.getCost());
+    }
+
+    public static MapMergingEntryImpl<Object, Object> createMergingEntry(SerializationService serializationService,
+                                                                         Data key, Data value,
+                                                                         CompatibilityWanMapEntryView<Data, Data> entryView) {
+        return new MapMergingEntryImpl<>(serializationService)
+                .setKey(key)
+                .setValue(value)
                 .setCreationTime(entryView.getCreationTime())
                 .setExpirationTime(entryView.getExpirationTime())
                 .setLastStoredTime(entryView.getLastStoredTime())
