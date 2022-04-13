@@ -129,16 +129,20 @@ public class LocalAddressRegistry {
                 }
             }
             linkedAddresses.getAllAddresses().forEach(address -> {
-                if (!addressToUuid.containsKey(address)) {
-                    addressToUuid.put(address, instanceUuid);
-                } else {
-                    logger.warning("Address: " + address + " cannot be registered for the member uuid: " + instanceUuid
-                            + " to addressToMemberUuid map since this address is previously registered for the instance"
-                            + " uuid: " + addressToUuid.get(address) + ". Please use the different set of addresses in "
-                            + " all connected members. Tip: If you want only the wan addresses of the target cluster"
-                            + " to be registered while using advanced networking, configure your wan publishers with"
-                            + " the wan-endpoint-config.");
+                if (addressToUuid.containsKey(address)) {
+                    logger.warning("Address: " + address + " is previously registered with the member uuid: "
+                            + addressToUuid.get(address) + " to our addressToMemberUuid map, now registered with"
+                            + "/overridden by a new member uuid: " + instanceUuid +". In the case, the overridden member"
+                            +  " uuid belongs to an old member that is recently restarted, this override is expected"
+                            + " and it does not create any harm as it will delete the entry of old stale connections."
+                            + " But, if you use the intersecting set of addresses in the two different members in"
+                            + " your cluster topology, please use the different set of addresses in the connected"
+                            + " members. Tip: We can encounter members using these same addresses in WAN setups"
+                            + " including clusters that are belongs to two private networks. If you want only the"
+                            + " WAN addresses of the target cluster to be registered, Use advanced networking,"
+                            + " configure your wan publishers with an wan-endpoint-config.");
                 }
+                addressToUuid.put(address, instanceUuid);
             });
             if (logger.isFineEnabled()) {
                 logger.fine(linkedAddresses + " registered for the instance uuid=" + instanceUuid
