@@ -73,7 +73,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
             try {
                 asyncNoop().get(23, SECONDS);
             } catch (Exception e) {
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             }
         } else {
             CompletableFuture[] futures = new CompletableFuture[concurrency];

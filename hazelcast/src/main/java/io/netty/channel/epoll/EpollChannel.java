@@ -38,6 +38,37 @@ public class EpollChannel extends Channel {
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
+    protected int flags = Native.EPOLLET;
+
+    void setFlag(int flag) throws IOException {
+        if (!isFlagSet(flag)) {
+            flags |= flag;
+            modifyEvents();
+        }
+    }
+
+    void clearFlag(int flag) throws IOException {
+        if (isFlagSet(flag)) {
+            flags &= ~flag;
+            modifyEvents();
+        }
+    }
+
+    private void modifyEvents() throws IOException {
+//        if (socket.isOpen() && isRegistered()) {
+//            ((EpollEventLoop) eventLoop()).modify(this);
+//        }
+
+        if(socket.isOpen()) {
+            Native.epollCtlMod(reactor.epollFd.intValue(), socket.intValue(), flags);
+        }
+    }
+
+    boolean isFlagSet(int flag) {
+        return (flags & flag) != 0;
+    }
+
+
     @Override
     public void flush() {
 //        if (flushThread.get() != null) {

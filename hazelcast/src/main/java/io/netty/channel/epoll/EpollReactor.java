@@ -20,13 +20,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
+import static io.netty.channel.epoll.Native.EPOLLIN;
+import static io.netty.channel.epoll.Native.epollCtlAdd;
 
 public final class EpollReactor extends Reactor {
     private final boolean spin;
     private final boolean writeThrough;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final IntObjectMap<EpollChannel> channels = new IntObjectHashMap<>(4096);
-    private final FileDescriptor epollFd;
+    private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
+    public final FileDescriptor epollFd;
     private final FileDescriptor eventFd;
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
@@ -41,7 +44,7 @@ public final class EpollReactor extends Reactor {
         try {
             // It is important to use EPOLLET here as we only want to get the notification once per
             // wakeup and don't call eventfd_read(...).
-            Native.epollCtlAdd(epollFd.intValue(), eventFd.intValue(), Native.EPOLLIN | Native.EPOLLET);
+            epollCtlAdd(epollFd.intValue(), eventFd.intValue(), EPOLLIN | Native.EPOLLET);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to add eventFd filedescriptor to epoll", e);
         }
@@ -49,7 +52,7 @@ public final class EpollReactor extends Reactor {
         try {
             // It is important to use EPOLLET here as we only want to get the notification once per
             // wakeup and don't call read(...).
-            Native.epollCtlAdd(epollFd.intValue(), timerFd.intValue(), Native.EPOLLIN | Native.EPOLLET);
+            epollCtlAdd(epollFd.intValue(), timerFd.intValue(), EPOLLIN | Native.EPOLLET);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to add timerFd filedescriptor to epoll", e);
         }
@@ -68,20 +71,25 @@ public final class EpollReactor extends Reactor {
 
     @Override
     protected void eventLoop() throws Exception {
+        int k=0;
         while (running) {
             runTasks();
+            k++;
+
+            Thread.sleep(500);
+            System.out.println(getName() +" eventLoop run "+k);
 
             boolean moreWork = scheduler.tick();
 
             flushDirtyChannels();
 
-            int ready = 0;
+            int ready;
             if (spin || moreWork) {
                 ready = epollBusyWait();
             } else {
                 wakeupNeeded.set(true);
                 if (publicRunQueue.isEmpty()) {
-                    //ready = selector.select();
+                    ready = epollWait();
                 } else {
                     ready = epollBusyWait();
                 }
@@ -89,24 +97,32 @@ public final class EpollReactor extends Reactor {
             }
 
             if (ready > 0) {
-                handleReadyEvents(ready);
+                processReady(ready);
             }
         }
     }
 
+    private int epollWait() throws IOException {
+        return Native.epollWait(epollFd, events, true);
+    }
 
     private int epollBusyWait() throws IOException {
         return Native.epollBusyWait(epollFd, events);
     }
 
-    private void handleReadyEvents(int ready) {
+    private void processReady(int ready) {
+        System.out.println("handleReadyEvents: "+ready+" ready");
+
         for (int i = 0; i < ready; i++) {
             final int fd = events.fd(i);
             if (fd == eventFd.intValue()) {
+                System.out.println("eventFd");
                 //pendingWakeup = false;
             } else if (fd == timerFd.intValue()) {
+                System.out.println("timerFd");
                 //timerFired = true;
             } else {
+                System.out.println("Something else");
                 final long ev = events.events(i);
 
                 EpollChannel channel = channels.get(fd);
@@ -116,11 +132,12 @@ public final class EpollReactor extends Reactor {
                         handleWrite(channel);
                     }
 
-                    if ((ev & (Native.EPOLLERR | Native.EPOLLIN)) != 0) {
+                    if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
                         // The Channel is still open and there is something to read. Do it now.
                         handleRead(channel);
                     }
                 } else {
+                    // no channel found
                     // We received an event for an fd which we not use anymore. Remove it from the epoll_event set.
                     try {
                         Native.epollCtlDel(epollFd.intValue(), fd);
@@ -271,20 +288,23 @@ public final class EpollReactor extends Reactor {
     }
 
     public void registerAccept(InetSocketAddress serverAddress, SocketConfig socketConfig) throws IOException {
-//        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-//        serverSocketChannel.setOption(SO_RCVBUF, socketConfig.receiveBufferSize);
-//        System.out.println(getName() + " Binding to " + serverAddress);
-//        serverSocketChannel.bind(serverAddress);
-//        serverSocketChannel.configureBlocking(false);
-//        schedule(() -> {
-//            SelectionKey key = serverSocketChannel.register(selector, OP_ACCEPT);
-//            System.out.println(getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
-//
-//            EpollServerChannel serverChannel = new EpollServerChannel();
-//            serverChannel.socketConfig = socketConfig;
-//            serverChannel.serverSocketChannel = serverSocketChannel;
-//            key.attach(serverChannel);
-//        });
+        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
+        serverSocket.setReuseAddress(true);
+        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
+
+        serverSocket.bind(serverAddress);
+        System.out.println(getName() + " Bind success " + serverAddress);
+        serverSocket.listen(10);
+        System.out.println(getName() + " Listening on " + serverAddress);
+
+        schedule(() -> {
+            EpollServerChannel serverChannel = new EpollServerChannel();
+            serverChannel.serverSocket = serverSocket;
+            serverChannel.socketConfig = socketConfig;
+            serverChannels.put(serverSocket.intValue(), serverChannel);
+            serverSocket.listen(socketConfig.backlog);
+            epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
+        });
     }
 
     @Override
@@ -293,25 +313,29 @@ public final class EpollReactor extends Reactor {
             SocketAddress address = request.address;
             System.out.println("ConnectRequest address:" + address);
 
-            LinuxSocket socket = LinuxSocket.newSocketDgram();
+            LinuxSocket socket = LinuxSocket.newSocketStream();
             configure(socket, request.socketConfig);
-            socket.connect(address);
+            if(!socket.connect(address)){
+                throw new RuntimeException("Failed to connect to "+request.address);
+            }
 
 //            socketChannel.configureBlocking(false);
 
 //            SelectionKey key = socketChannel.register(selector, OP_READ);
 //
-//            EpollChannel channel = newChannel(socket, request.connection, key, request.socketConfig);
-//            key.attach(channel);
+            EpollChannel channel = newChannel(socket, request.connection, request.socketConfig);
+            channel.setFlag(EPOLLIN);
+            //todo: register for read.
 
             logger.info("Socket listening at " + address);
-            //request.future.complete(channel);
+            request.future.complete(channel);
         } catch (Exception e) {
+            e.printStackTrace();
             request.future.completeExceptionally(e);
         }
     }
 
-    private EpollChannel newChannel(LinuxSocket socket, Connection connection, SelectionKey key, SocketConfig socketConfig) throws IOException {
+    private EpollChannel newChannel(LinuxSocket socket, Connection connection, SocketConfig socketConfig) throws IOException {
         System.out.println(this + " newChannel: " + socket);
 
         EpollChannel channel = new EpollChannel();
@@ -323,6 +347,7 @@ public final class EpollReactor extends Reactor {
         channel.remoteAddress = socket.remoteAddress();
         channel.localAddress = socket.localAddress();
         registeredChannels.add(channel);
+
         return channel;
     }
 
@@ -330,7 +355,8 @@ public final class EpollReactor extends Reactor {
         socket.setTcpNoDelay(socketConfig.tcpNoDelay);
         socket.setSendBufferSize(socketConfig.sendBufferSize);
         socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+
         String id = socket.localAddress() + "->" + socket.remoteAddress();
         System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
         System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
