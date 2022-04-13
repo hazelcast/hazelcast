@@ -128,7 +128,18 @@ public class LocalAddressRegistry {
                             + " member.");
                 }
             }
-            linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, instanceUuid));
+            linkedAddresses.getAllAddresses().forEach(address -> {
+                if (!addressToUuid.containsKey(address)) {
+                    addressToUuid.put(address, instanceUuid);
+                } else {
+                    logger.warning("Address: " + address + " cannot be registered for the member uuid: " + instanceUuid
+                            + " to addressToMemberUuid map since this address is previously registered for the instance"
+                            + " uuid: " + addressToUuid.get(address) + ". Please use the different set of addresses in "
+                            + " all connected members. Tip: If you want only the wan addresses of the target cluster"
+                            + " to be registered while using advanced networking, configure your wan publishers with"
+                            + " the wan-endpoint-config.");
+                }
+            });
             if (logger.isFineEnabled()) {
                 logger.fine(linkedAddresses + " registered for the instance uuid=" + instanceUuid
                         + " currently all registered addresses for this instance uuid: "
