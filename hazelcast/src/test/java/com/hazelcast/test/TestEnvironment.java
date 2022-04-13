@@ -46,9 +46,6 @@ public final class TestEnvironment {
      * @return {@code true} when compatibility tests are to be executed on a mixed version cluster
      */
     public static boolean isRunningCompatibilityTest() {
-        // RU_COMPAT_4_2 normally no compatibility tests are to be executed
-        // on a X.0 version, because we do not guarantee RU compatibility
-        // across major versions. However 5.0 is different in this respect.
         return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS);
     }
 

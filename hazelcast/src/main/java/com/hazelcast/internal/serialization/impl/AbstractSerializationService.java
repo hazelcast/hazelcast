@@ -86,8 +86,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
     private final SerializerAdapter[] constantTypeIds;
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
+    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
     //Global serializer may override Java Serialization or not
