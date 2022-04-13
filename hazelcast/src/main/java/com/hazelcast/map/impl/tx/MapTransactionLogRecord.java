@@ -45,14 +45,14 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private UUID ownerUuid;
     private Operation op;
 
-    private transient RemoteCallHook nearCachingHook = RemoteCallHook.EMPTY_HOOK;
+    private transient RemoteCallHook remoteCallHook = RemoteCallHook.EMPTY_HOOK;
 
     public MapTransactionLogRecord() {
     }
 
     public MapTransactionLogRecord(String name, Data key, int partitionId,
                                    Operation op, UUID ownerUuid, UUID transactionId,
-                                   @Nonnull RemoteCallHook nearCachingHook) {
+                                   @Nonnull RemoteCallHook remoteCallHook) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -62,7 +62,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         this.ownerUuid = ownerUuid;
         this.partitionId = partitionId;
         this.transactionId = transactionId;
-        this.nearCachingHook = nearCachingHook;
+        this.remoteCallHook = remoteCallHook;
     }
 
     @Override
@@ -85,12 +85,12 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void onCommitSuccess() {
-        nearCachingHook.onRemoteCallSuccess(op);
+        remoteCallHook.onRemoteCallSuccess(op);
     }
 
     @Override
     public void onCommitFailure() {
-        nearCachingHook.onRemoteCallFailure();
+        remoteCallHook.onRemoteCallFailure();
     }
 
     @Override

@@ -424,9 +424,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     }
 
     protected void updateOpStats(Operation op, long startNanos) {
-        if (!statisticsEnabled) {
-            return;
-        }
+        assert statisticsEnabled;
 
         incrementTxnOperationStats(op, localMapStats, startNanos);
     }
