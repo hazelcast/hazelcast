@@ -28,16 +28,17 @@ import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.cp.internal.CPSubsystemImpl;
 import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.ClientExtension;
+import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -138,6 +139,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.annotation.Nonnull;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -167,6 +169,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.unmodifiableSet;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
@@ -253,11 +256,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
+        clusterService = new ClientClusterServiceImpl(loggingService.getLogger(ClientClusterService.class));
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
         listenerService = new ClientListenerServiceImpl(this);
-        clusterService = new ClientClusterServiceImpl(this);
         clientClusterViewListenerService = new ClientClusterViewListenerService(this);
         userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
@@ -295,7 +298,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             configs = clientFailoverConfig.getClientConfigs();
         }
         ClusterDiscoveryServiceBuilder builder = new ClusterDiscoveryServiceBuilder(tryCount, configs, loggingService,
-                externalAddressProvider, properties, clientExtension, getLifecycleService());
+                externalAddressProvider, properties, clientExtension, getLifecycleService(), clusterService);
         return builder.build();
     }
 
@@ -551,13 +554,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Nonnull
     @Override
     public Cluster getCluster() {
-        return new ClientClusterProxy(clusterService);
+        return clusterService.getCluster();
     }
 
     @Nonnull
     @Override
     public Client getLocalEndpoint() {
-        return clusterService.getLocalClient();
+        TcpClientConnection connection = (TcpClientConnection) connectionManager.getRandomConnection();
+        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
+        UUID clientUuid = connectionManager.getClientUuid();
+        return new ClientImpl(clientUuid, inetSocketAddress, instanceName, unmodifiableSet(config.getLabels()));
     }
 
     @Nonnull
@@ -863,8 +869,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
-        //clear the member lists
-        clusterService.reset();
+        //reset the member list version
+        clusterService.onClusterChange();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -873,12 +879,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterRestart() {
+    public void onClusterConnect() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        clusterService.clearMemberList();
+        clusterService.onClusterConnect();
     }
 
     public void waitForInitialMembershipEvents() {

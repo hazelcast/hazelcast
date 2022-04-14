@@ -49,6 +49,8 @@ public class ClientReplicatedMapSplitBrainProtectionWriteTest extends Replicated
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

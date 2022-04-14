@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
+import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.Before;
@@ -26,6 +27,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -34,7 +37,7 @@ public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map2;
     private IMap<Integer, Person> map3;
 
-    private List<Row> expected = new ArrayList<>();
+    private final List<Row> expected = new ArrayList<>();
 
     @BeforeClass
     public static void beforeClass() {
@@ -185,5 +188,57 @@ public class SqlUnionTest extends SqlTestSupport {
         expected.add(new Row((byte) 1));
         String sql = "SELECT 1 FROM (values(1)) UNION ALL SELECT 1 FROM map1";
         assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void watermarkedStreamUnionTest() {
+        String name = createTable(
+                row(timestampTz(10L), 1),
+                row(timestampTz(12L), 2),
+                row(timestampTz(14L), 3),
+                row(timestampTz(0L), 4)
+        );
+
+        String sql = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))";
+
+        String query = sql + " UNION " + sql;
+        // Internally, UNION query would be converted into DISTINCT aggregation.
+        // Non-windowed streaming aggregation is not supported.
+        assertThatThrownBy(() -> instance().getSql().execute(query))
+                .hasMessageContaining("Streaming aggregation is supported only for window aggregation");
+    }
+
+    @Test
+    public void watermarkedStreamUnionAllTest() {
+        String name = createTable(
+                row(timestampTz(10L), 1),
+                row(timestampTz(12L), 2),
+                row(timestampTz(14L), 3),
+                row(timestampTz(0L), 4)
+        );
+
+        String sql = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))";
+
+        expected.add(new Row(timestampTz(10L), 1));
+        expected.add(new Row(timestampTz(10L), 1));
+        expected.add(new Row(timestampTz(12L), 2));
+        expected.add(new Row(timestampTz(12L), 2));
+        expected.add(new Row(timestampTz(14L), 3));
+        expected.add(new Row(timestampTz(14L), 3));
+
+        String query = sql + " UNION ALL " + sql;
+        assertTipOfStream(query, expected);
+    }
+
+    private static String createTable(Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                name,
+                asList("ts", "id"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                values
+        );
+        return name;
     }
 }
