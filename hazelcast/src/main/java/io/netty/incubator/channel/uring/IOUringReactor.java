@@ -15,6 +15,7 @@ import io.netty.util.internal.PlatformDependent;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -100,8 +101,8 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
     private final IntObjectMap<IOUringServerChannel> serverChannels = new IntObjectHashMap<>(4096);
     // we could use an array.
-    private final IntObjectMap<IOUringChannel> channelMap = new IntObjectHashMap<>(4096);
-    private final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
+    final IntObjectMap<IOUringChannel> channelMap = new IntObjectHashMap<>(4096);
+    final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
 
     public IOUringReactor(IOUringReactorConfig config) {
         super(config);
@@ -124,7 +125,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
         }
     }
 
-    public void register(IOUringServerChannel serverChannel) throws IOException {
+    public void accept(IOUringServerChannel serverChannel) throws IOException {
         LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
         serverSocket.setBlocking();
         serverSocket.setReuseAddress(true);
@@ -137,13 +138,14 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
         schedule(() -> {
             serverChannel.sq = sq;
+            serverChannel.reactor = IOUringReactor.this;
             serverChannel.serverSocket = serverSocket;
             serverChannels.put(serverSocket.intValue(), serverChannel);
             serverChannel.sq_addAccept();
         });
     }
 
-    private void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
+    protected void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
         socket.setTcpNoDelay(socketConfig.tcpNoDelay);
         socket.setSendBufferSize(socketConfig.sendBufferSize);
         socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
@@ -243,9 +245,9 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
                 channel.handle_IORING_OP_WRITEV(res, flags, data);
             }
         } else if (op == IORING_OP_ACCEPT) {
-            if(res<0){
+            if (res < 0) {
                 System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
-            }else {
+            } else {
                 IOUringServerChannel channel = serverChannels.get(fd);
                 channel.handle_IORING_OP_ACCEPT(res, flags, data);
             }
@@ -254,36 +256,61 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
         }
     }
 
-    private final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
+    protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
     @Override
-    public Future<Channel> connect(Channel channel, SocketAddress address)  {
-        return null;
+    public Future<Channel> connect(Channel c, SocketAddress address) {
+        IOUringChannel channel = (IOUringChannel) c;
+
+        CompletableFuture<Channel> future = new CompletableFuture();
+
+        try {
+            System.out.println(getName() + " connectRequest to address:" + address);
+
+            LinuxSocket socket = LinuxSocket.newSocketStream(false);
+            socket.setBlocking();
+            SocketConfig socketConfig = channel.socketConfig;
+            configure(socket, socketConfig);
+
+            if (socket.connect(address)) {
+                logger.info(getName() + "Socket connected to " + address);
+                schedule(() -> {
+                    channel.reactor = IOUringReactor.this;
+                    channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
+                    channel.socket = socket;
+                    channel.remoteAddress = socket.remoteAddress();
+                    channel.localAddress = socket.localAddress();
+                    ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+                    channel.iovArray = new IovArray(iovArrayBuffer);
+                    channel.sq = sq;
+                    channelMap.put(socket.intValue(), channel);
+                    channel.sq_addRead();
+                    future.complete(channel);
+                });
+            } else {
+                future.completeExceptionally(new IOException("Could not connect to " + address));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            future.completeExceptionally(e);
+        }
+
+        return future;
     }
 
-    //    @Override
-//    protected void handleConnect(ConnectRequest request) {
-//        try {
-//            SocketAddress address = request.address;
-//            System.out.println(getName() + " connectRequest to address:" + address);
-//
-//            LinuxSocket socket = LinuxSocket.newSocketStream(false);
-//            socket.setBlocking();
-//            configure(socket, request.socketConfig);
-//
-//            if (!socket.connect(request.address)) {
-//                request.future.completeExceptionally(new IOException("Could not connect to " + request.address));
-//                return;
-//            }
-//            logger.info(getName() + "Socket connected to " + address);
-//            IOUringChannel channel = newChannel(socket, request.connection, request.socketConfig);
-//            channel.remoteAddress = request.address;
-//            channelMap.put(socket.intValue(), channel);
-//            request.future.complete(channel);
-//            channel.sq_addRead();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+
+    //        IOUringChannel channel = new IOUringChannel();
+//        channel.socket = socket;
+//        channel.localAddress = socket.localAddress();
+//        channel.remoteAddress = socket.remoteAddress();
+//        channel.reactor = this;
+//        channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
+//        channel.connection = connection;
+//        channel.remoteResponseFrameAllocator = remoteResponseFrameAllocator;
+//        channel.requestFrameAllocator = requestFrameAllocator;
+//        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+//        channel.iovArray = new IovArray(iovArrayBuffer);
+//        registeredChannels.add(channel);
+//        return channel;
 }
 
