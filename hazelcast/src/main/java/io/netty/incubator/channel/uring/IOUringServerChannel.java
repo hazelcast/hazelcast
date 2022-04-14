@@ -35,12 +35,12 @@ public class IOUringServerChannel {
 
         IOUringChannel channel = channelSupplier.get();
         LinuxSocket socket = new LinuxSocket(res);
+        reactor.channelMap.put(socket.intValue(), channel);
         try {
             channel.configure(reactor, socketConfig, socket);
+            channel.onConnectionEstablished();
         } catch (IOException e) {
             throw new RuntimeException();
         }
-        reactor.channelMap.put(socket.intValue(), channel);
-        channel.sq_addRead();
     }
 }

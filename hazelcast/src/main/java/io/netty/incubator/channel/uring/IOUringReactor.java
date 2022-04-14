@@ -237,14 +237,14 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
-            SocketConfig socketConfig = channel.socketConfig;
+
+            channel.configure(IOUringReactor.this, c.socketConfig, socket);
 
             if (socket.connect(address)) {
                 logger.info(getName() + "Socket connected to " + address);
                 schedule(() -> {
-                    channel.configure(IOUringReactor.this, socketConfig, socket);
                     channelMap.put(socket.intValue(), channel);
-                    channel.sq_addRead();
+                    channel.onConnectionEstablished();
                     future.complete(channel);
                 });
             } else {

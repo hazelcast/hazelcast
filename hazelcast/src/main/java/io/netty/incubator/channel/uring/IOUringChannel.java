@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+
 public abstract class IOUringChannel extends Channel {
     protected LinuxSocket socket;
     public IOUringReactor reactor;
@@ -40,8 +42,6 @@ public abstract class IOUringChannel extends Channel {
     public void configure(IOUringReactor reactor, SocketConfig socketConfig, LinuxSocket socket) throws IOException {
         this.reactor = reactor;
         this.receiveBuff = reactor.allocator.directBuffer(socketConfig.receiveBufferSize);
-        this.remoteAddress = socket.remoteAddress();
-        this.localAddress = socket.localAddress();
         this.socket = socket;
         ByteBuf iovArrayBuffer = reactor.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
         this.iovArray = new IovArray(iovArrayBuffer);
@@ -56,6 +56,12 @@ public abstract class IOUringChannel extends Channel {
         System.out.println(reactor.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
         System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
         System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+    }
+
+    public void onConnectionEstablished() throws IOException {
+        this.remoteAddress = socket.remoteAddress();
+        this.localAddress = socket.localAddress();
+        sq_addRead();
     }
 
     @Override

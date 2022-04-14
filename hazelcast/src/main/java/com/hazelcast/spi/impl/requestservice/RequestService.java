@@ -508,6 +508,11 @@ public class RequestService {
     }
 
     public Requests getRequests(SocketAddress address) {
+        // remove
+        if(address == null){
+            throw new RuntimeException("Address can't be null");
+        }
+
         Requests requests = requestsPerChannel.get(address);
         if (requests != null) {
             return requests;

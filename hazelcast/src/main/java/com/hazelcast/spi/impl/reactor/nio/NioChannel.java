@@ -1,12 +1,17 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.requestservice.FrameHandler;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -14,6 +19,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
+import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
@@ -25,6 +31,7 @@ public abstract class NioChannel extends Channel {
     public NioReactor reactor;
     protected SelectionKey key;
     protected boolean writeThrough;
+    private Selector selector;
      // ======================================================
     // reading side of the channel.
     // ======================================================
@@ -39,7 +46,32 @@ public abstract class NioChannel extends Channel {
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+
+
+    protected void configure(NioReactor reactor, SocketChannel socketChannel, SocketConfig socketConfig) throws IOException {
+        this.reactor = reactor;
+        this.selector = reactor.selector;
+        this.socketChannel = socketChannel;
+        this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+
+        Socket socket = socketChannel.socket();
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+
+        String id = socket.getLocalAddress() + "->" + socket.getRemoteSocketAddress();
+        System.out.println(reactor.getName() + " " + id + " tcpNoDelay: " + socket.getTcpNoDelay());
+        System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+    }
+
+    protected void onConnectionEstablished() throws IOException {
+        this.remoteAddress = socketChannel.getRemoteAddress();
+        this.localAddress = socketChannel.getLocalAddress();
+        this.key = socketChannel.register(selector, OP_READ, this);
+    }
 
     @Override
     public void flush() {
@@ -169,4 +201,5 @@ public abstract class NioChannel extends Channel {
         closeResource(socketChannel);
         reactor.removeChannel(this);
     }
+
 }
