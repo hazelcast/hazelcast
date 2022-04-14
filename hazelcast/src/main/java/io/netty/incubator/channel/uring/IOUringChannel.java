@@ -1,7 +1,7 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.requestservice.FrameHandler;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
@@ -36,6 +36,27 @@ public abstract class IOUringChannel extends Channel {
     // isolated state.
     public IovArray iovArray;
     public IOVector ioVector = new IOVector();
+
+    public void configure(IOUringReactor reactor, SocketConfig socketConfig, LinuxSocket socket) throws IOException {
+        this.reactor = reactor;
+        this.receiveBuff = reactor.allocator.directBuffer(socketConfig.receiveBufferSize);
+        this.remoteAddress = socket.remoteAddress();
+        this.localAddress = socket.localAddress();
+        this.socket = socket;
+        ByteBuf iovArrayBuffer = reactor.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+        this.iovArray = new IovArray(iovArrayBuffer);
+        this.sq = reactor.sq;
+
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+        socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+        String id = socket.localAddress() + "->" + socket.remoteAddress();
+        System.out.println(reactor.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(reactor.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+    }
 
     @Override
     public void flush() {

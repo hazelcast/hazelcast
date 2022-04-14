@@ -1,10 +1,6 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.unix.IovArray;
-
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,25 +30,17 @@ public class IOUringServerChannel {
 //        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
         SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
+
         System.out.println(this + " new connected accepted: " + address);
-        LinuxSocket socket = new LinuxSocket(res);
-        try {
-            reactor.configure(socket, socketConfig);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
         IOUringChannel channel = channelSupplier.get();
-        channel.reactor = reactor;
-        channel.receiveBuff = reactor.allocator.directBuffer(socketConfig.receiveBufferSize);
-        channel.socket = socket;
-        channel.remoteAddress = socket.remoteAddress();
-        channel.localAddress = socket.localAddress();
-        ByteBuf iovArrayBuffer = reactor.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-        channel.iovArray = new IovArray(iovArrayBuffer);
-        channel.sq = sq;
+        LinuxSocket socket = new LinuxSocket(res);
+        try {
+            channel.configure(reactor, socketConfig, socket);
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
         reactor.channelMap.put(socket.intValue(), channel);
-        channel.sq_addRead();
         channel.sq_addRead();
     }
 }

@@ -1,14 +1,11 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.FileDescriptor;
-import io.netty.channel.unix.IovArray;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.netty.util.internal.PlatformDependent;
@@ -95,7 +92,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     private final boolean spin;
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
-    private final IOUringSubmissionQueue sq;
+    final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
@@ -143,35 +140,6 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
             serverChannels.put(serverSocket.intValue(), serverChannel);
             serverChannel.sq_addAccept();
         });
-    }
-
-    protected void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        socket.setTcpQuickAck(socketConfig.tcpQuickAck);
-        String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
-    }
-
-    private IOUringChannel newChannel(LinuxSocket socket, Connection connection, SocketConfig socketConfig) {
-//        IOUringChannel channel = new IOUringChannel();
-//        channel.socket = socket;
-//        channel.localAddress = socket.localAddress();
-//        channel.remoteAddress = socket.remoteAddress();
-//        channel.reactor = this;
-//        channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
-//        channel.connection = connection;
-//        channel.remoteResponseFrameAllocator = remoteResponseFrameAllocator;
-//        channel.requestFrameAllocator = requestFrameAllocator;
-//        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-//        channel.iovArray = new IovArray(iovArrayBuffer);
-//        registeredChannels.add(channel);
-//        return channel;
-        return null;
     }
 
     @Override
@@ -270,19 +238,11 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
             SocketConfig socketConfig = channel.socketConfig;
-            configure(socket, socketConfig);
 
             if (socket.connect(address)) {
                 logger.info(getName() + "Socket connected to " + address);
                 schedule(() -> {
-                    channel.reactor = IOUringReactor.this;
-                    channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
-                    channel.socket = socket;
-                    channel.remoteAddress = socket.remoteAddress();
-                    channel.localAddress = socket.localAddress();
-                    ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-                    channel.iovArray = new IovArray(iovArrayBuffer);
-                    channel.sq = sq;
+                    channel.configure(IOUringReactor.this, socketConfig, socket);
                     channelMap.put(socket.intValue(), channel);
                     channel.sq_addRead();
                     future.complete(channel);
@@ -297,20 +257,5 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
         return future;
     }
-
-
-    //        IOUringChannel channel = new IOUringChannel();
-//        channel.socket = socket;
-//        channel.localAddress = socket.localAddress();
-//        channel.remoteAddress = socket.remoteAddress();
-//        channel.reactor = this;
-//        channel.receiveBuff = allocator.directBuffer(socketConfig.receiveBufferSize);
-//        channel.connection = connection;
-//        channel.remoteResponseFrameAllocator = remoteResponseFrameAllocator;
-//        channel.requestFrameAllocator = requestFrameAllocator;
-//        ByteBuf iovArrayBuffer = iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-//        channel.iovArray = new IovArray(iovArrayBuffer);
-//        registeredChannels.add(channel);
-//        return channel;
 }
 
