@@ -21,6 +21,8 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -28,7 +30,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -72,26 +74,75 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Class<?> clazz = loadClass(isKey, options);
-        return resolveFields(isKey, userFields, clazz);
+        return resolveFields(isKey, userFields, clazz, typesStorage);
     }
 
     public Stream<MappingField> resolveFields(
             boolean isKey,
             List<MappingField> userFields,
-            Class<?> clazz
+            Class<?> clazz,
+            TypesStorage typesStorage
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
-            type = TypeRegistry.INSTANCE.getTypeByClass(clazz).getQueryDataType();
+            type = resolveDataType(clazz, typesStorage);
         }
 
         if (type != QueryDataType.OBJECT) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
             return resolveObjectSchema(isKey, userFields, clazz);
+        }
+    }
+
+    private QueryDataType resolveDataType(final Class<?> clazz, final TypesStorage typesStorage) {
+        final Type rootType = typesStorage.getTypeByClass(clazz);
+        final Map<String, QueryDataType> discoveredTypes = new HashMap<>();
+
+        traverseTypeHierarchy(rootType, discoveredTypes, typesStorage);
+        populateTypeInformation(discoveredTypes, typesStorage);
+
+        return discoveredTypes.get(rootType.getName());
+    }
+
+    private void traverseTypeHierarchy(final Type current,
+                                       final Map<String, QueryDataType> discovered,
+                                       final TablesStorage tablesStorage
+    ) {
+        discovered.putIfAbsent(current.getName(), new QueryDataType(current.getName()));
+
+        for (int i = 0; i < current.getFields().size(); i++) {
+            final Type.TypeField field = current.getFields().get(i);
+            if (field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+                final String fieldTypeName = field.getQueryDataType().getTypeName();
+                if (!discovered.containsKey(fieldTypeName)) {
+                    traverseTypeHierarchy(tablesStorage.getType(fieldTypeName), discovered, tablesStorage);
+                }
+            }
+        }
+    }
+
+    private void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
+        for (final QueryDataType queryDataType : types.values()) {
+            final Type type = tablesStorage.getType(queryDataType.getTypeName());
+            for (int i = 0; i < type.getFields().size(); i++) {
+                final Type.TypeField field = type.getFields().get(i);
+                if (field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+                    queryDataType.getFields().add(new QueryDataType.QueryDataTypeField(
+                            field.getName(),
+                            types.get(field.getQueryDataType().getTypeName())
+                    ));
+                } else {
+                    queryDataType.getFields().add(new QueryDataType.QueryDataTypeField(
+                            field.getName(),
+                            field.getQueryDataType()
+                    ));
+                }
+            }
         }
     }
 
@@ -192,9 +243,11 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Class<?> clazz = loadClass(isKey, options);
+        // TODO: typeStorages wiring?
         return resolveMetadata(isKey, resolvedFields, clazz);
     }
 

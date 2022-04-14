@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
@@ -184,6 +185,9 @@ public class TableResolverImpl implements TableResolver {
                 tables.add(toTable((Mapping) o));
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
+            } else if (o instanceof Type) {
+                // TODO: something?
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }

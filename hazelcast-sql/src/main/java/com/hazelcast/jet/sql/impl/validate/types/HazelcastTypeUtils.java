@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate.types;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -135,12 +132,7 @@ public final class HazelcastTypeUtils {
 
     private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
         final HazelcastObjectType hazelcastObjectType = extractHzObjectType(relDataType);
-        final Type type = TypeRegistry.INSTANCE.getTypeByName(hazelcastObjectType.getTypeName());
-        if (type == null) {
-            throw new HazelcastException("Type " + hazelcastObjectType.getTypeName() + " does not exist.");
-        }
-
-        return type.getQueryDataType();
+        return new QueryDataType(hazelcastObjectType.getTypeName());
     }
 
     public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {

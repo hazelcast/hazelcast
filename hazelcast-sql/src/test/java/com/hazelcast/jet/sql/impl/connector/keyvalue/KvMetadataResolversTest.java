@@ -213,6 +213,7 @@ public class KvMetadataResolversTest {
         );
         given(resolver.resolveMetadata(key, emptyList(), options, ss)).willReturn(mock(KvMetadata.class));
 
+        // TODO: fix
         KvMetadata metadata = resolvers.resolveMetadata(key, emptyList(), options, ss);
 
         assertThat(metadata).isNotNull();
@@ -224,6 +225,7 @@ public class KvMetadataResolversTest {
             "false"
     })
     public void when_formatIsMissingInOptionsWhileResolvingMetadata_then_throws(boolean key) {
+        // TODO fix
         assertThatThrownBy(() -> resolvers.resolveMetadata(key, emptyList(), emptyMap(), ss))
                 .isInstanceOf(QueryException.class)
                 .hasMessageMatching("Missing '(key|value)Format' option");

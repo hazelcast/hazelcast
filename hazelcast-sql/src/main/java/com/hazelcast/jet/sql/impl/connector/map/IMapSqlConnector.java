@@ -132,6 +132,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> resolvedFields
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        // TODO: types storage
 
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(true, resolvedFields, options, ss);
         KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(false, resolvedFields, options, ss);

@@ -178,8 +178,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int TYPE_FIELD = 64;
     public static final int EXPRESSION_ROW = 65;
     public static final int ROW_VALUE = 66;
+    public static final int QUERY_DATA_TYPE_FIELD = 67;
 
-    public static final int LEN = ROW_VALUE + 1;
+    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -271,6 +272,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[TYPE_FIELD] = arg -> new Type.TypeField();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
         constructors[ROW_VALUE] = arg -> new RowValue();
+        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
         return new ArrayDataSerializableFactory(constructors);
     }

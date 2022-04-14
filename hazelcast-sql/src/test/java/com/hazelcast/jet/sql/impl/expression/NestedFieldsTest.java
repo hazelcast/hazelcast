@@ -17,7 +17,9 @@
 package com.hazelcast.jet.sql.impl.expression;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
@@ -91,6 +93,11 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     public void test_fullInsert() {
         initDefault();
 
+        // TODO: remove
+        TypeRegistry.INSTANCE.registerType("UserType", User.class);
+        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
+        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
+
         final Office office = new Office(5L, "office2");
         final Organization organization = new Organization(4L, "organization2", office);
         final User user = new User(2L, "user1", organization);
@@ -106,6 +113,10 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     @Test
     public void test_update() {
         initDefault();
+        // TODO: remove
+        TypeRegistry.INSTANCE.registerType("UserType", User.class);
+        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
+        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
 
         final Office office = new Office(3L, "office1");
         final Organization organization = new Organization(2L, "organization1", office);
@@ -119,7 +130,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_selfRefType() {
-        TypeRegistry.INSTANCE.registerType("SelfRefType", SelfRef.class);
+        typesStorage().registerType("SelfRefType", SelfRef.class);
 
         final SelfRef first = new SelfRef(1L, "first");
         final SelfRef second = new SelfRef(2L, "second");
@@ -131,6 +142,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         third.other = fourth;
         fourth.other = first;
 
+        createMapping("test", Long.class, Long.class);
         createMapping("test", Long.class, SelfRef.class);
         instance().getMap("test").put(1L, first);
 
@@ -152,9 +164,9 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_circularlyRecurrentTypes() {
-        TypeRegistry.INSTANCE.registerType("AType", A.class);
-        TypeRegistry.INSTANCE.registerType("BType", B.class);
-        TypeRegistry.INSTANCE.registerType("CType", C.class);
+        typesStorage().registerType("AType", A.class);
+        typesStorage().registerType("BType", B.class);
+        typesStorage().registerType("CType", C.class);
 
         final A a = new A("a");
         final B b = new B("b");
@@ -178,9 +190,14 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_deepUpdate() {
+        // TODO: remove
         TypeRegistry.INSTANCE.registerType("AType", A.class);
         TypeRegistry.INSTANCE.registerType("BType", B.class);
         TypeRegistry.INSTANCE.registerType("CType", C.class);
+
+        typesStorage().registerType("AType", A.class);
+        typesStorage().registerType("BType", B.class);
+        typesStorage().registerType("CType", C.class);
 
         final A a = new A("a");
         final B b = new B("b");
@@ -192,10 +209,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
         createMapping("public", Long.class, A.class);
 
-//        instance().getSql().execute("CREATE MAPPING public TYPE IMap OPTIONS " +
-//                "('keyFormat'='bigint'," +
-//                "'valueFormat'='AType')");
-
         IMap<Long, A> map = instance().getMap("public");
         map.put(1L, a);
 
@@ -203,11 +216,15 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         assertRowsAnyOrder("SELECT public.public.this.name, public.public.this.b.name, public.public.this.b.c.name FROM public", rows(3, "a_2", "b_2", "c_2"));
     }
 
+    private TypesStorage typesStorage() {
+        return new TypesStorage(((HazelcastInstanceProxy) instance()).getOriginal().node.nodeEngine);
+    }
+
     private User initDefault() {
         // TODO: sql, dependent-types
-        TypeRegistry.INSTANCE.registerType("UserType", User.class);
-        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
-        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
+        typesStorage().registerType("UserType", User.class);
+        typesStorage().registerType("OfficeType", Office.class);
+        typesStorage().registerType("OrganizationType", Organization.class);
 
         final IMap<Long, User> testMap = instance().getMap("test");
         execute("CREATE MAPPING test "

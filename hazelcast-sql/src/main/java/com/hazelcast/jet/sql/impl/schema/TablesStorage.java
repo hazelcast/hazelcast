@@ -32,10 +32,12 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -68,6 +70,12 @@ public class TablesStorage {
         awaitMappingOnAllMembers(name, view);
     }
 
+    void put(String name, Type type) {
+        // TODO Case sensitive?
+        storage().put(name.toLowerCase(Locale.ROOT), type);
+        awaitMappingOnAllMembers(name.toLowerCase(Locale.ROOT), type);
+    }
+
     boolean putIfAbsent(String name, Mapping mapping) {
         Object previous = storage().putIfAbsent(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
@@ -82,6 +90,28 @@ public class TablesStorage {
 
     Mapping removeMapping(String name) {
         return (Mapping) storage().remove(name);
+    }
+
+    public Collection<Type> getAllTypes() {
+        return storage().values().stream()
+                .filter(o -> o instanceof Type)
+                .map(o -> (Type) o)
+                .collect(Collectors.toList());
+    }
+
+    public Type getType(final String name) {
+        return (Type) storage().get(name.toLowerCase(Locale.ROOT));
+    }
+
+    public Type getTypeByClass(final Class<?> typeClass) {
+        return getAllTypes().stream()
+                .filter(type -> type.getJavaClassName().equals(typeClass.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Type removeType(String name) {
+        return (Type) storage().remove(name.toLowerCase(Locale.ROOT));
     }
 
     View getView(String name) {

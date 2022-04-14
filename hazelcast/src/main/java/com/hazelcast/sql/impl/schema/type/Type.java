@@ -21,12 +21,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-public class Type implements IdentifiedDataSerializable {
+public class Type implements IdentifiedDataSerializable, Serializable {
     private String name;
     private String javaClassName;
     private List<TypeField> fields;
@@ -70,16 +74,25 @@ public class Type implements IdentifiedDataSerializable {
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(javaClassName);
-        out.writeObject(fields);
         out.writeObject(queryDataType);
+
+        out.writeInt(fields.size());
+        for (final TypeField field : fields) {
+            out.writeObject(field);
+        }
     }
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
         this.name = in.readString();
         this.javaClassName = in.readString();
-        this.fields = in.readObject(Map.class);
         this.queryDataType = in.readObject(QueryDataType.class);
+
+        final int size = in.readInt();
+        this.fields = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            this.fields.add(in.readObject());
+        }
     }
 
     @Override
@@ -92,7 +105,7 @@ public class Type implements IdentifiedDataSerializable {
         return SqlDataSerializerHook.TYPE;
     }
 
-    public static class TypeField implements IdentifiedDataSerializable {
+    public static class TypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType queryDataType;
         private String className = "";
@@ -136,15 +149,28 @@ public class Type implements IdentifiedDataSerializable {
         @Override
         public void writeData(final ObjectDataOutput out) throws IOException {
             out.writeString(name);
-            out.writeObject(queryDataType);
+            out.writeInt(queryDataType == null ? -1 : queryDataType.getConverter().getId());
+            out.writeString(queryDataType == null ? "" : queryDataType.getTypeName());
             out.writeString(className);
         }
 
         @Override
         public void readData(final ObjectDataInput in) throws IOException {
             this.name = in.readString();
-            this.queryDataType = in.readObject(QueryDataType.class);
+            final int converterId = in.readInt();
+            final String typeName = in.readString();
             this.className = in.readString();
+
+            // Type doesn't have a QueryDataType yet because its a class.
+            // TODO: maybe empty HZ_OBJECT?
+            if (converterId == -1) {
+                return;
+            }
+
+            final QueryDataTypeFamily typeFamily = Converters.getConverter(converterId).getTypeFamily();
+            this.queryDataType = typeFamily.equals(QueryDataTypeFamily.HZ_OBJECT)
+                    ? new QueryDataType(typeName)
+                    : QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily);
         }
 
         @Override

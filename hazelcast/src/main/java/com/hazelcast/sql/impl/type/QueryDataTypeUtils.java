@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.CalendarConverter;
@@ -276,8 +275,7 @@ public final class QueryDataTypeUtils {
                 // TODO: correct type
                 return ROW;
             case HZ_OBJECT:
-                return TypeRegistry.INSTANCE.getTypeByClass(clazz).getQueryDataType();
-
+                return HZ_OBJECT;
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }

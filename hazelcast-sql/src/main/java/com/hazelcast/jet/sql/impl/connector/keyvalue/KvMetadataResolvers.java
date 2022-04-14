@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -79,7 +80,8 @@ public class KvMetadataResolvers {
             Map<String, String> options,
             NodeEngine nodeEngine
     ) {
-        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        final TypesStorage typesStorage = new TypesStorage(nodeEngine);
 
         // normalize and validate the names and external names
         for (MappingField field : userFields) {
@@ -106,10 +108,10 @@ public class KvMetadataResolvers {
         }
 
         Stream<MappingField> keyFields = findMetadataResolver(options, true)
-                .resolveAndValidateFields(true, userFields, options, ss)
+                .resolveAndValidateFields(true, userFields, options, ss, typesStorage)
                 .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY));
         Stream<MappingField> valueFields = findMetadataResolver(options, false)
-                .resolveAndValidateFields(false, userFields, options, ss)
+                .resolveAndValidateFields(false, userFields, options, ss, typesStorage)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)

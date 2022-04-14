@@ -37,8 +37,6 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -359,20 +357,21 @@ public final class OptUtils {
         return dataTypeMap.get(fieldType.getTypeName());
     }
 
-    private static void convertUserDefinedTypeRecursively(QueryDataType queryDataType,
+    private static void convertUserDefinedTypeRecursively(QueryDataType type,
                                                                  RelDataTypeFactory typeFactory,
                                                                  Map<String, RelDataType> typeMap) {
-        if (typeMap.get(queryDataType.getTypeName()) != null) {
+        if (typeMap.get(type.getTypeName()) != null) {
             return;
         }
-        final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
+
         final List<HazelcastObjectType.Field> fields = new ArrayList<>();
         final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
-        typeMap.put(queryDataType.getTypeName(), typeRef);
+        typeMap.put(type.getTypeName(), typeRef);
 
+        // TODO: test_deepUpdate typeMap size() can be bigger than the number of entries
         for (int i = 0; i < type.getFields().size(); i++) {
             final String fieldName = type.getFields().get(i).getName();
-            final QueryDataType fieldType = type.getFields().get(i).getQueryDataType();
+            final QueryDataType fieldType = type.getFields().get(i).getDataType();
 
             final RelDataType fieldRelDataType;
             if (isUserDefinedType(fieldType)) {
@@ -387,7 +386,7 @@ public final class OptUtils {
             fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
         }
 
-        typeRef.setOriginal(new HazelcastObjectType(type.getName(), fields));
+        typeRef.setOriginal(new HazelcastObjectType(type.getTypeName(), fields));
     }
 
     private static boolean isUserDefinedType(final QueryDataType queryDataType) {

@@ -51,6 +51,10 @@ import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -99,6 +103,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     private Converter converter;
     private String typeName = "";
+    private List<QueryDataTypeField> fields;
 
     public QueryDataType() {
         // No-op.
@@ -107,6 +112,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public QueryDataType(String typeName) {
         this.converter = HazelcastObjectConverter.INSTANCE;
         this.typeName = typeName;
+        this.fields = new ArrayList<>();
     }
 
     QueryDataType(Converter converter) {
@@ -115,6 +121,14 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public String getTypeName() {
         return typeName;
+    }
+
+    public List<QueryDataTypeField> getFields() {
+        return fields;
+    }
+
+    public void setFields(final List<QueryDataTypeField> fields) {
+        this.fields = fields;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -188,13 +202,72 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
         // TODO this needs to be backwards-compatible, it's stored as a part of MappingField in the catalog
+        if (!getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            return;
+        }
+
+        final Map<String, QueryDataType> nestedTypes = new HashMap<>();
+        collectNestedTypes(this, nestedTypes);
+
         out.writeString(typeName);
+        out.writeInt(nestedTypes.size());
+        for (final QueryDataType nestedType : nestedTypes.values()) {
+            out.writeString(nestedType.typeName);
+            out.writeInt(nestedType.getFields().size());
+            for (final QueryDataTypeField field : nestedType.getFields()) {
+                out.writeString(field.name);
+                out.writeInt(field.dataType.converter.getId());
+                out.writeString(field.dataType.typeName);
+            }
+        }
+    }
+
+    private void collectNestedTypes(final QueryDataType dataType, final Map<String, QueryDataType> collected) {
+        collected.putIfAbsent(dataType.typeName, dataType);
+
+        for (final QueryDataTypeField field : dataType.fields) {
+            if (field.dataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+                if (!collected.containsKey(field.dataType.typeName)) {
+                    collectNestedTypes(field.dataType, collected);
+                }
+            }
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         converter = Converters.getConverter(in.readInt());
-        typeName = in.readString();
+        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            return;
+        }
+
+        this.typeName = in.readString();
+        this.fields = new ArrayList<>();
+
+        final int typeMapSize = in.readInt();
+        final Map<String, QueryDataType> nestedTypes = new HashMap<>();
+        nestedTypes.put(typeName, this);
+
+        for (int i = 0; i < typeMapSize; i++) {
+            final String currentTypeName = in.readString();
+            final int fieldsSize = in.readInt();
+            final QueryDataType currentType = nestedTypes.computeIfAbsent(currentTypeName, QueryDataType::new);
+
+            for (int j = 0; j < fieldsSize; j++) {
+                final String fieldName = in.readString();
+                final int fieldConverterId = in.readInt();
+                final String fieldTypeName = in.readString();
+
+                if (fieldConverterId == QueryDataType.HZ_OBJECT.getConverter().getId()) {
+                    currentType.getFields().add(new QueryDataTypeField(fieldName,
+                            nestedTypes.computeIfAbsent(fieldTypeName, QueryDataType::new)));
+                } else {
+                    final QueryDataType fieldDataType = QueryDataTypeUtils
+                            .resolveTypeForTypeFamily(Converters.getConverter(fieldConverterId).getTypeFamily());
+                    currentType.getFields().add(new QueryDataTypeField(fieldName, fieldDataType));
+                }
+            }
+        }
     }
 
     @Override
@@ -220,5 +293,55 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public String toString() {
         return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
+    }
+
+    public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {
+        private String name;
+        private QueryDataType dataType;
+
+        public QueryDataTypeField() { }
+
+        public QueryDataTypeField(final String name, final QueryDataType dataType) {
+            this.name = name;
+            this.dataType = dataType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public QueryDataType getDataType() {
+            return dataType;
+        }
+
+        public void setDataType(final QueryDataType dataType) {
+            this.dataType = dataType;
+        }
+
+        @Override
+        public void writeData(final ObjectDataOutput out) throws IOException {
+            out.writeString(name);
+            out.writeObject(dataType);
+        }
+
+        @Override
+        public void readData(final ObjectDataInput in) throws IOException {
+            this.name = in.readString();
+            this.dataType = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return SqlDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD;
+        }
     }
 }

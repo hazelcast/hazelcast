@@ -40,6 +40,7 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
+        // TODO: resolve type in the constructor?
         final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
         return value -> {
             this.object = convertRowToTargetType(value, type);
