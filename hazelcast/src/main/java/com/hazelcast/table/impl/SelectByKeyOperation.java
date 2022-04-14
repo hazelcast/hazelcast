@@ -1,7 +1,7 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.reactor.OpCodes;
-import com.hazelcast.spi.impl.reactor.Op;
+import com.hazelcast.spi.impl.requestservice.OpCodes;
+import com.hazelcast.spi.impl.requestservice.Op;
 
 public class SelectByKeyOperation extends Op {
 

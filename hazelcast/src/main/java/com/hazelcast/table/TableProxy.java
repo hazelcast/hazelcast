@@ -6,7 +6,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.requestservice.RequestService;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
@@ -16,20 +16,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_UPSERT;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_UPSERT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
 
-    private final ReactorFrontEnd frontEnd;
+    private final RequestService requestService;
     private final String name;
     private final int partitionCount;
     private final FrameAllocator frameAllocator;
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
-        this.frontEnd = nodeEngine.getReactorFrontEnd();
+        this.requestService = nodeEngine.getRequestService();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.frameAllocator = new ConcurrentPooledFrameAllocator(128, true);
@@ -37,7 +37,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public Pipeline newPipeline() {
-        return new PipelineImpl(frontEnd, frameAllocator);
+        return new PipelineImpl(requestService, frameAllocator);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeInt(item.a)
                 .writeInt(item.b)
                 .completeWriting();
-        return frontEnd.invoke(request, partitionId);
+        return requestService.invoke(request, partitionId);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_NOOP)
                 .completeWriting();
-        return frontEnd.invoke(request, partitionId);
+        return requestService.invoke(request, partitionId);
     }
 
 

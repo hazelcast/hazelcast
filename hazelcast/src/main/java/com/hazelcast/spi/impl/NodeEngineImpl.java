@@ -66,7 +66,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.requestservice.RequestService;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
@@ -131,7 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ReactorFrontEnd reactorFrontEnd;
+    private final RequestService requestService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -158,7 +158,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.reactorFrontEnd = new ReactorFrontEnd(this);
+            this.requestService = new RequestService(this);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -190,8 +190,8 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public ReactorFrontEnd getReactorFrontEnd(){
-        return reactorFrontEnd;
+    public RequestService getRequestService(){
+        return requestService;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -259,7 +259,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        reactorFrontEnd.start();
+        requestService.start();
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -574,8 +574,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if(reactorFrontEnd !=null){
-            reactorFrontEnd.shutdown();
+        if(requestService !=null){
+            requestService.shutdown();
         }
     }
 

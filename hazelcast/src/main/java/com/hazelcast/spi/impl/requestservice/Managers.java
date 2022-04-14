@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.table.impl.TableManager;
 

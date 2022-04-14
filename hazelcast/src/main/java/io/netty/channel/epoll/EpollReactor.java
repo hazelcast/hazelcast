@@ -2,24 +2,19 @@ package io.netty.channel.epoll;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.ConnectRequest;
 import com.hazelcast.spi.impl.reactor.Reactor;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 
@@ -59,6 +54,11 @@ public final class EpollReactor extends Reactor {
     }
 
     @Override
+    public Future<Channel> connect(Channel channel, SocketAddress address)  {
+        return null;
+    }
+
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -71,13 +71,13 @@ public final class EpollReactor extends Reactor {
 
     @Override
     protected void eventLoop() throws Exception {
-        int k=0;
+        int k = 0;
         while (running) {
             runTasks();
             k++;
 
             Thread.sleep(500);
-            System.out.println(getName() +" eventLoop run "+k);
+            System.out.println(getName() + " eventLoop run " + k);
 
             boolean moreWork = scheduler.tick();
 
@@ -111,7 +111,7 @@ public final class EpollReactor extends Reactor {
     }
 
     private void processReady(int ready) {
-        System.out.println("handleReadyEvents: "+ready+" ready");
+        System.out.println("handleReadyEvents: " + ready + " ready");
 
         for (int i = 0; i < ready; i++) {
             final int fd = events.fd(i);
@@ -128,13 +128,11 @@ public final class EpollReactor extends Reactor {
                 EpollChannel channel = channels.get(fd);
                 if (channel != null) {
                     if ((ev & (Native.EPOLLERR | Native.EPOLLOUT)) != 0) {
-                        // Force flush of data as the epoll is writable again
-                        handleWrite(channel);
+                        channel.handleWrite();
                     }
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
-                        // The Channel is still open and there is something to read. Do it now.
-                        handleRead(channel);
+                        channel.handleRead();
                     }
                 } else {
                     // no channel found
@@ -146,130 +144,8 @@ public final class EpollReactor extends Reactor {
                 }
             }
         }
-
-
-//        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-//        while (it.hasNext()) {
-//            SelectionKey key = it.next();
-//            it.remove();
-//
-//            if (key.isValid() && key.isAcceptable()) {
-//                handleAccept(key);
-//            }
-//
-//            if (key.isValid() && key.isReadable()) {
-//                handleRead(key);
-//            }
-//
-//            if (key.isValid() && key.isWritable()) {
-//                handleWrite((EpollChannel) key.attachment());
-//            }
-//
-//            if (!key.isValid()) {
-//                key.cancel();
-//            }
-//        }
     }
 
-    private void handleRead(EpollChannel channel) {
-        try {
-            channel.readEvents.inc();
-            ByteBuffer readBuf = channel.receiveBuffer;
-            int bytesRead = channel.socket.read(readBuf, readBuf.position(), readBuf.remaining());
-            //System.out.println(this + " bytes read: " + bytesRead);
-            if (bytesRead == -1) {
-                channel.close();
-                return;
-            }
-
-            channel.bytesRead.inc(bytesRead);
-            readBuf.flip();
-            Frame responseChain = null;
-            for (; ; ) {
-                Frame frame = channel.inboundFrame;
-                if (frame == null) {
-                    if (readBuf.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
-                        break;
-                    }
-
-                    int size = readBuf.getInt();
-                    int flags = readBuf.getInt();
-                    if ((flags & FLAG_OP_RESPONSE) == 0) {
-                        channel.inboundFrame = requestFrameAllocator.allocate(size);
-                    } else {
-                        channel.inboundFrame = remoteResponseFrameAllocator.allocate(size);
-                    }
-                    frame = channel.inboundFrame;
-                    frame.byteBuffer().limit(size);
-                    frame.writeInt(size);
-                    frame.writeInt(flags);
-                    frame.connection = channel.connection;
-                    frame.channel = channel;
-                }
-
-                int size = frame.size();
-                int remaining = size - frame.position();
-                frame.write(readBuf, remaining);
-
-                if (!frame.isComplete()) {
-                    break;
-                }
-
-                frame.complete();
-                channel.inboundFrame = null;
-                channel.framesRead.inc();
-
-                if (frame.isFlagRaised(FLAG_OP_RESPONSE)) {
-                    frame.next = responseChain;
-                    responseChain = frame;
-                } else {
-                    handleRequest(frame);
-                }
-            }
-            compactOrClear(readBuf);
-
-            if (responseChain != null) {
-                frontend.handleResponse(responseChain);
-            }
-        } catch (IOException e) {
-            channel.close();
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    protected void handleWrite(Channel c) {
-        EpollChannel channel = (EpollChannel) c;
-        try {
-            if (channel.flushThread.get() == null) {
-                throw new RuntimeException("Channel is not in flushed state");
-            }
-            channel.handleWriteCnt.inc();
-
-            IOVector ioVector = channel.ioVector;
-            ioVector.fill(channel.unflushedFrames);
-            long written = ioVector.write(channel.socket);
-
-            channel.bytesWritten.inc(written);
-            //System.out.println(getName() + " bytes written:" + written);
-
-            //       SelectionKey key = channel.key;
-//            if (ioVector.isEmpty()) {
-//                int interestOps = key.interestOps();
-//                if ((interestOps & OP_WRITE) != 0) {
-//                    key.interestOps(interestOps & ~OP_WRITE);
-//                }
-
-            channel.resetFlushed();
-//            } else {
-//                System.out.println("Didn't manage to write everything." + channel);
-//                key.interestOps(key.interestOps() | OP_WRITE);
-//            }
-        } catch (IOException e) {
-            channel.close();
-            e.printStackTrace();
-        }
-    }
 
     private void handleAccept(SelectionKey key) {
 //        EpollServerChannel serverChannel = (EpollServerChannel) key.attachment();
@@ -287,69 +163,69 @@ public final class EpollReactor extends Reactor {
 //        }
     }
 
-    public void registerAccept(InetSocketAddress serverAddress, SocketConfig socketConfig) throws IOException {
+    public void register(EpollServerChannel serverChannel) throws IOException {
         LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
+
+        // should come from properties.
         serverSocket.setReuseAddress(true);
         System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
 
-        serverSocket.bind(serverAddress);
-        System.out.println(getName() + " Bind success " + serverAddress);
+        serverSocket.bind(serverChannel.address);
+        System.out.println(getName() + " Bind success " + serverChannel.address);
         serverSocket.listen(10);
-        System.out.println(getName() + " Listening on " + serverAddress);
+        System.out.println(getName() + " Listening on " + serverChannel.address);
 
         schedule(() -> {
-            EpollServerChannel serverChannel = new EpollServerChannel();
             serverChannel.serverSocket = serverSocket;
-            serverChannel.socketConfig = socketConfig;
             serverChannels.put(serverSocket.intValue(), serverChannel);
-            serverSocket.listen(socketConfig.backlog);
+            serverSocket.listen(serverChannel.socketConfig.backlog);
             epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
         });
     }
-
-    @Override
-    protected void handleConnect(ConnectRequest request) {
-        try {
-            SocketAddress address = request.address;
-            System.out.println("ConnectRequest address:" + address);
-
-            LinuxSocket socket = LinuxSocket.newSocketStream();
-            configure(socket, request.socketConfig);
-            if(!socket.connect(address)){
-                throw new RuntimeException("Failed to connect to "+request.address);
-            }
-
-//            socketChannel.configureBlocking(false);
-
-//            SelectionKey key = socketChannel.register(selector, OP_READ);
 //
-            EpollChannel channel = newChannel(socket, request.connection, request.socketConfig);
-            channel.setFlag(EPOLLIN);
-            //todo: register for read.
+//    @Override
+//    protected void handleConnect(ConnectRequest request) {
+//        try {
+//            SocketAddress address = request.address;
+//            System.out.println("ConnectRequest address:" + address);
+//
+//            LinuxSocket socket = LinuxSocket.newSocketStream();
+//            configure(socket, request.socketConfig);
+//            if (!socket.connect(address)) {
+//                throw new RuntimeException("Failed to connect to " + request.address);
+//            }
+//
+////            socketChannel.configureBlocking(false);
+//
+////            SelectionKey key = socketChannel.register(selector, OP_READ);
+////
+//            EpollChannel channel = newChannel(socket, request.connection, request.socketConfig);
+//            channel.setFlag(EPOLLIN);
+//            //todo: register for read.
+//
+//            logger.info("Socket listening at " + address);
+//            request.future.complete(channel);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            request.future.completeExceptionally(e);
+//        }
+//    }
 
-            logger.info("Socket listening at " + address);
-            request.future.complete(channel);
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.future.completeExceptionally(e);
-        }
-    }
-
-    private EpollChannel newChannel(LinuxSocket socket, Connection connection, SocketConfig socketConfig) throws IOException {
-        System.out.println(this + " newChannel: " + socket);
-
-        EpollChannel channel = new EpollChannel();
-        channel.reactor = this;
-        channel.writeThrough = writeThrough;
-        channel.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-        channel.socket = socket;
-        channel.connection = connection;
-        channel.remoteAddress = socket.remoteAddress();
-        channel.localAddress = socket.localAddress();
-        registeredChannels.add(channel);
-
-        return channel;
-    }
+//    private EpollChannel newChannel(LinuxSocket socket, Connection connection, SocketConfig socketConfig) throws IOException {
+//        System.out.println(this + " newChannel: " + socket);
+//
+//        EpollChannel channel = new EpollChannel();
+//        channel.reactor = this;
+//        channel.writeThrough = writeThrough;
+//        channel.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+//        channel.socket = socket;
+//        channel.connection = connection;
+//        channel.remoteAddress = socket.remoteAddress();
+//        channel.localAddress = socket.localAddress();
+//        registeredChannels.add(channel);
+//
+//        return channel;
+//    }
 
     private void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
         socket.setTcpNoDelay(socketConfig.tcpNoDelay);

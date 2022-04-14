@@ -2,78 +2,52 @@ package com.hazelcast.spi.impl.reactor;
 
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-import com.hazelcast.spi.impl.reactor.frame.NonConcurrentPooledFrameAllocator;
-import com.hazelcast.spi.impl.reactor.frame.UnpooledFrameAllocator;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_PAYLOAD;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
-
 /**
  * A Reactor is a thread that is an event loop.
+ *
+ * The Reactor infrastructure is unaware of what is being send. So it isn't aware of requests/responses.
+ *
+ * A single reactor can deal with many server ports.
  */
 public abstract class Reactor extends HazelcastManagedThread {
-    protected final ReactorFrontEnd frontend;
+    public final ConcurrentMap context = new ConcurrentHashMap();
     protected final ILogger logger;
-    protected final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
-    protected final FrameAllocator requestFrameAllocator;
-    protected final FrameAllocator remoteResponseFrameAllocator;
-    protected final FrameAllocator localResponseFrameAllocator;
+    public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
     public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
-    protected final SwCounter requests = SwCounter.newSwCounter();
-    protected final Scheduler scheduler;
-    private final OpAllocator opAllocator = new OpAllocator();
+    public final Scheduler scheduler;
     public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
-    private final Managers managers;
     protected volatile boolean running = true;
 
     public Reactor(ReactorConfig config) {
         super(config.name);
-        this.frontend = config.frontend;
         this.logger = config.logger;
+        this.scheduler = config.scheduler;
 
-        this.managers = config.managers;
-        this.scheduler = new Scheduler(32768, Integer.MAX_VALUE);
-        this.requestFrameAllocator = config.poolRequests
-                ? new NonConcurrentPooledFrameAllocator(128, true)
-                : new UnpooledFrameAllocator();
-        this.remoteResponseFrameAllocator = config.poolRemoteResponses
-                ? new ConcurrentPooledFrameAllocator(128, true)
-                : new UnpooledFrameAllocator();
-        this.localResponseFrameAllocator = config.poolLocalResponses
-                ? new NonConcurrentPooledFrameAllocator(128, true)
-                : new UnpooledFrameAllocator();
-        setThreadAffinity(config.threadAffinity);
+        if (config.threadAffinity != null) {
+            setThreadAffinity(config.threadAffinity);
+        }
     }
 
-    public void shutdown(){
+    public void shutdown() {
         running = false;
     }
 
-    public Future<Channel> schedule(SocketAddress address, Connection connection, SocketConfig socketConfig) {
-        System.out.println("asyncConnect connect to " + address);
-
-        ConnectRequest request = new ConnectRequest();
-        request.address = address;
-        request.connection = connection;
-        request.future = new CompletableFuture<>();
-        request.socketConfig = socketConfig;
-        schedule(request);
-        return request.future;
-    }
+    public abstract Future<Channel> connect(Channel channel, SocketAddress address) ;
 
     protected abstract void wakeup();
 
@@ -83,7 +57,7 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected abstract void eventLoop() throws Exception;
 
-    public void schedule(ReactorTask task){
+    public void schedule(ReactorTask task) {
         publicRunQueue.add(task);
         wakeup();
     }
@@ -102,20 +76,11 @@ public abstract class Reactor extends HazelcastManagedThread {
         }
     }
 
-    public void schedule(ConnectRequest request) {
-        publicRunQueue.add(request);
-        wakeup();
-    }
-
     public Collection<Channel> channels() {
         return registeredChannels;
     }
 
-    protected abstract void handleConnect(ConnectRequest request);
-
-    protected abstract void handleWrite(Channel task);
-
-    @Override
+     @Override
     public final void executeRun() {
         try {
             eventLoop();
@@ -132,7 +97,7 @@ public abstract class Reactor extends HazelcastManagedThread {
                 break;
             }
 
-            handleWrite(channel);
+            channel.handleWrite();
         }
     }
 
@@ -144,14 +109,12 @@ public abstract class Reactor extends HazelcastManagedThread {
             }
 
             if (task instanceof Channel) {
-                handleWrite((Channel) task);
+                ((Channel) task).handleWrite();
             } else if (task instanceof Frame) {
-                handleRequest((Frame) task);
-            } else if (task instanceof ConnectRequest) {
-                handleConnect((ConnectRequest) task);
-            } else if(task instanceof ReactorTask){
+                scheduler.schedule((Frame) task);
+            } else if (task instanceof ReactorTask) {
                 try {
-                    ((ReactorTask)task).run();
+                    ((ReactorTask) task).run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -159,18 +122,5 @@ public abstract class Reactor extends HazelcastManagedThread {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
         }
-    }
-
-    protected void handleRequest(Frame request) {
-        requests.inc();
-        Op op = opAllocator.allocate(request);
-        op.managers = managers;
-        if (request.future == null) {
-            op.response = localResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD);
-        } else {
-            op.response = remoteResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD);
-        }
-        op.request = request.position(OFFSET_REQUEST_PAYLOAD);
-        scheduler.schedule(op);
     }
 }

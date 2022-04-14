@@ -60,7 +60,7 @@ public final class IOVector {
         return written;
     }
 
-    private void compact(long written) {
+    void compact(long written) {
         if (written == pending) {
             for (int k = 0; k < size; k++) {
                 array[k] = null;

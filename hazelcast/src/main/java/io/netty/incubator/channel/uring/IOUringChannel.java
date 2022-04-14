@@ -1,23 +1,29 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.requestservice.FrameHandler;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class IO_UringChannel extends Channel {
+public abstract class IOUringChannel extends Channel {
     protected LinuxSocket socket;
-    public IO_UringReactor reactor;
+    public IOUringReactor reactor;
 
     // ======================================================
     // For the reading side of the channel
     // ======================================================
     protected ByteBuf receiveBuff;
-    protected Frame inboundFrame;
+    protected IOUringSubmissionQueue sq;
+    protected FrameAllocator requestFrameAllocator;
+    protected FrameAllocator remoteResponseFrameAllocator;
 
     // ======================================================
     // for the writing side of the channel.
@@ -106,5 +112,75 @@ public class IO_UringChannel extends Channel {
         }
 
         reactor.removeChannel(this);
+    }
+
+    @Override
+    public void handleWrite() {
+        try {
+            if (flushThread.get() == null) {
+                throw new RuntimeException("Channel should be in flushed state");
+            }
+
+            ioVector.fill(unflushedFrames);
+
+            int frameCount = ioVector.size();
+            if (frameCount == 1) {
+                ByteBuffer buffer = ioVector.get(0).byteBuffer();
+                sq.addWrite(socket.intValue(),
+                        Buffer.memoryAddress(buffer),
+                        buffer.position(),
+                        buffer.limit(),
+                        (short) 0);
+            } else {
+                int offset = iovArray.count();
+                ioVector.fillIoArray(iovArray);
+
+                sq.addWritev(socket.intValue(),
+                        iovArray.memoryAddress(offset),
+                        iovArray.count() - offset,
+                        (short) 0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            close();
+        }
+    }
+
+    public void handle_IORING_OP_WRITEV(int res, int flags, short data) {
+        //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
+        ioVector.compact(res);
+        iovArray.clear();
+        resetFlushed();
+    }
+
+    public void handle_IORING_OP_WRITE(int res, int flags, short data) {
+        ioVector.compact(res);
+        resetFlushed();
+    }
+
+    public abstract void onRead(ByteBuf receiveBuffer);
+
+    public void handle_IORING_OP_READ(int res, int flags, short data) {
+        try {
+            readEvents.inc();
+            bytesRead.inc(res);
+            receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
+            onRead(receiveBuff);
+            receiveBuff.discardReadBytes();
+            // we want to read more data.
+            sq_addRead();
+        } catch (Exception e) {
+            e.printStackTrace();
+            close();
+        }
+    }
+
+    public void sq_addRead() {
+        //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
+        sq.addRead(socket.intValue(),
+                receiveBuff.memoryAddress(),
+                receiveBuff.writerIndex(),
+                receiveBuff.capacity(),
+                (short) 0);
     }
 }

@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.reactor;
 
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.spi.impl.reactor.nio.NioChannel;
-import io.netty.incubator.channel.uring.IO_UringChannel;
+import io.netty.incubator.channel.uring.IOUringChannel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,14 +67,14 @@ public final class ReactorMonitorThread extends Thread {
     }
 
     private void monitor(Reactor reactor, long elapsed) {
-        log(reactor + " request-count:" + reactor.requests.get());
-        log(reactor + " channel-count:" + reactor.channels().size());
+        //log(reactor + " request-count:" + reactor.requests.get());
+        //log(reactor + " channel-count:" + reactor.channels().size());
 
-        long requests = reactor.requests.get();
-        LongHolder prevRequests = getPrev(reactor.requests);
-        long requestsDelta = requests - prevRequests.value;
-        log(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
-        prevRequests.value = requests;
+//        long requests = reactor.requests.get();
+//        LongHolder prevRequests = getPrev(reactor.requests);
+//        long requestsDelta = requests - prevRequests.value;
+        //log(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
+        //prevRequests.value = requests;
     }
 
     private void log(String s) {
@@ -129,8 +129,8 @@ public final class ReactorMonitorThread extends Thread {
                         + " flushed:" + c.flushThread.get()
                         + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
                 //}
-            } else if (channel instanceof IO_UringChannel) {
-                IO_UringChannel c = (IO_UringChannel) channel;
+            } else if (channel instanceof IOUringChannel) {
+                IOUringChannel c = (IOUringChannel) channel;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (c.flushThread.get() == null && hasData) {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()

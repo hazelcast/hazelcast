@@ -1,8 +1,8 @@
 package com.hazelcast.table.impl;
 
 
-import com.hazelcast.spi.impl.reactor.Op;
-import com.hazelcast.spi.impl.reactor.OpCodes;
+import com.hazelcast.spi.impl.requestservice.Op;
+import com.hazelcast.spi.impl.requestservice.OpCodes;
 
 import java.util.concurrent.atomic.AtomicLong;
 

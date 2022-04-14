@@ -2,7 +2,7 @@ package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-import com.hazelcast.spi.impl.reactor.ReactorFrontEnd;
+import com.hazelcast.spi.impl.requestservice.RequestService;
 import com.hazelcast.table.Pipeline;
 
 import java.util.ArrayList;
@@ -10,19 +10,19 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.impl.reactor.OpCodes.TABLE_NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 public class PipelineImpl implements Pipeline {
 
-    private final ReactorFrontEnd frontEnd;
+    private final RequestService frontEnd;
     private final FrameAllocator frameAllocator;
     private List<Frame> requests = new ArrayList<>();
     private List<CompletableFuture> futures = new ArrayList<>();
     private int partitionId = -1;
 
-    public PipelineImpl(ReactorFrontEnd frontEnd, FrameAllocator frameAllocator) {
+    public PipelineImpl(RequestService frontEnd, FrameAllocator frameAllocator) {
         this.frontEnd = frontEnd;
         this.frameAllocator = frameAllocator;
     }

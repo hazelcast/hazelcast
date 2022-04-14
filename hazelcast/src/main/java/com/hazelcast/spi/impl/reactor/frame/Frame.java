@@ -33,7 +33,6 @@ public class Frame {
 
     public CompletableFuture future;
     public Frame next;
-    public Connection connection;
     public Channel channel;
 
     public static final int OFFSET_SIZE = 0;

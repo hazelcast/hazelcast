@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
@@ -9,15 +9,26 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.ReactorMonitorThread;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
+import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.reactor.frame.UnpooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
 import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
+import com.hazelcast.spi.impl.reactor.nio.NioServerChannel;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.channel.epoll.EpollReactor;
 import io.netty.channel.epoll.EpollReactorConfig;
-import io.netty.incubator.channel.uring.IO_UringReactor;
-import io.netty.incubator.channel.uring.IO_UringReactorConfig;
+import io.netty.channel.epoll.EpollServerChannel;
+import io.netty.incubator.channel.uring.IOUringReactor;
+import io.netty.incubator.channel.uring.IOUringReactorConfig;
+import io.netty.incubator.channel.uring.IOUringServerChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -29,7 +40,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_CALL_ID;
@@ -59,7 +69,7 @@ import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_CALL_ID
  *
  * So how do we go from partition to a channel?
  */
-public class ReactorFrontEnd {
+public class RequestService {
 
     public final NodeEngineImpl nodeEngine;
     public final InternalSerializationService ss;
@@ -77,6 +87,7 @@ public class ReactorFrontEnd {
     private final boolean writeThrough;
     private final int responseThreadCount;
     private final boolean monitorSilent;
+    private final String reactorType;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     private final Reactor[] reactors;
@@ -85,9 +96,9 @@ public class ReactorFrontEnd {
     private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
 
-    public ReactorFrontEnd(NodeEngineImpl nodeEngine) {
+    public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(ReactorFrontEnd.class);
+        this.logger = nodeEngine.getLogger(RequestService.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         this.responseThreadCount = Integer.parseInt(System.getProperty("reactor.responsethread.count", "1"));
@@ -96,12 +107,12 @@ public class ReactorFrontEnd {
         this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "true"));
         this.poolLocalResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-local-responses", "true"));
         this.poolRemoteResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-remote-responses", "false"));
-        String reactorType = System.getProperty("reactor.type", "nio");
+        this.reactorType = System.getProperty("reactor.type", "nio");
         this.monitorSilent = Boolean.parseBoolean(System.getProperty("reactor.monitor.silent", "false"));
 
         this.channelCount = Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
-        printReactorInfo(reactorType);
+        printReactorInfo();
         this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
         this.socketConfig = new SocketConfig();
@@ -117,11 +128,11 @@ public class ReactorFrontEnd {
         for (int k = 0; k < reactors.length; k++) {
             int port = toPort(thisAddress, k);
             if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                reactors[k] = newIO_UringReactor(nodeEngine, port);
+                reactors[k] = newIO_UringReactor(port);
             } else if (reactorType.equals("nio")) {
-                reactors[k] = newNioReactor(nodeEngine, port);
+                reactors[k] = newNioReactor(port);
             } else if (reactorType.equals("epoll")) {
-                reactors[k] = newEpollReactor(nodeEngine, port);
+                reactors[k] = newEpollReactor(port);
             } else {
                 throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
             }
@@ -135,22 +146,36 @@ public class ReactorFrontEnd {
     }
 
     @NotNull
-    private NioReactor newNioReactor(NodeEngineImpl nodeEngine, int port) {
+    private NioReactor newNioReactor(int port) {
         try {
             NioReactorConfig config = new NioReactorConfig();
+            OpScheduler scheduler = newOpScheduler();
+            config.scheduler = scheduler;
             config.spin = reactorSpin;
             config.writeThrough = writeThrough;
             config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.poolRequests = poolRequests;
-            config.poolLocalResponses = poolLocalResponses;
-            config.poolRemoteResponses = poolRemoteResponses;
-            config.frontend = this;
             config.logger = nodeEngine.getLogger(NioReactor.class);
             config.threadAffinity = threadAffinity;
-            config.managers = managers;
             NioReactor reactor = new NioReactor(config);
-            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            reactor.registerAccept(serverAddress, socketConfig);
+
+            NioServerChannel serverChannel = new NioServerChannel();
+            serverChannel.socketConfig = socketConfig;
+            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+
+            serverChannel.channelSupplier = () -> {
+                RequestNioChannel channel = new RequestNioChannel();
+                channel.opScheduler = scheduler;
+                channel.requestService = this;
+                channel.requestFrameAllocator = poolRequests
+                        ? new NonConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                channel.remoteResponseFrameAllocator = poolRemoteResponses
+                        ? new ConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                return channel;
+            };
+
+            reactor.accept(serverChannel);
             return reactor;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -158,22 +183,34 @@ public class ReactorFrontEnd {
     }
 
     @NotNull
-    private IO_UringReactor newIO_UringReactor(NodeEngineImpl nodeEngine, int port) {
+    private IOUringReactor newIO_UringReactor(int port) {
         try {
-            IO_UringReactorConfig config = new IO_UringReactorConfig();
+            IOUringReactorConfig config = new IOUringReactorConfig();
+            OpScheduler scheduler = newOpScheduler();
+            config.scheduler = scheduler;
             config.spin = reactorSpin;
             config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.poolRequests = poolRequests;
-            config.poolLocalResponses = poolLocalResponses;
-            config.poolRemoteResponses = poolRemoteResponses;
-            config.frontend = this;
-            config.logger = nodeEngine.getLogger(IO_UringReactor.class);
+            config.logger = nodeEngine.getLogger(IOUringReactor.class);
             config.threadAffinity = threadAffinity;
-            config.managers = managers;
-            IO_UringReactor reactor = new IO_UringReactor(config);
+            IOUringReactor reactor = new IOUringReactor(config);
 
-            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            reactor.registerAccept(serverAddress, socketConfig);
+            IOUringServerChannel serverChannel = new IOUringServerChannel();
+            serverChannel.socketConfig = socketConfig;
+            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+
+            serverChannel.channelSupplier = () -> {
+                RequestIOUringChannel channel = new RequestIOUringChannel();
+                channel.opScheduler = scheduler;
+                channel.requestService = this;
+                channel.requestFrameAllocator = poolRequests
+                        ? new NonConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                channel.remoteResponseFrameAllocator = poolRemoteResponses
+                        ? new ConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                return channel;
+            };
+            reactor.register(serverChannel);
             return reactor;
         } catch (IOException e) {
             throw new RuntimeException();
@@ -181,29 +218,56 @@ public class ReactorFrontEnd {
     }
 
     @NotNull
-    private EpollReactor newEpollReactor(NodeEngineImpl nodeEngine, int port) {
+    private EpollReactor newEpollReactor(int port) {
         try {
             EpollReactorConfig config = new EpollReactorConfig();
+            OpScheduler scheduler = newOpScheduler();
+            config.scheduler = scheduler;
             config.spin = reactorSpin;
             config.name = "EpollReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.poolRequests = poolRequests;
-            config.poolLocalResponses = poolLocalResponses;
-            config.poolRemoteResponses = poolRemoteResponses;
-            config.frontend = this;
-            config.logger = nodeEngine.getLogger(IO_UringReactor.class);
+            config.logger = nodeEngine.getLogger(IOUringReactor.class);
             config.threadAffinity = threadAffinity;
-            config.managers = managers;
             EpollReactor reactor = new EpollReactor(config);
 
-            InetSocketAddress serverAddress = new InetSocketAddress(thisAddress.getInetAddress(), port);
-            reactor.registerAccept(serverAddress, socketConfig);
+            EpollServerChannel serverChannel = new EpollServerChannel();
+            serverChannel.socketConfig = socketConfig;
+            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+            serverChannel.channelSupplier = () -> {
+                RequestEpollChannel channel = new RequestEpollChannel();
+                channel.opScheduler = scheduler;
+                channel.requestService = this;
+                channel.requestFrameAllocator = poolRequests
+                        ? new NonConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                channel.remoteResponseFrameAllocator = poolRemoteResponses
+                        ? new ConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                return channel;
+            };
+
+            reactor.register(serverChannel);
             return reactor;
         } catch (IOException e) {
             throw new RuntimeException();
         }
     }
 
-    private void printReactorInfo(String reactorType) {
+    private OpScheduler newOpScheduler() {
+        FrameAllocator remoteResponseFrameAllocator = poolRemoteResponses
+                ? new ConcurrentPooledFrameAllocator(128, true)
+                : new UnpooledFrameAllocator();
+        FrameAllocator localResponseFrameAllocator = poolLocalResponses
+                ? new NonConcurrentPooledFrameAllocator(128, true)
+                : new UnpooledFrameAllocator();
+
+        return new OpScheduler(32768,
+                Integer.MAX_VALUE,
+                managers,
+                localResponseFrameAllocator,
+                remoteResponseFrameAllocator);
+    }
+
+    private void printReactorInfo() {
         System.out.println("reactor.count:" + reactorCount);
         System.out.println("reactor.spin:" + reactorSpin);
         System.out.println("reactor.responsethread.count:" + responseThreadCount);
@@ -259,6 +323,9 @@ public class ReactorFrontEnd {
         monitorThread.shutdown();
     }
 
+
+    // TODO: We can simplify this by attaching the requests for a member, directly to that
+    // channel so we don't need to do a requests lookup.
     public void handleResponse(Frame response) {
         if (response.next != null) {
             // probably better to use call-id.
@@ -270,7 +337,7 @@ public class ReactorFrontEnd {
         }
 
         try {
-            Address remoteAddress = response.connection.getRemoteAddress();
+            Address remoteAddress = null;//response.connection.getRemoteAddress();
             Requests requests = requestsPerMember.get(remoteAddress);
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
@@ -294,6 +361,7 @@ public class ReactorFrontEnd {
         }
     }
 
+
     public CompletableFuture invoke(Frame request, int partitionId) {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
@@ -314,8 +382,6 @@ public class ReactorFrontEnd {
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-
-
             Requests requests = getRequests(address);
             long callId = requests.callId.incrementAndGet();
             request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
@@ -399,7 +465,37 @@ public class ReactorFrontEnd {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        futures.add(reactors[hashToIndex(channelIndex, reactors.length)].schedule(reactorAddress, connection, socketConfig));
+                        Reactor reactor = reactors[hashToIndex(channelIndex, reactors.length)];
+
+                        Channel channel;
+                        if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
+                            RequestIOUringChannel c = new RequestIOUringChannel();
+                            c.requestFrameAllocator = null;
+                            c.remoteResponseFrameAllocator = null;
+                            c.opScheduler = null;
+                            c.requestService = this;
+                            channel = c;
+                        } else if (reactorType.equals("nio")) {
+                            RequestNioChannel c = new RequestNioChannel();
+                            c.requestFrameAllocator = null;
+                            c.remoteResponseFrameAllocator = null;
+                            c.opScheduler = null;
+                            c.requestService = this;
+                            channel = c;
+                        } else if (reactorType.equals("epoll")) {
+                            RequestEpollChannel c = new RequestEpollChannel();
+                            c.requestFrameAllocator = null;
+                            c.remoteResponseFrameAllocator = null;
+                            c.opScheduler = null;
+                            c.requestService = this;
+                            channel = c;
+                        } else {
+                            throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
+                        }
+                        channel.config = socketConfig;
+
+                        Future<Channel> schedule = reactor.connect(channel, reactorAddress);
+                        futures.add(schedule);
                     }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
@@ -429,11 +525,6 @@ public class ReactorFrontEnd {
         Requests newRequests = new Requests();
         Requests foundRequests = requestsPerMember.putIfAbsent(address, newRequests);
         return foundRequests == null ? newRequests : foundRequests;
-    }
-
-    public static class Requests {
-        private final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
-        private final AtomicLong callId = new AtomicLong(500);
     }
 
     public class ResponseThread extends Thread {

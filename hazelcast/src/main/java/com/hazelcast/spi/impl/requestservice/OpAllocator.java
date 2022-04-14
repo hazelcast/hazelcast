@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import com.hazelcast.table.impl.NoOp;
@@ -20,7 +20,7 @@ public final class OpAllocator {
         pools[2] = new Pool(NoOp::new);
     }
 
-    protected Op allocate(Frame request) {
+    public Op allocate(Frame request) {
         int opcode = request.getInt(OFFSET_REQUEST_OPCODE);
         Pool pool = pools[opcode];
         pool.allocated++;
