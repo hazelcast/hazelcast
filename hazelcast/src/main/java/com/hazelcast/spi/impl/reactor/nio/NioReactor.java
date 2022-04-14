@@ -124,7 +124,7 @@ public final class NioReactor extends Reactor {
 
             System.out.println("ConnectRequest address:" + address);
 
-            SocketConfig socketConfig = c.config;
+            SocketConfig socketConfig = c.socketConfig;
 
             SocketChannel socketChannel = SocketChannel.open();
             Socket socket = socketChannel.socket();

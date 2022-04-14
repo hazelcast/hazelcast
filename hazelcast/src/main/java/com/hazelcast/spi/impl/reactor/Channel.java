@@ -11,7 +11,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 public abstract class Channel {
     public SocketAddress remoteAddress;
     public SocketAddress localAddress;
-    public SocketConfig config;
+    public SocketConfig socketConfig;
 
     public final SwCounter packetsWritten = newSwCounter();
 

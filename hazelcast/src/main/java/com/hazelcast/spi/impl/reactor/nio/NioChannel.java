@@ -116,7 +116,7 @@ public abstract class NioChannel extends Channel {
         try {
             readEvents.inc();
             int read = socketChannel.read(receiveBuffer);
-            System.out.println(this + " bytes read: " + bytesRead);
+            //System.out.println(this + " bytes read: " + bytesRead);
             if (read == -1) {
                 close();
                 return;
@@ -146,7 +146,7 @@ public abstract class NioChannel extends Channel {
             long written = ioVector.write(socketChannel);
 
             bytesWritten.inc(written);
-            System.out.println(this + " bytes written:" + written);
+            //System.out.println(this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {
                 int interestOps = key.interestOps();
