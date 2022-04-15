@@ -5,12 +5,13 @@ import com.hazelcast.spi.impl.engine.SocketConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
 
-public class NioServerChannel {
+public class NioServerChannel implements NioSelectionListener {
 
     public NioReactor reactor;
     public SocketConfig socketConfig;
@@ -20,7 +21,8 @@ public class NioServerChannel {
     public Supplier<NioChannel> channelSupplier;
     public InetSocketAddress address;
 
-    public void handleAccept() {
+    @Override
+    public void handle(SelectionKey key) {
         try {
             SocketChannel socketChannel = serverSocketChannel.accept();
             socketChannel.configureBlocking(false);

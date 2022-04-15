@@ -21,7 +21,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
 // todo: add padding around Nio channel
-public abstract class NioChannel extends Channel {
+public abstract class NioChannel extends Channel implements NioSelectionListener{
 
     // immutable state
     protected SocketChannel socketChannel;
@@ -144,6 +144,17 @@ public abstract class NioChannel extends Channel {
     }
 
     public abstract void handleRead(ByteBuffer receiveBuffer);
+
+    @Override
+    public void handle(SelectionKey key) {
+        if (key.isValid() && key.isReadable()) {
+            handleRead();
+        }
+
+        if (key.isValid() && key.isWritable()) {
+            handleWrite();
+        }
+    }
 
     public void handleRead() {
         try {

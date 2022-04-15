@@ -49,6 +49,7 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate(int minSize) {
+        // for now we rely on the frames growing.
         return allocate();
     }
 

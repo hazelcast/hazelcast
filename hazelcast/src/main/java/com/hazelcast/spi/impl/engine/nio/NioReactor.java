@@ -63,31 +63,14 @@ public final class NioReactor extends Reactor {
             }
 
             if (keyCount > 0) {
-                handleSelectedKeys();
-            }
-        }
-    }
+                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                while (it.hasNext()) {
+                    SelectionKey key = it.next();
+                    it.remove();
 
-    private void handleSelectedKeys() {
-        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-        while (it.hasNext()) {
-            SelectionKey key = it.next();
-            it.remove();
-
-            if (key.isValid() && key.isAcceptable()) {
-                ((NioServerChannel) key.attachment()).handleAccept();
-            }
-
-            if (key.isValid() && key.isReadable()) {
-                ((NioChannel) key.attachment()).handleRead();
-            }
-
-            if (key.isValid() && key.isWritable()) {
-                ((NioChannel) key.attachment()).handleWrite();
-            }
-
-            if (!key.isValid()) {
-                key.cancel();
+                    NioSelectionListener listener = (NioSelectionListener)key.attachment();
+                    listener.handle(key);
+                }
             }
         }
     }
@@ -141,5 +124,4 @@ public final class NioReactor extends Reactor {
         }
         return future;
     }
-
 }
