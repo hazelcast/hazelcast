@@ -23,6 +23,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
@@ -113,16 +114,22 @@ public class ClusterStateManager {
         clusterServiceLock.lock();
         try {
             node.getNodeExtension().onInitialClusterState(initialState);
+            validateNodeCompatibleWith(version);
 
             final ClusterState currentState = getState();
+            InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+            boolean startingFromPersistence = hotRestartService.isEnabled() && hotRestartService.isStartingFromPersistence();
+            if (startingFromPersistence) {
+                logger.fine("Skipping setting initial cluster state to "
+                        + initialState + ", as instructed by master, because persistence is enabled");
+                return;
+            }
             if (currentState != ClusterState.ACTIVE && currentState != initialState) {
                 logger.warning("Initial state is already set! " + "Current state: " + currentState + ", Given state: "
                         + initialState);
                 return;
             }
-            // no need to validate again
             logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
-            validateNodeCompatibleWith(version);
             setClusterStateAndVersion(initialState, version, true);
         } finally {
             clusterServiceLock.unlock();

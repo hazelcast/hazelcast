@@ -88,6 +88,7 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
@@ -97,7 +98,9 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.utils.RetryUtils;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -114,6 +117,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
@@ -140,7 +144,9 @@ import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
-public class Node {
+public class Node implements ClusterTopologyIntentTracker {
+
+    public static final String DISCOVERY_PROPERTY_THIS_NODE = "hazelcast.this.node";
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
@@ -178,6 +184,8 @@ public class Node {
     private final HealthMonitor healthMonitor;
     private final Joiner joiner;
     private final LocalAddressRegistry localAddressRegistry;
+    private final AtomicReference<ClusterTopologyIntent> clusterTopologyIntent =
+            new AtomicReference<>(ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT);
     private ManagementCenterService managementCenterService;
 
     // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
@@ -331,6 +339,10 @@ public class Node {
         }
         ILogger logger = getLogger(DiscoveryService.class);
 
+        final Map attributes = new HashMap<>(localMember.getAttributes());
+        attributes.put(DISCOVERY_PROPERTY_THIS_NODE, this);
+        DiscoveryNode thisDiscoveryNode = new SimpleDiscoveryNode(localMember.getAddress(), attributes);
+
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
                 .setConfigClassLoader(configClassLoader)
                 .setLogger(logger)
@@ -338,8 +350,7 @@ public class Node {
                 .setDiscoveryConfig(discoveryConfig)
                 .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
                 .setAutoDetectionEnabled(isAutoDetectionEnabled)
-                .setDiscoveryNode(
-                        new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
+                .setDiscoveryNode(thisDiscoveryNode);
 
         return factory.newDiscoveryService(settings);
     }
@@ -681,10 +692,10 @@ public class Node {
     }
 
     public void changeNodeStateToPassive() {
-        final ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState != ClusterState.PASSIVE) {
-            throw new IllegalStateException("This method can be called only when cluster-state is " + clusterState);
-        }
+//        final ClusterState clusterState = clusterService.getClusterState();
+//        if (clusterState != ClusterState.PASSIVE) {
+//            throw new IllegalStateException("This method can be called only when cluster-state is " + clusterState);
+//        }
         state = NodeState.PASSIVE;
     }
 
@@ -765,18 +776,52 @@ public class Node {
         @Override
         public void run() {
             try {
-                if (isRunning()) {
-                    logger.info("Running shutdown hook... Current state: " + state);
-                    switch (policy) {
-                        case TERMINATE:
-                            hazelcastInstance.getLifecycleService().terminate();
-                            break;
-                        case GRACEFUL:
-                            hazelcastInstance.getLifecycleService().shutdown();
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
+                if (!isRunning()) {
+                    return;
+                }
+                final ClusterTopologyIntent shutdownIntent = clusterTopologyIntent.get();
+                if (getNodeExtension().getInternalHotRestartService().isEnabled()
+                        && shutdownIntent != ClusterTopologyIntent.UNKNOWN) {
+                    final ClusterState clusterState = clusterService.getClusterState();
+                    logger.info("Running shutdown hook... Current node state: " + state
+                                + ", detected shutdown intent: " + shutdownIntent
+                                + ", cluster state: " + clusterState);
+                    // consider the detected shutdown intent before triggering node shutdown
+                    if (shutdownIntent == ClusterTopologyIntent.STABLE) {
+                        try {
+                            changeClusterState(ClusterState.FROZEN);
+                        } catch (Throwable t) {
+                            // let shutdown proceed even though we failed to switch to FROZEN state
+                            logger.warning("Could not switch to transient FROZEN state while cluster"
+                                    + "shutdown intent was " + shutdownIntent, t);
+                        }
+                    } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN) {
+                        try {
+                            changeClusterState(ClusterState.PASSIVE);
+                        } catch (Throwable t) {
+                            // let shutdown proceed even though we failed to switch to PASSIVE state
+                            // and wait for replica sync
+                            logger.warning("Could not switch to transient PASSIVE state while cluster"
+                                    + "shutdown intent was " + shutdownIntent, t);
+                        }
+                        if (clusterService.getClusterState() == ClusterState.PASSIVE) {
+                            long timeoutNanos = getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+                            getNodeExtension().getInternalHotRestartService()
+                                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+                        }
                     }
+                } else {
+                    logger.info("Running shutdown hook... Current node state: " + state);
+                }
+                switch (policy) {
+                    case TERMINATE:
+                        hazelcastInstance.getLifecycleService().terminate();
+                        break;
+                    case GRACEFUL:
+                        hazelcastInstance.getLifecycleService().shutdown();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -935,5 +980,69 @@ public class Node {
             }
         }
         return attributes;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @Override
+    public void update(int previousClusterSpecSize, int currentClusterSpecSize,
+                       int readyNodesCount) {
+        if (previousClusterSpecSize == UNKNOWN) {
+            if (currentClusterSpecSize > 0
+                    && (readyNodesCount == UNKNOWN || readyNodesCount == 0)) {
+                // startup of first member of new cluster
+                logger.info("Cluster starting in managed context");
+                clusterTopologyIntent.set(ClusterTopologyIntent.CLUSTER_START);
+            } else {
+                logger.info("Member starting in managed context");
+                clusterTopologyIntent.set(ClusterTopologyIntent.UNKNOWN);
+            }
+            return;
+        }
+        final ClusterTopologyIntent previous = clusterTopologyIntent.get();
+        ClusterTopologyIntent newTopologyIntent = null;
+        if (currentClusterSpecSize == 0) {
+            newTopologyIntent = ClusterTopologyIntent.CLUSTER_SHUTDOWN;
+        } else if (previousClusterSpecSize == currentClusterSpecSize) {
+            if (previous == ClusterTopologyIntent.SCALING
+                || previous == ClusterTopologyIntent.UNKNOWN) {
+                // only switch to STABLE when ready nodes count equals number of currentClusterSpecSize
+                if (readyNodesCount != currentClusterSpecSize) {
+                    logger.info("Ignoring state change because readyNodesCount "
+                        + readyNodesCount + ", while spec requires " + currentClusterSpecSize);
+                    return;
+                }
+            }
+            if (previous == ClusterTopologyIntent.CLUSTER_START
+                && readyNodesCount < currentClusterSpecSize) {
+                // cluster start is not done yet, don't switch to STABLE
+                logger.info("Ignoring state change because readyNodesCount "
+                        + readyNodesCount + " is less than required by spec and cluster is still starting");
+                return;
+            }
+            newTopologyIntent = ClusterTopologyIntent.STABLE;
+        } else {
+            newTopologyIntent = ClusterTopologyIntent.SCALING;
+        }
+        if (clusterTopologyIntent.compareAndSet(previous, newTopologyIntent)) {
+            logger.info("Cluster topology intent: " + previous + "-> " + newTopologyIntent);
+            if (isMaster() && newTopologyIntent == ClusterTopologyIntent.SCALING) {
+                changeClusterState(ClusterState.ACTIVE);
+            }
+        }
+    }
+
+    /**
+     * Change cluster state, if current state is not already the desired one.
+     * Retries up to 3 times. The cluster state change is transient, so if persistence
+     * is enabled, the new cluster state is not persisted to disk.
+     *
+     * @param newClusterState
+     */
+    private void changeClusterState(ClusterState newClusterState) {
+        RetryUtils.retry(
+                () -> {
+                    clusterService.changeClusterState(newClusterState, true);
+                    return null;
+                }, 3);
     }
 }

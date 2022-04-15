@@ -1791,6 +1791,19 @@ public final class ClusterProperty {
     public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
             "hazelcast.sql.experimental.custom.types.enabled", false);
 
+    /**
+     * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
+     * and automate cluster state management decisions.
+     * Currently supported when persistence is enabled and Hazelcast is executed in a Kubernetes
+     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.
+     * <p/>
+     * The default value is {@code true}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_SHUTDOWN_INTENT = new HazelcastProperty(
+            "hazelcast.persistence.shutdown.intent", true);
+
     private ClusterProperty() {
     }
 }

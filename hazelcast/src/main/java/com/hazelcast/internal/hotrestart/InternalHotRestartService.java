@@ -48,6 +48,8 @@ public interface InternalHotRestartService {
      */
     boolean isEnabled();
 
+    boolean isStartCompleted();
+
     /**
      * Forces node to start by skipping hot-restart completely and removing all hot-restart data
      * even if node is still on validation phase or loading hot-restart data.
@@ -141,4 +143,8 @@ public interface InternalHotRestartService {
      * @param postJoinOp
      */
     void deferPostJoinOps(OnJoinOp postJoinOp);
+
+    void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
+
+    boolean isStartingFromPersistence();
 }

@@ -38,6 +38,11 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
+    public boolean isStartCompleted() {
+        return true;
+    }
+
+    @Override
     public boolean triggerForceStart() {
         return false;
     }
@@ -92,5 +97,14 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
 
     @Override
     public void deferPostJoinOps(OnJoinOp postJoinOp) {
+    }
+
+    @Override
+    public void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent) {
+    }
+
+    @Override
+    public boolean isStartingFromPersistence() {
+        return false;
     }
 }

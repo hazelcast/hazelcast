@@ -16,6 +16,7 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -29,6 +30,7 @@ import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
@@ -54,6 +57,7 @@ class KubernetesClient {
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
+    private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
     private final String caCertificate;
@@ -63,8 +67,12 @@ class KubernetesClient {
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
+    @Nullable
+    private final Thread stsMonitorThread;
 
     private final KubernetesTokenProvider tokenProvider;
+
+    private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
@@ -72,7 +80,7 @@ class KubernetesClient {
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
-                     String servicePerPodLabelValue) {
+                     String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
@@ -82,7 +90,11 @@ class KubernetesClient {
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
-        this.apiProvider = buildKubernetesApiUrlProvider();
+        this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
+        this.apiProvider =  buildKubernetesApiUrlProvider();
+        this.stsName = stsName();
+        this.stsMonitorThread = clusterTopologyIntentTracker != null
+                ? new Thread(new StsMonitor(), "hz-sts-monitor") : null;
     }
 
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
@@ -99,6 +111,22 @@ class KubernetesClient {
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.apiProvider = apiProvider;
+        this.stsMonitorThread = null;
+        this.stsName = stsName();
+        this.clusterTopologyIntentTracker = null;
+    }
+
+    public void start() {
+        if (stsMonitorThread != null) {
+            stsMonitorThread.start();
+        }
+    }
+
+    public void destroy() {
+        if (stsMonitorThread != null) {
+            LOGGER.info("Interrupting StatefulSet monitor thread");
+            stsMonitorThread.interrupt();
+        }
     }
 
     KubernetesApiProvider buildKubernetesApiUrlProvider() {
@@ -225,6 +253,40 @@ class KubernetesClient {
     // For test purpose
     boolean isKnownExceptionAlreadyLogged() {
         return isKnownExceptionAlreadyLogged;
+    }
+
+    private String stsName() {
+        String stsName = System.getenv("HOSTNAME");
+        int dashIndex = stsName.lastIndexOf('-');
+        if (dashIndex > 0) {
+            stsName = stsName.substring(0, dashIndex);
+        }
+        return stsName;
+    }
+
+    @Nullable
+    private RuntimeContext parseStsList(JsonObject jsonObject) {
+        String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                null);
+        // identify stateful set this pod belongs to
+        for (JsonValue item : toJsonArray(jsonObject.get("items"))) {
+            String itemName = item.asObject().get("metadata").asObject().getString("name", null);
+            if (stsName.equals(itemName)) {
+                // identified the stateful set
+                int specReplicas = item.asObject().get("spec").asObject().getInt("replicas", UNKNOWN);
+                int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas",
+                        UNKNOWN);
+                return new RuntimeContext(specReplicas, readyReplicas, resourceVersion);
+            }
+        }
+        return null;
+    }
+
+    private RuntimeContext parseSts(JsonObject jsonObject) {
+        int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
+        int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
+        String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
+        return new RuntimeContext(specReplicas, readyReplicas, resourceVersion);
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
@@ -617,6 +679,81 @@ class KubernetesClient {
         @Override
         public String toString() {
             return String.format("%s:%s", ip, port);
+        }
+    }
+
+    final class StsMonitor implements Runnable {
+        private String latestResourceVersion;
+        private RuntimeContext latestRuntimeContext;
+
+        @Override
+        public void run() {
+            String stsUrlString = String.format("%s/apis/apps/v1/namespaces/%s/statefulsets", kubernetesMaster,
+                    namespace);
+            JsonObject jsonObject = callGet(stsUrlString);
+            latestResourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                    null);
+            latestRuntimeContext = parseStsList(jsonObject);
+            LOGGER.info("Initializing cluster topology tracker with initial context: "
+                    + latestRuntimeContext);
+            clusterTopologyIntentTracker.update(UNKNOWN,
+                    latestRuntimeContext.getDesiredNumberOfMembers(),
+                    latestRuntimeContext.getReadyReplicas());
+            while (true) {
+                if (Thread.interrupted()) {
+                    break;
+                }
+                RestClient restClient = RestClient.create(stsUrlString)
+                        .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
+                        .withCaCertificates(caCertificate);
+                RestClient.WatchResponse watchResponse = restClient.watch(latestResourceVersion);
+                String message;
+                try {
+                    while ((message = watchResponse.nextLine()) != null) {
+                        onMessage(message);
+                    }
+                } catch (IOException e) {
+                    LOGGER.info("Exception while watching for StatefulSet changes", e);
+                    try {
+                        watchResponse.disconnect();
+                    } catch (Throwable t) {
+                        LOGGER.fine("Exception while closing connection after an IOException", t);
+                    }
+                }
+            }
+        }
+
+        private void onMessage(String message) {
+            JsonObject jsonObject = Json.parse(message).asObject();
+            JsonObject sts = jsonObject.get("object").asObject();
+            String itemName = sts.asObject().get("metadata").asObject().getString("name", null);
+            if (!stsName.equals(itemName)) {
+                return;
+            }
+            String watchType = jsonObject.getString("type", null);
+            RuntimeContext ctx = null;
+            switch (watchType) {
+                case "MODIFIED":
+                    ctx = parseSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    break;
+                case "DELETED":
+                    ctx = parseSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    ctx = new RuntimeContext(0, ctx.getReadyReplicas(), ctx.getResourceVersion());
+                    break;
+                case "ADDED":
+                    throw new IllegalStateException("A new sts with same name as this cannot be added");
+                default:
+                    LOGGER.info("Unknown watch type " + watchType + ", complete message:\n" + message);
+            }
+            if (latestRuntimeContext != null && ctx != null) {
+                LOGGER.info("Updating cluster topology tracker with previous: "
+                    + latestRuntimeContext + ", updated: " + ctx);
+                clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
+                        ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas());
+            }
+            latestRuntimeContext = ctx;
         }
     }
 }
