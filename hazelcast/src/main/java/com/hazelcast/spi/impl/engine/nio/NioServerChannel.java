@@ -1,7 +1,7 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
+import com.hazelcast.spi.impl.engine.SocketConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

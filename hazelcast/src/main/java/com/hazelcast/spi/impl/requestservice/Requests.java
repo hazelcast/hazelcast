@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.requestservice;
 
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

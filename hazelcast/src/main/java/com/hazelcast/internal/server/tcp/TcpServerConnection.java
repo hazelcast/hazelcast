@@ -59,7 +59,7 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
-    public volatile com.hazelcast.spi.impl.reactor.Channel[] channels;
+    public volatile com.hazelcast.spi.impl.engine.Channel[] channels;
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;

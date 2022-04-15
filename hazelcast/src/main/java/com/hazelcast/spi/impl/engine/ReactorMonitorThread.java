@@ -1,7 +1,7 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
+import com.hazelcast.spi.impl.engine.nio.NioChannel;
 import io.netty.incubator.channel.uring.IOUringChannel;
 
 import java.util.HashMap;

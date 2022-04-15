@@ -1,10 +1,10 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.nio.NioReactor;
+import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.spi.impl.engine.nio.NioReactor;
 import io.netty.channel.epoll.EpollReactor;
 import io.netty.incubator.channel.uring.IOUringReactor;
 
@@ -18,7 +18,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 import static java.lang.System.out;
 
-public class Engine {
+public final class Engine {
 
     private final boolean monitorSilent;
     private final Supplier<Scheduler> schedulerSupplier;
@@ -113,9 +113,9 @@ public class Engine {
 
     public void start() {
         this.reactors = new Reactor[reactorCount];
+        ILogger logger = Logger.getLogger(Reactor.class);
         for (int idx = 0; idx < reactors.length; idx++) {
             String name = reactorBaseName + idx;
-            ILogger logger = Logger.getLogger(Reactor.class);
             Scheduler scheduler = schedulerSupplier.get();
             switch (reactorType) {
                 case NIO:

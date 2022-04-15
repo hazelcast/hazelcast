@@ -1,10 +1,9 @@
 package io.netty.channel.epoll;
 
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
 public final class IOVector {

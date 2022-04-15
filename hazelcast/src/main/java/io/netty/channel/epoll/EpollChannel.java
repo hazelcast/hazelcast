@@ -1,8 +1,8 @@
 package io.netty.channel.epoll;
 
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;

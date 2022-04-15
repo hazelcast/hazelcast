@@ -1,6 +1,6 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package com.hazelcast.spi.impl.engine.nio;
 
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

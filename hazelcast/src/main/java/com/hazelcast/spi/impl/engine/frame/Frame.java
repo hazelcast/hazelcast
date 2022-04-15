@@ -1,8 +1,6 @@
-package com.hazelcast.spi.impl.reactor.frame;
+package com.hazelcast.spi.impl.engine.frame;
 
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.engine.Channel;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;

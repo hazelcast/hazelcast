@@ -1,7 +1,7 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 
 import java.net.SocketAddress;
 

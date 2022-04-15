@@ -1,7 +1,7 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
+import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import com.hazelcast.spi.impl.requestservice.RequestService;
 import com.hazelcast.table.Pipeline;
 

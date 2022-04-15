@@ -1,11 +1,8 @@
 package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_PAYLOAD;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
+import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 
 public class FrameHandler {
 

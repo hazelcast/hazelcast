@@ -1,16 +1,15 @@
 package io.netty.channel.epoll;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.Scheduler;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;

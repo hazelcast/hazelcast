@@ -1,8 +1,8 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;

@@ -1,24 +1,20 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package com.hazelcast.spi.impl.engine.nio;
 
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
-import com.hazelcast.spi.impl.requestservice.FrameHandler;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.FLAG_OP_RESPONSE;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
@@ -48,7 +44,7 @@ public abstract class NioChannel extends Channel {
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
 
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
-    
+
     protected void configure(NioReactor reactor, SocketChannel socketChannel, SocketConfig socketConfig) throws IOException {
         this.reactor = reactor;
         this.selector = reactor.selector;

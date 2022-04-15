@@ -19,8 +19,7 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
+import com.hazelcast.spi.impl.engine.Channel;
 
 import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 

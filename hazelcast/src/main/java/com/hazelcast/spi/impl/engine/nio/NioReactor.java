@@ -1,10 +1,10 @@
-package com.hazelcast.spi.impl.reactor.nio;
+package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.Scheduler;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
 import java.net.SocketAddress;

@@ -1,7 +1,6 @@
-package com.hazelcast.spi.impl.reactor;
+package com.hazelcast.spi.impl.engine;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class CircularQueue<E> {
 

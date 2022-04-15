@@ -8,20 +8,19 @@ import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Engine;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.ReactorType;
-import com.hazelcast.spi.impl.reactor.Scheduler;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
-import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-import com.hazelcast.spi.impl.reactor.frame.NonConcurrentPooledFrameAllocator;
-import com.hazelcast.spi.impl.reactor.frame.UnpooledFrameAllocator;
-import com.hazelcast.spi.impl.reactor.nio.NioChannel;
-import com.hazelcast.spi.impl.reactor.nio.NioReactor;
-import com.hazelcast.spi.impl.reactor.nio.NioServerChannel;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.Engine;
+import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.ReactorType;
+import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
+import com.hazelcast.spi.impl.engine.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.spi.impl.engine.frame.UnpooledFrameAllocator;
+import com.hazelcast.spi.impl.engine.nio.NioChannel;
+import com.hazelcast.spi.impl.engine.nio.NioReactor;
+import com.hazelcast.spi.impl.engine.nio.NioServerChannel;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.channel.epoll.EpollChannel;
@@ -45,7 +44,7 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_CALL_ID;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RESPONSE_CALL_ID;
 
 
 /**

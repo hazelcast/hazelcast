@@ -1,16 +1,14 @@
 package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.spi.impl.reactor.CircularQueue;
-import com.hazelcast.spi.impl.reactor.Scheduler;
-import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
-import com.hazelcast.spi.impl.requestservice.Op;
-import org.jetbrains.annotations.Async;
+import com.hazelcast.spi.impl.engine.CircularQueue;
+import com.hazelcast.spi.impl.engine.Scheduler;
+import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_REQUEST_PAYLOAD;
-import static com.hazelcast.spi.impl.reactor.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQUEST_PAYLOAD;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
 import static com.hazelcast.spi.impl.requestservice.Op.COMPLETED;
 
 public final class OpScheduler implements Scheduler {

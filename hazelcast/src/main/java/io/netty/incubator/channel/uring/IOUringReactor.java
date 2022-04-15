@@ -1,9 +1,9 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.reactor.Channel;
-import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.Scheduler;
+import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.FileDescriptor;

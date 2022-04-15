@@ -1,6 +1,6 @@
 package io.netty.channel.epoll;
 
-import com.hazelcast.spi.impl.reactor.SocketConfig;
+import com.hazelcast.spi.impl.engine.SocketConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
