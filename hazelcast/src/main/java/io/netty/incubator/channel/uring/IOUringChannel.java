@@ -12,7 +12,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class IOUringChannel extends Channel {
+import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
+
+public abstract class IOUringChannel extends Channel implements CompletionListener {
     protected LinuxSocket socket;
     public IOUringReactor reactor;
 
@@ -168,34 +172,34 @@ public abstract class IOUringChannel extends Channel {
         }
     }
 
-    public void handle_IORING_OP_WRITEV(int res, int flags, short data) {
-        //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
-        ioVector.compact(res);
-        iovArray.clear();
-        resetFlushed();
-    }
-
-    public void handle_IORING_OP_WRITE(int res, int flags, short data) {
-        ioVector.compact(res);
-        resetFlushed();
+    @Override
+    public void handle(int fd, int res, int flags, byte op, short data) {
+        if (res >= 0) {
+            if (op == IORING_OP_READ) {
+                readEvents.inc();
+                bytesRead.inc(res);
+                //System.out.println("handle_IORING_OP_READ fd:" + fd + " bytes read: " + res);
+                receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
+                onRead(receiveBuff);
+                receiveBuff.discardReadBytes();
+                // we want to read more data.
+                sq_addRead();
+            } else if (op == IORING_OP_WRITE) {
+                //System.out.println("handle_IORING_OP_WRITE fd:" + fd + " bytes written: " + res);
+                ioVector.compact(res);
+                resetFlushed();
+            } else if (op == IORING_OP_WRITEV) {
+                //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
+                ioVector.compact(res);
+                iovArray.clear();
+                resetFlushed();
+            }
+        } else {
+            System.out.println("Problem: handle_IORING_OP_READ res:" + res);
+        }
     }
 
     public abstract void onRead(ByteBuf receiveBuffer);
-
-    public void handle_IORING_OP_READ(int res, int flags, short data) {
-        try {
-            readEvents.inc();
-            bytesRead.inc(res);
-            receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
-            onRead(receiveBuff);
-            receiveBuff.discardReadBytes();
-            // we want to read more data.
-            sq_addRead();
-        } catch (Exception e) {
-            e.printStackTrace();
-            close();
-        }
-    }
 
     public void sq_addRead() {
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());

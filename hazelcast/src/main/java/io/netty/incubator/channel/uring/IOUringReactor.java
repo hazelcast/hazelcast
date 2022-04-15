@@ -19,10 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
-import static io.netty.incubator.channel.uring.Native.IORING_OP_ACCEPT;
-import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
-import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
-import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
 
 /**
@@ -96,9 +92,8 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
-    private final IntObjectMap<IOUringServerChannel> serverChannels = new IntObjectHashMap<>(4096);
     // we could use an array.
-    final IntObjectMap<IOUringChannel> channelMap = new IntObjectHashMap<>(4096);
+    final IntObjectMap<CompletionListener> completionListeners = new IntObjectHashMap<>(4096);
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
@@ -108,6 +103,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.eventfd = Native.newBlockingEventFd();
+        this.completionListeners.put(eventfd.intValue(), (fd, op, res, flags, data) -> sq_addEventRead());
     }
 
     @Override
@@ -137,7 +133,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
             serverChannel.sq = sq;
             serverChannel.reactor = IOUringReactor.this;
             serverChannel.serverSocket = serverSocket;
-            serverChannels.put(serverSocket.intValue(), serverChannel);
+            completionListeners.put(serverSocket.intValue(), serverChannel);
             serverChannel.sq_addAccept();
         });
     }
@@ -184,46 +180,11 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
     @Override
     public void handle(int fd, int res, int flags, byte op, short data) {
-        //System.out.println(getName() + " handle called: opcode:" + op);
-
-        if (op == IORING_OP_READ) {
-            // res is the number of bytes read
-            //todo: we need to deal with res=0 and res<0
-            if (fd == eventfd.intValue()) {
-                //System.out.println(getName() + " handle IORING_OP_READ from eventFd res:" + res);
-                sq_addEventRead();
-            } else if (res < 0) {
-                System.out.println("Problem: handle_IORING_OP_READ res:" + res);
-            } else {
-                // System.out.println(getName() + " handle IORING_OP_READ from fd:" + fd + " res:" + res + " flags:" + flags);
-                IOUringChannel channel = channelMap.get(fd);
-                channel.handle_IORING_OP_READ(res, flags, data);
-            }
-        } else if (op == IORING_OP_WRITE) {
-            if (res < 0) {
-                System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
-            } else {
-                //System.out.println("handle_IORING_OP_WRITE fd:" + fd + " bytes written: " + res);
-                IOUringChannel channel = channelMap.get(fd);
-                channel.handle_IORING_OP_WRITE(res, flags, data);
-            }
-        } else if (op == IORING_OP_WRITEV) {
-            if (res < 0) {
-                System.out.println("Problem: handle_IORING_OP_WRITEV res: " + res);
-            } else {
-                //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
-                IOUringChannel channel = channelMap.get(fd);
-                channel.handle_IORING_OP_WRITEV(res, flags, data);
-            }
-        } else if (op == IORING_OP_ACCEPT) {
-            if (res < 0) {
-                System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
-            } else {
-                IOUringServerChannel channel = serverChannels.get(fd);
-                channel.handle_IORING_OP_ACCEPT(res, flags, data);
-            }
+        CompletionListener l = completionListeners.get(fd);
+        if (l == null) {
+            System.out.println("no listener found for fd:" + fd + " op:" + op);
         } else {
-            System.out.println(this + " handle Unknown opcode:" + op);
+            l.handle(fd, res, flags, op, data);
         }
     }
 
@@ -244,7 +205,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
             if (socket.connect(address)) {
                 logger.info(getName() + "Socket connected to " + address);
                 schedule(() -> {
-                    channelMap.put(socket.intValue(), channel);
+                    completionListeners.put(socket.intValue(), channel);
                     channel.onConnectionEstablished();
                     future.complete(channel);
                 });

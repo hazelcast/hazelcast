@@ -39,6 +39,4 @@ public abstract class Op {
             allocator.free(this);
         }
     }
-
-
 }
