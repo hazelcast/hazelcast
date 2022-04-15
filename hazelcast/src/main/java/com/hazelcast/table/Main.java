@@ -11,7 +11,7 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 1_000_000; k++) {
+        for (int k = 0; k < 100_000_000; k++) {
             Item item = new Item();
             item.key = 1;
             item.a = 2;
@@ -21,7 +21,7 @@ public class Main {
 //            System.out.println("k="+k);
 //            System.out.println("========================================================================");
 
-            if (k % 1000 == 0) {
+            if (k % 100000 == 0) {
                 System.out.println("at k:" + k);
             }
 

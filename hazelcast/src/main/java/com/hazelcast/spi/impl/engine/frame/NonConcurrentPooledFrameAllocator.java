@@ -17,7 +17,7 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate() {
-        // allocateCnt++;
+        allocateCnt++;
 
         if (index == -1) {
             // the pool is empty.
@@ -29,16 +29,16 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
                 Frame frame = new Frame(buffer);
                 frame.concurrent = false;
-                //   newAllocateCnt++;
+                newAllocateCnt++;
                 frame.allocator = this;
                 index++;
                 frames[k] = frame;
             }
         }
 
-//        if (allocateCnt % 10_000_000 == 0) {
-//            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
-//        }
+        if (allocateCnt % 10_000_000 == 0) {
+            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
+        }
 
         Frame frame = frames[index];
         frames[index] = null;
@@ -58,9 +58,13 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
         frame.next = null;
         frame.future = null;
 
-        if (index < frames.length - 1) {
-            index++;
-            frames[index] = frame;
+        if (index == frames.length - 1) {
+            Frame[] newframes = new Frame[frames.length * 2];
+            System.arraycopy(frames, 0, newframes, 0, frames.length);
+            frames = newframes;
         }
+
+        index++;
+        frames[index] = frame;
     }
 }
