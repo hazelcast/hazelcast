@@ -25,8 +25,15 @@ public class Main {
                 System.out.println("at k:" + k);
             }
 
+            Pipeline pipeline = table.newPipeline();
+            for (int l = 0; l < 10; l++) {
+                pipeline.noop(0);
+            }
+            pipeline.execute();
+            pipeline.await();
+
             //table.upsert(item);
-            table.concurrentNoop(1);
+            //table.concurrentNoop(1);
 //            try {
 //                Thread.sleep(1000);
 //            } catch (InterruptedException e) {

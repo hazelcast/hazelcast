@@ -139,6 +139,9 @@ public final class Engine {
         }
 
         for (Reactor reactor : reactors) {
+            if (threadAffinity != null) {
+                reactor.setThreadAffinity(threadAffinity);
+            }
             reactor.start();
         }
 

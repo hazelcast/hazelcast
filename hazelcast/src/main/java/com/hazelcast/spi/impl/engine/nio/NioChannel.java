@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -103,6 +104,11 @@ public abstract class NioChannel extends Channel {
     @Override
     public void write(Frame frame) {
         unflushedFrames.add(frame);
+    }
+
+    @Override
+    public void writeAll(Collection<Frame> frames) {
+        unflushedFrames.addAll(frames);
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 
 import java.net.SocketAddress;
+import java.util.Collection;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
@@ -28,6 +29,8 @@ public abstract class Channel {
     public abstract void flush();
 
     public abstract void write(Frame frame);
+
+    public abstract void writeAll(Collection<Frame> frames);
 
     public abstract void writeAndFlush(Frame frame);
 

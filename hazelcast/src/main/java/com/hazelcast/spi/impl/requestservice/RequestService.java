@@ -340,7 +340,6 @@ public class RequestService {
         }
     }
 
-
     public CompletableFuture invoke(Frame request, int partitionId) {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
@@ -387,21 +386,21 @@ public class RequestService {
         if (address.equals(thisAddress)) {
             engine.reactorForHash(partitionId).schedule(requestList);
         } else {
-            TcpServerConnection connection = getConnection(address);
-            Channel channel = connection.channels[partitionIdToChannel[partitionId]];
+            Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
             Requests requests = getRequests(channel.remoteAddress);
 
             long c = requests.callId.addAndGet(requestList.size());
 
             int k = 0;
             for (Frame request : requestList) {
+                request.acquire();
                 long callId = c - k;
                 requests.map.put(callId, request);
                 request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
-                channel.write(request);
                 k--;
             }
 
+            channel.writeAll(requestList);
             channel.flush();
         }
     }

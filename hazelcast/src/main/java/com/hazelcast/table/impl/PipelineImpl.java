@@ -16,14 +16,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class PipelineImpl implements Pipeline {
 
-    private final RequestService frontEnd;
+    private final RequestService requestService;
     private final FrameAllocator frameAllocator;
     private List<Frame> requests = new ArrayList<>();
     private List<CompletableFuture> futures = new ArrayList<>();
     private int partitionId = -1;
 
-    public PipelineImpl(RequestService frontEnd, FrameAllocator frameAllocator) {
-        this.frontEnd = frontEnd;
+    public PipelineImpl(RequestService requestService, FrameAllocator frameAllocator) {
+        this.requestService = requestService;
         this.frameAllocator = frameAllocator;
     }
 
@@ -49,7 +49,7 @@ public class PipelineImpl implements Pipeline {
 
     @Override
     public void execute() {
-        frontEnd.invoke(this);
+        requestService.invoke(this);
     }
 
     public void await(){

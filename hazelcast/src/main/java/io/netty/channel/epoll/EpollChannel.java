@@ -7,6 +7,7 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -101,6 +102,11 @@ public abstract class EpollChannel extends Channel {
     @Override
     public void write(Frame frame) {
         unflushedFrames.add(frame);
+    }
+
+    @Override
+    public void writeAll(Collection<Frame> frames) {
+        unflushedFrames.addAll(frames);
     }
 
     @Override

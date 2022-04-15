@@ -10,6 +10,7 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
@@ -90,6 +91,11 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
     public void write(Frame frame) {
         // can be optimized
         unflushedFrames.add(frame);
+    }
+
+    @Override
+    public void writeAll(Collection<Frame> frames) {
+        unflushedFrames.addAll(frames);
     }
 
     @Override
