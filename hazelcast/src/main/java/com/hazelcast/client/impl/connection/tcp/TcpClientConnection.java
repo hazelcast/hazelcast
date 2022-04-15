@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
@@ -55,7 +56,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  */
 public class TcpClientConnection implements ClientConnection {
 
-    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID)
+    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
