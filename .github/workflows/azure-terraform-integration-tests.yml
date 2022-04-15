@@ -45,7 +45,7 @@ jobs:
       - run : mkdir ~/lib
 
       # BUILD HAZELCAST AZURE SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3.0.1
         with:
           path: hazelcast
 
