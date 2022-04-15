@@ -3,7 +3,6 @@ package io.netty.incubator.channel.uring;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
-import com.hazelcast.spi.impl.reactor.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;
@@ -12,8 +11,6 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static java.nio.channels.SelectionKey.OP_READ;
 
 public abstract class IOUringChannel extends Channel {
     protected LinuxSocket socket;
@@ -24,8 +21,6 @@ public abstract class IOUringChannel extends Channel {
     // ======================================================
     protected ByteBuf receiveBuff;
     protected IOUringSubmissionQueue sq;
-    protected FrameAllocator requestFrameAllocator;
-    protected FrameAllocator remoteResponseFrameAllocator;
 
     // ======================================================
     // for the writing side of the channel.

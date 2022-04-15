@@ -259,7 +259,7 @@ public class RequestService {
             reactor.context.put("requestChannelSupplier", channelSupplier);
             serverChannel.channelSupplier = channelSupplier;
 
-            reactor.register(serverChannel);
+            reactor.accept(serverChannel);
             return reactor;
         } catch (IOException e) {
             throw new RuntimeException();

@@ -92,7 +92,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     private final boolean spin;
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
-    final IOUringSubmissionQueue sq;
+    protected final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
@@ -100,6 +100,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     // we could use an array.
     final IntObjectMap<IOUringChannel> channelMap = new IntObjectHashMap<>(4096);
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
+    protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
     public IOUringReactor(IOUringReactorConfig config) {
         super(config);
@@ -178,7 +179,6 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
     }
 
-
     @Override
     public void handle(int fd, int res, int flags, byte op, short data) {
         //System.out.println(getName() + " handle called: opcode:" + op);
@@ -224,8 +224,6 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
         }
     }
 
-    protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
-
     @Override
     public Future<Channel> connect(Channel c, SocketAddress address) {
         IOUringChannel channel = (IOUringChannel) c;
@@ -238,7 +236,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
             LinuxSocket socket = LinuxSocket.newSocketStream(false);
             socket.setBlocking();
 
-            channel.configure(IOUringReactor.this, c.socketConfig, socket);
+            channel.configure(this, c.socketConfig, socket);
 
             if (socket.connect(address)) {
                 logger.info(getName() + "Socket connected to " + address);

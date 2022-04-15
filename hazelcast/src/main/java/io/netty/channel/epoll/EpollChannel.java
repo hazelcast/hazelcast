@@ -1,6 +1,7 @@
 package io.netty.channel.epoll;
 
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -9,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static io.netty.channel.epoll.Native.EPOLLIN;
 
 
 // add padding around Nio channel
@@ -57,7 +59,14 @@ public abstract class EpollChannel extends Channel {
 //        }
 
         if (socket.isOpen()) {
-            Native.epollCtlMod(reactor.epollFd.intValue(), socket.intValue(), flags);
+            try {
+                System.out.println("reactor.epollFd.intValue:"+reactor.epollFd.intValue());
+                System.out.println("socket.intValue:"+socket.intValue());
+                System.out.println("flags:"+flags);
+                Native.epollCtlMod(reactor.epollFd.intValue(), socket.intValue(), flags);
+            }catch (Exception e){
+                throw new IOException(e);
+            }
         }
     }
 
@@ -192,4 +201,30 @@ public abstract class EpollChannel extends Channel {
         }
     }
 
+    public void configure(EpollReactor reactor, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
+        this.reactor = reactor;
+        this.socket = socket;
+
+        receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+
+        String id = socket.localAddress() + "->" + socket.remoteAddress();
+        System.out.println(reactor.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(reactor.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+    }
+
+    public void onConnectionEstablished() throws IOException{
+        remoteAddress = socket.remoteAddress();
+        localAddress = socket.localAddress();
+
+        System.out.println("Connection established");
+
+        setFlag(EPOLLIN);
+    }
 }

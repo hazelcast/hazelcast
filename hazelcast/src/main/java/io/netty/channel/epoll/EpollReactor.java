@@ -1,17 +1,15 @@
 package io.netty.channel.epoll;
 
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -22,7 +20,7 @@ public final class EpollReactor extends Reactor {
     private final boolean spin;
     private final boolean writeThrough;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    private final IntObjectMap<EpollChannel> channels = new IntObjectHashMap<>(4096);
+    private final IntObjectMap channels = new IntObjectHashMap<>(4096);
     private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
     public final FileDescriptor epollFd;
     private final FileDescriptor eventFd;
@@ -31,7 +29,7 @@ public final class EpollReactor extends Reactor {
 
     public EpollReactor(EpollReactorConfig config) {
         super(config);
-        this.spin = config.spin;
+        this.spin = false;//config.spin;
         this.writeThrough = config.writeThrough;
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
@@ -54,11 +52,6 @@ public final class EpollReactor extends Reactor {
     }
 
     @Override
-    public Future<Channel> connect(Channel channel, SocketAddress address)  {
-        return null;
-    }
-
-    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == this) {
             return;
@@ -76,8 +69,7 @@ public final class EpollReactor extends Reactor {
             runTasks();
             k++;
 
-            Thread.sleep(500);
-            System.out.println(getName() + " eventLoop run " + k);
+             System.out.println(getName() + " eventLoop run " + k);
 
             boolean moreWork = scheduler.tick();
 
@@ -85,12 +77,15 @@ public final class EpollReactor extends Reactor {
 
             int ready;
             if (spin || moreWork) {
+                System.out.println("epollBusyWait");
                 ready = epollBusyWait();
             } else {
                 wakeupNeeded.set(true);
                 if (publicRunQueue.isEmpty()) {
+                    System.out.println("epollWait");
                     ready = epollWait();
                 } else {
+                    System.out.println("epollBusyWait");
                     ready = epollBusyWait();
                 }
                 wakeupNeeded.set(false);
@@ -103,7 +98,7 @@ public final class EpollReactor extends Reactor {
     }
 
     private int epollWait() throws IOException {
-        return Native.epollWait(epollFd, events, true);
+        return Native.epollWait(epollFd, events, false);
     }
 
     private int epollBusyWait() throws IOException {
@@ -125,16 +120,26 @@ public final class EpollReactor extends Reactor {
                 System.out.println("Something else");
                 final long ev = events.events(i);
 
-                EpollChannel channel = channels.get(fd);
+                Object channel = channels.get(fd);
                 if (channel != null) {
+                    System.out.println("channel found");
                     if ((ev & (Native.EPOLLERR | Native.EPOLLOUT)) != 0) {
-                        channel.handleWrite();
+                        System.out.println("epollout");
+                        ((EpollChannel)channel).handleWrite();
                     }
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
-                        channel.handleRead();
+                        System.out.println("epoll in");
+                        if(channel instanceof EpollServerChannel){
+                            System.out.println("EpollServerChannel.handleAccept");
+                            ((EpollServerChannel)channel).handleAccept();
+                        }else{
+                            System.out.println("EpollChannel.handleRead");
+                            ((EpollChannel)channel).handleRead();
+                        }
                     }
                 } else {
+                    System.out.println("no channel found");
                     // no channel found
                     // We received an event for an fd which we not use anymore. Remove it from the epoll_event set.
                     try {
@@ -146,24 +151,7 @@ public final class EpollReactor extends Reactor {
         }
     }
 
-
-    private void handleAccept(SelectionKey key) {
-//        EpollServerChannel serverChannel = (EpollServerChannel) key.attachment();
-//        try {
-//            SocketChannel socketChannel = serverChannel.serverSocketChannel.accept();
-//            socketChannel.configureBlocking(false);
-//            configure(socketChannel.socket(), serverChannel.socketConfig);
-//
-//            SelectionKey channelSelectionKey = socketChannel.register(selector, OP_READ);
-//            channelSelectionKey.attach(newChannel(socketChannel, null, key, serverChannel.socketConfig));
-//
-//            logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-    }
-
-    public void register(EpollServerChannel serverChannel) throws IOException {
+    public void accept(EpollServerChannel serverChannel) throws IOException {
         LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
 
         // should come from properties.
@@ -176,68 +164,45 @@ public final class EpollReactor extends Reactor {
         System.out.println(getName() + " Listening on " + serverChannel.address);
 
         schedule(() -> {
+            serverChannel.reactor = EpollReactor.this;
             serverChannel.serverSocket = serverSocket;
+            channels.put(serverSocket.intValue(), serverChannel);
             serverChannels.put(serverSocket.intValue(), serverChannel);
             serverSocket.listen(serverChannel.socketConfig.backlog);
             epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
         });
     }
-//
-//    @Override
-//    protected void handleConnect(ConnectRequest request) {
-//        try {
-//            SocketAddress address = request.address;
-//            System.out.println("ConnectRequest address:" + address);
-//
-//            LinuxSocket socket = LinuxSocket.newSocketStream();
-//            configure(socket, request.socketConfig);
-//            if (!socket.connect(address)) {
-//                throw new RuntimeException("Failed to connect to " + request.address);
-//            }
-//
-////            socketChannel.configureBlocking(false);
-//
-////            SelectionKey key = socketChannel.register(selector, OP_READ);
-////
-//            EpollChannel channel = newChannel(socket, request.connection, request.socketConfig);
-//            channel.setFlag(EPOLLIN);
-//            //todo: register for read.
-//
-//            logger.info("Socket listening at " + address);
-//            request.future.complete(channel);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            request.future.completeExceptionally(e);
-//        }
-//    }
 
-//    private EpollChannel newChannel(LinuxSocket socket, Connection connection, SocketConfig socketConfig) throws IOException {
-//        System.out.println(this + " newChannel: " + socket);
-//
-//        EpollChannel channel = new EpollChannel();
-//        channel.reactor = this;
-//        channel.writeThrough = writeThrough;
-//        channel.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-//        channel.socket = socket;
-//        channel.connection = connection;
-//        channel.remoteAddress = socket.remoteAddress();
-//        channel.localAddress = socket.localAddress();
-//        registeredChannels.add(channel);
-//
-//        return channel;
-//    }
+    @Override
+    public Future<Channel> connect(Channel c, SocketAddress address) {
+        EpollChannel channel = (EpollChannel) c;
 
-    private void configure(LinuxSocket socket, SocketConfig socketConfig) throws IOException {
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+        CompletableFuture<Channel> future = new CompletableFuture();
+        try {
+            System.out.println("ConnectRequest address:" + address);
 
-        String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+            LinuxSocket socket = LinuxSocket.newSocketStream();
+            channel.configure(this, socket, c.socketConfig);
+
+            if (!socket.connect(address)) {
+                future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
+            } else {
+                schedule(() -> {
+                    try {
+                        channel.onConnectionEstablished();
+                        registeredChannels.add(channel);
+                        logger.info("Socket listening at " + address);
+                        future.complete(channel);
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
     }
+
 
 }
