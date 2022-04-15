@@ -1,8 +1,9 @@
 package io.netty.incubator.channel.uring;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.SocketConfig;
+import com.hazelcast.spi.impl.reactor.Scheduler;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.FileDescriptor;
@@ -89,7 +90,6 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
  */
 public class IOUringReactor extends Reactor implements IOUringCompletionQueueCallback {
 
-    private final boolean spin;
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
     protected final IOUringSubmissionQueue sq;
@@ -102,9 +102,8 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
-    public IOUringReactor(IOUringReactorConfig config) {
-        super(config);
-        this.spin = config.spin;
+    public IOUringReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+        super(idx, name, logger, scheduler, spin);
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();

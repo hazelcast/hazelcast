@@ -17,7 +17,6 @@ public class NioServerChannel {
     public ServerSocketChannel serverSocketChannel;
     public Selector selector;
     public ILogger logger;
-    public NioReactorConfig config;
     public Supplier<NioChannel> channelSupplier;
     public InetSocketAddress address;
 

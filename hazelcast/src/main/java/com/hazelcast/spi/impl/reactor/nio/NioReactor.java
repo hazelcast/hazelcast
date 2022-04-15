@@ -1,8 +1,10 @@
 package com.hazelcast.spi.impl.reactor.nio;
 
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.Scheduler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -20,12 +22,10 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 public final class NioReactor extends Reactor {
     final Selector selector;
-    private final boolean spin;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
-    public NioReactor(NioReactorConfig config) {
-        super(config);
-        this.spin = config.spin;
+    public NioReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+        super(idx, name, logger, scheduler, spin);
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 

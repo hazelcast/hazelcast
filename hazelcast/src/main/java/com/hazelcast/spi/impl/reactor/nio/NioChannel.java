@@ -23,7 +23,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
-// add padding around Nio channel
+// todo: add padding around Nio channel
 public abstract class NioChannel extends Channel {
 
     // immutable state
@@ -48,8 +48,7 @@ public abstract class NioChannel extends Channel {
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
 
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
-
-
+    
     protected void configure(NioReactor reactor, SocketChannel socketChannel, SocketConfig socketConfig) throws IOException {
         this.reactor = reactor;
         this.selector = reactor.selector;

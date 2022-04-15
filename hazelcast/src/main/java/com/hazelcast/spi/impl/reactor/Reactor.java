@@ -10,6 +10,7 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,16 +32,24 @@ public abstract class Reactor extends HazelcastManagedThread {
     public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
     public final Scheduler scheduler;
     public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
+    protected final boolean spin;
+    protected final int idx;
     protected volatile boolean running = true;
 
-    public Reactor(ReactorConfig config) {
-        super(config.name);
-        this.logger = config.logger;
-        this.scheduler = config.scheduler;
+    public Reactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+        super(name);
+        this.idx = idx;
+        this.logger = logger;
+        this.scheduler = scheduler;
+        this.spin = spin;
+    }
 
-        if (config.threadAffinity != null) {
-            setThreadAffinity(config.threadAffinity);
-        }
+    public Scheduler getScheduler(){
+        return scheduler;
+    }
+
+    public int getIdx(){
+        return idx;
     }
 
     public void shutdown() {
@@ -59,6 +68,11 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     public void schedule(ReactorTask task) {
         publicRunQueue.add(task);
+        wakeup();
+    }
+
+    public void schedule(Collection<Frame> requests) {
+        publicRunQueue.addAll(requests);
         wakeup();
     }
 

@@ -1,7 +1,9 @@
 package io.netty.channel.epoll;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.reactor.Channel;
 import com.hazelcast.spi.impl.reactor.Reactor;
+import com.hazelcast.spi.impl.reactor.Scheduler;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
@@ -18,7 +20,6 @@ import static io.netty.channel.epoll.Native.epollCtlAdd;
 
 public final class EpollReactor extends Reactor {
     private final boolean spin;
-    private final boolean writeThrough;
     private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
     private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
@@ -27,10 +28,9 @@ public final class EpollReactor extends Reactor {
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollReactor(EpollReactorConfig config) {
-        super(config);
+    public EpollReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+        super(idx, name, logger, scheduler, spin);
         this.spin = false;//config.spin;
-        this.writeThrough = config.writeThrough;
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
         this.eventFd = Native.newEventFd();

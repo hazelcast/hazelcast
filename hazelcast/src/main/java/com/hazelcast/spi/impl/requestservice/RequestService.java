@@ -5,13 +5,14 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
-import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.reactor.Channel;
+import com.hazelcast.spi.impl.reactor.Engine;
 import com.hazelcast.spi.impl.reactor.Reactor;
-import com.hazelcast.spi.impl.reactor.ReactorMonitorThread;
+import com.hazelcast.spi.impl.reactor.ReactorType;
+import com.hazelcast.spi.impl.reactor.Scheduler;
 import com.hazelcast.spi.impl.reactor.SocketConfig;
 import com.hazelcast.spi.impl.reactor.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.frame.Frame;
@@ -20,21 +21,19 @@ import com.hazelcast.spi.impl.reactor.frame.NonConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.frame.UnpooledFrameAllocator;
 import com.hazelcast.spi.impl.reactor.nio.NioChannel;
 import com.hazelcast.spi.impl.reactor.nio.NioReactor;
-import com.hazelcast.spi.impl.reactor.nio.NioReactorConfig;
 import com.hazelcast.spi.impl.reactor.nio.NioServerChannel;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import io.netty.channel.epoll.EpollChannel;
 import io.netty.channel.epoll.EpollReactor;
-import io.netty.channel.epoll.EpollReactorConfig;
 import io.netty.channel.epoll.EpollServerChannel;
 import io.netty.incubator.channel.uring.IOUringChannel;
 import io.netty.incubator.channel.uring.IOUringReactor;
-import io.netty.incubator.channel.uring.IOUringReactorConfig;
 import io.netty.incubator.channel.uring.IOUringServerChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -79,46 +78,35 @@ public class RequestService {
     public final InternalSerializationService ss;
     public final ILogger logger;
     private final Address thisAddress;
-    private final ThreadAffinity threadAffinity;
-    private final int reactorCount;
     private final int channelCount;
-    private final boolean reactorSpin;
     private final SocketConfig socketConfig;
-    private final ReactorMonitorThread monitorThread;
     private final boolean poolRequests;
     private final boolean poolLocalResponses;
     private final boolean poolRemoteResponses;
     private final boolean writeThrough;
     private final int responseThreadCount;
-    private final boolean monitorSilent;
-    private final String reactorType;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
-    private final Reactor[] reactors;
     public final Managers managers;
     private final ConcurrentMap<SocketAddress, Requests> requestsPerChannel = new ConcurrentHashMap<>();
     private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
+    private Engine engine;
 
     public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(RequestService.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.reactorCount = Integer.parseInt(System.getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        this.responseThreadCount = Integer.parseInt(System.getProperty("reactor.responsethread.count", "1"));
-        this.reactorSpin = Boolean.parseBoolean(System.getProperty("reactor.spin", "false"));
-        this.writeThrough = Boolean.parseBoolean(System.getProperty("reactor.write-through", "false"));
-        this.poolRequests = Boolean.parseBoolean(System.getProperty("reactor.pool-requests", "true"));
-        this.poolLocalResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-local-responses", "true"));
-        this.poolRemoteResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-remote-responses", "false"));
-        this.reactorType = System.getProperty("reactor.type", "nio");
-        this.monitorSilent = Boolean.parseBoolean(System.getProperty("reactor.monitor.silent", "false"));
+        this.responseThreadCount = Integer.parseInt(java.lang.System.getProperty("reactor.responsethread.count", "1"));
+        this.writeThrough = Boolean.parseBoolean(java.lang.System.getProperty("reactor.write-through", "false"));
+        this.poolRequests = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-requests", "true"));
+        this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
+        this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
 
-        this.channelCount = Integer.parseInt(System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
-        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
+        this.channelCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printReactorInfo();
-        this.reactors = new Reactor[reactorCount];
         this.thisAddress = nodeEngine.getThisAddress();
+        this.engine = newApplication();
         this.socketConfig = new SocketConfig();
         this.managers = new Managers();
         //hack
@@ -129,20 +117,6 @@ public class RequestService {
             partitionIdToChannel[k] = hashToIndex(k, channelCount);
         }
 
-        for (int k = 0; k < reactors.length; k++) {
-            int port = toPort(thisAddress, k);
-            if (reactorType.equals("io_uring") || reactorType.equals("iouring")) {
-                reactors[k] = newIO_UringReactor(port);
-            } else if (reactorType.equals("nio")) {
-                reactors[k] = newNioReactor(port);
-            } else if (reactorType.equals("epoll")) {
-                reactors[k] = newEpollReactor(port);
-            } else {
-                throw new RuntimeException("Unrecognized 'reactor.type' " + reactorType);
-            }
-        }
-
-        this.monitorThread = new ReactorMonitorThread(reactors, monitorSilent);
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreadCount; k++) {
             this.responseThreads[k] = new ResponseThread();
@@ -150,148 +124,131 @@ public class RequestService {
     }
 
     @NotNull
-    private NioReactor newNioReactor(int port) {
-        try {
-            NioReactorConfig config = new NioReactorConfig();
-            OpScheduler scheduler = newOpScheduler();
-            config.scheduler = scheduler;
-            config.spin = reactorSpin;
-            config.writeThrough = writeThrough;
-            config.name = "NioReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.logger = nodeEngine.getLogger(NioReactor.class);
-            config.threadAffinity = threadAffinity;
-            NioReactor reactor = new NioReactor(config);
+    private Engine newApplication() {
+        Engine engine = new Engine(() -> {
+            FrameAllocator remoteResponseFrameAllocator = poolRemoteResponses
+                    ? new ConcurrentPooledFrameAllocator(128, true)
+                    : new UnpooledFrameAllocator();
+            FrameAllocator localResponseFrameAllocator = poolLocalResponses
+                    ? new NonConcurrentPooledFrameAllocator(128, true)
+                    : new UnpooledFrameAllocator();
 
-            NioServerChannel serverChannel = new NioServerChannel();
-            serverChannel.socketConfig = socketConfig;
-            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-
-            Supplier<NioChannel> channelSupplier = () -> {
-                RequestNioChannel channel = new RequestNioChannel();
-                channel.opScheduler = scheduler;
-                channel.requestService = this;
-                channel.socketConfig = socketConfig;
-                channel.requestFrameAllocator = poolRequests
-                        ? new NonConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                channel.remoteResponseFrameAllocator = poolRemoteResponses
-                        ? new ConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                return channel;
-            };
-            reactor.context.put("requestChannelSupplier", channelSupplier);
-            serverChannel.channelSupplier = channelSupplier;
-
-            reactor.accept(serverChannel);
-            return reactor;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            return new OpScheduler(32768,
+                    Integer.MAX_VALUE,
+                    managers,
+                    localResponseFrameAllocator,
+                    remoteResponseFrameAllocator);
+        });
+        engine.setReactorBaseName("Reactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
+        engine.printConfig();
+        return engine;
     }
 
-    @NotNull
-    private IOUringReactor newIO_UringReactor(int port) {
-        try {
-            IOUringReactorConfig config = new IOUringReactorConfig();
-            OpScheduler scheduler = newOpScheduler();
-            config.scheduler = scheduler;
-            config.spin = reactorSpin;
-            config.name = "IO_UringReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.logger = nodeEngine.getLogger(IOUringReactor.class);
-            config.threadAffinity = threadAffinity;
-            IOUringReactor reactor = new IOUringReactor(config);
+    private void configureNio() {
+        engine.forEach(r -> {
+            try {
+                NioReactor reactor = (NioReactor) r;
+                int port = toPort(thisAddress, reactor.getIdx());
 
-            IOUringServerChannel serverChannel = new IOUringServerChannel();
-            serverChannel.socketConfig = socketConfig;
-            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+                NioServerChannel serverChannel = new NioServerChannel();
+                serverChannel.socketConfig = socketConfig;
+                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
 
-            Supplier<IOUringChannel> channelSupplier = () -> {
-                RequestIOUringChannel channel = new RequestIOUringChannel();
-                channel.opScheduler = scheduler;
-                channel.requestService = this;
-                channel.socketConfig = socketConfig;
-                channel.requestFrameAllocator = poolRequests
-                        ? new NonConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                channel.remoteResponseFrameAllocator = poolRemoteResponses
-                        ? new ConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                return channel;
-            };
-            reactor.context.put("requestChannelSupplier", channelSupplier);
-            serverChannel.channelSupplier = channelSupplier;
-            reactor.accept(serverChannel);
-            return reactor;
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
+                Supplier<NioChannel> channelSupplier = () -> {
+                    RequestNioChannel channel = new RequestNioChannel();
+                    channel.opScheduler = (OpScheduler) reactor.scheduler;
+                    channel.requestService = RequestService.this;
+                    channel.socketConfig = socketConfig;
+                    channel.requestFrameAllocator = poolRequests
+                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    return channel;
+                };
+                reactor.context.put("requestChannelSupplier", channelSupplier);
+                serverChannel.channelSupplier = channelSupplier;
+
+                reactor.accept(serverChannel);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
-    @NotNull
-    private EpollReactor newEpollReactor(int port) {
-        try {
-            EpollReactorConfig config = new EpollReactorConfig();
-            OpScheduler scheduler = newOpScheduler();
-            config.scheduler = scheduler;
-            config.spin = reactorSpin;
-            config.name = "EpollReactor:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:" + port;
-            config.logger = nodeEngine.getLogger(IOUringReactor.class);
-            config.threadAffinity = threadAffinity;
-            EpollReactor reactor = new EpollReactor(config);
+    private void configureIOUring() {
+        engine.forEach(r -> {
+            try {
+                IOUringReactor reactor = (IOUringReactor) r;
+                 int port = toPort(thisAddress, reactor.getIdx());
 
-            EpollServerChannel serverChannel = new EpollServerChannel();
-            serverChannel.socketConfig = socketConfig;
-            serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+                IOUringServerChannel serverChannel = new IOUringServerChannel();
+                serverChannel.socketConfig = socketConfig;
+                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
 
-            Supplier<EpollChannel> channelSupplier = () -> {
-                RequestEpollChannel channel = new RequestEpollChannel();
-                channel.opScheduler = scheduler;
-                channel.requestService = this;
-                channel.socketConfig = socketConfig;
-                channel.requestFrameAllocator = poolRequests
-                        ? new NonConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                channel.remoteResponseFrameAllocator = poolRemoteResponses
-                        ? new ConcurrentPooledFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                return channel;
-            };
-            reactor.context.put("requestChannelSupplier", channelSupplier);
-            serverChannel.channelSupplier = channelSupplier;
-
-            reactor.accept(serverChannel);
-            return reactor;
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
+                Supplier<IOUringChannel> channelSupplier = () -> {
+                    RequestIOUringChannel channel = new RequestIOUringChannel();
+                    channel.opScheduler = (OpScheduler) reactor.scheduler;
+                    channel.requestService = this;
+                    channel.socketConfig = socketConfig;
+                    channel.requestFrameAllocator = poolRequests
+                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    return channel;
+                };
+                reactor.context.put("requestChannelSupplier", channelSupplier);
+                serverChannel.channelSupplier = channelSupplier;
+                reactor.accept(serverChannel);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
-    private OpScheduler newOpScheduler() {
-        FrameAllocator remoteResponseFrameAllocator = poolRemoteResponses
-                ? new ConcurrentPooledFrameAllocator(128, true)
-                : new UnpooledFrameAllocator();
-        FrameAllocator localResponseFrameAllocator = poolLocalResponses
-                ? new NonConcurrentPooledFrameAllocator(128, true)
-                : new UnpooledFrameAllocator();
+    private void configureEpoll() {
+        engine.forEach(r -> {
+            try {
+                EpollReactor reactor = (EpollReactor) r;
 
-        return new OpScheduler(32768,
-                Integer.MAX_VALUE,
-                managers,
-                localResponseFrameAllocator,
-                remoteResponseFrameAllocator);
+                 EpollServerChannel serverChannel = new EpollServerChannel();
+                serverChannel.socketConfig = socketConfig;
+                int port = toPort(thisAddress, reactor.getIdx());
+                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+
+                Supplier<EpollChannel> channelSupplier = () -> {
+                    RequestEpollChannel channel = new RequestEpollChannel();
+                    channel.opScheduler = (OpScheduler) reactor.scheduler;
+                    channel.requestService = this;
+                    channel.socketConfig = socketConfig;
+                    channel.requestFrameAllocator = poolRequests
+                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    return channel;
+                };
+                reactor.context.put("requestChannelSupplier", channelSupplier);
+                serverChannel.channelSupplier = channelSupplier;
+                reactor.accept(serverChannel);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     private void printReactorInfo() {
-        System.out.println("reactor.count:" + reactorCount);
-        System.out.println("reactor.spin:" + reactorSpin);
-        System.out.println("reactor.responsethread.count:" + responseThreadCount);
-        System.out.println("reactor.write-through:" + writeThrough);
-        System.out.println("reactor.channels:" + channelCount);
-        System.out.println("reactor.type:" + reactorType);
-        System.out.println("reactor.pool-requests:" + poolRequests);
-        System.out.println("reactor.pool-local-responses:" + poolLocalResponses);
-        System.out.println("reactor.pool-remote-responses:" + poolRemoteResponses);
-        System.out.println("reactor.cpu-affinity:" + System.getProperty("reactor.cpu-affinity"));
+        java.lang.System.out.println("reactor.responsethread.count:" + responseThreadCount);
+        java.lang.System.out.println("reactor.write-through:" + writeThrough);
+        java.lang.System.out.println("reactor.channels:" + channelCount);
+        java.lang.System.out.println("reactor.pool-requests:" + poolRequests);
+        java.lang.System.out.println("reactor.pool-local-responses:" + poolLocalResponses);
+        java.lang.System.out.println("reactor.pool-remote-responses:" + poolRemoteResponses);
+        java.lang.System.out.println("reactor.cpu-affinity:" + java.lang.System.getProperty("reactor.cpu-affinity"));
     }
 
     public int toPort(Address address, int cpu) {
@@ -304,12 +261,22 @@ public class RequestService {
 
     public void start() {
         logger.info("Starting ReactorFrontend");
+        engine.start();
 
-        for (Reactor reactor : reactors) {
-            reactor.start();
+        ReactorType reactorType = engine.getReactorType();
+        switch (reactorType) {
+            case NIO:
+                configureNio();
+                break;
+            case EPOLL:
+                configureEpoll();
+                break;
+            case IOURING:
+                configureIOUring();
+                break;
+            default:
+                throw new RuntimeException();
         }
-
-        monitorThread.start();
 
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();
@@ -321,9 +288,7 @@ public class RequestService {
 
         shuttingdown = true;
 
-        for (Reactor r : reactors) {
-            r.shutdown();
-        }
+        engine.shutdown();
 
         for (Requests requests : requestsPerChannel.values()) {
             for (Frame request : requests.map.values()) {
@@ -334,7 +299,6 @@ public class RequestService {
         for (ResponseThread responseThread : responseThreads) {
             responseThread.shutdown();
         }
-        monitorThread.shutdown();
     }
 
 
@@ -353,7 +317,7 @@ public class RequestService {
         try {
             Requests requests = requestsPerChannel.get(response.channel.remoteAddress);
             if (requests == null) {
-                System.out.println("Dropping response " + response + ", requests not found");
+                java.lang.System.out.println("Dropping response " + response + ", requests not found");
                 return;
             }
 
@@ -362,7 +326,7 @@ public class RequestService {
 
             Frame request = requests.map.remove(callId);
             if (request == null) {
-                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                java.lang.System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
             } else {
                 request.future.complete(response);
                 request.release();
@@ -387,10 +351,8 @@ public class RequestService {
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         CompletableFuture future = request.future;
         if (address.equals(thisAddress)) {
-            //System.out.println("invoke:local");
-            //System.out.println("local invoke");
             // todo: hack with the assignment of a partition to a local cpu.
-            reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
+            engine.reactorForHash(partitionIdToChannel(partitionId)).schedule(request);
         } else {
             Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
 
@@ -421,9 +383,7 @@ public class RequestService {
         int partitionId = pipeline.getPartitionId();
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            for (Frame request : requestList) {
-                reactors[partitionIdToChannel(partitionId) % reactorCount].schedule(request);
-            }
+            engine.reactorForHash(partitionId).schedule(requestList);
         } else {
             TcpServerConnection connection = getConnection(address);
             Channel channel = connection.channels[partitionIdToChannel[partitionId]];
@@ -454,7 +414,7 @@ public class RequestService {
             connectionManager.getOrConnect(address);
             for (int k = 0; k < 60; k++) {
                 try {
-                    System.out.println("Waiting for connection: " + address);
+                    java.lang.System.out.println("Waiting for connection: " + address);
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                 }
@@ -479,12 +439,10 @@ public class RequestService {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        Reactor reactor = reactors[hashToIndex(channelIndex, reactors.length)];
+                        Reactor reactor = engine.reactorForHash(channelIndex);
 
-                        Supplier<Channel> channelSupplier = (Supplier<Channel>)reactor.context.get("requestChannelSupplier");
-
+                        Supplier<Channel> channelSupplier = (Supplier<Channel>) reactor.context.get("requestChannelSupplier");
                         Channel channel = channelSupplier.get();
-
                         Future<Channel> schedule = reactor.connect(channel, reactorAddress);
                         futures.add(schedule);
                     }
@@ -499,7 +457,7 @@ public class RequestService {
                     }
 
                     connection.channels = channels;
-                    System.out.println("channels to " + address + " established");
+                    java.lang.System.out.println("channels to " + address + " established");
                 }
             }
         }
@@ -509,7 +467,7 @@ public class RequestService {
 
     public Requests getRequests(SocketAddress address) {
         // remove
-        if(address == null){
+        if (address == null) {
             throw new RuntimeException("Address can't be null");
         }
 
