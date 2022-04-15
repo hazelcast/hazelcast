@@ -92,7 +92,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
-    protected final IOUringSubmissionQueue sq;
+    public final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
@@ -176,6 +176,10 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
     private void sq_addEventRead() {
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
+    }
+
+    public void sq_addRead(int fd, long bufferAddress, int pos, int limit, short extraData) {
+        sq.addRead(fd, eventfdReadBuf, 0, 8, (short) 0);
     }
 
     @Override

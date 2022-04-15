@@ -12,8 +12,13 @@ import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQUEST_OPCODE;
 public final class OpAllocator {
 
     private final Pool[] pools;
+    private final OpScheduler scheduler;
+    private final Managers manager;
 
-    public OpAllocator() {
+    public OpAllocator(OpScheduler scheduler, Managers managers) {
+        this.scheduler = scheduler;
+        this.manager = managers;
+
         pools = new Pool[OpCodes.MAX_OPCODE + 1];
         pools[0] = new Pool(UpsertOp::new);
         pools[1] = new Pool(SelectByKeyOperation::new);
@@ -28,6 +33,8 @@ public final class OpAllocator {
         if (pool.index == -1) {
             op = pool.supplier.get();
             op.allocator = this;
+            op.managers = manager;
+            op.scheduler = scheduler;
         } else {
             op = pool.array[pool.index];
             pool.array[pool.index] = null;//not needed
