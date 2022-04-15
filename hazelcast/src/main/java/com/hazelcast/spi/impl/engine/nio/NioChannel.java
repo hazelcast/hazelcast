@@ -28,7 +28,7 @@ public abstract class NioChannel extends Channel {
     protected SelectionKey key;
     protected boolean writeThrough;
     private Selector selector;
-     // ======================================================
+    // ======================================================
     // reading side of the channel.
     // ======================================================
     protected ByteBuffer receiveBuffer;

@@ -18,6 +18,12 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 import static java.lang.System.out;
 
+/**
+ * The Engine is effectively an array of reactors.
+ *
+ * The Engine is not aware of any specific applications. E.g. it could execute operations, but it
+ * can equally well run client requests or completely different applications.
+ */
 public final class Engine {
 
     private final boolean monitorSilent;
@@ -28,7 +34,7 @@ public final class Engine {
     private Reactor[] reactors;
     private int reactorCount;
     private String reactorBaseName = "reactor-";
-    private ReactorMonitorThread reactorMonitorThread;
+    private MonitorThread reactorMonitorThread;
 
     public Engine(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
@@ -43,7 +49,7 @@ public final class Engine {
         return reactorType;
     }
 
-    public Engine setReactorType(ReactorType reactorType){
+    public Engine setReactorType(ReactorType reactorType) {
         this.reactorType = checkNotNull(reactorType);
         return this;
     }
@@ -136,7 +142,7 @@ public final class Engine {
             reactor.start();
         }
 
-        this.reactorMonitorThread = new ReactorMonitorThread(reactors, monitorSilent);
+        this.reactorMonitorThread = new MonitorThread(reactors, monitorSilent);
         this.reactorMonitorThread.start();
     }
 

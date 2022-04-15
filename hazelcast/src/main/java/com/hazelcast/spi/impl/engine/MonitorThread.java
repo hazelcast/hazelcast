@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
 
-public final class ReactorMonitorThread extends Thread {
+public final class MonitorThread extends Thread {
 
     private final Reactor[] reactors;
     private final boolean silent;
@@ -18,7 +18,7 @@ public final class ReactorMonitorThread extends Thread {
     // There is a memory leak on the counters. When channels die, counters are not removed.
     private final Map<SwCounter, LongHolder> prevMap = new HashMap<>();
 
-    public ReactorMonitorThread(Reactor[] reactors, boolean silent) {
+    public MonitorThread(Reactor[] reactors, boolean silent) {
         super("MonitorThread");
         this.reactors = reactors;
         this.silent = silent;
@@ -55,7 +55,7 @@ public final class ReactorMonitorThread extends Thread {
                     }
                 }
 
-                if(!silent) {
+                if (!silent) {
                     for (Reactor reactor : reactors) {
                         monitor(reactor, elapsed);
                     }
@@ -86,7 +86,7 @@ public final class ReactorMonitorThread extends Thread {
         LongHolder prevPacketsRead = getPrev(channel.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;
 
-        if(!silent) {
+        if (!silent) {
             log(channel + " " + thp(packetsReadDelta, elapsed) + " packets/second");
 
             long bytesRead = channel.bytesRead.get();

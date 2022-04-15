@@ -33,8 +33,8 @@ public abstract class Op {
     public void clear() {
     }
 
-    public void release(){
-        if(allocator!=null){
+    public void release() {
+        if (allocator != null) {
             allocator.free(this);
         }
     }

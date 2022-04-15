@@ -41,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
@@ -48,6 +49,8 @@ import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RESPONSE_CALL_ID;
 
 
 /**
+ * The RequestService is an application of the Engine.
+ *
  * The Reactor is very specific to requests/responses. It isn't a flexible framework unlike Seastar.
  *
  * Mapping from partition to CPU is easy; just a simple mod.
@@ -180,7 +183,7 @@ public class RequestService {
         engine.forEach(r -> {
             try {
                 IOUringReactor reactor = (IOUringReactor) r;
-                 int port = toPort(thisAddress, reactor.getIdx());
+                int port = toPort(thisAddress, reactor.getIdx());
 
                 IOUringServerChannel serverChannel = new IOUringServerChannel();
                 serverChannel.socketConfig = socketConfig;
@@ -213,7 +216,7 @@ public class RequestService {
             try {
                 EpollReactor reactor = (EpollReactor) r;
 
-                 EpollServerChannel serverChannel = new EpollServerChannel();
+                EpollServerChannel serverChannel = new EpollServerChannel();
                 serverChannel.socketConfig = socketConfig;
                 int port = toPort(thisAddress, reactor.getIdx());
                 serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
@@ -509,6 +512,18 @@ public class RequestService {
 
         public void shutdown() {
             interrupt();
+        }
+    }
+
+    /**
+     * Requests for a given member.
+     */
+    public static class Requests {
+        final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
+        final AtomicLong callId = new AtomicLong(500);
+
+        public void handleResponse(Frame response) {
+
         }
     }
 }

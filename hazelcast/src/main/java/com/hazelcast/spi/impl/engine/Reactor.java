@@ -40,11 +40,11 @@ public abstract class Reactor extends HazelcastManagedThread {
         this.spin = spin;
     }
 
-    public Scheduler getScheduler(){
+    public Scheduler getScheduler() {
         return scheduler;
     }
 
-    public int getIdx(){
+    public int getIdx() {
         return idx;
     }
 
@@ -52,7 +52,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         running = false;
     }
 
-    public abstract Future<Channel> connect(Channel channel, SocketAddress address) ;
+    public abstract Future<Channel> connect(Channel channel, SocketAddress address);
 
     protected abstract void wakeup();
 
@@ -90,7 +90,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         return registeredChannels;
     }
 
-     @Override
+    @Override
     public final void executeRun() {
         try {
             eventLoop();

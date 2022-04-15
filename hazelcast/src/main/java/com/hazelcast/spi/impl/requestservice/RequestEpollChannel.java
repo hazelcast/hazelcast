@@ -36,7 +36,6 @@ public class RequestEpollChannel extends EpollChannel {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(flags);
-               // inboundFrame.connection = connection;
                 inboundFrame.channel = this;
             }
 

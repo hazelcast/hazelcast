@@ -33,7 +33,7 @@ public final class OpScheduler implements Scheduler {
         this.remoteResponseFrameAllocator = remoteResponseFrameAllocator;
     }
 
-    public void schedule(Frame request){
+    public void schedule(Frame request) {
         //requests.inc();
         Op op = opAllocator.allocate(request);
         op.managers = managers;

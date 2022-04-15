@@ -16,7 +16,6 @@ public class RequestIOUringChannel extends IOUringChannel {
     public FrameAllocator remoteResponseFrameAllocator;
     public RequestService requestService;
     public OpScheduler opScheduler;
- //   public Connection connection;
 
     @Override
     public void onRead(ByteBuf receiveBuffer) {
@@ -38,7 +37,6 @@ public class RequestIOUringChannel extends IOUringChannel {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(frameFlags);
-               // inboundFrame.connection = connection;
                 inboundFrame.channel = this;
             }
 
@@ -63,7 +61,7 @@ public class RequestIOUringChannel extends IOUringChannel {
                 inboundFrame.next = responses;
                 responses = inboundFrame;
             } else {
-               opScheduler.schedule(inboundFrame);
+                opScheduler.schedule(inboundFrame);
                 // frameHandler.handleRequest(inboundFrame);
             }
             inboundFrame = null;

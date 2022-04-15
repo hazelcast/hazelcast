@@ -13,7 +13,7 @@ public abstract class Channel {
     public SocketAddress localAddress;
     public SocketConfig socketConfig;
 
-    public final SwCounter packetsWritten = newSwCounter();
+    public final SwCounter framesWritten = newSwCounter();
 
     public final SwCounter bytesRead = newSwCounter();
 
