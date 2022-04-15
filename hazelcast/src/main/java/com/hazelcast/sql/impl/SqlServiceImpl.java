@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.tracing.TracingUtils;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -46,6 +47,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.hazelcast.sql.SqlExpectedResultType.ANY;
@@ -167,6 +169,7 @@ public class SqlServiceImpl implements SqlService {
             QueryId queryId,
             boolean skipStats
     ) {
+        TracingUtils.context().setCorrelationId(UUID.randomUUID().toString());
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
         if (!skipStats) {
@@ -204,6 +207,8 @@ public class SqlServiceImpl implements SqlService {
             throw e;
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
+        } finally {
+            TracingUtils.context().clearCorrelationId();
         }
     }
 

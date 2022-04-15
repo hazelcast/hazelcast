@@ -34,5 +34,10 @@ public final class JobConfigArguments {
      */
     public static final String KEY_SQL_UNBOUNDED = "__sql.queryUnbounded";
 
+    /**
+     * The key contains correlation id of the running job.
+     */
+    public static final String KEY_ECID = "__ecid";
+
     private JobConfigArguments() { }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.tracing.TracingUtils;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.Contexts;
@@ -60,6 +61,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_ECID;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -300,6 +302,10 @@ public class TaskletExecutionService {
         public void run() {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
+            Object ecid = t.getProcessorContext() == null ? null :
+                    t.getProcessorContext().jobConfig().getArgument(KEY_ECID);
+            TracingUtils.context().setCorrelationId((String) ecid);
+
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
             Contexts.Container contextContainer = Contexts.container();
@@ -328,6 +334,7 @@ public class TaskletExecutionService {
                 contextContainer.setContext(null);
                 currentThread().setContextClassLoader(clBackup);
                 tracker.executionTracker.taskletDone();
+                TracingUtils.context().clearCorrelationId();
             }
         }
     }
@@ -391,6 +398,9 @@ public class TaskletExecutionService {
         }
 
         private void runTasklet(TaskletTracker t) {
+            Object ecid = t.tasklet.getProcessorContext() == null ? null :
+                    t.tasklet.getProcessorContext().jobConfig().getArgument(KEY_ECID);
+            TracingUtils.context().setCorrelationId((String) ecid);
             long start = 0;
             if (finestLogEnabled) {
                 start = System.nanoTime();
@@ -419,6 +429,7 @@ public class TaskletExecutionService {
                             + COOPERATIVE_LOGGING_THRESHOLD + " ms: " + elapsedMs + "ms");
                 }
             }
+            TracingUtils.context().clearCorrelationId();
         }
 
         private void dismissTasklet(TaskletTracker t) {

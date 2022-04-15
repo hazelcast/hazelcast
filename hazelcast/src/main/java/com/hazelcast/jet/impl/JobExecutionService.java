@@ -33,6 +33,7 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.tracing.TracingUtils;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
@@ -74,6 +75,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_ECID;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -266,39 +268,46 @@ public class JobExecutionService implements DynamicMetricsProvider {
             Set<MemberInfo> participants,
             ExecutionPlan plan
     ) {
-        assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
-        verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-        failIfNotRunning();
-
-        ExecutionContext execCtx;
-        synchronized (mutex) {
-            addExecutionContextJobId(jobId, executionId, coordinator);
-            execCtx = executionContexts.computeIfAbsent(executionId,
-                    x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
-        }
+        String prevCorrelationId = TracingUtils.context().getCorrelationId();
+        TracingUtils.context().setCorrelationId(plan.getJobConfig().getArgument(KEY_ECID));
 
         try {
-            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-            // We don't create the CL for light jobs.
-            assert jobClassloaderService.getClassLoader(jobId) == null;
-            doWithClassLoader(
-                    jobCl,
-                    () -> execCtx.initialize(coordinator, addresses, plan)
-            );
-        } catch (Throwable e) {
-            completeExecution(execCtx, new CancellationException());
-            throw e;
-        }
+            assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
+            verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
+            failIfNotRunning();
 
-        // initial log entry with all of jobId, jobName, executionId
-        if (logger.isFineEnabled()) {
-            logger.fine("Execution plan for light job ID=" + idToString(jobId)
-                    + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                    + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
-        }
+            ExecutionContext execCtx;
+            synchronized (mutex) {
+                addExecutionContextJobId(jobId, executionId, coordinator);
+                execCtx = executionContexts.computeIfAbsent(executionId,
+                        x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
+            }
 
-        return beginExecution0(execCtx, false);
+            try {
+                Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+                ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+                // We don't create the CL for light jobs.
+                assert jobClassloaderService.getClassLoader(jobId) == null;
+                doWithClassLoader(
+                        jobCl,
+                        () -> execCtx.initialize(coordinator, addresses, plan)
+                );
+            } catch (Throwable e) {
+                completeExecution(execCtx, new CancellationException());
+                throw e;
+            }
+
+            // initial log entry with all of jobId, jobName, executionId
+            if (logger.isFineEnabled()) {
+                logger.fine("Execution plan for light job ID=" + idToString(jobId)
+                        + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                        + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
+            }
+
+            return beginExecution0(execCtx, false);
+        } finally {
+            TracingUtils.context().setCorrelationId(prevCorrelationId);
+        }
     }
 
     /**

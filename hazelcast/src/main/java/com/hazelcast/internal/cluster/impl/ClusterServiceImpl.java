@@ -46,6 +46,7 @@ import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ExecutorType;
+import com.hazelcast.internal.util.tracing.TracingUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -73,7 +74,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
@@ -87,8 +90,6 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -165,6 +166,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        TracingUtils.context();
         long mergeFirstRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS,
                 DEFAULT_MERGE_RUN_DELAY_MILLIS);
         long mergeNextRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS,
@@ -908,6 +910,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     private void shutdownCluster(TransactionOptions options) {
+        try {
+            TracingUtils.context().close();
+        } catch (Exception e) {
+            logger.warning("Cannot close tracing context", e);
+        }
+
         if (options == null) {
             changeClusterState(ClusterState.PASSIVE, true);
         } else {
