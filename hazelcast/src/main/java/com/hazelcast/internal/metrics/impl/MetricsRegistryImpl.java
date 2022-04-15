@@ -234,7 +234,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        descriptor.withExcludedTargets(extractExcludedTargets(function));
+        descriptor.withExcludedTargets(extractExcludedTargets(function, minimumLevel));
 
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances

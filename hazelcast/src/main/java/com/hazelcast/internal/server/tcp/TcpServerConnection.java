@@ -43,6 +43,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
@@ -132,7 +133,7 @@ public class TcpServerConnection implements ServerConnection {
         return connectionType;
     }
 
-    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM)
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM, level = DEBUG)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }
