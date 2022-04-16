@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
@@ -90,7 +89,6 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     private final FileDescriptor eventfd;
     public final IOUringSubmissionQueue sq;
     private final IOUringCompletionQueue cq;
-    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
     // we could use an array.
     final IntObjectMap<CompletionListener> completionListeners = new IntObjectHashMap<>(4096);

@@ -14,11 +14,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class NioReactor extends Reactor {
     final Selector selector;
-    private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
 
     public NioReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
         super(idx, name, logger, scheduler, spin);

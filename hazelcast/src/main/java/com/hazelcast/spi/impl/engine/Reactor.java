@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A Reactor is a thread that is an event loop.
@@ -25,9 +26,13 @@ public abstract class Reactor extends HazelcastManagedThread {
     public final ConcurrentMap context = new ConcurrentHashMap();
     public final ILogger logger;
     public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
+
+    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
+
     public final Scheduler scheduler;
     public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
+
     protected final boolean spin;
     protected final int idx;
     protected volatile boolean running = true;

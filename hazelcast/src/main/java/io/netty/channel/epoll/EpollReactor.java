@@ -12,14 +12,12 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 
 public final class EpollReactor extends Reactor {
     private final boolean spin;
-    private final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
     private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
     public final FileDescriptor epollFd;
