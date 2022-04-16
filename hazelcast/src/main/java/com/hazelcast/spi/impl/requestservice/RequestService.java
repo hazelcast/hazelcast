@@ -29,6 +29,7 @@ import io.netty.channel.epoll.EpollServerChannel;
 import io.netty.incubator.channel.uring.IOUringChannel;
 import io.netty.incubator.channel.uring.IOUringReactor;
 import io.netty.incubator.channel.uring.IOUringServerChannel;
+import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -41,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
@@ -94,6 +95,7 @@ public class RequestService {
     private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
     private Engine engine;
+    private int concurrentRequestLimit;
 
     public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -104,6 +106,7 @@ public class RequestService {
         this.poolRequests = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-requests", "true"));
         this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
         this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
+        this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
 
         this.channelCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printReactorInfo();
@@ -319,16 +322,18 @@ public class RequestService {
         try {
             Requests requests = requestsPerChannel.get(response.channel.remoteAddress);
             if (requests == null) {
-                java.lang.System.out.println("Dropping response " + response + ", requests not found");
+                System.out.println("Dropping response " + response + ", requests not found");
                 return;
             }
+
+            requests.complete();
 
             long callId = response.getLong(OFFSET_RESPONSE_CALL_ID);
             //System.out.println("response with callId:"+callId +" frame: "+response);
 
             Frame request = requests.map.remove(callId);
             if (request == null) {
-                java.lang.System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
             } else {
                 request.future.complete(response);
                 request.release();
@@ -361,7 +366,7 @@ public class RequestService {
             // and we need to keep the frame around for the response.
             request.acquire();
             Requests requests = getRequests(channel.remoteAddress);
-            long callId = requests.callId.incrementAndGet();
+            long callId = requests.nextCallId();
             request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
@@ -389,7 +394,7 @@ public class RequestService {
             Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
             Requests requests = getRequests(channel.remoteAddress);
 
-            long c = requests.callId.addAndGet(requestList.size());
+            long c = requests.nextCallId(requestList.size());
 
             int k = 0;
             for (Frame request : requestList) {
@@ -517,12 +522,57 @@ public class RequestService {
     /**
      * Requests for a given member.
      */
-    public static class Requests {
+    public class Requests {
         final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
-        final AtomicLong callId = new AtomicLong(500);
+        final PaddedAtomicLong started = new PaddedAtomicLong();
+        final PaddedAtomicLong completed = new PaddedAtomicLong();
 
-        public void handleResponse(Frame response) {
+        public void complete() {
+            if (concurrentRequestLimit > -1) {
+                completed.incrementAndGet();
+            }
+        }
 
+        public long nextCallId() {
+            if (concurrentRequestLimit == -1) {
+                return started.incrementAndGet();
+            } else {
+                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
+                do {
+                    if (completed.get() + concurrentRequestLimit > started.get()) {
+                        return started.incrementAndGet();
+                    } else {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException();
+                        }
+                    }
+                } while (System.currentTimeMillis() < endTime);
+
+                throw new RuntimeException("Member is overloaded with requests");
+            }
+        }
+
+        public long nextCallId(int count) {
+            if (concurrentRequestLimit == -1) {
+                return started.addAndGet(count);
+            } else {
+                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
+                do {
+                    if (completed.get() + concurrentRequestLimit > started.get() + count) {
+                        return started.addAndGet(count);
+                    } else {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException();
+                        }
+                    }
+                } while (System.currentTimeMillis() < endTime);
+
+                throw new RuntimeException("Member is overloaded with requests");
+            }
         }
     }
 }
