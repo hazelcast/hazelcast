@@ -34,7 +34,7 @@ public final class Engine {
     private Reactor[] reactors;
     private int reactorCount;
     private String reactorBaseName = "reactor-";
-    private MonitorThread reactorMonitorThread;
+    private MonitorThread monitorThread;
 
     public Engine(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
@@ -145,8 +145,8 @@ public final class Engine {
             reactor.start();
         }
 
-        this.reactorMonitorThread = new MonitorThread(reactors, monitorSilent);
-        this.reactorMonitorThread.start();
+        this.monitorThread = new MonitorThread(reactors, monitorSilent);
+        this.monitorThread.start();
     }
 
     public void shutdown() {
@@ -154,7 +154,7 @@ public final class Engine {
             reactor.shutdown();
         }
 
-        reactorMonitorThread.shutdown();
+        monitorThread.shutdown();
     }
 
     public void printConfig() {
