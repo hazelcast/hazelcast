@@ -23,7 +23,7 @@ import java.util.concurrent.Future;
  */
 public abstract class Reactor extends HazelcastManagedThread {
     public final ConcurrentMap context = new ConcurrentHashMap();
-    protected final ILogger logger;
+    public final ILogger logger;
     public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
     public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
     public final Scheduler scheduler;

@@ -119,22 +119,9 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     }
 
     public void accept(IOUringServerChannel serverChannel) throws IOException {
-        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
-        serverSocket.setBlocking();
-        serverSocket.setReuseAddress(true);
-        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
-
-        serverSocket.bind(serverChannel.address);
-        System.out.println(getName() + " Bind success " + serverChannel.address);
-        serverSocket.listen(10);
-        System.out.println(getName() + " Listening on " + serverChannel.address);
-
         schedule(() -> {
-            serverChannel.sq = sq;
-            serverChannel.reactor = IOUringReactor.this;
-            serverChannel.serverSocket = serverSocket;
-            completionListeners.put(serverSocket.intValue(), serverChannel);
-            serverChannel.sq_addAccept();
+            serverChannel.configure(this);
+            serverChannel.accept();
         });
     }
 
@@ -149,23 +136,18 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
 
             flushDirtyChannels();
 
-            if (!cq.hasCompletions()) {
-                if (spin || moreWork) {
-                    sq.submit();
-                } else {
-                    wakeupNeeded.set(true);
-                    if (publicRunQueue.isEmpty()) {
-                        sq.submitAndWait();
-                    } else {
-                        sq.submit();
-                    }
-                    wakeupNeeded.set(false);
-                }
+            if (cq.hasCompletions()) {
+                cq.process(this);
+            } else if (spin || moreWork) {
+                sq.submit();
             } else {
-                int processed = cq.process(this);
-                if (processed > 0) {
-                    //     System.out.println(getName() + " processed " + processed);
+                wakeupNeeded.set(true);
+                if (publicRunQueue.isEmpty()) {
+                    sq.submitAndWait();
+                } else {
+                    sq.submit();
                 }
+                wakeupNeeded.set(false);
             }
         }
     }

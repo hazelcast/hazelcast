@@ -1,6 +1,7 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.engine.SocketConfig;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,6 +23,23 @@ public class IOUringServerChannel implements CompletionListener {
         sq.addAccept(serverSocket.intValue(),
                 acceptMemory.memoryAddress,
                 acceptMemory.lengthMemoryAddress, (short) 0);
+    }
+
+    public void configure(IOUringReactor reactor) throws IOException {
+        this.reactor = reactor;
+        this.sq = reactor.sq;
+
+        serverSocket = LinuxSocket.newSocketStream(false);
+        serverSocket.setBlocking();
+        serverSocket.setReuseAddress(true);
+        serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+        System.out.println(reactor + " serverSocket.fd:" + serverSocket.intValue());
+
+        serverSocket.bind(address);
+        System.out.println(reactor.getName() + " Bind success " + address);
+        serverSocket.listen(10);
+        System.out.println(reactor.getName() + " Listening on " + address);
+        reactor.completionListeners.put(serverSocket.intValue(), this);
     }
 
     @Override
@@ -48,5 +66,9 @@ public class IOUringServerChannel implements CompletionListener {
                 throw new RuntimeException();
             }
         }
+    }
+
+    public void accept() {
+        sq_addAccept();
     }
 }

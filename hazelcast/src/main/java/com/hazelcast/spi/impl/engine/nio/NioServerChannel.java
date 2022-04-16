@@ -11,15 +11,35 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
 
-public class NioServerChannel implements NioSelectionListener {
+import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
-    public NioReactor reactor;
+public final class NioServerChannel implements NioSelectedKeyListener {
+
     public SocketConfig socketConfig;
     public ServerSocketChannel serverSocketChannel;
-    public Selector selector;
-    public ILogger logger;
     public Supplier<NioChannel> channelSupplier;
     public InetSocketAddress address;
+
+    private Selector selector;
+    private ILogger logger;
+    private NioReactor reactor;
+
+    public void configure(NioReactor reactor) throws IOException {
+        this.reactor = reactor;
+        this.selector = reactor.selector;
+        this.logger = reactor.logger;
+        this.serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.setOption(SO_RCVBUF, socketConfig.receiveBufferSize);
+        System.out.println(reactor.getName() + " Binding to " + address);
+        serverSocketChannel.bind(address);
+        serverSocketChannel.configureBlocking(false);
+    }
+
+    public void accept() throws Exception {
+        serverSocketChannel.register(selector, OP_ACCEPT, this);
+        System.out.println(reactor.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+    }
 
     @Override
     public void handle(SelectionKey key) {

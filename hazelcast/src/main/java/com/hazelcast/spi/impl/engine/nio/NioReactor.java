@@ -10,15 +10,11 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static java.net.StandardSocketOptions.SO_RCVBUF;
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 public final class NioReactor extends Reactor {
     final Selector selector;
@@ -68,36 +64,22 @@ public final class NioReactor extends Reactor {
                     SelectionKey key = it.next();
                     it.remove();
 
-                    NioSelectionListener listener = (NioSelectionListener)key.attachment();
-                    listener.handle(key);
+                    ((NioSelectedKeyListener) key.attachment()).handle(key);
                 }
             }
         }
     }
 
     public void accept(NioServerChannel serverChannel) throws IOException {
-        serverChannel.reactor = this;
-        serverChannel.selector = selector;
-        serverChannel.logger = logger;
-
-        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-        serverSocketChannel.setOption(SO_RCVBUF, serverChannel.socketConfig.receiveBufferSize);
-        System.out.println(getName() + " Binding to " + serverChannel.address);
-        serverSocketChannel.bind(serverChannel.address);
-        serverSocketChannel.configureBlocking(false);
-        schedule(() -> {
-            SelectionKey key = serverSocketChannel.register(selector, OP_ACCEPT);
-            System.out.println(getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
-            serverChannel.serverSocketChannel = serverSocketChannel;
-            key.attach(serverChannel);
-        });
+        serverChannel.configure(this);
+        schedule(serverChannel::accept);
     }
 
     @Override
     public Future<Channel> connect(Channel c, SocketAddress address) {
         NioChannel channel = (NioChannel) c;
 
-        CompletableFuture<Channel> future = new CompletableFuture();
+        CompletableFuture<Channel> future = new CompletableFuture<>();
         try {
 
             System.out.println("ConnectRequest address:" + address);

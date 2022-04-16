@@ -21,7 +21,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
 // todo: add padding around Nio channel
-public abstract class NioChannel extends Channel implements NioSelectionListener{
+public abstract class NioChannel extends Channel implements NioSelectedKeyListener {
 
     // immutable state
     protected SocketChannel socketChannel;
@@ -143,9 +143,7 @@ public abstract class NioChannel extends Channel implements NioSelectionListener
         }
     }
 
-    public abstract void handleRead(ByteBuffer receiveBuffer);
-
-    @Override
+     @Override
     public void handle(SelectionKey key) {
         if (key.isValid() && key.isReadable()) {
             handleRead();
@@ -156,7 +154,7 @@ public abstract class NioChannel extends Channel implements NioSelectionListener
         }
     }
 
-    public void handleRead() {
+    public final void handleRead() {
         try {
             readEvents.inc();
             int read = socketChannel.read(receiveBuffer);
@@ -178,8 +176,10 @@ public abstract class NioChannel extends Channel implements NioSelectionListener
         }
     }
 
+    public abstract void handleRead(ByteBuffer receiveBuffer);
+
     @Override
-    public void handleWrite() {
+    public final void handleWrite() {
         try {
             if (flushThread.get() == null) {
                 throw new RuntimeException("Channel is not in flushed state");
@@ -213,5 +213,4 @@ public abstract class NioChannel extends Channel implements NioSelectionListener
         closeResource(socketChannel);
         reactor.removeChannel(this);
     }
-
 }
