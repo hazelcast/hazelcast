@@ -27,6 +27,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     public final ILogger logger;
     public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
 
+    public final ReactorQueue reactorQueue = new ReactorQueue(4096);
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
 
@@ -68,25 +69,27 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected abstract void eventLoop() throws Exception;
 
     public void schedule(ReactorTask task) {
-        publicRunQueue.add(task);
-        wakeup();
+        if (reactorQueue.addAndMarkedBlocked(task)) {
+            wakeup();
+        }
     }
 
     public void schedule(Collection<Frame> requests) {
-        publicRunQueue.addAll(requests);
-        wakeup();
+        if (reactorQueue.addAndMarkedBlocked(requests)) {
+            wakeup();
+        }
     }
 
     public void schedule(Frame request) {
-        publicRunQueue.add(request);
-        wakeup();
+        if (reactorQueue.addAndMarkedBlocked(request)) {
+            wakeup();
+        }
     }
 
     public void schedule(Channel channel) {
         if (Thread.currentThread() == this) {
             dirtyChannels.offer(channel);
-        } else {
-            publicRunQueue.add(channel);
+        } else if (reactorQueue.addAndMarkedBlocked(channel)) {
             wakeup();
         }
     }
@@ -118,10 +121,12 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected void runTasks() {
         for (; ; ) {
-            Object task = publicRunQueue.poll();
+            Object task = reactorQueue.poll();
             if (task == null) {
                 break;
             }
+
+            //System.out.println("Task:"+task);
 
             if (task instanceof Channel) {
                 ((Channel) task).handleWrite();

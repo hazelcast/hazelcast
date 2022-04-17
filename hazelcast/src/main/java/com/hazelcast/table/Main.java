@@ -7,7 +7,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+        //HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Table table = node1.getTable("piranaha");
 
@@ -21,24 +21,26 @@ public class Main {
 //            System.out.println("k="+k);
 //            System.out.println("========================================================================");
 
-            if (k % 100000 == 0) {
+            if (k % 100 == 0) {
                 System.out.println("at k:" + k);
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
-            Pipeline pipeline = table.newPipeline();
-            for (int l = 0; l < 10; l++) {
-                pipeline.noop(0);
-            }
-            pipeline.execute();
-            pipeline.await();
+//            Pipeline pipeline = table.newPipeline();
+//            for (int l = 0; l < 10; l++) {
+//                pipeline.noop(0);
+//            }
+//            pipeline.execute();
+//            pipeline.await();
 
             //table.upsert(item);
-            //table.concurrentNoop(1);
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+            table.concurrentNoop(1);
+
 
         }
 

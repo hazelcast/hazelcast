@@ -29,6 +29,8 @@ import io.netty.channel.epoll.EpollServerChannel;
 import io.netty.incubator.channel.uring.IOUringChannel;
 import io.netty.incubator.channel.uring.IOUringReactor;
 import io.netty.incubator.channel.uring.IOUringServerChannel;
+import org.jctools.queues.MpscArrayQueue;
+import org.jctools.queues.MpscBlockingConsumerArrayQueue;
 import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
@@ -88,6 +90,7 @@ public class RequestService {
     private final boolean poolRemoteResponses;
     private final boolean writeThrough;
     private final int responseThreadCount;
+    private final boolean responseThreadSpin;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
@@ -102,6 +105,7 @@ public class RequestService {
         this.logger = nodeEngine.getLogger(RequestService.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.responseThreadCount = Integer.parseInt(java.lang.System.getProperty("reactor.responsethread.count", "1"));
+        this.responseThreadSpin = Boolean.parseBoolean(java.lang.System.getProperty("reactor.responsethread.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(java.lang.System.getProperty("reactor.write-through", "false"));
         this.poolRequests = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-requests", "true"));
         this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
@@ -492,14 +496,22 @@ public class RequestService {
 
         public ResponseThread() {
             super("ResponseThread");
-            this.queue = new MPSCQueue<>(this, null);
+            this.queue = new MPSCQueue<Frame>(this, null);
         }
 
         @Override
         public void run() {
             try {
                 while (!shuttingdown) {
-                    Frame frame = queue.take();
+                    Frame frame;
+                    if (responseThreadSpin) {
+                        do {
+                            frame = queue.poll();
+                        } while (frame == null);
+                    } else {
+                        frame = queue.take();
+                    }
+
                     do {
                         Frame next = frame.next;
                         frame.next = null;
@@ -508,7 +520,7 @@ public class RequestService {
                     } while (frame != null);
                 }
             } catch (InterruptedException e) {
-                // ignore
+                System.out.println("ResponseThread stopping due to interrupt");
             } catch (Exception e) {
                 e.printStackTrace();
             }
