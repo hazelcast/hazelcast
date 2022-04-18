@@ -139,7 +139,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
             return false;
         }
-        
+
         // update wm state
         offer(watermark);
 

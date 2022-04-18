@@ -1,0 +1,42 @@
+{-inf, +inf, +inf}, {+inf, -inf, -inf}, {+inf, -inf, -inf}
+
+in:  l{o.time=102, d.time=101}
+-> leftBuffer: [l{o.time=102, d.time=101}]
+
+in:  l{o.time=102, d.time=103}
+-> leftBuffer: [l{o.time=102, d.time=101}, l{o.time=102, d.time=103}]
+
+in:  wm0(103)
+{103, +inf, +inf}, {+inf, -inf, -inf}, {+inf, -inf, -inf}
+# 103 is the new minimum for wm0, but we can't emit it now as it would render items in
+  leftBuffer late. We also can't remove them from the buffer, as they're not late due
+  their d.time. We can emit wm0(102) as that will not render any items in buffers late
+
+out: wm0(102)
+
+in:  r{r.time=99}
+
+out: joined{o.time=102, d.time=101, r.time=99}
+
+-> rightBuffer: [r{r.time=99}]
+# not emitting joined{o.time=102, d.time=103, r.time=99}, as the join condition is false,
+  even though we have these left and right rows in the buffers
+
+in:  wm1(102)
+{103, +inf, +inf}, {+inf, 102, -inf}, {+inf, 101, -inf}
+
+in:  wm2(110)
+{103, +inf, +inf}, {+inf, 102, 106}, {+inf, 101, 110}
+# New minimum in key=1 is 102 and in key=2 is 101.
+# Now we remove anything that is late from buffers according to all their watermarked timestamps
+
+-> leftBuffer: [l{o.time=102, d.time=103}]
+-> rightBuffer: []
+
+in:  l{o.time=103, d.time=102}
+# this wouldn't join with the removed r{r.time=99}, not even with r{r.time=100}
+in:  r{r.time=110}
+# this wouldn't join with the removed l{o.time=102, d.time=101}
+
+# To prove that the example is correct, now there must not be anything that the processor
+# can possibly receive, that would join with the rows that we removed from the buffers.
