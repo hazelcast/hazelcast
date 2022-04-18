@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -60,6 +61,9 @@ public class KvMetadataResolversTest {
     @Mock
     private InternalSerializationService ss;
 
+    @Mock
+    private TypesStorage ts;
+
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -95,9 +99,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("__key", QueryDataType.INT)));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("this", QueryDataType.VARCHAR)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -114,12 +118,12 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(
                         field("__key", QueryDataType.INT, "__key.name"),
                         field("keyField", QueryDataType.INT, "__key.__keyField")
                 ));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(
                         field("this", QueryDataType.VARCHAR, "this.name"),
                         field("thisField", QueryDataType.VARCHAR, "this.thisField")
@@ -139,9 +143,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("field", QueryDataType.INT, "__key.field")));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("field", QueryDataType.VARCHAR, "this.field")));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -155,9 +159,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.empty());
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("this", QueryDataType.INT)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -170,9 +174,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.of(field("__key", QueryDataType.INT)));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.empty());
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -185,9 +189,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss, ts))
                 .willReturn(Stream.empty());
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss, ts))
                 .willReturn(Stream.empty());
 
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine))
@@ -211,10 +215,10 @@ public class KvMetadataResolversTest {
         Map<String, String> options = ImmutableMap.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT
         );
-        given(resolver.resolveMetadata(key, emptyList(), options, ss)).willReturn(mock(KvMetadata.class));
+        given(resolver.resolveMetadata(key, emptyList(), options, ss, ts)).willReturn(mock(KvMetadata.class));
 
         // TODO: fix
-        KvMetadata metadata = resolvers.resolveMetadata(key, emptyList(), options, ss);
+        KvMetadata metadata = resolvers.resolveMetadata(key, emptyList(), options, ss, ts);
 
         assertThat(metadata).isNotNull();
     }
@@ -225,8 +229,7 @@ public class KvMetadataResolversTest {
             "false"
     })
     public void when_formatIsMissingInOptionsWhileResolvingMetadata_then_throws(boolean key) {
-        // TODO fix
-        assertThatThrownBy(() -> resolvers.resolveMetadata(key, emptyList(), emptyMap(), ss))
+        assertThatThrownBy(() -> resolvers.resolveMetadata(key, emptyList(), emptyMap(), ss, ts))
                 .isInstanceOf(QueryException.class)
                 .hasMessageMatching("Missing '(key|value)Format' option");
     }

@@ -51,6 +51,7 @@ public class MetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
+                null,
                 null
         );
 
@@ -67,6 +68,7 @@ public class MetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, "extField")),
                 emptyMap(),
+                null,
                 null);
         assertThat(metadata.getFields()).containsExactly(
                 key
@@ -92,6 +94,7 @@ public class MetadataJsonResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 emptyMap(),
+                null,
                 null
         )).isInstanceOf(QueryException.class)
           .hasMessageMatching("Duplicate external name: (__key|this).field");
@@ -107,6 +110,7 @@ public class MetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
+                null,
                 null
         );
 

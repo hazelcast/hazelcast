@@ -38,6 +38,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -132,10 +133,21 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> resolvedFields
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        // TODO: types storage
+        TypesStorage typesStorage = new TypesStorage(nodeEngine);
 
-        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(true, resolvedFields, options, ss);
-        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(false, resolvedFields, options, ss);
+        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                true,
+                resolvedFields,
+                options, ss,
+                typesStorage
+        );
+        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                false,
+                resolvedFields,
+                options,
+                ss,
+                typesStorage
+        );
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 

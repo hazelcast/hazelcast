@@ -21,6 +21,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldType;
@@ -70,7 +71,8 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
@@ -165,7 +167,8 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
         ClassDefinition clazz = resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);

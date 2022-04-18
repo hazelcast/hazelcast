@@ -42,44 +42,22 @@ public interface KvMetadataResolver {
 
     Stream<String> supportedFormats();
 
-    // TODO: change implementations
-    default Stream<MappingField> resolveAndValidateFields(
-            boolean isKey,
-            List<MappingField> userFields,
-            Map<String, String> options,
-            InternalSerializationService serializationService
-    ) {
-        return resolveAndValidateFields(isKey, userFields, options, serializationService, null);
-    }
-
-    default KvMetadata resolveMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            Map<String, String> options,
-            InternalSerializationService serializationService
-    ) {
-        return resolveMetadata(isKey, resolvedFields, options, serializationService, null);
-    }
-
-    default Stream<MappingField> resolveAndValidateFields(
+    Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
             InternalSerializationService serializationService,
+            // TODO: TS is a part of the type system, therefore it should be wired in every test most likely
             TypesStorage typesStorage
-    ) {
-        return resolveAndValidateFields(isKey, userFields, options, serializationService);
-    }
+    );
 
-    default KvMetadata resolveMetadata(
+    KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
             InternalSerializationService serializationService,
             TypesStorage typesStorage
-    ) {
-        return resolveMetadata(isKey, resolvedFields, options, serializationService);
-    }
+    );
 
     static Map<QueryPath, MappingField> extractFields(List<MappingField> fields, boolean isKey) {
         Map<QueryPath, MappingField> fieldsByPath = new LinkedHashMap<>();

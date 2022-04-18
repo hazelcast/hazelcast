@@ -113,7 +113,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                                        final Map<String, QueryDataType> discovered,
                                        final TablesStorage tablesStorage
     ) {
-        discovered.putIfAbsent(current.getName(), new QueryDataType(current.getName()));
+        discovered.putIfAbsent(current.getName(), new QueryDataType(current.getName(), current.getJavaClassName()));
 
         for (int i = 0; i < current.getFields().size(); i++) {
             final Type.TypeField field = current.getFields().get(i);
@@ -129,6 +129,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     private void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
         for (final QueryDataType queryDataType : types.values()) {
             final Type type = tablesStorage.getType(queryDataType.getTypeName());
+            queryDataType.setTypeClassName(type.getJavaClassName());
             for (int i = 0; i < type.getFields().size(); i++) {
                 final Type.TypeField field = type.getFields().get(i);
                 if (field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {

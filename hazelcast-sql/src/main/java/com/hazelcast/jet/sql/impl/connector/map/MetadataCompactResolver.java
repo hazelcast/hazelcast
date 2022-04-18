@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -62,7 +63,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Compact format");
@@ -95,7 +97,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 

@@ -19,8 +19,6 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
-import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
@@ -40,15 +38,13 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
-        // TODO: resolve type in the constructor?
-        final Type type = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
         return value -> {
-            this.object = convertRowToTargetType(value, type);
+            this.object = convertRowToTargetType(value, queryDataType);
         };
     }
 
-    private Object convertRowToTargetType(final Object value, final Type type) {
-        final Class<?> targetClass = ReflectionUtils.loadClass(type.getJavaClassName());
+    private Object convertRowToTargetType(final Object value, final QueryDataType type) {
+        final Class<?> targetClass = ReflectionUtils.loadClass(type.getTypeClassName());
         if (value.getClass().isAssignableFrom(targetClass)) {
             object = value;
             return value;
@@ -66,14 +62,13 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
         );
 
         for (int i = 0; i < type.getFields().size(); i++) {
-            final Type.TypeField typeField = type.getFields().get(i);
+            final QueryDataType.QueryDataTypeField typeField = type.getFields().get(i);
             final Class<?> typeFieldClass = getTypeFieldClass(typeField);
 
             final Method setter = ReflectionUtils
                     .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
             final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
-                    ? convertRowToTargetType(rowValue.getValues().get(i),
-                    TypeRegistry.INSTANCE.getTypeByName(typeField.getQueryDataType().getTypeName()))
+                    ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
                     : rowValue.getValues().get(i);
 
             if (setter != null) {
@@ -100,14 +95,10 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
         return result;
     }
 
-    private Class<?> getTypeFieldClass(final Type.TypeField typeField) {
-        final QueryDataType queryDataType = typeField.getQueryDataType();
+    private Class<?> getTypeFieldClass(final QueryDataType.QueryDataTypeField typeField) {
+        final QueryDataType queryDataType = typeField.getDataType();
         if (queryDataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
-            final Type fieldType = TypeRegistry.INSTANCE.getTypeByName(queryDataType.getTypeName());
-            if (fieldType == null) {
-                throw QueryException.error("Type not found for field " + typeField.getName());
-            }
-            return ReflectionUtils.loadClass(fieldType.getJavaClassName());
+            return ReflectionUtils.loadClass(queryDataType.getTypeClassName());
         } else {
             return queryDataType.getConverter().getValueClass();
         }

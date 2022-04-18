@@ -48,7 +48,7 @@ public class TypesStorage extends TablesStorage {
         final Type type = new Type();
         type.setName(name);
         type.setJavaClassName(typeClass.getName());
-        type.setQueryDataType(new QueryDataType(name));
+        type.setQueryDataType(new QueryDataType(name, typeClass.getName()));
 
         if (typeClass.isAssignableFrom(GenericRecord.class)) {
             type.setFields(getFieldsFromGenericRecord(typeClass));

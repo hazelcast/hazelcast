@@ -132,10 +132,11 @@ public class KvMetadataResolvers {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
-        return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
+        return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService, typesStorage));
     }
 
     private KvMetadataResolver findMetadataResolver(Map<String, String> options, boolean isKey) {

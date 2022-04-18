@@ -50,6 +50,7 @@ public class KvMetadataAvroResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
+                null,
                 null
         );
 
@@ -66,6 +67,7 @@ public class KvMetadataAvroResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, "extField")),
                 emptyMap(),
+                null,
                 null
         );
         assertThat(metadata.getFields()).containsExactly(
@@ -92,6 +94,7 @@ public class KvMetadataAvroResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 emptyMap(),
+                null,
                 null
         )).isInstanceOf(QueryException.class)
           .hasMessageMatching("Duplicate external name: (__key|this).field");
@@ -123,6 +126,7 @@ public class KvMetadataAvroResolverTest {
                         field("object", QueryDataType.OBJECT, prefix + ".object")
                 ),
                 emptyMap(),
+                null,
                 null
         );
 

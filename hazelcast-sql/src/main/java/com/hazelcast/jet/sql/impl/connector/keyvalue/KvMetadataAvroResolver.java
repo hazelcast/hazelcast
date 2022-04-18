@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -56,7 +57,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Avro format");
@@ -77,7 +79,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 

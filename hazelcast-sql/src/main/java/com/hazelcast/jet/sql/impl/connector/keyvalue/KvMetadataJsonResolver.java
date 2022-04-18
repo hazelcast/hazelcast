@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.extract.JsonQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.JsonUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -53,7 +54,8 @@ public final class KvMetadataJsonResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for JSON format");
@@ -74,7 +76,8 @@ public final class KvMetadataJsonResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService
+            InternalSerializationService serializationService,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 

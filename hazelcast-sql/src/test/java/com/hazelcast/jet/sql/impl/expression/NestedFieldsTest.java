@@ -21,10 +21,8 @@ import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.schema.type.TypeRegistry;
 import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,11 +39,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
         initialize(1, config);
-    }
-
-    @Before
-    public void init() {
-        TypeRegistry.INSTANCE.clear();
     }
 
     @Test
@@ -93,11 +86,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     public void test_fullInsert() {
         initDefault();
 
-        // TODO: remove
-        TypeRegistry.INSTANCE.registerType("UserType", User.class);
-        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
-        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
-
         final Office office = new Office(5L, "office2");
         final Organization organization = new Organization(4L, "organization2", office);
         final User user = new User(2L, "user1", organization);
@@ -113,10 +101,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     @Test
     public void test_update() {
         initDefault();
-        // TODO: remove
-        TypeRegistry.INSTANCE.registerType("UserType", User.class);
-        TypeRegistry.INSTANCE.registerType("OfficeType", Office.class);
-        TypeRegistry.INSTANCE.registerType("OrganizationType", Organization.class);
 
         final Office office = new Office(3L, "office1");
         final Organization organization = new Organization(2L, "organization1", office);
@@ -190,10 +174,6 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_deepUpdate() {
-        // TODO: remove
-        TypeRegistry.INSTANCE.registerType("AType", A.class);
-        TypeRegistry.INSTANCE.registerType("BType", B.class);
-        TypeRegistry.INSTANCE.registerType("CType", C.class);
 
         typesStorage().registerType("AType", A.class);
         typesStorage().registerType("BType", B.class);

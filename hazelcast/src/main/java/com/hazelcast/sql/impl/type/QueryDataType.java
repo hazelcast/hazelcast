@@ -103,7 +103,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     private Converter converter;
     private String typeName = "";
-    private List<QueryDataTypeField> fields;
+    private List<QueryDataTypeField> fields = new ArrayList<>();
+    private String typeClassName = "";
 
     public QueryDataType() {
         // No-op.
@@ -112,7 +113,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public QueryDataType(String typeName) {
         this.converter = HazelcastObjectConverter.INSTANCE;
         this.typeName = typeName;
-        this.fields = new ArrayList<>();
+    }
+
+    public QueryDataType(String typeName, String typeClassName) {
+        this.converter = HazelcastObjectConverter.INSTANCE;
+        this.typeName = typeName;
+        this.typeClassName = typeClassName;
     }
 
     QueryDataType(Converter converter) {
@@ -129,6 +135,14 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public void setFields(final List<QueryDataTypeField> fields) {
         this.fields = fields;
+    }
+
+    public String getTypeClassName() {
+        return typeClassName;
+    }
+
+    public void setTypeClassName(final String typeClassName) {
+        this.typeClassName = typeClassName;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -210,14 +224,17 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         collectNestedTypes(this, nestedTypes);
 
         out.writeString(typeName);
+        out.writeString(typeClassName);
         out.writeInt(nestedTypes.size());
         for (final QueryDataType nestedType : nestedTypes.values()) {
             out.writeString(nestedType.typeName);
+            out.writeString(nestedType.typeClassName);
             out.writeInt(nestedType.getFields().size());
             for (final QueryDataTypeField field : nestedType.getFields()) {
                 out.writeString(field.name);
                 out.writeInt(field.dataType.converter.getId());
                 out.writeString(field.dataType.typeName);
+                out.writeString(field.dataType.typeClassName);
             }
         }
     }
@@ -242,6 +259,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         }
 
         this.typeName = in.readString();
+        this.typeClassName = in.readString();
         this.fields = new ArrayList<>();
 
         final int typeMapSize = in.readInt();
@@ -250,17 +268,29 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         for (int i = 0; i < typeMapSize; i++) {
             final String currentTypeName = in.readString();
+            final String currentTypeClassName = in.readString();
             final int fieldsSize = in.readInt();
-            final QueryDataType currentType = nestedTypes.computeIfAbsent(currentTypeName, QueryDataType::new);
+            final QueryDataType currentType = nestedTypes.computeIfAbsent(currentTypeName, s -> {
+                // TODO: simplify?
+                final QueryDataType fieldType = new QueryDataType(currentTypeName);
+                fieldType.setTypeClassName(currentTypeClassName);
+                return fieldType;
+            });
 
             for (int j = 0; j < fieldsSize; j++) {
                 final String fieldName = in.readString();
                 final int fieldConverterId = in.readInt();
                 final String fieldTypeName = in.readString();
+                final String fieldTypeClassName = in.readString();
 
                 if (fieldConverterId == QueryDataType.HZ_OBJECT.getConverter().getId()) {
                     currentType.getFields().add(new QueryDataTypeField(fieldName,
-                            nestedTypes.computeIfAbsent(fieldTypeName, QueryDataType::new)));
+                            nestedTypes.computeIfAbsent(fieldTypeName, s -> {
+                                // TODO: simplify?
+                                final QueryDataType fieldType = new QueryDataType(fieldTypeName);
+                                fieldType.setTypeClassName(fieldTypeClassName);
+                                return fieldType;
+                            })));
                 } else {
                     final QueryDataType fieldDataType = QueryDataTypeUtils
                             .resolveTypeForTypeFamily(Converters.getConverter(fieldConverterId).getTypeFamily());
