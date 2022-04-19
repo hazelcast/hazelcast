@@ -104,4 +104,9 @@ public class DiscoveryJoiner
         }
         return discoveryNode.getPublicAddress();
     }
+
+    @Override
+    public String getType() {
+        return "discovery";
+    }
 }

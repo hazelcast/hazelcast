@@ -23,6 +23,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
@@ -795,7 +796,10 @@ public class MembershipManager {
                 // sync calls
                 node.getPartitionService().memberAdded(newMember);
                 node.getNodeExtension().onMemberListChange();
-
+                Joiner joiner = node.getJoiner();
+                if (node.getJoiner().getType().equals("tcp-ip")) {
+                    ((TcpIpJoiner) joiner).onMemberAdded(newMember);
+                }
                 // async events
                 eventMembers.add(newMember);
                 if (sortMembers) {

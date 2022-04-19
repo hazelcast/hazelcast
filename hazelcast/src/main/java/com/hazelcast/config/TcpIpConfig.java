@@ -17,8 +17,10 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -33,13 +35,12 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 public class TcpIpConfig {
 
     private static final int CONNECTION_TIMEOUT_SEC = 5;
+    // split member texts defined in tcp-ip configuration by comma(,) semicolon(;) space( ).
+    private static final Pattern MEMBER_TEXT_SPLIT_PATTERN = Pattern.compile("[,; ]+");
+    private final List<String> members = new CopyOnWriteArrayList<>();
 
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT_SEC;
-
     private boolean enabled;
-
-    private List<String> members = new ArrayList<String>();
-
     private String requiredMember;
 
     /**
@@ -99,9 +100,6 @@ public class TcpIpConfig {
      * @see #setMembers(java.util.List)
      */
     public List<String> getMembers() {
-        if (members == null) {
-            members = new ArrayList<String>();
-        }
         return members;
     }
 
@@ -110,8 +108,8 @@ public class TcpIpConfig {
      * <p>
      * If members are empty, calling this method will have the same effect as calling {@link #clear()}.
      * <p>
-     * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
-     * are going to be added.
+     * A member can be a comma(,) semicolon(;) space( ) separated string, e.g. "10.11.12.1,10.11.12.2"
+     * which indicates multiple members are going to be added.
      *
      * @param members the members to set
      * @return the updated TcpIpConfig
@@ -121,10 +119,13 @@ public class TcpIpConfig {
         isNotNull(members, "members");
 
         this.members.clear();
-
+        List<String> tempList = new ArrayList<>();
         for (String member : members) {
-            addMember(member);
+            // TODO [ufuk]: consider this check throwing exception after adding dynamic update support
+            String memberText = checkHasText(member, "member must contain text");
+            tempList.addAll(Arrays.asList(MEMBER_TEXT_SPLIT_PATTERN.split(memberText.trim())));
         }
+        this.members.addAll(tempList);
         return this;
     }
 
@@ -134,8 +135,8 @@ public class TcpIpConfig {
      * Each HazelcastInstance will try to connect to at least one of the members, to find all other members,
      * and create a cluster.
      * <p>
-     * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
-     * are going to be added.
+     * A member can be a comma(,) semicolon(;) space( ) separated string, e.g. "10.11.12.1,10.11.12.2"
+     * which indicates multiple members are going to be added.
      *
      * @param member the member to add
      * @return the updated configuration
@@ -143,14 +144,10 @@ public class TcpIpConfig {
      * @see #getMembers()
      */
     public TcpIpConfig addMember(String member) {
+        // TODO [ufuk]: consider this check throwing exception after adding dynamic update support
         String memberText = checkHasText(member, "member must contain text");
-
-        StringTokenizer tokenizer = new StringTokenizer(memberText, ",");
-        while (tokenizer.hasMoreTokens()) {
-            String s = tokenizer.nextToken();
-            this.members.add(s.trim());
-        }
-
+        List<String> splitMembers = Arrays.asList(MEMBER_TEXT_SPLIT_PATTERN.split(memberText.trim()));
+        members.addAll(splitMembers);
         return this;
     }
 
@@ -198,7 +195,7 @@ public class TcpIpConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof TcpIpConfig)) {
+        if (!(o instanceof TcpIpConfig)) {
             return false;
         }
 
@@ -210,7 +207,7 @@ public class TcpIpConfig {
         if (enabled != that.enabled) {
             return false;
         }
-        if (members != null ? !members.equals(that.members) : that.members != null) {
+        if (!members.equals(that.members)) {
             return false;
         }
         return requiredMember != null ? requiredMember.equals(that.requiredMember) : that.requiredMember == null;
@@ -220,7 +217,7 @@ public class TcpIpConfig {
     public final int hashCode() {
         int result = connectionTimeoutSeconds;
         result = 31 * result + (enabled ? 1 : 0);
-        result = 31 * result + (members != null ? members.hashCode() : 0);
+        result = 31 * result + members.hashCode();
         result = 31 * result + (requiredMember != null ? requiredMember.hashCode() : 0);
         return result;
     }

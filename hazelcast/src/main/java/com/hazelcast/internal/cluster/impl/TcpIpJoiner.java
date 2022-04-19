@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -54,6 +55,7 @@ import static com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static java.util.Collections.newSetFromMap;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
@@ -63,6 +65,12 @@ public class TcpIpJoiner extends AbstractJoiner {
     private final int maxPortTryCount;
     private volatile boolean claimingMastership;
     private final JoinConfig joinConfig;
+
+    /**
+     * We register the member addresses to this map which are known with the
+     * member list update
+     */
+    private final Set<Address> knownMemberAddresses = newSetFromMap(new ConcurrentHashMap<>());
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -393,7 +401,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
             }
         }
-
+        possibleAddresses.addAll(knownMemberAddresses);
         possibleAddresses.remove(node.getThisAddress());
         return possibleAddresses;
     }
@@ -434,22 +442,17 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     protected Collection<String> getMembers() {
-        return getConfigurationMembers(config);
-    }
-
-    public static Collection<String> getConfigurationMembers(Config config) {
-        return getConfigurationMembers(getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig());
+        return getConfigurationMembers(joinConfig.getTcpIpConfig());
     }
 
     public static Collection<String> getConfigurationMembers(TcpIpConfig tcpIpConfig) {
-        final Collection<String> configMembers = tcpIpConfig.getMembers();
-        final Set<String> possibleMembers = new HashSet<>();
-        for (String member : configMembers) {
-            // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
-            String[] members = member.split("[,; ]");
-            Collections.addAll(possibleMembers, members);
+        return new HashSet<>(tcpIpConfig.getMembers());
+    }
+
+    public void onMemberAdded(Member member) {
+        if (!member.localMember()) {
+            knownMemberAddresses.add(member.getAddress());
         }
-        return possibleMembers;
     }
 
     @Override
