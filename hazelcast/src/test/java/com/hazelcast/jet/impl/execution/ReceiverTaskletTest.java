@@ -51,7 +51,7 @@ public class ReceiverTaskletTest {
         collector = new MockOutboundCollector(2);
         serService = new DefaultSerializationServiceBuilder().build();
         t = new ReceiverTasklet(collector, serService, 3, 100, mock(LoggingService.class),
-                new Address(), 0, "", null, "");
+                new Address(), 0, "", null, "", "");
         t.initIncomingQueue(queue);
     }
 

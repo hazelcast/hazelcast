@@ -16,8 +16,18 @@
 
 package com.hazelcast.internal.util.tracing;
 
-public interface TracingContext extends AutoCloseable {
-    void setCorrelationId(String correlationId);
-    void clearCorrelationId();
-    String getCorrelationId();
+import java.io.Closeable;
+
+/**
+ * This class is an abstraction over passing context correlation id to all the tools that needs it.
+ * The default implementation that will be loaded in runtime is {@link NullObjectTracingContext}.
+ * All the methods there are empty. This class is an abstract class, not the interface, to exploit
+ * the internals of JIT class hierarchy analysis (CHA), which created faster compilation for an
+ * abstract class with exactly one implementation. Inlining + CHA + NullObject pattern should
+ * make absolutely no overhead for the following methods.
+ */
+public abstract class TracingContext implements Closeable {
+    public abstract void setCorrelationId(String correlationId);
+    public abstract void clearCorrelationId();
+    public abstract String getCorrelationId();
 }

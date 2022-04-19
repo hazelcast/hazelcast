@@ -28,6 +28,7 @@ import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
@@ -661,7 +662,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
                     memberConnections.get(destAddr),
                     destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
-                    edge.sourceVertex().name(), edge.sourceOrdinal(), jobSerializationService
+                    edge.sourceVertex().name(), edge.sourceOrdinal(), jobSerializationService,
+                    jobConfig.getArgument(JobConfigArguments.KEY_ECID)
             );
             senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
                     .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())
@@ -756,7 +758,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                 edge.getConfig().getReceiveWindowMultiplier(),
                                 getJetConfig().getFlowControlPeriodMs(),
                                 nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
-                                memberConnections.get(addr), jobPrefix);
+                                memberConnections.get(addr), jobPrefix,
+                                jobConfig.getArgument(JobConfigArguments.KEY_ECID));
                         addrToTasklet.put(addr, receiverTasklet);
                         tasklets.add(receiverTasklet);
                     }

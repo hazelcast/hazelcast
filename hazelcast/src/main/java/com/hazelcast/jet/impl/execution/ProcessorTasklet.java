@@ -28,6 +28,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -679,5 +680,10 @@ public class ProcessorTasklet implements Tasklet {
         if (context instanceof ProcCtx) {
             ((ProcCtx) context).metricsContext().provideDynamicMetrics(descriptor, mContext);
         }
+    }
+
+    @Override
+    public String getEcid() {
+        return context.jobConfig().getArgument(JobConfigArguments.KEY_ECID);
     }
 }

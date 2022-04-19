@@ -119,13 +119,15 @@ public class ReceiverTasklet implements Tasklet {
     private int prevAckedSeqCompressed;
     private long prevTimestamp;
 
+    private String ecid;
+
     //                 END FLOW-CONTROL STATE
 
     public ReceiverTasklet(
             OutboundCollector collector, InternalSerializationService serializationService,
             int rwinMultiplier, int flowControlPeriodMs, LoggingService loggingService,
             Address sourceAddress, int ordinal, String destinationVertexName,
-            Connection memberConnection, String jobPrefix
+            Connection memberConnection, String jobPrefix, String ecid
     ) {
         this.collector = collector;
         this.serializationService = serializationService;
@@ -144,6 +146,7 @@ public class ReceiverTasklet implements Tasklet {
                 .toString();
         this.logger = prefixedLogger(loggingService.getLogger(getClass()), prefix);
         this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
+        this.ecid = ecid;
     }
 
     @Override
@@ -341,5 +344,10 @@ public class ReceiverTasklet implements Tasklet {
                 .withTag(MetricTags.ORDINAL, ordinalString);
 
         context.collect(descriptor, this);
+    }
+
+    @Override
+    public String getEcid() {
+        return ecid;
     }
 }

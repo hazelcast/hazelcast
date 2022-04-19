@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class AsyncProfilerTracingContext implements TracingContext {
+public class AsyncProfilerTracingContext extends TracingContext {
     private static final String FILE_LIBASYNC_PROFILER_SO = "/tmp/libasyncProfiler.so";
     private static final String CP_LIBASYNC_PROFILER_SO = "/libasyncProfiler.so";
     private static final String EVENT = "wall";
@@ -23,6 +23,7 @@ public class AsyncProfilerTracingContext implements TracingContext {
         }
         asyncProfiler = AsyncProfiler.getInstance(FILE_LIBASYNC_PROFILER_SO);
         asyncProfiler.execute("start,jfr,event=" + EVENT + ",file=prof.jfr");
+//        asyncProfiler.execute("start,jfr,event=" + EVENT + ",file=prof.jfr,interval=1000000");
     }
 
     @Override
@@ -48,7 +49,8 @@ public class AsyncProfilerTracingContext implements TracingContext {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         asyncProfiler.execute("stop,jfr,event=" + EVENT + ",file=prof.jfr");
+        //        asyncProfiler.execute("stop,jfr,event=" + EVENT + ",file=prof.jfr,interval=1000000");
     }
 }

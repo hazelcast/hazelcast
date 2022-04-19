@@ -48,4 +48,5 @@ public interface Tasklet extends DynamicMetricsProvider {
     default void provideDynamicMetrics(MetricDescriptor tagger, MetricsCollectionContext context) {
     }
 
+    String getEcid();
 }

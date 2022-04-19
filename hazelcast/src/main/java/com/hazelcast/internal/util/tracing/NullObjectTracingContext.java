@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.tracing;
 
-class NullObjectTracingContext implements TracingContext {
+class NullObjectTracingContext extends TracingContext {
     @Override
     public void setCorrelationId(String correlationId) {
     }
@@ -31,6 +31,6 @@ class NullObjectTracingContext implements TracingContext {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 }

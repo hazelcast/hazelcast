@@ -187,4 +187,9 @@ public class StoreSnapshotTasklet implements Tasklet {
         /** Input is done, terminal state. */
         DONE
     }
+
+    @Override
+    public String getEcid() {
+        return null;
+    }
 }

@@ -61,7 +61,6 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_ECID;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -302,9 +301,7 @@ public class TaskletExecutionService {
         public void run() {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
-            Object ecid = t.getProcessorContext() == null ? null :
-                    t.getProcessorContext().jobConfig().getArgument(KEY_ECID);
-            TracingUtils.context().setCorrelationId((String) ecid);
+            TracingUtils.context().setCorrelationId(t.getEcid());
 
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
@@ -398,9 +395,7 @@ public class TaskletExecutionService {
         }
 
         private void runTasklet(TaskletTracker t) {
-            Object ecid = t.tasklet.getProcessorContext() == null ? null :
-                    t.tasklet.getProcessorContext().jobConfig().getArgument(KEY_ECID);
-            TracingUtils.context().setCorrelationId((String) ecid);
+            TracingUtils.context().setCorrelationId(t.tasklet.getEcid());
             long start = 0;
             if (finestLogEnabled) {
                 start = System.nanoTime();

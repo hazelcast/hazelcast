@@ -491,6 +491,11 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         void assertNotDone() {
             assertNotEquals("Tasklet was done", -1, callsBeforeDone);
         }
+
+        @Override
+        public String getEcid() {
+            return null;
+        }
     }
 
     private static class TaskletAssertingThreadLocal implements Tasklet {
@@ -507,6 +512,11 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
             callCount++;
             LockSupport.parkNanos(10_000_000);
             return callCount > 50 ? DONE : MADE_PROGRESS;
+        }
+
+        @Override
+        public String getEcid() {
+            return null;
         }
     }
 }
