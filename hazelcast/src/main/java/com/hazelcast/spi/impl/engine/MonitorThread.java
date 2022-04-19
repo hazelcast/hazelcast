@@ -75,12 +75,12 @@ public final class MonitorThread extends Thread {
 //        long requestsDelta = requests - prevRequests.value;
         //log(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
         //prevRequests.value = requests;
-
-        log("head-block:" + reactor.reactorQueue.head_block
-                + " tail:" + reactor.reactorQueue.tail.get()
-                + " dirtyHead:" + reactor.reactorQueue.dirtyHead.get()
-                + " cachedTail:" + reactor.reactorQueue.cachedTail);
 //
+//        log("head-block:" + reactor.reactorQueue.head_block
+//                + " tail:" + reactor.reactorQueue.tail.get()
+//                + " dirtyHead:" + reactor.reactorQueue.dirtyHead.get()
+//                + " cachedTail:" + reactor.reactorQueue.cachedTail);
+////
     }
 
     private void log(String s) {
@@ -128,17 +128,13 @@ public final class MonitorThread extends Thread {
         if (packetsReadDelta == 0 || true) {
             if (channel instanceof NioChannel) {
                 NioChannel c = (NioChannel) channel;
-                log(channel + " head-block:" + c.reactor.reactorQueue.head_block
-                        + " tail:" + c.reactor.reactorQueue.tail.get()
-                        + " flushed:" + c.flushThread.get());
-//
-//                boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
-//                //if (nioChannel.flushThread.get() == null && hasData) {
-//                log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
-//                        + " ioVector.empty:" + c.ioVector.isEmpty()
-//                        + " flushed:" + c.flushThread.get()
-//                        + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
-//                //}
+                boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
+                //if (nioChannel.flushThread.get() == null && hasData) {
+                log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
+                        + " ioVector.empty:" + c.ioVector.isEmpty()
+                        + " flushed:" + c.flushThread.get()
+                        + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
+                //}
             } else if (channel instanceof IOUringChannel) {
                 IOUringChannel c = (IOUringChannel) channel;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();

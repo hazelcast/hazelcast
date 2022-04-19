@@ -45,11 +45,9 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
 
-
-
-    //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
-
-    protected void configure(NioReactor reactor, SocketChannel socketChannel, SocketConfig socketConfig) throws IOException {
+    protected void configure(NioReactor reactor,
+                             SocketChannel socketChannel,
+                             SocketConfig socketConfig) throws IOException {
         this.reactor = reactor;
         this.selector = reactor.selector;
         this.socketChannel = socketChannel;
@@ -89,6 +87,8 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
             } else if (writeThrough) {
                 handleWrite();
             } else {
+                //key.interestOps(key.interestOps() | OP_WRITE);
+                //reactor.wakeup();
                 reactor.schedule(this);
             }
         }

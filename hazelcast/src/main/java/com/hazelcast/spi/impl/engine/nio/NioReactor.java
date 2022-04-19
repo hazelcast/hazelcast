@@ -29,7 +29,9 @@ public final class NioReactor extends Reactor {
             return;
         }
 
-        selector.wakeup();
+        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
+            selector.wakeup();
+        }
     }
 
     @Override
@@ -43,16 +45,15 @@ public final class NioReactor extends Reactor {
 
             int keyCount;
             if (spin || moreWork) {
-                reactorQueue.commit();
                 keyCount = selector.selectNow();
             } else {
-                if (reactorQueue.commitAndMarkBlocked()) {
-                    //System.out.println("Thread.select dirtySize:"+reactorQueue.dirtySize());
+                wakeupNeeded.set(true);
+                if (publicRunQueue.isEmpty()) {
                     keyCount = selector.select();
-                    reactorQueue.markAwake();
                 } else {
                     keyCount = selector.selectNow();
                 }
+                wakeupNeeded.set(false);
             }
 
             if (keyCount > 0) {
