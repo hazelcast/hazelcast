@@ -7,7 +7,10 @@
 + [Functional Design](#functional-design)
     * [Summary of Functionality](#summary-of-functionality)
 + [Technical Design](#technical-design)
-    + [Technical Design](#watermarks)
+    + [Overall Design](#overall-design)
+    + [JOIN processor design and algorithm description](#join-processor-design-and-algorithm-description)
+    + [Watermarks](#watermarks)
+    + [Memory management](#memory-management)
 + [Testing Criteria](#testing-criteria)
 
 |||
@@ -32,7 +35,7 @@ Hazelcast already supports static to stream joins. This work is intended to intr
 goals are:
 
 - SQL based / Non-Java friendly: easy to use format also for non-Java developers to use stream to stream joins
-- different join types (`INNER` , `LEFT`/`RIGHT`/`FULL` `OUTER` `JOIN`s.
+- different join types (`INNER` , `LEFT`/`RIGHT` `OUTER` `JOIN`s.
 
 It should be possible to efficiently manage state for these joins using watermarks or other mechanism(s).
 
@@ -76,8 +79,6 @@ _This is the technical portion of the design document. Explain the design in suf
 SQL engine should use a specialized Jet processor to perform JOIN operation for two input stream events. JOIN condition
 allows suppose to be time-bounded. Non-time-bounded JOIN condition is not allowed to be used.
 
-#### Overall design
-
 Consider having two streams - __S1__ and __S2__. There is only one payload in both streams event: conditional timestamp
 of that event.
 
@@ -93,68 +94,83 @@ Let's describe all possible scenarios for joining these two streams:
 
 __Table 2__
 
-Let lag time be equal for both inputs. Consider streams have the following input:
-
-| S1          | S2          |
-|-------------|-------------|
-| s1_event(1) | s2_event(1) |
-| s1_wm(2)    | s2_wm(2)    |
-| s1_event(3) | s2_event(3) |
-| s1_wm(4)    | s2_wm(4)    |
-| -           | s2_event(4) |
-| -           | s2_wm(6)    |
-| -           | s2_event(7) |
-| -           | s2_wm(8)    |
-
-__Table 3__
-
-After applying the `CROSS JOIN` operation we expect next output:
-
-| JOIN(S1, S2)               |
-|----------------------------|
-| [s1_event(1), s2_event(1)] |
-| s1_wm(2)`[*]`              |
-| s2_wm(2)`[*]`              |  
-| [s1_event(3), s2_event(3)] |
-| [s1_event(3), s2_event(4)] |
-| s1_wm(4)                   |
-| s2_wm(4)                   |  
-| s2_wm(6)                   |  
-| [NULL, s2_event(7)]`[**]`  |  
-| s2_wm(8)                   |  
-
-__Table 4__
-
 #### JOIN processor design and algorithm description
+
+##### Postpone map definition
+
+To solve a problem with JOIN condition extraction complexity, we want to introduce the _canonical representation_ of
+relations between different input event types. To enlighten the thinking about JOIN condition for the processor, we
+would like to represent the conditions in such format:
+
+```
+inputX.time >= inputY.time - constant
+...
+```
+
+Since we strictly require **time-bounded** JOIN condition, we use mathematical transformations to transform the fresh
+extracted condition to unified form, or, _canonical representation_. We then translate this _canonical representation_
+into a simple data structure called a `postpone map`. For each input event key, we define a complete dependency map :
+
+```
+...
+{inputX.key -> {{inputA.key, constant1}, ..., inputX.key, 0}, ..., {inputZ.key, constant2 }}
+...
+```
+
+Example:
+Consider having query:
+
+```
+SELECT * from input1 i1
+JOIN input3 i2 ON i2.time BETWEEN i1.time - 1 AND i1.time + 4
+```
+
+Extracted conditions:
+
+```
+i2.time >= i1.time - 1
+i1.time >= i2.time - 4
+```
+
+Postpone map:
+
+```
+0 -> [{0, 0}, {1, 1}]
+1 -> [{0, 4}, {1, 0}]
+```
 
 ##### Processor design
 
 Items:
 
-- join condition predicate (`BiPredicateEx<T, S>`)
-- left input stream event timestamp extraction function (`ToLongFunctionEx<T>`)
-- right input stream event timestamp extraction (`ToLongFunctionEx<T>`)
+- join metainformation (`JetJoinInfo`)
+- list of left input stream event timestamp extraction functions (according to watermarks count on left input stream)
+- list of right input stream event timestamp extraction functions (according to watermarks count on left input stream)
+- postpone map
 
 ##### Algorithm
 
-Consider having two input streams __S1__ and __S2__.
+Consider having two input streams __S1__ and __S2__. Each input stream **must** contain at least one watermark with
+defined watermark key. Also, each input stream **may** contain
 
 1. Perform query analysis, detect timestamp column from both input stream schemas
-2. Produce JOIN condition and timestamp extraction functions.
-3. Prepare two buffers : B0 to store input events from ordinal 0 and B1 to store input events from ordinal 1.
-4. Receive event E from the ordinal.
-    1. If received event is watermark:
-        1. If watermark received from ordinal 0 clean all expired events in B0.
-        2. Else, clean all _expired_ events in B1.
-        3. Emit watermark event to the outbox.
+2. Produce JOIN condition, timestamp extraction functions and postpone maps.
+3. Prepare a **watermark state** data structure (`long[][]`) - time limit for each watermark keys relation.
+    1.
+4. Prepare two buffers : `B0` to store input events from ordinal 0 and `B1` to store input events from ordinal 1.
+5. Receive event `E` from the ordinal.
+    1. If received event is watermark with key `key` :
+        1. Offer changes to watermark state: define minimum available time for each join condition written in WM state.
+        2. Try to clean all _expired_ events in related buffer:
+            1. _Expired_ items are all items with watermark timestamp less than value in corresponding watermark state.
+        3. Compute `minTime` as minimum timestamp of items in related buffer to watermark key.
+        4. Emit `minTime` as watermark event with `key` to the outbox.
     2. Else:
         1. Extract timestamp from event E.
         2. If extract attempt was failed - throw an exception.
         3. Store E to the buffer B0, if received from ordinal 0, store to B1 otherwise.
         4. For each event in 'parallel' buffer
-            1. Test the JOIN condition with received timestamps.
-            2. Perform JOIN operation for each event in 'parallel' buffer, perform
-                1. If test was not successful, retry step 4.
+            1. Perform JOIN operation for each event in 'opposite' buffer.
             3. If the join type is `OUTER JOIN`, we should fill empty side (no input events received) with NULL.
             4. Emit joined event.
 
@@ -183,12 +199,6 @@ public final class Watermark implements BroadcastItem {
 _Q: Should we support only timestamps as JOIN condition?_
 **Sasha's proposition: JOIN condition must contain a time boundness. Non-timestamp JOIN condition(s) are allowed as
 optional JOIN condition .**
-
-_Q:How to convert the JOIN condition into deletion rule, if it does not touch timestamp?_
-**Sasha's proposition: Watch below, my proposition is to support non-timestamp JOIN condition as optional.**
-
-_Q: What semantics should we consider for queries with zero lag for both inputs?_
-**Sasha's proposition: We would not have any available events to join with very high probability. Need mates thoughts.**
 
 _Q: Time bounds should be constant or variable size? Example:_
 
