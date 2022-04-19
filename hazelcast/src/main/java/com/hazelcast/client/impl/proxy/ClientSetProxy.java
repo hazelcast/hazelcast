@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
@@ -88,6 +89,11 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     @Override
     public Iterator<E> iterator() {
         return getAll().iterator();
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return getAll().spliterator();
     }
 
     @Override
