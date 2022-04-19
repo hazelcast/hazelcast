@@ -84,7 +84,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
         assertEquals(createMapConfig(mapName), mapConfig);
     }
 
-    private static MapConfig createMapConfig(String mapName) {
+    static MapConfig createMapConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setCacheLocalEntries(true)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
