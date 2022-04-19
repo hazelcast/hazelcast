@@ -97,6 +97,7 @@ import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFO
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 
 public class PlanExecutor {
@@ -390,16 +391,14 @@ public class PlanExecutor {
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
                 .toCompletableFuture()
-                .thenApply(value -> plan.rowProjectorSupplier()
+                .thenApply(value -> value == null ? null : plan.rowProjectorSupplier()
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
         JetSqlRow row = await(future, timeout);
-        return new SqlResultImpl(
-                queryId,
-                new StaticQueryResultProducerImpl(row),
-                plan.rowMetadata(),
-                false
-        );
+        StaticQueryResultProducerImpl resultProducer = row != null
+                ? new StaticQueryResultProducerImpl(row)
+                : new StaticQueryResultProducerImpl(emptyIterator());
+        return new SqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false);
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
