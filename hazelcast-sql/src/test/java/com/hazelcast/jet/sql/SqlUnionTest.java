@@ -239,7 +239,7 @@ public class SqlUnionTest extends SqlTestSupport {
             while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
                 actualRows.add(new Row(iterator.next()));
             }
-            if (actualRows.size() == 3 && expected.size() < 3) {
+            if (actualRows.size() == 7 && expected.size() < 7) {
                 // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
                 // it can happen that one of the late items makes it through. But both will never make it.
                 expected.add(new Row(timestampTz(0L), 4));
