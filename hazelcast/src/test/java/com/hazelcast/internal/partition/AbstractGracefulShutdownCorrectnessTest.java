@@ -62,7 +62,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
 
         shutdownNodes(shutdownNodeCount);
 
-        assertSizeAndData();
+        assertSizeAndDataEventually();
     }
 
     @Test(timeout = 6000 * 10 * 10)
