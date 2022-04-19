@@ -18,18 +18,19 @@ package com.hazelcast.internal.nearcache.impl;
 
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 
 /**
- * Hook to be used by near cache enabled proxy objects.
- *
- * With this hook, you can implement needed logic
- * for truly invalidate/populate local near cache.
+ * Hook to be used by near cache invalidations or by statistics updates.
+ * <p>
+ * For instance, with this hook, you can implement needed
+ * logic for truly invalidate/populate local near cache.
  */
-public interface NearCachingHook<K, V> {
+public interface RemoteCallHook<K, V> {
 
-    NearCachingHook EMPTY_HOOK = new NearCachingHook() {
+    RemoteCallHook EMPTY_HOOK = new RemoteCallHook() {
 
         @Override
         public void beforeRemoteCall(Object key, Data keyData,
@@ -37,7 +38,7 @@ public interface NearCachingHook<K, V> {
         }
 
         @Override
-        public void onRemoteCallSuccess() {
+        public void onRemoteCallSuccess(Operation remoteCall) {
         }
 
         @Override
@@ -46,9 +47,10 @@ public interface NearCachingHook<K, V> {
         }
     };
 
-    void beforeRemoteCall(K key, Data keyData, @Nullable V value, @Nullable Data valueData);
+    void beforeRemoteCall(K key, Data keyData,
+                          @Nullable V value, @Nullable Data valueData);
 
-    void onRemoteCallSuccess();
+    void onRemoteCallSuccess(@Nullable Operation remoteCall);
 
     void onRemoteCallFailure();
 }

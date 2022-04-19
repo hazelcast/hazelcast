@@ -49,6 +49,8 @@ public class ClientQueueSplitBrainProtectionReadTest extends QueueSplitBrainProt
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

@@ -179,16 +179,18 @@ public class MockServerConnection implements ServerConnection {
     }
 
     public void close(String msg, Throwable cause) {
-        if (!alive.compareAndSet(true, false)) {
-            return;
-        }
+        try {
+            if (!alive.compareAndSet(true, false)) {
+                return;
+            }
 
-        if (otherConnection != null) {
-            otherConnection.close(msg, cause);
-        }
-
-        if (lifecycleListener != null) {
-            lifecycleListener.onConnectionClose(this, cause, false);
+            if (otherConnection != null) {
+                otherConnection.close(msg, cause);
+            }
+        } finally {
+            if (lifecycleListener != null) {
+                lifecycleListener.onConnectionClose(this, cause, false);
+            }
         }
     }
 
