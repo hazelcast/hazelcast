@@ -43,7 +43,7 @@ public class IMapResolverTest extends SqlTestSupport {
     }
 
     @Test
-    public void smokeTest() throws Exception {
+    public void test_javaObject() throws Exception {
         instance().getMap("m1").put(42, new BigDecimal((43)));
 
         Member member = instance().getCluster().getLocalMember();
