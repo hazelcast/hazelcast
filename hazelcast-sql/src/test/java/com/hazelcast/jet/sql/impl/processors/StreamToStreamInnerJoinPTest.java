@@ -49,7 +49,7 @@ import static java.util.Collections.singletonMap;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
+public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     private static final ConstantExpression<?> TRUE_PREDICATE = ConstantExpression.create(true, BOOLEAN);
     private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
             RemainderFunction.create(
@@ -69,7 +69,6 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
     public void before() {
         //noinspection unchecked
         postponeTimeMap = new HashMap<>();
-
         joinInfo = new JetJoinInfo(
                 JoinRelType.INNER,
                 new int[]{0},
@@ -175,7 +174,6 @@ public class StreamToStreamJoinPTest extends SimpleTestInClusterSupport {
                         )
                 );
     }
-
 
     /*
         SELECT * FROM a

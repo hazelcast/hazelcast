@@ -60,7 +60,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> pos;
 
     private JetSqlRow currItem;
-    private JetSqlRow pendingOutput;
+    private final Queue<JetSqlRow> pendingOutput;
     private final Queue<Watermark> pendingWatermarks;
 
     public StreamToStreamJoinP(
@@ -87,16 +87,19 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
         }
 
+        this.pendingOutput = new ArrayDeque<>();
         this.pendingWatermarks = new ArrayDeque<>();
     }
 
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
-        if (pendingOutput != null) {
-            if (tryEmit(pendingOutput)) {
-                pendingOutput = null;
+        // region JOIN type independent region
+        while (!pendingOutput.isEmpty()) {
+            if (!tryEmit(pendingOutput.peek())) {
+                return false;
+            } else {
+                pendingOutput.remove();
             }
-            return false;
         }
 
         //  having side input, traverse opposite buffer
@@ -104,24 +107,37 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
             pos = buffer[1 - ordinal].iterator();
+            // if opposite buffer is empty, and we have LEFT/RIGHT JOIN,
+            // we need to produce input row with null-filled opposite side.
+            // EXAMPLE - LEFT JOIN
+            // left  buffer [1, 2]
+            // right buffer []
+
+            // if (!joinInfo.isInner()) {
+            // TODO
+            // }
         }
 
+        // endregion
+
+        // region JOIN type dependent region
         if (!pos.hasNext()) {
             pos = null;
             currItem = null;
             return true;
         }
 
-        pendingOutput = ExpressionUtil.join(
+        JetSqlRow preparedOutput = ExpressionUtil.join(
                 ordinal == 0 ? currItem : pos.next(),
                 ordinal == 0 ? pos.next() : currItem,
                 joinInfo.condition(),
                 MOCK_EEC
         );
 
-        if (pendingOutput != null && tryEmit(pendingOutput)) {
-            pendingOutput = null;
+        if (preparedOutput == null || !tryEmit(preparedOutput)) {
+            pendingOutput.offer(preparedOutput);
         }
+        // endregion
         return false;
     }
 

@@ -122,6 +122,10 @@ public class JetJoinInfo implements DataSerializable {
         return rightEquiJoinIndices.length > 0;
     }
 
+    public JoinRelType getJoinType() {
+        return joinType;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(joinType.name());
