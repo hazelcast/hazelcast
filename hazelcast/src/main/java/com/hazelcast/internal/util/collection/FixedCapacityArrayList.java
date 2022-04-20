@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.internal.util.collection;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
-import java.util.List;
+import java.util.Arrays;
 
-public class FixedCapacityArrayList<E> extends AbstractList<E> implements List<E> {
-    private static final int DEFAULT_CAPACITY = 10;
-
+/**
+ * A very fast implementation of {@link java.util.List} that stores its content in not resizeable array.
+ * The {@link FixedCapacityArrayList} provides an API to fetch that array. Fetching that array makes
+ * the list instance unusable.
+ */
+@NotThreadSafe
+public class FixedCapacityArrayList<E> extends AbstractList<E> {
     private E[] elementData;
     private int size;
 
@@ -49,7 +53,12 @@ public class FixedCapacityArrayList<E> extends AbstractList<E> implements List<E
         return size;
     }
 
-    public E[] getArray() {
-        return elementData;
+    /**
+     * Returns a storage with all the elements and makes an instance unusable.
+     */
+    public E[] asArray() {
+        E[] result = size == elementData.length ? elementData : Arrays.copyOfRange(elementData, 0, size);
+        elementData = null;
+        return result;
     }
 }

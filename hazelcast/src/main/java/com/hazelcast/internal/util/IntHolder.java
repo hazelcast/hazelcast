@@ -16,6 +16,12 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
+/**
+ * A simple holder for a mutable int.
+ */
+@NotThreadSafe
 public class IntHolder {
     private int integer;
 

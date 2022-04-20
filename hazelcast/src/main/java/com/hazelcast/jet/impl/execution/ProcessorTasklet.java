@@ -212,7 +212,7 @@ public class ProcessorTasklet implements Tasklet {
 
         Queue<InboundEdgeStream[]> queue = new ArrayDeque<>(priorityToStreams.size());
         for (FixedCapacityArrayList<InboundEdgeStream> streams : priorityToStreams.values()) {
-            queue.add(streams.getArray());
+            queue.add(streams.asArray());
         }
 
         return queue;
