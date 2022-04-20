@@ -6,10 +6,11 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nio.Bits.BYTES_CHAR;
+import static com.hazelcast.internal.nio.Bits.BYTES_INT;
+import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 
@@ -34,15 +35,15 @@ public class Frame {
     public Channel channel;
 
     public static final int OFFSET_SIZE = 0;
-    public static final int OFFSET_FLAGS = OFFSET_SIZE + INT_SIZE_IN_BYTES;
-    public static final int OFFSET_PARTITION_ID = OFFSET_FLAGS + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_FLAGS = OFFSET_SIZE + BYTES_INT;
+    public static final int OFFSET_PARTITION_ID = OFFSET_FLAGS + BYTES_INT;
 
-    public static final int OFFSET_REQ_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
-    public static final int OFFSET_REQ_OPCODE = OFFSET_REQ_CALL_ID + LONG_SIZE_IN_BYTES;
-    public static final int OFFSET_REQ_PAYLOAD = OFFSET_REQ_OPCODE + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_REQ_CALL_ID = OFFSET_PARTITION_ID + BYTES_INT;
+    public static final int OFFSET_REQ_OPCODE = OFFSET_REQ_CALL_ID + BYTES_LONG;
+    public static final int OFFSET_REQ_PAYLOAD = OFFSET_REQ_OPCODE + BYTES_INT;
 
-    public static final int OFFSET_RES_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
-    public static final int OFFSET_RES_PAYLOAD = OFFSET_RES_CALL_ID + LONG_SIZE_IN_BYTES;
+    public static final int OFFSET_RES_CALL_ID = OFFSET_PARTITION_ID + BYTES_INT;
+    public static final int OFFSET_RES_PAYLOAD = OFFSET_RES_CALL_ID + BYTES_LONG;
 
     public boolean trackRelease;
     private ByteBuffer buff;
@@ -56,8 +57,12 @@ public class Frame {
     }
 
     public Frame(int size) {
+        this(size, false);
+    }
+
+    public Frame(int size, boolean direct) {
         //todo: allocate power of 2.
-        this.buff = ByteBuffer.allocate(size);
+        this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
     public Frame(ByteBuffer buffer) {
@@ -97,7 +102,7 @@ public class Frame {
     }
 
     public int size() {
-        if (buff.limit() < INT_SIZE_IN_BYTES) {
+        if (buff.limit() < BYTES_INT) {
             return -1;
         }
         return buff.getInt(0);
@@ -129,20 +134,21 @@ public class Frame {
     }
 
     public Frame writeInt(int value) {
-        //System.out.println(IOUtil.toDebugString("before buff", buff));
-
-        ensureRemaining(INT_SIZE_IN_BYTES);
-        //System.out.println(IOUtil.toDebugString("after buff", buff));
+        ensureRemaining(BYTES_INT);
         buff.putInt(value);
         return this;
     }
 
-    public Frame writeBytes(byte[] value) {
-        //System.out.println(IOUtil.toDebugString("before buff", buff));
+    public Frame writeSizedBytes(byte[] src) {
+        ensureRemaining(src.length + BYTES_INT);
+        buff.putInt(src.length);
+        buff.put(src);
+        return this;
+    }
 
-        ensureRemaining(value.length);
-        //System.out.println(IOUtil.toDebugString("after buff", buff));
-        buff.put(value);
+    public Frame writeBytes(byte[] src) {
+        ensureRemaining(src.length);
+        buff.put(src);
         return this;
     }
 
@@ -154,7 +160,7 @@ public class Frame {
     public Frame writeString(String s) {
         int length = s.length();
 
-        ensureRemaining(INT_SIZE_IN_BYTES + length * CHAR_SIZE_IN_BYTES);
+        ensureRemaining(BYTES_INT + length * BYTES_CHAR);
 
         buff.putInt(length);
         for (int k = 0; k < length; k++) {
@@ -172,7 +178,7 @@ public class Frame {
     }
 
     public Frame writeLong(long value) {
-        ensureRemaining(LONG_SIZE_IN_BYTES);
+        ensureRemaining(BYTES_LONG);
         buff.putLong(value);
         return this;
     }
@@ -198,7 +204,7 @@ public class Frame {
     }
 
     public boolean isComplete() {
-        if (buff.position() < INT_SIZE_IN_BYTES) {
+        if (buff.position() < BYTES_INT) {
             // not enough bytes.
             return false;
         } else {
@@ -219,6 +225,10 @@ public class Frame {
 
     public int getInt(int index) {
         return buff.getInt(index);
+    }
+
+    public byte getByte(int index) {
+        return buff.get(index);
     }
 
     public boolean isFlagRaised(int flag) {
@@ -245,6 +255,11 @@ public class Frame {
         return this;
     }
 
+    public Frame incPosition(int delta) {
+        buff.position(buff.position() + delta);
+        return this;
+    }
+
     public int remaining() {
         return buff.remaining();
     }
@@ -258,9 +273,7 @@ public class Frame {
             return;
         }
 
-        if (!concurrent) {
-            refCount.lazySet(refCount.get() + 1);
-        } else {
+        if (concurrent) {
             for (; ; ) {
                 int current = refCount.get();
                 if (current == 0) {
@@ -271,6 +284,8 @@ public class Frame {
                     break;
                 }
             }
+        } else {
+            refCount.lazySet(refCount.get() + 1);
         }
     }
 
@@ -279,28 +294,29 @@ public class Frame {
             return;
         }
 
-        if (!concurrent) {
+        if (concurrent) {
+            for (; ; ) {
+                int current = refCount.get();
+                if (current > 0) {
+                    if (refCount.compareAndSet(current, current - 1)) {
+                        if (current == 1) {
+                            allocator.free(this);
+                        }
+                        break;
+                    }
+                } else {
+                    throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
+                }
+            }
+        } else {
             int current = refCount.get();
             if (current == 1) {
                 refCount.lazySet(0);
                 allocator.free(this);
-            } else if (current <= 0) {
-                throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
-            } else {
+            } else if (current > 1) {
                 refCount.lazySet(current - 1);
-            }
-        } else {
-            for (; ; ) {
-                int current = refCount.get();
-                if (current <= 0) {
-                    throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
-                }
-                if (refCount.compareAndSet(current, current - 1)) {
-                    if (current == 1) {
-                        allocator.free(this);
-                    }
-                    break;
-                }
+            } else {
+                throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
             }
         }
     }
@@ -320,6 +336,6 @@ public class Frame {
     }
 
     public void readBytes(byte[] dst, int len) {
-        buff.get(dst, len, 0);
+        buff.get(dst, 0, len);
     }
 }

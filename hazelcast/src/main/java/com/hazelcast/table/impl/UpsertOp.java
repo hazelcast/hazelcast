@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
-public class UpsertOp extends Op {
+public final class UpsertOp extends Op {
 
     public UpsertOp() {
         super(OpCodes.TABLE_UPSERT);
@@ -29,7 +29,6 @@ public class UpsertOp extends Op {
 
         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
                 .writeComplete();
-
 
         return Op.COMPLETED;
     }

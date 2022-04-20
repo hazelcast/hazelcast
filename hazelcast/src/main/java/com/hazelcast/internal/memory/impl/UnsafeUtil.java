@@ -19,9 +19,12 @@ package com.hazelcast.internal.memory.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.Bits;
+import io.netty.channel.unix.Buffer;
+import io.netty.util.internal.PlatformDependent;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 

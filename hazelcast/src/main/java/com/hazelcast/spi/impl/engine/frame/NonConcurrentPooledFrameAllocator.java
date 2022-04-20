@@ -21,7 +21,7 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
 
         if (index == -1) {
             // the pool is empty.
-            // and lets create a bunch of frames ourselves so we don't end up
+            // and lets create a set of frames so we don't end up
             // continuously asking the queue for requests.
             for (int k = 0; k < frames.length; k++) {
                 //newAllocations.incrementAndGet();
@@ -49,8 +49,9 @@ public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
 
     @Override
     public Frame allocate(int minSize) {
-        // for now we rely on the frames growing.
-        return allocate();
+        Frame frame = allocate();
+        frame.ensureRemaining(minSize);
+        return frame;
     }
 
     @Override

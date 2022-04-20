@@ -10,10 +10,13 @@ import com.hazelcast.spi.impl.requestservice.RequestService;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.SET;
@@ -56,7 +59,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     private CompletableFuture asyncUpsert(V v) {
         Item item = (Item) v;
 
-        int partitionId = HashUtil.hashToIndex(Long.hashCode(item.key), partitionCount);
+        int partitionId = hashToIndex(Long.hashCode(item.key), partitionCount);
         Frame request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_UPSERT)
@@ -132,16 +135,13 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void set(byte[] key, byte[] value) {
-        long hash = HashUtil.MurmurHash3_x64_64(key, 0, key.length);
-        int partitionId = HashUtil.hashToIndex(hash, partitionCount);
+        int partitionId = hashToIndex( Arrays.hashCode(key), partitionCount);
 
         Frame request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, SET)
-                .writeInt(key.length)
-                .writeBytes(key)
-                .writeInt(value.length)
-                .writeBytes(value)
+                .writeSizedBytes(key)
+                .writeSizedBytes(value)
                 .writeComplete();
         CompletableFuture f = requestService.invoke(request, partitionId);
         try {
@@ -153,19 +153,26 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public byte[] get(byte[] key) {
-        long hash = HashUtil.MurmurHash3_x64_64(key, 0, key.length);
-        int partitionId = HashUtil.hashToIndex(hash, partitionCount);
+        int partitionId = hashToIndex( Arrays.hashCode(key), partitionCount);
 
         Frame request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, GET)
-                .writeInt(key.length)
-                .writeBytes(key)
+                .writeSizedBytes(key)
                 .writeComplete();
         CompletableFuture f = requestService.invoke(request, partitionId);
         try {
-            Frame frame = (Frame)f.get(requestTimeoutMs, MILLISECONDS);
-            return null;
+            Frame frame = (Frame) f.get(requestTimeoutMs, MILLISECONDS);
+            frame.position(OFFSET_RES_PAYLOAD);
+            int length = frame.readInt();
+
+            if (length == -1) {
+                return null;
+            } else {
+                byte[] bytes = new byte[length];
+                frame.readBytes(bytes, length);
+                return bytes;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

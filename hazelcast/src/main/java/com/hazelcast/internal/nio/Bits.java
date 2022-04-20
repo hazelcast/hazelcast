@@ -47,10 +47,18 @@ public final class Bits {
      * Char size in bytes
      */
     public static final int CHAR_SIZE_IN_BYTES = 2;
+    public static final int BYTES_CHAR = 2;
     /**
      * Integer size in bytes
      */
     public static final int INT_SIZE_IN_BYTES = 4;
+
+    /**
+     * Integer size in bytes
+     */
+    public static final int BYTES_INT = INT_SIZE_IN_BYTES;
+
+
     /**
      * Float size in bytes
      */
@@ -59,6 +67,7 @@ public final class Bits {
      * Long size in bytes
      */
     public static final int LONG_SIZE_IN_BYTES = 8;
+    public static final int BYTES_LONG = LONG_SIZE_IN_BYTES;
     /**
      * Double size in bytes
      */

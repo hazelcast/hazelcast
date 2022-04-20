@@ -6,7 +6,7 @@ import io.netty.incubator.channel.uring.IOUringReactor;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
-public class RandomLoadOp extends Op {
+public final class RandomLoadOp extends Op {
 
     private boolean loaded;
     public RandomLoadOp() {

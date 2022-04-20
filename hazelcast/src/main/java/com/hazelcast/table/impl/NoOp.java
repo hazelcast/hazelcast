@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
-public class NoOp extends Op {
+public final class NoOp extends Op {
 
     public final static AtomicLong counter = new AtomicLong();
 

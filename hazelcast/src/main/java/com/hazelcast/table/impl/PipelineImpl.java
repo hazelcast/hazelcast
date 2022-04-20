@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
 
 
-public class PipelineImpl implements Pipeline {
+public final class PipelineImpl implements Pipeline {
 
     private final RequestService requestService;
     private final FrameAllocator frameAllocator;
