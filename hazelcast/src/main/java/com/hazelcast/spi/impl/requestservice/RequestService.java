@@ -92,6 +92,7 @@ public class RequestService {
     private final int responseThreadCount;
     private final boolean responseThreadSpin;
     private final int requestTimeoutMs;
+    private final boolean regularSchedule;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
@@ -108,6 +109,7 @@ public class RequestService {
         this.responseThreadCount = Integer.parseInt(java.lang.System.getProperty("reactor.responsethread.count", "1"));
         this.responseThreadSpin = Boolean.parseBoolean(java.lang.System.getProperty("reactor.responsethread.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(java.lang.System.getProperty("reactor.write-through", "false"));
+        this.regularSchedule = Boolean.parseBoolean(java.lang.System.getProperty("reactor.regular-schedule", "true"));
         this.poolRequests = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-requests", "true"));
         this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
         this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
@@ -171,6 +173,8 @@ public class RequestService {
 
                 Supplier<NioChannel> channelSupplier = () -> {
                     RequestNioChannel channel = new RequestNioChannel();
+                    channel.writeThrough = writeThrough;
+                    channel.regularSchedule = regularSchedule;
                     channel.opScheduler = (OpScheduler) reactor.scheduler;
                     channel.requestService = RequestService.this;
                     channel.socketConfig = socketConfig;

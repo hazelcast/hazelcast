@@ -26,10 +26,9 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     // immutable state
     protected SocketChannel socketChannel;
     public NioReactor reactor;
-    protected boolean regularSchedule = true;
     protected SelectionKey key;
-    protected boolean writeThrough;
     private Selector selector;
+
     // ======================================================
     // reading side of the channel.
     // ======================================================
@@ -40,6 +39,8 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     // ======================================================
     // private
     public final IOVector ioVector = new IOVector();
+    public boolean regularSchedule = true;
+    public boolean writeThrough;
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
