@@ -55,13 +55,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private final long[][] wmState;
 
-    private final List<JetSqlRow>[] buffer;
-
     private Iterator<JetSqlRow> pos;
 
     private JetSqlRow currItem;
-    private final Queue<JetSqlRow> pendingOutput;
-    private final Queue<Watermark> pendingWatermarks;
+    private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
+    private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
+    private final Queue<Watermark> pendingWatermarks = new ArrayDeque<>();
 
     public StreamToStreamJoinP(
             final JetJoinInfo joinInfo,
@@ -69,8 +68,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractor,
             final Map<Byte, Map<Byte, Long>> postponeTimeMap
     ) {
-        this.buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
-
         this.joinInfo = joinInfo;
         this.leftTimeExtractor = leftTimeExtractor;
         this.rightTimeExtractor = rightTimeExtractor;
@@ -86,14 +83,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
         }
-
-        this.pendingOutput = new ArrayDeque<>();
-        this.pendingWatermarks = new ArrayDeque<>();
     }
 
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
-        // region JOIN type independent region
         while (!pendingOutput.isEmpty()) {
             if (!tryEmit(pendingOutput.peek())) {
                 return false;
@@ -107,20 +100,36 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
             pos = buffer[1 - ordinal].iterator();
-            // if opposite buffer is empty, and we have LEFT/RIGHT JOIN,
-            // we need to produce input row with null-filled opposite side.
-            // EXAMPLE - LEFT JOIN
-            // left  buffer [1, 2]
-            // right buffer []
 
-            // if (!joinInfo.isInner()) {
-            // TODO
-            // }
+            JetSqlRow joinedRow = null;
+            // If current join type is LEFT/RIGHT and opposite buffer is empty,
+            // we should to produce input row with null-filled opposite side.
+            if (!pos.hasNext() && !joinInfo.isInner()) {
+                if (ordinal == 1 && joinInfo.isLeftOuter()) {
+                    // fill LEFT side with nulls
+                    joinedRow = ExpressionUtil.join(
+                            new JetSqlRow(currItem.getSerializationService(), new Object[]{null}),
+                            currItem,
+                            joinInfo.condition(),
+                            MOCK_EEC
+                    );
+                } else if (ordinal == 0 && joinInfo.isRightOuter()) {
+                    // fill RIGHT side with nulls
+                    joinedRow = ExpressionUtil.join(
+                            currItem,
+                            new JetSqlRow(currItem.getSerializationService(), new Object[]{null}),
+                            joinInfo.condition(),
+                            MOCK_EEC
+                    );
+                }
+            }
+
+            if (joinedRow != null) {
+                pendingOutput.offer(joinedRow);
+            }
+            return false;
         }
 
-        // endregion
-
-        // region JOIN type dependent region
         if (!pos.hasNext()) {
             pos = null;
             currItem = null;
@@ -137,7 +146,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (preparedOutput == null || !tryEmit(preparedOutput)) {
             pendingOutput.offer(preparedOutput);
         }
-        // endregion
         return false;
     }
 

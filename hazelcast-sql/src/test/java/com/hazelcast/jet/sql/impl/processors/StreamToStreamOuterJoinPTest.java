@@ -51,7 +51,7 @@ import static java.util.Collections.singletonMap;
 public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
     private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
             RemainderFunction.create(
-                    ColumnExpression.create(0, BIGINT),
+                    ColumnExpression.create(1, BIGINT),  // both for LEFT and RIGHT JOIN it is fine.
                     ConstantExpression.create(2, BIGINT),
                     BIGINT),
             ConstantExpression.create(0, BIGINT),
@@ -65,8 +65,13 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        //noinspection unchecked
         postponeTimeMap = new HashMap<>();
+    }
+
+    @Test
+    public void given_leftJoin_when_singleWmKeyPerInput_then_fillNulls() {
+        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.LEFT,
                 new int[]{0},
@@ -74,12 +79,6 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 null,
                 ODD_PREDICATE
         );
-    }
-
-    @Test
-    public void given_alwaysTrueCondition_when_singleWmKeyPerInput_then_successful() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -92,21 +91,79 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
-                                jetRow(11L, 11L),
-                                jetRow(12L, 13L),
-                                wm((byte) 0, 13L)
+                                wm((byte) 0, 0L),
+                                wm((byte) 0, 2L),
+                                wm((byte) 0, 4L),
+                                wm((byte) 0, 6L),
+                                wm((byte) 0, 8L),
+                                wm((byte) 0, 10L)
                         ),
                         asList(
-                                jetRow(9L),
-                                wm((byte) 1, 15L),
-                                jetRow(16L),
-                                wm((byte) 1, 16)
+                                wm((byte) 1, 0L),
+                                jetRow(1L, 1L),
+                                jetRow(2L, 2L),
+                                jetRow(3L, 3L),
+                                jetRow(4L, 4L),
+                                jetRow(5L, 5L),
+                                wm((byte) 1, 10L)
                         )
                 ))
                 .expectOutput(
                         asList(
-                                jetRow(11L, 11L, null),
-                                wm((byte) 0, 13L)
+                                jetRow(null, 1L, 1L),
+                                jetRow(null, 3L, 3L),
+                                jetRow(null, 5L, 5L),
+                                wm((byte) 1, 1L)
+                        )
+                );
+    }
+
+    @Test
+    public void given_rightJoin_when_singleWmKeyPerInput_then_fillNulls() {
+        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        joinInfo = new JetJoinInfo(
+                JoinRelType.RIGHT,
+                new int[]{0},
+                new int[]{0},
+                null,
+                ODD_PREDICATE
+        );
+
+        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                joinInfo,
+                leftExtractors,
+                rightExtractors,
+                postponeTimeMap);
+
+        TestSupport.verifyProcessor(supplier)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .inputs(asList(
+                        asList(
+                                wm((byte) 0, 0L),
+                                jetRow(1L, 1L),
+                                jetRow(2L, 2L),
+                                jetRow(3L, 3L),
+                                jetRow(4L, 4L),
+                                jetRow(5L, 5L),
+                                wm((byte) 0, 10L)
+                        ),
+                        asList(
+                                wm((byte) 1, 0L),
+                                wm((byte) 1, 2L),
+                                wm((byte) 1, 4L),
+                                wm((byte) 1, 6L),
+                                wm((byte) 1, 8L),
+                                wm((byte) 1, 10L)
+                        )
+                ))
+                .expectOutput(
+                        asList(
+                                jetRow(1L, 1L, null),
+                                jetRow(3L, 3L, null),
+                                jetRow(5L, 5L, null),
+                                wm((byte) 0, 1L)
                         )
                 );
     }
@@ -115,14 +172,6 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
         Map<Byte, Long> map = new HashMap<>();
         map.put(key1, value1);
         map.put(key2, value2);
-        return map;
-    }
-
-    static Map<Byte, Long> mapOf(Byte key1, Long value1, Byte key2, Long value2, Byte key3, Long value3) {
-        Map<Byte, Long> map = new HashMap<>();
-        map.put(key1, value1);
-        map.put(key2, value2);
-        map.put(key3, value3);
         return map;
     }
 }
