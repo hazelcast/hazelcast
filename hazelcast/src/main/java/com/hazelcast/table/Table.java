@@ -8,7 +8,9 @@ public interface Table<K,E> {
 
     void upsertAll(E[] items);
 
-    void get(K key);
+    void set(byte[] key, byte[] value);
+
+    byte[] get(byte[] key);
 
     void noop();
 

@@ -1,13 +1,21 @@
 package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.table.impl.GetOp;
 import com.hazelcast.table.impl.NoOp;
 import com.hazelcast.table.impl.SelectByKeyOperation;
+import com.hazelcast.table.impl.SetOp;
 import com.hazelcast.table.impl.UpsertOp;
 
 import java.util.function.Supplier;
 
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQUEST_OPCODE;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_OPCODE;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.MAX_OPCODE;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.SET;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_SELECT_BY_KEY;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_UPSERT;
 
 public final class OpAllocator {
 
@@ -19,14 +27,16 @@ public final class OpAllocator {
         this.scheduler = scheduler;
         this.manager = managers;
 
-        pools = new Pool[OpCodes.MAX_OPCODE + 1];
-        pools[0] = new Pool(UpsertOp::new);
-        pools[1] = new Pool(SelectByKeyOperation::new);
-        pools[2] = new Pool(NoOp::new);
+        this.pools = new Pool[MAX_OPCODE + 1];
+        pools[TABLE_UPSERT] = new Pool(UpsertOp::new);
+        pools[TABLE_SELECT_BY_KEY] = new Pool(SelectByKeyOperation::new);
+        pools[NOOP] = new Pool(NoOp::new);
+        pools[GET] = new Pool(GetOp::new);
+        pools[SET] = new Pool(SetOp::new);
     }
 
     public Op allocate(Frame request) {
-        int opcode = request.getInt(OFFSET_REQUEST_OPCODE);
+        int opcode = request.getInt(OFFSET_REQ_OPCODE);
         Pool pool = pools[opcode];
         pool.allocated++;
         Op op;

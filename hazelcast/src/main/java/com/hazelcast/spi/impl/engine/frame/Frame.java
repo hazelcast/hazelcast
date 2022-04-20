@@ -37,12 +37,12 @@ public class Frame {
     public static final int OFFSET_FLAGS = OFFSET_SIZE + INT_SIZE_IN_BYTES;
     public static final int OFFSET_PARTITION_ID = OFFSET_FLAGS + INT_SIZE_IN_BYTES;
 
-    public static final int OFFSET_REQUEST_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
-    public static final int OFFSET_REQUEST_OPCODE = OFFSET_REQUEST_CALL_ID + LONG_SIZE_IN_BYTES;
-    public static final int OFFSET_REQUEST_PAYLOAD = OFFSET_REQUEST_OPCODE + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_REQ_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_REQ_OPCODE = OFFSET_REQ_CALL_ID + LONG_SIZE_IN_BYTES;
+    public static final int OFFSET_REQ_PAYLOAD = OFFSET_REQ_OPCODE + INT_SIZE_IN_BYTES;
 
-    public static final int OFFSET_RESPONSE_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
-    public static final int OFFSET_RESPONSE_PAYLOAD = OFFSET_RESPONSE_CALL_ID + LONG_SIZE_IN_BYTES;
+    public static final int OFFSET_RES_CALL_ID = OFFSET_PARTITION_ID + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_RES_PAYLOAD = OFFSET_RES_CALL_ID + LONG_SIZE_IN_BYTES;
 
     public boolean trackRelease;
     private ByteBuffer buff;
@@ -74,7 +74,7 @@ public class Frame {
     }
 
     public Frame writeRequestHeader(int partitionId, int opcode) {
-        ensureRemaining(OFFSET_REQUEST_PAYLOAD);
+        ensureRemaining(OFFSET_REQ_PAYLOAD);
         buff.putInt(-1); //size
         buff.putInt(Frame.FLAG_OP);
         buff.putInt(partitionId);
@@ -84,7 +84,7 @@ public class Frame {
     }
 
     public Frame writeResponseHeader(int partitionId, long callId) {
-        ensureRemaining(OFFSET_RESPONSE_PAYLOAD);
+        ensureRemaining(OFFSET_RES_PAYLOAD);
         buff.putInt(-1);  //size
         buff.putInt(Frame.FLAG_OP_RESPONSE);
         buff.putInt(partitionId);
@@ -134,6 +134,15 @@ public class Frame {
         ensureRemaining(INT_SIZE_IN_BYTES);
         //System.out.println(IOUtil.toDebugString("after buff", buff));
         buff.putInt(value);
+        return this;
+    }
+
+    public Frame writeBytes(byte[] value) {
+        //System.out.println(IOUtil.toDebugString("before buff", buff));
+
+        ensureRemaining(value.length);
+        //System.out.println(IOUtil.toDebugString("after buff", buff));
+        buff.put(value);
         return this;
     }
 
@@ -202,7 +211,7 @@ public class Frame {
         return this;
     }
 
-    public Frame completeWriting() {
+    public Frame writeComplete() {
         buff.putInt(OFFSET_SIZE, buff.position());
         buff.flip();
         return this;
@@ -308,5 +317,9 @@ public class Frame {
             newBuffer.put(buff);
             buff = newBuffer;
         }
+    }
+
+    public void readBytes(byte[] dst, int len) {
+        buff.get(dst, len, 0);
     }
 }

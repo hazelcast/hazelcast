@@ -7,18 +7,18 @@ import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import com.hazelcast.spi.impl.requestservice.RequestService;
-import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.SET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_UPSERT;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TableProxy<K, V> extends AbstractDistributedObject implements Table<K, V> {
@@ -64,7 +64,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeLong(item.key)
                 .writeInt(item.a)
                 .writeInt(item.b)
-                .completeWriting();
+                .writeComplete();
         return requestService.invoke(request, partitionId);
     }
 
@@ -86,7 +86,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
             for (CompletableFuture f : futures) {
                 try {
-                    f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
+                    f.get(requestTimeoutMs, MILLISECONDS);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -98,7 +98,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     public void noop() {
         CompletableFuture f = asyncNoop();
         try {
-            f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
+            f.get(requestTimeoutMs, MILLISECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -108,8 +108,8 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         int partitionId = ThreadLocalRandom.current().nextInt(271);
         Frame request = frameAllocator.allocate(32)
                 .newFuture()
-                .writeRequestHeader(partitionId, TABLE_NOOP)
-                .completeWriting();
+                .writeRequestHeader(partitionId, NOOP)
+                .writeComplete();
         return requestService.invoke(request, partitionId);
     }
 
@@ -123,7 +123,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         for (CompletableFuture f : futures) {
             try {
-                f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
+                f.get(requestTimeoutMs, MILLISECONDS);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -131,8 +131,44 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
-    public void get(K key) {
-        throw new RuntimeException();
+    public void set(byte[] key, byte[] value) {
+        long hash = HashUtil.MurmurHash3_x64_64(key, 0, key.length);
+        int partitionId = HashUtil.hashToIndex(hash, partitionCount);
+
+        Frame request = frameAllocator.allocate(60)
+                .newFuture()
+                .writeRequestHeader(partitionId, SET)
+                .writeInt(key.length)
+                .writeBytes(key)
+                .writeInt(value.length)
+                .writeBytes(value)
+                .writeComplete();
+        CompletableFuture f = requestService.invoke(request, partitionId);
+        try {
+            f.get(requestTimeoutMs, MILLISECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public byte[] get(byte[] key) {
+        long hash = HashUtil.MurmurHash3_x64_64(key, 0, key.length);
+        int partitionId = HashUtil.hashToIndex(hash, partitionCount);
+
+        Frame request = frameAllocator.allocate(60)
+                .newFuture()
+                .writeRequestHeader(partitionId, GET)
+                .writeInt(key.length)
+                .writeBytes(key)
+                .writeComplete();
+        CompletableFuture f = requestService.invoke(request, partitionId);
+        try {
+            Frame frame = (Frame)f.get(requestTimeoutMs, MILLISECONDS);
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

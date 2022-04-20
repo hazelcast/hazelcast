@@ -2,35 +2,35 @@ package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.requestservice.Op;
 import com.hazelcast.spi.impl.requestservice.OpCodes;
-import com.hazelcast.table.Item;
 
 import java.util.Map;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
-public class UpsertOp extends Op {
+public class SetOp extends Op {
 
-    public UpsertOp() {
-        super(OpCodes.TABLE_UPSERT);
+    public SetOp() {
+        super(OpCodes.SET);
     }
 
     @Override
     public int run() throws Exception {
-        readName();
-
         TableManager tableManager = managers.tableManager;
-        Map map = tableManager.get(partitionId, name);
+        Map map = tableManager.get(partitionId, null);
 
-        Item item = new Item();
-        item.key = request.readLong();
-        item.a = request.readInt();
-        item.b = request.readInt();
-        map.put(item.key, item);
+        int keyLen = request.readInt();
+        byte[] key = new byte[keyLen];
+        request.readBytes(key, keyLen);
+
+        int valueLen = request.readInt();
+        byte[] value = new byte[valueLen];
+        request.readBytes(value, valueLen);
+
+        //map.put(item.key, item);
 
         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
                 .writeComplete();
 
-
-        return Op.COMPLETED;
+        return COMPLETED;
     }
 }

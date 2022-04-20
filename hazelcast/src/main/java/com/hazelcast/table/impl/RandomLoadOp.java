@@ -4,13 +4,13 @@ import com.hazelcast.spi.impl.requestservice.Op;
 import com.hazelcast.spi.impl.requestservice.OpCodes;
 import io.netty.incubator.channel.uring.IOUringReactor;
 
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQUEST_CALL_ID;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
 public class RandomLoadOp extends Op {
 
     private boolean loaded;
     public RandomLoadOp() {
-        super(OpCodes.TABLE_NOOP);
+        super(OpCodes.RANDOM_LOAD);
     }
 
     @Override
@@ -31,12 +31,12 @@ public class RandomLoadOp extends Op {
             short someId = 0;
             int fd = 0;
             reactor.sq_addRead(fd, 0, 0,0, someId);
-            return Op.BLOCKED;
+            return BLOCKED;
         }else {
-            response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQUEST_CALL_ID))
-                    .completeWriting();
+            response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
+                    .writeComplete();
 
-            return Op.COMPLETED;
+            return COMPLETED;
         }
     }
 }

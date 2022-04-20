@@ -9,4 +9,6 @@ public class SocketConfig {
     public boolean tcpNoDelay = true;
     public boolean tcpQuickAck = true;
     public int backlog = NetUtil.SOMAXCONN;
+    public boolean keepAlive = true;
+    public int soTimeout = 0;
 }

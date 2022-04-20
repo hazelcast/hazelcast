@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RESPONSE_CALL_ID;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RES_CALL_ID;
 
 
 /**
@@ -340,7 +340,7 @@ public class RequestService {
 
             requests.complete();
 
-            long callId = response.getLong(OFFSET_RESPONSE_CALL_ID);
+            long callId = response.getLong(OFFSET_RES_CALL_ID);
             //System.out.println("response with callId:"+callId +" frame: "+response);
 
             Frame request = requests.map.remove(callId);
@@ -379,7 +379,7 @@ public class RequestService {
             request.acquire();
             Requests requests = getRequests(channel.remoteAddress);
             long callId = requests.nextCallId();
-            request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+            request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
             channel.writeAndFlush(request);
@@ -413,7 +413,7 @@ public class RequestService {
                 request.acquire();
                 long callId = c - k;
                 requests.map.put(callId, request);
-                request.putLong(Frame.OFFSET_REQUEST_CALL_ID, callId);
+                request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
                 k--;
             }
 

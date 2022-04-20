@@ -8,8 +8,8 @@ import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQUEST_PAYLOAD;
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RESPONSE_PAYLOAD;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_PAYLOAD;
+import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.spi.impl.requestservice.Op.BLOCKED;
 import static com.hazelcast.spi.impl.requestservice.Op.COMPLETED;
 
@@ -50,9 +50,9 @@ public final class OpScheduler implements Scheduler {
     public void schedule(Frame request) {
         Op op = opAllocator.allocate(request);
         op.response = request.future != null
-                ? remoteResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD)
-                : localResponseFrameAllocator.allocate(OFFSET_RESPONSE_PAYLOAD);
-        op.request = request.position(OFFSET_REQUEST_PAYLOAD);
+                ? remoteResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD)
+                : localResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD);
+        op.request = request.position(OFFSET_REQ_PAYLOAD);
         schedule(op);
     }
 

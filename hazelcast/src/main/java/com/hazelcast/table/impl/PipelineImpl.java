@@ -11,8 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
 
 
 public class PipelineImpl implements Pipeline {
@@ -41,8 +40,8 @@ public class PipelineImpl implements Pipeline {
 
         Frame request = frameAllocator.allocate(32)
                 .newFuture()
-                .writeRequestHeader(partitionId, TABLE_NOOP)
-                .completeWriting();
+                .writeRequestHeader(partitionId, NOOP)
+                .writeComplete();
 
         futures.add(request.future);
         requests.add(request);
