@@ -91,6 +91,7 @@ public class RequestService {
     private final boolean writeThrough;
     private final int responseThreadCount;
     private final boolean responseThreadSpin;
+    private final int requestTimeoutMs;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
@@ -111,6 +112,7 @@ public class RequestService {
         this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
         this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
         this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
+        this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
 
         this.channelCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printReactorInfo();
@@ -130,6 +132,10 @@ public class RequestService {
         for (int k = 0; k < responseThreadCount; k++) {
             this.responseThreads[k] = new ResponseThread();
         }
+    }
+
+    public int getRequestTimeoutMs() {
+        return requestTimeoutMs;
     }
 
     @NotNull

@@ -20,13 +20,13 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
-
 // todo: add padding around Nio channel
 public abstract class NioChannel extends Channel implements NioSelectedKeyListener {
 
     // immutable state
     protected SocketChannel socketChannel;
     public NioReactor reactor;
+    protected boolean regularSchedule = false;
     protected SelectionKey key;
     protected boolean writeThrough;
     private Selector selector;
@@ -86,10 +86,11 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
                 reactor.dirtyChannels.add(this);
             } else if (writeThrough) {
                 handleWrite();
-            } else {
-                //key.interestOps(key.interestOps() | OP_WRITE);
-                //reactor.wakeup();
+            } else if (regularSchedule) {
                 reactor.schedule(this);
+            } else {
+                key.interestOps(key.interestOps() | OP_WRITE);
+                reactor.wakeup();
             }
         }
     }
@@ -146,7 +147,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         }
     }
 
-     @Override
+    @Override
     public void handle(SelectionKey key) {
         if (key.isValid() && key.isReadable()) {
             handleRead();

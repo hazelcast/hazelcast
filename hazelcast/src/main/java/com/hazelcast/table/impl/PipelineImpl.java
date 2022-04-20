@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -55,7 +56,7 @@ public class PipelineImpl implements Pipeline {
     public void await(){
         for(Future f: futures){
             try {
-                f.get(23, SECONDS);
+                f.get(requestService.getRequestTimeoutMs(), TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_NOOP;
@@ -26,6 +27,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     private final String name;
     private final int partitionCount;
     private final FrameAllocator frameAllocator;
+    private final int requestTimeoutMs;
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
@@ -33,6 +35,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.frameAllocator = new ConcurrentPooledFrameAllocator(128, true);
+        this.requestTimeoutMs = requestService.getRequestTimeoutMs();
     }
 
     @Override
@@ -83,7 +86,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
             for (CompletableFuture f : futures) {
                 try {
-                    f.get(23, SECONDS);
+                    f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -95,7 +98,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     public void noop() {
         CompletableFuture f = asyncNoop();
         try {
-            f.get(23, SECONDS);
+            f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -110,7 +113,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         return requestService.invoke(request, partitionId);
     }
 
-
     // better pipelining support
     @Override
     public void upsertAll(V[] values) {
@@ -121,7 +123,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         for (CompletableFuture f : futures) {
             try {
-                f.get(23, SECONDS);
+                f.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
