@@ -12,6 +12,7 @@
     + [Notes/Questions/Issues](#notesquestionsissues)
 + [User Interaction](#user-interaction)
   - [API design and/or Prototypes](#api-design-andor-prototypes)
++ [Client Related Changes](#client-related-changes)
 + [Technical Design](#technical-design)
 + [Testing Criteria](#testing-criteria)
 + [Other Artifacts](#other-artifacts)
@@ -89,6 +90,13 @@ Consider the following writing prompts:
 - Are there new error messages introduced? Can you provide examples?
 - Are there new deprecation warnings? Can you provide examples?
 - How are clusters affected that were created before this change? Are there migrations to consider?
+
+#### Client Related Changes
+Please identify if any client code change is required. If so, please provide a list of client code changes.
+The changes may include API changes, serialization changes or other client related code changes.
+
+Please notify the APIs team if any change is documented in this section. 
+The changes may need to be handled for non-Java clients as well.
 
 ### Technical Design
 
