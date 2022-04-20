@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.expression;
+package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,13 +33,18 @@ import java.util.Collections;
 import java.util.Objects;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class NestedFieldsTest extends SqlJsonTestSupport {
+public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
         initialize(1, config);
+    }
+
+    @Before()
+    public void init() {
+        typesStorage().clear();
     }
 
     @Test
@@ -97,19 +103,15 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
                 rows(2, organization, office));
     }
 
-    // TODO: fix
     @Test
     public void test_update() {
-        initDefault();
+        final User oldUser = initDefault();
 
-        final Office office = new Office(3L, "office1");
-        final Organization organization = new Organization(2L, "organization1", office);
-        final User user = new User(1L, "user1", organization);
-        final User newUser = new User(1L, "new-name", organization);
+        final User newUser = new User(1L, "new-name", oldUser.organization);
 
         execute("UPDATE test SET this = ? WHERE __key = 1", newUser);
         assertRowsAnyOrder("SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
-                rows(3, 1L, "new-name", organization));
+                rows(3, 1L, "new-name", oldUser.organization));
     }
 
     @Test
@@ -169,7 +171,16 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_deepInsert() {
-        // TODO: ROW-literal?
+        initDefault();
+        // TODO: correct type coercion
+        instance().getSql().execute("INSERT INTO test VALUES (2, " +
+                "(CAST(2 AS BIGINT), 'user2', (CAST(2 AS BIGINT), 'organization2', (CAST(2 AS BIGINT), 'office2'))))");
+        assertRowsAnyOrder("SELECT "
+                        + "test.this.name, "
+                        + "test.this.organization.name, "
+                        + "test.this.organization.office.name "
+                        + "FROM test WHERE __key = 2",
+                rows(3, "user2", "organization2", "office2"));
     }
 
     @Test
@@ -201,7 +212,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
     }
 
     private User initDefault() {
-        // TODO: sql, dependent-types
+        // TODO: sql
         typesStorage().registerType("UserType", User.class);
         typesStorage().registerType("OfficeType", Office.class);
         typesStorage().registerType("OrganizationType", Organization.class);
