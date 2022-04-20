@@ -6,7 +6,6 @@ on:
       - master
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-      - 'hazelcast/pom.xml'
       - '.github/terraform/azure/**'
 
 

@@ -55,6 +55,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -70,10 +71,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT, level = DEBUG)
     protected final MwCounter openedCount = newMwCounter();
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT, level = DEBUG)
     protected final MwCounter closedCount = newMwCounter();
 
     protected final ILogger logger;
@@ -94,7 +95,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
     final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT, level = DEBUG)
     final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
 
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor;

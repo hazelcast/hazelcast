@@ -138,7 +138,7 @@ public class MetadataCompactResolverTest {
         // TODO: fix compact nested types support?
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")), options, ss, null))
-                .hasMessageContaining("Unable to resolve table metadata. Missing ['typeName'] option");
+                .hasMessageMatching("Unable to resolve table metadata\\. Missing '(key|value)CompactTypeName' option");
     }
 
     @Test
