@@ -138,7 +138,7 @@ public class LocalAddressRegistry {
                             + " connections. But, if you use the intersecting set of addresses in the two different"
                             + " members in your cluster topology, please use the different set of addresses in the"
                             + " connected members. Tip: We can encounter members using these same addresses in WAN"
-                            + " setups including clusters that are belongs to two private networks. If you want only"
+                            + " setups including clusters that belong to two private networks. If you want only"
                             + " the WAN addresses of the target cluster to be registered, use advanced networking"
                             + " in the both clusters, configure your wan server sockets and your wan publishers with"
                             + " some wan endpoint config.");
