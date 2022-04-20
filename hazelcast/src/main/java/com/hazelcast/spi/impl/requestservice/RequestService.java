@@ -29,8 +29,6 @@ import io.netty.channel.epoll.EpollServerChannel;
 import io.netty.incubator.channel.uring.IOUringChannel;
 import io.netty.incubator.channel.uring.IOUringReactor;
 import io.netty.incubator.channel.uring.IOUringServerChannel;
-import org.jctools.queues.MpscArrayQueue;
-import org.jctools.queues.MpscBlockingConsumerArrayQueue;
 import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
@@ -477,7 +475,6 @@ public class RequestService {
                     }
 
                     connection.channels = channels;
-                    java.lang.System.out.println("channels to " + address + " established");
                 }
             }
         }

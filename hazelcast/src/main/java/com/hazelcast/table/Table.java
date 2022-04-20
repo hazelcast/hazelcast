@@ -8,7 +8,7 @@ public interface Table<K,E> {
 
     void upsertAll(E[] items);
 
-    void selectByKey(K key);
+    void get(K key);
 
     void noop();
 

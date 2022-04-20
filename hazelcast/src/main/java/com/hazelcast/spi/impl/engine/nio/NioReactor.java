@@ -4,6 +4,7 @@ import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.Channel;
 import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.ReactorTask;
 import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
@@ -79,26 +80,7 @@ public final class NioReactor extends Reactor {
 
         CompletableFuture<Channel> future = new CompletableFuture<>();
         try {
-
-            System.out.println("ConnectRequest address:" + address);
-
-            SocketChannel socketChannel = SocketChannel.open();
-
-            channel.configure(this, socketChannel, c.socketConfig);
-
-            socketChannel.connect(address);
-            socketChannel.configureBlocking(false);
-
-            schedule(() -> {
-                try {
-                    channel.onConnectionEstablished();
-                    registeredChannels.add(channel);
-                    logger.info("Socket listening at " + address);
-                    future.complete(channel);
-                } catch (Exception e) {
-                    future.completeExceptionally(e);
-                }
-            });
+            schedule(() -> channel.connect(future, address, NioReactor.this));
         } catch (Exception e) {
             future.completeExceptionally(e);
         }

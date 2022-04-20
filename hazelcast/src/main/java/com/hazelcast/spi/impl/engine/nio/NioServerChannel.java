@@ -45,12 +45,8 @@ public final class NioServerChannel implements NioSelectedKeyListener {
     public void handle(SelectionKey key) {
         try {
             SocketChannel socketChannel = serverSocketChannel.accept();
-            socketChannel.configureBlocking(false);
-
             NioChannel channel = channelSupplier.get();
-            channel.configure(reactor, socketChannel, socketConfig);
-            channel.onConnectionEstablished();
-            reactor.registeredChannels.add(channel);
+            channel.handleAccepted(reactor, socketChannel, socketConfig);
             logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
         } catch (IOException e) {
             e.printStackTrace();

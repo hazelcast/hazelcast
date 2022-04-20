@@ -22,15 +22,15 @@ public class ReactorQueueTest {
 
         assertNull(reactorQueue.poll());
 
-        assertFalse(reactorQueue.addAndMarkedBlocked("1"));
+        assertFalse(reactorQueue.addAndCheckBlocked("1"));
         assertEquals("1", reactorQueue.poll());
         assertTrue(reactorQueue.commitAndMarkBlocked());
 
-        assertTrue(reactorQueue.addAndMarkedBlocked("2"));
-        assertFalse(reactorQueue.addAndMarkedBlocked("3"));
+        assertTrue(reactorQueue.addAndCheckBlocked("2"));
+        assertFalse(reactorQueue.addAndCheckBlocked("3"));
         assertEquals("2", reactorQueue.poll());
         assertEquals("3", reactorQueue.poll());
-        assertFalse(reactorQueue.addAndMarkedBlocked("4"));
+        assertFalse(reactorQueue.addAndCheckBlocked("4"));
         assertFalse(reactorQueue.commitAndMarkBlocked());
         assertEquals("4",reactorQueue.poll());
         assertTrue(reactorQueue.commitAndMarkBlocked());

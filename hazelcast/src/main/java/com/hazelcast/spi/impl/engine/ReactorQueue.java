@@ -25,7 +25,7 @@ public class ReactorQueue {
     private final int capacity;
 
     public ReactorQueue(int capacity) {
-        capacity = QuickMath.nextPowerOfTwo(capacity);
+        capacity = QuickMath.nextPowerOfTwo(capacity) * 8;
         this.array = new Object[capacity];
         this.capacity = capacity;
         this.mask = capacity - 1;
@@ -102,7 +102,7 @@ public class ReactorQueue {
      * @param item
      * @return true if the consumer was blocked and hence wakup is needed, false otherwise.
      */
-    public boolean addAndMarkedBlocked(Object item) {
+    public boolean addAndCheckBlocked(Object item) {
         //System.out.println("addAndMarkedBlocked----------------");
         long newTail;
         long oldTail;
@@ -172,12 +172,12 @@ public class ReactorQueue {
 //        System.out.println("addAndMarkedBlocked     size:" + size());
 //        System.out.println("addAndMarkedBlocked     oldSize:" + oldSize);
 
-        long offset = calcCircularRefElementOffset(newTail, mask);
+        long offset = toIndex(newTail);
         soRefElement(array, offset, item);
         return signal;
     }
 
-    public boolean addAndMarkedBlocked(Collection items) {
+    public boolean addAndCheckBlocked(Collection items) {
         throw new RuntimeException();
     }
 
@@ -195,7 +195,7 @@ public class ReactorQueue {
         }
 
         long h = dirtyHead.get();
-        long offset = calcCircularRefElementOffset(h, mask);
+        long offset = toIndex(h);
         Object item;
         do {
             item = lvRefElement(array, offset);
@@ -205,5 +205,9 @@ public class ReactorQueue {
 
         this.dirtyHead.lazySet(h + 1);
         return item;
+    }
+
+    private long toIndex(long h) {
+        return calcCircularRefElementOffset(h * 8, mask);
     }
 }

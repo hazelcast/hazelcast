@@ -131,7 +131,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
-    public void selectByKey(K key) {
+    public void get(K key) {
         throw new RuntimeException();
     }
 
@@ -140,15 +140,8 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         return name;
     }
 
-    @NotNull
-    @Override
-    public DestroyEventContext getDestroyContextForTenant() {
-        return super.getDestroyContextForTenant();
-    }
-
     @Override
     public String getServiceName() {
         return TableService.SERVICE_NAME;
     }
-
 }
