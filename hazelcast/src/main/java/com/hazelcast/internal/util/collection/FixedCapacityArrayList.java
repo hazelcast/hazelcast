@@ -22,7 +22,7 @@ import java.util.AbstractList;
 import java.util.Arrays;
 
 /**
- * A very fast implementation of {@link java.util.List} that stores its content in not resizeable array.
+ * A very fast implementation of {@link java.util.List} that stores its content in a not resizeable array.
  * The {@link FixedCapacityArrayList} provides an API to fetch that array. Fetching that array makes
  * the list instance unusable.
  */
