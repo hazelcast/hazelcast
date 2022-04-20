@@ -31,7 +31,7 @@ public final class MonitorThread extends Thread {
     @Override
     public void run() {
         try {
-            long nextWakeup = currentTimeMillis() + 1000;
+            long nextWakeup = currentTimeMillis() + 5000;
             while (!shutdown) {
                 try {
                     long now = currentTimeMillis();
@@ -43,7 +43,7 @@ public final class MonitorThread extends Thread {
                     return;
                 }
 
-                nextWakeup += 1000;
+                nextWakeup += 5000;
 
                 long currentMillis = currentTimeMillis();
                 long elapsed = currentMillis - prevMillis;
@@ -55,11 +55,11 @@ public final class MonitorThread extends Thread {
                     }
                 }
 
-                //if (!silent) {
-                for (Reactor reactor : reactors) {
-                    monitor(reactor, elapsed);
+                if (!silent) {
+                    for (Reactor reactor : reactors) {
+                        monitor(reactor, elapsed);
+                    }
                 }
-                //}
             }
         } catch (Exception e) {
             e.printStackTrace();

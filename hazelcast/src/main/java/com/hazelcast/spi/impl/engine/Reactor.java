@@ -6,6 +6,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
@@ -112,7 +113,11 @@ public abstract class Reactor extends HazelcastManagedThread {
                 break;
             }
 
-            channel.handleWrite();
+            try {
+                channel.handleWrite();
+            }catch (IOException e){
+                channel.handleException(e);
+            }
         }
     }
 
@@ -124,7 +129,12 @@ public abstract class Reactor extends HazelcastManagedThread {
             }
 
             if (task instanceof Channel) {
-                ((Channel) task).handleWrite();
+                Channel channel = (Channel)task;
+                try {
+                    channel.handleWrite();
+                }catch (Exception e){
+                    channel.handleException(e);
+                }
             } else if (task instanceof Frame) {
                 scheduler.schedule((Frame) task);
             } else if (task instanceof ReactorTask) {

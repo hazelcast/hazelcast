@@ -105,6 +105,12 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
     }
 
     @Override
+    public void handleException(Exception e) {
+        e.printStackTrace();
+        close();
+    }
+
+    @Override
     public void unsafeWriteAndFlush(Frame frame) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
@@ -148,33 +154,28 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
 
     @Override
     public void handleWrite() {
-        try {
-            if (flushThread.get() == null) {
-                throw new RuntimeException("Channel should be in flushed state");
-            }
+        if (flushThread.get() == null) {
+            throw new RuntimeException("Channel should be in flushed state");
+        }
 
-            ioVector.fill(unflushedFrames);
+        ioVector.fill(unflushedFrames);
 
-            int frameCount = ioVector.size();
-            if (frameCount == 1) {
-                ByteBuffer buffer = ioVector.get(0).byteBuffer();
-                sq.addWrite(socket.intValue(),
-                        Buffer.memoryAddress(buffer),
-                        buffer.position(),
-                        buffer.limit(),
-                        (short) 0);
-            } else {
-                int offset = iovArray.count();
-                ioVector.fillIoArray(iovArray);
+        int frameCount = ioVector.size();
+        if (frameCount == 1) {
+            ByteBuffer buffer = ioVector.get(0).byteBuffer();
+            sq.addWrite(socket.intValue(),
+                    Buffer.memoryAddress(buffer),
+                    buffer.position(),
+                    buffer.limit(),
+                    (short) 0);
+        } else {
+            int offset = iovArray.count();
+            ioVector.fillIoArray(iovArray);
 
-                sq.addWritev(socket.intValue(),
-                        iovArray.memoryAddress(offset),
-                        iovArray.count() - offset,
-                        (short) 0);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            close();
+            sq.addWritev(socket.intValue(),
+                    iovArray.memoryAddress(offset),
+                    iovArray.count() - offset,
+                    (short) 0);
         }
     }
 

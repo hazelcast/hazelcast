@@ -4,14 +4,12 @@ import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.Channel;
 import com.hazelcast.spi.impl.engine.Reactor;
-import com.hazelcast.spi.impl.engine.ReactorTask;
 import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -63,7 +61,12 @@ public final class NioReactor extends Reactor {
                     SelectionKey key = it.next();
                     it.remove();
 
-                    ((NioSelectedKeyListener) key.attachment()).handle(key);
+                    NioSelectedKeyListener listener = (NioSelectedKeyListener) key.attachment();
+                    try {
+                        listener.handle(key);
+                    } catch (IOException e) {
+                        listener.handleException(e);
+                    }
                 }
             }
         }

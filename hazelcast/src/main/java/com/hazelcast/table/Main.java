@@ -23,12 +23,6 @@ public class Main {
 
             if (k % 100 == 0) {
                 System.out.println("at k:" + k);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
 
 //            Pipeline pipeline = table.newPipeline();

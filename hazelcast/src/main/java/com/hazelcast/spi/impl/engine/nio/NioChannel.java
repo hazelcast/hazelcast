@@ -70,7 +70,11 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
             if (currentThread == reactor) {
                 reactor.dirtyChannels.add(this);
             } else if (writeThrough) {
-                handleWrite();
+                try {
+                    handleWrite();
+                }catch (IOException e){
+                    handleException(e);
+                }
             } else if (regularSchedule) {
                 reactor.schedule(this);
             } else {
@@ -78,6 +82,12 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
                 reactor.wakeup();
             }
         }
+    }
+
+    @Override
+    public void handleException(Exception e) {
+        e.printStackTrace();
+        close();
     }
 
     public void resetFlushed() {
@@ -133,7 +143,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     }
 
     @Override
-    public void handle(SelectionKey key) {
+    public void handle(SelectionKey key) throws IOException{
         int readyOp = key.readyOps();
 
         if (key.isValid() && (readyOp & OP_READ) != 0) {
@@ -151,53 +161,41 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
     protected void handleAccepted(NioReactor reactor,
                                   SocketChannel socketChannel,
-                                  SocketConfig socketConfig) {
-        try {
+                                  SocketConfig socketConfig) throws IOException {
+        this.reactor = reactor;
+        this.selector = reactor.selector;
+        this.logger = reactor.logger;
+        this.socketConfig = socketConfig;
+        this.socketChannel = socketChannel;
+        this.remoteAddress = socketChannel.getRemoteAddress();
+        this.localAddress = socketChannel.getLocalAddress();
 
-            this.reactor = reactor;
-            this.selector = reactor.selector;
-            this.logger = reactor.logger;
-            this.socketConfig = socketConfig;
-            this.socketChannel = socketChannel;
-            this.remoteAddress = socketChannel.getRemoteAddress();
-            this.localAddress = socketChannel.getLocalAddress();
+        System.out.println("Accepted " + remoteAddress + "->" + localAddress);
 
-            System.out.println("Accepted " + remoteAddress + "->" + localAddress);
-
-            this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-            configureSocket();
-            socketChannel.configureBlocking(false);
-            this.key = socketChannel.register(selector, OP_READ, this);
-            reactor.registeredChannels.add(this);
-        } catch (IOException e) {
-            e.printStackTrace();
-            close();
-        }
+        this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+        configureSocket();
+        socketChannel.configureBlocking(false);
+        this.key = socketChannel.register(selector, OP_READ, this);
+        reactor.registeredChannels.add(this);
     }
 
     protected void connect(CompletableFuture<Channel> future,
                            SocketAddress address,
-                           NioReactor reactor) {
-        try {
-            this.reactor = reactor;
-            this.selector = reactor.selector;
-            this.logger = reactor.logger;
-            this.connectFuture = future;
-            this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-            this.socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            configureSocket();
-            this.key = socketChannel.register(selector, OP_CONNECT, this);
-            System.out.println("Connect to address:" + address);
-            socketChannel.connect(address);
-        } catch (IOException e) {
-            future.completeExceptionally(e);
-            e.printStackTrace();
-            close();
-        }
+                           NioReactor reactor) throws IOException {
+        this.reactor = reactor;
+        this.selector = reactor.selector;
+        this.logger = reactor.logger;
+        this.connectFuture = future;
+        this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+        this.socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+        configureSocket();
+        this.key = socketChannel.register(selector, OP_CONNECT, this);
+        System.out.println("Connect to address:" + address);
+        socketChannel.connect(address);
     }
 
-    private void handleConnectable() {
+    private void handleConnectable() throws IOException {
         try {
             reactor.registeredChannels.add(this);
 
@@ -211,60 +209,49 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
             connectFuture.complete(this);
         } catch (IOException e) {
             connectFuture.completeExceptionally(e);
-            e.printStackTrace();
-            close();
+            throw e;
         } finally {
             connectFuture = null;
         }
     }
 
-    public final void handleRead() {
-        try {
-            readEvents.inc();
-            int read = socketChannel.read(receiveBuffer);
-            //System.out.println(this + " bytes read: " + bytesRead);
-            if (read == -1) {
-                close();
-            } else {
-                bytesRead.inc(read);
-                receiveBuffer.flip();
-                handleRead(receiveBuffer);
-                compactOrClear(receiveBuffer);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public final void handleRead() throws IOException {
+        readEvents.inc();
+        int read = socketChannel.read(receiveBuffer);
+        //System.out.println(this + " bytes read: " + bytesRead);
+        if (read == -1) {
             close();
+        } else {
+            bytesRead.inc(read);
+            receiveBuffer.flip();
+            handleRead(receiveBuffer);
+            compactOrClear(receiveBuffer);
         }
     }
 
     public abstract void handleRead(ByteBuffer receiveBuffer);
 
     @Override
-    public final void handleWrite() {
-        try {
-            assert flushThread.get() != null;
+    public final void handleWrite() throws IOException {
+        assert flushThread.get() != null;
 
-            handleWriteCnt.inc();
+        handleWriteCnt.inc();
 
-            ioVector.fill(unflushedFrames);
-            long written = ioVector.write(socketChannel);
+        ioVector.fill(unflushedFrames);
+        long written = ioVector.write(socketChannel);
 
-            bytesWritten.inc(written);
-            //System.out.println(this + " bytes written:" + written);
+        bytesWritten.inc(written);
+        //System.out.println(this + " bytes written:" + written);
 
-            if (ioVector.isEmpty()) {
-                int interestOps = key.interestOps();
-                if ((interestOps & OP_WRITE) != 0) {
-                    key.interestOps(interestOps & ~OP_WRITE);
-                }
-
-                resetFlushed();
-            } else {
-                key.interestOps(key.interestOps() | OP_WRITE);
+        if (ioVector.isEmpty()) {
+            int interestOps = key.interestOps();
+            if ((interestOps & OP_WRITE) != 0) {
+                key.interestOps(interestOps & ~OP_WRITE);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            close();
+
+            resetFlushed();
+        } else {
+            key.interestOps(key.interestOps() | OP_WRITE);
         }
     }
 

@@ -122,7 +122,7 @@ public final class EpollReactor extends Reactor {
                     System.out.println("channel found");
                     if ((ev & (Native.EPOLLERR | Native.EPOLLOUT)) != 0) {
                         System.out.println("epollout");
-                        ((EpollChannel)channel).handleWrite();
+                        //((EpollChannel)channel).handleWrite();
                     }
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
@@ -132,7 +132,7 @@ public final class EpollReactor extends Reactor {
                             ((EpollServerChannel)channel).handleAccept();
                         }else{
                             System.out.println("EpollChannel.handleRead");
-                            ((EpollChannel)channel).handleRead();
+                          //  ((EpollChannel)channel).handleRead();
                         }
                     }
                 } else {

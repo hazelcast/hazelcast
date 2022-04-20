@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl.engine;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 
@@ -72,5 +73,7 @@ public abstract class Channel {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
 
-    public abstract void handleWrite();
+    public abstract void handleWrite() throws IOException;
+
+    public abstract void handleException(Exception e);
 }

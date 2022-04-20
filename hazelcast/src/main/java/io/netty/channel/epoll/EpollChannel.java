@@ -61,11 +61,11 @@ public abstract class EpollChannel extends Channel {
 
         if (socket.isOpen()) {
             try {
-                System.out.println("reactor.epollFd.intValue:"+reactor.epollFd.intValue());
-                System.out.println("socket.intValue:"+socket.intValue());
-                System.out.println("flags:"+flags);
+                System.out.println("reactor.epollFd.intValue:" + reactor.epollFd.intValue());
+                System.out.println("socket.intValue:" + socket.intValue());
+                System.out.println("flags:" + flags);
                 Native.epollCtlMod(reactor.epollFd.intValue(), socket.intValue(), flags);
-            }catch (Exception e){
+            } catch (Exception e) {
                 throw new IOException(e);
             }
         }
@@ -82,7 +82,11 @@ public abstract class EpollChannel extends Channel {
             if (currentThread == reactor) {
                 reactor.dirtyChannels.add(this);
             } else if (writeThrough) {
-                handleWrite();
+                try {
+                    handleWrite();
+                } catch (IOException e) {
+                    handleException(e);
+                }
             } else {
                 reactor.schedule(this);
             }
@@ -154,57 +158,54 @@ public abstract class EpollChannel extends Channel {
         reactor.removeChannel(this);
     }
 
-    public void handleRead() {
-        try {
-            readEvents.inc();
-            int read = socket.read(receiveBuffer, receiveBuffer.position(), receiveBuffer.remaining());
-            //System.out.println(this + " bytes read: " + bytesRead);
-            if (read == -1) {
-                close();
-            } else {
-                bytesRead.inc(read);
-                receiveBuffer.flip();
-                onRead(receiveBuffer);
-                compactOrClear(receiveBuffer);
-            }
-        } catch (Exception e) {
+    @Override
+    public void handleException(Exception e) {
+        e.printStackTrace();
+        close();
+    }
+
+    public void handleRead() throws IOException {
+        readEvents.inc();
+        int read = socket.read(receiveBuffer, receiveBuffer.position(), receiveBuffer.remaining());
+        //System.out.println(this + " bytes read: " + bytesRead);
+        if (read == -1) {
             close();
-            e.printStackTrace();
+        } else {
+            bytesRead.inc(read);
+            receiveBuffer.flip();
+            onRead(receiveBuffer);
+            compactOrClear(receiveBuffer);
         }
     }
 
     public abstract void onRead(ByteBuffer receiveBuffer);
 
     @Override
-    public void handleWrite() {
-        try {
-            if (flushThread.get() == null) {
-                throw new RuntimeException("Channel is not in flushed state");
-            }
-            handleWriteCnt.inc();
+    public void handleWrite() throws IOException {
+        if (flushThread.get() == null) {
+            throw new RuntimeException("Channel is not in flushed state");
+        }
+        handleWriteCnt.inc();
 
-            ioVector.fill(unflushedFrames);
-            long written = ioVector.write(socket);
+        ioVector.fill(unflushedFrames);
+        long written = ioVector.write(socket);
 
-            bytesWritten.inc(written);
-            //System.out.println(getName() + " bytes written:" + written);
+        bytesWritten.inc(written);
+        //System.out.println(getName() + " bytes written:" + written);
 
-            //       SelectionKey key = channel.key;
+        //       SelectionKey key = channel.key;
 //            if (ioVector.isEmpty()) {
 //                int interestOps = key.interestOps();
 //                if ((interestOps & OP_WRITE) != 0) {
 //                    key.interestOps(interestOps & ~OP_WRITE);
 //                }
 
-            resetFlushed();
+        resetFlushed();
 //            } else {
 //                System.out.println("Didn't manage to write everything." + channel);
 //                key.interestOps(key.interestOps() | OP_WRITE);
 //            }
-        } catch (Exception e) {
-            close();
-            e.printStackTrace();
-        }
+
     }
 
     public void configure(EpollReactor reactor, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
@@ -225,7 +226,7 @@ public abstract class EpollChannel extends Channel {
         System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 
-    public void onConnectionEstablished() throws IOException{
+    public void onConnectionEstablished() throws IOException {
         remoteAddress = socket.remoteAddress();
         localAddress = socket.localAddress();
 

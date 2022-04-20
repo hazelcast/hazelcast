@@ -42,14 +42,20 @@ public final class NioServerChannel implements NioSelectedKeyListener {
     }
 
     @Override
-    public void handle(SelectionKey key) {
+    public void handleException(Exception e) {
+        logger.severe("NioServerChannel ran into a fatal exception", e);
+    }
+
+    @Override
+    public void handle(SelectionKey key) throws IOException {
+        SocketChannel socketChannel = serverSocketChannel.accept();
+        NioChannel channel = channelSupplier.get();
+
         try {
-            SocketChannel socketChannel = serverSocketChannel.accept();
-            NioChannel channel = channelSupplier.get();
             channel.handleAccepted(reactor, socketChannel, socketConfig);
             logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
         } catch (IOException e) {
-            e.printStackTrace();
+            channel.handleException(e);
         }
     }
 }
