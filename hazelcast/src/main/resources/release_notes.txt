@@ -6,6 +6,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 environment have the instance tracking file name set correctly in the configuration. See the note in Instance Tracking documentation. [#19929]
 * Enabled XXE (XML External Entity Reference) protection for `XMLInputFactory`. The issue was reported through
 https://huntr.dev/bounties/d63972a2-b910-480a-a86b-d1f75d24d563/. [#20942]
+* The probe level for most of the network related statistics has been changed to "DEBUG" to decrease the pressure on Management Center; now they are not sent to Management Center by default. If you want to see these statistics, you need to set the "hazelcast.metrics.debug.enabled" property to "true. [#21275]
 
 ## Fixes
 
