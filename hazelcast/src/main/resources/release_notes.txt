@@ -1,21 +1,5 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast Platform 5.0.3 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast Platform 5.0.3-migration release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 ## Enhancements
 
-* Hazelcast command line interface is now available within the Hazelcast distribution package;
-previously it needed to be installed separately. [#20812]
-* Enabled XXE (XML External Entity Reference) protection for `XMLInputFactory`. The related issue was reported
-through the https://huntr.dev/bounties/d63972a2-b910-480a-a86b-d1f75d24d563/. [#20941]
-
-## Fixes
-
-* Fixed a data race in `SingleProtocolEncoder`; while one method of this interface is called from the input thread,
-another one is called from the output thread which was causing the race. [#20993]
-* Fixed a potential deadlock during partition migrations and inability to make progress while performing graceful shutdown with persistence enabled. [#20884]
-* Fixed an issue where the `hz-start.bat` command was not working with Java 8 in the Windows operating system. [#20811]
-* Fixed an issue where the Operation Profiler of diagnostic utility was showing incorrect
-latency distributions. [#20722]
-* Fixed an issue where a Hazelcast client was failing to connect to a cluster if it does not
-know the hostname of a cluster member. [#20630]
-* Fixed the mapping issue of Hazelcast Map fields in SQL; when the value object contains a
-public getter of `java.util.Map`, the `CREATE MAPPING` statement was failing. [#20256]
+* Added the support for processing WAN replication messages from Hazelcast IMDG 3.12. cluster members. [#20842]
