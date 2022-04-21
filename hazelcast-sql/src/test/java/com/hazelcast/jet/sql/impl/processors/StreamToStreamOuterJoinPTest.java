@@ -21,6 +21,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -84,7 +85,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(1, 2));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -119,7 +121,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_leftJoin_when_rowContainsMultipleColumns_then_fillNulls() {
+    public void given_leftJoin_when_rowContainsMultipleColumns_then_successful() {
         postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
         postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
         joinInfo = new JetJoinInfo(
@@ -134,7 +136,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(1, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -170,7 +173,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_rightJoin_when_singleWmKeyPerInput_then_fillNulls() {
+    public void given_rightJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
         postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
         postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
         joinInfo = new JetJoinInfo(
@@ -185,7 +188,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -220,7 +224,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_rightJoin_when_rowContainsMultipleColumns_then_fillNulls() {
+    public void given_rightJoin_when_rowContainsMultipleColumns_then_successful() {
         postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
         postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
         joinInfo = new JetJoinInfo(
@@ -235,7 +239,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(2, 2));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -259,7 +264,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .expectOutput(
                         asList(
                                 // NOTE: first row contains NULL since test processor process left input first
-                                jetRow(1L, 1L, null),
+                                jetRow(1L, 1L, null, null),
                                 jetRow(1L, 1L, 1L, 1L),
                                 jetRow(1L, 1L, 2L, 2L),
                                 jetRow(3L, 3L, 1L, 1L),

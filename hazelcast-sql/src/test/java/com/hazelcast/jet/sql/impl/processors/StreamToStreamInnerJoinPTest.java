@@ -21,6 +21,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -87,7 +88,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(1, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -137,7 +139,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -200,7 +203,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(2, 2));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -260,7 +264,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -322,7 +327,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
-                postponeTimeMap);
+                postponeTimeMap,
+                Tuple2.tuple2(3, 1));
 
         // endregion
 

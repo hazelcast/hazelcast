@@ -20,6 +20,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -52,12 +53,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractor;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractor;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
+    private final Tuple2<Integer, Integer> columnCount;
 
     private final long[][] wmState;
 
     private Iterator<JetSqlRow> pos;
 
     private JetSqlRow currItem;
+    // NOTE: we are using LinkedList, because we are expecting :
+    // (1) removals in the middle,
+    // (2) traversing whole list without indexing.
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
     private final Queue<Watermark> pendingWatermarks = new ArrayDeque<>();
@@ -66,12 +71,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             final JetJoinInfo joinInfo,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractor,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractor,
-            final Map<Byte, Map<Byte, Long>> postponeTimeMap
+            final Map<Byte, Map<Byte, Long>> postponeTimeMap,
+            final Tuple2<Integer, Integer> columnCount
     ) {
         this.joinInfo = joinInfo;
         this.leftTimeExtractor = leftTimeExtractor;
         this.rightTimeExtractor = rightTimeExtractor;
         this.postponeTimeMap = postponeTimeMap;
+        this.columnCount = columnCount;
 
         this.wmState = new long[postponeTimeMap.size()][postponeTimeMap.size()];
         for (byte i = 0; i < postponeTimeMap.size(); ++i) {
@@ -85,6 +92,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         while (!pendingOutput.isEmpty()) {
@@ -108,7 +116,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 if (ordinal == 1 && joinInfo.isLeftOuter()) {
                     // fill LEFT side with nulls
                     joinedRow = ExpressionUtil.join(
-                            new JetSqlRow(currItem.getSerializationService(), new Object[]{null}),
+                            new JetSqlRow(currItem.getSerializationService(), new Object[columnCount.f0()]),
                             currItem,
                             joinInfo.condition(),
                             MOCK_EEC
@@ -117,7 +125,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     // fill RIGHT side with nulls
                     joinedRow = ExpressionUtil.join(
                             currItem,
-                            new JetSqlRow(currItem.getSerializationService(), new Object[]{null}),
+                            new JetSqlRow(currItem.getSerializationService(), new Object[columnCount.f1()]),
                             joinInfo.condition(),
                             MOCK_EEC
                     );
