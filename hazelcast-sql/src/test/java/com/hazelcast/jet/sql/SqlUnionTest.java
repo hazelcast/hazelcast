@@ -20,16 +20,22 @@ import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlUnionTest extends SqlTestSupport {
@@ -226,8 +232,21 @@ public class SqlUnionTest extends SqlTestSupport {
         expected.add(new Row(timestampTz(14L), 3));
         expected.add(new Row(timestampTz(14L), 3));
 
-        String query = sql + " UNION ALL " + sql;
-        assertTipOfStream(query, expected);
+        SqlResult result = instance().getSql().execute(sql + " UNION ALL " + sql);
+        ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+        List<Row> actualRows = new ArrayList<>();
+        assertTrueEventually(() -> {
+            while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
+                actualRows.add(new Row(iterator.next()));
+            }
+            if (actualRows.size() == 7 && expected.size() < 7) {
+                // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
+                // it can happen that one of the late items makes it through. But both will never make it.
+                expected.add(new Row(timestampTz(0L), 4));
+            }
+            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
+        },
+                5);
     }
 
     private static String createTable(Object[]... values) {
