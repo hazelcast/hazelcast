@@ -113,7 +113,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(methodProbe.probe.unit())
                         .withMetric(methodProbe.getProbeName())
-                        .withExcludedTargets(extractExcludedTargets(methodProbe));
+                        .withExcludedTargets(extractExcludedTargets(methodProbe, minimumLevel));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
                 collect(descriptorCopy, source, methodProbe);
@@ -126,7 +126,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
                         .withMetric(fieldProbe.getProbeName())
-                        .withExcludedTargets(extractExcludedTargets(fieldProbe));
+                        .withExcludedTargets(extractExcludedTargets(fieldProbe, minimumLevel));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
                 collect(descriptorCopy, source, fieldProbe);
@@ -188,7 +188,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
-                adjustExclusionsWithLevel(descriptorCopy, level);
+                adjustExclusionsWithLevel(descriptorCopy, level, minimumLevel);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectLong(descriptorCopy, value);
@@ -202,7 +202,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
-                adjustExclusionsWithLevel(descriptorCopy, level);
+                adjustExclusionsWithLevel(descriptorCopy, level, minimumLevel);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectDouble(descriptorCopy, value);
