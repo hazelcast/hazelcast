@@ -72,6 +72,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 
 public class JetPlanExecutor {
@@ -262,17 +263,14 @@ public class JetPlanExecutor {
         CompletableFuture<Object[]> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
                 .toCompletableFuture()
-                .thenApply(value -> plan.rowProjectorSupplier()
+                .thenApply(value -> value == null ? null : plan.rowProjectorSupplier()
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
         Object[] row = await(future, timeout);
-        return new JetSqlResultImpl(
-                queryId,
-                new JetStaticQueryResultProducer(row),
-                plan.rowMetadata(),
-                false,
-                serializationService
-        );
+        JetStaticQueryResultProducer resultProducer = row != null
+                ? new JetStaticQueryResultProducer(row)
+                : new JetStaticQueryResultProducer(emptyIterator());
+        return new JetSqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false, serializationService);
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
