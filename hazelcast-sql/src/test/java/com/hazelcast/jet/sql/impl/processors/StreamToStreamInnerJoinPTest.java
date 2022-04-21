@@ -19,9 +19,12 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -35,6 +38,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,10 +46,13 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -65,6 +72,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private JetJoinInfo joinInfo;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
 
     @Before
     public void before() {
@@ -91,9 +103,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(1, 1));
 
-        TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableProgressAssertion()
+                .disableSnapshots()
                 .inputs(asList(
                         asList(
                                 jetRow(0L),
@@ -142,9 +156,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 1));
 
-        TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableProgressAssertion()
+                .disableSnapshots()
                 .inputs(asList(
                         asList(
                                 jetRow(12L, 10L),
@@ -206,7 +222,9 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 2));
 
-        TestSupport.verifyProcessor(supplier)
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .inputs(asList(
@@ -267,7 +285,9 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 1));
 
-        TestSupport.verifyProcessor(supplier)
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .inputs(asList(
@@ -332,7 +352,10 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
         // endregion
 
-        TestSupport.verifyProcessor(supplier)
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(SqlTestSupport::compareRowLists)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .inputs(asList(

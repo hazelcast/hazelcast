@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -34,13 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 public class StreamToStreamJoinP extends AbstractProcessor {
-    // TODO: replace with ExpressionEvalContext.from(context) in init() method.
-    private static final ExpressionEvalContext MOCK_EEC =
-            new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
     /**
      * <p>
      * JOIN condition should be transformed into such form:
@@ -57,6 +52,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private final long[][] wmState;
 
+    private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> pos;
 
     private JetSqlRow currItem;
@@ -92,6 +88,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        this.evalContext = ExpressionEvalContext.from(context);
+    }
+
     @SuppressWarnings("ConstantConditions")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
@@ -119,7 +120,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                             new JetSqlRow(currItem.getSerializationService(), new Object[columnCount.f0()]),
                             currItem,
                             joinInfo.condition(),
-                            MOCK_EEC
+                            evalContext
                     );
                 } else if (ordinal == 0 && joinInfo.isRightOuter()) {
                     // fill RIGHT side with nulls
@@ -127,7 +128,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                             currItem,
                             new JetSqlRow(currItem.getSerializationService(), new Object[columnCount.f1()]),
                             joinInfo.condition(),
-                            MOCK_EEC
+                            evalContext
                     );
                 }
             }
@@ -148,7 +149,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 ordinal == 0 ? currItem : pos.next(),
                 ordinal == 0 ? pos.next() : currItem,
                 joinInfo.condition(),
-                MOCK_EEC
+                evalContext
         );
 
         if (preparedOutput != null && !tryEmit(preparedOutput)) {
