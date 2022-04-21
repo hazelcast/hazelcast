@@ -40,22 +40,22 @@ public class SqlJava16RecordTest extends SqlTestSupport {
         initializeWithClient(1, config, null);
     }
 
-//    @Test
-//    public void test_withColumnList() {
-//        instance().getMap("m").put(1, new Person("foo", 42));
-//        SqlService sqlService = instance().getSql();
-//        sqlService.execute("CREATE OR REPLACE MAPPING m(__key int, age INT, name VARCHAR) TYPE imap\n"
-//                + "OPTIONS (\n"
-//                + '\'' + OPTION_KEY_FORMAT + "'='int'\n"
-//                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + "'\n"
-//                + ", 'valueCompactTypeName'='" + Person.class.getName() + "'\n"
-//                + ")"
-//        );
-//        sqlService.execute("insert into m values (2, 43, 'foo43')");
-//        for (SqlRow r : sqlService.execute("select * from m")) {
-//            System.out.println(r);
-//        }
-//    }
+    @Test
+    public void test_withColumnList2() {
+        instance().getMap("m").put(1, new Person("foo", 42));
+        SqlService sqlService = instance().getSql();
+        sqlService.execute("CREATE OR REPLACE MAPPING m(__key int, age INT, name VARCHAR) TYPE imap\n"
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='int'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + "'\n"
+                + ", 'valueCompactTypeName'='" + Person.class.getName() + "'\n"
+                + ")"
+        );
+        sqlService.execute("insert into m values (2, 43, 'foo43')");
+        for (SqlRow r : sqlService.execute("select * from m")) {
+            System.out.println(r);
+        }
+    }
 
     @Test
     public void test_withColumnList() {

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Stream.concat;
 
@@ -33,14 +32,12 @@ final class Metadata {
 
     private final List<MappingField> fields;
     private final Map<String, String> options;
+    private boolean fieldsOptional;
 
-    Metadata(Map<String, String> options) {
-        this(emptyList(), options);
-    }
-
-    Metadata(List<MappingField> fields, Map<String, String> options) {
+    Metadata(List<MappingField> fields, Map<String, String> options, boolean fieldsOptional) {
         this.fields = fields;
         this.options = options;
+        this.fieldsOptional = fieldsOptional;
     }
 
     List<MappingField> fields() {
@@ -56,6 +53,6 @@ final class Metadata {
                 .collect(toCollection(() -> new TreeSet<>(Comparator.comparing(MappingField::name)))));
         Map<String, String> options = concat(this.options.entrySet().stream(), other.options.entrySet().stream())
                 .collect(LinkedHashMap::new, (map, entry) -> map.putIfAbsent(entry.getKey(), entry.getValue()), Map::putAll);
-        return new Metadata(fields, options);
+        return new Metadata(fields, options, this.fieldsOptional && other.fieldsOptional);
     }
 }

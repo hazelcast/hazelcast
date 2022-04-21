@@ -33,14 +33,15 @@ public class MetadataTest {
                         new MappingField("field1", QueryDataType.INT, "__key.field1"),
                         new MappingField("field2", QueryDataType.INT, "__key.field2")
                 ),
-                ImmutableMap.of("key1", "1", "key2", "2")
+                ImmutableMap.of("key1", "1", "key2", "2"), false
         );
         Metadata second = new Metadata(
                 asList(
                         new MappingField("field2", QueryDataType.VARCHAR, "this.field2"),
                         new MappingField("field3", QueryDataType.VARCHAR, "this.field3")
                 ),
-                ImmutableMap.of("key2", "two", "key3", "three")
+                ImmutableMap.of("key2", "two", "key3", "three"),
+                false
         );
 
         Metadata merged = first.merge(second);
@@ -50,7 +51,8 @@ public class MetadataTest {
                         new MappingField("field2", QueryDataType.INT, "__key.field2"),
                         new MappingField("field3", QueryDataType.VARCHAR, "this.field3")
                 ),
-                ImmutableMap.of("key1", "1", "key2", "2", "key3", "three")
+                ImmutableMap.of("key1", "1", "key2", "2", "key3", "three"),
+                false
         ));
     }
 }

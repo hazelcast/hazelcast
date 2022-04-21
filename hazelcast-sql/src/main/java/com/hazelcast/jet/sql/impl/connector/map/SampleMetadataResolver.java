@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.VersionedPortable;
@@ -49,6 +50,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COM
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 final class SampleMetadataResolver {
@@ -100,12 +102,15 @@ final class SampleMetadataResolver {
     }
 
     private static Metadata resolvePortable(ClassDefinition classDefinition, boolean key) {
+        List<MappingField> fields = FieldsUtil.resolvePortable(classDefinition).entrySet().stream()
+                .map(entry -> new MappingField(entry.getKey(), entry.getValue(), new QueryPath(entry.getKey(), key).toString()))
+                .collect(toList());
         Map<String, String> options = new LinkedHashMap<>();
         options.put(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, PORTABLE_FORMAT);
         options.put(key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()));
         options.put(key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()));
         options.put(key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion()));
-        return new Metadata(options);
+        return new Metadata(fields, options, true);
     }
 
     private static Metadata resolveCompact(Schema schema, boolean key) {
@@ -115,13 +120,15 @@ final class SampleMetadataResolver {
         Map<String, String> options = new LinkedHashMap<>();
         options.put(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, COMPACT_FORMAT);
         options.put(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, schema.getTypeName());
-        return new Metadata(fields, options);
+        return new Metadata(fields, options, false);
     }
 
     private static Metadata resolveJava(Class<?> clazz, boolean key) {
+        List<MappingField> fields = KvMetadataJavaResolver.INSTANCE.resolveFields(key, emptyList(), clazz)
+                .collect(toList());
         Map<String, String> options = new LinkedHashMap<>();
         options.put(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, JAVA_FORMAT);
         options.put(key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS, clazz.getName());
-        return new Metadata(options);
+        return new Metadata(fields, options, true);
     }
 }
