@@ -143,7 +143,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 MOCK_EEC
         );
 
-        if (preparedOutput == null || !tryEmit(preparedOutput)) {
+        if (preparedOutput != null && !tryEmit(preparedOutput)) {
             pendingOutput.offer(preparedOutput);
         }
         return false;
