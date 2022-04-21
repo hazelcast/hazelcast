@@ -70,6 +70,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_TEXT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_TAG_ENDPOINT;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.nio.ConnectionType.MEMCACHE_CLIENT;
@@ -101,7 +102,7 @@ public class TcpServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
     final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT, level = DEBUG)
     final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
 
     final ConnectionLifecycleListenerImpl connectionLifecycleListener = new ConnectionLifecycleListenerImpl();
@@ -120,10 +121,10 @@ public class TcpServerConnectionManager
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT, level = DEBUG)
     private final MwCounter openedCount = newMwCounter();
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT, level = DEBUG)
     private final MwCounter closedCount = newMwCounter();
 
 
@@ -403,7 +404,7 @@ public class TcpServerConnectionManager
                 + ", connectionsMap=" + null + '}';
     }
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT, level = DEBUG)
     private int connectionsInProgress() {
         int c = 0;
         for (Plane plane : planes) {
