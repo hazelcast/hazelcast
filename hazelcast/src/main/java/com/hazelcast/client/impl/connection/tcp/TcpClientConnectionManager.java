@@ -583,10 +583,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             TcpClientConnection connection = createSocketConnection(address);
             ClientAuthenticationCodec.ResponseParameters response = authenticate(connection);
             checkAuthenticationResponse(connection, response);
-            connection.setConnectedServerVersion(response.serverHazelcastVersion);
-            connection.setRemoteAddress(response.address);
-            connection.setRemoteUuid(response.memberUuid);
-            connection.setClusterUuid(response.clusterId);
+            populateConnectionWithResponse(connection, response);
             assert activeConnections.isEmpty() : "active connections should be empty when connection to cluster";
             return new AuthenticationResult(connection, response);
         } catch (InvalidConfigurationException e) {
@@ -963,9 +960,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         ClientAuthenticationCodec.ResponseParameters response =
                                 ClientAuthenticationCodec.decodeResponse(clientMessage);
                         checkAuthenticationResponse(connection, response);
-                        connection.setConnectedServerVersion(response.serverHazelcastVersion);
-                        connection.setRemoteAddress(response.address);
-                        connection.setRemoteUuid(response.memberUuid);
+                        populateConnectionWithResponse(connection, response);
                         return response;
                     });
             connectionAttempts.add(new ConnectionAttempt(member.getUuid(), future, connection));
@@ -988,6 +983,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
             }
         }
+    }
+
+    private void populateConnectionWithResponse(TcpClientConnection connection,
+                                                ClientAuthenticationCodec.ResponseParameters response) {
+        connection.setConnectedServerVersion(response.serverHazelcastVersion);
+        connection.setRemoteAddress(response.address);
+        connection.setRemoteUuid(response.memberUuid);
+        connection.setClusterUuid(response.clusterId);
     }
 
     @Override
