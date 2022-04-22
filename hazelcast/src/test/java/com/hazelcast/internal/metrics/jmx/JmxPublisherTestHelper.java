@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.internal.metrics.jmx.MetricsMBean.Type;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -49,6 +50,20 @@ public class JmxPublisherTestHelper {
         objectNameNoModule = new ObjectName(domainPrefix + ":*");
         objectNameWithModule = new ObjectName(domainPrefix + "." + MODULE_NAME + ":*");
         platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+    }
+
+    public void clearMBeans() {
+        queryOurInstances().forEach(this::clearMBean);
+        assertNoMBeans();
+    }
+
+    private void clearMBean(ObjectInstance instance) {
+        try {
+            ObjectName name = instance.getObjectName();
+            platformMBeanServer.unregisterMBean(name);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     public void assertNoMBeans() {
