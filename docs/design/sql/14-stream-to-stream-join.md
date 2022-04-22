@@ -84,13 +84,12 @@ of that event.
 
 Let's describe all possible scenarios for joining these two streams:
 
-| Behavior                                                       | Outcome                           |
-|----------------------------------------------------------------|-----------------------------------|
-| Both input streams don't have watermarks                       | exception during query processing |
-| At least one input stream doesn't have watermarks              | exception during query processing |
-| At least one input stream has zero lag                         | result set would be empty         |
-| Both __S1__ and __S2__ have watermarks with non-zero lag times | Example in Table 3, 4             |
-| ---                                                            | ---                               |
+| Behavior                                                       | Outcome                              |
+|----------------------------------------------------------------|--------------------------------------|
+| Both input streams don't have watermarks                       | exception during query processing    |
+| At least one input stream doesn't have watermarks              | exception during query processing    |
+| At least one input stream has zero lag                         | result set would be empty            |
+| Both __S1__ and __S2__ have watermarks with non-zero lag times | result set would contain joined rows |
 
 __Table 2__
 
@@ -98,18 +97,19 @@ __Table 2__
 
 ##### Postpone map definition
 
-To solve a problem with JOIN condition extraction complexity, we want to introduce the _canonical representation_ of
-relations between different input event types. To enlighten the thinking about JOIN condition for the processor, we
-would like to represent the conditions in such format:
+There is a problem - processor cannot hold received events forever. We strongly require time-boundness in JOIN condition
+exactly for that : processor should know which events are expired and then removes them. What is the most convenient way
+represent time-bounded in JOIN condition? To solve this problem, we want to introduce the _canonical representation_ of
+time bound conditions between different input event types. Proposed format is :
 
 ```
 inputX.time >= inputY.time - constant
 ...
 ```
 
-Since we strictly require **time-bounded** JOIN condition, we use mathematical transformations to transform the fresh
-extracted condition to unified form, or, _canonical representation_. We then translate this _canonical representation_
-into a simple data structure called a `postpone map`. For each input event key, we define a complete dependency map :
+We use mathematical transformations to transform the fresh extracted condition to unified form, or, _canonical
+representation_. We then translate this _canonical representation_ into a simple data structure called a `postpone map`.
+For each input event key, we define a complete dependency map :
 
 ```
 ...
@@ -143,9 +143,9 @@ Postpone map:
 
 Items:
 
-- join metainformation (`JetJoinInfo`)
+- join meta-information (`JetJoinInfo`)
 - list of left input stream event timestamp extraction functions (according to watermarks count on left input stream)
-- list of right input stream event timestamp extraction functions (according to watermarks count on left input stream)
+- list of right input stream event timestamp extraction functions (according to watermarks count on right input stream)
 - postpone map
 
 ##### Algorithm
@@ -156,20 +156,19 @@ defined watermark key. Also, each input stream **may** contain
 1. Perform query analysis, detect timestamp column from both input stream schemas
 2. Produce JOIN condition, timestamp extraction functions and postpone maps.
 3. Prepare a **watermark state** data structure (`long[][]`) - time limit for each watermark keys relation.
-    1.
 4. Prepare two buffers : `B0` to store input events from ordinal 0 and `B1` to store input events from ordinal 1.
 5. Receive event `E` from the ordinal.
     1. If received event is watermark with key `key` :
-        1. Offer changes to watermark state: define minimum available time for each join condition written in WM state.
+        1. Offer changes to **watermark state**: redefine minimum available time for each join condition written in WM
+           state.
         2. Try to clean all _expired_ events in related buffer:
             1. _Expired_ items are all items with watermark timestamp less than value in corresponding watermark state.
         3. Compute `minTime` as minimum timestamp of items in related buffer to watermark key.
         4. Emit `minTime` as watermark event with `key` to the outbox.
     2. Else:
         1. Extract timestamp from event E.
-        2. If extract attempt was failed - throw an exception.
-        3. Store E to the buffer B0, if received from ordinal 0, store to B1 otherwise.
-        4. For each event in 'parallel' buffer
+        2. Store E to the buffer B0, if received from ordinal 0, store to B1 otherwise.
+        3. For each event in opposite buffer
             1. Perform JOIN operation for each event in 'opposite' buffer.
             3. If the join type is `OUTER JOIN`, we should fill empty side (no input events received) with NULL.
             4. Emit joined event.
@@ -193,12 +192,6 @@ public final class Watermark implements BroadcastItem {
     // ...
 }
 ```
-
-`[*]` __Note__: each watermark event should stay as a separate event in joined stream.
-
-_Q: Should we support only timestamps as JOIN condition?_
-**Sasha's proposition: JOIN condition must contain a time boundness. Non-timestamp JOIN condition(s) are allowed as
-optional JOIN condition .**
 
 _Q: Time bounds should be constant or variable size? Example:_
 
