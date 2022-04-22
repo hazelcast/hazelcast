@@ -160,7 +160,7 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
     }
 
     @Category(SlowTest.class)
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void clusterSafe_completes_whenInvokedFromCommonPool() throws InterruptedException {
         Config config = getConfig(true, true);
 
