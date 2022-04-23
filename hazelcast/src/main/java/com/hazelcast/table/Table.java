@@ -1,5 +1,13 @@
 package com.hazelcast.table;
 
+/**
+ * This API contains a lot of functionality that normally would be placed
+ * over different APIs. But I don't want to jump to a more appropriate solution
+ * yet.
+ *
+ * @param <K>
+ * @param <E>
+ */
 public interface Table<K,E> {
 
     Pipeline newPipeline();

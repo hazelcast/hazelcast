@@ -5,6 +5,7 @@ import sun.misc.Unsafe;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
+import static java.lang.Math.abs;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -22,28 +23,23 @@ public class OffheapMap {
     private final Unsafe unsafe = UnsafeUtil.UNSAFE;
     private final int addressSize = unsafe.addressSize();
     private final Allocator allocator;
-    private final float upperLoadFactor;
-    private final float lowerLoadFactory;
-    private final long initialCapacity;
+    private final float maxLoadFactor;
     private long mod;
     private long size;
     private long tableSize;
     private long tableAddress;
 
     public OffheapMap(long initialCapacity, Allocator allocator) {
-        this(initialCapacity, allocator, 0.60f, 0.75f);
+        this(initialCapacity, allocator, 0.75f);
     }
 
     public OffheapMap(long initialCapacity,
                       Allocator allocator,
-                      float lowerLoadFactor,
-                      float upperLoadFactor) {
-        this.initialCapacity = nextPowerOfTwo(initialCapacity);
-        this.tableSize = initialCapacity;
+                      float maxLoadFactor) {
+        this.tableSize = nextPowerOfTwo(initialCapacity);
         this.mod = tableSize - 1;
         this.allocator = allocator;
-        this.upperLoadFactor = upperLoadFactor;
-        this.lowerLoadFactory = lowerLoadFactor;
+        this.maxLoadFactor = maxLoadFactor;
         this.tableAddress = allocator.callocate(initialCapacity * addressSize);
     }
 
@@ -51,14 +47,12 @@ public class OffheapMap {
         return tableSize;
     }
 
-
-    // bucket count power of two: cheap mod.
     private long index(Bin key) {
-        return Math.abs(key.hash() % tableSize);
+        return abs(key.hash()) & mod;
     }
 
-    private long index(int hash, long bucketCount) {
-        return Math.abs(hash % bucketCount);
+    private static long index(int hash, long mod) {
+        return abs(hash) & mod;
     }
 
     /**
@@ -79,24 +73,15 @@ public class OffheapMap {
     }
 
     private void resize() {
-        //  System.out.println("size:" + size);
-        float loadFactor = loadFactor();
-        //    System.out.println("loadFactor:" + loadFactor);
-        long newTableSize;
-        if (loadFactor > upperLoadFactor) {
-            newTableSize = tableSize * 2;
-//        } else if (loadFactor < lowerLoadFactory) {
-//            if (bucketCount < 32) {
-//                return;
-//            }
-//            newTableSize = bucketCount / 2;
-        } else {
+        if (loadFactor() <= maxLoadFactor) {
             return;
         }
 
-        //long startMs = currentTimeMillis();
-        //long oldTableSize = tableSize;
+        long oldTableSize = tableSize;
+        long newTableSize = tableSize * 2;
+        long startMs = currentTimeMillis();
 
+        long newMod = newTableSize -1;
         long newTableSizeInBytes = newTableSize * addressSize;
         long newTableAddress = allocator.callocate(newTableSizeInBytes);
 
@@ -119,7 +104,7 @@ public class OffheapMap {
                     hashcode = 31 * hashcode + unsafe.getByte(recordAddress + BYTES_INT + k);
                 }
 
-                long newIndex = index(hashcode, newTableSize);
+                long newIndex = index(hashcode, newMod);
                 //System.out.println("new bucket:"+newIndex);
                 long newNodeAddress = unsafe.getAddress(newTableAddress + newIndex * addressSize);
                 int newNodeCount;
@@ -142,13 +127,10 @@ public class OffheapMap {
         allocator.free(tableAddress);
         this.tableSize = newTableSize;
         this.tableAddress = newTableAddress;
-        this.mod = tableSize - 1;
+        this.mod = newMod;
 
-        //long durationMs = currentTimeMillis()-startMs;
-        //System.out.println("resizing from " + oldTableSize + " to:" + newTableSize+" took "+durationMs+" ms");
-
-
-        // System.out.println("resize complete");
+        long durationMs = currentTimeMillis()-startMs;
+        System.out.println("resizing from " + oldTableSize + " to:" + newTableSize+" took "+durationMs+" ms");
     }
 
     public boolean get(Bin key, Bout value) {
@@ -184,9 +166,9 @@ public class OffheapMap {
 
         if (!update(key, value, nodeAddress, nodeCount)) {
             insert(key, value, index, nodeAddress, nodeCount);
+            resize();
         }
     }
-
 
     private boolean update(Bin key, Bin value, long nodeAddress, int nodeCount) {
         for (long node = 0; node < nodeCount; node++) {
@@ -223,7 +205,6 @@ public class OffheapMap {
         unsafe.putInt(nodeAddress, nodeCount + 1);
         unsafe.putAddress(tableAddress + index * addressSize, nodeAddress);
         size++;
-        resize();
     }
 
     public void clear() {
