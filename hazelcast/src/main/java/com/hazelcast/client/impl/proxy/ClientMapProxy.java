@@ -16,6 +16,24 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
+import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
+import static java.lang.Thread.currentThread;
+import static java.util.Collections.emptyMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
@@ -73,6 +91,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -85,7 +104,6 @@ import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
-import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
@@ -146,9 +164,6 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -165,24 +180,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
-import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
-import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
-import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.map.impl.record.Record.UNSET;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
-import static java.lang.Thread.currentThread;
-import static java.util.Collections.emptyMap;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Proxy implementation of {@link IMap}.
@@ -1286,7 +1285,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response;
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-            response = invoke(request, partitionPredicate.getPartitionKey());
+            response = invoke(request, partitionPredicate.getRandomPartitionKey());
         } else {
             response = invoke(request);
         }
