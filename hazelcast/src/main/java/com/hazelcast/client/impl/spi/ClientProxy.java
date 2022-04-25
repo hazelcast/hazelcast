@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.spi;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
@@ -26,12 +28,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-
-import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.Future;
-
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import javax.annotation.Nonnull;
 
 /**
  * Base class for client proxies.
