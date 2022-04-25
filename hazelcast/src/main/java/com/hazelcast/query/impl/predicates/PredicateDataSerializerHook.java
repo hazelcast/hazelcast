@@ -16,17 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.internal.util.ConstructorFunction;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 public class PredicateDataSerializerHook implements DataSerializerHook {
 
@@ -154,7 +154,7 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
         };
         constructors[PARTITIONS_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionsPredicateImpl();
+                return new PartitionPredicateImpl();
             }
         };
         constructors[NULL_OBJECT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

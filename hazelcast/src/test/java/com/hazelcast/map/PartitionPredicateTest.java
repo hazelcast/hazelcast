@@ -16,6 +16,10 @@
 
 package com.hazelcast.map;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,17 +35,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Collection;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collection;
-import java.util.Map;
-
-import static com.hazelcast.test.Accessors.getSerializationService;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -197,7 +196,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         assertContains(predicate.toString(), "PartitionPredicate");
-        assertContains(predicate.toString(), "partitionKey=" + partitionKey);
+        assertContains(predicate.toString(), "partitionKeys=[" + partitionKey + "]");
     }
 
     @Test
@@ -206,7 +205,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
         Data serialized = serializationService.toData(predicate);
         PartitionPredicate deserialized = serializationService.toObject(serialized);
 
-        assertEquals(partitionKey, deserialized.getPartitionKey());
+        assertEquals(partitionKey, deserialized.getPartitionKeys().stream().findFirst().get());
         assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
     }
 

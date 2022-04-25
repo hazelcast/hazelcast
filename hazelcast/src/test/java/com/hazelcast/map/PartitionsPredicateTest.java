@@ -16,13 +16,17 @@
 
 package com.hazelcast.map;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.projection.Projections;
-import com.hazelcast.query.PartitionsPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -31,19 +35,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static com.hazelcast.test.Accessors.getSerializationService;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,7 +62,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
     private int partitionId2;
     private String partitionKey3;
     private int partitionId3;
-    private List<String> partitionKeys;
+    private Set<String> partitionKeys;
 
     private Predicate<String, Integer> predicate;
     private Predicate<String, Integer> aggPredicate;
@@ -103,7 +103,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
                 break;
             }
         }
-        partitionKeys = Arrays.asList(partitionKey1, partitionKey2, partitionKey3);
+        partitionKeys = new HashSet<>(Arrays.asList(partitionKey1, partitionKey2, partitionKey3));
 
 
         predicate = Predicates.partitionsPredicate(partitionKeys, Predicates.alwaysTrue());
@@ -163,7 +163,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnEntries() {
-        PartitionsPredicate<String, Integer> lessThan10pp = Predicates.partitionsPredicate(partitionKeys,
+        PartitionPredicate<String, Integer> lessThan10pp = Predicates.partitionsPredicate(partitionKeys,
                 Predicates.lessThan("this", 10));
         Map<String, Integer> result = aggMap.executeOnEntries(new EntryNoop<>(), lessThan10pp);
 
@@ -226,7 +226,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
     public void testSerialization() {
         SerializationService serializationService = getSerializationService(local);
         Data serialized = serializationService.toData(predicate);
-        PartitionsPredicate deserialized = serializationService.toObject(serialized);
+        PartitionPredicate deserialized = serializationService.toObject(serialized);
 
         assertEquals(partitionKeys, deserialized.getPartitionKeys());
         assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());

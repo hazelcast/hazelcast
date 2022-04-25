@@ -16,6 +16,12 @@
 
 package com.hazelcast.spi.discovery.multicast;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.JoinConfig;
@@ -24,24 +30,17 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 /**
  * Tests if safe-serialization property works in {@link MulticastDiscoveryStrategy}.
@@ -80,7 +79,6 @@ public class MulticastDiscoveryStrategyDeserializationTest {
         assertNull(datagramsThreadException);
         HazelcastInstanceFactory.terminateAll();
         TestDeserialized.isDeserialized = false;
-
     }
 
     @Test
@@ -96,7 +94,7 @@ public class MulticastDiscoveryStrategyDeserializationTest {
     public void testDefaultPacketFormat() throws Exception {
         Config config = createConfig(null);
         Hazelcast.newHazelcastInstance(config);
-        assertTrueEventually(() -> assertTrue("Object was not deserialized", TestDeserialized.isDeserialized), 15);
+        assertTrueEventually(() -> assertTrue("Object was not deserialized", TestDeserialized.isDeserialized));
     }
 
     private Config createConfig(Boolean safeSerialization) {

@@ -16,11 +16,13 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.predicates.FalsePredicate;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.BetweenPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.query.impl.predicates.FalsePredicate;
 import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.query.impl.predicates.ILikePredicate;
 import com.hazelcast.query.impl.predicates.InPredicate;
@@ -31,15 +33,14 @@ import com.hazelcast.query.impl.predicates.NotPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
-import com.hazelcast.query.impl.predicates.PartitionsPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.query.impl.predicates.TruePredicate;
-
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A utility class to create new {@link PredicateBuilder} and {@link com.hazelcast.query.Predicate} instances.
@@ -576,20 +577,21 @@ public final class Predicates {
      * @throws NullPointerException     if partition key or target predicate is {@code null}
      */
     public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {
-        return new PartitionPredicateImpl<>(partitionKey, target);
+        checkNotNull(partitionKey, "partitionKey can't be null");
+        return new PartitionPredicateImpl<>(Collections.singleton(partitionKey), target);
     }
 
     /**
      * Creates a new partitions predicate that restricts the execution of the target predicate to a subset of partitions.
      *
-     * @param partitionKey the partition keys
+     * @param partitionKeys the partition keys
      * @param target       the target {@link Predicate}
      * @param <K>          the type of keys the predicate operates on.
      * @param <V>          the type of values the predicate operates on.
      * @throws NullPointerException     if partition key or target predicate is {@code null}
      */
-    public static <K, V> PartitionsPredicate<K, V> partitionsPredicate(Collection<? extends Object> partitionKeys,
-            Predicate<K, V> target) {
-        return new PartitionsPredicateImpl<>(partitionKeys, target);
+    public static <K, V> PartitionPredicate<K, V> partitionsPredicate(Set<? extends Object> partitionKeys,
+                                                                      Predicate<K, V> target) {
+        return new PartitionPredicateImpl<>(partitionKeys, target);
     }
 }

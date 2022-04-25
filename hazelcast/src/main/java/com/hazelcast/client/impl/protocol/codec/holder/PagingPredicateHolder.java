@@ -116,7 +116,7 @@ public class PagingPredicateHolder {
                                                            SerializationService serializationService) {
         PagingPredicateImpl<K, V> pagingPredicate = (PagingPredicateImpl<K, V>) partitionPredicate.getTarget();
 
-        Data partitionKeyData = serializationService.toData(partitionPredicate.getPartitionKey());
+        Data partitionKeyData = serializationService.toData(partitionPredicate.getPartitionKeys());
 
         return buildHolder(serializationService, pagingPredicate, partitionKeyData);
     }

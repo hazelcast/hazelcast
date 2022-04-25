@@ -16,17 +16,23 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
-
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Implementation of {@link PartitionPredicate}.
@@ -35,11 +41,13 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @param <V> type of the entry value
  */
 @BinaryInterface
-public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable {
+public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable, Versioned {
 
     private static final long serialVersionUID = 1L;
+    private static final Random RANDOM = new Random();
 
     private Object partitionKey;
+    private Set<? extends Object> partitionKeys;
     private Predicate<K, V> target;
 
     // should only be used for deserialization
@@ -49,23 +57,43 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
     /**
      * Creates a new PartitionPredicate.
      *
-     * @param partitionKey the partition key
+     * @param partitionKeys the partition keys
      * @param target       the target {@link Predicate}
      * @throws NullPointerException     if partitionKey or target predicate is {@code null}
      */
-    public PartitionPredicateImpl(Object partitionKey, Predicate<K, V> target) {
-        this.partitionKey = checkNotNull(partitionKey, "partitionKey can't be null");
+    public PartitionPredicateImpl(Set<? extends Object> partitionKeys, Predicate<K, V> target) {
+        this.partitionKeys = checkNotNull(partitionKeys, "partitionKeys can't be null");
+        checkTrue(partitionKeys.size() > 0, "partitionKeys must not be empty");
         this.target = checkNotNull(target, "target predicate can't be null");
     }
 
     /**
-     * Returns the partition key that determines the partition the target {@link Predicate} is going to execute on.
+     * Returns the partition keys that determines the partitions the target {@link Predicate} is going to execute on.
      *
-     * @return the partition ID
+     * @return the partition IDs
      */
     @Override
-    public Object getPartitionKey() {
-        return partitionKey;
+    public Collection<? extends Object> getPartitionKeys() {
+        return partitionKeys;
+    }
+
+    /**
+     * Returns a random partition key that can be used to pick which member of a cluster to execute on.
+     *
+     * If there is only a single partition key in {@linkplain #getPartitionKeys() partitionKeys} it is always returned immediately
+     *
+     * @return the randomly selected partition key from {@linkplain #getPartitionKeys()} partitionKeys}.
+     */
+    @Override
+    public Object getRandomPartitionKey() {
+        if (partitionKey != null) {
+            return partitionKey;
+        }
+        // Empty collections are rejected by the object constructor and serializer so this should be safe
+        return partitionKeys.stream()
+                .skip(RANDOM.nextInt(partitionKeys.size()))
+                .findFirst()
+                .get();
     }
 
     /**
@@ -95,22 +123,32 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(partitionKey);
+        if (out.getVersion().isLessThan(Versions.V5_2)) {
+            out.writeObject(partitionKey);
+        } else {
+            out.writeObject(partitionKeys);
+        }
         out.writeObject(target);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.partitionKey = in.readObject();
+        if (in.getVersion().isLessThan(Versions.V5_2)) {
+            this.partitionKey = in.readObject();
+            this.partitionKeys = Collections.singleton(this.partitionKey);
+        } else {
+            this.partitionKey = null;
+            this.partitionKeys = in.readObject();
+        }
         this.target = in.readObject();
     }
 
     @Override
     public String toString() {
         return "PartitionPredicate{"
-                + "partitionKey=" + partitionKey
-                + ", target=" + target
-                + '}';
+               + "partitionKeys=" + partitionKeys
+               + ", target=" + target
+               + '}';
     }
 
     @Override
@@ -124,7 +162,7 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
 
         PartitionPredicateImpl<?, ?> that = (PartitionPredicateImpl<?, ?>) o;
 
-        if (partitionKey != null ? !partitionKey.equals(that.partitionKey) : that.partitionKey != null) {
+        if (partitionKeys != null ? !partitionKeys.equals(that.partitionKeys) : that.partitionKeys != null) {
             return false;
         }
         return target != null ? target.equals(that.target) : that.target == null;
@@ -132,7 +170,7 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
 
     @Override
     public int hashCode() {
-        int result = partitionKey != null ? partitionKey.hashCode() : 0;
+        int result = partitionKeys != null ? partitionKeys.hashCode() : 0;
         result = 31 * result + (target != null ? target.hashCode() : 0);
         return result;
     }
