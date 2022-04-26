@@ -18,6 +18,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * A {@link Predicate} that restricts the execution of a {@link Predicate} to a single partition.
@@ -34,21 +35,27 @@ import java.util.Collection;
 public interface PartitionPredicate<K, V> extends Predicate<K, V> {
 
     /**
-     * Returns the partition keys that determines the partitions the {@linkplain
+     * Returns the partition keys that determine the partitions the {@linkplain
      * #getTarget() target} {@link Predicate} is going to execute on.
+     *
+     * A default implementation that wraps the {@linkplain #getPartitionKey() partition key} in a singleton
+     * collection is provided for backwards compatibility with single key implementations.
      *
      * @return the partition keys
      */
-    Collection<? extends Object> getPartitionKeys();
+    default Collection<? extends Object> getPartitionKeys() {
+        return Collections.singleton(getPartitionKey());
+    }
 
     /**
      * Returns a random partition key from the {@linkplain #getPartitionKeys() collection}.
      * This is useful for client message routing to cluster instances.
-     * If there is a single value in the collection it is always returned as is.
+     * If there is a single value in the collection it is always returned as is to be backwards
+     * compatible with older versions of PartitionPredicate.
      *
      * @return the single key
      */
-    Object getRandomPartitionKey();
+    Object getPartitionKey();
 
     /**
      * Returns the target {@link Predicate}.

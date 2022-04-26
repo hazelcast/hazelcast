@@ -85,7 +85,7 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
      * @return the randomly selected partition key from {@linkplain #getPartitionKeys()} partitionKeys}.
      */
     @Override
-    public Object getRandomPartitionKey() {
+    public Object getPartitionKey() {
         if (partitionKey != null) {
             return partitionKey;
         }
