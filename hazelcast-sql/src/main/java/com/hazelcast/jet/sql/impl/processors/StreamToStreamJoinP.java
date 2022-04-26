@@ -46,8 +46,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
      * </pre>
      */
     private final JetJoinInfo joinInfo;
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractor;
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractor;
+    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
+    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCount;
 
@@ -57,23 +57,23 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> pos;
 
     private JetSqlRow currItem;
-    // NOTE: we are using LinkedList, because we are expecting :
+    // NOTE: we are using LinkedList, because we are expecting:
     // (1) removals in the middle,
     // (2) traversing whole list without indexing.
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
-    private final Queue<Watermark> pendingWatermarks = new ArrayDeque<>();
+    private Watermark pendingWatermark;
 
     public StreamToStreamJoinP(
             final JetJoinInfo joinInfo,
-            final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractor,
-            final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractor,
+            final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
+            final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
             final Map<Byte, Map<Byte, Long>> postponeTimeMap,
             final Tuple2<Integer, Integer> columnCount
     ) {
         this.joinInfo = joinInfo;
-        this.leftTimeExtractor = leftTimeExtractor;
-        this.rightTimeExtractor = rightTimeExtractor;
+        this.leftTimeExtractors = leftTimeExtractors;
+        this.rightTimeExtractors = rightTimeExtractors;
         this.postponeTimeMap = postponeTimeMap;
         this.columnCount = columnCount;
 
@@ -160,17 +160,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
         // if pending watermarks available - try to send them
-        if (!pendingWatermarks.isEmpty()) {
-            while (!pendingWatermarks.isEmpty()) {
-                Watermark wm = pendingWatermarks.peek();
-                if (!tryEmit(wm)) {
-                    return false;
-                } else {
-                    pendingWatermarks.remove();
-                }
-            }
+        if (pendingWatermark != null && !tryEmit(pendingWatermark)) {
             return false;
         }
+        pendingWatermark = null;
 
         // update wm state
         offer(watermark);
@@ -178,13 +171,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // try to clear buffers if possible
         clearExpiredItemsInBuffer(ordinal, watermark);
 
-        // We can't immediately emit current WM, as it would render items in left buffer late.
+        // We can't immediately emit current WM, as it could render items in buffers late.
         // Instead, we can emit WM with the minimum available time for this WM key.
         long minimumItemTime = findMinimumBufferTime(ordinal, watermark);
         if (minimumItemTime != Long.MAX_VALUE) {
             Watermark wm = new Watermark(minimumItemTime, watermark.key());
             if (!tryEmit(wm)) {
-                pendingWatermarks.offer(wm);
+                assert pendingWatermark == null;
+                pendingWatermark = wm;
+                return false;
             }
         }
 
@@ -204,7 +199,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private long findMinimumBufferTime(int ordinal, Watermark watermark) {
         byte key = watermark.key();
-        ToLongFunctionEx<JetSqlRow> extractor = ordinal == 0 ? leftTimeExtractor.get(key) : rightTimeExtractor.get(key);
+        ToLongFunctionEx<JetSqlRow> extractor = ordinal == 0 ? leftTimeExtractors.get(key) : rightTimeExtractors.get(key);
 
         long min = Long.MAX_VALUE;
         for (JetSqlRow row : buffer[ordinal]) {
@@ -223,8 +218,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private void clearExpiredItemsInBuffer(int ordinal, Watermark wm) {
         final ToLongFunctionEx<JetSqlRow> tsExtractor = ordinal == 0
-                ? leftTimeExtractor.get(wm.key())
-                : rightTimeExtractor.get(wm.key());
+                ? leftTimeExtractors.get(wm.key())
+                : rightTimeExtractors.get(wm.key());
 
         long limit = findMinimumGroupTime(wm.key());
         if (limit == Long.MAX_VALUE || limit == Long.MIN_VALUE) {
