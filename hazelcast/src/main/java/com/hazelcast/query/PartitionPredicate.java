@@ -38,8 +38,8 @@ public interface PartitionPredicate<K, V> extends Predicate<K, V> {
      * Returns the partition keys that determine the partitions the {@linkplain
      * #getTarget() target} {@link Predicate} is going to execute on.
      *
-     * A default implementation that wraps the {@linkplain #getPartitionKey() partition key} in a singleton
-     * collection is provided for backwards compatibility with single key implementations.
+     * A default implementation of {@linkplain #getPartitionKeys() partition keys} that wraps the {@linkplain #getPartitionKey() partition key} in a singleton
+     * collection is provided for backwards compatibility.
      *
      * @return the partition keys
      */
