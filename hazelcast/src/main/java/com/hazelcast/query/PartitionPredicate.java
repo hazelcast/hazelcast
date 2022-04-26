@@ -50,7 +50,7 @@ public interface PartitionPredicate<K, V> extends Predicate<K, V> {
     /**
      * Returns a random partition key from the {@linkplain #getPartitionKeys() collection}.
      * This is useful for client message routing to cluster instances.
-     * If there is a single value in the collection it is always returned as is to be backwards
+     * If there is a single value in the collection it is always returned as-is to be backwards
      * compatible with older versions of PartitionPredicate.
      *
      * @return the single key
