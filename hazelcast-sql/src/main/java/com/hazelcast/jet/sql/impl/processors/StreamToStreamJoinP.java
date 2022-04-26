@@ -93,6 +93,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @SuppressWarnings("ConstantConditions")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        assert ordinal == 0 || ordinal == 1; // bad DAG
+
         if (pendingOutput != null && !tryEmit(pendingOutput)) {
             return false;
         }
