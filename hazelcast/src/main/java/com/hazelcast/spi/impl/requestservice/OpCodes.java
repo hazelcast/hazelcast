@@ -8,5 +8,6 @@ public class OpCodes {
     public final static byte RANDOM_LOAD = 3;
     public final static byte GET = 4;
     public final static byte SET = 5;
-    public final static byte MAX_OPCODE = SET;
+    public final static byte QUERY = 6;
+    public final static byte MAX_OPCODE = QUERY;
 }

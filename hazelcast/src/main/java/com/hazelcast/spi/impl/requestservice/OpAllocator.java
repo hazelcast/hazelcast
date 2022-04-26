@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl.requestservice;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.table.impl.GetOp;
 import com.hazelcast.table.impl.NoOp;
+import com.hazelcast.table.impl.QueryOp;
 import com.hazelcast.table.impl.SelectByKeyOperation;
 import com.hazelcast.table.impl.SetOp;
 import com.hazelcast.table.impl.UpsertOp;
@@ -13,6 +14,7 @@ import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_OPCODE;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.MAX_OPCODE;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.QUERY;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.SET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_SELECT_BY_KEY;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_UPSERT;
@@ -33,6 +35,7 @@ public final class OpAllocator {
         pools[NOOP] = new Pool(NoOp::new);
         pools[GET] = new Pool(GetOp::new);
         pools[SET] = new Pool(SetOp::new);
+        pools[QUERY] = new Pool(QueryOp::new);
     }
 
     public Op allocate(Frame request) {

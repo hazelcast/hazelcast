@@ -1,6 +1,5 @@
 package com.hazelcast.table;
 
-import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
@@ -19,6 +18,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.QUERY;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.SET;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.TABLE_UPSERT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -36,7 +36,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         super(nodeEngine, tableService);
         this.requestService = nodeEngine.getRequestService();
         this.name = name;
-        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        this.partitionCount = 1;//nodeEngine.getPartitionService().getPartitionCount();
         this.frameAllocator = new ConcurrentPooledFrameAllocator(128, true);
         this.requestTimeoutMs = requestService.getRequestTimeoutMs();
     }
@@ -135,7 +135,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void set(byte[] key, byte[] value) {
-        int partitionId = hashToIndex( Arrays.hashCode(key), partitionCount);
+        int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
         Frame request = frameAllocator.allocate(60)
                 .newFuture()
@@ -152,8 +152,28 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
+    public void bogusQuery() {
+        CompletableFuture[] futures = new CompletableFuture[partitionCount];
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            Frame request = frameAllocator.allocate(60)
+                    .newFuture()
+                    .writeRequestHeader(partitionId, QUERY)
+                    .writeComplete();
+            futures[partitionId] = requestService.invoke(request, partitionId);
+        }
+
+        for (CompletableFuture future : futures) {
+            try {
+                future.get(requestTimeoutMs, MILLISECONDS);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
     public byte[] get(byte[] key) {
-        int partitionId = hashToIndex( Arrays.hashCode(key), partitionCount);
+        int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
         Frame request = frameAllocator.allocate(60)
                 .newFuture()

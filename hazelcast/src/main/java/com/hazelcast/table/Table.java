@@ -20,6 +20,8 @@ public interface Table<K,E> {
 
     byte[] get(byte[] key);
 
+    void bogusQuery();
+
     void noop();
 
     void concurrentNoop(int concurrency);

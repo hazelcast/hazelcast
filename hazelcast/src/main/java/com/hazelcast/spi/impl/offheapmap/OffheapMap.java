@@ -55,6 +55,23 @@ public class OffheapMap {
         return abs(hash) & mod;
     }
 
+    public void execute(Query t){
+        for (long node = 0; node < tableSize; node++) {
+            long nodeAddress = unsafe.getAddress(tableAddress + node * addressSize);
+
+            if (nodeAddress != 0) {
+                int entryCount = unsafe.getInt(nodeAddress);
+                for (long entry = 0; entry < entryCount; entry++) {
+                    long recordAddress = unsafe.getAddress(nodeAddress + BYTES_INT + entry * addressSize);
+
+                    if (recordAddress != 0) {
+                        t.process(recordAddress);
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Return the number of entries in this OffheapMap.
      *

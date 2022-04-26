@@ -11,10 +11,10 @@ public class MapMain {
 
         Table table = node1.getTable("piranaha");
 
-        int items = 10_000;
+        int items = 1_000_000;
 
         for (int k = 0; k < items; k++) {
-            if (k % 1000 == 0) {
+            if (k % 100000 == 0) {
                 System.out.println("Inserting at: " + k);
             }
 
@@ -24,20 +24,27 @@ public class MapMain {
             table.set(key, value);
         }
 //
-        for (int k = 0; k < items; k++) {
+        long start = System.currentTimeMillis();
+        int queryCount = 2000;
+        for (int k = 0; k < queryCount; k++) {
             if (k % 1000 == 0) {
                 System.out.println("Getting at: " + k);
             }
 
-            String key = "" + k;
-            byte[] value = table.get(key.getBytes());
-            String actual = new String(value);
-            String expected = "value-" + k;
-            if (!expected.equals(actual)) {
-                throw new RuntimeException("Expected " + expected + " but found: " + actual);
-            }
+            table.bogusQuery();
+//
+//            String key = "" + k;
+//            byte[] value = table.get(key.getBytes());
+//            String actual = new String(value);
+//            String expected = "value-" + k;
+//            if (!expected.equals(actual)) {
+//                throw new RuntimeException("Expected " + expected + " but found: " + actual);
+//            }
         }
 
+        long duration = System.currentTimeMillis()-start;
+        double throughput = queryCount * 1000f/duration;
+        System.out.println("throughput: "+throughput);
         System.out.println("Done");
     }
 }
