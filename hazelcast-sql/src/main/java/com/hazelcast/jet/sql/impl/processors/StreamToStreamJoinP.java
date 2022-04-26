@@ -54,7 +54,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> wmState = new HashMap<>();
 
     private ExpressionEvalContext evalContext;
-    private Iterator<JetSqlRow> pos;
+    private Iterator<JetSqlRow> iterator;
 
     private JetSqlRow currItem;
     // NOTE: we are using LinkedList, because we are expecting:
@@ -107,12 +107,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (currItem == null) {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
-            pos = buffer[1 - ordinal].iterator();
+            iterator = buffer[1 - ordinal].iterator();
 
             JetSqlRow joinedRow = null;
             // If current join type is LEFT/RIGHT and opposite buffer is empty,
             // we should to produce input row with null-filled opposite side.
-            if (!pos.hasNext() && !joinInfo.isInner()) {
+            if (!iterator.hasNext() && !joinInfo.isInner()) {
                 if (ordinal == 1 && joinInfo.isLeftOuter()) {
                     // fill LEFT side with nulls
                     joinedRow = ExpressionUtil.join(
@@ -138,15 +138,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return false;
         }
 
-        if (!pos.hasNext()) {
-            pos = null;
+        if (!iterator.hasNext()) {
+            iterator = null;
             currItem = null;
             return true;
         }
 
         JetSqlRow preparedOutput = ExpressionUtil.join(
-                ordinal == 0 ? currItem : pos.next(),
-                ordinal == 0 ? pos.next() : currItem,
+                ordinal == 0 ? currItem : iterator.next(),
+                ordinal == 0 ? iterator.next() : currItem,
                 joinInfo.condition(),
                 evalContext
         );
