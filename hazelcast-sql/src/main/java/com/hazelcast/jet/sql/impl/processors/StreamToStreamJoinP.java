@@ -26,13 +26,11 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 import static java.util.stream.Collectors.toList;
 
@@ -61,7 +59,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     // (1) removals in the middle,
     // (2) traversing whole list without indexing.
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
-    private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
+    private JetSqlRow pendingOutput;
     private Watermark pendingWatermark;
 
     public StreamToStreamJoinP(
@@ -95,13 +93,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @SuppressWarnings("ConstantConditions")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
-        while (!pendingOutput.isEmpty()) {
-            if (!tryEmit(pendingOutput.peek())) {
-                return false;
-            } else {
-                pendingOutput.remove();
-            }
+        if (pendingOutput != null && !tryEmit(pendingOutput)) {
+            return false;
         }
+        pendingOutput = null;
 
         //  having side input, traverse opposite buffer
         if (currItem == null) {
@@ -133,7 +128,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
 
             if (joinedRow != null) {
-                pendingOutput.offer(joinedRow);
+                assert pendingOutput == null;
+                pendingOutput = joinedRow;
             }
             return false;
         }
@@ -152,7 +148,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         );
 
         if (preparedOutput != null && !tryEmit(preparedOutput)) {
-            pendingOutput.offer(preparedOutput);
+            assert pendingOutput == null;
+            pendingOutput = preparedOutput;
         }
         return false;
     }
