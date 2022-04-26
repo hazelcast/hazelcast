@@ -177,6 +177,12 @@ public interface NodeExtension {
     boolean isStartCompleted();
 
     /**
+     * todo
+     * @return
+     */
+    boolean isReady();
+
+    /**
      * Called before <tt>Node.shutdown()</tt>
      */
     void beforeShutdown(boolean terminate);

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.hotrestart;
 
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;

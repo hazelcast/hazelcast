@@ -232,6 +232,12 @@ public interface NodeEngine {
     boolean isRunning();
 
     /**
+     * todo NodeExtension.isStartCompleted
+     * @return
+     */
+    boolean isStartCompleted();
+
+    /**
      * Returns the HazelcastInstance that this {@link NodeEngine} belongs to.
      *
      * @return the HazelcastInstance

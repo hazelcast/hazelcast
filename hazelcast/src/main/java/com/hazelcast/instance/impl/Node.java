@@ -829,6 +829,10 @@ public class Node implements ClusterTopologyIntentTracker {
         }
     }
 
+    public ClusterTopologyIntent getClusterTopologyIntent() {
+        return clusterTopologyIntent.get();
+    }
+
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
         MemberImpl localMember = getLocalMember();
         boolean liteMember = localMember.isLiteMember();
