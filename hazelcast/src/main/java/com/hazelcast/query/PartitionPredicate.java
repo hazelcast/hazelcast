@@ -21,9 +21,9 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * A {@link Predicate} that restricts the execution of a {@link Predicate} to a single partition.
+ * A {@link Predicate} that restricts the execution of a {@link Predicate} to specific partitions.
  *
- * This can help to speed up query execution since only a single instead of all partitions needs to be queried.
+ * This can help to speed up query execution since only a subset of all partitions needs to be queried.
  *
  * This predicate only has effect if used as an outermost predicate.
  *
