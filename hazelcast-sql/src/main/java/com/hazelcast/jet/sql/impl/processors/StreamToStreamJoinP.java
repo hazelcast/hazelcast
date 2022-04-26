@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +51,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCount;
 
-    private final long[][] wmState;
+    private final Map<Byte, Map<Byte, Long>> wmState = new HashMap<>();
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> pos;
@@ -76,15 +77,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.postponeTimeMap = postponeTimeMap;
         this.columnCount = columnCount;
 
-        this.wmState = new long[postponeTimeMap.size()][postponeTimeMap.size()];
-        for (byte i = 0; i < postponeTimeMap.size(); ++i) {
-            for (byte j = 0; j < postponeTimeMap.size(); ++j) {
-                if (postponeTimeMap.get(i).get(j) == null) {
-                    wmState[i][j] = Long.MAX_VALUE;
-                } else {
-                    wmState[i][j] = Long.MIN_VALUE;
-                }
+        for (byte key : postponeTimeMap.keySet()) {
+            Map<Byte, Long> valueMap = postponeTimeMap.get(key);
+            Map<Byte, Long> map = new HashMap<>();
+            for (byte j : valueMap.keySet()) {
+                map.put(j, Long.MIN_VALUE);
             }
+            wmState.put(key, map);
         }
     }
 
@@ -196,11 +195,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         byte key = watermark.key();
         final Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(key);
         for (byte i : wmKeyMapping.keySet()) {
-            if (wmState[i][key] != Long.MIN_VALUE) {
-                wmState[i][key] = Math.min(watermark.timestamp() - wmKeyMapping.get(i), wmState[i][key]);
-            } else {
-                wmState[i][key] = watermark.timestamp() - wmKeyMapping.get(i);
-            }
+            Long curr = wmState.get(i).get(key);
+            wmState.get(i).put(key, (curr != null && curr != Long.MIN_VALUE)
+                    ? Math.min(watermark.timestamp() - wmKeyMapping.get(i), curr)
+                    : watermark.timestamp() - wmKeyMapping.get(i));
         }
     }
 
@@ -217,8 +215,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private long findMinimumGroupTime(byte group) {
         long min = Long.MAX_VALUE;
-        for (int i = 0; i < wmState[group].length; ++i) {
-            min = Math.min(min, wmState[group][i]);
+        for (byte i : wmState.get(group).keySet()) {
+            min = Math.min(min, wmState.get(group).get(i));
         }
         return min;
     }
