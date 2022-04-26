@@ -2,15 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.2"
-    }
-    tls = {
-      source  = "hashicorp/tls"
-      version = ">= 3.3.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.1.0"
+      version = "= 3.2"
     }
   }
   required_version = ">= 0.13"
@@ -36,40 +28,9 @@ data "aws_ami" "image" {
   owners = ["099720109477"]
 }
 
-resource "random_pet" "prefix" {
-  prefix    = "test"
-  length    = 2
-  separator = "_"
-}
-
-data "template_file" "hazelcast" {
-  template = file("${path.module}/hazelcast.yaml")
-  vars = {
-    PREFIX    = random_pet.prefix.id
-    REGION    = var.aws_region
-    TAG_KEY   = var.aws_tag_key
-    TAG_VALUE = var.aws_tag_value
-
-  }
-}
-
-data "template_file" "hazelcast_client" {
-  template = file("${path.module}/hazelcast-client.yaml")
-  vars = {
-    PREFIX    = random_pet.prefix.id
-    REGION    = var.aws_region
-    TAG_KEY   = var.aws_tag_key
-    TAG_VALUE = var.aws_tag_value
-  }
-}
-
-data "template_file" "user_data" {
-  template = file("${path.module}/cloud-init.yaml")
-}
-
 # IAM Role required for Hazelcast AWS Discovery
 resource "aws_iam_role" "discovery_role" {
-  name = "${random_pet.prefix.id}_discovery_role"
+  name = "${var.prefix}_discovery_role"
 
   assume_role_policy = <<-EOF
   {
@@ -89,7 +50,7 @@ resource "aws_iam_role" "discovery_role" {
 }
 
 resource "aws_iam_role_policy" "discovery_policy" {
-  name = "${random_pet.prefix.id}_discovery_policy"
+  name = "${var.prefix}_discovery_policy"
   role = aws_iam_role.discovery_role.id
 
   policy = <<-EOF
@@ -110,12 +71,12 @@ resource "aws_iam_role_policy" "discovery_policy" {
 
 
 resource "aws_iam_instance_profile" "discovery_instance_profile" {
-  name = "${random_pet.prefix.id}_discovery_instance_profile"
+  name = "${var.prefix}_discovery_instance_profile"
   role = aws_iam_role.discovery_role.name
 }
 
 resource "aws_security_group" "sg" {
-  name = "${random_pet.prefix.id}_sg"
+  name = "${var.prefix}_sg"
 
   ingress {
     from_port   = 22
@@ -148,21 +109,11 @@ resource "aws_security_group" "sg" {
   }
 }
 
-resource "tls_private_key" "ssh" {
-  algorithm = "RSA"
-  rsa_bits  = "4096"
-}
-
-resource "local_file" "private_key" {
-  content         = tls_private_key.ssh.private_key_pem
-  filename        = "private_key.pem"
-  file_permission = "0600"
-}
-
 resource "aws_key_pair" "keypair" {
-  key_name   = "${random_pet.prefix.id}_aws_key"
-  public_key = tls_private_key.ssh.public_key_openssh
+  key_name   = "${var.prefix}_${var.aws_key_name}"
+  public_key = file("${var.local_key_path}/${var.aws_key_name}.pub")
 }
+###########################################################################
 
 resource "aws_instance" "hazelcast_member" {
   count                = var.member_count
@@ -171,9 +122,8 @@ resource "aws_instance" "hazelcast_member" {
   iam_instance_profile = aws_iam_instance_profile.discovery_instance_profile.name
   security_groups      = [aws_security_group.sg.name]
   key_name             = aws_key_pair.keypair.key_name
-  user_data            = data.template_file.user_data.rendered
   tags = {
-    Name                 = "${random_pet.prefix.id}-AWS-Member-${count.index}"
+    Name                 = "${var.prefix}-AWS-Member-${count.index}"
     "${var.aws_tag_key}" = var.aws_tag_value
   }
   connection {
@@ -182,7 +132,7 @@ resource "aws_instance" "hazelcast_member" {
     host        = self.public_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.aws_key_name}")
   }
 
   provisioner "remote-exec" {
@@ -190,6 +140,8 @@ resource "aws_instance" "hazelcast_member" {
       "mkdir -p /home/${var.username}/jars",
       "mkdir -p /home/${var.username}/logs",
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
+      "sudo apt-get update",
+      "sudo apt-get -y install openjdk-8-jdk wget",
     ]
   }
 
@@ -204,12 +156,12 @@ resource "aws_instance" "hazelcast_member" {
   }
 
   provisioner "file" {
-    source      = var.hazelcast_path
+    source      = "~/lib/hazelcast.jar"
     destination = "/home/${var.username}/jars/hazelcast.jar"
   }
 
   provisioner "file" {
-    content     = data.template_file.hazelcast.rendered
+    source      = "hazelcast.yaml"
     destination = "/home/${var.username}/hazelcast.yaml"
   }
 
@@ -217,7 +169,8 @@ resource "aws_instance" "hazelcast_member" {
     inline = [
       "cd /home/${var.username}",
       "chmod 0755 start_aws_hazelcast_member.sh",
-      "./start_aws_hazelcast_member.sh",
+      "./start_aws_hazelcast_member.sh  ${var.aws_region} ${var.aws_tag_key} ${var.aws_tag_value} ",
+      "sleep 5",
     ]
   }
 }
@@ -231,7 +184,7 @@ resource "null_resource" "verify_members" {
     host        = aws_instance.hazelcast_member[count.index].public_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.aws_key_name}")
   }
 
 
@@ -252,9 +205,8 @@ resource "aws_instance" "hazelcast_mancenter" {
   iam_instance_profile = aws_iam_instance_profile.discovery_instance_profile.name
   security_groups      = [aws_security_group.sg.name]
   key_name             = aws_key_pair.keypair.key_name
-  user_data            = data.template_file.user_data.rendered
   tags = {
-    Name                 = "${random_pet.prefix.id}-AWS-Management-Center"
+    Name                 = "${var.prefix}-AWS-Management-Center"
     "${var.aws_tag_key}" = var.aws_tag_value
   }
 
@@ -264,7 +216,7 @@ resource "aws_instance" "hazelcast_mancenter" {
     host        = self.public_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.aws_key_name}")
   }
 
   provisioner "file" {
@@ -278,13 +230,15 @@ resource "aws_instance" "hazelcast_mancenter" {
   }
 
   provisioner "file" {
-    content     = data.template_file.hazelcast_client.rendered
+    source      = "hazelcast-client.yaml"
     destination = "/home/${var.username}/hazelcast-client.yaml"
   }
 
   provisioner "remote-exec" {
     inline = [
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
+      "sudo apt-get update",
+      "sudo apt-get -y install openjdk-8-jdk wget unzip",
     ]
   }
 
@@ -292,7 +246,8 @@ resource "aws_instance" "hazelcast_mancenter" {
     inline = [
       "cd /home/${var.username}",
       "chmod 0755 start_aws_hazelcast_management_center.sh",
-      "./start_aws_hazelcast_management_center.sh ${var.hazelcast_mancenter_version}",
+      "./start_aws_hazelcast_management_center.sh ${var.hazelcast_mancenter_version}  ${var.aws_region} ${var.aws_tag_key} ${var.aws_tag_value} ",
+      "sleep 5",
     ]
   }
 }
@@ -306,7 +261,7 @@ resource "null_resource" "verify_mancenter" {
     host        = aws_instance.hazelcast_mancenter.public_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.aws_key_name}")
   }
 
 

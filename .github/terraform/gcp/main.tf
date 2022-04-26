@@ -9,7 +9,8 @@ terraform {
 }
 
 provider "google" {
-  credentials = file(var.gcp_key_file)
+
+  credentials = file("gcp_key_file.json")
   batching {
     enable_batching = "false"
   }
@@ -18,47 +19,10 @@ provider "google" {
   zone    = var.zone
 }
 
-resource "random_pet" "prefix" {
-  prefix    = "test"
-  length    = 2
-  separator = "-"
-}
-
-data "template_file" "hazelcast" {
-  template = file("${path.module}/hazelcast.yaml")
-  vars = {
-    LABEL_KEY   = var.gcp_label_key
-    LABEL_VALUE = var.gcp_label_value
-  }
-}
-
-data "template_file" "hazelcast_client" {
-  template = file("${path.module}/hazelcast-client.yaml")
-  vars = {
-    LABEL_KEY   = var.gcp_label_key
-    LABEL_VALUE = var.gcp_label_value
-  }
-}
-
-data "template_file" "user_data" {
-  template = file("${path.module}/cloud-init.yaml")
-}
-
-resource "tls_private_key" "ssh" {
-  algorithm = "RSA"
-  rsa_bits  = "4096"
-}
-
-resource "local_file" "private_key" {
-  content         = tls_private_key.ssh.private_key_pem
-  filename        = "private_key.pem"
-  file_permission = "0600"
-}
-
 #################### SERVICE ACCOUNT ####################
 
 resource "google_service_account" "service_account" {
-  account_id   = "${random_pet.prefix.id}-sa"
+  account_id   = "${var.prefix}-sa"
   display_name = "Service Account for Hazelcast Integration Test"
 }
 
@@ -73,29 +37,29 @@ resource "google_project_iam_custom_role" "discovery_role" {
 
 resource "google_project_iam_member" "project" {
   depends_on = [google_service_account.service_account]
-  project    = var.project_id
-  role       = google_project_iam_custom_role.discovery_role.name
-  member     = "serviceAccount:${google_service_account.service_account.email}"
+  project = var.project_id
+  role    = google_project_iam_custom_role.discovery_role.name
+  member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
 
 ########## NETWORK - SUBNETWORK - FIREWALL - PUBLIC IP ##################
 
 resource "google_compute_network" "vpc" {
-  name                    = "${random_pet.prefix.id}-vpc"
+  name                    = "${var.prefix}-vpc"
   auto_create_subnetworks = false
 }
 
 
 resource "google_compute_subnetwork" "vpc_subnet" {
-  name          = "${random_pet.prefix.id}-subnet"
+  name          = "${var.prefix}-subnet"
   ip_cidr_range = "10.0.10.0/24"
   region        = var.region
   network       = google_compute_network.vpc.id
 }
 
 resource "google_compute_firewall" "firewall" {
-  name    = "${random_pet.prefix.id}-firewall"
+  name    = "${var.prefix}-firewall"
   network = google_compute_network.vpc.name
 
   # Allow SSH, Hazelcast member communication and Hazelcat Management Center website
@@ -111,20 +75,20 @@ resource "google_compute_firewall" "firewall" {
 
 resource "google_compute_address" "public_ip" {
   count = var.member_count + 1
-  name  = "${random_pet.prefix.id}-ip-${count.index}"
+  name  = "${var.prefix}-ip-${count.index}"
 }
 
 ############## HAZELCAST MEMBERS #####################
 
 resource "google_compute_instance" "hazelcast_member" {
   count                     = var.member_count
-  name                      = "${random_pet.prefix.id}-instance-${count.index}"
+  name                      = "${var.prefix}-instance-${count.index}"
   machine_type              = var.gcp_instance_type
   allow_stopping_for_update = "true"
   zone                      = var.zone
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-1804-lts"
+      image = "debian-cloud/debian-9"
     }
   }
 
@@ -145,15 +109,14 @@ resource "google_compute_instance" "hazelcast_member" {
   }
 
   metadata = {
-    ssh-keys  = "${var.gcp_ssh_user}:${tls_private_key.ssh.public_key_openssh}"
-    user-data = "${data.template_file.user_data.rendered}"
+    ssh-keys = "${var.gcp_ssh_user}:${file("${var.local_key_path}/${var.gcp_key_name}.pub")}"
   }
 
   connection {
     host        = self.network_interface[0].access_config[0].nat_ip
     user        = var.gcp_ssh_user
     type        = "ssh"
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.gcp_key_name}")
     timeout     = "120s"
     agent       = false
   }
@@ -161,7 +124,8 @@ resource "google_compute_instance" "hazelcast_member" {
     inline = [
       "mkdir -p /home/${var.gcp_ssh_user}/jars",
       "mkdir -p /home/${var.gcp_ssh_user}/logs",
-      "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 10; done",
+      "sudo apt-get update",
+      "sudo apt-get -y install openjdk-8-jdk wget",
     ]
   }
 
@@ -176,12 +140,12 @@ resource "google_compute_instance" "hazelcast_member" {
   }
 
   provisioner "file" {
-    source      = var.hazelcast_path
+    source      = "~/lib/hazelcast.jar"
     destination = "/home/${var.gcp_ssh_user}/jars/hazelcast.jar"
   }
 
   provisioner "file" {
-    content     = data.template_file.hazelcast.rendered
+    source      = "hazelcast.yaml"
     destination = "/home/${var.gcp_ssh_user}/hazelcast.yaml"
   }
 
@@ -204,7 +168,7 @@ resource "null_resource" "verify_members" {
     host        = google_compute_instance.hazelcast_member[count.index].network_interface.0.access_config.0.nat_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.gcp_key_name}")
   }
 
 
@@ -222,16 +186,16 @@ resource "null_resource" "verify_members" {
 ############## HAZELCAST MANAGEMENT CENTER #######################
 
 resource "google_compute_instance" "hazelcast_mancenter" {
-  name                      = "${random_pet.prefix.id}-mancenter"
+  name                      = "${var.prefix}-mancenter"
   machine_type              = var.gcp_instance_type
   allow_stopping_for_update = "true"
   zone                      = var.zone
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-1804-lts"
+      image = "debian-cloud/debian-9"
     }
   }
-
+  
   labels = {
     "${var.gcp_label_key}" = var.gcp_label_value
   }
@@ -249,15 +213,14 @@ resource "google_compute_instance" "hazelcast_mancenter" {
   }
 
   metadata = {
-    ssh-keys  = "${var.gcp_ssh_user}:${tls_private_key.ssh.public_key_openssh}"
-    user-data = "${data.template_file.user_data.rendered}"
+    ssh-keys = "${var.gcp_ssh_user}:${file("${var.local_key_path}/${var.gcp_key_name}.pub")}"
   }
 
   connection {
     host        = self.network_interface[0].access_config[0].nat_ip
     user        = var.gcp_ssh_user
     type        = "ssh"
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.gcp_key_name}")
     timeout     = "120s"
     agent       = false
   }
@@ -273,15 +236,17 @@ resource "google_compute_instance" "hazelcast_mancenter" {
   }
 
   provisioner "file" {
-    content     = data.template_file.hazelcast_client.rendered
+    source      = "hazelcast-client.yaml"
     destination = "/home/${var.gcp_ssh_user}/hazelcast-client.yaml"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 10; done",
+      "sudo apt-get update",
+      "sudo apt-get -y install openjdk-8-jdk wget unzip",
     ]
   }
+
   provisioner "remote-exec" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
@@ -302,7 +267,7 @@ resource "null_resource" "verify_mancenter" {
     host        = google_compute_instance.hazelcast_mancenter.network_interface.0.access_config.0.nat_ip
     timeout     = "180s"
     agent       = false
-    private_key = tls_private_key.ssh.private_key_pem
+    private_key = file("${var.local_key_path}/${var.gcp_key_name}")
   }
 
   provisioner "remote-exec" {

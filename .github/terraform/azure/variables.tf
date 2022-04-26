@@ -1,3 +1,19 @@
+variable "prefix" {
+  type    = string
+}
+
+# key name to be assigned to Azure Compute instances
+variable "azure_key_name" {
+  type    = string
+  default = "id_rsa"
+}
+
+# local path of private and public key file for SSH connection - local_key_path/azure_key_name
+variable "local_key_path" {
+  type    = string
+  default = "~/.ssh"
+}
+
 variable "location" {
   type    = string
   default = "central us"
@@ -10,6 +26,7 @@ variable "member_count" {
 
 variable "hazelcast_mancenter_version" {
   type    = string
+  default = "4.2020.08"
 }
 
 variable "azure_ssh_user" {
@@ -30,8 +47,4 @@ variable "azure_tag_key" {
 variable "azure_tag_value" {
   type    = string
   default = "terraform"
-}
-
-variable "hazelcast_path" {
-  type    = string
 }
