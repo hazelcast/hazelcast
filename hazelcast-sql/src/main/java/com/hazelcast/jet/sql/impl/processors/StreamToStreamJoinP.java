@@ -32,8 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toList;
-
 public class StreamToStreamJoinP extends AbstractProcessor {
     /**
      * <p>
@@ -225,9 +223,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return;
         }
 
-        buffer[ordinal] = buffer[ordinal]
-                .stream()
-                .filter(row -> tsExtractor.applyAsLong(row) >= limit)
-                .collect(toList());
+        buffer[ordinal].removeIf(row -> tsExtractor.applyAsLong(row) < limit);
     }
 }
