@@ -210,8 +210,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private long findMinimumGroupTime(byte group) {
         long min = Long.MAX_VALUE;
-        for (byte i : wmState.get(group).keySet()) {
-            min = Math.min(min, wmState.get(group).get(i));
+        for (long i : wmState.get(group).values()) {
+            min = Math.min(min, i);
         }
         return min;
     }
