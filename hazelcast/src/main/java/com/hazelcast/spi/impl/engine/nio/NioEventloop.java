@@ -46,7 +46,7 @@ public final class NioEventloop extends Eventloop {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (publicRunQueue.isEmpty()) {
+                if (concurrentRunQueue.isEmpty()) {
                     keyCount = selector.select();
                 } else {
                     keyCount = selector.selectNow();

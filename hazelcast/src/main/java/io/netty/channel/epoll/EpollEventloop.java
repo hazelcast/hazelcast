@@ -65,7 +65,7 @@ public final class EpollEventloop extends Eventloop {
             runTasks();
             k++;
 
-             System.out.println(getName() + " eventLoop run " + k);
+            System.out.println(getName() + " eventLoop run " + k);
 
             boolean moreWork = scheduler.tick();
 
@@ -77,7 +77,7 @@ public final class EpollEventloop extends Eventloop {
                 ready = epollBusyWait();
             } else {
                 wakeupNeeded.set(true);
-                if (publicRunQueue.isEmpty()) {
+                if (concurrentRunQueue.isEmpty()) {
                     System.out.println("epollWait");
                     ready = epollWait();
                 } else {
@@ -126,12 +126,12 @@ public final class EpollEventloop extends Eventloop {
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
                         System.out.println("epoll in");
-                        if(channel instanceof EpollServerChannel){
+                        if (channel instanceof EpollServerChannel) {
                             System.out.println("EpollServerChannel.handleAccept");
-                            ((EpollServerChannel)channel).handleAccept();
-                        }else{
+                            ((EpollServerChannel) channel).handleAccept();
+                        } else {
                             System.out.println("EpollChannel.handleRead");
-                          //  ((EpollChannel)channel).handleRead();
+                            //  ((EpollChannel)channel).handleRead();
                         }
                     }
                 } else {

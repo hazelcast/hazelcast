@@ -29,7 +29,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    public final MpmcArrayQueue publicRunQueue = new MpmcArrayQueue(4096);
+    public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
     public final Scheduler scheduler;
     public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
@@ -69,17 +69,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected abstract void eventLoop() throws Exception;
 
     public void execute(EventloopTask task) {
-        publicRunQueue.add(task);
+        concurrentRunQueue.add(task);
         wakeup();
     }
 
     public void execute(Collection<Frame> requests) {
-        publicRunQueue.addAll(requests);
+        concurrentRunQueue.addAll(requests);
         wakeup();
     }
 
     public void execute(Frame request) {
-        publicRunQueue.add(request);
+        concurrentRunQueue.add(request);
         wakeup();
     }
 
@@ -87,7 +87,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         if (Thread.currentThread() == this) {
             dirtyChannels.offer(channel);
         } else {
-            publicRunQueue.add(channel);
+            concurrentRunQueue.add(channel);
             wakeup();
         }
     }
@@ -123,7 +123,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected void runTasks() {
         for (; ; ) {
-            Object task = publicRunQueue.poll();
+            Object task = concurrentRunQueue.poll();
             if (task == null) {
                 break;
             }

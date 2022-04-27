@@ -139,7 +139,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
                 sq.submit();
             } else {
                 wakeupNeeded.set(true);
-                if (publicRunQueue.isEmpty()) {
+                if (concurrentRunQueue.isEmpty()) {
                     sq.submitAndWait();
                 } else {
                     sq.submit();
