@@ -3,14 +3,14 @@ package com.hazelcast.spi.impl.requestservice;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
-import io.netty.incubator.channel.uring.IOUringChannel;
+import io.netty.incubator.channel.uring.IOUringAsyncSocket;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestIOUringChannel extends IOUringChannel {
+public class RequestIOUringChannel extends IOUringAsyncSocket {
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;

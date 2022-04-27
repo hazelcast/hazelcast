@@ -14,11 +14,11 @@ import java.util.function.Supplier;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
-public final class NioServerChannel implements NioSelectedKeyListener {
+public final class NioServerSocket implements NioSelectedKeyListener {
 
     public SocketConfig socketConfig;
     public ServerSocketChannel serverSocketChannel;
-    public Supplier<NioChannel> channelSupplier;
+    public Supplier<NioAsyncSocket> socketSupplier;
     public InetSocketAddress address;
 
     private Selector selector;
@@ -49,13 +49,13 @@ public final class NioServerChannel implements NioSelectedKeyListener {
     @Override
     public void handle(SelectionKey key) throws IOException {
         SocketChannel socketChannel = serverSocketChannel.accept();
-        NioChannel channel = channelSupplier.get();
+        NioAsyncSocket socket = socketSupplier.get();
 
         try {
-            channel.handleAccepted(eventloop, socketChannel, socketConfig);
+            socket.handleAccepted(eventloop, socketChannel, socketConfig);
             logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
         } catch (IOException e) {
-            channel.handleException(e);
+            socket.handleException(e);
         }
     }
 }

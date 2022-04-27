@@ -1,6 +1,6 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
@@ -17,7 +17,7 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
-public abstract class IOUringChannel extends Channel implements CompletionListener {
+public abstract class IOUringAsyncSocket extends AsyncSocket implements CompletionListener {
     protected LinuxSocket socket;
     public IOUringEventloop eventloop;
 
@@ -69,7 +69,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
             } else {
                 eventloop.execute(this);
             }
@@ -119,7 +119,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -149,7 +149,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
             }
         }
 
-        eventloop.removeChannel(this);
+        eventloop.removeSocket(this);
     }
 
     @Override

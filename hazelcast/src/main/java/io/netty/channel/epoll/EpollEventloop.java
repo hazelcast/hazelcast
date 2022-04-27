@@ -1,7 +1,7 @@
 package io.netty.channel.epoll;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.channel.unix.FileDescriptor;
@@ -18,7 +18,7 @@ import static io.netty.channel.epoll.Native.epollCtlAdd;
 public final class EpollEventloop extends Eventloop {
     private final boolean spin;
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
-    private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
+    private final IntObjectMap<EpollServerSocket> serverChannels = new IntObjectHashMap<>(4096);
     public final FileDescriptor epollFd;
     private final FileDescriptor eventFd;
     private final FileDescriptor timerFd;
@@ -69,7 +69,7 @@ public final class EpollEventloop extends Eventloop {
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtyChannels();
+            flushDirtySockets();
 
             int ready;
             if (spin || moreWork) {
@@ -126,9 +126,9 @@ public final class EpollEventloop extends Eventloop {
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
                         System.out.println("epoll in");
-                        if (channel instanceof EpollServerChannel) {
+                        if (channel instanceof EpollServerSocket) {
                             System.out.println("EpollServerChannel.handleAccept");
-                            ((EpollServerChannel) channel).handleAccept();
+                            ((EpollServerSocket) channel).handleAccept();
                         } else {
                             System.out.println("EpollChannel.handleRead");
                             //  ((EpollChannel)channel).handleRead();
@@ -147,7 +147,7 @@ public final class EpollEventloop extends Eventloop {
         }
     }
 
-    public void accept(EpollServerChannel serverChannel) throws IOException {
+    public void accept(EpollServerSocket serverChannel) throws IOException {
         LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
 
         // should come from properties.
@@ -170,10 +170,10 @@ public final class EpollEventloop extends Eventloop {
     }
 
     @Override
-    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
-        EpollChannel channel = (EpollChannel) c;
+    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
+        EpollAsyncSocket channel = (EpollAsyncSocket) c;
 
-        CompletableFuture<Channel> future = new CompletableFuture();
+        CompletableFuture<AsyncSocket> future = new CompletableFuture();
         try {
             System.out.println("ConnectRequest address:" + address);
 
@@ -186,7 +186,7 @@ public final class EpollEventloop extends Eventloop {
                 execute(() -> {
                     try {
                         channel.onConnectionEstablished();
-                        registeredChannels.add(channel);
+                        registeredsockets.add(channel);
                         logger.info("Socket listening at " + address);
                         future.complete(channel);
                     } catch (Exception e) {

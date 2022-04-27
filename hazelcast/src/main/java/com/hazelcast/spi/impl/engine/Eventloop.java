@@ -26,13 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class Eventloop extends HazelcastManagedThread {
     public final ConcurrentMap context = new ConcurrentHashMap();
     public final ILogger logger;
-    public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
+    public final Set<AsyncSocket> registeredsockets = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
     public final Scheduler scheduler;
-    public final CircularQueue<Channel> dirtyChannels = new CircularQueue<>(1024);
+    public final CircularQueue<AsyncSocket> dirtySockets = new CircularQueue<>(1024);
 
     protected final boolean spin;
     protected final int idx;
@@ -58,12 +58,12 @@ public abstract class Eventloop extends HazelcastManagedThread {
         running = false;
     }
 
-    public abstract CompletableFuture<Channel> connect(Channel channel, SocketAddress address);
+    public abstract CompletableFuture<AsyncSocket> connect(AsyncSocket channel, SocketAddress address);
 
     protected abstract void wakeup();
 
-    public void removeChannel(Channel nioChannel) {
-        registeredChannels.remove(nioChannel);
+    public void removeSocket(AsyncSocket socket) {
+        registeredsockets.remove(socket);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -83,17 +83,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
         wakeup();
     }
 
-    public void execute(Channel channel) {
+    public void execute(AsyncSocket socket) {
         if (Thread.currentThread() == this) {
-            dirtyChannels.offer(channel);
+            dirtySockets.offer(socket);
         } else {
-            concurrentRunQueue.add(channel);
+            concurrentRunQueue.add(socket);
             wakeup();
         }
     }
 
-    public Collection<Channel> channels() {
-        return registeredChannels;
+    public Collection<AsyncSocket> channels() {
+        return registeredsockets;
     }
 
     @Override
@@ -106,9 +106,9 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    protected void flushDirtyChannels() {
+    protected void flushDirtySockets() {
         for (; ; ) {
-            Channel channel = dirtyChannels.poll();
+            AsyncSocket channel = dirtySockets.poll();
             if (channel == null) {
                 break;
             }
@@ -128,8 +128,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
                 break;
             }
 
-            if (task instanceof Channel) {
-                Channel channel = (Channel)task;
+            if (task instanceof AsyncSocket) {
+                AsyncSocket channel = (AsyncSocket)task;
                 try {
                     channel.handleWrite();
                 }catch (Exception e){

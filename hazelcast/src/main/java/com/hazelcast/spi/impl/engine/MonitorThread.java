@@ -1,8 +1,8 @@
 package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.spi.impl.engine.nio.NioChannel;
-import io.netty.incubator.channel.uring.IOUringChannel;
+import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
+import io.netty.incubator.channel.uring.IOUringAsyncSocket;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +50,7 @@ public final class MonitorThread extends Thread {
                 this.prevMillis = currentMillis;
 
                 for (Eventloop eventloop : eventloops) {
-                    for (Channel channel : eventloop.channels()) {
+                    for (AsyncSocket channel : eventloop.channels()) {
                         monitor(channel, elapsed);
                     }
                 }
@@ -87,7 +87,7 @@ public final class MonitorThread extends Thread {
         System.out.println("[monitor] " + s);
     }
 
-    private void monitor(Channel channel, long elapsed) {
+    private void monitor(AsyncSocket channel, long elapsed) {
         long packetsRead = channel.framesRead.get();
         LongHolder prevPacketsRead = getPrev(channel.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;
@@ -126,8 +126,8 @@ public final class MonitorThread extends Thread {
         prevPacketsRead.value = packetsRead;
 
         if (packetsReadDelta == 0 || true) {
-            if (channel instanceof NioChannel) {
-                NioChannel c = (NioChannel) channel;
+            if (channel instanceof NioAsyncSocket) {
+                NioAsyncSocket c = (NioAsyncSocket) channel;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (nioChannel.flushThread.get() == null && hasData) {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
@@ -135,8 +135,8 @@ public final class MonitorThread extends Thread {
                         + " flushed:" + c.flushThread.get()
                         + " eventloop.contains:" + c.eventloop.concurrentRunQueue.contains(c));
                 //}
-            } else if (channel instanceof IOUringChannel) {
-                IOUringChannel c = (IOUringChannel) channel;
+            } else if (channel instanceof IOUringAsyncSocket) {
+                IOUringAsyncSocket c = (IOUringAsyncSocket) channel;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (c.flushThread.get() == null && hasData) {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()

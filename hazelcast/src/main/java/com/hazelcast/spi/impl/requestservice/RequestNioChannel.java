@@ -2,14 +2,14 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import com.hazelcast.spi.impl.engine.nio.NioChannel;
+import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestNioChannel extends NioChannel {
+public class RequestNioChannel extends NioAsyncSocket {
 
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;

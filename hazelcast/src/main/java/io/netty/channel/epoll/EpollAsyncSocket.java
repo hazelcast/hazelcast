@@ -1,6 +1,6 @@
 package io.netty.channel.epoll;
 
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
@@ -15,7 +15,7 @@ import static io.netty.channel.epoll.Native.EPOLLIN;
 
 
 // add padding around Nio channel
-public abstract class EpollChannel extends Channel {
+public abstract class EpollAsyncSocket extends AsyncSocket {
 
     // immutable state
     protected LinuxSocket socket;
@@ -80,7 +80,7 @@ public abstract class EpollChannel extends Channel {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
             } else if (writeThrough) {
                 try {
                     handleWrite();
@@ -128,7 +128,7 @@ public abstract class EpollChannel extends Channel {
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -155,7 +155,7 @@ public abstract class EpollChannel extends Channel {
             }
         }
 
-        eventloop.removeChannel(this);
+        eventloop.removeSocket(this);
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 
 import java.io.EOFException;
 import java.net.InetAddress;
@@ -59,7 +60,7 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
-    public volatile com.hazelcast.spi.impl.engine.Channel[] channels;
+    public volatile AsyncSocket[] channels;
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;

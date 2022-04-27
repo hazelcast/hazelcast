@@ -7,13 +7,13 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.function.Supplier;
 
-public class IOUringServerChannel implements CompletionListener {
+public class IOUringServerSocket implements CompletionListener {
 
     public SocketConfig socketConfig;
     public IOUringSubmissionQueue sq;
     public LinuxSocket serverSocket;
     public InetSocketAddress address;
-    public Supplier<IOUringChannel> channelSupplier;
+    public Supplier<IOUringAsyncSocket> channelSupplier;
     public IOUringEventloop eventloop;
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
@@ -55,7 +55,7 @@ public class IOUringServerChannel implements CompletionListener {
 
             System.out.println(this + " new connected accepted: " + address);
 
-            IOUringChannel channel = channelSupplier.get();
+            IOUringAsyncSocket channel = channelSupplier.get();
             LinuxSocket socket = new LinuxSocket(res);
             eventloop.completionListeners.put(socket.intValue(), channel);
             try {

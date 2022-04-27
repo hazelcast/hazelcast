@@ -1,11 +1,9 @@
 package com.hazelcast.spi.impl.engine.frame;
 
-import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_CHAR;
@@ -35,7 +33,7 @@ public class Frame {
 
     public CompletableFuture future;
     public Frame next;
-    public Channel channel;
+    public AsyncSocket channel;
 
     public static final int OFFSET_SIZE = 0;
     public static final int OFFSET_FLAGS = OFFSET_SIZE + BYTES_INT;

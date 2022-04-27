@@ -7,11 +7,11 @@ import java.net.InetSocketAddress;
 import java.util.function.Supplier;
 
 // https://stackoverflow.com/questions/51777259/how-to-code-an-epoll-based-sockets-client-in-c
-public class EpollServerChannel {
+public class EpollServerSocket {
     public SocketConfig socketConfig;
     public LinuxSocket serverSocket;
     public int flags = Native.EPOLLIN;
-    public Supplier<EpollChannel> channelSupplier;
+    public Supplier<EpollAsyncSocket> channelSupplier;
     public InetSocketAddress address;
     private final byte[] acceptedAddress = new byte[26];
     public EpollEventloop eventloop;
@@ -24,8 +24,8 @@ public class EpollServerChannel {
 
             LinuxSocket socket = new LinuxSocket(fd);
 
-            EpollChannel channel = channelSupplier.get();
-            eventloop.registeredChannels.add(channel);
+            EpollAsyncSocket channel = channelSupplier.get();
+            eventloop.registeredsockets.add(channel);
 
             channel.configure(eventloop, socket, socketConfig);
             channel.onConnectionEstablished();

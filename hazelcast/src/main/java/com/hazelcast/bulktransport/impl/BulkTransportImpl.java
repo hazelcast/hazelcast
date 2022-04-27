@@ -2,7 +2,7 @@ package com.hazelcast.bulktransport.impl;
 
 import com.hazelcast.bulktransport.BulkTransport;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import com.hazelcast.spi.impl.requestservice.RequestService;
@@ -22,7 +22,7 @@ public class BulkTransportImpl implements BulkTransport {
     private final Address address;
     private final int reactor;
     private final int receiveBufferSize;
-    private Channel[] channels;
+    private AsyncSocket[] channels;
     private FrameAllocator frameAllocator;
 
     public BulkTransportImpl(RequestService requestService, Address address, int reactor) {
@@ -62,7 +62,7 @@ public class BulkTransportImpl implements BulkTransport {
         ensureOpen();
 
         CompletableFuture[] futures = new CompletableFuture[channels.length];
-        for (Channel channel : channels) {
+        for (AsyncSocket channel : channels) {
             Frame request = frameAllocator.allocate()
                     .newFuture()
                     .writeRequestHeader(-1, INIT_BULK_TRANSPORT)
@@ -84,7 +84,7 @@ public class BulkTransportImpl implements BulkTransport {
     @Override
     public void close() {
         if (isClosed.compareAndSet(false, true)) {
-            for (Channel channel : channels) {
+            for (AsyncSocket channel : channels) {
                 channel.close();
             }
             channels = null;

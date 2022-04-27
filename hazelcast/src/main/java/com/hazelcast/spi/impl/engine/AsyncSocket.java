@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  *
  * Also the
  */
-public abstract class Channel {
+public abstract class AsyncSocket {
     public SocketAddress remoteAddress;
     public SocketAddress localAddress;
     public SocketConfig socketConfig;

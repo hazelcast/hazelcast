@@ -2,14 +2,14 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import io.netty.channel.epoll.EpollChannel;
+import io.netty.channel.epoll.EpollAsyncSocket;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestEpollChannel extends EpollChannel {
+public class RequestEpollChannel extends EpollAsyncSocket {
 
     public OpScheduler opScheduler;
     public RequestService requestService;

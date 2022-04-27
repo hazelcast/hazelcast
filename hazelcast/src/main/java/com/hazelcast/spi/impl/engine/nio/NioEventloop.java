@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 
@@ -39,7 +39,7 @@ public final class NioEventloop extends Eventloop {
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtyChannels();
+            flushDirtySockets();
 
             int keyCount;
             if (spin || moreWork) {
@@ -71,18 +71,18 @@ public final class NioEventloop extends Eventloop {
         }
     }
 
-    public void accept(NioServerChannel serverChannel) throws IOException {
-        serverChannel.configure(this);
-        execute(serverChannel::accept);
+    public void accept(NioServerSocket serverSocket) throws IOException {
+        serverSocket.configure(this);
+        execute(serverSocket::accept);
     }
 
     @Override
-    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
-        NioChannel channel = (NioChannel) c;
+    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
+        NioAsyncSocket socket = (NioAsyncSocket) c;
 
-        CompletableFuture<Channel> future = new CompletableFuture<>();
+        CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
         try {
-            execute(() -> channel.connect(future, address, NioEventloop.this));
+            execute(() -> socket.connect(future, address, NioEventloop.this));
         } catch (Exception e) {
             future.completeExceptionally(e);
         }

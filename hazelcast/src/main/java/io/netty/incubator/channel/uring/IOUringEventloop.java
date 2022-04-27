@@ -1,7 +1,7 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -115,7 +115,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
         }
     }
 
-    public void accept(IOUringServerChannel serverChannel) throws IOException {
+    public void accept(IOUringServerSocket serverChannel) throws IOException {
         execute(() -> {
             serverChannel.configure(this);
             serverChannel.accept();
@@ -131,7 +131,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtyChannels();
+            flushDirtySockets();
 
             if (cq.hasCompletions()) {
                 cq.process(this);
@@ -168,10 +168,10 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     }
 
     @Override
-    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
-        IOUringChannel channel = (IOUringChannel) c;
+    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
+        IOUringAsyncSocket channel = (IOUringAsyncSocket) c;
 
-        CompletableFuture<Channel> future = new CompletableFuture();
+        CompletableFuture<AsyncSocket> future = new CompletableFuture();
 
         try {
             System.out.println(getName() + " connectRequest to address:" + address);

@@ -1,7 +1,7 @@
 package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.Channel;
+import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
@@ -26,7 +26,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
 // todo: add padding around Nio channel
-public abstract class NioChannel extends Channel implements NioSelectedKeyListener {
+public abstract class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyListener {
 
     // immutable state
     protected SocketChannel socketChannel;
@@ -68,7 +68,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
             } else if (writeThrough) {
                 try {
                     handleWrite();
@@ -125,7 +125,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtyChannels.add(this);
+                eventloop.dirtySockets.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -176,10 +176,10 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         configureSocket();
         socketChannel.configureBlocking(false);
         this.key = socketChannel.register(selector, OP_READ, this);
-        eventloop.registeredChannels.add(this);
+        eventloop.registeredsockets.add(this);
     }
 
-    protected void connect(CompletableFuture<Channel> future,
+    protected void connect(CompletableFuture<AsyncSocket> future,
                            SocketAddress address,
                            NioEventloop eventloop) throws IOException {
         this.eventloop = eventloop;
@@ -197,7 +197,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
     private void handleConnectable() throws IOException {
         try {
-            eventloop.registeredChannels.add(this);
+            eventloop.registeredsockets.add(this);
 
             this.remoteAddress = socketChannel.getRemoteAddress();
             this.localAddress = socketChannel.getLocalAddress();
@@ -265,6 +265,6 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     @Override
     public void close() {
         closeResource(socketChannel);
-        eventloop.removeChannel(this);
+        eventloop.removeSocket(this);
     }
 }
