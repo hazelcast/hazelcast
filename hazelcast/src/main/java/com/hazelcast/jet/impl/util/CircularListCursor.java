@@ -60,18 +60,15 @@ public class CircularListCursor<E> {
      * to the previous item, wrapping around to the last item if necessary.
      */
     public void remove() {
-        remove(index--);
-        if (index < 0) {
-            index = size - 1;
-        }
-    }
-
-    private void remove(int index) {
         int numMoved = size - index - 1;
         if (numMoved > 0) {
             System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         }
         elementData[--size] = null;
+        index--;
+        if (index < 0) {
+            index = size - 1;
+        }
     }
 
     @Override
