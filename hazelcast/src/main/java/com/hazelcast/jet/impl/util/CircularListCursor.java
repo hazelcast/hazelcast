@@ -66,7 +66,7 @@ public class CircularListCursor<E> {
         }
     }
 
-    public void remove(int index) {
+    private void remove(int index) {
         int numMoved = size - index - 1;
         if (numMoved > 0) {
             System.arraycopy(elementData, index + 1, elementData, index, numMoved);
