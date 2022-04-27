@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.IntHolder;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.collection.FixedCapacityArrayList;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
@@ -194,15 +194,15 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
-        Int2ObjectHashMap<IntHolder> priorityCounters = new Int2ObjectHashMap<>();
+        Int2ObjectHashMap<MutableInteger> priorityCounters = new Int2ObjectHashMap<>();
         for (InboundEdgeStream instream : instreams) {
-            priorityCounters.computeIfAbsent(instream.priority(), priority -> new IntHolder()).increment();
+            priorityCounters.computeIfAbsent(instream.priority(), priority -> new MutableInteger()).getAndInc();
         }
 
         Map<Integer, FixedCapacityArrayList<InboundEdgeStream>> priorityToStreams = new TreeMap<>();
-        for (Map.Entry<Integer, IntHolder> priorityWithCounter : priorityCounters.entrySet()) {
+        for (Map.Entry<Integer, MutableInteger> priorityWithCounter : priorityCounters.entrySet()) {
             FixedCapacityArrayList<InboundEdgeStream> streams =
-                    new FixedCapacityArrayList<>(InboundEdgeStream.class, priorityWithCounter.getValue().getInt());
+                    new FixedCapacityArrayList<>(InboundEdgeStream.class, priorityWithCounter.getValue().value);
             priorityToStreams.put(priorityWithCounter.getKey(), streams);
         }
 
