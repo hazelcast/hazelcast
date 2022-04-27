@@ -159,7 +159,7 @@ public final class EpollEventloop extends Eventloop {
         serverSocket.listen(10);
         System.out.println(getName() + " Listening on " + serverChannel.address);
 
-        schedule(() -> {
+        execute(() -> {
             serverChannel.eventloop = EpollEventloop.this;
             serverChannel.serverSocket = serverSocket;
             channels.put(serverSocket.intValue(), serverChannel);
@@ -183,7 +183,7 @@ public final class EpollEventloop extends Eventloop {
             if (!socket.connect(address)) {
                 future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
             } else {
-                schedule(() -> {
+                execute(() -> {
                     try {
                         channel.onConnectionEstablished();
                         registeredChannels.add(channel);

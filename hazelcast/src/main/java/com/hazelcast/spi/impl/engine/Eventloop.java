@@ -68,22 +68,22 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected abstract void eventLoop() throws Exception;
 
-    public void schedule(EventloopTask task) {
+    public void execute(EventloopTask task) {
         publicRunQueue.add(task);
         wakeup();
     }
 
-    public void schedule(Collection<Frame> requests) {
+    public void execute(Collection<Frame> requests) {
         publicRunQueue.addAll(requests);
         wakeup();
     }
 
-    public void schedule(Frame request) {
+    public void execute(Frame request) {
         publicRunQueue.add(request);
         wakeup();
     }
 
-    public void schedule(Channel channel) {
+    public void execute(Channel channel) {
         if (Thread.currentThread() == this) {
             dirtyChannels.offer(channel);
         } else {

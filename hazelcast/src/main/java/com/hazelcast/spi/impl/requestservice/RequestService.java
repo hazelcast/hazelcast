@@ -368,7 +368,7 @@ public class RequestService {
 
         CompletableFuture future = request.future;
         if (address.equals(thisAddress)) {
-            engine.eventloop(eventloop).schedule(request);
+            engine.eventloop(eventloop).execute(request);
         } else {
             Channel channel = getConnection(address).channels[eventloop];
 
@@ -397,7 +397,7 @@ public class RequestService {
         CompletableFuture future = request.future;
         if (address.equals(thisAddress)) {
             // todo: hack with the assignment of a partition to a local cpu.
-            engine.eventloopForHash(partitionIdToChannel(partitionId)).schedule(request);
+            engine.eventloopForHash(partitionIdToChannel(partitionId)).execute(request);
         } else {
             Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
 
@@ -442,7 +442,7 @@ public class RequestService {
         int partitionId = pipeline.getPartitionId();
         Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            engine.eventloopForHash(partitionId).schedule(requestList);
+            engine.eventloopForHash(partitionId).execute(requestList);
         } else {
             Channel channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
             Requests requests = getRequests(channel.remoteAddress);

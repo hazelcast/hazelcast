@@ -76,7 +76,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
                     handleException(e);
                 }
             } else if (regularSchedule) {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
                 eventloop.wakeup();
@@ -95,7 +95,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             }
         }
     }

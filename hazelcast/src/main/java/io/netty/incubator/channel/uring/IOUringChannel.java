@@ -71,7 +71,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
             if (currentThread == eventloop) {
                 eventloop.dirtyChannels.add(this);
             } else {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             }
         }
     }
@@ -82,7 +82,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             }
         }
     }

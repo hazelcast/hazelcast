@@ -73,7 +73,7 @@ public final class NioEventloop extends Eventloop {
 
     public void accept(NioServerChannel serverChannel) throws IOException {
         serverChannel.configure(this);
-        schedule(serverChannel::accept);
+        execute(serverChannel::accept);
     }
 
     @Override
@@ -82,7 +82,7 @@ public final class NioEventloop extends Eventloop {
 
         CompletableFuture<Channel> future = new CompletableFuture<>();
         try {
-            schedule(() -> channel.connect(future, address, NioEventloop.this));
+            execute(() -> channel.connect(future, address, NioEventloop.this));
         } catch (Exception e) {
             future.completeExceptionally(e);
         }

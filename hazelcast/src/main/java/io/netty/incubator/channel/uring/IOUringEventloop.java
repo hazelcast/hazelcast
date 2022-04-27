@@ -116,7 +116,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     }
 
     public void accept(IOUringServerChannel serverChannel) throws IOException {
-        schedule(() -> {
+        execute(() -> {
             serverChannel.configure(this);
             serverChannel.accept();
         });
@@ -183,7 +183,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
 
             if (socket.connect(address)) {
                 logger.info(getName() + "Socket connected to " + address);
-                schedule(() -> {
+                execute(() -> {
                     completionListeners.put(socket.intValue(), channel);
                     channel.onConnectionEstablished();
                     future.complete(channel);

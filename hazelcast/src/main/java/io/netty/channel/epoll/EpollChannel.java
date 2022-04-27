@@ -88,7 +88,7 @@ public abstract class EpollChannel extends Channel {
                     handleException(e);
                 }
             } else {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             }
         }
     }
@@ -98,7 +98,7 @@ public abstract class EpollChannel extends Channel {
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.schedule(this);
+                eventloop.execute(this);
             }
         }
     }

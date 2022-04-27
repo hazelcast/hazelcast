@@ -106,15 +106,15 @@ public final class Engine {
     }
 
     public void run(int eventloopIdx, Collection<Frame> frames) {
-        eventloops[eventloopIdx].schedule(frames);
+        eventloops[eventloopIdx].execute(frames);
     }
 
     public void run(int eventloopIdx, Frame frame) {
-        eventloops[eventloopIdx].schedule(frame);
+        eventloops[eventloopIdx].execute(frame);
     }
 
     public void run(int eventloopIdx, EventloopTask task) {
-        eventloops[eventloopIdx].schedule(task);
+        eventloops[eventloopIdx].execute(task);
     }
 
     public void start() {
