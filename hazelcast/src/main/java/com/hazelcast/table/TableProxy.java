@@ -1,11 +1,14 @@
 package com.hazelcast.table;
 
+import com.hazelcast.bulktransport.BulkTransport;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import com.hazelcast.spi.impl.requestservice.RequestService;
+import com.hazelcast.bulktransport.impl.BulkTransportImpl;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableService;
 
@@ -36,7 +39,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         super(nodeEngine, tableService);
         this.requestService = nodeEngine.getRequestService();
         this.name = name;
-        this.partitionCount = 1;//nodeEngine.getPartitionService().getPartitionCount();
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.frameAllocator = new ConcurrentPooledFrameAllocator(128, true);
         this.requestTimeoutMs = requestService.getRequestTimeoutMs();
     }
@@ -68,7 +71,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeInt(item.a)
                 .writeInt(item.b)
                 .writeComplete();
-        return requestService.invoke(request, partitionId);
+        return requestService.invokeOnPartition(request, partitionId);
     }
 
     @Override
@@ -113,7 +116,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
                 .writeComplete();
-        return requestService.invoke(request, partitionId);
+        return requestService.invokeOnPartition(request, partitionId);
     }
 
     // better pipelining support
@@ -134,6 +137,11 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
+    public BulkTransport newBulkTransport(Address address, int parallelism) {
+       return new BulkTransportImpl(requestService, address, parallelism);
+    }
+
+    @Override
     public void set(byte[] key, byte[] value) {
         int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
@@ -143,7 +151,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeSizedBytes(key)
                 .writeSizedBytes(value)
                 .writeComplete();
-        CompletableFuture f = requestService.invoke(request, partitionId);
+        CompletableFuture f = requestService.invokeOnPartition(request, partitionId);
         try {
             f.get(requestTimeoutMs, MILLISECONDS);
         } catch (Exception e) {
@@ -159,7 +167,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                     .newFuture()
                     .writeRequestHeader(partitionId, QUERY)
                     .writeComplete();
-            futures[partitionId] = requestService.invoke(request, partitionId);
+            futures[partitionId] = requestService.invokeOnPartition(request, partitionId);
         }
 
         for (CompletableFuture future : futures) {
@@ -180,7 +188,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeRequestHeader(partitionId, GET)
                 .writeSizedBytes(key)
                 .writeComplete();
-        CompletableFuture f = requestService.invoke(request, partitionId);
+        CompletableFuture f = requestService.invokeOnPartition(request, partitionId);
         try {
             Frame frame = (Frame) f.get(requestTimeoutMs, MILLISECONDS);
             frame.position(OFFSET_RES_PAYLOAD);

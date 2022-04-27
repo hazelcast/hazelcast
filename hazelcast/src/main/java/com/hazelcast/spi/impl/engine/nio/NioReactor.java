@@ -78,7 +78,7 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    public Future<Channel> connect(Channel c, SocketAddress address) {
+    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
         NioChannel channel = (NioChannel) c;
 
         CompletableFuture<Channel> future = new CompletableFuture<>();

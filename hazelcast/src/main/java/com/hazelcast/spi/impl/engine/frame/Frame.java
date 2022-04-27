@@ -1,9 +1,11 @@
 package com.hazelcast.spi.impl.engine.frame;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.engine.Channel;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_CHAR;
@@ -11,6 +13,7 @@ import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 

@@ -1,5 +1,7 @@
 package com.hazelcast.spi.impl.requestservice;
 
+import com.hazelcast.bulktransport.impl.BulkTransportOp;
+import com.hazelcast.bulktransport.impl.InitBulkTransportOp;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.table.impl.GetOp;
 import com.hazelcast.table.impl.NoOp;
@@ -11,7 +13,9 @@ import com.hazelcast.table.impl.UpsertOp;
 import java.util.function.Supplier;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_OPCODE;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.BULK_TRANSPORT;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.GET;
+import static com.hazelcast.spi.impl.requestservice.OpCodes.INIT_BULK_TRANSPORT;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.MAX_OPCODE;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.QUERY;
@@ -36,6 +40,8 @@ public final class OpAllocator {
         pools[GET] = new Pool(GetOp::new);
         pools[SET] = new Pool(SetOp::new);
         pools[QUERY] = new Pool(QueryOp::new);
+        pools[INIT_BULK_TRANSPORT] = new Pool(InitBulkTransportOp::new);
+        pools[BULK_TRANSPORT] = new Pool(BulkTransportOp::new);
     }
 
     public Op allocate(Frame request) {

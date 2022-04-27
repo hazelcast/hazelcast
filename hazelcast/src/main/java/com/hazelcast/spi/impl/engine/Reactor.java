@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -58,7 +59,7 @@ public abstract class Reactor extends HazelcastManagedThread {
         running = false;
     }
 
-    public abstract Future<Channel> connect(Channel channel, SocketAddress address);
+    public abstract CompletableFuture<Channel> connect(Channel channel, SocketAddress address);
 
     protected abstract void wakeup();
 

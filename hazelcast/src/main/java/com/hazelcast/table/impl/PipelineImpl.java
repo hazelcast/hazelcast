@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
 
 
+// todo: we don't need a frame for all the requests. We should just add to an existing frame.
 public final class PipelineImpl implements Pipeline {
 
     private final RequestService requestService;
@@ -49,7 +50,7 @@ public final class PipelineImpl implements Pipeline {
 
     @Override
     public void execute() {
-        requestService.invoke(this);
+        requestService.invokeOnPartition(this);
     }
 
     public void await(){

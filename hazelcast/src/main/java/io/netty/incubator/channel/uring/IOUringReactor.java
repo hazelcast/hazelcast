@@ -169,7 +169,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     }
 
     @Override
-    public Future<Channel> connect(Channel c, SocketAddress address) {
+    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
         IOUringChannel channel = (IOUringChannel) c;
 
         CompletableFuture<Channel> future = new CompletableFuture();

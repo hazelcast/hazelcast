@@ -268,8 +268,8 @@ public class RequestService {
         java.lang.System.out.println("reactor.cpu-affinity:" + java.lang.System.getProperty("reactor.cpu-affinity"));
     }
 
-    public int toPort(Address address, int cpu) {
-        return (address.getPort() - 5701) * 100 + 11000 + cpu;
+    public int toPort(Address address, int reactorIdx) {
+        return (address.getPort() - 5701) * 100 + 11000 + reactorIdx;
     }
 
     public int partitionIdToChannel(int partitionId) {
@@ -297,6 +297,12 @@ public class RequestService {
 
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();
+        }
+    }
+
+    private void ensureActive() {
+        if (shuttingdown) {
+            throw new RuntimeException("Can't make invocation, frontend shutting down");
         }
     }
 
@@ -357,10 +363,31 @@ public class RequestService {
         }
     }
 
-    public CompletableFuture invoke(Frame request, int partitionId) {
-        if (shuttingdown) {
-            throw new RuntimeException("Can't make invocation, frontend shutting down");
+    public CompletableFuture invokeOnReactor(Frame request, Address address, int reactor) {
+        ensureActive();
+
+        CompletableFuture future = request.future;
+        if (address.equals(thisAddress)) {
+            engine.reactor(reactor).schedule(request);
+        } else {
+            Channel channel = getConnection(address).channels[reactor];
+
+            // we need to acquire the frame because storage will release it once written
+            // and we need to keep the frame around for the response.
+            request.acquire();
+            Requests requests = getRequests(channel.remoteAddress);
+            long callId = requests.nextCallId();
+            request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+            //System.out.println("request.refCount:"+request.refCount());
+            requests.map.put(callId, request);
+            channel.writeAndFlush(request);
         }
+
+        return future;
+    }
+
+    public CompletableFuture invokeOnPartition(Frame request, int partitionId) {
+        ensureActive();
 
         if (partitionId < 0) {
             throw new RuntimeException("Negative partition id not supported:" + partitionId);
@@ -388,10 +415,24 @@ public class RequestService {
         return future;
     }
 
-    public void invoke(PipelineImpl pipeline) {
-        if (shuttingdown) {
-            throw new RuntimeException("Can't make invocation, frontend shutting down");
-        }
+    public CompletableFuture invoke(Frame request, Channel channel) {
+        ensureActive();
+
+        CompletableFuture future = request.future;
+        // we need to acquire the frame because storage will release it once written
+        // and we need to keep the frame around for the response.
+        request.acquire();
+        Requests requests = getRequests(channel.remoteAddress);
+        long callId = requests.nextCallId();
+        request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+        //System.out.println("request.refCount:"+request.refCount());
+        requests.map.put(callId, request);
+        channel.writeAndFlush(request);
+        return future;
+    }
+
+    public void invokeOnPartition(PipelineImpl pipeline) {
+        ensureActive();
 
         List<Frame> requestList = pipeline.getRequests();
         if (requestList.isEmpty()) {
@@ -457,12 +498,7 @@ public class RequestService {
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
                         SocketAddress reactorAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
                         reactorAddresses.add(reactorAddress);
-                        Reactor reactor = engine.reactorForHash(channelIndex);
-
-                        Supplier<Channel> channelSupplier = (Supplier<Channel>) reactor.context.get("requestChannelSupplier");
-                        Channel channel = channelSupplier.get();
-                        Future<Channel> schedule = reactor.connect(channel, reactorAddress);
-                        futures.add(schedule);
+                        futures.add(connect(reactorAddress, channelIndex));
                     }
 
                     for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
@@ -482,20 +518,23 @@ public class RequestService {
         return connection;
     }
 
-    public Requests getRequests(SocketAddress address) {
-        // remove
-        if (address == null) {
-            throw new RuntimeException("Address can't be null");
-        }
+    public CompletableFuture<Channel> connect(SocketAddress reactorAddress, int channelIndex) {
+        Reactor reactor = engine.reactorForHash(channelIndex);
 
+        Supplier<Channel> channelSupplier = (Supplier<Channel>) reactor.context.get("requestChannelSupplier");
+        Channel channel = channelSupplier.get();
+        return reactor.connect(channel, reactorAddress);
+    }
+
+    public Requests getRequests(SocketAddress address) {
         Requests requests = requestsPerChannel.get(address);
-        if (requests != null) {
+        if (requests == null) {
+            Requests newRequests = new Requests();
+            Requests foundRequests = requestsPerChannel.putIfAbsent(address, newRequests);
+            return foundRequests == null ? newRequests : foundRequests;
+        } else {
             return requests;
         }
-
-        Requests newRequests = new Requests();
-        Requests foundRequests = requestsPerChannel.putIfAbsent(address, newRequests);
-        return foundRequests == null ? newRequests : foundRequests;
     }
 
     public class ResponseThread extends Thread {

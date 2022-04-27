@@ -68,6 +68,10 @@ public abstract class Channel {
 
     public abstract void close();
 
+    public SocketConfig getSocketConfig(){
+        return socketConfig;
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";

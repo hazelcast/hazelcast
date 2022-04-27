@@ -1,5 +1,9 @@
 package com.hazelcast.table;
 
+import com.hazelcast.bulktransport.BulkTransport;
+import com.hazelcast.cluster.Address;
+
+
 /**
  * This API contains a lot of functionality that normally would be placed
  * over different APIs. But I don't want to jump to a more appropriate solution
@@ -17,6 +21,8 @@ public interface Table<K,E> {
     void upsertAll(E[] items);
 
     void set(byte[] key, byte[] value);
+
+    BulkTransport newBulkTransport(Address address, int parallism);
 
     byte[] get(byte[] key);
 

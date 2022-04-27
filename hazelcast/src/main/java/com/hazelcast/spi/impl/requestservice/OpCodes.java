@@ -9,5 +9,9 @@ public class OpCodes {
     public final static byte GET = 4;
     public final static byte SET = 5;
     public final static byte QUERY = 6;
-    public final static byte MAX_OPCODE = QUERY;
+
+    public final static byte INIT_BULK_TRANSPORT = 7;
+    public final static byte BULK_TRANSPORT = 8;
+
+    public final static byte MAX_OPCODE = BULK_TRANSPORT;
 }

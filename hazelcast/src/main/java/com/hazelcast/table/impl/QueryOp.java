@@ -9,6 +9,10 @@ import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
 public class QueryOp extends Op {
 
+    // Currently, we always execute the same bogus query.
+    // Probably the queryOp should have some query id for prepared queries
+    // And we do a lookup based on that query id.
+    // This query instance should also be pooled.
     private ExampleQuery query = new ExampleQuery();
 
     public QueryOp() {
@@ -17,7 +21,7 @@ public class QueryOp extends Op {
 
     @Override
     public void clear() {
-
+        query.clear();
     }
 
     @Override
@@ -28,7 +32,7 @@ public class QueryOp extends Op {
         map.execute(query);
 
         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
-                .writeLong(query.bogus)
+                .writeLong(query.result)
                 .writeComplete();
 
         return COMPLETED;
