@@ -1,5 +1,5 @@
 package com.hazelcast.spi.impl.engine;
 
-public interface ReactorTask {
+public interface EventloopTask {
     void run() throws Exception;
 }

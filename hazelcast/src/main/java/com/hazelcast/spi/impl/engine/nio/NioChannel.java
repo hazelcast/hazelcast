@@ -30,7 +30,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
     // immutable state
     protected SocketChannel socketChannel;
-    public NioReactor reactor;
+    public NioEventloop eventloop;
     protected SelectionKey key;
     private Selector selector;
     private ILogger logger;
@@ -67,8 +67,8 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == reactor) {
-                reactor.dirtyChannels.add(this);
+            if (currentThread == eventloop) {
+                eventloop.dirtyChannels.add(this);
             } else if (writeThrough) {
                 try {
                     handleWrite();
@@ -76,10 +76,10 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
                     handleException(e);
                 }
             } else if (regularSchedule) {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
-                reactor.wakeup();
+                eventloop.wakeup();
             }
         }
     }
@@ -95,7 +95,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             }
         }
     }
@@ -121,18 +121,18 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == reactor;
+        assert currentThread == eventloop;
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                reactor.dirtyChannels.add(this);
+                eventloop.dirtyChannels.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
             } else {
                 unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == reactor) {
+        } else if (currentFlushThread == eventloop) {
             if (!ioVector.add(frame)) {
                 unflushedFrames.add(frame);
             }
@@ -159,12 +159,12 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         }
     }
 
-    protected void handleAccepted(NioReactor reactor,
+    protected void handleAccepted(NioEventloop eventloop,
                                   SocketChannel socketChannel,
                                   SocketConfig socketConfig) throws IOException {
-        this.reactor = reactor;
-        this.selector = reactor.selector;
-        this.logger = reactor.logger;
+        this.eventloop = eventloop;
+        this.selector = eventloop.selector;
+        this.logger = eventloop.logger;
         this.socketConfig = socketConfig;
         this.socketChannel = socketChannel;
         this.remoteAddress = socketChannel.getRemoteAddress();
@@ -176,15 +176,15 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
         configureSocket();
         socketChannel.configureBlocking(false);
         this.key = socketChannel.register(selector, OP_READ, this);
-        reactor.registeredChannels.add(this);
+        eventloop.registeredChannels.add(this);
     }
 
     protected void connect(CompletableFuture<Channel> future,
                            SocketAddress address,
-                           NioReactor reactor) throws IOException {
-        this.reactor = reactor;
-        this.selector = reactor.selector;
-        this.logger = reactor.logger;
+                           NioEventloop eventloop) throws IOException {
+        this.eventloop = eventloop;
+        this.selector = eventloop.selector;
+        this.logger = eventloop.logger;
         this.connectFuture = future;
         this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
         this.socketChannel = SocketChannel.open();
@@ -197,7 +197,7 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
 
     private void handleConnectable() throws IOException {
         try {
-            reactor.registeredChannels.add(this);
+            eventloop.registeredChannels.add(this);
 
             this.remoteAddress = socketChannel.getRemoteAddress();
             this.localAddress = socketChannel.getLocalAddress();
@@ -265,6 +265,6 @@ public abstract class NioChannel extends Channel implements NioSelectedKeyListen
     @Override
     public void close() {
         closeResource(socketChannel);
-        reactor.removeChannel(this);
+        eventloop.removeChannel(this);
     }
 }

@@ -2,7 +2,7 @@ package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.requestservice.Op;
 import com.hazelcast.spi.impl.requestservice.OpCodes;
-import io.netty.incubator.channel.uring.IOUringReactor;
+import io.netty.incubator.channel.uring.IOUringEventloop;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
@@ -27,7 +27,7 @@ public final class RandomLoadOp extends Op {
     @Override
     public int run() throws Exception {
         if(!loaded){
-            IOUringReactor reactor = (IOUringReactor) this.scheduler.getReactor();
+            IOUringEventloop reactor = (IOUringEventloop) this.scheduler.getEventloop();
             short someId = 0;
             int fd = 0;
             reactor.sq_addRead(fd, 0, 0,0, someId);

@@ -3,7 +3,7 @@ package com.hazelcast.spi.impl.engine.nio;
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.Channel;
-import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
@@ -12,12 +12,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
-public final class NioReactor extends Reactor {
+public final class NioEventloop extends Eventloop {
     final Selector selector;
 
-    public NioReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+    public NioEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
         super(idx, name, logger, scheduler, spin);
         this.selector = SelectorOptimizer.newSelector(logger);
     }
@@ -83,7 +82,7 @@ public final class NioReactor extends Reactor {
 
         CompletableFuture<Channel> future = new CompletableFuture<>();
         try {
-            schedule(() -> channel.connect(future, address, NioReactor.this));
+            schedule(() -> channel.connect(future, address, NioEventloop.this));
         } catch (Exception e) {
             future.completeExceptionally(e);
         }

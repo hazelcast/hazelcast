@@ -14,17 +14,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A Reactor is a thread that is an event loop.
+ * A EventLoop is a thread that is an event loop.
  *
- * The Reactor infrastructure is unaware of what is being send. So it isn't aware of requests/responses.
+ * The Eventloop infrastructure is unaware of what is being send. So it isn't aware of requests/responses.
  *
- * A single reactor can deal with many server ports.
+ * A single eventloop can deal with many server ports.
  */
-public abstract class Reactor extends HazelcastManagedThread {
+public abstract class Eventloop extends HazelcastManagedThread {
     public final ConcurrentMap context = new ConcurrentHashMap();
     public final ILogger logger;
     public final Set<Channel> registeredChannels = new CopyOnWriteArraySet<>();
@@ -39,7 +38,7 @@ public abstract class Reactor extends HazelcastManagedThread {
     protected final int idx;
     protected volatile boolean running = true;
 
-    public Reactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+    public Eventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
         super(name);
         this.idx = idx;
         this.logger = logger;
@@ -69,7 +68,7 @@ public abstract class Reactor extends HazelcastManagedThread {
 
     protected abstract void eventLoop() throws Exception;
 
-    public void schedule(ReactorTask task) {
+    public void schedule(EventloopTask task) {
         publicRunQueue.add(task);
         wakeup();
     }
@@ -138,9 +137,9 @@ public abstract class Reactor extends HazelcastManagedThread {
                 }
             } else if (task instanceof Frame) {
                 scheduler.schedule((Frame) task);
-            } else if (task instanceof ReactorTask) {
+            } else if (task instanceof EventloopTask) {
                 try {
-                    ((ReactorTask) task).run();
+                    ((EventloopTask) task).run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

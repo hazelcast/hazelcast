@@ -2,7 +2,7 @@ package io.netty.channel.epoll;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.Channel;
-import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
@@ -11,12 +11,11 @@ import io.netty.util.collection.IntObjectMap;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 
-public final class EpollReactor extends Reactor {
+public final class EpollEventloop extends Eventloop {
     private final boolean spin;
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
     private final IntObjectMap<EpollServerChannel> serverChannels = new IntObjectHashMap<>(4096);
@@ -25,7 +24,7 @@ public final class EpollReactor extends Reactor {
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+    public EpollEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
         super(idx, name, logger, scheduler, spin);
         this.spin = false;//config.spin;
         this.events = new EpollEventArray(4096);
@@ -161,7 +160,7 @@ public final class EpollReactor extends Reactor {
         System.out.println(getName() + " Listening on " + serverChannel.address);
 
         schedule(() -> {
-            serverChannel.reactor = EpollReactor.this;
+            serverChannel.eventloop = EpollEventloop.this;
             serverChannel.serverSocket = serverSocket;
             channels.put(serverSocket.intValue(), serverChannel);
             serverChannels.put(serverSocket.intValue(), serverChannel);
@@ -171,7 +170,7 @@ public final class EpollReactor extends Reactor {
     }
 
     @Override
-    public Future<Channel> connect(Channel c, SocketAddress address) {
+    public CompletableFuture<Channel> connect(Channel c, SocketAddress address) {
         EpollChannel channel = (EpollChannel) c;
 
         CompletableFuture<Channel> future = new CompletableFuture();
@@ -200,6 +199,4 @@ public final class EpollReactor extends Reactor {
         }
         return future;
     }
-
-
 }

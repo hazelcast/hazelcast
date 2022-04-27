@@ -19,7 +19,7 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
 public abstract class IOUringChannel extends Channel implements CompletionListener {
     protected LinuxSocket socket;
-    public IOUringReactor reactor;
+    public IOUringEventloop eventloop;
 
     // ======================================================
     // For the reading side of the channel
@@ -39,23 +39,23 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
     public IovArray iovArray;
     public IOVector ioVector = new IOVector();
 
-    public void configure(IOUringReactor reactor, SocketConfig socketConfig, LinuxSocket socket) throws IOException {
-        this.reactor = reactor;
-        this.receiveBuff = reactor.allocator.directBuffer(socketConfig.receiveBufferSize);
+    public void configure(IOUringEventloop eventloop, SocketConfig socketConfig, LinuxSocket socket) throws IOException {
+        this.eventloop = eventloop;
+        this.receiveBuff = eventloop.allocator.directBuffer(socketConfig.receiveBufferSize);
         this.socket = socket;
-        ByteBuf iovArrayBuffer = reactor.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+        ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
         this.iovArray = new IovArray(iovArrayBuffer);
-        this.sq = reactor.sq;
+        this.sq = eventloop.sq;
 
         socket.setTcpNoDelay(socketConfig.tcpNoDelay);
         socket.setSendBufferSize(socketConfig.sendBufferSize);
         socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
         socket.setTcpQuickAck(socketConfig.tcpQuickAck);
         String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(reactor.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(reactor.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 
     public void onConnectionEstablished() throws IOException {
@@ -68,10 +68,10 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
     public void flush() {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == reactor) {
-                reactor.dirtyChannels.add(this);
+            if (currentThread == eventloop) {
+                eventloop.dirtyChannels.add(this);
             } else {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             }
         }
     }
@@ -82,7 +82,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             }
         }
     }
@@ -115,18 +115,18 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == reactor;
+        assert currentThread == eventloop;
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                reactor.dirtyChannels.add(this);
+                eventloop.dirtyChannels.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
             } else {
                 unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == reactor) {
+        } else if (currentFlushThread == eventloop) {
             if (!ioVector.add(frame)) {
                 unflushedFrames.add(frame);
             }
@@ -149,7 +149,7 @@ public abstract class IOUringChannel extends Channel implements CompletionListen
             }
         }
 
-        reactor.removeChannel(this);
+        eventloop.removeChannel(this);
     }
 
     @Override

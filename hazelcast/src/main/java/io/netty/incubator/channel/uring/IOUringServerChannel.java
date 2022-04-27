@@ -1,7 +1,6 @@
 package io.netty.incubator.channel.uring;
 
 import com.hazelcast.spi.impl.engine.SocketConfig;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,7 +14,7 @@ public class IOUringServerChannel implements CompletionListener {
     public LinuxSocket serverSocket;
     public InetSocketAddress address;
     public Supplier<IOUringChannel> channelSupplier;
-    public IOUringReactor reactor;
+    public IOUringEventloop eventloop;
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
 
@@ -25,21 +24,21 @@ public class IOUringServerChannel implements CompletionListener {
                 acceptMemory.lengthMemoryAddress, (short) 0);
     }
 
-    public void configure(IOUringReactor reactor) throws IOException {
-        this.reactor = reactor;
-        this.sq = reactor.sq;
+    public void configure(IOUringEventloop eventloop) throws IOException {
+        this.eventloop = eventloop;
+        this.sq = eventloop.sq;
 
         serverSocket = LinuxSocket.newSocketStream(false);
         serverSocket.setBlocking();
         serverSocket.setReuseAddress(true);
         serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        System.out.println(reactor + " serverSocket.fd:" + serverSocket.intValue());
+        System.out.println(eventloop + " serverSocket.fd:" + serverSocket.intValue());
 
         serverSocket.bind(address);
-        System.out.println(reactor.getName() + " Bind success " + address);
+        System.out.println(eventloop.getName() + " Bind success " + address);
         serverSocket.listen(10);
-        System.out.println(reactor.getName() + " Listening on " + address);
-        reactor.completionListeners.put(serverSocket.intValue(), this);
+        System.out.println(eventloop.getName() + " Listening on " + address);
+        eventloop.completionListeners.put(serverSocket.intValue(), this);
     }
 
     @Override
@@ -58,9 +57,9 @@ public class IOUringServerChannel implements CompletionListener {
 
             IOUringChannel channel = channelSupplier.get();
             LinuxSocket socket = new LinuxSocket(res);
-            reactor.completionListeners.put(socket.intValue(), channel);
+            eventloop.completionListeners.put(socket.intValue(), channel);
             try {
-                channel.configure(reactor, socketConfig, socket);
+                channel.configure(eventloop, socketConfig, socket);
                 channel.onConnectionEstablished();
             } catch (IOException e) {
                 throw new RuntimeException();

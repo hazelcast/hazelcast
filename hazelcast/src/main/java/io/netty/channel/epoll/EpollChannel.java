@@ -19,7 +19,7 @@ public abstract class EpollChannel extends Channel {
 
     // immutable state
     protected LinuxSocket socket;
-    public EpollReactor reactor;
+    public EpollEventloop eventloop;
     protected boolean writeThrough;
 
     // ======================================================
@@ -61,10 +61,10 @@ public abstract class EpollChannel extends Channel {
 
         if (socket.isOpen()) {
             try {
-                System.out.println("reactor.epollFd.intValue:" + reactor.epollFd.intValue());
+                System.out.println("reactor.epollFd.intValue:" + eventloop.epollFd.intValue());
                 System.out.println("socket.intValue:" + socket.intValue());
                 System.out.println("flags:" + flags);
-                Native.epollCtlMod(reactor.epollFd.intValue(), socket.intValue(), flags);
+                Native.epollCtlMod(eventloop.epollFd.intValue(), socket.intValue(), flags);
             } catch (Exception e) {
                 throw new IOException(e);
             }
@@ -79,8 +79,8 @@ public abstract class EpollChannel extends Channel {
     public void flush() {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == reactor) {
-                reactor.dirtyChannels.add(this);
+            if (currentThread == eventloop) {
+                eventloop.dirtyChannels.add(this);
             } else if (writeThrough) {
                 try {
                     handleWrite();
@@ -88,7 +88,7 @@ public abstract class EpollChannel extends Channel {
                     handleException(e);
                 }
             } else {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             }
         }
     }
@@ -98,7 +98,7 @@ public abstract class EpollChannel extends Channel {
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.schedule(this);
+                eventloop.schedule(this);
             }
         }
     }
@@ -124,18 +124,18 @@ public abstract class EpollChannel extends Channel {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == reactor;
+        assert currentThread == eventloop;
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                reactor.dirtyChannels.add(this);
+                eventloop.dirtyChannels.add(this);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
             } else {
                 unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == reactor) {
+        } else if (currentFlushThread == eventloop) {
             if (!ioVector.add(frame)) {
                 unflushedFrames.add(frame);
             }
@@ -155,7 +155,7 @@ public abstract class EpollChannel extends Channel {
             }
         }
 
-        reactor.removeChannel(this);
+        eventloop.removeChannel(this);
     }
 
     @Override
@@ -208,8 +208,8 @@ public abstract class EpollChannel extends Channel {
 
     }
 
-    public void configure(EpollReactor reactor, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
-        this.reactor = reactor;
+    public void configure(EpollEventloop eventloop, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
+        this.eventloop = eventloop;
         this.socket = socket;
 
         receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
@@ -220,10 +220,10 @@ public abstract class EpollChannel extends Channel {
         //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
 
         String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(reactor.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(reactor.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(reactor.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(reactor.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
     }
 
     public void onConnectionEstablished() throws IOException {

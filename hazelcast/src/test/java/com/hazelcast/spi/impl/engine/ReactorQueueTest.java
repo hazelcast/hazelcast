@@ -18,7 +18,7 @@ public class ReactorQueueTest {
 
     @Test
     public void test(){
-        ReactorQueue reactorQueue = new ReactorQueue(16);
+        EventloopQueue reactorQueue = new EventloopQueue(16);
 
         assertNull(reactorQueue.poll());
 

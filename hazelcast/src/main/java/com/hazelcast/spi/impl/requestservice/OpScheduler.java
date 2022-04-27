@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.spi.impl.engine.CircularQueue;
-import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
@@ -23,7 +23,7 @@ public final class OpScheduler implements Scheduler {
     private final FrameAllocator localResponseFrameAllocator;
     private final FrameAllocator remoteResponseFrameAllocator;
     private final OpAllocator opAllocator;
-    private Reactor reactor;
+    private Eventloop eventloop;
 
     public OpScheduler(int capacity,
                        int batchSize,
@@ -38,12 +38,12 @@ public final class OpScheduler implements Scheduler {
     }
 
     @Override
-    public void setReactor(Reactor reactor) {
-        this.reactor = reactor;
+    public void setEventloop(Eventloop eventloop) {
+        this.eventloop = eventloop;
     }
 
-    public Reactor getReactor() {
-        return reactor;
+    public Eventloop getEventloop() {
+        return eventloop;
     }
 
     @Override

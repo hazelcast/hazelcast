@@ -23,22 +23,22 @@ public final class NioServerChannel implements NioSelectedKeyListener {
 
     private Selector selector;
     private ILogger logger;
-    private NioReactor reactor;
+    private NioEventloop eventloop;
 
-    public void configure(NioReactor reactor) throws IOException {
-        this.reactor = reactor;
-        this.selector = reactor.selector;
-        this.logger = reactor.logger;
+    public void configure(NioEventloop eventloop) throws IOException {
+        this.eventloop = eventloop;
+        this.selector = eventloop.selector;
+        this.logger = eventloop.logger;
         this.serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.setOption(SO_RCVBUF, socketConfig.receiveBufferSize);
-        System.out.println(reactor.getName() + " Binding to " + address);
+        System.out.println(eventloop.getName() + " Binding to " + address);
         serverSocketChannel.bind(address);
         serverSocketChannel.configureBlocking(false);
     }
 
     public void accept() throws Exception {
         serverSocketChannel.register(selector, OP_ACCEPT, this);
-        System.out.println(reactor.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+        System.out.println(eventloop.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class NioServerChannel implements NioSelectedKeyListener {
         NioChannel channel = channelSupplier.get();
 
         try {
-            channel.handleAccepted(reactor, socketChannel, socketConfig);
+            channel.handleAccepted(eventloop, socketChannel, socketConfig);
             logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
         } catch (IOException e) {
             channel.handleException(e);

@@ -11,16 +11,16 @@ import static java.lang.System.currentTimeMillis;
 
 public final class MonitorThread extends Thread {
 
-    private final Reactor[] reactors;
+    private final Eventloop[] eventloops;
     private final boolean silent;
     private volatile boolean shutdown = false;
     private long prevMillis = currentTimeMillis();
     // There is a memory leak on the counters. When channels die, counters are not removed.
     private final Map<SwCounter, LongHolder> prevMap = new HashMap<>();
 
-    public MonitorThread(Reactor[] reactors, boolean silent) {
+    public MonitorThread(Eventloop[] eventloops, boolean silent) {
         super("MonitorThread");
-        this.reactors = reactors;
+        this.eventloops = eventloops;
         this.silent = silent;
     }
 
@@ -49,15 +49,15 @@ public final class MonitorThread extends Thread {
                 long elapsed = currentMillis - prevMillis;
                 this.prevMillis = currentMillis;
 
-                for (Reactor reactor : reactors) {
-                    for (Channel channel : reactor.channels()) {
+                for (Eventloop eventloop : eventloops) {
+                    for (Channel channel : eventloop.channels()) {
                         monitor(channel, elapsed);
                     }
                 }
 
                 if (!silent) {
-                    for (Reactor reactor : reactors) {
-                        monitor(reactor, elapsed);
+                    for (Eventloop eventloop : eventloops) {
+                        monitor(eventloop, elapsed);
                     }
                 }
             }
@@ -66,7 +66,7 @@ public final class MonitorThread extends Thread {
         }
     }
 
-    private void monitor(Reactor reactor, long elapsed) {
+    private void monitor(Eventloop eventloop, long elapsed) {
         //log(reactor + " request-count:" + reactor.requests.get());
         //log(reactor + " channel-count:" + reactor.channels().size());
 
@@ -133,7 +133,7 @@ public final class MonitorThread extends Thread {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushThread.get()
-                        + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
+                        + " eventloop.contains:" + c.eventloop.publicRunQueue.contains(c));
                 //}
             } else if (channel instanceof IOUringChannel) {
                 IOUringChannel c = (IOUringChannel) channel;
@@ -142,7 +142,7 @@ public final class MonitorThread extends Thread {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushThread.get()
-                        + " reactor.contains:" + c.reactor.publicRunQueue.contains(c));
+                        + " eventloop.contains:" + c.eventloop.publicRunQueue.contains(c));
                 //}
             }
         }

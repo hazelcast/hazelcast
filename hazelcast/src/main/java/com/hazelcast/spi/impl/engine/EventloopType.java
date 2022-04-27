@@ -1,10 +1,10 @@
 package com.hazelcast.spi.impl.engine;
 
-public enum ReactorType {
+public enum EventloopType {
 
     NIO, EPOLL, IOURING;
 
-    public static ReactorType fromString(String s) {
+    public static EventloopType fromString(String s) {
         if (s.equals("io_uring") || s.equals("iouring")) {
             return IOURING;
         } else if (s.equals("nio")) {

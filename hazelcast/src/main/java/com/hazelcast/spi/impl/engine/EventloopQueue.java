@@ -9,7 +9,7 @@ import static org.jctools.util.UnsafeRefArrayAccess.calcCircularRefElementOffset
 import static org.jctools.util.UnsafeRefArrayAccess.lvRefElement;
 import static org.jctools.util.UnsafeRefArrayAccess.soRefElement;
 
-public class ReactorQueue {
+public class EventloopQueue {
 
     // These are all local to the ReactorThread
     // The head_block contains 2 pieces of info; the sequence and if the listener is blocked.
@@ -24,7 +24,7 @@ public class ReactorQueue {
     private final int mask;
     private final int capacity;
 
-    public ReactorQueue(int capacity) {
+    public EventloopQueue(int capacity) {
         capacity = QuickMath.nextPowerOfTwo(capacity) * 8;
         this.array = new Object[capacity];
         this.capacity = capacity;

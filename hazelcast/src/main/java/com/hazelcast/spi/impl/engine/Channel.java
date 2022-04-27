@@ -62,7 +62,7 @@ public abstract class Channel {
     public abstract void writeAndFlush(Frame frame);
 
     /**
-     * Should only be called from within the reactor.
+     * Should only be called from within the Eventloop.
      */
     public abstract void unsafeWriteAndFlush(Frame frame);
 

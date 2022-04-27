@@ -4,9 +4,9 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.engine.frame.Frame;
-import com.hazelcast.spi.impl.engine.nio.NioReactor;
-import io.netty.channel.epoll.EpollReactor;
-import io.netty.incubator.channel.uring.IOUringReactor;
+import com.hazelcast.spi.impl.engine.nio.NioEventloop;
+import io.netty.channel.epoll.EpollEventloop;
+import io.netty.incubator.channel.uring.IOUringEventloop;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -19,7 +19,7 @@ import static java.lang.System.getProperty;
 import static java.lang.System.out;
 
 /**
- * The Engine is effectively an array of reactors.
+ * The Engine is effectively an array of eventloops
  *
  * The Engine is not aware of any specific applications. E.g. it could execute operations, but it
  * can equally well run client requests or completely different applications.
@@ -28,29 +28,29 @@ public final class Engine {
 
     private final boolean monitorSilent;
     private final Supplier<Scheduler> schedulerSupplier;
-    private boolean reactorSpin;
-    private ReactorType reactorType;
+    private boolean eventloopSpin;
+    private EventloopType eventloopType;
     private final ThreadAffinity threadAffinity;
-    private Reactor[] reactors;
-    private int reactorCount;
-    private String reactorBaseName = "reactor-";
+    private Eventloop[] eventloops;
+    private int eventloopCount;
+    private String eventloopBasename = "eventloop-";
     private MonitorThread monitorThread;
 
     public Engine(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
-        this.reactorCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        this.reactorSpin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
-        this.reactorType = ReactorType.fromString(getProperty("reactor.type", "nio"));
+        this.eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        this.eventloopSpin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
+        this.eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         this.monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
     }
 
-    public ReactorType getReactorType() {
-        return reactorType;
+    public EventloopType getEventloopType() {
+        return eventloopType;
     }
 
-    public Engine setReactorType(ReactorType reactorType) {
-        this.reactorType = checkNotNull(reactorType);
+    public Engine setEventLoopType(EventloopType eventloopType) {
+        this.eventloopType = checkNotNull(eventloopType);
         return this;
     }
 
@@ -65,102 +65,102 @@ public final class Engine {
     public Engine setThreadAffinity(ThreadAffinity threadAffinity) {
         checkNotNull(threadAffinity);
 
-        for (Reactor reactor : reactors) {
-            reactor.setThreadAffinity(threadAffinity);
+        for (Eventloop eventloop : eventloops) {
+            eventloop.setThreadAffinity(threadAffinity);
         }
 
         return this;
     }
 
-    public Engine setReactorBaseName(String baseName) {
-        this.reactorBaseName = checkNotNull(baseName, "baseName");
+    public Engine setEventloopBasename(String baseName) {
+        this.eventloopBasename = checkNotNull(baseName, "baseName");
         return this;
     }
 
-    public Engine setReactorCount(int reactorCount) {
-        this.reactorCount = checkPositive("reactorCount", reactorCount);
+    public Engine setEventloopCount(int eventloopCount) {
+        this.eventloopCount = checkPositive("reactorCount", eventloopCount);
         return this;
     }
 
-    public int reactorCount() {
-        return reactorCount;
+    public int eventloopCount() {
+        return eventloopCount;
     }
 
-    public void forEach(Consumer<Reactor> function) {
-        for (Reactor reactor : reactors) {
-            function.accept(reactor);
+    public void forEach(Consumer<Eventloop> function) {
+        for (Eventloop eventloop : eventloops) {
+            function.accept(eventloop);
         }
     }
 
-    public Engine setSpin(boolean reactorSpin) {
-        this.reactorSpin = reactorSpin;
+    public Engine setSpin(boolean evenloopSpin) {
+        this.eventloopSpin = evenloopSpin;
         return this;
     }
 
-    public Reactor reactorForHash(int hash) {
-        return reactors[hashToIndex(hash, reactors.length)];
+    public Eventloop eventloopForHash(int hash) {
+        return eventloops[hashToIndex(hash, eventloops.length)];
     }
 
-    public Reactor reactor(int reactorIdx) {
-        return reactors[reactorIdx];
+    public Eventloop eventloop(int eventloopIdx) {
+        return eventloops[eventloopIdx];
     }
 
-    public void run(int reactorIdx, Collection<Frame> frames) {
-        reactors[reactorIdx].schedule(frames);
+    public void run(int eventloopIdx, Collection<Frame> frames) {
+        eventloops[eventloopIdx].schedule(frames);
     }
 
-    public void run(int reactorIdx, Frame frame) {
-        reactors[reactorIdx].schedule(frame);
+    public void run(int eventloopIdx, Frame frame) {
+        eventloops[eventloopIdx].schedule(frame);
     }
 
-    public void run(int reactorIdx, ReactorTask task) {
-        reactors[reactorIdx].schedule(task);
+    public void run(int eventloopIdx, EventloopTask task) {
+        eventloops[eventloopIdx].schedule(task);
     }
 
     public void start() {
-        this.reactors = new Reactor[reactorCount];
-        ILogger logger = Logger.getLogger(Reactor.class);
-        for (int idx = 0; idx < reactors.length; idx++) {
-            String name = reactorBaseName + idx;
+        this.eventloops = new Eventloop[eventloopCount];
+        ILogger logger = Logger.getLogger(Eventloop.class);
+        for (int idx = 0; idx < eventloops.length; idx++) {
+            String name = eventloopBasename + idx;
             Scheduler scheduler = schedulerSupplier.get();
-            switch (reactorType) {
+            switch (eventloopType) {
                 case NIO:
-                    reactors[idx] = new NioReactor(idx, name, logger, scheduler, reactorSpin);
+                    eventloops[idx] = new NioEventloop(idx, name, logger, scheduler, eventloopSpin);
                     break;
                 case EPOLL:
-                    reactors[idx] = new EpollReactor(idx, name, logger, scheduler, reactorSpin);
+                    eventloops[idx] = new EpollEventloop(idx, name, logger, scheduler, eventloopSpin);
                     break;
                 case IOURING:
-                    reactors[idx] = new IOUringReactor(idx, name, logger, scheduler, reactorSpin);
+                    eventloops[idx] = new IOUringEventloop(idx, name, logger, scheduler, eventloopSpin);
                     break;
                 default:
-                    throw new IllegalStateException("Unknown reactorType:" + reactorType);
+                    throw new IllegalStateException("Unknown reactorType:" + eventloopType);
             }
         }
 
-        for (Reactor reactor : reactors) {
+        for (Eventloop eventloop : eventloops) {
             if (threadAffinity != null) {
-                reactor.setThreadAffinity(threadAffinity);
+                eventloop.setThreadAffinity(threadAffinity);
             }
-            reactor.start();
+            eventloop.start();
         }
 
-        this.monitorThread = new MonitorThread(reactors, monitorSilent);
+        this.monitorThread = new MonitorThread(eventloops, monitorSilent);
         this.monitorThread.start();
     }
 
     public void shutdown() {
-        for (Reactor reactor : reactors) {
-            reactor.shutdown();
+        for (Eventloop eventloop : eventloops) {
+            eventloop.shutdown();
         }
 
         monitorThread.shutdown();
     }
 
     public void printConfig() {
-        out.println("reactor.count:" + reactorCount);
-        out.println("reactor.spin:" + reactorSpin);
-        out.println("reactor.type:" + reactorType);
+        out.println("reactor.count:" + eventloopCount);
+        out.println("reactor.spin:" + eventloopSpin);
+        out.println("reactor.type:" + eventloopType);
         out.println("reactor.cpu-affinity:" + threadAffinity);
     }
 }

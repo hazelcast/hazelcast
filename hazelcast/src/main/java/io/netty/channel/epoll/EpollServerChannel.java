@@ -14,7 +14,7 @@ public class EpollServerChannel {
     public Supplier<EpollChannel> channelSupplier;
     public InetSocketAddress address;
     private final byte[] acceptedAddress = new byte[26];
-    public EpollReactor reactor;
+    public EpollEventloop eventloop;
 
     public void handleAccept() {
         try {
@@ -25,9 +25,9 @@ public class EpollServerChannel {
             LinuxSocket socket = new LinuxSocket(fd);
 
             EpollChannel channel = channelSupplier.get();
-            reactor.registeredChannels.add(channel);
+            eventloop.registeredChannels.add(channel);
 
-            channel.configure(reactor, socket, socketConfig);
+            channel.configure(eventloop, socket, socketConfig);
             channel.onConnectionEstablished();
 
             System.out.println("accepted fd:"+fd);

@@ -2,7 +2,7 @@ package io.netty.incubator.channel.uring;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.Channel;
-import com.hazelcast.spi.impl.engine.Reactor;
+import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -14,7 +14,6 @@ import io.netty.util.internal.PlatformDependent;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
@@ -83,7 +82,7 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
  * IORING_OP_LINKAT,
  * IORING_OP_MSG_RING,
  */
-public class IOUringReactor extends Reactor implements IOUringCompletionQueueCallback {
+public class IOUringEventloop extends Eventloop implements IOUringCompletionQueueCallback {
 
     private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd;
@@ -95,7 +94,7 @@ public class IOUringReactor extends Reactor implements IOUringCompletionQueueCal
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
-    public IOUringReactor(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
+    public IOUringEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
         super(idx, name, logger, scheduler, spin);
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
