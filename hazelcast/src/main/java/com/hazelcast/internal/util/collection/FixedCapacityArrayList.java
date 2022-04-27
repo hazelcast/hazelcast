@@ -22,7 +22,7 @@ import java.util.AbstractList;
 import java.util.Arrays;
 
 /**
- * A very fast implementation of {@link java.util.List} that stores its content in a not resizeable array.
+ * A very fast implementation of {@link java.util.List} that stores its content in a non-resizeable array.
  * The {@link FixedCapacityArrayList} provides an API to fetch that array. Fetching that array makes
  * the list instance unusable.
  */
@@ -54,7 +54,7 @@ public class FixedCapacityArrayList<E> extends AbstractList<E> {
     }
 
     /**
-     * Returns a storage with all the elements and makes an instance unusable.
+     * Returns a storage with all the elements and makes this instance unusable.
      */
     public E[] asArray() {
         E[] result = size == elementData.length ? elementData : Arrays.copyOfRange(elementData, 0, size);

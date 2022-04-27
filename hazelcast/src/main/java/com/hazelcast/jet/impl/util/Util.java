@@ -474,7 +474,7 @@ public final class Util {
     }
 
     /**
-     * Adds items of an array. Crates no GC litter (if you use non-capturing lambda for
+     * Adds items of an array. Creates no GC litter (if you use non-capturing lambda for
      * {@code toIntF}, else new lambda instance is created for each call).
      */
     public static <E> int sum(E[] array, ToIntFunction<E> toIntF, int size) {
