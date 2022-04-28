@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.engine.epoll;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.ReadHandler;
-import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
@@ -319,10 +318,5 @@ public final class EpollAsyncSocket extends AsyncSocket {
         System.out.println("Connection established");
 
         setFlag(EPOLLIN);
-    }
-
-    @Override
-    public String toString() {
-        return "EpollAsyncSocket(" + localAddress + "->" + remoteAddress + ")";
     }
 }

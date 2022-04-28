@@ -13,7 +13,6 @@ import com.hazelcast.spi.impl.engine.Engine;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.EventloopType;
 import com.hazelcast.spi.impl.engine.ReadHandler;
-import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;

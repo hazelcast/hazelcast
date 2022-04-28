@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.engine.nio;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.ReadHandler;
@@ -61,7 +60,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public  MpmcArrayQueue<Frame> unflushedFrames;
+    public MpmcArrayQueue<Frame> unflushedFrames;
     private CompletableFuture<AsyncSocket> connectFuture;
 
     private NioAsyncSocket() {
@@ -96,7 +95,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         this.readHandler.init(this);
     }
 
-    public void setUnflushedFramesCapacity(int unflushedFramesCapacity){
+    public void setUnflushedFramesCapacity(int unflushedFramesCapacity) {
         this.unflushedFramesCapacity = checkPositive("unflushedFramesCapacity", unflushedFramesCapacity);
     }
 
@@ -349,10 +348,5 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
             socketChannel.connect(address);
         });
         return future;
-    }
-
-    @Override
-    public String toString(){
-        return "NioAsyncSocket("+localAddress+"->"+remoteAddress+")";
     }
 }

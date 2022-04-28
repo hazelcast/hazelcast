@@ -40,7 +40,6 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  */
 public abstract class AsyncSocket implements Closeable {
     protected final ILogger logger = Logger.getLogger(getClass());
-
     protected final AtomicBoolean closed = new AtomicBoolean();
 
     protected volatile SocketAddress remoteAddress;
@@ -58,19 +57,24 @@ public abstract class AsyncSocket implements Closeable {
 
     public final SwCounter readEvents = newSwCounter();
 
-    public SocketAddress getRemoteAddress(){
+
+    public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
 
-    public abstract void setTcpNoDelay(boolean tcpNoDelay) ;
+    public final SocketAddress getLocalAddress() {
+        return localAddress;
+    }
+
+    public abstract void setTcpNoDelay(boolean tcpNoDelay);
 
     public abstract boolean isTcpNoDelay();
 
-    public abstract void setReceiveBufferSize(int size) ;
+    public abstract void setReceiveBufferSize(int size);
 
     public abstract int getReceiveBufferSize();
 
-    public abstract void setSendBufferSize(int size) ;
+    public abstract void setSendBufferSize(int size);
 
     public abstract int getSendBufferSize();
 
@@ -97,7 +101,7 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
 
-    public abstract void close() ;
+    public abstract void close();
 
     public boolean isClosed() {
         return closed.get();

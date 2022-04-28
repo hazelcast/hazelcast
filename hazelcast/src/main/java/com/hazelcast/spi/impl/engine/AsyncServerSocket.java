@@ -12,7 +12,7 @@ public abstract class AsyncServerSocket {
     protected SocketAddress localAddress;
     protected AtomicBoolean closed = new AtomicBoolean(false);
 
-    public SocketAddress getLocalAddress() {
+    public final SocketAddress getLocalAddress() {
         return localAddress;
     }
 
@@ -35,7 +35,7 @@ public abstract class AsyncServerSocket {
 
     public abstract void close();
 
-    public boolean isClosed() {
+    public final boolean isClosed() {
         return closed.get();
     }
 }

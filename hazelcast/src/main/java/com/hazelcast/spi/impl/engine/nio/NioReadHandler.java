@@ -13,5 +13,4 @@ public abstract class NioReadHandler implements ReadHandler {
     }
 
     public abstract void onRead(ByteBuffer buffer);
-
 }

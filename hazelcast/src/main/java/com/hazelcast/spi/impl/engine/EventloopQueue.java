@@ -9,7 +9,7 @@ import static org.jctools.util.UnsafeRefArrayAccess.calcCircularRefElementOffset
 import static org.jctools.util.UnsafeRefArrayAccess.lvRefElement;
 import static org.jctools.util.UnsafeRefArrayAccess.soRefElement;
 
-public class EventloopQueue {
+public final class EventloopQueue {
 
     // These are all local to the ReactorThread
     // The head_block contains 2 pieces of info; the sequence and if the listener is blocked.

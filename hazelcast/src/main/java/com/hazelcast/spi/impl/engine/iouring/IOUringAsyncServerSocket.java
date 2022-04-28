@@ -10,7 +10,7 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
-public class IOUringAsyncServerSocket extends AsyncServerSocket implements CompletionListener {
+public final class IOUringAsyncServerSocket extends AsyncServerSocket implements CompletionListener {
 
     public static IOUringAsyncServerSocket open(IOUringEventloop eventloop) {
         return new IOUringAsyncServerSocket(eventloop);

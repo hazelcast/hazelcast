@@ -11,7 +11,7 @@ import java.net.SocketAddress;
 import java.util.function.Supplier;
 
 // https://stackoverflow.com/questions/51777259/how-to-code-an-epoll-based-sockets-client-in-c
-public class EpollAsyncServerSocket extends AsyncServerSocket {
+public final class EpollAsyncServerSocket extends AsyncServerSocket {
     public LinuxSocket serverSocket;
     public int flags = Native.EPOLLIN;
     public Supplier<EpollAsyncSocket> channelSupplier;

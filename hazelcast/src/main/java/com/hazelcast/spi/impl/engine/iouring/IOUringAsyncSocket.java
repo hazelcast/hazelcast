@@ -336,9 +336,4 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
 
         return future;
     }
-
-    @Override
-    public String toString() {
-        return "IOUringAsyncSocket(" + localAddress + "->" + remoteAddress + ")";
-    }
 }
