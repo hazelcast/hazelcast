@@ -8,6 +8,7 @@ import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -21,7 +22,7 @@ import static io.netty.channel.epoll.Native.EPOLLIN;
 // add padding around Nio channel
 public final class EpollAsyncSocket extends AsyncSocket {
 
-    public static EpollAsyncSocket open(){
+    public static EpollAsyncSocket open() {
         return new EpollAsyncSocket();
     }
 
@@ -67,33 +68,59 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setTcpNoDelay(boolean tcpNoDelay) {
-
+    public boolean isTcpNoDelay() {
+        try {
+            return socket.isTcpNoDelay();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    public boolean isTcpNoDelay() {
-        return false;
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        try {
+            socket.setTcpNoDelay(tcpNoDelay);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
+
 
     @Override
     public int getReceiveBufferSize() {
-        return 0;
+        try {
+            return socket.getReceiveBufferSize();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+
+    @Override
+    public void setReceiveBufferSize(int size) {
+        try {
+            socket.setReceiveBufferSize(size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public int getSendBufferSize() {
-        return 0;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int size) {
-
+        try {
+            return socket.getSendBufferSize();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public void setSendBufferSize(int size) {
-
+        try {
+            socket.setSendBufferSize(size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     void setFlag(int flag) throws IOException {
@@ -292,6 +319,8 @@ public final class EpollAsyncSocket extends AsyncSocket {
         setFlag(EPOLLIN);
     }
 
-
-
+    @Override
+    public String toString() {
+        return "EpollAsyncSocket(" + localAddress + "->" + remoteAddress + ")";
+    }
 }

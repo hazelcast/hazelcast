@@ -75,6 +75,10 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         }
     }
 
+    public LinuxSocket socket(){
+        return socket;
+    }
+
     @Override
     public void activate(Eventloop l) {
         IOUringEventloop eventloop = (IOUringEventloop) l;
@@ -332,36 +336,8 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         return future;
     }
 
-
-//    @Override
-//    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
-//        IOUringAsyncSocket channel = (IOUringAsyncSocket) c;
-//
-//        CompletableFuture<AsyncSocket> future = new CompletableFuture();
-//
-//        try {
-//            System.out.println(getName() + " connectRequest to address:" + address);
-//
-//            LinuxSocket socket = LinuxSocket.newSocketStream(false);
-//            socket.setBlocking();
-//
-//            channel.configure(this, c.socketConfig, socket);
-//
-//            if (socket.connect(address)) {
-//                logger.info(getName() + "Socket connected to " + address);
-//                execute(() -> {
-//                    completionListeners.put(socket.intValue(), channel);
-//                    channel.onConnectionEstablished();
-//                    future.complete(channel);
-//                });
-//            } else {
-//                future.completeExceptionally(new IOException("Could not connect to " + address));
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            future.completeExceptionally(e);
-//        }
-//
-//        return future;
-//    }
+    @Override
+    public String toString(){
+        return "IOUringAsyncSocket("+localAddress+"->"+remoteAddress+")";
+    }
 }

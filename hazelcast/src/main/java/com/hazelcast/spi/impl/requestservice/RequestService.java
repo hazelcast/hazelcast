@@ -25,9 +25,7 @@ import com.hazelcast.spi.impl.engine.nio.NioEventloop;
 import com.hazelcast.spi.impl.engine.nio.NioReadHandler;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
-import io.netty.channel.epoll.EpollAsyncServerSocket;
 import io.netty.channel.epoll.EpollAsyncSocket;
-import io.netty.channel.epoll.EpollEventloop;
 import io.netty.incubator.channel.uring.IOUringAsyncServerSocket;
 import io.netty.incubator.channel.uring.IOUringAsyncSocket;
 import io.netty.incubator.channel.uring.IOUringEventloop;
@@ -39,7 +37,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -100,6 +100,7 @@ public class RequestService {
     private int[] partitionIdToChannel;
     private Engine engine;
     private int concurrentRequestLimit;
+    private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
 
     public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -118,7 +119,8 @@ public class RequestService {
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printEventloopInfo();
         this.thisAddress = nodeEngine.getThisAddress();
-        this.engine = newApplication();
+        this.engine = newEngine();
+
         this.socketConfig = new SocketConfig();
         this.managers = new Managers();
         //hack
@@ -140,7 +142,7 @@ public class RequestService {
     }
 
     @NotNull
-    private Engine newApplication() {
+    private Engine newEngine() {
         Engine engine = new Engine(() -> {
             FrameAllocator remoteResponseFrameAllocator = poolRemoteResponses
                     ? new ConcurrentPooledFrameAllocator(128, true)
@@ -156,36 +158,37 @@ public class RequestService {
                     remoteResponseFrameAllocator);
         });
         engine.setEventloopBasename("Eventloop:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
+        engine.createEventLoops();
         engine.printConfig();
         return engine;
     }
 
+
     private void configureNio() {
-        engine.forEach(l -> {
+        for (int k = 0; k < engine.eventloopCount(); k++) {
+            NioEventloop eventloop = (NioEventloop) engine.eventloop(k);
+
+            Supplier<NioReadHandler> readHandlerSupplier = () -> {
+                RequestNioReadHandler readHandler = new RequestNioReadHandler();
+                readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
+                readHandler.requestService = RequestService.this;
+                readHandler.requestFrameAllocator = poolRequests
+                        ? new NonConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                readHandler.remoteResponseFrameAllocator = poolRemoteResponses
+                        ? new ConcurrentPooledFrameAllocator(128, true)
+                        : new UnpooledFrameAllocator();
+                return readHandler;
+            };
+            readHandlerSuppliers.put(eventloop, readHandlerSupplier);
+
             try {
-                NioEventloop eventloop = (NioEventloop) l;
-                int port = toPort(thisAddress, eventloop.getIdx());
-
-                Supplier<NioReadHandler> readHandlerSupplier = () -> {
-                    RequestNioReadHandler readHandler = new RequestNioReadHandler();
-                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
-                    readHandler.requestService = RequestService.this;
-                    readHandler.requestFrameAllocator = poolRequests
-                            ? new NonConcurrentPooledFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ConcurrentPooledFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-                    return readHandler;
-                };
-
-                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
-
+                int port = toPort(thisAddress, k);
                 NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
                 serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.accept(socket -> {
-                    socket.setReadHandler(readHandlerSupplier.get());
+                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
                     socket.setWriteThrough(writeThrough);
                     socket.setRegularSchedule(regularSchedule);
                     socket.setSendBufferSize(socketConfig.sendBufferSize);
@@ -197,14 +200,16 @@ public class RequestService {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
+        }
+        ;
     }
 
+
     private void configureIOUring() {
-        engine.forEach(r -> {
+        for (int k = 0; k < engine.eventloopCount(); k++) {
+            IOUringEventloop eventloop = (IOUringEventloop) engine.eventloop(k);
             try {
-                IOUringEventloop eventloop = (IOUringEventloop) r;
-                int port = toPort(thisAddress, eventloop.getIdx());
+
                 Supplier<IOUringReadHandler> readHandlerSupplier = () -> {
                     RequestIOUringReadHandler handler = new RequestIOUringReadHandler();
                     handler.opScheduler = (OpScheduler) eventloop.scheduler;
@@ -217,14 +222,16 @@ public class RequestService {
                             : new UnpooledFrameAllocator();
                     return handler;
                 };
-                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
+                readHandlerSuppliers.put(eventloop, readHandlerSupplier);
+
+                int port = toPort(thisAddress, k);
 
                 IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(eventloop);
                 serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.listen(10);
                 serverSocket.accept(socket -> {
-                    socket.setReadHandler(readHandlerSupplier.get());
+                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
                     socket.setSendBufferSize(socketConfig.sendBufferSize);
                     socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
                     socket.setTcpNoDelay(socketConfig.tcpNoDelay);
@@ -233,45 +240,22 @@ public class RequestService {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
+        }
     }
 
     private void configureEpoll() {
-        engine.forEach(r -> {
-            try {
-                EpollEventloop eventloop = (EpollEventloop) r;
-
-                EpollAsyncServerSocket serverSocket = new EpollAsyncServerSocket();
-
-                //serverSocket.socketConfig = socketConfig;
-                int port = toPort(thisAddress, eventloop.getIdx());
-                serverSocket.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-
-                Supplier<EpollAsyncSocket> readHandlerSupplier = () -> {
-                    RequestEpollReadHandler readHandler = new RequestEpollReadHandler();
-                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
-                    readHandler.requestService = this;
-                    readHandler.requestFrameAllocator = poolRequests
-                            ? new NonConcurrentPooledFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ConcurrentPooledFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-
-                    EpollAsyncSocket socket = new EpollAsyncSocket();
-                    socket.setSendBufferSize(socketConfig.sendBufferSize);
-                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-                    //readHandler.socketConfig = socketConfig;
-                    return socket;
-                };
-                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
-                serverSocket.channelSupplier = readHandlerSupplier;
-                //eventloop.accept(serverSocket);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+//        engine.forEach(r -> {
+//            try {
+//                EpollEventloop eventloop = (EpollEventloop) r;
+//
+//                EpollAsyncServerSocket serverSocket = new EpollAsyncServerSocket();
+//
+//
+//                //eventloop.accept(serverSocket);
+//            } catch (IOException e) {
+//                throw new UncheckedIOException(e);
+//            }
+//        });
     }
 
     private void printEventloopInfo() {
@@ -543,8 +527,7 @@ public class RequestService {
                 throw new RuntimeException();
         }
 
-        Supplier<ReadHandler> readHandlerSupplier = (Supplier<ReadHandler>) eventloop.context.get("readHandlerSupplier");
-        socket.setReadHandler(readHandlerSupplier.get());
+        socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
         socket.setSendBufferSize(socketConfig.sendBufferSize);
         socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
         socket.setTcpNoDelay(socketConfig.tcpNoDelay);
@@ -552,7 +535,7 @@ public class RequestService {
 
         CompletableFuture future = socket.connect(address);
         future.join();
-        System.out.println("AsyncSocket "+address+" connected");
+        System.out.println("AsyncSocket " + address + " connected");
         return socket;
     }
 

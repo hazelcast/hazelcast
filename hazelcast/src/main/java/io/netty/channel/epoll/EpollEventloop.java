@@ -16,7 +16,6 @@ import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 
 public final class EpollEventloop extends Eventloop {
-    private final boolean spin;
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
     private final IntObjectMap<EpollAsyncServerSocket> serverChannels = new IntObjectHashMap<>(4096);
     public final FileDescriptor epollFd;
@@ -24,9 +23,7 @@ public final class EpollEventloop extends Eventloop {
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollEventloop(int idx, Scheduler scheduler, boolean spin) {
-        super(idx, scheduler, spin);
-        this.spin = false;//config.spin;
+    public EpollEventloop() {
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
         this.eventFd = Native.newEventFd();

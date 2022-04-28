@@ -52,6 +52,10 @@ public final class Engine {
         return this;
     }
 
+    public Eventloop[] eventloops(){
+        return eventloops;
+    }
+
     /**
      * Sets the ThreadAffinity for the reactor threads.
      *
@@ -115,28 +119,33 @@ public final class Engine {
         eventloops[eventloopIdx].execute(task);
     }
 
-    public void start() {
+    public void createEventLoops(){
         this.eventloops = new Eventloop[eventloopCount];
         for (int idx = 0; idx < eventloops.length; idx++) {
             Scheduler scheduler = schedulerSupplier.get();
+            Eventloop eventloop;
             switch (eventloopType) {
                 case NIO:
-                    eventloops[idx] = new NioEventloop(idx, scheduler, spin);
+                    eventloop = new NioEventloop();
                     break;
                 case EPOLL:
-                    eventloops[idx] = new EpollEventloop(idx, scheduler, spin);
+                    eventloop = new EpollEventloop();
                     break;
                 case IOURING:
-                    eventloops[idx] = new IOUringEventloop(idx, scheduler, spin);
+                    eventloop = new IOUringEventloop();
                     break;
                 default:
                     throw new IllegalStateException("Unknown reactorType:" + eventloopType);
             }
 
-            eventloops[idx].setName(eventloopBasename + idx);
+            eventloop.setName(eventloopBasename + idx);
+            eventloop.setScheduler(scheduler);
+            eventloop.setSpin(spin);
+            eventloops[idx] = eventloop;
         }
+    }
 
-
+    public void start() {
         for (Eventloop eventloop : eventloops) {
             if (threadAffinity != null) {
                 eventloop.setThreadAffinity(threadAffinity);

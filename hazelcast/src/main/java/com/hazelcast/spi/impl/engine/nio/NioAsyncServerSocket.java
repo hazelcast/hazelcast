@@ -13,6 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.util.function.Consumer;
 
 import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 public final class NioAsyncServerSocket extends AsyncServerSocket {
@@ -54,7 +55,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public boolean isReuseAddress() {
         try {
-            return serverSocketChannel.getOption(StandardSocketOptions.SO_REUSEADDR);
+            return serverSocketChannel.getOption(SO_REUSEADDR);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -63,7 +64,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void setReuseAddress(boolean reuseAddress) {
         try {
-            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, reuseAddress);
+            serverSocketChannel.setOption(SO_REUSEADDR, reuseAddress);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

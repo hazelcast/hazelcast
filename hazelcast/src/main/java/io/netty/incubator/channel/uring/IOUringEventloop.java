@@ -88,8 +88,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
-    public IOUringEventloop(int idx, Scheduler scheduler, boolean spin) {
-        super(idx, scheduler, spin);
+    public IOUringEventloop() {
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();

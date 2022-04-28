@@ -9,7 +9,6 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -21,6 +20,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static java.net.StandardSocketOptions.SO_SNDBUF;
+import static java.net.StandardSocketOptions.TCP_NODELAY;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -56,7 +58,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(65536);
     private CompletableFuture<AsyncSocket> connectFuture;
 
     private NioAsyncSocket() {
@@ -81,7 +83,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         }
     }
 
-    public SocketChannel socketChannel(){
+    public SocketChannel socketChannel() {
         return socketChannel;
     }
 
@@ -101,7 +103,6 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
             receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
 
             if (!clientSide) {
-                System.out.println(" server side has been registered for read");
                 key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
             }
         });
@@ -118,7 +119,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public boolean isTcpNoDelay() {
         try {
-            return socketChannel.getOption(StandardSocketOptions.TCP_NODELAY);
+            return socketChannel.getOption(TCP_NODELAY);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -127,7 +128,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public void setTcpNoDelay(boolean tcpNoDelay) {
         try {
-            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, tcpNoDelay);
+            socketChannel.setOption(TCP_NODELAY, tcpNoDelay);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -136,7 +137,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public int getReceiveBufferSize() {
         try {
-            return socketChannel.getOption(StandardSocketOptions.SO_RCVBUF);
+            return socketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -145,7 +146,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public void setReceiveBufferSize(int size) {
         try {
-            socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, size);
+            socketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -154,7 +155,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public int getSendBufferSize() {
         try {
-            return socketChannel.getOption(StandardSocketOptions.SO_SNDBUF);
+            return socketChannel.getOption(SO_SNDBUF);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -163,7 +164,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public void setSendBufferSize(int size) {
         try {
-            socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, size);
+            socketChannel.setOption(SO_SNDBUF, size);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -306,10 +307,10 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
     public void handleConnectReady() throws IOException {
         try {
+            socketChannel.finishConnect();
             remoteAddress = socketChannel.getRemoteAddress();
             localAddress = socketChannel.getLocalAddress();
             logger.info("Channel established " + localAddress + "->" + remoteAddress);
-            socketChannel.finishConnect();
             socketChannel.register(selector, OP_READ, this);
             connectFuture.complete(this);
         } catch (IOException e) {
@@ -323,9 +324,10 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            //todo: probably offload this to the event loop.
-            closeResource(socketChannel);
-            eventloop.removeSocket(this);
+            eventloop.execute(() -> {
+                closeResource(socketChannel);
+                eventloop.removeSocket(NioAsyncSocket.this);
+            });
         }
     }
 
@@ -339,5 +341,10 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
             socketChannel.connect(address);
         });
         return future;
+    }
+
+    @Override
+    public String toString(){
+        return "NioAsyncSocket("+localAddress+"->"+remoteAddress+")";
     }
 }

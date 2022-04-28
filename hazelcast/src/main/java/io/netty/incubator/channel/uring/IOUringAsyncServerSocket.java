@@ -37,6 +37,10 @@ public class IOUringAsyncServerSocket extends AsyncServerSocket implements Compl
         }
     }
 
+    public LinuxSocket serverSocket() {
+        return serverSocket;
+    }
+
     @Override
     public void listen(int backlog) {
         try {
@@ -154,14 +158,6 @@ public class IOUringAsyncServerSocket extends AsyncServerSocket implements Compl
             LinuxSocket socket = new LinuxSocket(res);
             IOUringAsyncSocket asyncSocket = new IOUringAsyncSocket(socket);
             consumer.accept(asyncSocket);
-//
-//            eventloop.completionListeners.put(socket.intValue(), asyncSocket);
-//            try {
-//                // channel.configure(eventloop, socketConfig, socket);
-//                asyncSocket.onConnectionEstablished();
-//            } catch (IOException e) {
-//                throw new RuntimeException();
-//            }
         }
     }
 
@@ -178,28 +174,4 @@ public class IOUringAsyncServerSocket extends AsyncServerSocket implements Compl
             System.out.println(" ServerSocket listening at " + getLocalAddress());
         });
     }
-
-//    private class AcceptHandler implements NioSelectedKeyListener {
-//
-//        private final Consumer<NioAsyncSocket> consumer;
-//
-//        private AcceptHandler(Consumer<NioAsyncSocket> consumer) {
-//            this.consumer = consumer;
-//        }
-//
-//        @Override
-//        public void handleException(Exception e) {
-//            logger.severe("NioServerChannel ran into a fatal exception", e);
-//        }
-//
-//        @Override
-//        public void handle(SelectionKey key) throws IOException {
-//            SocketChannel socketChannel = serverSocketChannel.accept();
-//
-//            NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
-//            consumer.accept(socket);
-//
-//            logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
-//        }
-//    }
 }

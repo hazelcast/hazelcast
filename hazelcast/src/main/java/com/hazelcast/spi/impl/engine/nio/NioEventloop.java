@@ -2,7 +2,6 @@ package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
 import com.hazelcast.spi.impl.engine.Eventloop;
-import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -12,8 +11,7 @@ import java.util.Iterator;
 public final class NioEventloop extends Eventloop {
     final Selector selector;
 
-    public NioEventloop(int idx, Scheduler scheduler, boolean spin) {
-        super(idx, scheduler, spin);
+    public NioEventloop() {
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 

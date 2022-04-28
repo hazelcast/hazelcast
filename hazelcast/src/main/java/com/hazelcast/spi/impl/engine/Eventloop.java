@@ -23,32 +23,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A single eventloop can deal with many server ports.
  */
 public abstract class Eventloop extends HazelcastManagedThread {
-    public final ConcurrentMap context = new ConcurrentHashMap();
     public final ILogger logger = Logger.getLogger(getClass());
     public final Set<AsyncSocket> registeredAsyncSockets = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
-    public final Scheduler scheduler;
+    public  Scheduler scheduler;
     public final CircularQueue<AsyncSocket> dirtySockets = new CircularQueue<>(1024);
 
-    protected final boolean spin;
-    protected final int idx;
+    protected boolean spin;
     protected volatile boolean running = true;
 
-    public Eventloop(int idx, Scheduler scheduler, boolean spin) {
-        this.idx = idx;
-        this.scheduler = scheduler;
+    public boolean isSpin() {
+        return spin;
+    }
+
+    public void setSpin(boolean spin) {
         this.spin = spin;
+    }
+
+    public void setScheduler(Scheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
     public Scheduler getScheduler() {
         return scheduler;
-    }
-
-    public int getIdx() {
-        return idx;
     }
 
     public void shutdown() {
