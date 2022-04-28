@@ -12,23 +12,26 @@ import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Engine;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.EventloopType;
+import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.NonConcurrentPooledFrameAllocator;
 import com.hazelcast.spi.impl.engine.frame.UnpooledFrameAllocator;
+import com.hazelcast.spi.impl.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
 import com.hazelcast.spi.impl.engine.nio.NioEventloop;
-import com.hazelcast.spi.impl.engine.nio.NioServerSocket;
+import com.hazelcast.spi.impl.engine.nio.NioReadHandler;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
+import io.netty.channel.epoll.EpollAsyncServerSocket;
 import io.netty.channel.epoll.EpollAsyncSocket;
 import io.netty.channel.epoll.EpollEventloop;
-import io.netty.channel.epoll.EpollServerSocket;
+import io.netty.incubator.channel.uring.IOUringAsyncServerSocket;
 import io.netty.incubator.channel.uring.IOUringAsyncSocket;
 import io.netty.incubator.channel.uring.IOUringEventloop;
-import io.netty.incubator.channel.uring.IOUringServerSocket;
+import io.netty.incubator.channel.uring.IOUringReadHandler;
 import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,12 +39,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -81,7 +82,7 @@ public class RequestService {
     public final InternalSerializationService ss;
     public final ILogger logger;
     private final Address thisAddress;
-    private final int channelCount;
+    private final int socketCount;
     private final SocketConfig socketConfig;
     private final boolean poolRequests;
     private final boolean poolLocalResponses;
@@ -114,7 +115,7 @@ public class RequestService {
         this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
 
-        this.channelCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
+        this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printEventloopInfo();
         this.thisAddress = nodeEngine.getThisAddress();
         this.engine = newApplication();
@@ -125,7 +126,7 @@ public class RequestService {
 
         this.partitionIdToChannel = new int[271];
         for (int k = 0; k < 271; k++) {
-            partitionIdToChannel[k] = hashToIndex(k, channelCount);
+            partitionIdToChannel[k] = hashToIndex(k, socketCount);
         }
 
         this.responseThreads = new ResponseThread[responseThreadCount];
@@ -160,34 +161,39 @@ public class RequestService {
     }
 
     private void configureNio() {
-        engine.forEach(r -> {
+        engine.forEach(l -> {
             try {
-                NioEventloop eventloop = (NioEventloop) r;
+                NioEventloop eventloop = (NioEventloop) l;
                 int port = toPort(thisAddress, eventloop.getIdx());
 
-                NioServerSocket serverChannel = new NioServerSocket();
-                serverChannel.socketConfig = socketConfig;
-                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-
-                Supplier<NioAsyncSocket> channelSupplier = () -> {
-                    RequestNioChannel channel = new RequestNioChannel();
-                    channel.writeThrough = writeThrough;
-                    channel.regularSchedule = regularSchedule;
-                    channel.opScheduler = (OpScheduler) eventloop.scheduler;
-                    channel.requestService = RequestService.this;
-                    channel.socketConfig = socketConfig;
-                    channel.requestFrameAllocator = poolRequests
+                Supplier<NioReadHandler> readHandlerSupplier = () -> {
+                    RequestNioReadHandler readHandler = new RequestNioReadHandler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
+                    readHandler.requestService = RequestService.this;
+                    readHandler.requestFrameAllocator = poolRequests
                             ? new NonConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
                             ? new ConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    return channel;
+                    return readHandler;
                 };
-                eventloop.context.put("requestChannelSupplier", channelSupplier);
-                serverChannel.socketSupplier = channelSupplier;
 
-                eventloop.accept(serverChannel);
+                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
+
+                NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
+                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                serverSocket.accept(socket -> {
+                    socket.setReadHandler(readHandlerSupplier.get());
+                    socket.setWriteThrough(writeThrough);
+                    socket.setRegularSchedule(regularSchedule);
+                    socket.setSendBufferSize(socketConfig.sendBufferSize);
+                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    System.out.println("server ");
+                    socket.activate(eventloop);
+                });
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -199,27 +205,31 @@ public class RequestService {
             try {
                 IOUringEventloop eventloop = (IOUringEventloop) r;
                 int port = toPort(thisAddress, eventloop.getIdx());
-
-                IOUringServerSocket serverChannel = new IOUringServerSocket();
-                serverChannel.socketConfig = socketConfig;
-                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
-
-                Supplier<IOUringAsyncSocket> channelSupplier = () -> {
-                    RequestIOUringChannel channel = new RequestIOUringChannel();
-                    channel.opScheduler = (OpScheduler) eventloop.scheduler;
-                    channel.requestService = this;
-                    channel.socketConfig = socketConfig;
-                    channel.requestFrameAllocator = poolRequests
+                Supplier<IOUringReadHandler> readHandlerSupplier = () -> {
+                    RequestIOUringReadHandler handler = new RequestIOUringReadHandler();
+                    handler.opScheduler = (OpScheduler) eventloop.scheduler;
+                    handler.requestService = this;
+                    handler.requestFrameAllocator = poolRequests
                             ? new NonConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                    handler.remoteResponseFrameAllocator = poolRemoteResponses
                             ? new ConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    return channel;
+                    return handler;
                 };
-                eventloop.context.put("requestChannelSupplier", channelSupplier);
-                serverChannel.channelSupplier = channelSupplier;
-                eventloop.accept(serverChannel);
+                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
+
+                IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(eventloop);
+                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                serverSocket.listen(10);
+                serverSocket.accept(socket -> {
+                    socket.setReadHandler(readHandlerSupplier.get());
+                    socket.setSendBufferSize(socketConfig.sendBufferSize);
+                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.activate(eventloop);
+                });
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -231,27 +241,33 @@ public class RequestService {
             try {
                 EpollEventloop eventloop = (EpollEventloop) r;
 
-                EpollServerSocket serverChannel = new EpollServerSocket();
-                serverChannel.socketConfig = socketConfig;
-                int port = toPort(thisAddress, eventloop.getIdx());
-                serverChannel.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+                EpollAsyncServerSocket serverSocket = new EpollAsyncServerSocket();
 
-                Supplier<EpollAsyncSocket> channelSupplier = () -> {
-                    RequestEpollChannel channel = new RequestEpollChannel();
-                    channel.opScheduler = (OpScheduler) eventloop.scheduler;
-                    channel.requestService = this;
-                    channel.socketConfig = socketConfig;
-                    channel.requestFrameAllocator = poolRequests
+                //serverSocket.socketConfig = socketConfig;
+                int port = toPort(thisAddress, eventloop.getIdx());
+                serverSocket.address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+
+                Supplier<EpollAsyncSocket> readHandlerSupplier = () -> {
+                    RequestEpollReadHandler readHandler = new RequestEpollReadHandler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
+                    readHandler.requestService = this;
+                    readHandler.requestFrameAllocator = poolRequests
                             ? new NonConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    channel.remoteResponseFrameAllocator = poolRemoteResponses
+                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
                             ? new ConcurrentPooledFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    return channel;
+
+                    EpollAsyncSocket socket = new EpollAsyncSocket();
+                    socket.setSendBufferSize(socketConfig.sendBufferSize);
+                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    //readHandler.socketConfig = socketConfig;
+                    return socket;
                 };
-                eventloop.context.put("requestChannelSupplier", channelSupplier);
-                serverChannel.channelSupplier = channelSupplier;
-                eventloop.accept(serverChannel);
+                eventloop.context.put("readHandlerSupplier", readHandlerSupplier);
+                serverSocket.channelSupplier = readHandlerSupplier;
+                //eventloop.accept(serverSocket);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -261,7 +277,7 @@ public class RequestService {
     private void printEventloopInfo() {
         java.lang.System.out.println("reactor.responsethread.count:" + responseThreadCount);
         java.lang.System.out.println("reactor.write-through:" + writeThrough);
-        java.lang.System.out.println("reactor.channels:" + channelCount);
+        java.lang.System.out.println("reactor.channels:" + socketCount);
         java.lang.System.out.println("reactor.pool-requests:" + poolRequests);
         java.lang.System.out.println("reactor.pool-local-responses:" + poolLocalResponses);
         java.lang.System.out.println("reactor.pool-remote-responses:" + poolRemoteResponses);
@@ -273,7 +289,7 @@ public class RequestService {
     }
 
     public int partitionIdToChannel(int partitionId) {
-        return hashToIndex(partitionId, channelCount);
+        return hashToIndex(partitionId, socketCount);
     }
 
     public void start() {
@@ -338,7 +354,7 @@ public class RequestService {
         }
 
         try {
-            Requests requests = requestsPerChannel.get(response.channel.remoteAddress);
+            Requests requests = requestsPerChannel.get(response.asyncSocket.getRemoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
                 return;
@@ -370,17 +386,17 @@ public class RequestService {
         if (address.equals(thisAddress)) {
             engine.eventloop(eventloop).execute(request);
         } else {
-            AsyncSocket channel = getConnection(address).channels[eventloop];
+            AsyncSocket socket = getConnection(address).sockets[eventloop];
 
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-            Requests requests = getRequests(channel.remoteAddress);
+            Requests requests = getRequests(socket.getRemoteAddress());
             long callId = requests.nextCallId();
             request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
-            channel.writeAndFlush(request);
+            socket.writeAndFlush(request);
         }
 
         return future;
@@ -399,35 +415,35 @@ public class RequestService {
             // todo: hack with the assignment of a partition to a local cpu.
             engine.eventloopForHash(partitionIdToChannel(partitionId)).execute(request);
         } else {
-            AsyncSocket channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
+            AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
 
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-            Requests requests = getRequests(channel.remoteAddress);
+            Requests requests = getRequests(socket.getRemoteAddress());
             long callId = requests.nextCallId();
             request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
-            channel.writeAndFlush(request);
+            socket.writeAndFlush(request);
         }
 
         return future;
     }
 
-    public CompletableFuture invoke(Frame request, AsyncSocket channel) {
+    public CompletableFuture invoke(Frame request, AsyncSocket socket) {
         ensureActive();
 
         CompletableFuture future = request.future;
         // we need to acquire the frame because storage will release it once written
         // and we need to keep the frame around for the response.
         request.acquire();
-        Requests requests = getRequests(channel.remoteAddress);
+        Requests requests = getRequests(socket.getRemoteAddress());
         long callId = requests.nextCallId();
         request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
         requests.map.put(callId, request);
-        channel.writeAndFlush(request);
+        socket.writeAndFlush(request);
         return future;
     }
 
@@ -444,8 +460,8 @@ public class RequestService {
         if (address.equals(thisAddress)) {
             engine.eventloopForHash(partitionId).execute(requestList);
         } else {
-            AsyncSocket channel = getConnection(address).channels[partitionIdToChannel[partitionId]];
-            Requests requests = getRequests(channel.remoteAddress);
+            AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
+            Requests requests = getRequests(socket.getRemoteAddress());
 
             long c = requests.nextCallId(requestList.size());
 
@@ -458,8 +474,8 @@ public class RequestService {
                 k--;
             }
 
-            channel.writeAll(requestList);
-            channel.flush();
+            socket.writeAll(requestList);
+            socket.flush();
         }
     }
 
@@ -488,29 +504,17 @@ public class RequestService {
             }
         }
 
-        if (connection.channels == null) {
+        if (connection.sockets == null) {
             synchronized (connection) {
-                if (connection.channels == null) {
-                    AsyncSocket[] channels = new AsyncSocket[channelCount];
+                if (connection.sockets == null) {
+                    AsyncSocket[] sockets = new AsyncSocket[socketCount];
 
-                    List<SocketAddress> eventloopAddresses = new ArrayList<>(channelCount);
-                    List<Future<AsyncSocket>> futures = new ArrayList<>(channelCount);
-                    for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
-                        SocketAddress eventloopAddress = new InetSocketAddress(address.getHost(), toPort(address, channelIndex));
-                        eventloopAddresses.add(eventloopAddress);
-                        futures.add(connect(eventloopAddress, channelIndex));
+                    for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
+                        SocketAddress eventloopAddress = new InetSocketAddress(address.getHost(), toPort(address, socketIndex));
+                        sockets[socketIndex] = connect(eventloopAddress, socketIndex);
                     }
 
-                    for (int channelIndex = 0; channelIndex < channels.length; channelIndex++) {
-                        try {
-                            channels[channelIndex] = futures.get(channelIndex).get();
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to connect to :" + eventloopAddresses.get(channelIndex), e);
-                        }
-                        //todo: assignment of the socket to the channels.
-                    }
-
-                    connection.channels = channels;
+                    connection.sockets = sockets;
                 }
             }
         }
@@ -518,12 +522,38 @@ public class RequestService {
         return connection;
     }
 
-    public CompletableFuture<AsyncSocket> connect(SocketAddress eventloopAddress, int channelIndex) {
+    public AsyncSocket connect(SocketAddress address, int channelIndex) {
         Eventloop eventloop = engine.eventloopForHash(channelIndex);
 
-        Supplier<AsyncSocket> channelSupplier = (Supplier<AsyncSocket>) eventloop.context.get("requestChannelSupplier");
-        AsyncSocket channel = channelSupplier.get();
-        return eventloop.connect(channel, eventloopAddress);
+        AsyncSocket socket;
+        switch (engine.getEventloopType()) {
+            case NIO:
+                NioAsyncSocket nioSocket = NioAsyncSocket.open();
+                nioSocket.setWriteThrough(writeThrough);
+                nioSocket.setRegularSchedule(regularSchedule);
+                socket = nioSocket;
+                break;
+            case IOURING:
+                socket = IOUringAsyncSocket.open();
+                break;
+            case EPOLL:
+                socket = EpollAsyncSocket.open();
+                break;
+            default:
+                throw new RuntimeException();
+        }
+
+        Supplier<ReadHandler> readHandlerSupplier = (Supplier<ReadHandler>) eventloop.context.get("readHandlerSupplier");
+        socket.setReadHandler(readHandlerSupplier.get());
+        socket.setSendBufferSize(socketConfig.sendBufferSize);
+        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.activate(eventloop);
+
+        CompletableFuture future = socket.connect(address);
+        future.join();
+        System.out.println("AsyncSocket "+address+" connected");
+        return socket;
     }
 
     public Requests getRequests(SocketAddress address) {
@@ -542,7 +572,7 @@ public class RequestService {
 
         public ResponseThread() {
             super("ResponseThread");
-            this.queue = new MPSCQueue<Frame>(this, null);
+            this.queue = new MPSCQueue<>(this, null);
         }
 
         @Override

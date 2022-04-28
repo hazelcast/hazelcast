@@ -7,7 +7,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
-        //HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Table table = node1.getTable("piranaha");
 

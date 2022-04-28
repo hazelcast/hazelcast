@@ -3,14 +3,13 @@ package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -25,8 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class Eventloop extends HazelcastManagedThread {
     public final ConcurrentMap context = new ConcurrentHashMap();
-    public final ILogger logger;
-    public final Set<AsyncSocket> registeredsockets = new CopyOnWriteArraySet<>();
+    public final ILogger logger = Logger.getLogger(getClass());
+    public final Set<AsyncSocket> registeredAsyncSockets = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
@@ -38,10 +37,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected final int idx;
     protected volatile boolean running = true;
 
-    public Eventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
-        super(name);
+    public Eventloop(int idx, Scheduler scheduler, boolean spin) {
         this.idx = idx;
-        this.logger = logger;
         this.scheduler = scheduler;
         this.spin = spin;
     }
@@ -58,12 +55,10 @@ public abstract class Eventloop extends HazelcastManagedThread {
         running = false;
     }
 
-    public abstract CompletableFuture<AsyncSocket> connect(AsyncSocket channel, SocketAddress address);
-
     protected abstract void wakeup();
 
     public void removeSocket(AsyncSocket socket) {
-        registeredsockets.remove(socket);
+        registeredAsyncSockets.remove(socket);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -92,8 +87,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    public Collection<AsyncSocket> channels() {
-        return registeredsockets;
+    public Collection<AsyncSocket> asyncSockets() {
+        return registeredAsyncSockets;
     }
 
     @Override
@@ -114,8 +109,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
             }
 
             try {
-                channel.handleWrite();
-            }catch (IOException e){
+                channel.handleWriteReady();
+            } catch (IOException e) {
                 channel.handleException(e);
             }
         }
@@ -129,10 +124,10 @@ public abstract class Eventloop extends HazelcastManagedThread {
             }
 
             if (task instanceof AsyncSocket) {
-                AsyncSocket channel = (AsyncSocket)task;
+                AsyncSocket channel = (AsyncSocket) task;
                 try {
-                    channel.handleWrite();
-                }catch (Exception e){
+                    channel.handleWriteReady();
+                } catch (Exception e) {
                     channel.handleException(e);
                 }
             } else if (task instanceof Frame) {

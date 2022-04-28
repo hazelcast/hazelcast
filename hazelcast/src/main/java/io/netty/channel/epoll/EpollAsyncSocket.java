@@ -1,13 +1,17 @@
 package io.netty.channel.epoll;
 
 import com.hazelcast.spi.impl.engine.AsyncSocket;
+import com.hazelcast.spi.impl.engine.Eventloop;
+import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -15,7 +19,11 @@ import static io.netty.channel.epoll.Native.EPOLLIN;
 
 
 // add padding around Nio channel
-public abstract class EpollAsyncSocket extends AsyncSocket {
+public final class EpollAsyncSocket extends AsyncSocket {
+
+    public static EpollAsyncSocket open(){
+        return new EpollAsyncSocket();
+    }
 
     // immutable state
     protected LinuxSocket socket;
@@ -39,6 +47,54 @@ public abstract class EpollAsyncSocket extends AsyncSocket {
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     protected int flags = Native.EPOLLET;
+
+    private EpollReadHandler readHandler;
+
+
+    @Override
+    public void activate(Eventloop eventloop) {
+
+    }
+
+    @Override
+    public void setReadHandler(ReadHandler readHandler) {
+
+    }
+
+    @Override
+    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        return null;
+    }
+
+    @Override
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+
+    }
+
+    @Override
+    public boolean isTcpNoDelay() {
+        return false;
+    }
+
+    @Override
+    public int getReceiveBufferSize() {
+        return 0;
+    }
+
+    @Override
+    public int getSendBufferSize() {
+        return 0;
+    }
+
+    @Override
+    public void setReceiveBufferSize(int size) {
+
+    }
+
+    @Override
+    public void setSendBufferSize(int size) {
+
+    }
 
     void setFlag(int flag) throws IOException {
         if (!isFlagSet(flag)) {
@@ -83,7 +139,7 @@ public abstract class EpollAsyncSocket extends AsyncSocket {
                 eventloop.dirtySockets.add(this);
             } else if (writeThrough) {
                 try {
-                    handleWrite();
+                    handleWriteReady();
                 } catch (IOException e) {
                     handleException(e);
                 }
@@ -147,15 +203,17 @@ public abstract class EpollAsyncSocket extends AsyncSocket {
 
     @Override
     public void close() {
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (closed.compareAndSet(false, true)) {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }
 
-        eventloop.removeSocket(this);
+            eventloop.removeSocket(this);
+        }
     }
 
     @Override
@@ -173,15 +231,14 @@ public abstract class EpollAsyncSocket extends AsyncSocket {
         } else {
             bytesRead.inc(read);
             receiveBuffer.flip();
-            onRead(receiveBuffer);
+            readHandler.onRead(receiveBuffer);
             compactOrClear(receiveBuffer);
         }
     }
 
-    public abstract void onRead(ByteBuffer receiveBuffer);
 
     @Override
-    public void handleWrite() throws IOException {
+    public void handleWriteReady() throws IOException {
         if (flushThread.get() == null) {
             throw new RuntimeException("Channel is not in flushed state");
         }

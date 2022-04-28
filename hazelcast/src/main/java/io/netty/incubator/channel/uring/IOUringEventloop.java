@@ -1,7 +1,5 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -10,10 +8,6 @@ import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.netty.util.internal.PlatformDependent;
-
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.concurrent.CompletableFuture;
 
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
@@ -94,8 +88,8 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
-    public IOUringEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
-        super(idx, name, logger, scheduler, spin);
+    public IOUringEventloop(int idx, Scheduler scheduler, boolean spin) {
+        super(idx, scheduler, spin);
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
@@ -113,13 +107,6 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
             // write to the evfd which will then wake-up epoll_wait(...)
             Native.eventFdWrite(eventfd.intValue(), 1L);
         }
-    }
-
-    public void accept(IOUringServerSocket serverChannel) throws IOException {
-        execute(() -> {
-            serverChannel.configure(this);
-            serverChannel.accept();
-        });
     }
 
     @Override
@@ -167,36 +154,5 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
         }
     }
 
-    @Override
-    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
-        IOUringAsyncSocket channel = (IOUringAsyncSocket) c;
-
-        CompletableFuture<AsyncSocket> future = new CompletableFuture();
-
-        try {
-            System.out.println(getName() + " connectRequest to address:" + address);
-
-            LinuxSocket socket = LinuxSocket.newSocketStream(false);
-            socket.setBlocking();
-
-            channel.configure(this, c.socketConfig, socket);
-
-            if (socket.connect(address)) {
-                logger.info(getName() + "Socket connected to " + address);
-                execute(() -> {
-                    completionListeners.put(socket.intValue(), channel);
-                    channel.onConnectionEstablished();
-                    future.complete(channel);
-                });
-            } else {
-                future.completeExceptionally(new IOException("Could not connect to " + address));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            future.completeExceptionally(e);
-        }
-
-        return future;
-    }
 }
 

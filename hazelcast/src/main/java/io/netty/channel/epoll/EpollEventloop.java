@@ -18,14 +18,14 @@ import static io.netty.channel.epoll.Native.epollCtlAdd;
 public final class EpollEventloop extends Eventloop {
     private final boolean spin;
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
-    private final IntObjectMap<EpollServerSocket> serverChannels = new IntObjectHashMap<>(4096);
+    private final IntObjectMap<EpollAsyncServerSocket> serverChannels = new IntObjectHashMap<>(4096);
     public final FileDescriptor epollFd;
     private final FileDescriptor eventFd;
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
-        super(idx, name, logger, scheduler, spin);
+    public EpollEventloop(int idx, Scheduler scheduler, boolean spin) {
+        super(idx, scheduler, spin);
         this.spin = false;//config.spin;
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
@@ -126,9 +126,9 @@ public final class EpollEventloop extends Eventloop {
 
                     if ((ev & (Native.EPOLLERR | EPOLLIN)) != 0) {
                         System.out.println("epoll in");
-                        if (channel instanceof EpollServerSocket) {
+                        if (channel instanceof EpollAsyncServerSocket) {
                             System.out.println("EpollServerChannel.handleAccept");
-                            ((EpollServerSocket) channel).handleAccept();
+                            ((EpollAsyncServerSocket) channel).handleAccept();
                         } else {
                             System.out.println("EpollChannel.handleRead");
                             //  ((EpollChannel)channel).handleRead();
@@ -146,57 +146,57 @@ public final class EpollEventloop extends Eventloop {
             }
         }
     }
+//
+//    public void accept(EpollAsyncServerSocket serverChannel) throws IOException {
+//        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
+//
+//        // should come from properties.
+//        serverSocket.setReuseAddress(true);
+//        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
+//
+//        serverSocket.bind(serverChannel.address);
+//        System.out.println(getName() + " Bind success " + serverChannel.address);
+//        serverSocket.listen(10);
+//        System.out.println(getName() + " Listening on " + serverChannel.address);
+//
+//        execute(() -> {
+//            serverChannel.eventloop = EpollEventloop.this;
+//            serverChannel.serverSocket = serverSocket;
+//            channels.put(serverSocket.intValue(), serverChannel);
+//            serverChannels.put(serverSocket.intValue(), serverChannel);
+//            //serverSocket.listen(serverChannel.socketConfig.backlog);
+//            epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
+//        });
+//    }
 
-    public void accept(EpollServerSocket serverChannel) throws IOException {
-        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
-
-        // should come from properties.
-        serverSocket.setReuseAddress(true);
-        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
-
-        serverSocket.bind(serverChannel.address);
-        System.out.println(getName() + " Bind success " + serverChannel.address);
-        serverSocket.listen(10);
-        System.out.println(getName() + " Listening on " + serverChannel.address);
-
-        execute(() -> {
-            serverChannel.eventloop = EpollEventloop.this;
-            serverChannel.serverSocket = serverSocket;
-            channels.put(serverSocket.intValue(), serverChannel);
-            serverChannels.put(serverSocket.intValue(), serverChannel);
-            serverSocket.listen(serverChannel.socketConfig.backlog);
-            epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
-        });
-    }
-
-    @Override
-    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
-        EpollAsyncSocket channel = (EpollAsyncSocket) c;
-
-        CompletableFuture<AsyncSocket> future = new CompletableFuture();
-        try {
-            System.out.println("ConnectRequest address:" + address);
-
-            LinuxSocket socket = LinuxSocket.newSocketStream();
-            channel.configure(this, socket, c.socketConfig);
-
-            if (!socket.connect(address)) {
-                future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
-            } else {
-                execute(() -> {
-                    try {
-                        channel.onConnectionEstablished();
-                        registeredsockets.add(channel);
-                        logger.info("Socket listening at " + address);
-                        future.complete(channel);
-                    } catch (Exception e) {
-                        future.completeExceptionally(e);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-        }
-        return future;
-    }
+//    @Override
+//    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
+//        EpollAsyncSocket channel = (EpollAsyncSocket) c;
+//
+//        CompletableFuture<AsyncSocket> future = new CompletableFuture();
+//        try {
+//            System.out.println("ConnectRequest address:" + address);
+//
+//            LinuxSocket socket = LinuxSocket.newSocketStream();
+//            channel.configure(this, socket, c.socketConfig);
+//
+//            if (!socket.connect(address)) {
+//                future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
+//            } else {
+//                execute(() -> {
+//                    try {
+//                        channel.onConnectionEstablished();
+//                        registeredAsyncSockets.add(channel);
+//                        logger.info("Socket listening at " + address);
+//                        future.complete(channel);
+//                    } catch (Exception e) {
+//                        future.completeExceptionally(e);
+//                    }
+//                });
+//            }
+//        } catch (Exception e) {
+//            future.completeExceptionally(e);
+//        }
+//        return future;
+//    }
 }

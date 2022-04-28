@@ -1,15 +1,15 @@
 package com.hazelcast.spi.impl.engine.nio;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
-import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.Eventloop;
+import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -20,59 +20,165 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
 // todo: add padding around Nio channel
-public abstract class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyListener {
+public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyListener {
 
+    public static NioAsyncSocket open() {
+        return new NioAsyncSocket();
+    }
+
+    private final boolean clientSide;
+    private NioReadHandler readHandler;
     // immutable state
-    protected SocketChannel socketChannel;
+    private SocketChannel socketChannel;
     public NioEventloop eventloop;
-    protected SelectionKey key;
+    private SelectionKey key;
     private Selector selector;
-    private ILogger logger;
 
     // ======================================================
     // reading side of the channel.
     // ======================================================
-    protected ByteBuffer receiveBuffer;
+    private ByteBuffer receiveBuffer;
 
     // ======================================================
     // writing side of the channel.
     // ======================================================
     // private
     public final IOVector ioVector = new IOVector();
-    public boolean regularSchedule = true;
-    public boolean writeThrough;
+    private boolean regularSchedule = true;
+    private boolean writeThrough;
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
     public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+    private CompletableFuture<AsyncSocket> connectFuture;
 
-    private CompletableFuture connectFuture;
+    private NioAsyncSocket() {
+        try {
+            this.socketChannel = SocketChannel.open();
+            this.socketChannel.configureBlocking(false);
+            this.clientSide = true;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
+    NioAsyncSocket(SocketChannel socketChannel) {
+        try {
+            this.socketChannel = socketChannel;
+            this.socketChannel.configureBlocking(false);
+            this.localAddress = socketChannel.getLocalAddress();
+            this.remoteAddress = socketChannel.getRemoteAddress();
+            this.clientSide = false;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public SocketChannel socketChannel(){
+        return socketChannel;
+    }
+
+    @Override
+    public void setReadHandler(ReadHandler h) {
+        this.readHandler = (NioReadHandler) checkNotNull(h);
+        this.readHandler.init(this);
+    }
+
+    @Override
+    public void activate(Eventloop l) {
+        NioEventloop eventloop = (NioEventloop) checkNotNull(l);
+        this.eventloop = eventloop;
+        eventloop.execute(() -> {
+            selector = eventloop.selector;
+            eventloop.registeredAsyncSockets.add(NioAsyncSocket.this);
+            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+
+            if (!clientSide) {
+                System.out.println(" server side has been registered for read");
+                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
+            }
+        });
+    }
+
+    public void setRegularSchedule(boolean regularSchedule) {
+        this.regularSchedule = regularSchedule;
+    }
+
+    public void setWriteThrough(boolean writeThrough) {
+        this.writeThrough = writeThrough;
+    }
+
+    @Override
+    public boolean isTcpNoDelay() {
+        try {
+            return socketChannel.getOption(StandardSocketOptions.TCP_NODELAY);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        try {
+            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, tcpNoDelay);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getReceiveBufferSize() {
+        try {
+            return socketChannel.getOption(StandardSocketOptions.SO_RCVBUF);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setReceiveBufferSize(int size) {
+        try {
+            socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getSendBufferSize() {
+        try {
+            return socketChannel.getOption(StandardSocketOptions.SO_SNDBUF);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setSendBufferSize(int size) {
+        try {
+            socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     @Override
     public void flush() {
-//        if (flushThread.get() != null) {
-//            return;
-//        }
-//
-//        if (flushThread.compareAndSet(null, Thread.currentThread())) {
-//            reactor.schedule(this);
-//        }
-
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
                 eventloop.dirtySockets.add(this);
             } else if (writeThrough) {
                 try {
-                    handleWrite();
-                }catch (IOException e){
+                    handleWriteReady();
+                } catch (IOException e) {
                     handleException(e);
                 }
             } else if (regularSchedule) {
@@ -143,80 +249,25 @@ public abstract class NioAsyncSocket extends AsyncSocket implements NioSelectedK
     }
 
     @Override
-    public void handle(SelectionKey key) throws IOException{
+    public void handle(SelectionKey key) throws IOException {
         int readyOp = key.readyOps();
 
         if (key.isValid() && (readyOp & OP_READ) != 0) {
-            handleRead();
+            handleReadReady();
         }
 
         if (key.isValid() && (readyOp & OP_WRITE) != 0) {
-            handleWrite();
+            handleWriteReady();
         }
 
         if (key.isValid() && (readyOp & OP_CONNECT) != 0) {
-            handleConnectable();
+            handleConnectReady();
         }
     }
 
-    protected void handleAccepted(NioEventloop eventloop,
-                                  SocketChannel socketChannel,
-                                  SocketConfig socketConfig) throws IOException {
-        this.eventloop = eventloop;
-        this.selector = eventloop.selector;
-        this.logger = eventloop.logger;
-        this.socketConfig = socketConfig;
-        this.socketChannel = socketChannel;
-        this.remoteAddress = socketChannel.getRemoteAddress();
-        this.localAddress = socketChannel.getLocalAddress();
-
-        System.out.println("Accepted " + remoteAddress + "->" + localAddress);
-
-        this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-        configureSocket();
-        socketChannel.configureBlocking(false);
-        this.key = socketChannel.register(selector, OP_READ, this);
-        eventloop.registeredsockets.add(this);
-    }
-
-    protected void connect(CompletableFuture<AsyncSocket> future,
-                           SocketAddress address,
-                           NioEventloop eventloop) throws IOException {
-        this.eventloop = eventloop;
-        this.selector = eventloop.selector;
-        this.logger = eventloop.logger;
-        this.connectFuture = future;
-        this.receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-        this.socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
-        configureSocket();
-        this.key = socketChannel.register(selector, OP_CONNECT, this);
-        System.out.println("Connect to address:" + address);
-        socketChannel.connect(address);
-    }
-
-    private void handleConnectable() throws IOException {
-        try {
-            eventloop.registeredsockets.add(this);
-
-            this.remoteAddress = socketChannel.getRemoteAddress();
-            this.localAddress = socketChannel.getLocalAddress();
-            logger.info("Channel established " + localAddress + "->" + remoteAddress);
-
-            socketChannel.finishConnect();
-
-            key.interestOps(OP_READ);
-            connectFuture.complete(this);
-        } catch (IOException e) {
-            connectFuture.completeExceptionally(e);
-            throw e;
-        } finally {
-            connectFuture = null;
-        }
-    }
-
-    public final void handleRead() throws IOException {
+    public void handleReadReady() throws IOException {
         readEvents.inc();
+
         int read = socketChannel.read(receiveBuffer);
         //System.out.println(this + " bytes read: " + bytesRead);
         if (read == -1) {
@@ -224,15 +275,13 @@ public abstract class NioAsyncSocket extends AsyncSocket implements NioSelectedK
         } else {
             bytesRead.inc(read);
             receiveBuffer.flip();
-            handleRead(receiveBuffer);
+            readHandler.onRead(receiveBuffer);
             compactOrClear(receiveBuffer);
         }
     }
 
-    public abstract void handleRead(ByteBuffer receiveBuffer);
-
     @Override
-    public final void handleWrite() throws IOException {
+    public void handleWriteReady() throws IOException {
         assert flushThread.get() != null;
 
         handleWriteCnt.inc();
@@ -255,16 +304,40 @@ public abstract class NioAsyncSocket extends AsyncSocket implements NioSelectedK
         }
     }
 
-    private void configureSocket() throws SocketException {
-        Socket socket = socketChannel.socket();
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+    public void handleConnectReady() throws IOException {
+        try {
+            remoteAddress = socketChannel.getRemoteAddress();
+            localAddress = socketChannel.getLocalAddress();
+            logger.info("Channel established " + localAddress + "->" + remoteAddress);
+            socketChannel.finishConnect();
+            socketChannel.register(selector, OP_READ, this);
+            connectFuture.complete(this);
+        } catch (IOException e) {
+            connectFuture.completeExceptionally(e);
+            throw e;
+        } finally {
+            connectFuture = null;
+        }
     }
 
     @Override
     public void close() {
-        closeResource(socketChannel);
-        eventloop.removeSocket(this);
+        if (closed.compareAndSet(false, true)) {
+            //todo: probably offload this to the event loop.
+            closeResource(socketChannel);
+            eventloop.removeSocket(this);
+        }
+    }
+
+    @Override
+    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        System.out.println("Connect to address:" + address);
+        CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
+        eventloop.execute(() -> {
+            key = socketChannel.register(selector, OP_CONNECT, NioAsyncSocket.this);
+            connectFuture = future;
+            socketChannel.connect(address);
+        });
+        return future;
     }
 }

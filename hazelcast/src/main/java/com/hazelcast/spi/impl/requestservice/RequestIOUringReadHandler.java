@@ -4,30 +4,37 @@ import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.incubator.channel.uring.IOUringAsyncSocket;
+import io.netty.incubator.channel.uring.IOUringReadHandler;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestIOUringChannel extends IOUringAsyncSocket {
+public class RequestIOUringReadHandler implements IOUringReadHandler {
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
     public RequestService requestService;
     public OpScheduler opScheduler;
+    private IOUringAsyncSocket asyncSocket;
 
     @Override
-    public void onRead(ByteBuf receiveBuffer) {
+    public void init(IOUringAsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    @Override
+    public void onRead(ByteBuf buf) {
         Frame responses = null;
         for (; ; ) {
             if (inboundFrame == null) {
-                if (receiveBuff.readableBytes() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+                if (buf.readableBytes() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
 
-                int size = receiveBuff.readInt();
-                int frameFlags = receiveBuff.readInt();
+                int size = buf.readInt();
+                int frameFlags = buf.readInt();
 
                 if ((frameFlags & FLAG_OP_RESPONSE) == 0) {
                     inboundFrame = requestFrameAllocator.allocate(size);
@@ -37,17 +44,17 @@ public class RequestIOUringChannel extends IOUringAsyncSocket {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(frameFlags);
-                inboundFrame.channel = this;
+                inboundFrame.asyncSocket = asyncSocket;
             }
 
-            if (inboundFrame.remaining() > receiveBuff.readableBytes()) {
+            if (inboundFrame.remaining() > buf.readableBytes()) {
                 ByteBuffer buffer = inboundFrame.byteBuffer();
                 int oldLimit = buffer.limit();
-                buffer.limit(buffer.position() + receiveBuff.readableBytes());
-                receiveBuff.readBytes(buffer);
+                buffer.limit(buffer.position() + buf.readableBytes());
+                buf.readBytes(buffer);
                 buffer.limit(oldLimit);
             } else {
-                receiveBuff.readBytes(inboundFrame.byteBuffer());
+                buf.readBytes(inboundFrame.byteBuffer());
             }
 
             if (!inboundFrame.isComplete()) {
@@ -55,7 +62,7 @@ public class RequestIOUringChannel extends IOUringAsyncSocket {
             }
 
             inboundFrame.complete();
-            framesRead.inc();
+            //framesRead.inc();
 
             if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {
                 inboundFrame.next = responses;

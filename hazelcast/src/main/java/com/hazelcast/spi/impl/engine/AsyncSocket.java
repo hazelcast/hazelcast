@@ -1,19 +1,21 @@
 package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 
 /**
- *
- *
- *
  * Thoughts:
  *
  * Back pressure.
@@ -36,10 +38,13 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  *
  * Also the
  */
-public abstract class AsyncSocket {
-    public SocketAddress remoteAddress;
-    public SocketAddress localAddress;
-    public SocketConfig socketConfig;
+public abstract class AsyncSocket implements Closeable {
+    protected final ILogger logger = Logger.getLogger(getClass());
+
+    protected final AtomicBoolean closed = new AtomicBoolean();
+
+    protected volatile SocketAddress remoteAddress;
+    protected volatile SocketAddress localAddress;
 
     public final SwCounter framesWritten = newSwCounter();
 
@@ -52,6 +57,26 @@ public abstract class AsyncSocket {
     public final SwCounter handleWriteCnt = newSwCounter();
 
     public final SwCounter readEvents = newSwCounter();
+
+    public SocketAddress getRemoteAddress(){
+        return remoteAddress;
+    }
+
+    public abstract void setTcpNoDelay(boolean tcpNoDelay) ;
+
+    public abstract boolean isTcpNoDelay();
+
+    public abstract void setReceiveBufferSize(int size) ;
+
+    public abstract int getReceiveBufferSize();
+
+    public abstract void setSendBufferSize(int size) ;
+
+    public abstract int getSendBufferSize();
+
+    public abstract void setReadHandler(ReadHandler readHandler);
+
+    public abstract void activate(Eventloop eventloop);
 
     public abstract void flush();
 
@@ -66,18 +91,20 @@ public abstract class AsyncSocket {
      */
     public abstract void unsafeWriteAndFlush(Frame frame);
 
-    public abstract void close();
+    public abstract void handleWriteReady() throws IOException;
 
-    public SocketConfig getSocketConfig(){
-        return socketConfig;
+    public abstract void handleException(Exception e);
+
+    public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
+
+    public abstract void close() ;
+
+    public boolean isClosed() {
+        return closed.get();
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
-
-    public abstract void handleWrite() throws IOException;
-
-    public abstract void handleException(Exception e);
 }

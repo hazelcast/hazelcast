@@ -33,7 +33,7 @@ public class Frame {
 
     public CompletableFuture future;
     public Frame next;
-    public AsyncSocket channel;
+    public AsyncSocket asyncSocket;
 
     public static final int OFFSET_SIZE = 0;
     public static final int OFFSET_FLAGS = OFFSET_SIZE + BYTES_INT;

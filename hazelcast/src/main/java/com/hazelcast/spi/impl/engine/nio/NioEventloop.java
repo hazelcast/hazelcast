@@ -1,23 +1,19 @@
 package com.hazelcast.spi.impl.engine.nio;
 
 import com.hazelcast.internal.networking.nio.SelectorOptimizer;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.Scheduler;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.concurrent.CompletableFuture;
 
 public final class NioEventloop extends Eventloop {
     final Selector selector;
 
-    public NioEventloop(int idx, String name, ILogger logger, Scheduler scheduler, boolean spin) {
-        super(idx, name, logger, scheduler, spin);
+    public NioEventloop(int idx, Scheduler scheduler, boolean spin) {
+        super(idx, scheduler, spin);
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 
@@ -69,23 +65,5 @@ public final class NioEventloop extends Eventloop {
                 }
             }
         }
-    }
-
-    public void accept(NioServerSocket serverSocket) throws IOException {
-        serverSocket.configure(this);
-        execute(serverSocket::accept);
-    }
-
-    @Override
-    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
-        NioAsyncSocket socket = (NioAsyncSocket) c;
-
-        CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
-        try {
-            execute(() -> socket.connect(future, address, NioEventloop.this));
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-        }
-        return future;
     }
 }

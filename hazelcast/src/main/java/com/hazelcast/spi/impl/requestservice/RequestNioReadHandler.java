@@ -2,32 +2,33 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import io.netty.channel.epoll.EpollAsyncSocket;
+import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
+import com.hazelcast.spi.impl.engine.nio.NioReadHandler;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestEpollChannel extends EpollAsyncSocket {
+public class RequestNioReadHandler extends NioReadHandler {
 
-    public OpScheduler opScheduler;
-    public RequestService requestService;
+    private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
-    private Frame inboundFrame;
+    public OpScheduler opScheduler;
+    public RequestService requestService;
 
     @Override
-    public void onRead(ByteBuffer receiveBuffer) {
+    public void onRead(ByteBuffer buffer) {
         Frame responseChain = null;
         for (; ; ) {
             if (inboundFrame == null) {
-                if (receiveBuffer.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+                if (buffer.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
 
-                int size = receiveBuffer.getInt();
-                int flags = receiveBuffer.getInt();
+                int size = buffer.getInt();
+                int flags = buffer.getInt();
                 if ((flags & FLAG_OP_RESPONSE) == 0) {
                     inboundFrame = requestFrameAllocator.allocate(size);
                 } else {
@@ -36,20 +37,19 @@ public class RequestEpollChannel extends EpollAsyncSocket {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(flags);
-                inboundFrame.channel = this;
+                inboundFrame.asyncSocket = asyncSocket;
             }
 
             int size = inboundFrame.size();
             int remaining = size - inboundFrame.position();
-            inboundFrame.write(receiveBuffer, remaining);
+            inboundFrame.write(buffer, remaining);
 
             if (!inboundFrame.isComplete()) {
                 break;
             }
 
             inboundFrame.complete();
-            inboundFrame = null;
-            framesRead.inc();
+            //framesRead.inc();
 
             if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {
                 inboundFrame.next = responseChain;
@@ -57,6 +57,7 @@ public class RequestEpollChannel extends EpollAsyncSocket {
             } else {
                 opScheduler.schedule(inboundFrame);
             }
+            inboundFrame = null;
         }
 
         if (responseChain != null) {

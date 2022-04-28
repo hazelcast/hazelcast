@@ -1,8 +1,6 @@
 package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.nio.NioEventloop;
 import io.netty.channel.epoll.EpollEventloop;
@@ -28,7 +26,7 @@ public final class Engine {
 
     private final boolean monitorSilent;
     private final Supplier<Scheduler> schedulerSupplier;
-    private boolean eventloopSpin;
+    private boolean spin;
     private EventloopType eventloopType;
     private final ThreadAffinity threadAffinity;
     private Eventloop[] eventloops;
@@ -39,7 +37,7 @@ public final class Engine {
     public Engine(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
         this.eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        this.eventloopSpin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
+        this.spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
         this.eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
         this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         this.monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
@@ -93,7 +91,7 @@ public final class Engine {
     }
 
     public Engine setSpin(boolean evenloopSpin) {
-        this.eventloopSpin = evenloopSpin;
+        this.spin = evenloopSpin;
         return this;
     }
 
@@ -119,24 +117,25 @@ public final class Engine {
 
     public void start() {
         this.eventloops = new Eventloop[eventloopCount];
-        ILogger logger = Logger.getLogger(Eventloop.class);
         for (int idx = 0; idx < eventloops.length; idx++) {
-            String name = eventloopBasename + idx;
             Scheduler scheduler = schedulerSupplier.get();
             switch (eventloopType) {
                 case NIO:
-                    eventloops[idx] = new NioEventloop(idx, name, logger, scheduler, eventloopSpin);
+                    eventloops[idx] = new NioEventloop(idx, scheduler, spin);
                     break;
                 case EPOLL:
-                    eventloops[idx] = new EpollEventloop(idx, name, logger, scheduler, eventloopSpin);
+                    eventloops[idx] = new EpollEventloop(idx, scheduler, spin);
                     break;
                 case IOURING:
-                    eventloops[idx] = new IOUringEventloop(idx, name, logger, scheduler, eventloopSpin);
+                    eventloops[idx] = new IOUringEventloop(idx, scheduler, spin);
                     break;
                 default:
                     throw new IllegalStateException("Unknown reactorType:" + eventloopType);
             }
+
+            eventloops[idx].setName(eventloopBasename + idx);
         }
+
 
         for (Eventloop eventloop : eventloops) {
             if (threadAffinity != null) {
@@ -159,7 +158,7 @@ public final class Engine {
 
     public void printConfig() {
         out.println("reactor.count:" + eventloopCount);
-        out.println("reactor.spin:" + eventloopSpin);
+        out.println("reactor.spin:" + spin);
         out.println("reactor.type:" + eventloopType);
         out.println("reactor.cpu-affinity:" + threadAffinity);
     }

@@ -39,12 +39,12 @@ public class BulkTransportImpl implements BulkTransport {
     }
 
     public void connect() {
-        CompletableFuture[] futures = new CompletableFuture[channels.length];
-        for (int k = 0; k < futures.length; k++) {
-            futures[k] = requestService.connect(null, 0);
-        }
+//        CompletableFuture[] futures = new CompletableFuture[channels.length];
+//        for (int k = 0; k < futures.length; k++) {
+//            futures[k] = requestService.connect(null, 0);
+//        }
 
-        CompletableFuture.allOf(futures);
+        //CompletableFuture.allOf(futures);
     }
 
     @Override

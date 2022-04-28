@@ -2,23 +2,30 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
+import io.netty.channel.epoll.EpollAsyncSocket;
+import io.netty.channel.epoll.EpollReadHandler;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestNioChannel extends NioAsyncSocket {
+public class RequestEpollReadHandler implements EpollReadHandler {
 
-    private Frame inboundFrame;
-    public FrameAllocator requestFrameAllocator;
-    public FrameAllocator remoteResponseFrameAllocator;
     public OpScheduler opScheduler;
     public RequestService requestService;
+    public FrameAllocator requestFrameAllocator;
+    public FrameAllocator remoteResponseFrameAllocator;
+    private Frame inboundFrame;
+    private EpollAsyncSocket asyncSocket;
 
     @Override
-    public void handleRead(ByteBuffer receiveBuffer) {
+    public void init(EpollAsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    @Override
+    public void onRead(ByteBuffer receiveBuffer) {
         Frame responseChain = null;
         for (; ; ) {
             if (inboundFrame == null) {
@@ -36,7 +43,7 @@ public class RequestNioChannel extends NioAsyncSocket {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(flags);
-                inboundFrame.channel = this;
+                inboundFrame.asyncSocket = asyncSocket;
             }
 
             int size = inboundFrame.size();
@@ -48,7 +55,8 @@ public class RequestNioChannel extends NioAsyncSocket {
             }
 
             inboundFrame.complete();
-            framesRead.inc();
+            inboundFrame = null;
+            //framesRead.inc();
 
             if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {
                 inboundFrame.next = responseChain;
@@ -56,7 +64,6 @@ public class RequestNioChannel extends NioAsyncSocket {
             } else {
                 opScheduler.schedule(inboundFrame);
             }
-            inboundFrame = null;
         }
 
         if (responseChain != null) {

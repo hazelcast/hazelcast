@@ -1,7 +1,10 @@
 package io.netty.incubator.channel.uring;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
-import com.hazelcast.spi.impl.engine.SocketConfig;
+import com.hazelcast.spi.impl.engine.Eventloop;
+import com.hazelcast.spi.impl.engine.EventloopTask;
+import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
@@ -9,15 +12,25 @@ import io.netty.channel.unix.IovArray;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
-public abstract class IOUringAsyncSocket extends AsyncSocket implements CompletionListener {
+public final class IOUringAsyncSocket extends AsyncSocket implements CompletionListener {
+
+    private final boolean clientSide;
+
+    public static IOUringAsyncSocket open() {
+        return new IOUringAsyncSocket();
+    }
+
     protected LinuxSocket socket;
     public IOUringEventloop eventloop;
 
@@ -38,31 +51,105 @@ public abstract class IOUringAsyncSocket extends AsyncSocket implements Completi
     // isolated state.
     public IovArray iovArray;
     public IOVector ioVector = new IOVector();
+    private IOUringReadHandler readHandler;
 
-    public void configure(IOUringEventloop eventloop, SocketConfig socketConfig, LinuxSocket socket) throws IOException {
+    private IOUringAsyncSocket() {
+        try {
+            this.socket = LinuxSocket.newSocketStream(false);
+            socket.setBlocking();
+            this.clientSide = true;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    IOUringAsyncSocket(LinuxSocket socket) {
+        try {
+            this.socket = socket;
+            socket.setBlocking();
+            this.remoteAddress = socket.remoteAddress();
+            this.localAddress = socket.localAddress();
+            this.clientSide = false;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void activate(Eventloop l) {
+        IOUringEventloop eventloop = (IOUringEventloop) l;
         this.eventloop = eventloop;
-        this.receiveBuff = eventloop.allocator.directBuffer(socketConfig.receiveBufferSize);
-        this.socket = socket;
-        ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-        this.iovArray = new IovArray(iovArrayBuffer);
-        this.sq = eventloop.sq;
+        this.eventloop.execute(() -> {
+            ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+            iovArray = new IovArray(iovArrayBuffer);
+            sq = eventloop.sq;
+            eventloop.completionListeners.put(socket.intValue(), IOUringAsyncSocket.this);
+            receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
 
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        socket.setTcpQuickAck(socketConfig.tcpQuickAck);
-        String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+            sq_addRead();
+        });
     }
 
-    public void onConnectionEstablished() throws IOException {
-        this.remoteAddress = socket.remoteAddress();
-        this.localAddress = socket.localAddress();
-        sq_addRead();
+    @Override
+    public void setReadHandler(ReadHandler readHandler) {
+        this.readHandler = (IOUringReadHandler) Preconditions.checkNotNull(readHandler);
+        this.readHandler.init(this);
     }
+
+    @Override
+    public boolean isTcpNoDelay() {
+        try {
+            return socket.isTcpNoDelay();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        try {
+            socket.setTcpNoDelay(tcpNoDelay);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getReceiveBufferSize() {
+        try {
+            return socket.getReceiveBufferSize();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setReceiveBufferSize(int size) {
+        try {
+            socket.setReceiveBufferSize(size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getSendBufferSize() {
+        try {
+            return socket.getSendBufferSize();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setSendBufferSize(int size) {
+        try {
+            socket.setSendBufferSize(size);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
 
     @Override
     public void flush() {
@@ -138,22 +225,26 @@ public abstract class IOUringAsyncSocket extends AsyncSocket implements Completi
 
     @Override
     public void close() {
-        //todo: also think about releasing the resources like frame buffers
-        // perhaps add a one time close check
+        if (closed.compareAndSet(false, true)) {
+            // todo: offloading.
 
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            //todo: also think about releasing the resources like frame buffers
+            // perhaps add a one time close check
+
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }
 
-        eventloop.removeSocket(this);
+            eventloop.removeSocket(this);
+        }
     }
 
     @Override
-    public void handleWrite() {
+    public void handleWriteReady() {
         if (flushThread.get() == null) {
             throw new RuntimeException("Channel should be in flushed state");
         }
@@ -187,7 +278,7 @@ public abstract class IOUringAsyncSocket extends AsyncSocket implements Completi
                 bytesRead.inc(res);
                 //System.out.println("handle_IORING_OP_READ fd:" + fd + " bytes read: " + res);
                 receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
-                onRead(receiveBuff);
+                readHandler.onRead(receiveBuff);
                 receiveBuff.discardReadBytes();
                 // we want to read more data.
                 sq_addRead();
@@ -206,8 +297,6 @@ public abstract class IOUringAsyncSocket extends AsyncSocket implements Completi
         }
     }
 
-    public abstract void onRead(ByteBuf receiveBuffer);
-
     public void sq_addRead() {
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
         sq.addRead(socket.intValue(),
@@ -216,4 +305,63 @@ public abstract class IOUringAsyncSocket extends AsyncSocket implements Completi
                 receiveBuff.capacity(),
                 (short) 0);
     }
+
+    @Override
+    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        CompletableFuture<AsyncSocket> future = new CompletableFuture();
+
+        try {
+            //System.out.println(getName() + " connectRequest to address:" + address);
+
+            if (socket.connect(address)) {
+                this.remoteAddress = socket.remoteAddress();
+                this.localAddress = socket.localAddress();
+
+                eventloop.execute(() -> sq_addRead());
+
+                logger.info("Socket connected to " + address);
+                future.complete(this);
+            } else {
+                future.completeExceptionally(new IOException("Could not connect to " + address));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            future.completeExceptionally(e);
+        }
+
+        return future;
+    }
+
+
+//    @Override
+//    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
+//        IOUringAsyncSocket channel = (IOUringAsyncSocket) c;
+//
+//        CompletableFuture<AsyncSocket> future = new CompletableFuture();
+//
+//        try {
+//            System.out.println(getName() + " connectRequest to address:" + address);
+//
+//            LinuxSocket socket = LinuxSocket.newSocketStream(false);
+//            socket.setBlocking();
+//
+//            channel.configure(this, c.socketConfig, socket);
+//
+//            if (socket.connect(address)) {
+//                logger.info(getName() + "Socket connected to " + address);
+//                execute(() -> {
+//                    completionListeners.put(socket.intValue(), channel);
+//                    channel.onConnectionEstablished();
+//                    future.complete(channel);
+//                });
+//            } else {
+//                future.completeExceptionally(new IOException("Could not connect to " + address));
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            future.completeExceptionally(e);
+//        }
+//
+//        return future;
+//    }
 }
