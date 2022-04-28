@@ -25,11 +25,11 @@ import com.hazelcast.spi.impl.engine.nio.NioEventloop;
 import com.hazelcast.spi.impl.engine.nio.NioReadHandler;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
-import io.netty.channel.epoll.EpollAsyncSocket;
-import io.netty.incubator.channel.uring.IOUringAsyncServerSocket;
-import io.netty.incubator.channel.uring.IOUringAsyncSocket;
-import io.netty.incubator.channel.uring.IOUringEventloop;
-import io.netty.incubator.channel.uring.IOUringReadHandler;
+import com.hazelcast.spi.impl.engine.epoll.EpollAsyncSocket;
+import com.hazelcast.spi.impl.engine.iouring.IOUringAsyncServerSocket;
+import com.hazelcast.spi.impl.engine.iouring.IOUringAsyncSocket;
+import com.hazelcast.spi.impl.engine.iouring.IOUringEventloop;
+import com.hazelcast.spi.impl.engine.iouring.IOUringReadHandler;
 import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 

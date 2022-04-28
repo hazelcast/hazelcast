@@ -1,10 +1,12 @@
-package io.netty.channel.epoll;
+package com.hazelcast.spi.impl.engine.epoll;
 
 import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.SocketConfig;
 import com.hazelcast.spi.impl.engine.frame.Frame;
+import io.netty.channel.epoll.LinuxSocket;
+import io.netty.channel.epoll.Native;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -292,23 +294,23 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
     }
 
-    public void configure(EpollEventloop eventloop, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
-        this.eventloop = eventloop;
-        this.socket = socket;
-
-        receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
-
-        String id = socket.localAddress() + "->" + socket.remoteAddress();
-        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
-    }
+//    public void configure(EpollEventloop eventloop, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
+//        this.eventloop = eventloop;
+//        this.socket = socket;
+//
+//        receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
+//
+//        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+//        socket.setSendBufferSize(socketConfig.sendBufferSize);
+//        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+//        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
+//
+//        String id = socket.localAddress() + "->" + socket.remoteAddress();
+//        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
+//        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
+//        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
+//        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
+//    }
 
     public void onConnectionEstablished() throws IOException {
         remoteAddress = socket.remoteAddress();

@@ -2,7 +2,7 @@ package com.hazelcast.table.impl;
 
 import com.hazelcast.spi.impl.requestservice.Op;
 import com.hazelcast.spi.impl.requestservice.OpCodes;
-import io.netty.incubator.channel.uring.IOUringEventloop;
+import com.hazelcast.spi.impl.engine.iouring.IOUringEventloop;
 
 import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 

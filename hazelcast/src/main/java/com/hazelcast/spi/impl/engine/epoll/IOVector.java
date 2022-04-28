@@ -1,6 +1,7 @@
-package io.netty.channel.epoll;
+package com.hazelcast.spi.impl.engine.epoll;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
+import io.netty.channel.epoll.LinuxSocket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

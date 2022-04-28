@@ -3,8 +3,8 @@ package com.hazelcast.spi.impl.requestservice;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
-import io.netty.incubator.channel.uring.IOUringAsyncSocket;
-import io.netty.incubator.channel.uring.IOUringReadHandler;
+import com.hazelcast.spi.impl.engine.iouring.IOUringAsyncSocket;
+import com.hazelcast.spi.impl.engine.iouring.IOUringReadHandler;
 
 import java.nio.ByteBuffer;
 

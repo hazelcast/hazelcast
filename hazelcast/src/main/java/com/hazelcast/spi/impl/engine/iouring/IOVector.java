@@ -1,4 +1,4 @@
-package io.netty.incubator.channel.uring;
+package com.hazelcast.spi.impl.engine.iouring;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.channel.unix.IovArray;

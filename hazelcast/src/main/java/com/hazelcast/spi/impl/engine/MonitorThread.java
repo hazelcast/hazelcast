@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
-import io.netty.incubator.channel.uring.IOUringAsyncSocket;
+import com.hazelcast.spi.impl.engine.iouring.IOUringAsyncSocket;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,8 +1,9 @@
-package io.netty.incubator.channel.uring;
+package com.hazelcast.spi.impl.engine.iouring;
 
 import com.hazelcast.spi.impl.engine.AsyncServerSocket;
-import com.hazelcast.spi.impl.engine.EventloopTask;
-import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
+import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
+import io.netty.incubator.channel.uring.LinuxSocket;
+import io.netty.incubator.channel.uring.SockaddrIn;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -114,23 +115,6 @@ public class IOUringAsyncServerSocket extends AsyncServerSocket implements Compl
             }
         }
     }
-
-
-//    public void configure(IOUringEventloop eventloop) throws IOException {
-//        this.eventloop = eventloop;
-//        this.sq = eventloop.sq;
-//
-//        serverSocket = LinuxSocket.newSocketStream(false);
-//        serverSocket.setBlocking();
-//        serverSocket.setReuseAddress(true);
-//        serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-//        System.out.println(eventloop + " serverSocket.fd:" + serverSocket.intValue());
-//
-//        System.out.println(eventloop.getName() + " Bind success " + address);
-//        serverSocket.listen(10);
-//        System.out.println(eventloop.getName() + " Listening on " + address);
-//        eventloop.completionListeners.put(serverSocket.intValue(), this);
-//    }
 
     @Override
     public void bind(SocketAddress local) {

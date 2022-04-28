@@ -1,8 +1,8 @@
-package io.netty.channel.epoll;
+package com.hazelcast.spi.impl.engine.epoll;
 
 import com.hazelcast.spi.impl.engine.AsyncServerSocket;
-import com.hazelcast.spi.impl.engine.Eventloop;
-import com.hazelcast.spi.impl.engine.SocketConfig;
+import io.netty.channel.epoll.LinuxSocket;
+import io.netty.channel.epoll.Native;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

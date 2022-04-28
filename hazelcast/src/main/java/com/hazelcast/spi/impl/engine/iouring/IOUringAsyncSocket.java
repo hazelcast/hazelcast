@@ -1,14 +1,15 @@
-package io.netty.incubator.channel.uring;
+package com.hazelcast.spi.impl.engine.iouring;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
-import com.hazelcast.spi.impl.engine.EventloopTask;
 import com.hazelcast.spi.impl.engine.ReadHandler;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;
+import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
+import io.netty.incubator.channel.uring.LinuxSocket;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;

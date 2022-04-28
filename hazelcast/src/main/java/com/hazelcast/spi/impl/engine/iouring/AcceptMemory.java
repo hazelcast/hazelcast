@@ -1,6 +1,7 @@
-package io.netty.incubator.channel.uring;
+package com.hazelcast.spi.impl.engine.iouring;
 
 import io.netty.channel.unix.Buffer;
+import io.netty.incubator.channel.uring.Native;
 
 import java.nio.ByteBuffer;
 

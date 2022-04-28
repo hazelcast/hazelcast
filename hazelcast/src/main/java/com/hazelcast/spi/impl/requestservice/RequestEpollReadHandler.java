@@ -2,8 +2,8 @@ package com.hazelcast.spi.impl.requestservice;
 
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import io.netty.channel.epoll.EpollAsyncSocket;
-import io.netty.channel.epoll.EpollReadHandler;
+import com.hazelcast.spi.impl.engine.epoll.EpollAsyncSocket;
+import com.hazelcast.spi.impl.engine.epoll.EpollReadHandler;
 
 import java.nio.ByteBuffer;
 

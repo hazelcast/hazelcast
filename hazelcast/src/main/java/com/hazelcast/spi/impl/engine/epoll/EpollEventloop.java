@@ -1,16 +1,13 @@
-package io.netty.channel.epoll;
+package com.hazelcast.spi.impl.engine.epoll;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
-import com.hazelcast.spi.impl.engine.Scheduler;
+import io.netty.channel.epoll.EpollEventArray;
+import io.netty.channel.epoll.Native;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.concurrent.CompletableFuture;
 
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;

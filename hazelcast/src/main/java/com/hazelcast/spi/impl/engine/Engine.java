@@ -3,8 +3,8 @@ package com.hazelcast.spi.impl.engine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.spi.impl.engine.frame.Frame;
 import com.hazelcast.spi.impl.engine.nio.NioEventloop;
-import io.netty.channel.epoll.EpollEventloop;
-import io.netty.incubator.channel.uring.IOUringEventloop;
+import com.hazelcast.spi.impl.engine.epoll.EpollEventloop;
+import com.hazelcast.spi.impl.engine.iouring.IOUringEventloop;
 
 import java.util.Collection;
 import java.util.function.Consumer;
