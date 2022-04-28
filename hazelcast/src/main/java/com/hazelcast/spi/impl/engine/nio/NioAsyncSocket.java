@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.engine.nio;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.impl.engine.AsyncSocket;
 import com.hazelcast.spi.impl.engine.Eventloop;
 import com.hazelcast.spi.impl.engine.ReadHandler;
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.TCP_NODELAY;
@@ -35,6 +37,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         return new NioAsyncSocket();
     }
 
+    private int unflushedFramesCapacity = 65536;
     private final boolean clientSide;
     private NioReadHandler readHandler;
     // immutable state
@@ -58,7 +61,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(65536);
+    public  MpmcArrayQueue<Frame> unflushedFrames;
     private CompletableFuture<AsyncSocket> connectFuture;
 
     private NioAsyncSocket() {
@@ -93,10 +96,15 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         this.readHandler.init(this);
     }
 
+    public void setUnflushedFramesCapacity(int unflushedFramesCapacity){
+        this.unflushedFramesCapacity = checkPositive("unflushedFramesCapacity", unflushedFramesCapacity);
+    }
+
     @Override
     public void activate(Eventloop l) {
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
+        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
         eventloop.execute(() -> {
             selector = eventloop.selector;
             eventloop.registeredAsyncSockets.add(NioAsyncSocket.this);

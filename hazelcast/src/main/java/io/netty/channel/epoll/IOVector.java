@@ -54,7 +54,7 @@ public final class IOVector {
             ByteBuffer buf = array[0];
             written = socket.write(buf, buf.position(), buf.remaining());
         } else {
-            written = socket.writev(array, 0, size, 1024*1024*1024);
+            written = socket.writev(array, 0, size, 1024 * 1024 * 1024);
         }
         compact(written);
         return written;

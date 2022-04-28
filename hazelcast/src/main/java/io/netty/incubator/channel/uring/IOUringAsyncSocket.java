@@ -75,7 +75,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         }
     }
 
-    public LinuxSocket socket(){
+    public LinuxSocket socket() {
         return socket;
     }
 
@@ -337,7 +337,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
     }
 
     @Override
-    public String toString(){
-        return "IOUringAsyncSocket("+localAddress+"->"+remoteAddress+")";
+    public String toString() {
+        return "IOUringAsyncSocket(" + localAddress + "->" + remoteAddress + ")";
     }
 }

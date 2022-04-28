@@ -19,7 +19,7 @@ public class EpollAsyncServerSocket extends AsyncServerSocket {
     private final byte[] acceptedAddress = new byte[26];
     public EpollEventloop eventloop;
 
-    public LinuxSocket socket(){
+    public LinuxSocket socket() {
         return serverSocket;
     }
 
@@ -83,7 +83,7 @@ public class EpollAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void close()  {
+    public void close() {
 
     }
 
@@ -98,10 +98,10 @@ public class EpollAsyncServerSocket extends AsyncServerSocket {
             EpollAsyncSocket channel = channelSupplier.get();
             eventloop.registeredAsyncSockets.add(channel);
 
-           // channel.configure(eventloop, socket, socketConfig);
+            // channel.configure(eventloop, socket, socketConfig);
             channel.onConnectionEstablished();
 
-            System.out.println("accepted fd:"+fd);
+            System.out.println("accepted fd:" + fd);
 
 //        sq_addAccept();
 //
