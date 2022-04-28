@@ -373,12 +373,13 @@ public final class OptUtils {
             final String fieldName = type.getFields().get(i).getName();
             final QueryDataType fieldType = type.getFields().get(i).getDataType();
 
-            final RelDataType fieldRelDataType;
+            RelDataType fieldRelDataType;
             if (isUserDefinedType(fieldType)) {
-                fieldRelDataType = typeMap.computeIfAbsent(fieldType.getTypeName(), (name) -> {
+                fieldRelDataType = typeMap.get(fieldType.getTypeName());
+                if (fieldRelDataType == null) {
                     convertUserDefinedTypeRecursively(fieldType, typeFactory, typeMap);
-                    return typeMap.get(fieldType.getTypeName());
-                });
+                    fieldRelDataType = typeMap.get(fieldType.getTypeName());
+                }
             } else {
                 fieldRelDataType = typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType));
             }
