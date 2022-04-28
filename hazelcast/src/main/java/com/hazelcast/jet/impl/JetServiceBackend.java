@@ -23,6 +23,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -180,13 +181,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
                   .whenCompleteAsync((response, throwable) -> {
-                      if (throwable != null) {
+                      // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
+                      NodeState nodeState = nodeEngine.getNode().getState();
+                      if (throwable != null && nodeState == NodeState.ACTIVE) {
                           logger.warning("Failed to notify master member that this member is shutting down," +
                                   " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                           // recursive call
                           nodeEngine.getExecutionService().schedule(
                                   () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                       } else {
+                          if (throwable != null) {
+                              logger.warning("Failed to notify master member that this member is shutting down," +
+                                      " but this member is " + nodeState + ", so not retrying", throwable);
+                          }
                           future.complete(null);
                       }
                   });
