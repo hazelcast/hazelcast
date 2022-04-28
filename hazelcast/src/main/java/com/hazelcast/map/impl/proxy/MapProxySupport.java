@@ -1312,16 +1312,16 @@ abstract class MapProxySupport<K, V>
             Map<Integer, Object> results;
             if (predicate instanceof PartitionPredicate) {
                 PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-                PartitionIdSet partionIds = new PartitionIdSet(partitionService.getPartitionCount());
+                PartitionIdSet partitionIds = new PartitionIdSet(partitionService.getPartitionCount());
                 partitionPredicate.getPartitionKeys().forEach(o -> {
                     Data key = toData(o);
-                    partionIds.add(partitionService.getPartitionId(key));
+                    partitionIds.add(partitionService.getPartitionId(key));
                 });
                 handleHazelcastInstanceAwareParams(partitionPredicate.getTarget());
 
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, partitionPredicate.getTarget());
-                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, partionIds);
+                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, partitionIds);
             } else {
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, predicate);
