@@ -213,18 +213,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
             extractors[i] = entry.getValue();
             limits[i] = findMinimumGroupTime(entry.getKey());
-            System.err.println("Minimum G time for " + entry.getKey() + " is " + limits[i]);
             ++i;
         }
 
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
-                System.err.println(extractors[idx].applyAsLong(row) + " ~ " + limits[idx]);
                 if (extractors[idx].applyAsLong(row) >= limits[idx]) {
                     return false;
                 }
             }
-            System.err.println("To remove -> " + row);
+            System.err.println("To remove -> " + row + ", " + unusedEventsTracker[ordinal].contains(row));
             if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
                 JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
                 unusedEventsTracker[ordinal].remove(row);

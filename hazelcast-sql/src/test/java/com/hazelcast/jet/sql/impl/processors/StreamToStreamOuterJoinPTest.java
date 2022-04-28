@@ -82,8 +82,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void given_leftJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
-        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.LEFT,
                 new int[]{0},
@@ -107,28 +107,29 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .inputs(asList(
                         asList(
                                 wm((byte) 0, 0L),
+                                wm((byte) 0, 1L),
                                 wm((byte) 0, 2L),
+                                wm((byte) 0, 3L),
                                 wm((byte) 0, 4L),
+                                wm((byte) 0, 5L),
                                 wm((byte) 0, 6L),
-                                wm((byte) 0, 8L),
-                                wm((byte) 0, 10L)
+                                // trigger it to process pending items
+                                jetRow(6L)
                         ),
                         asList(
                                 wm((byte) 1, 0L),
-                                jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
+                                jetRow(6L, 6L),
                                 wm((byte) 1, 10L)
                         )
                 ))
                 .expectOutput(
                         asList(
-                                jetRow(null, 1L, 1L),
                                 jetRow(null, 3L, 3L),
-                                jetRow(null, 5L, 5L),
-                                wm((byte) 1, 1L)
+                                jetRow(null, 5L, 5L)
                         )
                 );
     }
@@ -181,8 +182,10 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(3L, 3L, 2L, 2L),
                                 jetRow(1L, 1L, 3L, 3L),
                                 jetRow(3L, 3L, 3L, 3L),
-                                wm((byte) 0, 1L),
-                                wm((byte) 1, 1L)
+                                // MIN = 3
+                                wm((byte) 0, 3L),
+                                // MIN = 3
+                                wm((byte) 1, 3L)
                         )
                 );
     }
@@ -214,28 +217,29 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .inputs(asList(
                         asList(
                                 wm((byte) 0, 0L),
-                                jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
+                                jetRow(6L, 6L),
                                 wm((byte) 0, 10L)
                         ),
                         asList(
                                 wm((byte) 1, 0L),
+                                wm((byte) 1, 1L),
                                 wm((byte) 1, 2L),
+                                wm((byte) 1, 3L),
                                 wm((byte) 1, 4L),
+                                wm((byte) 1, 5L),
                                 wm((byte) 1, 6L),
-                                wm((byte) 1, 8L),
-                                wm((byte) 1, 10L)
+                                // trigger it to process pending items
+                                jetRow(6L)
                         )
                 ))
                 .expectOutput(
                         asList(
-                                jetRow(1L, 1L, null),
                                 jetRow(3L, 3L, null),
-                                jetRow(5L, 5L, null),
-                                wm((byte) 0, 1L)
+                                jetRow(5L, 5L, null)
                         )
                 );
     }
@@ -283,15 +287,14 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .expectOutput(
                         asList(
                                 // NOTE: first row contains NULL since test processor process left input first
-                                jetRow(1L, 1L, null, null),
                                 jetRow(1L, 1L, 1L, 1L),
                                 jetRow(1L, 1L, 2L, 2L),
                                 jetRow(3L, 3L, 1L, 1L),
                                 jetRow(3L, 3L, 2L, 2L),
                                 jetRow(1L, 1L, 3L, 3L),
                                 jetRow(3L, 3L, 3L, 3L),
-                                wm((byte) 0, 1L),
-                                wm((byte) 1, 1L)
+                                wm((byte) 0, 3L),
+                                wm((byte) 1, 3L)
                         )
                 );
     }
