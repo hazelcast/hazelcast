@@ -137,6 +137,50 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_alwaysTrueConditionAndSingleWmKeyPerInput_then_eventsRemovedInTime() {
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
+
+        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                joinInfo,
+                leftExtractors,
+                rightExtractors,
+                postponeTimeMap,
+                Tuple2.tuple2(1, 1));
+
+        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .disableProgressAssertion()
+                .disableSnapshots()
+                .inputs(asList(
+                        asList(
+                                jetRow(0L),
+                                wm((byte) 0, 1L),
+                                jetRow(2L),
+                                wm((byte) 0, 3L),
+                                jetRow(4L),
+                                wm((byte) 0, 5L)
+                        ),
+                        asList(
+                                jetRow(0L),
+                                wm((byte) 1, 1L),
+                                jetRow(2L),
+                                wm((byte) 1, 3L),
+                                jetRow(4L),
+                                wm((byte) 1, 5L)
+                        )
+                ))
+                .expectOutput(
+                        asList(
+                                jetRow(0L, 0L),
+                                jetRow(2L, 2L),
+                                jetRow(4L, 4L)
+                        )
+                );
+    }
+
+    @Test
     public void given_alwaysTrueCondition_when_twoWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
         // left ordinal
         postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
@@ -163,7 +207,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .disableSnapshots()
                 .inputs(asList(
                         asList(
-                                jetRow(12L, 10L),
+                                jetRow(12L, 9L),
                                 jetRow(12L, 13L),
                                 wm((byte) 1, 12L),
                                 wm((byte) 0, 13L),
@@ -172,24 +216,28 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                         asList(
                                 jetRow(9L),
                                 wm((byte) 2, 15L),
+                                wm((byte) 2, 15L),
                                 jetRow(16L),
                                 jetRow(16L)
                         )
                 ))
                 .expectOutput(
                         asList(
-                                // left <- (12, 10)
+                                // left <- (12, 9)
                                 // right <- (9)
-                                jetRow(12L, 10L, 9L),
+                                jetRow(12L, 9L, 9L),
                                 // left <- (12, 13)
                                 jetRow(12L, 13L, 9L),
                                 // left <-  wm(1, 12)
                                 // right <- wm(2, 15)
-                                wm((byte) 2, 9L),
-                                wm((byte) 1, 13L), // new minimum for key=1 is 13, so emit the freshest WM.
-                                // right <- (21)
+                                wm((byte) 1, 9L),
+                                wm((byte) 0, 12L),
+                                // right <- (16)
+                                jetRow(12L, 13L, 16L),
+                                // left <- (13)
+                                wm((byte) 1, 12L),
                                 jetRow(12L, 13L, 16L)
-                                // wm((byte) 0, 12L) // TODO: expected, but not reached ?
+
                         )
                 );
     }
@@ -231,14 +279,20 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                         asList(
                                 jetRow(12L, 10L),
                                 jetRow(12L, 13L),
-                                wm((byte) 1, 12L),
-                                wm((byte) 0, 13L)
+                                wm((byte) 0, 15L),
+                                wm((byte) 1, 16L),
+                                jetRow(16L, 17L),
+                                wm((byte) 0, 16L),
+                                wm((byte) 1, 17L)
                         ),
                         asList(
                                 jetRow(12L, 10L),
                                 jetRow(12L, 13L),
-                                wm((byte) 3, 12L),
-                                wm((byte) 2, 13L)
+                                wm((byte) 2, 15L),
+                                wm((byte) 3, 16L),
+                                jetRow(16L, 17L),
+                                wm((byte) 2, 16L),
+                                wm((byte) 3, 17L)
                         )
                 ))
                 .expectOutput(
@@ -249,10 +303,14 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(12L, 13L, 12L, 10L),
                                 jetRow(12L, 10L, 12L, 13L),
                                 jetRow(12L, 13L, 12L, 13L),
-                                wm((byte) 1, 10L),
-                                wm((byte) 3, 10L),
                                 wm((byte) 0, 12L),
-                                wm((byte) 2, 12L)
+                                wm((byte) 2, 12L),
+                                jetRow(16L, 17L, 16L, 17L),
+                                wm((byte) 0, 16L),
+                                wm((byte) 2, 14L),
+                                wm((byte) 1, 16L),
+                                //
+                                wm((byte) 3, 15L)
                         )
                 );
     }
@@ -294,7 +352,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                         asList(
                                 jetRow(11L, 11L),
                                 jetRow(12L, 13L),
-                                wm((byte) 1, 12L),
                                 wm((byte) 0, 13L),
                                 wm((byte) 1, 13L)
                         ),
@@ -302,19 +359,19 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(9L),
                                 wm((byte) 2, 15L),
                                 jetRow(16L),
-                                jetRow(16L),
                                 wm((byte) 2, 16)
                         )
                 ))
                 .expectOutput(
                         asList(
                                 jetRow(11L, 11L, 9L),
-                                wm((byte) 2, 9L),
-                                wm((byte) 1, 11L),
+                                // MIN = 11 (min element)
+                                wm((byte) 0, 11L),
                                 jetRow(11L, 11L, 16L),
-                                wm((byte) 2, 16L)
-                                // right <- (21)
-                                // wm((byte) 0, 12L) // TODO: expected, but not reached ?
+                                // MIN = min(13, 13-1) = 12
+                                wm((byte) 1, 12L),
+                                // MIN = min(16, 16-4) = 12
+                                wm((byte) 2, 12L)
                         )
                 );
     }
@@ -360,7 +417,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
-                                jetRow(1L, 1L, 1L),
                                 jetRow(2L, 2L, 2L),
                                 jetRow(3L, 3L, 3L),
                                 wm((byte) 0, 3L),
@@ -374,22 +430,21 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 wm((byte) 3, 3L),
                                 wm((byte) 3, 3L),
                                 wm((byte) 3, 3L),
-                                wm((byte) 3, 3L),
                                 jetRow(4L)
                         )
                 ))
                 .expectOutput(
                         asList(
-                                jetRow(1L, 1L, 1L, 2L),
-                                wm((byte) 3, 2L),
                                 jetRow(3L, 3L, 3L, 2L),
-                                wm((byte) 3, 2L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 3, 2L),
-                                wm((byte) 1, 3L),
-                                wm((byte) 3, 2L),
+                                wm((byte) 3, 1L),
+                                // minimum in buffer -> 1
+                                wm((byte) 0, 2L),
+                                wm((byte) 3, 1L),
+                                wm((byte) 1, 2L),
+                                wm((byte) 3, 1L),
+                                // 1 was removed, minimum in buffer -> 3
                                 wm((byte) 2, 3L),
-                                wm((byte) 3, 2L),
+                                wm((byte) 3, 1L),
                                 // no wm(t > 3) was produced,
                                 // so (5,5,5,2) is valid here.
                                 jetRow(5L, 5L, 5L, 2L),
