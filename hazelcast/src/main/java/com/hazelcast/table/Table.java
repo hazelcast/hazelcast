@@ -26,6 +26,10 @@ public interface Table<K,E> {
 
     byte[] get(byte[] key);
 
+    void randomLoad(byte[] key);
+
+    void concurrentRandomLoad(byte[] key, int concurrency);
+
     void bogusQuery();
 
     void noop();

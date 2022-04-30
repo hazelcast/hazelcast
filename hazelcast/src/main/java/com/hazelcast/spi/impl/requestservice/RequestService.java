@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -143,12 +144,8 @@ public class RequestService {
     @NotNull
     private Engine newEngine() {
         Engine engine = new Engine(() -> {
-            FrameAllocator remoteResponseFrameAllocator = poolRemoteResponses
-                    ? new ConcurrentPooledFrameAllocator(128, true)
-                    : new UnpooledFrameAllocator();
-            FrameAllocator localResponseFrameAllocator = poolLocalResponses
-                    ? new NonConcurrentPooledFrameAllocator(128, true)
-                    : new UnpooledFrameAllocator();
+            FrameAllocator remoteResponseFrameAllocator = new ConcurrentPooledFrameAllocator(128, true);
+            FrameAllocator localResponseFrameAllocator = new NonConcurrentPooledFrameAllocator(128, true);
 
             return new OpScheduler(32768,
                     Integer.MAX_VALUE,
@@ -169,7 +166,7 @@ public class RequestService {
 
             Supplier<NioReadHandler> readHandlerSupplier = () -> {
                 RequestNioReadHandler readHandler = new RequestNioReadHandler();
-                readHandler.opScheduler = (OpScheduler) eventloop.scheduler;
+                readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
                 readHandler.requestService = RequestService.this;
                 readHandler.requestFrameAllocator = poolRequests
                         ? new NonConcurrentPooledFrameAllocator(128, true)
@@ -208,10 +205,9 @@ public class RequestService {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             IOUringEventloop eventloop = (IOUringEventloop) engine.eventloop(k);
             try {
-
                 Supplier<IOUringReadHandler> readHandlerSupplier = () -> {
                     RequestIOUringReadHandler handler = new RequestIOUringReadHandler();
-                    handler.opScheduler = (OpScheduler) eventloop.scheduler;
+                    handler.opScheduler = (OpScheduler) eventloop.getScheduler();
                     handler.requestService = this;
                     handler.requestFrameAllocator = poolRequests
                             ? new NonConcurrentPooledFrameAllocator(128, true)
@@ -336,29 +332,30 @@ public class RequestService {
             return;
         }
 
+        System.out.println("response:"+response.refCount());
+
         try {
             Requests requests = requestsPerChannel.get(response.asyncSocket.getRemoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
-                return;
-            }
-
-            requests.complete();
-
-            long callId = response.getLong(OFFSET_RES_CALL_ID);
-            //System.out.println("response with callId:"+callId +" frame: "+response);
-
-            Frame request = requests.map.remove(callId);
-            if (request == null) {
-                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                response.release();
             } else {
-                request.future.complete(response);
-                request.release();
+                requests.complete();
+
+                long callId = response.getLong(OFFSET_RES_CALL_ID);
+                //System.out.println("response with callId:"+callId +" frame: "+response);
+
+                Frame request = requests.map.remove(callId);
+                if (request == null) {
+                    System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                } else {
+                    CompletableFuture future = request.future;
+                    future.complete(response);
+                    request.release();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            response.release();
         }
     }
 

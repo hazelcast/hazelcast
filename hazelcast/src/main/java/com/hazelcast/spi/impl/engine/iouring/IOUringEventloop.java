@@ -92,12 +92,19 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
 
+    protected IOUringScheduler diskScheduler;
+
     public IOUringEventloop() {
         this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.eventfd = Native.newBlockingEventFd();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, flags, data) -> sq_addEventRead());
+        this.diskScheduler = new IOUringScheduler(this);
+    }
+
+    public IOUringScheduler getDiskScheduler() {
+        return diskScheduler;
     }
 
     @Override

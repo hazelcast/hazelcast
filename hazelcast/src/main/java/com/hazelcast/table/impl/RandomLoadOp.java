@@ -1,5 +1,6 @@
 package com.hazelcast.table.impl;
 
+import com.hazelcast.spi.impl.engine.iouring.IOUringScheduler;
 import com.hazelcast.spi.impl.requestservice.Op;
 import com.hazelcast.spi.impl.requestservice.OpCodes;
 import com.hazelcast.spi.impl.engine.iouring.IOUringEventloop;
@@ -9,6 +10,7 @@ import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 public final class RandomLoadOp extends Op {
 
     private boolean loaded;
+
     public RandomLoadOp() {
         super(OpCodes.RANDOM_LOAD);
     }
@@ -26,13 +28,11 @@ public final class RandomLoadOp extends Op {
 
     @Override
     public int run() throws Exception {
-        if(!loaded){
-            IOUringEventloop reactor = (IOUringEventloop) this.scheduler.getEventloop();
-            short someId = 0;
-            int fd = 0;
-            reactor.sq_addRead(fd, 0, 0,0, someId);
+        if (!loaded) {
+            IOUringEventloop eventloop = (IOUringEventloop) this.scheduler.getEventloop();
+            eventloop.getDiskScheduler().scheduleLoad(IOUringScheduler.dummyFile, 0, 100, this);
             return BLOCKED;
-        }else {
+        } else {
             response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
                     .writeComplete();
 

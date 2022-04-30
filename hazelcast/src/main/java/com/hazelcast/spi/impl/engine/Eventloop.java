@@ -29,9 +29,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
-    public  Scheduler scheduler;
+    protected Scheduler scheduler;
     public final CircularQueue<AsyncSocket> dirtySockets = new CircularQueue<>(1024);
-
     protected boolean spin;
     protected volatile boolean running = true;
 
@@ -45,6 +44,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
+        scheduler.setEventloop(this);
     }
 
     public Scheduler getScheduler() {

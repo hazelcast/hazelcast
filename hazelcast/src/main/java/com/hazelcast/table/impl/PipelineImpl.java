@@ -54,9 +54,10 @@ public final class PipelineImpl implements Pipeline {
     }
 
     public void await(){
-        for(Future f: futures){
+        for(Future<Frame> f: futures){
             try {
-                f.get(requestService.getRequestTimeoutMs(), TimeUnit.MILLISECONDS);
+                Frame frame = f.get(requestService.getRequestTimeoutMs(), TimeUnit.MILLISECONDS);
+                frame.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

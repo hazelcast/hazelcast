@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
@@ -97,7 +98,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
 
     @Override
     public void setReadHandler(ReadHandler readHandler) {
-        this.readHandler = (IOUringReadHandler) Preconditions.checkNotNull(readHandler);
+        this.readHandler = (IOUringReadHandler) checkNotNull(readHandler);
         this.readHandler.init(this);
     }
 

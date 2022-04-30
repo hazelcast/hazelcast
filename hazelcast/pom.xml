@@ -203,7 +203,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>
@@ -338,9 +338,9 @@
                                     </fileset>
                                     <globmapper from="hazelcast-assembly.*" to="hazelcast-default-assembly.*"/>
                                     <filterset>
-                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="true" />
-                                        <filter token="FILTER_BIND_ANY" value="false" />
-                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ" />
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="true"/>
+                                        <filter token="FILTER_BIND_ANY" value="false"/>
+                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ"/>
                                     </filterset>
                                 </copy>
                                 <copy todir="${basedir}/target/classes">
@@ -349,9 +349,9 @@
                                     </fileset>
                                     <globmapper from="hazelcast-assembly.*" to="hazelcast-docker-assembly.*"/>
                                     <filterset>
-                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="false" />
-                                        <filter token="FILTER_BIND_ANY" value="true" />
-                                        <filter token="FILTER_DISTRO_NAME" value="Docker" />
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="false"/>
+                                        <filter token="FILTER_BIND_ANY" value="true"/>
+                                        <filter token="FILTER_DISTRO_NAME" value="Docker"/>
                                     </filterset>
                                 </copy>
                             </target>
@@ -369,10 +369,8 @@
                                        dest="${project.build.directory}/tmp-repack"/>
                                 <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
                                       tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
-                                <jar basedir="${project.build.directory}/tmp-repack"
-                                     destfile="${project.build.directory}/${project.build.finalName}.jar"
-                                     manifest="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"
-                                />
+                                <zip basedir="${project.build.directory}/tmp-repack"
+                                     destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                             </target>
                         </configuration>
                     </execution>
@@ -431,12 +429,24 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>10</source>
+                    <target>10</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <dependencies>
 
-
+        <dependency>
+            <groupId>net.smacke</groupId>
+            <artifactId>jaydio</artifactId>
+            <version>0.2-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
@@ -533,7 +543,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.1</version>
+            <version>1.14.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -771,7 +781,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
+            <version>42.3.3</version>
             <scope>test</scope>
         </dependency>
 

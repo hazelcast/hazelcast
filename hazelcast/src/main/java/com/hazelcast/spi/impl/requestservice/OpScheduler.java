@@ -94,7 +94,6 @@ public final class OpScheduler implements Scheduler {
                         op.request.asyncSocket.unsafeWriteAndFlush(op.response);
                     } else {
                         op.request.future.complete(op.response);
-                        op.response.release();
                     }
                     op.request.release();
                     op.release();
