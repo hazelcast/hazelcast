@@ -11,39 +11,25 @@ public class Main {
 
         Table table = node1.getTable("piranaha");
 
-        for (int k = 0; k < 100_000_000; k++) {
-            Item item = new Item();
-            item.key = 1;
-            item.a = 2;
-            item.b = 3;
+        long operations = 50_000_000;
+        int concurrency = 100;
+        long iterations = operations/concurrency;
 
-//            System.out.println("========================================================================");
-//            System.out.println("k="+k);
-//            System.out.println("========================================================================");
+        long startMs = System.currentTimeMillis();
+        long count = 0;
+        for (int k = 0; k < iterations; k++) {
 
-            if (k % 100 == 0) {
-                System.out.println("at k:" + k);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (count % 1_000_000 == 0) {
+                System.out.println("at k:" + count);
             }
 
-//            Pipeline pipeline = table.newPipeline();
-//            for (int l = 0; l < 10; l++) {
-//                pipeline.noop(0);
-//            }
-//            pipeline.execute();
-//            pipeline.await();
-
-            //table.upsert(item);
-            table.concurrentNoop(1);
-
-
+            table.concurrentNoop(concurrency);
+            count += concurrency;
         }
 
         System.out.println("Done");
+
+        long duration = System.currentTimeMillis()-startMs;
+        System.out.println("Throughput: "+(operations*1000.0f/duration)+" op/s");
     }
 }

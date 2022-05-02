@@ -2,7 +2,7 @@ package com.hazelcast.tpc.engine.frame;
 
 import java.nio.ByteBuffer;
 
-public class NonConcurrentPooledFrameAllocator implements FrameAllocator {
+public final class NonConcurrentPooledFrameAllocator implements FrameAllocator {
     private final int minSize;
     private final boolean direct;
     private long newAllocateCnt = 0;

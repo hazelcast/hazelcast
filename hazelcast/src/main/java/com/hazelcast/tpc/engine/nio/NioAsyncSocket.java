@@ -106,7 +106,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
         eventloop.execute(() -> {
             selector = eventloop.selector;
-            eventloop.registeredAsyncSockets.add(NioAsyncSocket.this);
+            eventloop.registerSocket(NioAsyncSocket.this);
             receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
 
             if (!clientSide) {
@@ -333,7 +333,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         if (closed.compareAndSet(false, true)) {
             eventloop.execute(() -> {
                 closeResource(socketChannel);
-                eventloop.removeSocket(NioAsyncSocket.this);
+                eventloop.deregisterSocket(NioAsyncSocket.this);
             });
         }
     }

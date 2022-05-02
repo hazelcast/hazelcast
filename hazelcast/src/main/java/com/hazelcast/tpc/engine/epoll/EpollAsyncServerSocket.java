@@ -95,11 +95,11 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
             LinuxSocket socket = new LinuxSocket(fd);
 
-            EpollAsyncSocket channel = channelSupplier.get();
-            eventloop.registeredAsyncSockets.add(channel);
+            EpollAsyncSocket ascynSocket = new EpollAsyncSocket(socket);
+            eventloop.registerSocket(ascynSocket);
 
-            // channel.configure(eventloop, socket, socketConfig);
-            channel.onConnectionEstablished();
+            // ascynSocket.configure(eventloop, socket, socketConfig);
+            ascynSocket.onConnectionEstablished();
 
             System.out.println("accepted fd:" + fd);
 
@@ -111,12 +111,12 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 //
 //        System.out.println(this + " new connected accepted: " + address);
 //
-//        IOUringChannel channel = channelSupplier.get();
-//        io.netty.incubator.channel.uring.LinuxSocket socket = new io.netty.incubator.channel.uring.LinuxSocket(res);
-//        reactor.channelMap.put(socket.intValue(), channel);
+//        IOUringChannel ascynSocket = channelSupplier.get();
+//        io.netty.incubator.ascynSocket.uring.LinuxSocket socket = new io.netty.incubator.ascynSocket.uring.LinuxSocket(res);
+//        reactor.channelMap.put(socket.intValue(), ascynSocket);
 //        try {
-//            channel.configure(reactor, socketConfig, socket);
-//            channel.onConnectionEstablished();
+//            ascynSocket.configure(reactor, socketConfig, socket);
+//            ascynSocket.onConnectionEstablished();
 //        } catch (IOException e) {
 //            throw new RuntimeException();
 //        }

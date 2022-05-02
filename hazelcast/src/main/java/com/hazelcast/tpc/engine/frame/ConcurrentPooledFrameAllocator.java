@@ -121,10 +121,7 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
             // if the thread has never allocated anything, we don't want to create
             // a pool for that thread.
             queue.offer(frame);
-            return;
-        }
-
-        if (pool.index == pool.frames.length - 1) {
+        } else if (pool.index == pool.frames.length - 1) {
             // the pool of the object is full, so lets toss it in the queue.
             queue.offer(frame);
         } else {

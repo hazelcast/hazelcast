@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class Eventloop extends HazelcastManagedThread {
     public final ILogger logger = Logger.getLogger(getClass());
-    public final Set<AsyncSocket> registeredAsyncSockets = new CopyOnWriteArraySet<>();
+    protected final Set<AsyncSocket> registeredSockets = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
@@ -55,8 +55,20 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected abstract void wakeup();
 
-    public void removeSocket(AsyncSocket socket) {
-        registeredAsyncSockets.remove(socket);
+    public void registerSocket(AsyncSocket socket) {
+        if (Thread.currentThread() != this) {
+            throw new RuntimeException("registerSocket can only be called from eventloop");
+        }
+
+        registeredSockets.remove(socket);
+    }
+
+    public void deregisterSocket(AsyncSocket socket) {
+        if (Thread.currentThread() != this) {
+            throw new RuntimeException("registerSocket can only be called from eventloop");
+        }
+
+        registeredSockets.remove(socket);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -86,7 +98,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     }
 
     public Collection<AsyncSocket> asyncSockets() {
-        return registeredAsyncSockets;
+        return registeredSockets;
     }
 
     @Override

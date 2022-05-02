@@ -1,10 +1,6 @@
 package com.hazelcast.tpc.engine.frame;
 
-public class UnpooledFrameAllocator implements FrameAllocator {
-
-    public UnpooledFrameAllocator(int i) {
-
-    }
+public final class UnpooledFrameAllocator implements FrameAllocator {
 
     public UnpooledFrameAllocator() {
     }

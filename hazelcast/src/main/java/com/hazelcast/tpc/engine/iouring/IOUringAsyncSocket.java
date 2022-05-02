@@ -244,7 +244,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
                 }
             }
 
-            eventloop.removeSocket(this);
+            eventloop.deregisterSocket(this);
         }
     }
 

@@ -52,6 +52,13 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
     private EpollReadHandler readHandler;
 
+    private EpollAsyncSocket(){
+    }
+
+
+    public EpollAsyncSocket(LinuxSocket socket) {
+    }
+
 
     @Override
     public void activate(Eventloop eventloop) {
@@ -240,7 +247,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
                 }
             }
 
-            eventloop.removeSocket(this);
+            eventloop.deregisterSocket(this);
         }
     }
 

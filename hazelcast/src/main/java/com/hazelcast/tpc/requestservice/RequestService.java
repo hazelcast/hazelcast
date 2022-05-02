@@ -331,8 +331,6 @@ public class RequestService {
             return;
         }
 
-        System.out.println("response:"+response.refCount());
-
         try {
             Requests requests = requestsPerChannel.get(response.asyncSocket.getRemoteAddress());
             if (requests == null) {

@@ -62,9 +62,6 @@ public class StorageScheduler {
             FileScheduler requestsPerFile = new FileScheduler(fd);
             fileSchedulers.put(file, requestsPerFile);
             loop.completionListeners.put(fd, requestsPerFile);
-
-
-            loop.rin
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,6 +138,7 @@ public class StorageScheduler {
 
     public void scheduleLoad(File file, long offset, int length, RandomLoadOp op) {
         IoRequest ioRequest = reqAllocator.allocate();
+        ioRequest.op = op;
         ioRequest.file = file;
         ioRequest.offset = offset;
         ioRequest.length = length;
