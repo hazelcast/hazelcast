@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -55,38 +56,45 @@ class PojoUpsertTarget implements UpsertTarget {
 
         Method method = ReflectionUtils.findPropertySetter(clazz, path, typesByPaths.get(path));
         if (method != null) {
-            return createMethodInjector(method);
+            return createMethodInjector(method, type);
         } else {
             Field field = ReflectionUtils.findPropertyField(clazz, path);
             if (field != null) {
-                return createFieldInjector(field);
+                return createFieldInjector(field, type);
             } else {
                 return createFailingInjector(path);
             }
         }
     }
 
-    private UpsertInjector createMethodInjector(@Nonnull Method method) {
+    private UpsertInjector createMethodInjector(@Nonnull Method method, QueryDataType targetType) {
         return value -> {
             if (value == null && method.getParameterTypes()[0].isPrimitive()) {
                 throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + method);
             }
             try {
-                // TODO: use nested fields injector if need be
-                method.invoke(pojo, value);
+                if (value instanceof RowValue) {
+                    method.invoke(pojo, UpsertTargetUtils.convertRowToTargetType(value, targetType));
+                } else {
+                    method.invoke(pojo, value);
+                }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw QueryException.error("Invocation of '" + method + "' failed: " + e, e);
             }
         };
     }
 
-    private UpsertInjector createFieldInjector(@Nonnull Field field) {
+    private UpsertInjector createFieldInjector(@Nonnull Field field, QueryDataType targetType) {
         return value -> {
             if (value == null && field.getType().isPrimitive()) {
                 throw QueryException.error("Cannot set NULL to a primitive field: " + field);
             }
             try {
-                field.set(pojo, value);
+                if (value instanceof RowValue) {
+                    field.set(pojo, UpsertTargetUtils.convertRowToTargetType(value, targetType));
+                } else {
+                    field.set(pojo, value);
+                }
             } catch (IllegalAccessException e) {
                 throw QueryException.error("Failed to set field " + field + ": " + e, e);
             }

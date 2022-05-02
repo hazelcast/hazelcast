@@ -288,8 +288,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 final String fieldTypeName = in.readString();
                 final String fieldTypeClassName = in.readString();
 
-                if (fieldConverterId == QueryDataType.OBJECT.getConverter().getId() &&
-                        (fieldTypeName != null && !fieldTypeName.isEmpty())) {
+                if (fieldConverterId == QueryDataType.OBJECT.getConverter().getId()
+                        && (fieldTypeName != null && !fieldTypeName.isEmpty())) {
                     currentType.getFields().add(new QueryDataTypeField(fieldName,
                             nestedTypes.computeIfAbsent(fieldTypeName, s -> {
                                 // TODO: simplify?

@@ -24,7 +24,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -224,12 +223,11 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_mixedModeUpsert() {
         typesStorage().registerType("NestedType", NestedPOJO.class);
         createMapping("test", Long.class, RegularPOJO.class);
 
-        instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', (1, 'child'))");
+        instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', (CAST(1 AS BIGINT), 'child'))");
     }
 
     private TypesStorage typesStorage() {
@@ -531,8 +529,14 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
         @Override
         public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
             final RegularPOJO that = (RegularPOJO) o;
             return Objects.equals(name, that.name) && Objects.equals(child, that.child);
         }
@@ -573,8 +577,14 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
         @Override
         public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
             final NestedPOJO that = (NestedPOJO) o;
             return Objects.equals(id, that.id) && Objects.equals(name, that.name);
         }

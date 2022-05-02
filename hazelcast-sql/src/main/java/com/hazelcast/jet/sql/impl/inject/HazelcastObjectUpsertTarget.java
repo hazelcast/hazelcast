@@ -16,15 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.jet.impl.util.ReflectionUtils;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+
+import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToTargetType;
 
 public class HazelcastObjectUpsertTarget implements UpsertTarget {
     private Object object;
@@ -40,67 +36,6 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
         return value -> {
             this.object = convertRowToTargetType(value, queryDataType);
         };
-    }
-
-    // TODO: migrate to shared utility class, use converters
-    private Object convertRowToTargetType(final Object value, final QueryDataType type) {
-        final Class<?> targetClass = ReflectionUtils.loadClass(type.getTypeClassName());
-        if (value.getClass().isAssignableFrom(targetClass)) {
-            return value;
-        }
-
-        if (!(value instanceof RowValue)) {
-            throw QueryException.error("Can not assign value of class " + value.getClass().getName()
-                    + " to OBJECT field.");
-        }
-
-        final RowValue rowValue = (RowValue) value;
-        final Object result = ReflectionUtils.newInstance(
-                Thread.currentThread().getContextClassLoader(),
-                targetClass.getName()
-        );
-
-        for (int i = 0; i < type.getFields().size(); i++) {
-            final QueryDataType.QueryDataTypeField typeField = type.getFields().get(i);
-            final Class<?> typeFieldClass = getTypeFieldClass(typeField);
-
-            final Method setter = ReflectionUtils
-                    .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
-            final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
-                    ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
-                    : rowValue.getValues().get(i);
-
-            if (setter != null) {
-                try {
-                    setter.invoke(result, fieldValue);
-                    continue;
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw QueryException.error("Can not use setter for field " + typeField.getName(), e);
-                }
-            }
-
-            final Field field = ReflectionUtils.findPropertyField(targetClass, typeField.getName());
-            if (field == null) {
-                throw QueryException.error("Can not find field: " + typeField.getName());
-            }
-
-            try {
-                field.set(result, fieldValue);
-            } catch (IllegalAccessException e) {
-                throw QueryException.error("Can not set value for field " + typeField.getName(), e);
-            }
-        }
-
-        return result;
-    }
-
-    private Class<?> getTypeFieldClass(final QueryDataType.QueryDataTypeField typeField) {
-        final QueryDataType queryDataType = typeField.getDataType();
-        if (queryDataType.isCustomType()) {
-            return ReflectionUtils.loadClass(queryDataType.getTypeClassName());
-        } else {
-            return queryDataType.getConverter().getValueClass();
-        }
     }
 
     @Override

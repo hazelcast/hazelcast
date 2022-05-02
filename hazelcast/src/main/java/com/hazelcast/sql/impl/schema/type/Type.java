@@ -168,8 +168,9 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             }
 
             final QueryDataTypeFamily typeFamily = Converters.getConverter(converterId).getTypeFamily();
-            this.queryDataType = typeFamily.equals(QueryDataTypeFamily.OBJECT) &&
-                    ((typeName != null && !typeName.isEmpty()) || className != null && !className.isEmpty())
+            this.queryDataType = typeFamily.equals(QueryDataTypeFamily.OBJECT)
+                    && ((typeName != null && !typeName.isEmpty()) || className != null
+                    && !className.isEmpty())
                     ? new QueryDataType(typeName, this.className)
                     : QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily);
         }

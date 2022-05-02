@@ -40,8 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-
 public class SqlExtendedInsert extends SqlInsert {
 
     private final SqlNodeList extendedKeywords;
@@ -133,6 +131,7 @@ public class SqlExtendedInsert extends SqlInsert {
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
                     // TODO: reevaluate
                     //throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
+                    continue;
                 }
             }
         }
