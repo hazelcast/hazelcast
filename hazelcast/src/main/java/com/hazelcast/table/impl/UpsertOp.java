@@ -1,12 +1,12 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.requestservice.Op;
-import com.hazelcast.spi.impl.requestservice.OpCodes;
+import com.hazelcast.tpc.requestservice.Op;
+import com.hazelcast.tpc.requestservice.OpCodes;
 import com.hazelcast.table.Item;
 
 import java.util.Map;
 
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
 public final class UpsertOp extends Op {
 

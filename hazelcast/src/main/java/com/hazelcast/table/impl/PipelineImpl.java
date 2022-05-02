@@ -1,8 +1,8 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.engine.frame.Frame;
-import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import com.hazelcast.spi.impl.requestservice.RequestService;
+import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.table.Pipeline;
 
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.impl.requestservice.OpCodes.NOOP;
+import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
 
 
 // todo: we don't need a frame for all the requests. We should just add to an existing frame.

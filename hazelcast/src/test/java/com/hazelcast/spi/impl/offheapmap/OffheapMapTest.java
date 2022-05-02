@@ -1,9 +1,13 @@
 package com.hazelcast.spi.impl.offheapmap;
 
-import com.hazelcast.spi.impl.engine.frame.Frame;
+import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.tpc.offheapmap.Bin;
+import com.hazelcast.tpc.offheapmap.Bout;
+import com.hazelcast.tpc.offheapmap.OffheapAllocator;
+import com.hazelcast.tpc.offheapmap.OffheapMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

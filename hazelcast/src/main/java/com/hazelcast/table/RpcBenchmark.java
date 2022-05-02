@@ -2,15 +2,15 @@ package com.hazelcast.table;
 
 
 import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.spi.impl.engine.Eventloop;
-import com.hazelcast.spi.impl.engine.Scheduler;
-import com.hazelcast.spi.impl.engine.frame.Frame;
-import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import com.hazelcast.spi.impl.engine.frame.NonConcurrentPooledFrameAllocator;
-import com.hazelcast.spi.impl.engine.nio.NioAsyncServerSocket;
-import com.hazelcast.spi.impl.engine.nio.NioAsyncSocket;
-import com.hazelcast.spi.impl.engine.nio.NioEventloop;
-import com.hazelcast.spi.impl.engine.nio.NioReadHandler;
+import com.hazelcast.tpc.engine.Eventloop;
+import com.hazelcast.tpc.engine.Scheduler;
+import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
+import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
+import com.hazelcast.tpc.engine.nio.NioEventloop;
+import com.hazelcast.tpc.engine.nio.NioReadHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;

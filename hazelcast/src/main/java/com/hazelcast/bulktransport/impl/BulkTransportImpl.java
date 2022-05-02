@@ -2,17 +2,17 @@ package com.hazelcast.bulktransport.impl;
 
 import com.hazelcast.bulktransport.BulkTransport;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.engine.AsyncSocket;
-import com.hazelcast.spi.impl.engine.frame.Frame;
-import com.hazelcast.spi.impl.engine.frame.FrameAllocator;
-import com.hazelcast.spi.impl.requestservice.RequestService;
+import com.hazelcast.tpc.engine.AsyncSocket;
+import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.requestservice.RequestService;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.spi.impl.requestservice.OpCodes.BULK_TRANSPORT;
-import static com.hazelcast.spi.impl.requestservice.OpCodes.INIT_BULK_TRANSPORT;
+import static com.hazelcast.tpc.requestservice.OpCodes.BULK_TRANSPORT;
+import static com.hazelcast.tpc.requestservice.OpCodes.INIT_BULK_TRANSPORT;
 import static java.util.concurrent.CompletableFuture.allOf;
 
 public class BulkTransportImpl implements BulkTransport {

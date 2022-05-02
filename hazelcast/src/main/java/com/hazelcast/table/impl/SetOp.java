@@ -1,11 +1,11 @@
 package com.hazelcast.table.impl;
 
-import com.hazelcast.spi.impl.offheapmap.Bin;
-import com.hazelcast.spi.impl.offheapmap.OffheapMap;
-import com.hazelcast.spi.impl.requestservice.Op;
-import com.hazelcast.spi.impl.requestservice.OpCodes;
+import com.hazelcast.tpc.offheapmap.Bin;
+import com.hazelcast.tpc.offheapmap.OffheapMap;
+import com.hazelcast.tpc.requestservice.Op;
+import com.hazelcast.tpc.requestservice.OpCodes;
 
-import static com.hazelcast.spi.impl.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 
 public final class SetOp extends Op {
 

@@ -28,7 +28,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.engine.AsyncSocket;
+import com.hazelcast.tpc.engine.AsyncSocket;
 
 import java.io.EOFException;
 import java.net.InetAddress;
