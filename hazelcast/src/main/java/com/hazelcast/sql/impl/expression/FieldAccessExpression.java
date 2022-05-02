@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
@@ -48,9 +49,16 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
-        final Object res = row.get(index);
+        Object res = row.get(index);
         if (isPrimitive(res.getClass())) {
             throw QueryException.error("Field Access expression can not be applied to primitive types");
+        }
+
+        if (res instanceof LazyTarget) {
+            LazyTarget lazyTarget = (LazyTarget) res;
+            res = lazyTarget.getDeserialized() != null
+                    ? lazyTarget.getDeserialized()
+                    : lazyTarget.deserialize(context.getSerializationService());
         }
 
         try {

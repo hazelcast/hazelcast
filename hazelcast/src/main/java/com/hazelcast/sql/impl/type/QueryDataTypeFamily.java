@@ -23,7 +23,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DOUBLE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_HZ_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTERVAL_YEAR_MONTH;
@@ -41,7 +40,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DECIMAL;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_HZ_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_JSON;
@@ -78,8 +76,7 @@ public enum QueryDataTypeFamily {
     INTERVAL_DAY_SECOND(TYPE_LEN_INTERVAL_DAY_SECOND, PRECEDENCE_INTERVAL_DAY_SECOND, null),
     MAP(TYPE_LEN_MAP, PRECEDENCE_MAP, null),
     JSON(TYPE_LEN_JSON, PRECEDENCE_JSON, SqlColumnType.JSON),
-    ROW(TYPE_LEN_ROW, PRECEDENCE_ROW, SqlColumnType.ROW),
-    HZ_OBJECT(TYPE_LEN_HZ_OBJECT, PRECEDENCE_HZ_OBJECT, SqlColumnType.HZ_OBJECT);
+    ROW(TYPE_LEN_ROW, PRECEDENCE_ROW, SqlColumnType.ROW);
 
     private final int estimatedSize;
     private final int precedence;

@@ -88,19 +88,23 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             TypesStorage typesStorage
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             type = resolveDataType(clazz, typesStorage);
         }
 
-        if (type != QueryDataType.OBJECT) {
+        if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
-            return resolveObjectSchema(isKey, userFields, clazz);
+            return resolveObjectSchema(isKey, userFields, clazz, typesStorage);
         }
     }
 
     private QueryDataType resolveDataType(final Class<?> clazz, final TypesStorage typesStorage) {
         final Type rootType = typesStorage.getTypeByClass(clazz);
+        if (rootType == null) {
+            return QueryDataType.OBJECT;
+        }
+
         final Map<String, QueryDataType> discoveredTypes = new HashMap<>();
 
         traverseTypeHierarchy(rootType, discoveredTypes, typesStorage);
@@ -117,7 +121,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
         for (int i = 0; i < current.getFields().size(); i++) {
             final Type.TypeField field = current.getFields().get(i);
-            if (field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            if (field.getQueryDataType().isCustomType()) {
                 final String fieldTypeName = field.getQueryDataType().getTypeName();
                 if (!discovered.containsKey(fieldTypeName)) {
                     traverseTypeHierarchy(tablesStorage.getType(fieldTypeName), discovered, tablesStorage);
@@ -132,7 +136,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             queryDataType.setTypeClassName(type.getJavaClassName());
             for (int i = 0; i < type.getFields().size(); i++) {
                 final Type.TypeField field = type.getFields().get(i);
-                if (field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+                if (field.getQueryDataType().isCustomType()) {
                     queryDataType.getFields().add(new QueryDataType.QueryDataTypeField(
                             field.getName(),
                             types.get(field.getQueryDataType().getTypeName())
@@ -193,13 +197,18 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         return userFieldsByPath.values().stream();
     }
 
-    private Stream<MappingField> resolveObjectSchema(boolean isKey, List<MappingField> userFields, Class<?> clazz) {
+    private Stream<MappingField> resolveObjectSchema(
+            boolean isKey,
+            List<MappingField> userFields,
+            Class<?> clazz,
+            TypesStorage typesStorage
+    ) {
         return userFields.isEmpty()
-                ? resolveObjectFields(isKey, clazz)
-                : resolveAndValidateObjectFields(isKey, userFields, clazz);
+                ? resolveObjectFields(isKey, clazz, typesStorage)
+                : resolveAndValidateObjectFields(isKey, userFields, clazz, typesStorage);
     }
 
-    private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> clazz) {
+    private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> clazz, TypesStorage typesStorage) {
         Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(clazz);
         if (fieldsInClass.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
@@ -211,6 +220,9 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 .map(classField -> {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
+                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                        type = resolveDataType(classField.getValue(), typesStorage);
+                    }
                     String name = classField.getKey();
 
                     return new MappingField(name, type, path.toString());
@@ -222,12 +234,17 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     private Stream<MappingField> resolveAndValidateObjectFields(
             boolean isKey,
             List<MappingField> userFields,
-            Class<?> clazz
+            Class<?> clazz,
+            TypesStorage typesStorage
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         for (Entry<String, Class<?>> classField : FieldsUtil.resolveClass(clazz).entrySet()) {
             QueryPath path = new QueryPath(classField.getKey(), isKey);
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
+
+            if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                type = resolveDataType(classField.getValue(), typesStorage);
+            }
 
             MappingField userField = userFieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
@@ -248,19 +265,23 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             TypesStorage typesStorage
     ) {
         Class<?> clazz = loadClass(isKey, options);
-        // TODO: typeStorages wiring?
-        return resolveMetadata(isKey, resolvedFields, clazz);
+        return resolveMetadata(isKey, resolvedFields, clazz, typesStorage);
     }
 
     public KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
-            Class<?> clazz
+            Class<?> clazz,
+            TypesStorage typesStorage
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
-        if (type != QueryDataType.OBJECT) {
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+            type = resolveDataType(clazz, typesStorage);
+        }
+
+        if (type != QueryDataType.OBJECT || type.isCustomType()) {
             return resolvePrimitiveMetadata(isKey, resolvedFields, fields, type);
         } else {
             return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);
@@ -281,7 +302,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, type);
 
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+        if (type.isCustomType()) {
             return new KvMetadata(
                     fields,
                     GenericQueryTargetDescriptor.DEFAULT,

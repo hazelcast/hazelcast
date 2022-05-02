@@ -20,7 +20,6 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -43,16 +42,16 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
         };
     }
 
+    // TODO: migrate to shared utility class, use converters
     private Object convertRowToTargetType(final Object value, final QueryDataType type) {
         final Class<?> targetClass = ReflectionUtils.loadClass(type.getTypeClassName());
         if (value.getClass().isAssignableFrom(targetClass)) {
-            object = value;
             return value;
         }
 
         if (!(value instanceof RowValue)) {
             throw QueryException.error("Can not assign value of class " + value.getClass().getName()
-                    + " to HZ_OBJECT field.");
+                    + " to OBJECT field.");
         }
 
         final RowValue rowValue = (RowValue) value;
@@ -97,7 +96,7 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
 
     private Class<?> getTypeFieldClass(final QueryDataType.QueryDataTypeField typeField) {
         final QueryDataType queryDataType = typeField.getDataType();
-        if (queryDataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+        if (queryDataType.isCustomType()) {
             return ReflectionUtils.loadClass(queryDataType.getTypeClassName());
         } else {
             return queryDataType.getConverter().getValueClass();

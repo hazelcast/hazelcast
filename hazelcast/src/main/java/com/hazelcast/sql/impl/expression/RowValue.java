@@ -20,14 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowValue implements Serializable, HazelcastObjectMarker, IdentifiedDataSerializable {
+public class RowValue implements Serializable, IdentifiedDataSerializable {
     private List<Object> values;
 
     public RowValue() {

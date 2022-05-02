@@ -95,7 +95,6 @@ public final class HazelcastTypeUtils {
 
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, OTHER);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.HZ_OBJECT, OTHER);
         // TODO: proper conversion
         HZ_TO_CALCITE.put(QueryDataTypeFamily.ROW, ROW);
         CALCITE_TO_HZ.put(ROW, QueryDataType.ROW);

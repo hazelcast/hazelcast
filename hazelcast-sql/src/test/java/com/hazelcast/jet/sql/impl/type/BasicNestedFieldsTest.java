@@ -21,10 +21,10 @@ import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -207,6 +207,31 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         assertRowsAnyOrder("SELECT public.public.this.name, public.public.this.b.name, public.public.this.b.c.name FROM public", rows(3, "a_2", "b_2", "c_2"));
     }
 
+    @Test
+    public void test_mixedModeQuerying() {
+        typesStorage().registerType("NestedType", NestedPOJO.class);
+        createMapping("test", Long.class, RegularPOJO.class);
+
+        instance().getMap("test")
+                .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
+
+        assertRowsAnyOrder("SELECT name, test.child.name FROM test", rows(2,
+                "parentPojo",
+                "childPojo"
+        ));
+
+        assertRowsAnyOrder("SELECT child FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+    }
+
+    @Test
+    @Ignore
+    public void test_mixedModeUpsert() {
+        typesStorage().registerType("NestedType", NestedPOJO.class);
+        createMapping("test", Long.class, RegularPOJO.class);
+
+        instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', (1, 'child'))");
+    }
+
     private TypesStorage typesStorage() {
         return new TypesStorage(((HazelcastInstanceProxy) instance()).getOriginal().node.nodeEngine);
     }
@@ -236,7 +261,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         instance().getSql().execute(sql, args);
     }
 
-    public static class A implements Serializable, HazelcastObjectMarker {
+    public static class A implements Serializable {
         public String name;
         public B b;
 
@@ -247,7 +272,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class B implements Serializable, HazelcastObjectMarker {
+    public static class B implements Serializable {
         public String name;
         public C c;
 
@@ -258,7 +283,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class C implements Serializable, HazelcastObjectMarker {
+    public static class C implements Serializable {
         public String name;
         public A a;
 
@@ -269,7 +294,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class SelfRef implements Serializable, HazelcastObjectMarker {
+    public static class SelfRef implements Serializable {
         public Long id;
         public String name;
         public SelfRef other;
@@ -282,7 +307,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class User implements Serializable, HazelcastObjectMarker {
+    public static class User implements Serializable {
         private Long id;
         private String name;
         private Organization organization;
@@ -348,7 +373,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Organization implements Serializable, Comparable<Organization>, HazelcastObjectMarker {
+    public static class Organization implements Serializable, Comparable<Organization> {
         private Long id;
         private String name;
         private Office office;
@@ -419,7 +444,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Office implements Serializable, Comparable<Office>, HazelcastObjectMarker {
+    public static class Office implements Serializable, Comparable<Office> {
         private Long id;
         private String name;
 
@@ -474,6 +499,89 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
                     "id=" + id +
                     ", name='" + name + '\'' +
                     '}';
+        }
+    }
+
+    public static class RegularPOJO implements Serializable {
+        private String name;
+        private NestedPOJO child;
+
+        public RegularPOJO() { }
+
+        public RegularPOJO(final String name, final NestedPOJO child) {
+            this.name = name;
+            this.child = child;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public NestedPOJO getChild() {
+            return child;
+        }
+
+        public void setChild(final NestedPOJO child) {
+            this.child = child;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final RegularPOJO that = (RegularPOJO) o;
+            return Objects.equals(name, that.name) && Objects.equals(child, that.child);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, child);
+        }
+    }
+
+    public static class NestedPOJO implements Serializable {
+        private Long id;
+        private String name;
+
+        public NestedPOJO() {
+        }
+
+        public NestedPOJO(final Long id, final String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final NestedPOJO that = (NestedPOJO) o;
+            return Objects.equals(id, that.id) && Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name);
         }
     }
 }

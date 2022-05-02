@@ -70,7 +70,6 @@ public final class ToConverters {
         converters.put(QueryDataType.OBJECT, new ToCanonicalConverter(QueryDataType.OBJECT));
         converters.put(QueryDataType.JSON, new ToCanonicalConverter(QueryDataType.JSON));
         converters.put(QueryDataType.ROW, new ToCanonicalConverter(QueryDataType.ROW));
-        converters.put(QueryDataType.HZ_OBJECT, new ToCanonicalConverter(QueryDataType.HZ_OBJECT));
 
         return converters;
     }

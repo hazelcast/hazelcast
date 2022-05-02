@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,9 +69,6 @@ public final class Converters {
         if (res == null) {
             if (Calendar.class.isAssignableFrom(clazz)) {
                 res = CalendarConverter.INSTANCE;
-            } else if (HazelcastObjectMarker.class.isAssignableFrom(clazz)) {
-                res = HazelcastObjectConverter.INSTANCE;
-                // TODO: RowConverter
             } else {
                 res = ObjectConverter.INSTANCE;
             }
@@ -142,9 +138,6 @@ public final class Converters {
 
         // ROW converter
         converters.add(RowConverter.INSTANCE);
-
-        // HZ OBJECT converter
-        converters.add(HazelcastObjectConverter.INSTANCE);
 
         return converters;
     }

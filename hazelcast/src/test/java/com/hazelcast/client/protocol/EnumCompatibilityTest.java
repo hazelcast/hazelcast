@@ -215,7 +215,6 @@ public class EnumCompatibilityTest {
         mappings.put(SqlColumnType.NULL, 14);
         mappings.put(SqlColumnType.JSON, 15);
         mappings.put(SqlColumnType.ROW, 16);
-        mappings.put(SqlColumnType.HZ_OBJECT, 17);
         verifyCompatibility(SqlColumnType.values(), SqlColumnType::getId, mappings);
     }
 

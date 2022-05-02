@@ -31,7 +31,6 @@ import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.DateConverter;
 import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
-import com.hazelcast.sql.impl.type.converter.HazelcastObjectConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
 import com.hazelcast.sql.impl.type.converter.IntervalConverter;
@@ -99,7 +98,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
-    public static final QueryDataType HZ_OBJECT = new QueryDataType("");
 
     private Converter converter;
     private String typeName = "";
@@ -111,12 +109,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     }
 
     public QueryDataType(String typeName) {
-        this.converter = HazelcastObjectConverter.INSTANCE;
+        this.converter = ObjectConverter.INSTANCE;
         this.typeName = typeName;
     }
 
     public QueryDataType(String typeName, String typeClassName) {
-        this.converter = HazelcastObjectConverter.INSTANCE;
+        this.converter = ObjectConverter.INSTANCE;
         this.typeName = typeName;
         this.typeClassName = typeClassName;
     }
@@ -216,15 +214,19 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
         // TODO this needs to be backwards-compatible, it's stored as a part of MappingField in the catalog
-        if (!getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+            return;
+        }
+        out.writeString(typeName);
+        out.writeString(typeClassName);
+
+        if (!isCustomType()) {
             return;
         }
 
         final Map<String, QueryDataType> nestedTypes = new HashMap<>();
         collectNestedTypes(this, nestedTypes);
 
-        out.writeString(typeName);
-        out.writeString(typeClassName);
         out.writeInt(nestedTypes.size());
         for (final QueryDataType nestedType : nestedTypes.values()) {
             out.writeString(nestedType.typeName);
@@ -243,7 +245,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         collected.putIfAbsent(dataType.typeName, dataType);
 
         for (final QueryDataTypeField field : dataType.fields) {
-            if (field.dataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+            if (field.getDataType().isCustomType()) {
                 if (!collected.containsKey(field.dataType.typeName)) {
                     collectNestedTypes(field.dataType, collected);
                 }
@@ -253,15 +255,18 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        converter = Converters.getConverter(in.readInt());
-        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
+        this.converter = Converters.getConverter(in.readInt());
+        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             return;
         }
 
         this.typeName = in.readString();
         this.typeClassName = in.readString();
-        this.fields = new ArrayList<>();
+        if (!isCustomType()) {
+            return;
+        }
 
+        this.fields = new ArrayList<>();
         final int typeMapSize = in.readInt();
         final Map<String, QueryDataType> nestedTypes = new HashMap<>();
         nestedTypes.put(typeName, this);
@@ -283,7 +288,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 final String fieldTypeName = in.readString();
                 final String fieldTypeClassName = in.readString();
 
-                if (fieldConverterId == QueryDataType.HZ_OBJECT.getConverter().getId()) {
+                if (fieldConverterId == QueryDataType.OBJECT.getConverter().getId() &&
+                        (fieldTypeName != null && !fieldTypeName.isEmpty())) {
                     currentType.getFields().add(new QueryDataTypeField(fieldName,
                             nestedTypes.computeIfAbsent(fieldTypeName, s -> {
                                 // TODO: simplify?
@@ -302,11 +308,19 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public int hashCode() {
-        return 31 * converter.getId();
+        // TODO: proper hashcode
+        if (converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+            return 31 * converter.getId();
+        } else if (converter.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+            return 31 * converter.getId();
+        } else {
+            return 31 * converter.getId();
+        }
     }
 
     @Override
     public boolean equals(Object o) {
+        // TODO: proper equals
         if (this == o) {
             return true;
         }
@@ -317,12 +331,23 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         QueryDataType type = (QueryDataType) o;
 
-        return converter.getId() == type.converter.getId();
+        if (converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+            return converter.getId() == type.converter.getId();
+        } else if (converter.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+            return converter.getId() == type.converter.getId();
+        } else {
+            return converter.getId() == type.converter.getId();
+        }
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
+    }
+
+    public boolean isCustomType() {
+        return this.converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
+                && (!this.typeName.isEmpty() || !this.typeClassName.isEmpty());
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {

@@ -96,7 +96,6 @@ public class ConvertersTest {
 
         checkGetById(ObjectConverter.INSTANCE);
         checkGetById(JsonConverter.INSTANCE);
-        checkGetById(HazelcastObjectConverter.INSTANCE);
         checkGetById(RowConverter.INSTANCE);
 
         checkGetById(NullConverter.INSTANCE);

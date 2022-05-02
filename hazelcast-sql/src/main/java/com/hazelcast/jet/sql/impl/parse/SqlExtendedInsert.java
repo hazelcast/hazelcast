@@ -131,7 +131,8 @@ public class SqlExtendedInsert extends SqlInsert {
                 QueryPath path = ((MapTableField) field).getPath();
                 if (path.getPath() == null
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
-                    throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
+                    // TODO: reevaluate
+                    //throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
                 }
             }
         }

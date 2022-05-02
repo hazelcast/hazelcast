@@ -54,8 +54,6 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         // changes the observed type of a column to a canonical one.
         if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             return new ColumnExpression<>(index, type);
-        } else if (type.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT)) {
-            return new ColumnExpression<>(index, type);
         } else {
             Class<?> canonicalClass = type.getConverter().getNormalizedValueClass();
             QueryDataType canonicalType = QueryDataTypeUtils.resolveTypeForClass(canonicalClass);

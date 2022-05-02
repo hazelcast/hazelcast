@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
-import com.hazelcast.sql.impl.type.HazelcastObjectMarker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -157,7 +156,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
         return new TypesStorage(((HazelcastInstanceProxy) instance()).getOriginal().node.nodeEngine);
     }
 
-    public static class FullyConnectedA implements HazelcastObjectMarker, Serializable {
+    public static class FullyConnectedA implements Serializable {
         private String name;
         private FullyConnectedB b;
         private FullyConnectedC c;
@@ -193,7 +192,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class FullyConnectedB implements HazelcastObjectMarker, Serializable {
+    public static class FullyConnectedB implements Serializable {
         private String name;
         private FullyConnectedA a;
         private FullyConnectedC c;
@@ -229,7 +228,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class FullyConnectedC implements HazelcastObjectMarker, Serializable {
+    public static class FullyConnectedC implements Serializable {
         private String name;
         private FullyConnectedA a;
         private FullyConnectedB b;
@@ -265,7 +264,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class DualPathGraph implements HazelcastObjectMarker, Serializable {
+    public static class DualPathGraph implements Serializable {
         private String name;
         private DualPathGraph left;
         private DualPathGraph right;

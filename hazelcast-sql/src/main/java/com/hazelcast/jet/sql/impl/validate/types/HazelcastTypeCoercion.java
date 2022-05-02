@@ -200,10 +200,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return true;
         }
 
-        if (targetHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT) &&
-                (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
-                        sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT))) {
-
+        if (targetHzType.isCustomType() && (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
+                sourceHzType.isCustomType())) {
             return customTypesCompatible(sourceType, targetType);
         }
 

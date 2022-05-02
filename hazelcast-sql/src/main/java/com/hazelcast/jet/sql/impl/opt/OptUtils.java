@@ -345,6 +345,8 @@ public final class OptUtils {
 
         if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType, typeFactory);
+        } else if (fieldType.isCustomType()) {
+            return convertUserDefinedType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
@@ -368,13 +370,12 @@ public final class OptUtils {
         final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
         typeMap.put(type.getTypeName(), typeRef);
 
-        // TODO: test_deepUpdate typeMap size() can be bigger than the number of entries
         for (int i = 0; i < type.getFields().size(); i++) {
             final String fieldName = type.getFields().get(i).getName();
             final QueryDataType fieldType = type.getFields().get(i).getDataType();
 
             RelDataType fieldRelDataType;
-            if (isUserDefinedType(fieldType)) {
+            if (fieldType.isCustomType()) {
                 fieldRelDataType = typeMap.get(fieldType.getTypeName());
                 if (fieldRelDataType == null) {
                     convertUserDefinedTypeRecursively(fieldType, typeFactory, typeMap);
@@ -390,17 +391,11 @@ public final class OptUtils {
         typeRef.setOriginal(new HazelcastObjectType(type.getTypeName(), fields));
     }
 
-    private static boolean isUserDefinedType(final QueryDataType queryDataType) {
-        return queryDataType.getTypeFamily().equals(QueryDataTypeFamily.HZ_OBJECT) &&
-                !queryDataType.getTypeName().isEmpty();
-    }
 
     private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
                 return HazelcastJsonType.create(true);
-            case HZ_OBJECT:
-                return convertUserDefinedType(fieldType, typeFactory);
             default:
                 throw new IllegalStateException("Unexpected type family: " + fieldType);
         }

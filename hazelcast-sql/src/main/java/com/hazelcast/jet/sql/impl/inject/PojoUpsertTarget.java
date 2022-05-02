@@ -72,6 +72,7 @@ class PojoUpsertTarget implements UpsertTarget {
                 throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + method);
             }
             try {
+                // TODO: use nested fields injector if need be
                 method.invoke(pojo, value);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw QueryException.error("Invocation of '" + method + "' failed: " + e, e);
