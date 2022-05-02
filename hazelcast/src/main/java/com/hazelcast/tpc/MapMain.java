@@ -1,7 +1,8 @@
-package com.hazelcast.table;
+package com.hazelcast.tpc;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.table.Table;
 
 public class MapMain {
 

@@ -1,4 +1,4 @@
-package com.hazelcast.table;
+package com.hazelcast.tpc;
 
 
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -44,7 +44,6 @@ public class RpcBenchmark {
         NioAsyncSocket clientSocket = newClient(serverAddress, latch);
 
         System.out.println("Starting");
-
 
         long startMs = System.currentTimeMillis();
 

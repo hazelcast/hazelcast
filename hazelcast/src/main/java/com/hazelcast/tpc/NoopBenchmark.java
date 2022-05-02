@@ -1,9 +1,10 @@
-package com.hazelcast.table;
+package com.hazelcast.tpc;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.table.Table;
 
-public class Main {
+public class NoopBenchmark {
 
     public static void main(String[] args) throws Exception {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
