@@ -36,7 +36,9 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -57,17 +59,27 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoin_then_fail() {
+        public void when_streamToStreamJoin_then_success() {
             String stream1 = "stream1";
             String stream2 = "stream2";
-            TestStreamSqlConnector.create(sqlService, stream1, singletonList("a"), singletonList(INTEGER));
-            TestStreamSqlConnector.create(sqlService, stream2, singletonList("b"), singletonList(INTEGER));
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream1,
+                    singletonList("a"),
+                    singletonList(BIGINT),
+                    row(0L));
 
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                    row(timestampTz(0)));
 
-            assertThatThrownBy(() ->
-                    sqlService.execute(
-                            "SELECT * FROM " + stream1 + " AS s1, " + stream2 + " AS s2 WHERE s1.a = s2.b"
-                    )).hasMessageContaining("The right side of an INNER JOIN cannot be a streaming source");
+            assertTipOfStream(
+                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1",
+                    singletonList(new Row(0L, 0L))
+            );
         }
     }
 

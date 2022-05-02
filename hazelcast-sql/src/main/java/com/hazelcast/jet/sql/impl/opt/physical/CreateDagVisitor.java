@@ -47,6 +47,7 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
+import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -418,6 +419,32 @@ public class CreateDagVisitor {
                 )
         );
         connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
+    }
+
+    public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Stream-Stream Join",
+                StreamToStreamJoinP.supplier(
+                        joinInfo,
+                        rel.leftTimeExtractors(),
+                        rel.rightTimeExtractors(),
+                        rel.postponeTimeMap(),
+                        rel.getLeft().getRowType().getFieldCount(),
+                        rel.getRight().getRowType().getFieldCount())
+        );
+        // region DAG
+        Vertex leftInput = ((PhysicalRel) rel.getLeft()).accept(this);
+        Vertex rightInput = ((PhysicalRel) rel.getRight()).accept(this);
+
+        Edge left = Edge.from(leftInput).to(joinVertex, 0);
+        Edge right = Edge.from(rightInput).to(joinVertex, 1);
+
+        dag.edge(left);
+        dag.edge(right);
+        // endregion
+
         return joinVertex;
     }
 

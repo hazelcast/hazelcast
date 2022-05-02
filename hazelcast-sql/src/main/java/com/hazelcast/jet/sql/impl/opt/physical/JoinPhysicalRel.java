@@ -28,7 +28,7 @@ import org.apache.calcite.rex.RexNode;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
-public abstract class JoinPhysicalRel  extends Join implements PhysicalRel {
+public abstract class JoinPhysicalRel extends Join implements PhysicalRel {
 
     public JoinPhysicalRel(
             RelOptCluster cluster,
