@@ -6,7 +6,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.tpc.offheapmap.Bin;
 import com.hazelcast.tpc.offheapmap.Bout;
-import com.hazelcast.tpc.offheapmap.OffheapAllocator;
+import com.hazelcast.tpc.OffheapAllocator;
 import com.hazelcast.tpc.offheapmap.OffheapMap;
 import org.junit.After;
 import org.junit.Before;

@@ -1,4 +1,4 @@
-package com.hazelcast.tpc.offheapmap;
+package com.hazelcast.tpc;
 
 public interface Allocator {
 

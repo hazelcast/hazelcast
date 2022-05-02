@@ -1,6 +1,7 @@
 package com.hazelcast.tpc.offheapmap;
 
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
+import com.hazelcast.tpc.Allocator;
 import sun.misc.Unsafe;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
