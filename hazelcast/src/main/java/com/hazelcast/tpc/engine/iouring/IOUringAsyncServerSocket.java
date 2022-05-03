@@ -158,4 +158,8 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
             System.out.println(" ServerSocket listening at " + getLocalAddress());
         });
     }
+
+    public String toString() {
+        return "IOUringServerSocket(fd=" + serverSocket.intValue() + ")";
+    }
 }
