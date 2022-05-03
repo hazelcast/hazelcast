@@ -46,37 +46,35 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     @Test
     public void given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex() throws Exception {
+        Pipeline p = given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex_pipeline();
+        submitJob(p);
+        assertSingleDocument();
+    }
+
+    protected Pipeline given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex_pipeline() {
+        Pipeline p = Pipeline.create();
+
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
                 .clientFn(elasticClientSupplier())
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
                 .mapToRequestFn((TestItem item) -> new IndexRequest("my-index").source(item.asMap()))
                 .build();
 
-        Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem("id", "Frantisek")))
-         .writeTo(elasticSink);
+                .writeTo(elasticSink);
 
-        submitJob(p);
-
-        assertSingleDocument();
+        return p;
     }
 
     @Test
     public void given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex() throws IOException {
-        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .mapToRequestFn((TestItem item) -> new IndexRequest("my-index").source(item.asMap()))
-                .build();
-
         int batchSize = 10_000;
         TestItem[] items = new TestItem[batchSize];
         for (int i = 0; i < batchSize; i++) {
             items[i] = new TestItem("id" + i, "name" + i);
         }
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(items))
-         .writeTo(elasticSink);
 
+        Pipeline p = given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex_pipeline(items);
         submitJob(p);
         refreshIndex();
 
@@ -85,21 +83,42 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         assertThat(totalHits.value).isEqualTo(batchSize);
     }
 
+    protected Pipeline given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex_pipeline(
+            TestItem[] items) {
+        Pipeline p = Pipeline.create();
+
+        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .mapToRequestFn((TestItem item) -> new IndexRequest("my-index").source(item.asMap()))
+                .build();
+
+        p.readFrom(TestSources.items(items))
+                .writeTo(elasticSink);
+
+        return p;
+    }
+
     @Test
     public void given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex() throws Exception {
+        Pipeline p = given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex_pipeline();
+        submitJob(p);
+        refreshIndex();
+
+        assertSingleDocument();
+    }
+
+    protected Pipeline given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex_pipeline() {
+        Pipeline p = Pipeline.create();
+
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
                 item -> new IndexRequest("my-index").source(item.asMap())
         );
 
-        Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem("id", "Frantisek")))
-         .writeTo(elasticSink);
+                .writeTo(elasticSink);
 
-        submitJob(p);
-        refreshIndex();
-
-        assertSingleDocument();
+        return p;
     }
 
     @Test
@@ -108,19 +127,26 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
+        Pipeline p = given_documentInIndex_whenWriteToElasticSinkUpdateRequest_then_documentsInIndexUpdated_pipeline(id);
+        submitJob(p);
+        refreshIndex();
+
+        assertSingleDocument(id, "Frantisek");
+    }
+
+    protected Pipeline given_documentInIndex_whenWriteToElasticSinkUpdateRequest_then_documentsInIndexUpdated_pipeline(
+            String id) {
+        Pipeline p = Pipeline.create();
+
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
                 item -> new UpdateRequest("my-index", item.getId()).doc(item.asMap())
         );
 
-        Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem(id, "Frantisek")))
-         .writeTo(elasticSink);
+                .writeTo(elasticSink);
 
-        submitJob(p);
-        refreshIndex();
-
-        assertSingleDocument(id, "Frantisek");
+        return p;
     }
 
     @Test
@@ -129,19 +155,26 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
+        Pipeline p = given_documentInIndex_whenWriteToElasticSinkDeleteRequest_then_documentIsDeleted_pipeline(id);
+        submitJob(p);
+        refreshIndex();
+
+        assertNoDocuments("my-index");
+    }
+
+    protected Pipeline given_documentInIndex_whenWriteToElasticSinkDeleteRequest_then_documentIsDeleted_pipeline(
+            String id) {
+        Pipeline p = Pipeline.create();
+
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
                 (item) -> new DeleteRequest("my-index", item.getId())
         );
 
-        Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem(id, "Frantisek")))
-         .writeTo(elasticSink);
+                .writeTo(elasticSink);
 
-        submitJob(p);
-        refreshIndex();
-
-        assertNoDocuments("my-index");
+        return p;
     }
 
     /**
@@ -154,19 +187,26 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
     public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
         elasticClient.indices().create(new CreateIndexRequest("my-index"), RequestOptions.DEFAULT);
 
+        Pipeline p = given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail_pipeline();
+
+        assertThatThrownBy(() -> submitJob(p))
+                .hasRootCauseInstanceOf(JetException.class)
+                .hasStackTraceContaining("document missing");
+    }
+
+    protected Pipeline given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail_pipeline() {
+        Pipeline p = Pipeline.create();
+
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
                 .clientFn(elasticClientSupplier())
                 .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", item.getId()).doc(item.asMap()))
                 .retries(0)
                 .build();
 
-        Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem("notExist", "Frantisek")))
-         .writeTo(elasticSink);
+                .writeTo(elasticSink);
 
-        assertThatThrownBy(() -> submitJob(p))
-                .hasRootCauseInstanceOf(JetException.class)
-                .hasStackTraceContaining("document missing");
+        return p;
     }
 
     @Test
@@ -177,15 +217,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Frantisek");
         String id = indexDocument("my-index", doc);
 
-        Sink<String> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .mapToRequestFn((String item) -> new DeleteRequest("my-index", item))
-                .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
-                .build();
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(id))
-         .writeTo(elasticSink);
+        Pipeline p = documentInIndex_writeToElasticSinkDeleteRequestTwice_jobShouldFinishSuccessfully_pipeline(id);
 
         // Submit job 2x to delete non-existing document on 2nd run
         submitJob(p);
@@ -194,18 +226,34 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         assertNoDocuments("my-index");
     }
 
+    protected Pipeline documentInIndex_writeToElasticSinkDeleteRequestTwice_jobShouldFinishSuccessfully_pipeline(
+            String id) {
+        Pipeline p = Pipeline.create();
+
+        Sink<String> elasticSink = new ElasticSinkBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .mapToRequestFn((String item) -> new DeleteRequest("my-index", item))
+                .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
+                .build();
+
+        p.readFrom(TestSources.items(id))
+                .writeTo(elasticSink);
+
+        return p;
+    }
+
     private void refreshIndex() throws IOException {
         // Need to refresh index because the default bulk request doesn't do it and we may not see the result
         elasticClient.indices().refresh(new RefreshRequest("my-index"), DEFAULT);
     }
 
-    static class TestItem implements Serializable {
+    public static class TestItem implements Serializable {
 
         private static final long serialVersionUID = 1L;
         private final String id;
         private final String name;
 
-        TestItem(String id, String name) {
+        public TestItem(String id, String name) {
             this.id = id;
             this.name = name;
         }

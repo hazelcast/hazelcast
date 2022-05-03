@@ -58,6 +58,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index", of("name", "Frantisek"));
         deleteDocuments();
 
+        Pipeline p = given_emptyIndex_when_readFromElasticSource_then_finishWithNoResults_pipeline();
+        submitJob(p);
+
+        assertThat(results).isEmpty();
+    }
+
+    protected Pipeline given_emptyIndex_when_readFromElasticSource_then_finishWithNoResults_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -67,17 +74,21 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-
-        assertThat(results).isEmpty();
+        return p;
     }
 
     @Test
     public void given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
+        Pipeline p = given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult_pipeline();
+        submitJob(p);
+        assertThat(results).containsExactly("Frantisek");
+    }
+
+    protected Pipeline given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -87,16 +98,22 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsExactly("Frantisek");
+        return p;
     }
 
     @Test
     public void given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
+        Pipeline p = given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult_pipeline();
+
+        submitJob(p);
+        assertThat(results).containsExactly("Frantisek");
+    }
+
+    protected Pipeline given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = ElasticSources.elastic(
@@ -105,10 +122,9 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         );
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsExactly("Frantisek");
+        return p;
     }
 
     @Test
@@ -116,6 +132,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
+        Pipeline p = given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult_pipeline();
+
+        submitJob(p);
+        assertThat(results).containsExactly("Frantisek");
+    }
+
+    protected Pipeline given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = ElasticSources.elastic(
@@ -125,10 +148,9 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         );
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsExactly("Frantisek");
+        return p;
     }
 
     @Test
@@ -137,6 +159,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
         indexBatchOfDocuments("my-index");
 
+        Pipeline p = multipleDocuments_readFromElasticSourceWithScroll_resultHasAllDocuments_pipeline();
+
+        submitJob(p);
+        assertThat(results).hasSize(BATCH_SIZE);
+    }
+
+    protected Pipeline multipleDocuments_readFromElasticSourceWithScroll_resultHasAllDocuments_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -145,17 +174,16 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                     SearchRequest sr = new SearchRequest("my-index");
 
                     sr.source().size(10) // needs to scroll 5 times
-                      .query(matchAllQuery());
+                            .query(matchAllQuery());
                     return sr;
                 })
                 .mapToItemFn(SearchHit::getSourceAsString)
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).hasSize(BATCH_SIZE);
+        return p;
     }
 
     @Test
@@ -163,6 +191,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
+        Pipeline p = multipleIndexes_readFromElasticSourceWithIndexWildcard_resultDocumentsFromAllIndexes_pipeline();
+
+        submitJob(p);
+        assertThat(results).containsOnlyOnce("Frantisek", "Vladimir");
+    }
+
+    protected Pipeline multipleIndexes_readFromElasticSourceWithIndexWildcard_resultDocumentsFromAllIndexes_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -172,10 +207,9 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsOnlyOnce("Frantisek", "Vladimir");
+        return p;
     }
 
     @Test
@@ -183,6 +217,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
+        Pipeline p = multipleIndexes_readFromElasticSourceWithIndex_resultHasNoDocumentFromOtherIndex_pipeline();
+
+        submitJob(p);
+        assertThat(results).containsOnlyOnce("Frantisek");
+    }
+
+    protected Pipeline multipleIndexes_readFromElasticSourceWithIndex_resultHasNoDocumentFromOtherIndex_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -192,10 +233,9 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsOnlyOnce("Frantisek");
+        return p;
     }
 
     @Test
@@ -203,26 +243,39 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index", of("name", "Frantisek"));
         indexDocument("my-index", of("name", "Vladimir"));
 
+        Pipeline p = given_documents_when_readFromElasticSourceWithQuery_then_resultHasMatchingDocuments_pipeline();
+
+        submitJob(p);
+        assertThat(results).containsOnlyOnce("Frantisek");
+    }
+
+    protected Pipeline given_documents_when_readFromElasticSourceWithQuery_then_resultHasMatchingDocuments_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticClientSupplier())
                 .searchRequestFn(() -> new SearchRequest("my-index")
-                        .source(new SearchSourceBuilder().query(QueryBuilders.matchQuery("name", "Frantisek"))))
+                .source(new SearchSourceBuilder().query(QueryBuilders.matchQuery("name", "Frantisek"))))
                 .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).containsOnlyOnce("Frantisek");
+        return p;
     }
 
     @Test
     public void given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments() throws IOException {
         initShardedIndex("my-index");
 
+        Pipeline p = given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments_pipeline();
+
+        submitJob(p);
+        assertThat(results).hasSize(BATCH_SIZE);
+    }
+
+    protected Pipeline given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -233,10 +286,9 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).hasSize(BATCH_SIZE);
+        return p;
     }
 
     @Test
@@ -246,6 +298,13 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         initShardedIndex("my-index-1");
         initShardedIndex("my-index-2");
 
+        Pipeline p = documentsInMultipleIndexes_readFromElasticSourceWithSlicing_resultHasAllDocuments_pipeline();
+
+        submitJob(p);
+        assertThat(results).hasSize(2 * BATCH_SIZE);
+    }
+
+    protected Pipeline documentsInMultipleIndexes_readFromElasticSourceWithSlicing_resultHasAllDocuments_pipeline() {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
@@ -256,32 +315,47 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).hasSize(2 * BATCH_SIZE);
+        return p;
     }
 
     @Test
     public void given_nonExistingIndex_whenReadFromElasticSource_thenThrowException() {
-        Pipeline p = Pipeline.create();
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("non-existing-index"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .retries(0) // we expect the exception -> faster test
-                .build();
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = given_nonExistingIndex_whenReadFromElasticSource_thenThrowException_pipeline();
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(ResponseException.class)
                 .hasStackTraceContaining("no such index [non-existing-index]");
     }
 
+    protected Pipeline given_nonExistingIndex_whenReadFromElasticSource_thenThrowException_pipeline() {
+        Pipeline p = Pipeline.create();
+
+        BatchSource<String> source = new ElasticSourceBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .searchRequestFn(() -> new SearchRequest("non-existing-index"))
+                .mapToItemFn(SearchHit::getSourceAsString)
+                .retries(0) // we expect the exception -> faster test
+                .build();
+
+        p.readFrom(source)
+                .writeTo(Sinks.list(results));
+
+        return p;
+    }
+
     @Test
     public void given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults() {
+        Pipeline p = given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults_pipeline();
+
+        submitJob(p);
+        assertThat(results).isEmpty();
+    }
+
+    protected Pipeline given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults_pipeline() {
         Pipeline p = Pipeline.create();
+
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticClientSupplier())
                 .searchRequestFn(() -> new SearchRequest("my-index-*"))
@@ -289,9 +363,8 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .build();
 
         p.readFrom(source)
-         .writeTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
 
-        submitJob(p);
-        assertThat(results).isEmpty();
+        return p;
     }
 }
