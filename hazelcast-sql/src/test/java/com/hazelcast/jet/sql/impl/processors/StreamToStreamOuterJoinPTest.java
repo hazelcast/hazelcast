@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,31 +106,22 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .inputs(asList(
-                        asList(
-                                wm((byte) 0, 0L),
-                                wm((byte) 0, 1L),
-                                wm((byte) 0, 2L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 0, 4L),
-                                wm((byte) 0, 5L),
-                                wm((byte) 0, 6L),
-                                // trigger it to process pending items
-                                jetRow(6L)
+                        Collections.singletonList(
+                                wm((byte) 0, 0L)
                         ),
                         asList(
-                                wm((byte) 1, 0L),
-                                jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
-                                jetRow(6L, 6L),
-                                wm((byte) 1, 10L)
+                                wm((byte) 1, 6L)
                         )
                 ))
                 .expectOutput(
                         asList(
+                                wm((byte) 0, 0L),
                                 jetRow(null, 3L, 3L),
-                                jetRow(null, 5L, 5L)
+                                jetRow(null, 5L, 5L),
+                                wm((byte) 1, 6L)
                         )
                 );
     }
@@ -160,14 +152,12 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
-                                wm((byte) 0, 0L),
                                 jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 wm((byte) 0, 3L)
                         ),
                         asList(
-                                wm((byte) 1, 0L),
                                 jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),
@@ -216,30 +206,21 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
-                                wm((byte) 0, 0L),
-                                jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
-                                jetRow(6L, 6L),
-                                wm((byte) 0, 10L)
+                                wm((byte) 0, 6L)
                         ),
                         asList(
-                                wm((byte) 1, 0L),
-                                wm((byte) 1, 1L),
-                                wm((byte) 1, 2L),
-                                wm((byte) 1, 3L),
-                                wm((byte) 1, 4L),
-                                wm((byte) 1, 5L),
-                                wm((byte) 1, 6L),
-                                // trigger it to process pending items
-                                jetRow(6L)
+                                wm((byte) 1, 0L)
                         )
                 ))
                 .expectOutput(
                         asList(
+                                wm((byte) 1, 0L),
                                 jetRow(3L, 3L, null),
-                                jetRow(5L, 5L, null)
+                                jetRow(5L, 5L, null),
+                                wm((byte) 0, 6L)
                         )
                 );
     }
@@ -270,14 +251,12 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
-                                wm((byte) 0, 0L),
                                 jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),
                                 wm((byte) 0, 3L)
                         ),
                         asList(
-                                wm((byte) 1, 0L),
                                 jetRow(1L, 1L),
                                 jetRow(2L, 2L),
                                 jetRow(3L, 3L),

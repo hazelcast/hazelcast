@@ -39,6 +39,7 @@ import java.util.Set;
 
 import static java.lang.Long.MAX_VALUE;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class StreamToStreamJoinP extends AbstractProcessor {
     /**
      * <p>
@@ -55,16 +56,18 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Tuple2<Integer, Integer> columnCount;
 
     private final Map<Byte, Map<Byte, Long>> wmState = new HashMap<>();
+    private final Map<Byte, Long> lastEmittedWm = new HashMap<>();
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
-
     private JetSqlRow currItem;
+
     // NOTE: we are using LinkedList, because we are expecting:
     // (1) removals in the middle,
     // (2) traversing whole list without indexing.
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
+
     private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
     private Watermark pendingWatermark;
 
@@ -88,6 +91,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 map.put(j, Long.MIN_VALUE);
             }
             wmState.put(key, map);
+            lastEmittedWm.put(key, Long.MIN_VALUE);
         }
     }
 
@@ -100,13 +104,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
-
-        while (!pendingOutput.isEmpty()) {
-            if (!tryEmit(pendingOutput.peek())) {
-                return false;
-            } else {
-                pendingOutput.remove();
-            }
+        if (!processPendingOutput()) {
+            return false;
         }
 
         //  having side input, traverse opposite buffer
@@ -136,19 +135,21 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
 
         if (preparedOutput != null && !tryEmit(preparedOutput)) {
-            pendingOutput.offer(preparedOutput);
+            pendingOutput.add(preparedOutput);
         }
-
         return false;
     }
 
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
         // if pending watermarks available - try to send them
-        if (pendingWatermark != null && !tryEmit(pendingWatermark)) {
-            return false;
+        if (pendingWatermark != null) {
+            if (!tryEmit(pendingWatermark)) {
+                return false;
+            }
+            lastEmittedWm.replace(pendingWatermark.key(), pendingWatermark.timestamp());
+            pendingWatermark = null;
         }
-        pendingWatermark = null;
 
         // update wm state
         applyToWmState(watermark);
@@ -156,22 +157,41 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // try to clear buffers if possible
         clearExpiredItemsInBuffer(ordinal);
 
-        // We can't immediately emit current WM, as it could render items in buffers late.
-        // Instead, we can emit WM with the minimum available time for this WM key.
-        byte wmKey = watermark.key();
-        long minItemTime = findMinimumBufferTime(ordinal, wmKey);
-        if (minItemTime != MAX_VALUE) {
-            minItemTime = Math.min(findMinimumGroupTime(wmKey), minItemTime);
-            if (minItemTime != Long.MIN_VALUE) {
-                Watermark wm = new Watermark(minItemTime, wmKey);
-                if (!tryEmit(wm)) {
-                    assert pendingWatermark == null;
-                    pendingWatermark = wm;
-                    return false;
-                }
-            }
+        if (!processPendingOutput()) {
+            return false;
         }
 
+        // We can't immediately emit current WM, as it could render items in buffers late.
+        // Instead, we can emit WM with the minimum available time for this WM key.
+        Watermark wm = null;
+        byte wmKey = watermark.key();
+
+        long minItemTime = Math.min(findMinimumGroupTime(wmKey), findMinimumBufferTime(ordinal, wmKey));
+        if (minItemTime != lastEmittedWm.get(wmKey)) {
+            wm = new Watermark(minItemTime, wmKey);
+        }
+
+        if (wm != null) {
+            if (!tryEmit(wm)) {
+                assert pendingWatermark == null;
+                pendingWatermark = wm;
+                return false;
+            } else {
+                lastEmittedWm.replace(wm.key(), wm.timestamp());
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean processPendingOutput() {
+        while (!pendingOutput.isEmpty()) {
+            if (!tryEmit(pendingOutput.peek())) {
+                return false;
+            } else {
+                pendingOutput.remove();
+            }
+        }
         return true;
     }
 
@@ -179,9 +199,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         byte key = watermark.key();
         final Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(key);
 
-        for (byte i : wmKeyMapping.keySet()) {
-            long newLimit = watermark.timestamp() - wmKeyMapping.get(i);
-            wmState.get(key).put(i, newLimit);
+        for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
+            long newLimit = watermark.timestamp() - entry.getValue();
+            wmState.get(key).put(entry.getKey(), newLimit);
         }
     }
 
@@ -222,19 +242,18 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     return false;
                 }
             }
-            System.err.println("To remove -> " + row + ", " + unusedEventsTracker[ordinal].contains(row));
             if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
                 JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
                 unusedEventsTracker[ordinal].remove(row);
                 if (joinedRow != null) {
-                    pendingOutput.offer(joinedRow);
+                    pendingOutput.add(joinedRow);
                 }
             }
             return true;
         });
     }
 
-    // If current join type is LEFT/RIGHT and opposite buffer is empty,
+    // If current join type is LEFT/RIGHT and a row don't have a matching row on the other side
     // we should to produce input row with null-filled opposite side.
     @SuppressWarnings("ConstantConditions")
     private JetSqlRow composeRowWithNulls(JetSqlRow row, int ordinal) {

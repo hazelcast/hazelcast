@@ -174,8 +174,14 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .expectOutput(
                         asList(
                                 jetRow(0L, 0L),
+                                wm((byte) 0, 1L),
+                                wm((byte) 1, 1L),
                                 jetRow(2L, 2L),
-                                jetRow(4L, 4L)
+                                wm((byte) 0, 3L),
+                                wm((byte) 1, 3L),
+                                jetRow(4L, 4L),
+                                wm((byte) 0, 5L),
+                                wm((byte) 1, 5L)
                         )
                 );
     }
@@ -228,9 +234,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(12L, 9L, 9L),
                                 // left <- (12, 13)
                                 jetRow(12L, 13L, 9L),
+                                // right <- wm(2, 15), 15-4 = 11
                                 // left <-  wm(1, 12)
-                                // right <- wm(2, 15)
+                                wm((byte) 2, 11L),
                                 wm((byte) 1, 9L),
+                                // right <- wm(2, 15), 15-4 = 11
                                 wm((byte) 0, 12L),
                                 // right <- (16)
                                 jetRow(12L, 13L, 16L),
@@ -305,11 +313,14 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(12L, 13L, 12L, 13L),
                                 wm((byte) 0, 12L),
                                 wm((byte) 2, 12L),
+                                // MIN = min(16, 16 - 1) = 15
+                                wm((byte) 1, 15L),
+                                // MIN = min(16, 16 - 2) = 14
+                                wm((byte) 3, 14L),
                                 jetRow(16L, 17L, 16L, 17L),
                                 wm((byte) 0, 16L),
                                 wm((byte) 2, 14L),
                                 wm((byte) 1, 16L),
-                                //
                                 wm((byte) 3, 15L)
                         )
                 );
@@ -365,6 +376,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .expectOutput(
                         asList(
                                 jetRow(11L, 11L, 9L),
+                                // MIN = min(15, 15-4) = 11
+                                wm((byte) 2, 11L),
                                 // MIN = 11 (min element)
                                 wm((byte) 0, 11L),
                                 jetRow(11L, 11L, 16L),
@@ -439,12 +452,9 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 wm((byte) 3, 1L),
                                 // minimum in buffer -> 1
                                 wm((byte) 0, 2L),
-                                wm((byte) 3, 1L),
                                 wm((byte) 1, 2L),
-                                wm((byte) 3, 1L),
                                 // 1 was removed, minimum in buffer -> 3
                                 wm((byte) 2, 3L),
-                                wm((byte) 3, 1L),
                                 // no wm(t > 3) was produced,
                                 // so (5,5,5,2) is valid here.
                                 jetRow(5L, 5L, 5L, 2L),
