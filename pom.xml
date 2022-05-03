@@ -1770,7 +1770,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.21.2</version>
+                <version>3.22.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
