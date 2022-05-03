@@ -13,6 +13,9 @@ import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopType;
 import com.hazelcast.tpc.engine.ReadHandler;
+import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
+import com.hazelcast.tpc.engine.epoll.EpollEventloop;
+import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
 import com.hazelcast.tpc.engine.frame.ConcurrentPooledFrameAllocator;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
@@ -238,18 +241,40 @@ public class RequestService {
     }
 
     private void configureEpoll() {
-//        engine.forEach(r -> {
-//            try {
-//                EpollEventloop eventloop = (EpollEventloop) r;
-//
-//                EpollAsyncServerSocket serverSocket = new EpollAsyncServerSocket();
-//
-//
-//                //eventloop.accept(serverSocket);
-//            } catch (IOException e) {
-//                throw new UncheckedIOException(e);
-//            }
-//        });
+        for (int k = 0; k < engine.eventloopCount(); k++) {
+            EpollEventloop eventloop = (EpollEventloop) engine.eventloop(k);
+            try {
+                Supplier<EpollReadHandler> readHandlerSupplier = () -> {
+                    RequestEpollReadHandler handler = new RequestEpollReadHandler();
+                    handler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                    handler.requestService = this;
+                    handler.requestFrameAllocator = poolRequests
+                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    handler.remoteResponseFrameAllocator = poolRemoteResponses
+                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            : new UnpooledFrameAllocator();
+                    return handler;
+                };
+                readHandlerSuppliers.put(eventloop, readHandlerSupplier);
+
+                int port = toPort(thisAddress, k);
+
+                EpollAsyncServerSocket serverSocket = EpollAsyncServerSocket.open(eventloop);
+                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                serverSocket.listen(10);
+                serverSocket.accept(socket -> {
+                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
+                    socket.setSendBufferSize(socketConfig.sendBufferSize);
+                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.activate(eventloop);
+                });
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     private void printEventloopInfo() {

@@ -4,6 +4,9 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
+import com.hazelcast.tpc.engine.nio.NioEventloop;
+import io.netty.channel.EventLoop;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
 import org.jctools.queues.MpmcArrayQueue;
@@ -17,7 +20,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static io.netty.channel.epoll.Native.EPOLLIN;
+import static java.nio.channels.SelectionKey.OP_READ;
 
 
 // add padding around Nio channel
@@ -27,6 +32,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         return new EpollAsyncSocket();
     }
 
+    private final boolean clientSide;
     // immutable state
     protected LinuxSocket socket;
     public EpollEventloop eventloop;
@@ -42,37 +48,48 @@ public final class EpollAsyncSocket extends AsyncSocket {
     // ======================================================
     // private
     public final IOVector ioVector = new IOVector();
+    private int unflushedFramesCapacity = 65536;
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
+    public MpmcArrayQueue<Frame> unflushedFrames;
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     protected int flags = Native.EPOLLET;
 
     private EpollReadHandler readHandler;
 
-    private EpollAsyncSocket(){
+    private EpollAsyncSocket() {
+        this.socket = LinuxSocket.newSocketStream();
+        this.clientSide = true;
     }
 
-
-    public EpollAsyncSocket(LinuxSocket socket) {
+    private EpollAsyncSocket(LinuxSocket socket) {
+        this.socket = socket;
+        this.clientSide = false;
+        this.localAddress = socket.localAddress();
+        this.remoteAddress = socket.remoteAddress();
     }
-
 
     @Override
-    public void activate(Eventloop eventloop) {
-
+    public void activate(Eventloop l) {
+        EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
+        this.eventloop = eventloop;
+        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+        eventloop.execute(() -> {
+            //selector = eventloop.selector;
+            eventloop.registerSocket(EpollAsyncSocket.this);
+            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+//
+//            if (!clientSide) {
+//                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
+//            }
+        });
     }
 
     @Override
     public void setReadHandler(ReadHandler readHandler) {
-
-    }
-
-    @Override
-    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
-        return null;
+        this.readHandler = (EpollReadHandler) checkNotNull(readHandler);
     }
 
     @Override
@@ -300,30 +317,30 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
     }
 
-//    public void configure(EpollEventloop eventloop, LinuxSocket socket, SocketConfig socketConfig) throws IOException {
-//        this.eventloop = eventloop;
-//        this.socket = socket;
-//
-//        receiveBuffer = ByteBuffer.allocateDirect(socketConfig.receiveBufferSize);
-//
-//        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-//        socket.setSendBufferSize(socketConfig.sendBufferSize);
-//        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-//        //socket.setTcpQuickAck(socketConfig.tcpQuickAck);
-//
-//        String id = socket.localAddress() + "->" + socket.remoteAddress();
-//        System.out.println(eventloop.getName() + " " + id + " tcpNoDelay: " + socket.isTcpNoDelay());
-//        System.out.println(eventloop.getName() + " " + id + " tcpQuickAck: " + socket.isTcpQuickAck());
-//        System.out.println(eventloop.getName() + " " + id + " receiveBufferSize: " + socket.getReceiveBufferSize());
-//        System.out.println(eventloop.getName() + " " + id + " sendBufferSize: " + socket.getSendBufferSize());
-//    }
 
-    public void onConnectionEstablished() throws IOException {
-        remoteAddress = socket.remoteAddress();
-        localAddress = socket.localAddress();
+    @Override
+    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        CompletableFuture<AsyncSocket> future = new CompletableFuture();
+        try {
+            System.out.println("ConnectRequest address:" + address);
 
-        System.out.println("Connection established");
-
-        setFlag(EPOLLIN);
+            if (!socket.connect(address)) {
+                future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
+            } else {
+                eventloop.execute(() -> {
+                    try {
+                        eventloop.registerSocket(EpollAsyncSocket.this);
+                        logger.info("Socket listening at " + address);
+                        future.complete(EpollAsyncSocket.this);
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
     }
+
 }

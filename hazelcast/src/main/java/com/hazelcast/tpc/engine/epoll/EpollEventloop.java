@@ -140,57 +140,5 @@ public final class EpollEventloop extends Eventloop {
             }
         }
     }
-//
-//    public void accept(EpollAsyncServerSocket serverChannel) throws IOException {
-//        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
-//
-//        // should come from properties.
-//        serverSocket.setReuseAddress(true);
-//        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
-//
-//        serverSocket.bind(serverChannel.address);
-//        System.out.println(getName() + " Bind success " + serverChannel.address);
-//        serverSocket.listen(10);
-//        System.out.println(getName() + " Listening on " + serverChannel.address);
-//
-//        execute(() -> {
-//            serverChannel.eventloop = EpollEventloop.this;
-//            serverChannel.serverSocket = serverSocket;
-//            channels.put(serverSocket.intValue(), serverChannel);
-//            serverChannels.put(serverSocket.intValue(), serverChannel);
-//            //serverSocket.listen(serverChannel.socketConfig.backlog);
-//            epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
-//        });
-//    }
 
-//    @Override
-//    public CompletableFuture<AsyncSocket> connect(AsyncSocket c, SocketAddress address) {
-//        EpollAsyncSocket channel = (EpollAsyncSocket) c;
-//
-//        CompletableFuture<AsyncSocket> future = new CompletableFuture();
-//        try {
-//            System.out.println("ConnectRequest address:" + address);
-//
-//            LinuxSocket socket = LinuxSocket.newSocketStream();
-//            channel.configure(this, socket, c.socketConfig);
-//
-//            if (!socket.connect(address)) {
-//                future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
-//            } else {
-//                execute(() -> {
-//                    try {
-//                        channel.onConnectionEstablished();
-//                        registeredAsyncSockets.add(channel);
-//                        logger.info("Socket listening at " + address);
-//                        future.complete(channel);
-//                    } catch (Exception e) {
-//                        future.completeExceptionally(e);
-//                    }
-//                });
-//            }
-//        } catch (Exception e) {
-//            future.completeExceptionally(e);
-//        }
-//        return future;
-//    }
 }

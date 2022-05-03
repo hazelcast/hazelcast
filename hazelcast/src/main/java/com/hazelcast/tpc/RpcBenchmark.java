@@ -30,9 +30,9 @@ public class RpcBenchmark {
 
     public static int serverCpu = -1;
     public static int clientCpu = -1;
-    public static boolean spin = false;
-    public static int requestTotal = 1000 * 1000 * 1000;
-    public static int concurrency = 10000;
+    public static boolean spin = true;
+    public static int requestTotal = 1000 * 1000;
+    public static int concurrency = 1;
 
     public static void main(String[] args) throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);

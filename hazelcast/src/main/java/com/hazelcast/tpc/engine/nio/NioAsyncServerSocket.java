@@ -48,7 +48,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void setReusePort(boolean reusePort) {
-
     }
 
     @Override

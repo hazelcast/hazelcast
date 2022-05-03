@@ -1,6 +1,8 @@
 package com.hazelcast.tpc.engine.epoll;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
+import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
+import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
 
@@ -8,16 +10,39 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 // https://stackoverflow.com/questions/51777259/how-to-code-an-epoll-based-sockets-client-in-c
 public final class EpollAsyncServerSocket extends AsyncServerSocket {
+
+
+    public static EpollAsyncServerSocket open(EpollEventloop eventloop) {
+        return new EpollAsyncServerSocket(eventloop);
+    }
+
+
     public LinuxSocket serverSocket;
     public int flags = Native.EPOLLIN;
-    public Supplier<EpollAsyncSocket> channelSupplier;
     public InetSocketAddress address;
     private final byte[] acceptedAddress = new byte[26];
     public EpollEventloop eventloop;
+
+    private EpollAsyncServerSocket(EpollEventloop eventloop){
+//        try {
+            this.eventloop = eventloop;
+            this.serverSocket = LinuxSocket.newSocketStream();
+           // this.serverSocket.
+//            this.selector = eventloop.selector;
+//            this.serverSocketChannel = ServerSocketChannel.open();
+//            serverSocketChannel.configureBlocking(false);
+//        } catch (IOException e) {
+//            throw new UncheckedIOException(e);
+//        }
+    }
 
     public LinuxSocket socket() {
         return serverSocket;
@@ -79,7 +104,11 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void bind(SocketAddress socketAddress) {
-
+        try {
+            serverSocket.bind(socketAddress);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -87,41 +116,47 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     }
 
-    public void handleAccept() {
+    @Override
+    public void listen(int backlog) {
         try {
-            System.out.println("Handle accept");
-
-            int fd = serverSocket.accept(acceptedAddress);
-
-            LinuxSocket socket = new LinuxSocket(fd);
-
-            EpollAsyncSocket ascynSocket = new EpollAsyncSocket(socket);
-            eventloop.registerSocket(ascynSocket);
-
-            // ascynSocket.configure(eventloop, socket, socketConfig);
-            ascynSocket.onConnectionEstablished();
-
-            System.out.println("accepted fd:" + fd);
-
-//        sq_addAccept();
-//
-////        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
-//
-//        SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
-//
-//        System.out.println(this + " new connected accepted: " + address);
-//
-//        IOUringChannel ascynSocket = channelSupplier.get();
-//        io.netty.incubator.ascynSocket.uring.LinuxSocket socket = new io.netty.incubator.ascynSocket.uring.LinuxSocket(res);
-//        reactor.channelMap.put(socket.intValue(), ascynSocket);
-//        try {
-//            ascynSocket.configure(reactor, socketConfig, socket);
-//            ascynSocket.onConnectionEstablished();
-//        } catch (IOException e) {
-//            throw new RuntimeException();
-//        }
+            serverSocket.listen(backlog);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
+    }
+
+    //
+//    public void accept(EpollAsyncServerSocket serverChannel) throws IOException {
+//        LinuxSocket serverSocket = LinuxSocket.newSocketStream(false);
+//
+//        // should come from properties.
+//        serverSocket.setReuseAddress(true);
+//        System.out.println(getName() + " serverSocket.fd:" + serverSocket.intValue());
+//
+//        serverSocket.bind(serverChannel.address);
+//        System.out.println(getName() + " Bind success " + serverChannel.address);
+//        serverSocket.listen(10);
+//        System.out.println(getName() + " Listening on " + serverChannel.address);
+//
+//        execute(() -> {
+//            serverChannel.eventloop = EpollEventloop.this;
+//            serverChannel.serverSocket = serverSocket;
+//            channels.put(serverSocket.intValue(), serverChannel);
+//            serverChannels.put(serverSocket.intValue(), serverChannel);
+//            //serverSocket.listen(serverChannel.socketConfig.backlog);
+//            epollCtlAdd(epollFd.intValue(), serverSocket.intValue(), serverChannel.flags);
+//        });
+//    }
+
+
+    public void accept(Consumer<NioAsyncSocket> consumer) {
+        eventloop.execute(() -> {
+            //serverSocketChannel.register(selector, OP_ACCEPT, new NioAsyncServerSocket.AcceptHandler(consumer));
+            //System.out.println(eventloop.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+        });
+    }
+
+    public void handleAccept() {
+
     }
 }
