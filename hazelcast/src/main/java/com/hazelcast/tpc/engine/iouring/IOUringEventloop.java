@@ -124,11 +124,11 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
         sq_addEventRead();
 
         while (running) {
-            runTasks();
+            runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtySockets();
+            runLocalTasks();
 
             if (cq.hasCompletions()) {
                 cq.process(this);

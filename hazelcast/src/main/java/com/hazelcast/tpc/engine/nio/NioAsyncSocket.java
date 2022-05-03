@@ -2,6 +2,7 @@ package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
+import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
@@ -182,7 +183,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
             } else if (writeThrough) {
                 try {
                     handleWriteReady();
@@ -190,7 +191,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
                     handleException(e);
                 }
             } else if (regularSchedule) {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
                 eventloop.wakeup();
@@ -209,7 +210,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             }
         }
     }
@@ -239,7 +240,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }

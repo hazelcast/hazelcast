@@ -28,7 +28,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
     protected Scheduler scheduler;
-    public final CircularQueue<AsyncSocket> dirtySockets = new CircularQueue<>(1024);
+    public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
     protected volatile boolean running = true;
 
@@ -74,8 +74,12 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected abstract void eventLoop() throws Exception;
 
     public void execute(EventloopTask task) {
-        concurrentRunQueue.add(task);
-        wakeup();
+        if (Thread.currentThread() == this) {
+            localRunQueue.offer(task);
+        } else {
+            concurrentRunQueue.add(task);
+            wakeup();
+        }
     }
 
     public void execute(Collection<Frame> requests) {
@@ -86,15 +90,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public void execute(Frame request) {
         concurrentRunQueue.add(request);
         wakeup();
-    }
-
-    public void execute(AsyncSocket socket) {
-        if (Thread.currentThread() == this) {
-            dirtySockets.offer(socket);
-        } else {
-            concurrentRunQueue.add(socket);
-            wakeup();
-        }
     }
 
     public Collection<AsyncSocket> asyncSockets() {
@@ -111,43 +106,37 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    protected void flushDirtySockets() {
+    protected void runLocalTasks() {
         for (; ; ) {
-            AsyncSocket channel = dirtySockets.poll();
-            if (channel == null) {
+            EventloopTask task = localRunQueue.poll();
+            if (task == null) {
                 break;
             }
 
             try {
-                channel.handleWriteReady();
-            } catch (IOException e) {
-                channel.handleException(e);
+                task.run();
+            } catch (Exception e) {
+                //todo
+                e.printStackTrace();
             }
         }
     }
 
-    protected void runTasks() {
+    protected void runConcurrentTasks() {
         for (; ; ) {
             Object task = concurrentRunQueue.poll();
             if (task == null) {
                 break;
             }
 
-            if (task instanceof AsyncSocket) {
-                AsyncSocket channel = (AsyncSocket) task;
-                try {
-                    channel.handleWriteReady();
-                } catch (Exception e) {
-                    channel.handleException(e);
-                }
-            } else if (task instanceof Frame) {
-                scheduler.schedule((Frame) task);
-            } else if (task instanceof EventloopTask) {
+            if (task instanceof EventloopTask) {
                 try {
                     ((EventloopTask) task).run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            } else if (task instanceof Frame) {
+                scheduler.schedule((Frame) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }

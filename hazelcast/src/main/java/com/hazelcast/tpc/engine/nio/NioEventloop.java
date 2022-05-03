@@ -29,11 +29,11 @@ public final class NioEventloop extends Eventloop {
     @Override
     protected void eventLoop() throws Exception {
         while (running) {
-            runTasks();
+            runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtySockets();
+            runLocalTasks();
 
             int keyCount;
             if (spin || moreWork) {

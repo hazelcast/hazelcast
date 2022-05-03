@@ -56,14 +56,14 @@ public final class EpollEventloop extends Eventloop {
     protected void eventLoop() throws Exception {
         int k = 0;
         while (running) {
-            runTasks();
+            runConcurrentTasks();
             k++;
 
             System.out.println(getName() + " eventLoop run " + k);
 
             boolean moreWork = scheduler.tick();
 
-            flushDirtySockets();
+            runLocalTasks();
 
             int ready;
             if (spin || moreWork) {

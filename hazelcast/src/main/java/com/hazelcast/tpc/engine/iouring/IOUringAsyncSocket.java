@@ -2,6 +2,7 @@ package com.hazelcast.tpc.engine.iouring;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
+import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
@@ -161,9 +162,9 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
             } else {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             }
         }
     }
@@ -174,7 +175,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             }
         }
     }
@@ -211,7 +212,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }

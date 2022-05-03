@@ -12,7 +12,7 @@ public enum EventloopType {
         } else if (s.equals("epoll")) {
             return EPOLL;
         } else {
-            throw new RuntimeException("Unrecognized reactor type [" + s + ']');
+            throw new RuntimeException("Unrecognized eventloop type [" + s + ']');
         }
     }
 }

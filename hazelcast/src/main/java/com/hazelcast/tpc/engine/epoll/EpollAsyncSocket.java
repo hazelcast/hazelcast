@@ -4,9 +4,6 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
-import com.hazelcast.tpc.engine.nio.NioEventloop;
-import io.netty.channel.EventLoop;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
 import org.jctools.queues.MpmcArrayQueue;
@@ -21,8 +18,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static io.netty.channel.epoll.Native.EPOLLIN;
-import static java.nio.channels.SelectionKey.OP_READ;
 
 
 // add padding around Nio channel
@@ -120,7 +115,6 @@ public final class EpollAsyncSocket extends AsyncSocket {
         }
     }
 
-
     @Override
     public void setReceiveBufferSize(int size) {
         try {
@@ -188,7 +182,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
             } else if (writeThrough) {
                 try {
                     handleWriteReady();
@@ -196,7 +190,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
                     handleException(e);
                 }
             } else {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             }
         }
     }
@@ -206,7 +200,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(this);
+                eventloop.execute(writeDirtySocket);
             }
         }
     }
@@ -236,7 +230,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.dirtySockets.add(this);
+                eventloop.localRunQueue.add(writeDirtySocket);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
