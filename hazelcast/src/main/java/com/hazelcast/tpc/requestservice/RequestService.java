@@ -193,7 +193,6 @@ public class RequestService {
                     socket.setSendBufferSize(socketConfig.sendBufferSize);
                     socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
                     socket.setTcpNoDelay(socketConfig.tcpNoDelay);
-                    System.out.println("server ");
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {

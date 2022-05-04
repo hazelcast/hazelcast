@@ -92,7 +92,9 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
             eventloop.completionListeners.put(socket.intValue(), IOUringAsyncSocket.this);
             receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
 
-            sq_addRead();
+            if(!clientSide) {
+                sq_addRead();
+            }
         });
     }
 
