@@ -3,6 +3,7 @@ package com.hazelcast.tpc.engine.nio;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -30,7 +31,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
 // todo: add padding around Nio channel
-public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyListener {
+public final class NioAsyncSocket extends AsyncSocket {
 
     public static NioAsyncSocket open() {
         return new NioAsyncSocket();
@@ -62,6 +63,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
     public MpmcArrayQueue<Frame> unflushedFrames;
     private CompletableFuture<AsyncSocket> connectFuture;
+    private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
     private NioAsyncSocket() {
         try {
@@ -110,7 +112,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
             receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
 
             if (!clientSide) {
-                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
+                key = socketChannel.register(selector, OP_READ, eventLoopHandler);
             }
         });
     }
@@ -182,15 +184,11 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventLoopHandler);
             } else if (writeThrough) {
-                try {
-                    handleWriteReady();
-                } catch (IOException e) {
-                    handleException(e);
-                }
+                eventLoopHandler.run();
             } else if (regularSchedule) {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventLoopHandler);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
                 eventloop.wakeup();
@@ -198,18 +196,12 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         }
     }
 
-    @Override
-    public void handleException(Exception e) {
-        e.printStackTrace();
-        close();
-    }
-
     public void resetFlushed() {
         flushThread.set(null);
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventLoopHandler);
             }
         }
     }
@@ -239,7 +231,7 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventLoopHandler);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -257,81 +249,9 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     }
 
     @Override
-    public void handle(SelectionKey key) throws IOException {
-        int readyOp = key.readyOps();
-
-        if (key.isValid() && (readyOp & OP_READ) != 0) {
-            handleReadReady();
-        }
-
-        if (key.isValid() && (readyOp & OP_WRITE) != 0) {
-            handleWriteReady();
-        }
-
-        if (key.isValid() && (readyOp & OP_CONNECT) != 0) {
-            handleConnectReady();
-        }
-    }
-
-    public void handleReadReady() throws IOException {
-        readEvents.inc();
-
-        int read = socketChannel.read(receiveBuffer);
-        //System.out.println(this + " bytes read: " + bytesRead);
-        if (read == -1) {
-            close();
-        } else {
-            bytesRead.inc(read);
-            receiveBuffer.flip();
-            readHandler.onRead(receiveBuffer);
-            compactOrClear(receiveBuffer);
-        }
-    }
-
-    @Override
-    public void handleWriteReady() throws IOException {
-        assert flushThread.get() != null;
-
-        handleWriteCnt.inc();
-
-        ioVector.fill(unflushedFrames);
-        long written = ioVector.write(socketChannel);
-
-        bytesWritten.inc(written);
-        //System.out.println(this + " bytes written:" + written);
-
-        if (ioVector.isEmpty()) {
-            int interestOps = key.interestOps();
-            if ((interestOps & OP_WRITE) != 0) {
-                key.interestOps(interestOps & ~OP_WRITE);
-            }
-
-            resetFlushed();
-        } else {
-            key.interestOps(key.interestOps() | OP_WRITE);
-        }
-    }
-
-    public void handleConnectReady() throws IOException {
-        try {
-            socketChannel.finishConnect();
-            remoteAddress = socketChannel.getRemoteAddress();
-            localAddress = socketChannel.getLocalAddress();
-            logger.info("Channel established " + localAddress + "->" + remoteAddress);
-            socketChannel.register(selector, OP_READ, this);
-            connectFuture.complete(this);
-        } catch (IOException e) {
-            connectFuture.completeExceptionally(e);
-            throw e;
-        } finally {
-            connectFuture = null;
-        }
-    }
-
-    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  "+ this);
+            System.out.println("Closing  " + this);
 
             eventloop.execute(() -> {
                 closeResource(socketChannel);
@@ -345,10 +265,99 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
         System.out.println("Connect to address:" + address);
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
         eventloop.execute(() -> {
-            key = socketChannel.register(selector, OP_CONNECT, NioAsyncSocket.this);
+            key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
             connectFuture = future;
             socketChannel.connect(address);
         });
         return future;
+    }
+
+    private class EventLoopHandler implements NioSelectedKeyListener, EventloopTask {
+
+        @Override
+        public void run() {
+            try {
+                handleWriteReady();
+            } catch (Exception e) {
+                handleException(e);
+            }
+        }
+
+        @Override
+        public void handleException(Exception e) {
+            e.printStackTrace();
+            close();
+        }
+
+        @Override
+        public void handle(SelectionKey key) throws IOException {
+            int readyOp = key.readyOps();
+
+            if (key.isValid() && (readyOp & OP_READ) != 0) {
+                handleReadReady();
+            }
+
+            if (key.isValid() && (readyOp & OP_WRITE) != 0) {
+                handleWriteReady();
+            }
+
+            if (key.isValid() && (readyOp & OP_CONNECT) != 0) {
+                handleConnectReady();
+            }
+        }
+
+        private void handleReadReady() throws IOException {
+            readEvents.inc();
+
+            int read = socketChannel.read(receiveBuffer);
+            //System.out.println(this + " bytes read: " + bytesRead);
+            if (read == -1) {
+                close();
+            } else {
+                bytesRead.inc(read);
+                receiveBuffer.flip();
+                readHandler.onRead(receiveBuffer);
+                compactOrClear(receiveBuffer);
+            }
+        }
+
+        private void handleWriteReady() throws IOException {
+            assert flushThread.get() != null;
+
+            handleWriteCnt.inc();
+
+            ioVector.fill(unflushedFrames);
+            long written = ioVector.write(socketChannel);
+
+            bytesWritten.inc(written);
+            //System.out.println(this + " bytes written:" + written);
+
+            if (ioVector.isEmpty()) {
+                int interestOps = key.interestOps();
+                if ((interestOps & OP_WRITE) != 0) {
+                    key.interestOps(interestOps & ~OP_WRITE);
+                }
+
+                resetFlushed();
+            } else {
+                key.interestOps(key.interestOps() | OP_WRITE);
+            }
+        }
+
+        private void handleConnectReady() throws IOException {
+            try {
+                socketChannel.finishConnect();
+                remoteAddress = socketChannel.getRemoteAddress();
+                localAddress = socketChannel.getLocalAddress();
+                logger.info("Channel established " + localAddress + "->" + remoteAddress);
+                socketChannel.register(selector, OP_READ, this);
+                connectFuture.complete(NioAsyncSocket.this);
+            } catch (IOException e) {
+                connectFuture.completeExceptionally(e);
+                throw e;
+            } finally {
+                connectFuture = null;
+            }
+        }
     }
 }

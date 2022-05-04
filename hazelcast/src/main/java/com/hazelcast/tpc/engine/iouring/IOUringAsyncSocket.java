@@ -3,6 +3,7 @@ package com.hazelcast.tpc.engine.iouring;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
@@ -53,6 +54,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     public IovArray iovArray;
     public IOVector ioVector = new IOVector();
     private IOUringReadHandler readHandler;
+    private final EventloopHandler eventloopHandler = new EventloopHandler();
 
     private IOUringAsyncSocket() {
         try {
@@ -88,10 +90,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
             iovArray = new IovArray(iovArrayBuffer);
             sq = eventloop.sq;
-            eventloop.completionListeners.put(socket.intValue(), new CompletionListenerImpl());
+            eventloop.completionListeners.put(socket.intValue(), new EventloopHandler());
             receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
 
-            if(!clientSide) {
+            if (!clientSide) {
                 sq_addRead();
             }
         });
@@ -163,9 +165,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventloopHandler);
             } else {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventloopHandler);
             }
         }
     }
@@ -173,7 +175,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     // called by the Reactor.
     private void resetFlushed() {
         if (!ioVector.isEmpty()) {
-            eventloop.localRunQueue.add(writeDirtySocket);
+            eventloop.localRunQueue.add(eventloopHandler);
             return;
         }
 
@@ -181,7 +183,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventloopHandler);
             }
         }
     }
@@ -204,12 +206,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void handleException(Exception e) {
-        e.printStackTrace();
-        close();
-    }
-
-    @Override
     public void unsafeWriteAndFlush(Frame frame) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
@@ -218,7 +214,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventloopHandler);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -257,32 +253,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
-    @Override
-    public void handleWriteReady() {
-        if (flushThread.get() == null) {
-            throw new RuntimeException("Channel should be in flushed state");
-        }
-
-        ioVector.fill(unflushedFrames);
-
-        int frameCount = ioVector.size();
-        if (frameCount == 1) {
-            ByteBuffer buffer = ioVector.get(0).byteBuffer();
-            sq.addWrite(socket.intValue(),
-                    Buffer.memoryAddress(buffer),
-                    buffer.position(),
-                    buffer.limit(),
-                    (short) 0);
-        } else {
-            int offset = iovArray.count();
-            ioVector.fillIoArray(iovArray);
-
-            sq.addWritev(socket.intValue(),
-                    iovArray.memoryAddress(offset),
-                    iovArray.count() - offset,
-                    (short) 0);
-        }
-    }
 
     private void sq_addRead() {
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
@@ -319,7 +289,34 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class CompletionListenerImpl implements CompletionListener{
+    private class EventloopHandler implements CompletionListener, EventloopTask {
+
+        @Override
+        public void run() throws Exception {
+            if (flushThread.get() == null) {
+                throw new RuntimeException("Channel should be in flushed state");
+            }
+
+            ioVector.fill(unflushedFrames);
+
+            int frameCount = ioVector.size();
+            if (frameCount == 1) {
+                ByteBuffer buffer = ioVector.get(0).byteBuffer();
+                sq.addWrite(socket.intValue(),
+                        Buffer.memoryAddress(buffer),
+                        buffer.position(),
+                        buffer.limit(),
+                        (short) 0);
+            } else {
+                int offset = iovArray.count();
+                ioVector.fillIoArray(iovArray);
+
+                sq.addWritev(socket.intValue(),
+                        iovArray.memoryAddress(offset),
+                        iovArray.count() - offset,
+                        (short) 0);
+            }
+        }
 
         @Override
         public void handle(int fd, int res, int flags, byte op, short data) {

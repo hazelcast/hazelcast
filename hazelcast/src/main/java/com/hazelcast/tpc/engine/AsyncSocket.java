@@ -57,14 +57,6 @@ public abstract class AsyncSocket implements Closeable {
 
     public final SwCounter readEvents = newSwCounter();
 
-    protected final EventloopTask writeDirtySocket = () -> {
-        try {
-            handleWriteReady();
-        }catch (IOException e){
-            handleException(e);
-        }
-    };
-
     public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
@@ -101,10 +93,6 @@ public abstract class AsyncSocket implements Closeable {
      * Should only be called from within the Eventloop.
      */
     public abstract void unsafeWriteAndFlush(Frame frame);
-
-    public abstract void handleWriteReady() throws IOException;
-
-    public abstract void handleException(Exception e);
 
     public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
 

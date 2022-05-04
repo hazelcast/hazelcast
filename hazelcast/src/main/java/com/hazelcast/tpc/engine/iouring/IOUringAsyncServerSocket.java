@@ -31,7 +31,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             serverSocket.setBlocking();
 
             eventloop.execute(() -> {
-                eventloop.completionListeners.put(serverSocket.intValue(), new CompletionListenerImpl());
+                eventloop.completionListeners.put(serverSocket.intValue(), new EventloopHandler());
                 sq = eventloop.sq;
             });
         } catch (IOException e) {
@@ -148,7 +148,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         });
     }
 
-    private class CompletionListenerImpl implements CompletionListener {
+    private class EventloopHandler implements CompletionListener {
         @Override
         public void handle(int fd, int res, int flags, byte op, short data) {
             sq_addAccept();

@@ -3,6 +3,7 @@ package com.hazelcast.tpc.engine.epoll;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
@@ -53,6 +54,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     protected int flags = Native.EPOLLET;
 
     private EpollReadHandler readHandler;
+    private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
     private EpollAsyncSocket() {
         this.socket = LinuxSocket.newSocketStream();
@@ -182,15 +184,11 @@ public final class EpollAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloop) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventLoopHandler);
             } else if (writeThrough) {
-                try {
-                    handleWriteReady();
-                } catch (IOException e) {
-                    handleException(e);
-                }
+                eventLoopHandler.run();
             } else {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventLoopHandler);
             }
         }
     }
@@ -200,7 +198,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         if (!unflushedFrames.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(writeDirtySocket);
+                eventloop.execute(eventLoopHandler);
             }
         }
     }
@@ -230,7 +228,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.localRunQueue.add(writeDirtySocket);
+                eventloop.localRunQueue.add(eventLoopHandler);
                 if (!ioVector.add(frame)) {
                     unflushedFrames.add(frame);
                 }
@@ -265,56 +263,6 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void handleException(Exception e) {
-        e.printStackTrace();
-        close();
-    }
-
-    public void handleRead() throws IOException {
-        readEvents.inc();
-        int read = socket.read(receiveBuffer, receiveBuffer.position(), receiveBuffer.remaining());
-        //System.out.println(this + " bytes read: " + bytesRead);
-        if (read == -1) {
-            close();
-        } else {
-            bytesRead.inc(read);
-            receiveBuffer.flip();
-            readHandler.onRead(receiveBuffer);
-            compactOrClear(receiveBuffer);
-        }
-    }
-
-
-    @Override
-    public void handleWriteReady() throws IOException {
-        if (flushThread.get() == null) {
-            throw new RuntimeException("Channel is not in flushed state");
-        }
-        handleWriteCnt.inc();
-
-        ioVector.fill(unflushedFrames);
-        long written = ioVector.write(socket);
-
-        bytesWritten.inc(written);
-        //System.out.println(getName() + " bytes written:" + written);
-
-        //       SelectionKey key = channel.key;
-//            if (ioVector.isEmpty()) {
-//                int interestOps = key.interestOps();
-//                if ((interestOps & OP_WRITE) != 0) {
-//                    key.interestOps(interestOps & ~OP_WRITE);
-//                }
-
-        resetFlushed();
-//            } else {
-//                System.out.println("Didn't manage to write everything." + channel);
-//                key.interestOps(key.interestOps() | OP_WRITE);
-//            }
-
-    }
-
-
-    @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
         CompletableFuture<AsyncSocket> future = new CompletableFuture();
         try {
@@ -339,4 +287,57 @@ public final class EpollAsyncSocket extends AsyncSocket {
         return future;
     }
 
+    private class EventLoopHandler implements EventloopTask{
+        @Override
+        public void run()  {
+            try{
+                handleWriteReady();
+            }catch (Exception e){
+                e.printStackTrace();
+                close();
+            }
+        }
+
+        public void handleRead() throws IOException {
+            readEvents.inc();
+            int read = socket.read(receiveBuffer, receiveBuffer.position(), receiveBuffer.remaining());
+            //System.out.println(this + " bytes read: " + bytesRead);
+            if (read == -1) {
+                close();
+            } else {
+                bytesRead.inc(read);
+                receiveBuffer.flip();
+                readHandler.onRead(receiveBuffer);
+                compactOrClear(receiveBuffer);
+            }
+        }
+
+        private void handleWriteReady() throws IOException {
+            if (flushThread.get() == null) {
+                throw new RuntimeException("Channel is not in flushed state");
+            }
+            handleWriteCnt.inc();
+
+            ioVector.fill(unflushedFrames);
+            long written = ioVector.write(socket);
+
+            bytesWritten.inc(written);
+            //System.out.println(getName() + " bytes written:" + written);
+
+            //       SelectionKey key = channel.key;
+//            if (ioVector.isEmpty()) {
+//                int interestOps = key.interestOps();
+//                if ((interestOps & OP_WRITE) != 0) {
+//                    key.interestOps(interestOps & ~OP_WRITE);
+//                }
+
+            resetFlushed();
+//            } else {
+//                System.out.println("Didn't manage to write everything." + channel);
+//                key.interestOps(key.interestOps() | OP_WRITE);
+//            }
+
+        }
+
+    }
 }

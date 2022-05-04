@@ -118,16 +118,16 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     public void accept(Consumer<NioAsyncSocket> consumer) {
         eventloop.execute(() -> {
-            serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
+            serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
             System.out.println(eventloop.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
         });
     }
 
-    private class AcceptHandler implements NioSelectedKeyListener {
+    private class EventloopHandler implements NioSelectedKeyListener {
 
         private final Consumer<NioAsyncSocket> consumer;
 
-        private AcceptHandler(Consumer<NioAsyncSocket> consumer) {
+        private EventloopHandler(Consumer<NioAsyncSocket> consumer) {
             this.consumer = consumer;
         }
 
