@@ -11,7 +11,17 @@ public abstract class AsyncServerSocket {
     protected final ILogger logger = Logger.getLogger(this.getClass());
     protected AtomicBoolean closed = new AtomicBoolean(false);
 
-    public abstract SocketAddress getLocalAddress();
+    public final SocketAddress getLocalAddress() {
+        try {
+            return localAddress();
+        } catch (Error e) {
+            throw e;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    protected abstract SocketAddress localAddress() throws Exception;
 
     public abstract boolean isReusePort();
 
@@ -27,7 +37,7 @@ public abstract class AsyncServerSocket {
 
     public abstract void bind(SocketAddress socketAddress);
 
-    public void listen(int backlog){
+    public void listen(int backlog) {
     }
 
     public abstract void close();
@@ -38,6 +48,6 @@ public abstract class AsyncServerSocket {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName()+"[" + getLocalAddress() + "]";
+        return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
     }
 }

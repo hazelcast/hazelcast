@@ -44,7 +44,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public SocketAddress getLocalAddress() {
+    protected SocketAddress localAddress() throws Exception {
         return serverSocket.localAddress();
     }
 

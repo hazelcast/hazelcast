@@ -42,12 +42,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public SocketAddress getLocalAddress() {
-        try {
-            return serverSocketChannel.getLocalAddress();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    protected SocketAddress localAddress() throws IOException {
+        return serverSocketChannel.getLocalAddress();
     }
 
     @Override
