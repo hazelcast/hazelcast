@@ -148,11 +148,6 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         });
     }
 
-    @Override
-    public String toString() {
-        return "IOUringServerSocket(" + serverSocket.localAddress() + ")";
-    }
-
     private class CompletionListenerImpl implements CompletionListener {
         @Override
         public void handle(int fd, int res, int flags, byte op, short data) {

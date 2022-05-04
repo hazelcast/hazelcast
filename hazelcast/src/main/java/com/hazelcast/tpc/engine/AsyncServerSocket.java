@@ -35,4 +35,9 @@ public abstract class AsyncServerSocket {
     public final boolean isClosed() {
         return closed.get();
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()+"[" + getLocalAddress() + "]";
+    }
 }
