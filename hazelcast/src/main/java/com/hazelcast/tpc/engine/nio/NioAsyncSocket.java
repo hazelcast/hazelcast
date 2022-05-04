@@ -196,7 +196,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
-    public void resetFlushed() {
+    private void resetFlushed() {
         flushThread.set(null);
 
         if (!unflushedFrames.isEmpty()) {
