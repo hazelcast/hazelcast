@@ -184,6 +184,7 @@ public class RequestService {
                 int port = toPort(thisAddress, k);
                 NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
                 serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.setReuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.accept(socket -> {
                     socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
@@ -199,7 +200,6 @@ public class RequestService {
                 throw new UncheckedIOException(e);
             }
         }
-        ;
     }
 
 
@@ -225,6 +225,7 @@ public class RequestService {
 
                 IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(eventloop);
                 serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.setReuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.listen(10);
                 serverSocket.accept(socket -> {
@@ -262,6 +263,7 @@ public class RequestService {
 
                 EpollAsyncServerSocket serverSocket = EpollAsyncServerSocket.open(eventloop);
                 serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.setReuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.listen(10);
                 serverSocket.accept(socket -> {
