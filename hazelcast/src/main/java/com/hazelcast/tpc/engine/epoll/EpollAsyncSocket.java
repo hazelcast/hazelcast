@@ -250,6 +250,8 @@ public final class EpollAsyncSocket extends AsyncSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            System.out.println("Closing  "+ this);
+
             if (socket != null) {
                 try {
                     socket.close();

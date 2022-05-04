@@ -119,12 +119,14 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void close() {
-        eventloop.deregisterSocket(this);
-
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if(closed.compareAndSet(false,true)) {
+            System.out.println("Closing  "+ this);
+            eventloop.deregisterSocket(this);
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -232,6 +232,8 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            System.out.println("Closing  "+ this);
+
             // todo: offloading.
 
             //todo: also think about releasing the resources like frame buffers

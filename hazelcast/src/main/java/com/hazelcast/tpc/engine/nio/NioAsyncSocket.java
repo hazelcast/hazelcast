@@ -332,6 +332,8 @@ public final class NioAsyncSocket extends AsyncSocket implements NioSelectedKeyL
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            System.out.println("Closing  "+ this);
+
             eventloop.execute(() -> {
                 closeResource(socketChannel);
                 eventloop.deregisterSocket(NioAsyncSocket.this);

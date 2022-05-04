@@ -114,8 +114,9 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            eventloop.deregisterSocket(this);
+            System.out.println("Closing  "+ this);
 
+            eventloop.deregisterSocket(this);
             try {
                 serverSocket.close();
             } catch (IOException e) {

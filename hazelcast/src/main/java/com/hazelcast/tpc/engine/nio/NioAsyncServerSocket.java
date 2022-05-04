@@ -99,8 +99,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            eventloop.deregisterSocket(this);
+            System.out.println("Closing  "+ this);
 
+            eventloop.deregisterSocket(this);
             try {
                 serverSocketChannel.close();
             } catch (IOException e) {
