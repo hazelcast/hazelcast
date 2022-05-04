@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+
 /**
  * A EventLoop is a thread that is an event loop.
  *
@@ -59,7 +61,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected abstract void wakeup();
 
     public void registerSocket(AsyncSocket socket) {
-        if(!running){
+        if (!running) {
             throw new IllegalStateException("Can't register AsyncSocket when eventloop is shutdown");
         }
         registeredSockets.add(socket);
@@ -70,7 +72,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     }
 
     public void registerServerSocket(AsyncServerSocket serverSocket) {
-        if(!running){
+        if (!running) {
             throw new IllegalStateException("Can't register AsyncServerSocket when eventloop is shutdown");
         }
         registeredServerSockets.add(serverSocket);
@@ -114,25 +116,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
             logger.severe(e);
         } finally {
             closeSockets();
-            System.out.println(getName() +" terminated");
+            System.out.println(getName() + " terminated");
         }
     }
 
     private void closeSockets() {
         for (AsyncSocket socket : registeredSockets) {
-            try {
-                socket.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            closeResource(socket);
         }
 
         for (AsyncServerSocket serverSocket : registeredServerSockets) {
-            try {
-                serverSocket.close();
-            } catch (Exception e) {
-
-            }
+            closeResource(serverSocket);
         }
     }
 

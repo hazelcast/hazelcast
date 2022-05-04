@@ -3,10 +3,11 @@ package com.hazelcast.tpc.engine;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.Closeable;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class AsyncServerSocket {
+public abstract class AsyncServerSocket implements Closeable {
 
     protected final ILogger logger = Logger.getLogger(this.getClass());
     protected AtomicBoolean closed = new AtomicBoolean(false);
