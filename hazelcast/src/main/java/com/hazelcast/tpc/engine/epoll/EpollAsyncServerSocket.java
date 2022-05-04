@@ -1,6 +1,7 @@
 package com.hazelcast.tpc.engine.epoll;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
+import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import io.netty.channel.epoll.LinuxSocket;
@@ -29,7 +30,7 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
     public int flags = Native.EPOLLIN;
     public InetSocketAddress address;
     private final byte[] acceptedAddress = new byte[26];
-    public EpollEventloop eventloop;
+    private EpollEventloop eventloop;
 
     private EpollAsyncServerSocket(EpollEventloop eventloop) {
 //        try {
@@ -52,6 +53,11 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     public LinuxSocket socket() {
         return serverSocket;
+    }
+
+    @Override
+    public Eventloop getEventloop() {
+        return eventloop;
     }
 
     @Override

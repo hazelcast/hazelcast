@@ -21,6 +21,8 @@ public abstract class AsyncServerSocket {
         }
     }
 
+    public abstract Eventloop getEventloop();
+
     protected abstract SocketAddress localAddress() throws Exception;
 
     public abstract boolean isReusePort();

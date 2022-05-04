@@ -34,7 +34,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     protected LinuxSocket socket;
-    public IOUringEventloop eventloop;
+    private IOUringEventloop eventloop;
 
     // ======================================================
     // For the reading side of the channel
@@ -76,6 +76,11 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public IOUringEventloop getEventloop() {
+        return eventloop;
     }
 
     public LinuxSocket socket() {

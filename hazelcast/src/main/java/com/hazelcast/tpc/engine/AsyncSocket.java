@@ -57,6 +57,8 @@ public abstract class AsyncSocket implements Closeable {
 
     public final SwCounter readEvents = newSwCounter();
 
+    public abstract Eventloop getEventloop();
+
     public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }

@@ -1,6 +1,7 @@
 package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
+import com.hazelcast.tpc.engine.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -35,6 +36,11 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public NioEventloop getEventloop() {
+        return eventloop;
     }
 
     public ServerSocketChannel serverSocketChannel() {

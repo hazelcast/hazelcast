@@ -142,7 +142,7 @@ public final class MonitorThread extends Thread {
                 log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushThread.get()
-                        + " eventloop.contains:" + c.eventloop.concurrentRunQueue.contains(c));
+                        + " eventloop.contains:" + c.getEventloop().concurrentRunQueue.contains(c));
                 //}
             }
         }

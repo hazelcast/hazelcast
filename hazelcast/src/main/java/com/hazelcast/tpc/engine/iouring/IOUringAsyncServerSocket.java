@@ -1,6 +1,8 @@
 package com.hazelcast.tpc.engine.iouring;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.tpc.engine.AsyncServerSocket;
+import com.hazelcast.tpc.engine.Eventloop;
 import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
 import io.netty.incubator.channel.uring.LinuxSocket;
 import io.netty.incubator.channel.uring.SockaddrIn;
@@ -10,22 +12,24 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     public static IOUringAsyncServerSocket open(IOUringEventloop eventloop) {
         return new IOUringAsyncServerSocket(eventloop);
     }
 
-    public IOUringSubmissionQueue sq;
-    public LinuxSocket serverSocket;
-    public IOUringEventloop eventloop;
+    private IOUringSubmissionQueue sq;
+    private LinuxSocket serverSocket;
+    private IOUringEventloop eventloop;
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
     private Consumer<IOUringAsyncSocket> consumer;
 
     private IOUringAsyncServerSocket(IOUringEventloop eventloop) {
         try {
-            this.eventloop = eventloop;
+            this.eventloop = checkNotNull(eventloop);
             this.eventloop.registerServerSocket(this);
             this.serverSocket = LinuxSocket.newSocketStream(false);
             serverSocket.setBlocking();
@@ -41,6 +45,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     public LinuxSocket serverSocket() {
         return serverSocket;
+    }
+
+    @Override
+    public IOUringEventloop getEventloop() {
+        return eventloop;
     }
 
     @Override

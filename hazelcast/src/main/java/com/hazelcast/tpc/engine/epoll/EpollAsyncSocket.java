@@ -69,6 +69,11 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
+    public EpollEventloop getEventloop() {
+        return eventloop;
+    }
+
+    @Override
     public void activate(Eventloop l) {
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;

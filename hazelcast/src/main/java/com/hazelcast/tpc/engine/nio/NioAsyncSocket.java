@@ -87,6 +87,11 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
+    @Override
+    public NioEventloop getEventloop() {
+        return eventloop;
+    }
+
     public SocketChannel socketChannel() {
         return socketChannel;
     }
