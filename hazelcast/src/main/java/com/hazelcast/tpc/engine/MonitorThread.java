@@ -50,8 +50,8 @@ public final class MonitorThread extends Thread {
                 this.prevMillis = currentMillis;
 
                 for (Eventloop eventloop : eventloops) {
-                    for (AsyncSocket channel : eventloop.asyncSockets()) {
-                        monitor(channel, elapsed);
+                    for (AsyncSocket socket : eventloop.asyncSockets()) {
+                        monitor(socket, elapsed);
                     }
                 }
 
@@ -87,59 +87,59 @@ public final class MonitorThread extends Thread {
         System.out.println("[monitor] " + s);
     }
 
-    private void monitor(AsyncSocket channel, long elapsed) {
-        long packetsRead = channel.framesRead.get();
-        LongHolder prevPacketsRead = getPrev(channel.framesRead);
+    private void monitor(AsyncSocket socket, long elapsed) {
+        long packetsRead = socket.framesRead.get();
+        LongHolder prevPacketsRead = getPrev(socket.framesRead);
         long packetsReadDelta = packetsRead - prevPacketsRead.value;
 
         if (!silent) {
-            log(channel + " " + thp(packetsReadDelta, elapsed) + " packets/second");
+            log(socket + " " + thp(packetsReadDelta, elapsed) + " packets/second");
 
-            long bytesRead = channel.bytesRead.get();
-            LongHolder prevBytesRead = getPrev(channel.bytesRead);
+            long bytesRead = socket.bytesRead.get();
+            LongHolder prevBytesRead = getPrev(socket.bytesRead);
             long bytesReadDelta = bytesRead - prevBytesRead.value;
-            log(channel + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
+            log(socket + " " + thp(bytesReadDelta, elapsed) + " bytes-read/second");
             prevBytesRead.value = bytesRead;
 
-            long bytesWritten = channel.bytesWritten.get();
-            LongHolder prevBytesWritten = getPrev(channel.bytesWritten);
+            long bytesWritten = socket.bytesWritten.get();
+            LongHolder prevBytesWritten = getPrev(socket.bytesWritten);
             long bytesWrittenDelta = bytesWritten - prevBytesWritten.value;
-            log(channel + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
+            log(socket + " " + thp(bytesWrittenDelta, elapsed) + " bytes-written/second");
             prevBytesWritten.value = bytesWritten;
 
-            long handleOutboundCalls = channel.handleWriteCnt.get();
-            LongHolder prevHandleOutboundCalls = getPrev(channel.handleWriteCnt);
+            long handleOutboundCalls = socket.handleWriteCnt.get();
+            LongHolder prevHandleOutboundCalls = getPrev(socket.handleWriteCnt);
             long handleOutboundCallsDelta = handleOutboundCalls - prevHandleOutboundCalls.value;
-            log(channel + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
+            log(socket + " " + thp(handleOutboundCallsDelta, elapsed) + " handleOutbound-calls/second");
             prevHandleOutboundCalls.value = handleOutboundCalls;
 
-            long readEvents = channel.readEvents.get();
-            LongHolder prevReadEvents = getPrev(channel.readEvents);
+            long readEvents = socket.readEvents.get();
+            LongHolder prevReadEvents = getPrev(socket.readEvents);
             long readEventsDelta = readEvents - prevReadEvents.value;
-            log(channel + " " + thp(readEventsDelta, elapsed) + " read-events/second");
+            log(socket + " " + thp(readEventsDelta, elapsed) + " read-events/second");
             prevReadEvents.value = readEvents;
 
-            log(channel + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
-            log(channel + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
-            log(channel + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
+            log(socket + " " + (packetsReadDelta * 1.0f / (handleOutboundCallsDelta + 1)) + " packets/handleOutbound-call");
+            log(socket + " " + (packetsReadDelta * 1.0f / (readEventsDelta + 1)) + " packets/read-events");
+            log(socket + " " + (bytesReadDelta * 1.0f / (readEventsDelta + 1)) + " bytes-read/read-events");
         }
         prevPacketsRead.value = packetsRead;
 
         if (packetsReadDelta == 0 || true) {
-            if (channel instanceof NioAsyncSocket) {
-                NioAsyncSocket c = (NioAsyncSocket) channel;
+            if (socket instanceof NioAsyncSocket) {
+                NioAsyncSocket c = (NioAsyncSocket) socket;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (nioChannel.flushThread.get() == null && hasData) {
-                log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
+                log(socket + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushThread.get()
                         + " eventloop.contains:" + c.eventloop.concurrentRunQueue.contains(c));
                 //}
-            } else if (channel instanceof IOUringAsyncSocket) {
-                IOUringAsyncSocket c = (IOUringAsyncSocket) channel;
+            } else if (socket instanceof IOUringAsyncSocket) {
+                IOUringAsyncSocket c = (IOUringAsyncSocket) socket;
                 boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
                 //if (c.flushThread.get() == null && hasData) {
-                log(channel + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
+                log(socket + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
                         + " ioVector.empty:" + c.ioVector.isEmpty()
                         + " flushed:" + c.flushThread.get()
                         + " eventloop.contains:" + c.getEventloop().concurrentRunQueue.contains(c));

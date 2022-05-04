@@ -30,7 +30,6 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 
-// todo: add padding around Nio channel
 public final class NioAsyncSocket extends AsyncSocket {
 
     public static NioAsyncSocket open() {
@@ -47,12 +46,12 @@ public final class NioAsyncSocket extends AsyncSocket {
     private Selector selector;
 
     // ======================================================
-    // reading side of the channel.
+    // reading side of the socket.
     // ======================================================
     private ByteBuffer receiveBuffer;
 
     // ======================================================
-    // writing side of the channel.
+    // writing side of the socket.
     // ======================================================
     // private
     public final IOVector ioVector = new IOVector();

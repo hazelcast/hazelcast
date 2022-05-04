@@ -37,13 +37,13 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private IOUringEventloop eventloop;
 
     // ======================================================
-    // For the reading side of the channel
+    // For the reading side of the socket
     // ======================================================
     protected ByteBuf receiveBuff;
     protected IOUringSubmissionQueue sq;
 
     // ======================================================
-    // for the writing side of the channel.
+    // for the writing side of the socket.
     // ======================================================
     // concurrent state
     public AtomicReference<Thread> flushThread = new AtomicReference<>();
