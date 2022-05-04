@@ -45,6 +45,11 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 //        }
     }
 
+    @Override
+    public SocketAddress getLocalAddress() {
+        return serverSocket.localAddress();
+    }
+
     public LinuxSocket socket() {
         return serverSocket;
     }

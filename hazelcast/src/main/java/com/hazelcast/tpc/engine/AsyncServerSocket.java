@@ -9,12 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AsyncServerSocket {
 
     protected final ILogger logger = Logger.getLogger(this.getClass());
-    protected SocketAddress localAddress;
     protected AtomicBoolean closed = new AtomicBoolean(false);
 
-    public final SocketAddress getLocalAddress() {
-        return localAddress;
-    }
+    public abstract SocketAddress getLocalAddress();
 
     public abstract boolean isReusePort();
 

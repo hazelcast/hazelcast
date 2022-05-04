@@ -44,6 +44,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
     }
 
     @Override
+    public SocketAddress getLocalAddress() {
+        return serverSocket.localAddress();
+    }
+
+    @Override
     public void listen(int backlog) {
         try {
             serverSocket.listen(10);
