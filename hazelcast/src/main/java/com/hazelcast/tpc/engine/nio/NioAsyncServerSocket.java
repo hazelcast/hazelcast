@@ -28,6 +28,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private NioAsyncServerSocket(NioEventloop eventloop) {
         try {
             this.eventloop = eventloop;
+            this.eventloop.registerServerSocket(this);
             this.selector = eventloop.selector;
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
@@ -89,6 +90,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            eventloop.deregisterSocket(this);
+
             try {
                 serverSocketChannel.close();
             } catch (IOException e) {

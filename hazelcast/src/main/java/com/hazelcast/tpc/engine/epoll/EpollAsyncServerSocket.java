@@ -31,11 +31,12 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
     private final byte[] acceptedAddress = new byte[26];
     public EpollEventloop eventloop;
 
-    private EpollAsyncServerSocket(EpollEventloop eventloop){
+    private EpollAsyncServerSocket(EpollEventloop eventloop) {
 //        try {
-            this.eventloop = eventloop;
-            this.serverSocket = LinuxSocket.newSocketStream();
-           // this.serverSocket.
+        this.eventloop = eventloop;
+        this.eventloop.registerServerSocket(this);
+        this.serverSocket = LinuxSocket.newSocketStream();
+        // this.serverSocket.
 //            this.selector = eventloop.selector;
 //            this.serverSocketChannel = ServerSocketChannel.open();
 //            serverSocketChannel.configureBlocking(false);
@@ -113,7 +114,13 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void close() {
+        eventloop.deregisterSocket(this);
 
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

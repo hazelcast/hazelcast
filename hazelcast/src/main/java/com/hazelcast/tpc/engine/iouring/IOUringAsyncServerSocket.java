@@ -26,6 +26,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
     private IOUringAsyncServerSocket(IOUringEventloop eventloop) {
         try {
             this.eventloop = eventloop;
+            this.eventloop.registerServerSocket(this);
             this.serverSocket = LinuxSocket.newSocketStream(false);
             serverSocket.setBlocking();
 
@@ -108,6 +109,8 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            eventloop.deregisterSocket(this);
+
             try {
                 serverSocket.close();
             } catch (IOException e) {

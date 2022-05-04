@@ -1,6 +1,7 @@
 package com.hazelcast.tpc.engine;
 
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class Eventloop extends HazelcastManagedThread {
     public final ILogger logger = Logger.getLogger(getClass());
     protected final Set<AsyncSocket> registeredSockets = new CopyOnWriteArraySet<>();
+    protected final Set<AsyncServerSocket> registeredServerSockets = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
@@ -51,24 +53,25 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     public void shutdown() {
         running = false;
+        Thread.currentThread().interrupt();
     }
 
     protected abstract void wakeup();
 
     public void registerSocket(AsyncSocket socket) {
-        if (Thread.currentThread() != this) {
-            throw new RuntimeException("registerSocket can only be called from eventloop");
-        }
-
         registeredSockets.remove(socket);
     }
 
     public void deregisterSocket(AsyncSocket socket) {
-        if (Thread.currentThread() != this) {
-            throw new RuntimeException("registerSocket can only be called from eventloop");
-        }
-
         registeredSockets.remove(socket);
+    }
+
+    public void registerServerSocket(AsyncServerSocket serverSocket) {
+        registeredServerSockets.remove(serverSocket);
+    }
+
+    public void deregisterSocket(AsyncServerSocket socket) {
+        registeredServerSockets.remove(socket);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -103,6 +106,26 @@ public abstract class Eventloop extends HazelcastManagedThread {
         } catch (Throwable e) {
             e.printStackTrace();
             logger.severe(e);
+        } finally {
+            closeSockets();
+        }
+    }
+
+    private void closeSockets() {
+        for (AsyncSocket socket : registeredSockets) {
+            try {
+                socket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        for (AsyncServerSocket serverSocket : registeredServerSockets) {
+            try {
+                serverSocket.close();
+            } catch (Exception e) {
+
+            }
         }
     }
 

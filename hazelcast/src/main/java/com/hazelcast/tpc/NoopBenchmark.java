@@ -13,7 +13,7 @@ public class NoopBenchmark {
         Table table = node1.getTable("piranaha");
 
         long operations = 50_000_000;
-        int concurrency = 100;
+        int concurrency = 2;
         long iterations = operations/concurrency;
 
         long startMs = System.currentTimeMillis();
