@@ -161,7 +161,6 @@ public class RequestService {
         return engine;
     }
 
-
     private void configureNio() {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) engine.eventloop(k);
