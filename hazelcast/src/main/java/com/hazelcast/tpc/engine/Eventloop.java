@@ -53,13 +53,16 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     public void shutdown() {
         running = false;
-        Thread.currentThread().interrupt();
+        wakeup();
     }
 
     protected abstract void wakeup();
 
     public void registerSocket(AsyncSocket socket) {
-        registeredSockets.remove(socket);
+        if(!running){
+            throw new IllegalStateException("Can't register AsyncSocket when eventloop is shutdown");
+        }
+        registeredSockets.add(socket);
     }
 
     public void deregisterSocket(AsyncSocket socket) {
@@ -67,7 +70,10 @@ public abstract class Eventloop extends HazelcastManagedThread {
     }
 
     public void registerServerSocket(AsyncServerSocket serverSocket) {
-        registeredServerSockets.remove(serverSocket);
+        if(!running){
+            throw new IllegalStateException("Can't register AsyncServerSocket when eventloop is shutdown");
+        }
+        registeredServerSockets.add(serverSocket);
     }
 
     public void deregisterSocket(AsyncServerSocket socket) {
@@ -108,6 +114,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
             logger.severe(e);
         } finally {
             closeSockets();
+            System.out.println(getName() +" terminated");
         }
     }
 

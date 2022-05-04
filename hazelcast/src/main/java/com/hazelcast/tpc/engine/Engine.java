@@ -7,6 +7,7 @@ import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -52,7 +53,7 @@ public final class Engine {
         return this;
     }
 
-    public Eventloop[] eventloops(){
+    public Eventloop[] eventloops() {
         return eventloops;
     }
 
@@ -119,7 +120,7 @@ public final class Engine {
         eventloops[eventloopIdx].execute(task);
     }
 
-    public void createEventLoops(){
+    public void createEventLoops() {
         this.eventloops = new Eventloop[eventloopCount];
         for (int idx = 0; idx < eventloops.length; idx++) {
             Scheduler scheduler = schedulerSupplier.get();
@@ -160,6 +161,15 @@ public final class Engine {
     public void shutdown() {
         for (Eventloop eventloop : eventloops) {
             eventloop.shutdown();
+        }
+
+        try {
+            for (Eventloop eventloop : eventloops) {
+                eventloop.join(TimeUnit.SECONDS.toMillis(5));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
 
         monitorThread.shutdown();
