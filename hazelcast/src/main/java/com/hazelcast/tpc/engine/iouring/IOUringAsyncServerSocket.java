@@ -10,7 +10,7 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
-public final class IOUringAsyncServerSocket extends AsyncServerSocket implements CompletionListener {
+public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     public static IOUringAsyncServerSocket open(IOUringEventloop eventloop) {
         return new IOUringAsyncServerSocket(eventloop);
@@ -31,7 +31,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
             serverSocket.setBlocking();
 
             eventloop.execute(() -> {
-                eventloop.completionListeners.put(serverSocket.intValue(), IOUringAsyncServerSocket.this);
+                eventloop.completionListeners.put(serverSocket.intValue(), new CompletionListenerImpl());
                 sq = eventloop.sq;
             });
         } catch (IOException e) {
@@ -114,7 +114,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  "+ this);
+            System.out.println("Closing  " + this);
 
             eventloop.deregisterSocket(this);
             try {
@@ -134,26 +134,6 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
         }
     }
 
-    @Override
-    public void handle(int fd, int res, int flags, byte op, short data) {
-        sq_addAccept();
-
-        if (res < 0) {
-            System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
-        } else {
-
-//        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
-
-            SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
-
-            System.out.println(this + " new connected accepted: " + address);
-
-            LinuxSocket socket = new LinuxSocket(res);
-            IOUringAsyncSocket asyncSocket = new IOUringAsyncSocket(socket);
-            consumer.accept(asyncSocket);
-        }
-    }
-
     private void sq_addAccept() {
         sq.addAccept(serverSocket.intValue(),
                 acceptMemory.memoryAddress,
@@ -168,7 +148,30 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket implements
         });
     }
 
+    @Override
     public String toString() {
-        return "IOUringServerSocket(fd=" + serverSocket.intValue() + ")";
+        return "IOUringServerSocket(" + serverSocket.localAddress() + ")";
+    }
+
+    private class CompletionListenerImpl implements CompletionListener {
+        @Override
+        public void handle(int fd, int res, int flags, byte op, short data) {
+            sq_addAccept();
+
+            if (res < 0) {
+                System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
+            } else {
+
+//        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
+
+                SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
+
+                System.out.println(this + " new connected accepted: " + address);
+
+                LinuxSocket socket = new LinuxSocket(res);
+                IOUringAsyncSocket asyncSocket = new IOUringAsyncSocket(socket);
+                consumer.accept(asyncSocket);
+            }
+        }
     }
 }

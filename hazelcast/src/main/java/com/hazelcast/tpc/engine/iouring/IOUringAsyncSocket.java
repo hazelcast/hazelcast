@@ -25,7 +25,7 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_READ;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
-public final class IOUringAsyncSocket extends AsyncSocket implements CompletionListener {
+public final class IOUringAsyncSocket extends AsyncSocket {
 
     private final boolean clientSide;
 
@@ -89,7 +89,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
             ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
             iovArray = new IovArray(iovArrayBuffer);
             sq = eventloop.sq;
-            eventloop.completionListeners.put(socket.intValue(), IOUringAsyncSocket.this);
+            eventloop.completionListeners.put(socket.intValue(), new CompletionListenerImpl());
             receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
 
             if(!clientSide) {
@@ -285,34 +285,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         }
     }
 
-    @Override
-    public void handle(int fd, int res, int flags, byte op, short data) {
-        if (res >= 0) {
-            if (op == IORING_OP_READ) {
-                readEvents.inc();
-                bytesRead.inc(res);
-                //System.out.println("handle_IORING_OP_READ fd:" + fd + " bytes read: " + res);
-                receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
-                readHandler.onRead(receiveBuff);
-                receiveBuff.discardReadBytes();
-                // we want to read more data.
-                sq_addRead();
-            } else if (op == IORING_OP_WRITE) {
-                //System.out.println("handle_IORING_OP_WRITE fd:" + fd + " bytes written: " + res);
-                ioVector.compact(res);
-                resetFlushed();
-            } else if (op == IORING_OP_WRITEV) {
-                //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
-                ioVector.compact(res);
-                iovArray.clear();
-                resetFlushed();
-            }
-        } else {
-            System.out.println("Problem: handle_IORING_OP_READ res:" + res);
-        }
-    }
-
-    public void sq_addRead() {
+    private void sq_addRead() {
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());
         sq.addRead(socket.intValue(),
                 receiveBuff.memoryAddress(),
@@ -345,5 +318,35 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
         }
 
         return future;
+    }
+
+    private class CompletionListenerImpl implements CompletionListener{
+
+        @Override
+        public void handle(int fd, int res, int flags, byte op, short data) {
+            if (res >= 0) {
+                if (op == IORING_OP_READ) {
+                    readEvents.inc();
+                    bytesRead.inc(res);
+                    //System.out.println("handle_IORING_OP_READ fd:" + fd + " bytes read: " + res);
+                    receiveBuff.writerIndex(receiveBuff.writerIndex() + res);
+                    readHandler.onRead(receiveBuff);
+                    receiveBuff.discardReadBytes();
+                    // we want to read more data.
+                    sq_addRead();
+                } else if (op == IORING_OP_WRITE) {
+                    //System.out.println("handle_IORING_OP_WRITE fd:" + fd + " bytes written: " + res);
+                    ioVector.compact(res);
+                    resetFlushed();
+                } else if (op == IORING_OP_WRITEV) {
+                    //System.out.println("handle_IORING_OP_WRITEV fd:" + fd + " bytes written: " + res);
+                    ioVector.compact(res);
+                    iovArray.clear();
+                    resetFlushed();
+                }
+            } else {
+                System.out.println("Problem: handle_IORING_OP_READ res:" + res);
+            }
+        }
     }
 }

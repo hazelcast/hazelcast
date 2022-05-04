@@ -12,7 +12,7 @@ public class NoopBenchmark {
 
         Table table = node1.getTable("piranaha");
 
-        long operations = 50_000_000;
+        long operations = 5_000_000;
         int concurrency = 2;
         long iterations = operations/concurrency;
 
@@ -32,5 +32,7 @@ public class NoopBenchmark {
 
         long duration = System.currentTimeMillis()-startMs;
         System.out.println("Throughput: "+(operations*1000.0f/duration)+" op/s");
+        node1.shutdown();
+        node2.shutdown();
     }
 }
