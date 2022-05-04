@@ -2,8 +2,7 @@ package com.hazelcast.tpc.engine.iouring;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.EventloopTask;
-import com.hazelcast.tpc.engine.ReadHandler;
+import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
@@ -99,7 +98,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReadHandler(ReadHandler readHandler) {
+    public void setReadHandler(AsyncSocketReadHandler readHandler) {
         this.readHandler = (IOUringReadHandler) checkNotNull(readHandler);
         this.readHandler.init(this);
     }
