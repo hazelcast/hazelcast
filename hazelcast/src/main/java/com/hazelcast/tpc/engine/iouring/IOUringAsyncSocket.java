@@ -171,6 +171,11 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
 
     // called by the Reactor.
     public void resetFlushed() {
+        if (!ioVector.isEmpty()) {
+            eventloop.localRunQueue.add(writeDirtySocket);
+            return;
+        }
+
         flushThread.set(null);
 
         if (!unflushedFrames.isEmpty()) {
@@ -232,7 +237,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  "+ this);
+            System.out.println("Closing  " + this);
 
             // todo: offloading.
 
