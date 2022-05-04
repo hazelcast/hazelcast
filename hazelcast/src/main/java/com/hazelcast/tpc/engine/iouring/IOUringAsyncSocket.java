@@ -170,7 +170,7 @@ public final class IOUringAsyncSocket extends AsyncSocket implements CompletionL
     }
 
     // called by the Reactor.
-    public void resetFlushed() {
+    private void resetFlushed() {
         if (!ioVector.isEmpty()) {
             eventloop.localRunQueue.add(writeDirtySocket);
             return;
