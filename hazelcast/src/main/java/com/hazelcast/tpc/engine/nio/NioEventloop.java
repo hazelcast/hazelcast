@@ -30,7 +30,7 @@ public final class NioEventloop extends Eventloop {
 
     @Override
     protected void eventLoop() throws Exception {
-        while (state.get() == RUNNING) {
+        while (state == RUNNING) {
             runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();

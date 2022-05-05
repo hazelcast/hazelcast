@@ -20,11 +20,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         return new IOUringAsyncServerSocket(eventloop);
     }
 
-    private IOUringSubmissionQueue sq;
-    private LinuxSocket serverSocket;
-    private IOUringEventloop eventloop;
+    private final LinuxSocket serverSocket;
+    private final IOUringEventloop eventloop;
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final byte[] inet4AddressArray = new byte[SockaddrIn.IPV4_ADDRESS_LENGTH];
+    private IOUringSubmissionQueue sq;
     private Consumer<IOUringAsyncSocket> consumer;
 
     private IOUringAsyncServerSocket(IOUringEventloop eventloop) {
@@ -33,7 +33,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             serverSocket.setBlocking();
             this.eventloop = checkNotNull(eventloop);
 
-            if(!eventloop.registerServerSocket(this)){
+            if (!eventloop.registerServerSocket(this)) {
                 close();
                 throw new IllegalStateException("EventLoop is not running");
             }
@@ -157,11 +157,12 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         eventloop.execute(() -> {
             this.consumer = consumer;
             sq_addAccept();
-            System.out.println(" ServerSocket listening at " + getLocalAddress());
+            System.out.println("ServerSocket listening at " + getLocalAddress());
         });
     }
 
     private class EventloopHandler implements CompletionListener {
+
         @Override
         public void handle(int fd, int res, int flags, byte op, short data) {
             sq_addAccept();
@@ -169,8 +170,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             if (res < 0) {
                 System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
             } else {
-
-//        System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
+                // System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
                 SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
 

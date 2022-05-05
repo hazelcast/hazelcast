@@ -15,8 +15,7 @@ import static io.netty.channel.epoll.Native.epollCtlAdd;
 
 public final class EpollEventloop extends Eventloop {
     private final IntObjectMap channels = new IntObjectHashMap<>(4096);
-    private final IntObjectMap<EpollAsyncServerSocket> serverChannels = new IntObjectHashMap<>(4096);
-    public final FileDescriptor epollFd;
+    final FileDescriptor epollFd;
     private final FileDescriptor eventFd;
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
@@ -56,7 +55,7 @@ public final class EpollEventloop extends Eventloop {
     @Override
     protected void eventLoop() throws Exception {
         int k = 0;
-        while (state.get() == RUNNING) {
+        while (state == RUNNING) {
             runConcurrentTasks();
             k++;
 

@@ -15,10 +15,13 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.tpc.engine.EventloopState.*;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
  * A EventLoop is a thread that is an event loop.
@@ -28,6 +31,10 @@ import static com.hazelcast.tpc.engine.EventloopState.*;
  * A single eventloop can deal with many server ports.
  */
 public abstract class Eventloop extends HazelcastManagedThread {
+
+    protected final static AtomicReferenceFieldUpdater<Eventloop, EventloopState> STATE
+            = newUpdater(Eventloop.class, EventloopState.class, "state");
+
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final Set<AsyncSocket> registeredSockets = new CopyOnWriteArraySet<>();
     protected final Set<AsyncServerSocket> registeredServerSockets = new CopyOnWriteArraySet<>();
@@ -39,10 +46,10 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
 
-    protected final AtomicReference<EventloopState> state = new AtomicReference<>(CREATED);
+    protected volatile EventloopState state = CREATED;
 
     public EventloopState state() {
-        return state.get();
+        return state;
     }
 
     public boolean isSpin() {
@@ -64,15 +71,15 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     public void shutdown() {
         for (; ; ) {
-            EventloopState oldState = state.get();
+            EventloopState oldState = state;
             switch (oldState) {
                 case CREATED:
-                    if (state.compareAndSet(oldState, SHUTDOWN)) {
+                    if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
                         return;
                     }
                     break;
                 case RUNNING:
-                    if (state.compareAndSet(oldState, SHUTTING_DOWN)) {
+                    if (STATE.compareAndSet(this, oldState, SHUTTING_DOWN)) {
                         wakeup();
                         return;
                     }
@@ -86,13 +93,13 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected abstract void wakeup();
 
     public boolean registerSocket(AsyncSocket socket) {
-        if (state.get() != RUNNING) {
+        if (state != RUNNING) {
             return false;
         }
 
         registeredSockets.add(socket);
 
-        if (state.get() != RUNNING) {
+        if (state != RUNNING) {
             registeredSockets.remove(socket);
             return false;
         }
@@ -105,13 +112,13 @@ public abstract class Eventloop extends HazelcastManagedThread {
     }
 
     public boolean registerServerSocket(AsyncServerSocket serverSocket) {
-        if (state.get() != RUNNING) {
+        if (state != RUNNING) {
             return false;
         }
 
         registeredServerSockets.add(serverSocket);
 
-        if (state.get() != RUNNING) {
+        if (state != RUNNING) {
             registeredServerSockets.remove(serverSocket);
             return false;
         }
@@ -151,7 +158,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     @Override
     public final void executeRun() {
         try {
-            if (!state.compareAndSet(CREATED, RUNNING)) {
+            if (!STATE.compareAndSet(this, CREATED, RUNNING)) {
                 throw new IllegalStateException("Can't start eventLoop, invalid state:" + state);
             }
 
@@ -160,20 +167,15 @@ public abstract class Eventloop extends HazelcastManagedThread {
             e.printStackTrace();
             logger.severe(e);
         } finally {
-            state.set(SHUTDOWN);
+            state = SHUTDOWN;
             closeSockets();
             System.out.println(getName() + " terminated");
         }
     }
 
     private void closeSockets() {
-        for (AsyncSocket socket : registeredSockets) {
-            closeResource(socket);
-        }
-
-        for (AsyncServerSocket serverSocket : registeredServerSockets) {
-            closeResource(serverSocket);
-        }
+        closeResources(registeredSockets);
+        closeResources(registeredServerSockets);
     }
 
     protected void runLocalTasks() {
@@ -186,7 +188,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
             try {
                 task.run();
             } catch (Exception e) {
-                //todo
                 e.printStackTrace();
             }
         }
@@ -197,9 +198,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
             Object task = concurrentRunQueue.poll();
             if (task == null) {
                 break;
-            }
-
-            if (task instanceof EventloopTask) {
+            } else if (task instanceof EventloopTask) {
                 try {
                     ((EventloopTask) task).run();
                 } catch (Exception e) {

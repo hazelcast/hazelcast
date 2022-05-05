@@ -141,6 +141,10 @@ public class IOUringEventloop extends Eventloop  {
         this.ioseqAsyncTreshold = checkPositive("ioseqAsyncTreshold", ioseqAsyncTreshold);
     }
 
+    public void setStorageScheduler(StorageScheduler storageScheduler) {
+        this.storageScheduler = storageScheduler;
+    }
+
     public StorageScheduler getStorageScheduler() {
         return storageScheduler;
     }
@@ -161,7 +165,7 @@ public class IOUringEventloop extends Eventloop  {
     protected void eventLoop() {
         sq_addEventRead();
 
-        while (state.get() == RUNNING) {
+        while (state == RUNNING) {
             runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();

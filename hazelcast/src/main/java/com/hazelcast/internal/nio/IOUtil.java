@@ -60,6 +60,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.Random;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -79,8 +80,8 @@ import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
-@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
-        "checkstyle:ClassDataAbstractionCoupling" })
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ClassDataAbstractionCoupling"})
 public final class IOUtil {
 
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
@@ -424,6 +425,21 @@ public final class IOUtil {
             closeable.close();
         } catch (IOException e) {
             LOGGER.finest("closeResource failed", e);
+        }
+    }
+
+    public static void closeResources(Collection<? extends Closeable> collection) {
+        if (collection == null) {
+            return;
+        }
+        for (Closeable closeable : collection) {
+            if (closeable != null) {
+                try {
+                    closeable.close();
+                } catch (IOException e) {
+                    LOGGER.finest("closeResource failed", e);
+                }
+            }
         }
     }
 
