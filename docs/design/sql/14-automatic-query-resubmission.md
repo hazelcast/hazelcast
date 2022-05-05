@@ -52,56 +52,13 @@ The scope is to add support for automatic SQL retries in Java client. Other
 clients might follow, but it's not in the scope of the initial PR, as the
 requirement is currently only for Java client.
 
+There will be no retry mechanism for queries submitted through member instances.
+
 #### Terminology
 
-|Term|Definition|
-|---|---|
-|||
-
-#### Actors and Scenarios
-
-Provide a list of actors and the business function(s) they perform related to this feature.
-
-### Functional Design
-#### Summary of Functionality
-
-Provide a list of functions user(s) can perform.
-
-#### Additional Functional Design Topics
-
-Provide functional design details that are pertinent to this specific design spec. Use the h3 heading tag to distinguish topic titles.
-
-##### Notes/Questions/Issues
-
-- Document notes, questions, and issues identified with this functional design topic.
-- List drawbacks - why should we *not* do this? If applicable, list mitigating factors that may make each drawback acceptable. Investigate the consequences of the proposed change onto other areas
-  of Hazelcast. If other features are impacted, especially UX, list this impact as a reason not to do the change. If possible, also investigate and suggest mitigating actions that would reduce the impact. You can for example consider additional validation testing, additional documentation or doc changes, new user research, etc.
-- What parts of the design do you expect to resolve through the design process before this gets merged?
-- What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
-- What related issues do you consider out of scope for this document that could be addressed in the future independently of the solution that comes out of this change?
-
-Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
-
-### User Interaction
-#### API design and/or Prototypes
-
-Listing of associated prototypes (latest versions) and any API design samples. How do we teach this?
-
-Explain the proposal as if it was already included in the project and you were teaching it to an end-user, or a Hazelcast team member in a different project area.
-
-Consider the following writing prompts:
-- Which new concepts have been introduced to end-users? Can you provide examples for each?
-- How would end-users change their apps or thinking to use the change?
-- Are there new error messages introduced? Can you provide examples?
-- Are there new deprecation warnings? Can you provide examples?
-- How are clusters affected that were created before this change? Are there migrations to consider?
-
-#### Client Related Changes
-Please identify if any client code change is required. If so, please provide a list of client code changes.
-The changes may include API changes, serialization changes or other client related code changes.
-
-Please notify the APIs team if any change is documented in this section.
-The changes may need to be handled for non-Java clients as well.
+| Term           | Definition                            |
+|----------------|---------------------------------------|
+| Topology error | Query failure due to a member failure |
 
 ### Technical Design
 
@@ -117,40 +74,49 @@ We will analyze three scenarios:
 
 #### Resubmission policies
 
-We propose that the user will pick one of these policies:
+We propose that the user will be able to pick one of these retry policies:
 
-1. `NEVER`: the current state. If a query fails, the failure is forwarded to the user
+1. `NEVER`: the current state. If a query fails, the failure is immediately 
+   forwarded to the user
 2. `RETRY_SELECTS`: the query will be retried if:
    - no rows were received yet
    - the SQL text starts with `SELECT` (case-insensitive, ignoring
      white space)
-3. `RETRY_SELECTS_ALLOW_DUPLICATES`: as before, but 
-4. `RETRY_ALL`: all queries will be retried after a failure
+3. `RETRY_SELECTS_ALLOW_DUPLICATES`: as before, but query can be retried
+   after it returned some rows. The already-returned rows will be returned again.
+4. `RETRY_ALL`: all queries will be retried after a failure. This option is 
+   dangerous as it will retry all queries, including DML, DDL etc. E.g. a retried
+   `CREATE MAPPING` query can fail with "object already exists", if there's no `OR
+   REPLACE` option and the first attempt actually succeeded, so the user will   
+   receive an error even though it was successful, which is very confusing.
+
+The default mode will be `NEVER` (b/w compatible).
 
 #### Ways to pick resubmission policy
 
 1. Ideally, we would be able to configure the retry policy per query, but that's
-not possible. We could add this option to Java API (the `SqlStatement` class),
-but this is a non-standard API. We expect many clients to use JDBC or other
-standardized APIs in other languages, which don't provide this support.
+not possible. We could add this option to Java API (to the `SqlStatement`
+class), but this is a non-standard API. We expect many clients to use JDBC or
+other standardized APIs in other languages, which don't provide this support.
 
 2. Another idea is that we could specify this as a query hint, e.g. in the form of
 `SELECT /*+ ALLOW_RETRY */`. But for this we would have to parse the query on
 the client, which we want to avoid. Another reason against this is that queries
 are often generated, such as through ORM or other SQL tools, and injecting the
-hint might not be possible.
+hint might not be possible or easy.
 
 3. Another option is to use a session parameter, e.g. executing `SET
-ALLOW_RETRY=true`. The client will have to parse these commands, but it's
-relatively easier.
+RETRY_STATEGY=<mode>`. The client will have to parse these commands, but we will
+not have to provide a full SQL parser.
 
-4. Provide a connection option, that is a new option in `ClientConfig`, a
-new JDBC URL parameter for JDBC etc. Other standardized APIs also provide these.
-The disadvantage is that it will apply to all statements executed using that
-connection, that is also to DDL statements etc.
+4. Provide a new option in `ClientConfig`, and a new JDBC URL parameter for 
+JDBC. Other standardized APIs also provide these. The disadvantage is that it
+will apply to all statements executed using that connection, that is also to DDL
+statements etc.
 
 We propose to implement options (3) and (4). Since the option (4) is feasible
-for all modes, except for `RETRY_ALL`, the option (3) is a nice-to-have feature.
+for all modes, except for not-that-useful `RETRY_ALL` mode, we consider the
+option (3) a nice-to-have feature.
 
 #### Explanation of "no rows received yet"
 
@@ -160,95 +126,43 @@ However, there can be an ongoing blocking call to `next()` in another thread.
 #### Other configuration options
 
 The Java client retries invocations in this way: first 5 invocations are retried
-without a delay. Afterwards the delay is `2^<failureCount>` ms, up to 1000 ms
-(configurable by the `hazelcast.client.invocation.retry.pause.millis` property).
-After 120 seconds (configurable by the
-`hazelcast.client.invocation.timeout.seconds` property), a failure is thrown to
-the user.
+without a delay (hardcoded value). Afterwards the delay is `2^<failureCount>`
+ms, up to 1000 ms (configurable by the
+`hazelcast.client.invocation.retry.pause.millis` property). After 120 seconds
+(configurable by the `hazelcast.client.invocation.timeout.seconds` property), a
+failure is reported to the user.
 
 We think this scheme can be also used for SQL retries and there's no need to
 provide more configuration options.
 
 #### Error classification
 
-Each exception delivered to the client has an [error 
-code](https://github.com/hazelcast/hazelcast/blob/713cef1b54b725e6c7df971ff52da30d1133a0a2/hazelcast/src/main/java/com/hazelcast/sql/impl/SqlErrorCode.java#L22). Retry logic will be applied for all codes, except for:
-- `CANCELLED_BY_USER`
-- `TIMEOUT`
-- `PARSING`
-- ``
+Each exception delivered to the client has an [error
+code](https://github.com/hazelcast/hazelcast/blob/713cef1b54b725e6c7df971ff52da30d1133a0a2/hazelcast/src/main/java/com/hazelcast/sql/impl/SqlErrorCode.java#L22).
+This code isn't sufficient to decide whether to retry or not. More error codes
+need to be added. If we retried in case of a problem that has no chance of being
+resolved when executing the query again, it's a waste of time and the error will
+be delivered much later to the user.
 
+Since the use case is to increase availability during member failures, we
+propose to retry only in specific cases (as opposed to _not_ retrying in
+specific cases and retry in all other). We'll rather risk not retrying in a case
+where we could retry, rather than risk retrying in cases where the error could
+be reported immediately.
 
+From the existing codes we need to retry in these cases:
+- `CONNECTION_PROBLEM`
+- `PARTITION_DISTRIBUTION`
 
-This is the technical portion of the design document. Explain the design in sufficient detail.
+These do not cover most errors thrown at member failures. We propose introducing
+a new error code `TOPOLOGY_CHANGE` and use this code for various
+topology-related failures.
 
-Important writing prompts follow. You do not need to answer them in this particular order, but we wish to find answers to them throughout your prose.
-
-Some of these prompts may not be relevant to your design document; in which case you can spell out “this change does not affect ...” or answer “N/A” (not applicable) next to the question.
-
-- Questions about the change:
-    - What components in Hazelcast need to change? How do they change? This section outlines the implementation strategy: for each component affected, outline how it is changed.
-    - Are there new abstractions introduced by the change? New concepts? If yes, provide definitions and examples.
-    - How does this work in a on-prem deployment? How about on AWS and Kubernetes?
-    - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
-    - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
-    - Is there other ongoing or recent work that is related? (Cross-reference the relevant design documents.)
-    - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled? Provide examples.
-    - What are the effect of possible mistakes by other Hazelcast team members trying to use the feature in their own code? How does the change impact how they will troubleshoot things?
-    - Mention alternatives, risks and assumptions. Why is this design the best in the space of possible designs? What other designs have been considered and what is the rationale for not choosing them?
-    - Add links to any similar functionalities by other vendors, similarities and differentiators
-
-- Questions about performance:
-    - Does the change impact performance? How?
-    - How is resource usage affected for “large” loads? For example, what do we expect to happen when there are 100000 items/entries? 100000 data structures? 1000000 concurrent operations?
-    - Also investigate the consequences of the proposed change on performance. Pay especially attention to the risk that introducing a possible performance improvement in one area can slow down another area in an unexpected way. Examine all the current "consumers" of the code path you are proposing to change and consider whether the performance of any of them may be negatively impacted by the proposed change. List all these consequences as possible drawbacks.
-
-- Stability questions:
-    - Can this new functionality affect the stability of a node or the entire cluster? How does the behavior of a node or a cluster degrade if there is an error in the implementation?
-    - Can the new functionality be disabled? Can a user opt out? How? Can the user disable it from the Management Center?
-    - Can the new functionality affect clusters which are not explicitly using it?
-    - What testing and safe guards are being put in place to protect against unexpected problems?
-
-- Security questions:
-    - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant security-minded reviewer as reviewer to the design document.
-    - Does the change create a new way to communicate data over the network?  What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
-    - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
-
-- Observability and usage questions:
-    - Is the change affecting asynchronous / background subsystems?
-        - If so, how can users and our team observe the run-time state via tracing?
-        - Which other inspection APIs exist?
-          (In general, think about how your coworkers and users will gain access to the internals of the change after it has happened to either gain understanding during execution or troubleshoot problems.)
-
-    - Are there new APIs, or API changes (either internal or external)?
-        - How would you document the new APIs? Include example usage.
-        - What are the other components or teams that need to know about the new APIs and changes?
-        - Which principles did you apply to ensure the APIs are consistent with other related features / APIs? (Cross-reference other APIs that are similar or related, for comparison.)
-
-    - Is the change visible to users of Hazelcast or operators who run Hazelcast clusters?
-        - Are there any user experience (UX) changes needed as a result of this change?
-        - Are the UX changes necessary or clearly beneficial? (Cross-reference the motivation section.)
-        - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
-        - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
-    - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
-    - What might be the valuable metrics that could be shown for this feature in Management Center?
-    - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
-    - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
-    - Are usage statistics for this feature reported in Phone Home? If not, why?
-
-The section should return to the user stories in the motivations section, and explain more fully how the detailed proposal makes those stories work.
+We should avoid checking the error message or exception instance. The
+client-side logic must remain simple so that it can be easily ported to other
+clients in the future.
 
 ### Testing Criteria
 
-Describe testing approach to developed functionality
-- Soak testing for memory leaks and stable performance?
-- Security related tests?
-- Negative tests?
-- Stress tests?
-- Tests related to deployment on AWS or Kubernetes? See [Hazelcast Guides](https://guides.hazelcast.org/home/) for examples on deployments, [Connect To Hazelcast Running on Kubernetes from Outside](https://guides.hazelcast.org/kubernetes-external-client/) and [GH workflow](https://github.com/hazelcast-guides/kubernetes-external-client/blob/main/.github/workflows/integrational-tests.yml) for example of automated tests and [Create automated tests in Kubernetes/OpenShift for enterprise features](https://hazelcast.atlassian.net/browse/CN-150) for JIRA task on automated testing of EE features. For more information about testing in kubernetes please see [here](https://guides.hazelcast.org/kubernetes/) and [here](https://docs.hazelcast.com/hazelcast/5.0/deploy/deploying-in-kubernetes), for testing in AWS, GCP and Azure please see [here](https://guides.hazelcast.org/terraform-quickstarts/).
-
-Provide references to Testlink or Testing artifacts.
-
-### Other Artifacts
-
-Links to additional artifacts go here.
+Testing must have a unit test for the all common member failure cases and check,
+that the query still succeeds.
