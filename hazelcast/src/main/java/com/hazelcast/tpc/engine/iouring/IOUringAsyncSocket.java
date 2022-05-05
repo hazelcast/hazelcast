@@ -111,6 +111,24 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
+    public void setKeepAlive(boolean keepAlive) {
+        try {
+            socket.setKeepAlive(keepAlive);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public boolean isKeepAlive() {
+        try {
+            return socket.isKeepAlive();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
     public boolean isTcpNoDelay() {
         try {
             return socket.isTcpNoDelay();

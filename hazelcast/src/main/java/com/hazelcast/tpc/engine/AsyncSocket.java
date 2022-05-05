@@ -67,6 +67,10 @@ public abstract class AsyncSocket implements Closeable {
         return localAddress;
     }
 
+    public abstract void setKeepAlive(boolean keepAlive);
+
+    public abstract boolean isKeepAlive();
+
     public abstract void setTcpNoDelay(boolean tcpNoDelay);
 
     public abstract boolean isTcpNoDelay();

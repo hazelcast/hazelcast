@@ -10,6 +10,7 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -22,6 +23,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static java.net.StandardSocketOptions.SO_KEEPALIVE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.TCP_NODELAY;
@@ -131,6 +133,24 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     public void setWriteThrough(boolean writeThrough) {
         this.writeThrough = writeThrough;
+    }
+
+    @Override
+    public void setKeepAlive(boolean keepAlive) {
+        try {
+            socketChannel.setOption(SO_KEEPALIVE, keepAlive);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public boolean isKeepAlive() {
+        try {
+            return socketChannel.getOption(SO_KEEPALIVE);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
