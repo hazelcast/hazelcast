@@ -85,7 +85,7 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
  * IORING_OP_LINKAT,
  * IORING_OP_MSG_RING,
  */
-public class IOUringEventloop extends Eventloop implements IOUringCompletionQueueCallback {
+public class IOUringEventloop extends Eventloop  {
 
     private RingBuffer ringBuffer;
     private final FileDescriptor eventfd = Native.newBlockingEventFd();
@@ -102,6 +102,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     private int ringbufferSize = DEFAULT_RING_SIZE;
     private int ioseqAsyncTreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
     private int flags;
+    private final EventloopHandler eventLoopHandler = new EventloopHandler();
 
     public IOUringEventloop() {
     }
@@ -113,6 +114,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
         this.storageScheduler = new StorageScheduler(this, 512);
+        super.beforeStart();
     }
 
     public int getFlags() {
@@ -167,7 +169,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
             runLocalTasks();
 
             if (cq.hasCompletions()) {
-                cq.process(this);
+                cq.process(eventLoopHandler);
             } else if (spin || moreWork) {
                 sq.submit();
             } else {
@@ -186,13 +188,15 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
     }
 
-    @Override
-    public void handle(int fd, int res, int flags, byte op, short data) {
-        CompletionListener l = completionListeners.get(fd);
-        if (l == null) {
-            System.out.println("no listener found for fd:" + fd + " op:" + op);
-        } else {
-            l.handle(fd, res, flags, op, data);
+    private class EventloopHandler implements IOUringCompletionQueueCallback {
+        @Override
+        public void handle(int fd, int res, int flags, byte op, short data) {
+            CompletionListener l = completionListeners.get(fd);
+            if (l == null) {
+                System.out.println("no listener found for fd:" + fd + " op:" + op);
+            } else {
+                l.handle(fd, res, flags, op, data);
+            }
         }
     }
 }
