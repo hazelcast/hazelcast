@@ -176,7 +176,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 "non-existing-index", elasticPipelineClientSupplier(), results);
 
         assertThatThrownBy(() -> submitJob(p))
-                .hasRootCauseInstanceOf(ResponseException.class)
+                .hasStackTraceContaining("ResponseException")
                 .hasStackTraceContaining("no such index [non-existing-index]");
     }
 
