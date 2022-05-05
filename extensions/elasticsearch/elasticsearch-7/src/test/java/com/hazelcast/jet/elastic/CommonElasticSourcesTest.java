@@ -17,20 +17,19 @@
 package com.hazelcast.jet.elastic;
 
 import com.hazelcast.jet.pipeline.Pipeline;
-import org.elasticsearch.client.ResponseException;
 import org.junit.Test;
 
 import java.io.IOException;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringEnableSlicingPipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexWithQueryExtractNamePipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringPipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexExtractNamePipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringZeroRetriesPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingScrollAsStringPipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingScrollAsStringPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexWithQueryExtractNamePipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
