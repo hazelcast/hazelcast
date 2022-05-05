@@ -53,6 +53,7 @@ public final class PhysicalRules {
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
                 StreamToStreamJoinPhysicalRule.STREAM_TO_STREAM_JOIN_RULE,
+                StreamToStreamJoinDropLateItemsMergeRule.INSTANCE,
                 JoinValidationRule.INSTANCE,
 
                 // Union rules

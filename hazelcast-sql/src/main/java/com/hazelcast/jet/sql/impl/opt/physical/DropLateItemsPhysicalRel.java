@@ -57,6 +57,10 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
         return wmField.accept(visitor);
     }
 
+    public RexNode wmField() {
+        return wmField;
+    }
+
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         return OptUtils.schema(getRowType());

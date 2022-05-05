@@ -37,7 +37,7 @@ import java.util.List;
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     private final RexNode wmField;
 
-    protected DropLateItemsLogicalRel(
+    public DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,

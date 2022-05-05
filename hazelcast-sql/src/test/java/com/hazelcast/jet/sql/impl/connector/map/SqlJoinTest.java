@@ -97,14 +97,13 @@ public class SqlJoinTest {
                     singletonList(TIMESTAMP),
                     row(timestamp(0L)));
 
-//            assertTipOfStream(
-//                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 AS s1 " +
-//                            " ON 1 BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
-//                    singletonList(new Row(0L, timestamp(0L)))
-//            );
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
             assertTipOfStream(
-                    "SELECT * FROM stream1 AS s1 JOIN stream2 AS s2 " +
-                            " ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
+                    "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
                     singletonList(new Row(0L, timestamp(0L)))
             );
         }
@@ -127,11 +126,27 @@ public class SqlJoinTest {
                     singletonList(TIMESTAMP),
                     row(timestamp(0L)));
 
+            String stream3 = "stream3";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream3,
+                    singletonList("c"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(1L)));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s3 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
+
+
             assertTipOfStream(
-                    "SELECT * FROM TABLE(GENERATE_STREAM(2)) " +
-                            "JOIN stream1 AS s1 ON 1 BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS " +
-                            "JOIN stream2 AS s2 ON 1 BETWEEN s2.b AND s2.b + INTERVAL '0.002' SECONDS ",
-                    singletonList(new Row(0L, timestamp(0L), timestamp(0L)))
+                    "SELECT * FROM s1 " +
+                            "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECONDS AND s1.a " +
+                            "JOIN s3 ON s3.c BETWEEN s2.c AND s2.c + INTERVAL '0.005' SECONDS ",
+                    singletonList(new Row(0L, timestamp(0L), timestamp(1L)))
             );
         }
     }
