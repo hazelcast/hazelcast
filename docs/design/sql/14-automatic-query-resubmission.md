@@ -109,18 +109,76 @@ The client doesn't understand the SQL statements it sends, and we want it to
 remain this way in order to simplify the implementation in multiple languages.
 We also don't want to retry statements by default, as not all are read-only.
 
-We propose three scenarios:
+We will analyze three scenarios:
 1. Some, but not all rows were already received when the query fails
-2. No rows were received yet. The client doesn't know the result type.
-    a) the first 6 characters of the SQL are `SELECT` (case-insensitive)
-    b) otherwise
+2. No rows were received yet, the query text starts with `SELECT` (case-insensitive, ignoring 
+       white space) 
+3. No rows were received yet, the query _doesn't_ start with `SELECT`
 
-Ideally, we configure the retry per query
+#### Resubmission policies
 
-There will be a new configuration option:
-```
-ClientConfig.getSqlConfig().setRetrySqlStatements(SqlRetryOption)
-```
+We propose that the user will pick one of these policies:
+
+1. `NEVER`: the current state. If a query fails, the failure is forwarded to the user
+2. `RETRY_SELECTS`: the query will be retried if:
+   - no rows were received yet
+   - the SQL text starts with `SELECT` (case-insensitive, ignoring
+     white space)
+3. `RETRY_SELECTS_ALLOW_DUPLICATES`: as before, but 
+4. `RETRY_ALL`: all queries will be retried after a failure
+
+#### Ways to pick resubmission policy
+
+1. Ideally, we would be able to configure the retry policy per query, but that's
+not possible. We could add this option to Java API (the `SqlStatement` class),
+but this is a non-standard API. We expect many clients to use JDBC or other
+standardized APIs in other languages, which don't provide this support.
+
+2. Another idea is that we could specify this as a query hint, e.g. in the form of
+`SELECT /*+ ALLOW_RETRY */`. But for this we would have to parse the query on
+the client, which we want to avoid. Another reason against this is that queries
+are often generated, such as through ORM or other SQL tools, and injecting the
+hint might not be possible.
+
+3. Another option is to use a session parameter, e.g. executing `SET
+ALLOW_RETRY=true`. The client will have to parse these commands, but it's
+relatively easier.
+
+4. Provide a connection option, that is a new option in `ClientConfig`, a
+new JDBC URL parameter for JDBC etc. Other standardized APIs also provide these.
+The disadvantage is that it will apply to all statements executed using that
+connection, that is also to DDL statements etc.
+
+We propose to implement options (3) and (4). Since the option (4) is feasible
+for all modes, except for `RETRY_ALL`, the option (3) is a nice-to-have feature.
+
+#### Explanation of "no rows received yet"
+
+This means that the `SqlResult.iterator()` didn't ever return from `next()`.
+However, there can be an ongoing blocking call to `next()` in another thread.
+
+#### Other configuration options
+
+The Java client retries invocations in this way: first 5 invocations are retried
+without a delay. Afterwards the delay is `2^<failureCount>` ms, up to 1000 ms
+(configurable by the `hazelcast.client.invocation.retry.pause.millis` property).
+After 120 seconds (configurable by the
+`hazelcast.client.invocation.timeout.seconds` property), a failure is thrown to
+the user.
+
+We think this scheme can be also used for SQL retries and there's no need to
+provide more configuration options.
+
+#### Error classification
+
+Each exception delivered to the client has an [error 
+code](https://github.com/hazelcast/hazelcast/blob/713cef1b54b725e6c7df971ff52da30d1133a0a2/hazelcast/src/main/java/com/hazelcast/sql/impl/SqlErrorCode.java#L22). Retry logic will be applied for all codes, except for:
+- `CANCELLED_BY_USER`
+- `TIMEOUT`
+- `PARSING`
+- ``
+
+
 
 This is the technical portion of the design document. Explain the design in sufficient detail.
 
