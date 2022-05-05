@@ -14,7 +14,7 @@ public class NoopBenchmark {
 
         long operations = 5_000_000;
         int concurrency = 2;
-        long iterations = operations/concurrency;
+        long iterations = operations / concurrency;
 
         long startMs = System.currentTimeMillis();
         long count = 0;
@@ -30,8 +30,8 @@ public class NoopBenchmark {
 
         System.out.println("Done");
 
-        long duration = System.currentTimeMillis()-startMs;
-        System.out.println("Throughput: "+(operations*1000.0f/duration)+" op/s");
+        long duration = System.currentTimeMillis() - startMs;
+        System.out.println("Throughput: " + (operations * 1000.0f / duration) + " op/s");
         node1.shutdown();
         node2.shutdown();
     }

@@ -36,7 +36,7 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 //        try {
         this.serverSocket = LinuxSocket.newSocketStream();
         this.eventloop = eventloop;
-        if(!eventloop.registerServerSocket(this)){
+        if (!eventloop.registerServerSocket(this)) {
             close();
             throw new IllegalStateException("EventLoop is not running");
         }
@@ -129,8 +129,8 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void close() {
-        if(closed.compareAndSet(false,true)) {
-            System.out.println("Closing  "+ this);
+        if (closed.compareAndSet(false, true)) {
+            System.out.println("Closing  " + this);
             eventloop.deregisterSocket(this);
             try {
                 serverSocket.close();

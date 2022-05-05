@@ -67,7 +67,7 @@ public class StorageScheduler {
         }
     }
 
-    public void unregisterFile(File file){
+    public void unregisterFile(File file) {
         checkNotNull(file);
     }
 
@@ -92,7 +92,7 @@ public class StorageScheduler {
                 try {
                     // todo: improved exception handling.
                     req.op.handle_IORING_OP_READ(res, flags);
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -122,7 +122,7 @@ public class StorageScheduler {
                 someId = counter++;
             } while (requests.containsKey((int) someId));
 
-            requests.put((int)someId, req);
+            requests.put((int) someId, req);
 
             long bufferAddress = Buffer.memoryAddress(buffer);
 

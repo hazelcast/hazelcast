@@ -93,7 +93,7 @@ public final class EventloopQueue {
 
     public void markAwake() {
         head_block.set(dirtyHead.get());
-       // System.out.println("Mark awake     : " + head_block);
+        // System.out.println("Mark awake     : " + head_block);
     }
 
     /**
@@ -114,14 +114,14 @@ public final class EventloopQueue {
             oldTail = tail.get();
             newTail = oldTail + 1;
 
-           // System.out.println("addAndMarkedBlocked     oldTail:" + oldTail);
-           // System.out.println("addAndMarkedBlocked     newTail:" + newTail);
+            // System.out.println("addAndMarkedBlocked     oldTail:" + oldTail);
+            // System.out.println("addAndMarkedBlocked     newTail:" + newTail);
 
             head_block = this.head_block.get();
             head = head_block < 0 ? -head_block : head_block;
             oldSize = (int) (oldTail - head + 1);
-           // System.out.println("addAndMarkedBlocked     oldSize:" + oldSize);
-           // System.out.println("addAndMarkedBlocked     head_block:" + head_block);
+            // System.out.println("addAndMarkedBlocked     oldSize:" + oldSize);
+            // System.out.println("addAndMarkedBlocked     head_block:" + head_block);
 
 
 //            System.out.println("old size: "+(oldTail-head+1));
@@ -133,12 +133,12 @@ public final class EventloopQueue {
             } else if (oldTail < head) {
                 // the item is added in an empty queue, so we need to check head if the consumer is blocked.
                 signal = head_block < 0;
-            //    System.out.println("addAndMarkedBlocked     Queue was empty");
+                //    System.out.println("addAndMarkedBlocked     Queue was empty");
             } else {
                 // the queue was not empty, so signal not needed because somebody else
                 // already must have taken care of it.
                 signal = false;
-              //  System.out.println("addAndMarkedBlocked     Queue was not empty");
+                //  System.out.println("addAndMarkedBlocked     Queue was not empty");
             }
 
             if (tail.compareAndSet(oldTail, newTail)) {
@@ -151,12 +151,12 @@ public final class EventloopQueue {
                         if (oldTail < head2) {
                             // the item is added in an empty queue, so we need to check head if the consumer is blocked.
                             signal = head_block2 < 0;
-                          //  System.out.println("addAndMarkedBlocked     Queue was empty");
+                            //  System.out.println("addAndMarkedBlocked     Queue was empty");
                         } else {
                             // the queue was not empty, so signal not needed because somebody else
                             // already must have taken care of it.
                             signal = false;
-                           // System.out.println("addAndMarkedBlocked     Queue was not empty");
+                            // System.out.println("addAndMarkedBlocked     Queue was not empty");
                         }
                     }
                 }

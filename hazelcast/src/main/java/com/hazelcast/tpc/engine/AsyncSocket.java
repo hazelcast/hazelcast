@@ -13,30 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-
-/**
- * Thoughts:
- *
- * Back pressure.
- *
- * - every queue/buffer that doesn't have a capacity constraint can lead overload problems and
- * back pressure is needed.
- *
- *
- * Reliable communication.
- *
- * Add sessions. So a frame gets send as part of some session. Each frame in a session is numbered. So gaps and
- * out of order messages can be detected.
- *
- * How would retransmission for a certain session work? On the sending side it is easy to store the frames
- * in a log (buffer) per session.
- *
- * But the other side needs to tell what has been received, so that logged messages can be dropped.
- *
- * Currently, the NioChannel itself will be dropped when the connection drops. A more durable mechanism is required.
- *
- * Also the
- */
 public abstract class AsyncSocket implements Closeable {
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean();

@@ -14,7 +14,7 @@ public class LoadMain {
 
         Table table = node1.getTable("foo");
 
-        int count = 1000  * 1000;
+        int count = 1000 * 1000;
         int concurrency = 1;
         long start = System.currentTimeMillis();
         for (int k = 0; k < count / concurrency; k++) {

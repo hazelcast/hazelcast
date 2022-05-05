@@ -43,9 +43,9 @@ public class MapMain {
 //            }
         }
 
-        long duration = System.currentTimeMillis()-start;
-        double throughput = queryCount * 1000f/duration;
-        System.out.println("throughput: "+throughput);
+        long duration = System.currentTimeMillis() - start;
+        double throughput = queryCount * 1000f / duration;
+        System.out.println("throughput: " + throughput);
         System.out.println("Done");
     }
 }

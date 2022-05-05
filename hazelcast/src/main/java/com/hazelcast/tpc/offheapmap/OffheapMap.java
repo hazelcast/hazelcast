@@ -56,7 +56,7 @@ public class OffheapMap {
         return abs(hash) & mod;
     }
 
-    public void execute(Query t){
+    public void execute(Query t) {
         for (long node = 0; node < tableSize; node++) {
             long nodeAddress = unsafe.getAddress(tableAddress + node * addressSize);
 
@@ -99,7 +99,7 @@ public class OffheapMap {
         long newTableSize = tableSize * 2;
         long startMs = currentTimeMillis();
 
-        long newMod = newTableSize -1;
+        long newMod = newTableSize - 1;
         long newTableSizeInBytes = newTableSize * addressSize;
         long newTableAddress = allocator.callocate(newTableSizeInBytes);
 
@@ -147,8 +147,8 @@ public class OffheapMap {
         this.tableAddress = newTableAddress;
         this.mod = newMod;
 
-        long durationMs = currentTimeMillis()-startMs;
-        System.out.println("resizing from " + oldTableSize + " to:" + newTableSize+" took "+durationMs+" ms");
+        long durationMs = currentTimeMillis() - startMs;
+        System.out.println("resizing from " + oldTableSize + " to:" + newTableSize + " took " + durationMs + " ms");
     }
 
     public boolean get(Bin key, Bout value) {
@@ -178,7 +178,7 @@ public class OffheapMap {
         long nodeAddress = unsafe.getAddress(tableAddress + index * addressSize);
         int nodeCount = nodeAddress == 0 ? 0 : unsafe.getInt(nodeAddress);
 
-        if(nodeCount>10) {
+        if (nodeCount > 10) {
             System.out.println(nodeCount);
         }
 

@@ -85,7 +85,7 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
  * IORING_OP_LINKAT,
  * IORING_OP_MSG_RING,
  */
-public class IOUringEventloop extends Eventloop  {
+public class IOUringEventloop extends Eventloop {
 
     private RingBuffer ringBuffer;
     private final FileDescriptor eventfd = Native.newBlockingEventFd();

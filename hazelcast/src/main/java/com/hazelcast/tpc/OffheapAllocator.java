@@ -21,7 +21,7 @@ public final class OffheapAllocator implements Allocator {
     }
 
     @Override
-    public long reallocate(long address, long bytes){
+    public long reallocate(long address, long bytes) {
         return unsafe.reallocateMemory(address, bytes);
     }
 

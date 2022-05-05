@@ -32,7 +32,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             serverSocketChannel.configureBlocking(false);
             this.eventloop = eventloop;
             this.selector = eventloop.selector;
-            if(!eventloop.registerServerSocket(this)){
+            if (!eventloop.registerServerSocket(this)) {
                 close();
                 throw new IllegalStateException("EventLoop is not running");
             }
@@ -104,7 +104,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  "+ this);
+            System.out.println("Closing  " + this);
 
             eventloop.deregisterSocket(this);
             try {
