@@ -14,7 +14,7 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public final SocketAddress getLocalAddress() {
         try {
-            return localAddress();
+            return getLocalAddress0();
         } catch (Error e) {
             throw e;
         } catch (Exception e) {
@@ -24,7 +24,7 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public abstract Eventloop getEventloop();
 
-    protected abstract SocketAddress localAddress() throws Exception;
+    protected abstract SocketAddress getLocalAddress0() throws Exception;
 
     public abstract boolean isReusePort();
 

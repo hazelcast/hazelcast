@@ -51,7 +51,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected SocketAddress localAddress() throws IOException {
+    protected SocketAddress getLocalAddress0() throws IOException {
         return serverSocketChannel.getLocalAddress();
     }
 
