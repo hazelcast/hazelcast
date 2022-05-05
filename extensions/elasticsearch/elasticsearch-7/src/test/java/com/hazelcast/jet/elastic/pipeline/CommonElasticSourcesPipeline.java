@@ -35,14 +35,15 @@ public final class CommonElasticSourcesPipeline {
     private CommonElasticSourcesPipeline() {
     }
 
-    public static Pipeline given_emptyIndex_when_readFromElasticSource_then_finishWithNoResults_pipeline(
+    public static Pipeline readFromIndexAsStringPipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index"))
+                .searchRequestFn(() -> new SearchRequest(index))
                 .mapToItemFn(SearchHit::getSourceAsString)
                 .build();
 
@@ -52,14 +53,15 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
+    public static Pipeline readFromIndexExtractNamePipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index"))
+                .searchRequestFn(() -> new SearchRequest(index))
                 .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
                 .build();
 
@@ -69,7 +71,7 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
+    public static Pipeline readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline(
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
@@ -85,14 +87,15 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
+    public static Pipeline readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = ElasticSources.elastic(
                 elasticSupplier,
-                () -> new SearchRequest("my-index-1"),
+                () -> new SearchRequest(index),
                 hit -> (String) hit.getSourceAsMap().get("name")
         );
 
@@ -102,7 +105,8 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline multipleDocuments_readFromElasticSourceWithScroll_resultHasAllDocuments_pipeline(
+    public static Pipeline readFromIndexUsingScrollAsStringPipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
@@ -110,7 +114,7 @@ public final class CommonElasticSourcesPipeline {
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
                 .searchRequestFn(() -> {
-                    SearchRequest sr = new SearchRequest("my-index");
+                    SearchRequest sr = new SearchRequest(index);
 
                     sr.source().size(10) // needs to scroll 5 times
                             .query(matchAllQuery());
@@ -125,48 +129,15 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline multipleIndexes_readFromElasticSourceWithIndexWildcard_resultDocumentsFromAllIndexes_pipeline(
+    public static Pipeline readFromIndexWithQueryExtractNamePipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-                .writeTo(Sinks.list(resultsList));
-
-        return p;
-    }
-
-    public static Pipeline multipleIndexes_readFromElasticSourceWithIndex_resultHasNoDocumentFromOtherIndex_pipeline(
-            SupplierEx<RestClientBuilder> elasticSupplier,
-            IList<String> resultsList) {
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index-1"))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-                .writeTo(Sinks.list(resultsList));
-
-        return p;
-    }
-
-    public static Pipeline given_documents_when_readFromElasticSourceWithQuery_then_resultHasMatchingDocuments_pipeline(
-            SupplierEx<RestClientBuilder> elasticSupplier,
-            IList<String> resultsList) {
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index")
+                .searchRequestFn(() -> new SearchRequest(index)
                         .source(new SearchSourceBuilder().query(QueryBuilders.matchQuery("name", "Frantisek"))))
                 .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
                 .build();
@@ -177,14 +148,15 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments_pipeline(
+    public static Pipeline readFromIndexAsStringEnableSlicingPipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index"))
+                .searchRequestFn(() -> new SearchRequest(index))
                 .mapToItemFn(SearchHit::getSourceAsString)
                 .enableSlicing()
                 .build();
@@ -195,51 +167,17 @@ public final class CommonElasticSourcesPipeline {
         return p;
     }
 
-    public static Pipeline documentsInMultipleIndexes_readFromElasticSourceWithSlicing_resultHasAllDocuments_pipeline(
+    public static Pipeline readFromIndexAsStringZeroRetriesPipeline(
+            String index,
             SupplierEx<RestClientBuilder> elasticSupplier,
             IList<String> resultsList) {
         Pipeline p = Pipeline.create();
 
         BatchSource<String> source = new ElasticSourceBuilder<>()
                 .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .enableSlicing()
-                .build();
-
-        p.readFrom(source)
-                .writeTo(Sinks.list(resultsList));
-
-        return p;
-    }
-
-    public static Pipeline given_nonExistingIndex_whenReadFromElasticSource_thenThrowException_pipeline(
-            SupplierEx<RestClientBuilder> elasticSupplier,
-            IList<String> resultsList) {
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("non-existing-index"))
+                .searchRequestFn(() -> new SearchRequest(index))
                 .mapToItemFn(SearchHit::getSourceAsString)
                 .retries(0) // we expect the exception -> faster test
-                .build();
-
-        p.readFrom(source)
-                .writeTo(Sinks.list(resultsList));
-
-        return p;
-    }
-
-    public static Pipeline given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults_pipeline(
-            SupplierEx<RestClientBuilder> elasticSupplier,
-            IList<String> resultsList) {
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticSupplier)
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(SearchHit::getSourceAsString)
                 .build();
 
         p.readFrom(source)

@@ -23,18 +23,14 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.documentsInMultipleIndexes_readFromElasticSourceWithSlicing_resultHasAllDocuments_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_documents_when_readFromElasticSourceWithQuery_then_resultHasMatchingDocuments_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_emptyIndex_when_readFromElasticSource_then_finishWithNoResults_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_nonExistingIndex_whenReadFromElasticSource_thenThrowException_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.multipleDocuments_readFromElasticSourceWithScroll_resultHasAllDocuments_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.multipleIndexes_readFromElasticSourceWithIndexWildcard_resultDocumentsFromAllIndexes_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.multipleIndexes_readFromElasticSourceWithIndex_resultHasNoDocumentFromOtherIndex_pipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringEnableSlicingPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexWithQueryExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringZeroRetriesPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingScrollAsStringPipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -59,12 +55,11 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         //
         // elasticClient.indices().create(new CreateIndexRequest("my-index"), DEFAULT);
 
-        // Instead we index a document and delete it, ending up with index with correct settings applied
+        // Instead, we index a document and delete it, ending up with index with correct settings applied
         indexDocument("my-index", of("name", "Frantisek"));
         deleteDocuments();
 
-        Pipeline p = given_emptyIndex_when_readFromElasticSource_then_finishWithNoResults_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexAsStringPipeline("my-index", elasticPipelineClientSupplier(), results);
         submitJob(p);
 
         assertThat(results).isEmpty();
@@ -74,30 +69,34 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
     public void given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
-        Pipeline p = given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexExtractNamePipeline("my-index", elasticPipelineClientSupplier(), results);
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
     }
 
     @Test
-    public void given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult() {
+    public void given_sourceCreatedBySourceFactoryMethod1_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
-        Pipeline p = given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline(
+                elasticPipelineClientSupplier(),
+                results
+        );
 
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
     }
 
     @Test
-    public void given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult() {
+    public void given_sourceCreatedBySourceFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline(
+                "my-index-1",
+                elasticPipelineClientSupplier(),
+                results
+        );
 
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
@@ -109,8 +108,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
         indexBatchOfDocuments("my-index");
 
-        Pipeline p = multipleDocuments_readFromElasticSourceWithScroll_resultHasAllDocuments_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexUsingScrollAsStringPipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(BATCH_SIZE);
@@ -121,8 +119,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = multipleIndexes_readFromElasticSourceWithIndexWildcard_resultDocumentsFromAllIndexes_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexExtractNamePipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek", "Vladimir");
@@ -133,8 +130,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = multipleIndexes_readFromElasticSourceWithIndex_resultHasNoDocumentFromOtherIndex_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexExtractNamePipeline("my-index-1", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek");
@@ -145,8 +141,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index", of("name", "Frantisek"));
         indexDocument("my-index", of("name", "Vladimir"));
 
-        Pipeline p = given_documents_when_readFromElasticSourceWithQuery_then_resultHasMatchingDocuments_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexWithQueryExtractNamePipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek");
@@ -156,8 +151,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
     public void given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments() throws IOException {
         initShardedIndex("my-index");
 
-        Pipeline p = given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexAsStringEnableSlicingPipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(BATCH_SIZE);
@@ -170,8 +164,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         initShardedIndex("my-index-1");
         initShardedIndex("my-index-2");
 
-        Pipeline p = documentsInMultipleIndexes_readFromElasticSourceWithSlicing_resultHasAllDocuments_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexAsStringEnableSlicingPipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(2 * BATCH_SIZE);
@@ -179,8 +172,8 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
     @Test
     public void given_nonExistingIndex_whenReadFromElasticSource_thenThrowException() {
-        Pipeline p = given_nonExistingIndex_whenReadFromElasticSource_thenThrowException_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexAsStringZeroRetriesPipeline(
+                "non-existing-index", elasticPipelineClientSupplier(), results);
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(ResponseException.class)
@@ -189,8 +182,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
     @Test
     public void given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults() {
-        Pipeline p = given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults_pipeline(
-                elasticPipelineClientSupplier(), results);
+        Pipeline p = readFromIndexAsStringPipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).isEmpty();

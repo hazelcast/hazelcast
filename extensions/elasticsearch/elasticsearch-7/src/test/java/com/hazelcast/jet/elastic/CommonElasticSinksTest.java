@@ -31,13 +31,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.documentInIndex_writeToElasticSinkDeleteRequestTwice_jobShouldFinishSuccessfully_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_documentInIndex_whenWriteToElasticSinkDeleteRequest_then_documentIsDeleted_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_documentInIndex_whenWriteToElasticSinkUpdateRequest_then_documentsInIndexUpdated_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex_pipeline;
-import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex_pipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.deleteItemsFromIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.updateItemsInIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.writeItemsToIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.writeItemsToIndexUsingSourceFactoryMethodPipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
@@ -46,8 +43,12 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     @Test
     public void given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex() throws Exception {
-        Pipeline p = given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex_pipeline(
-                elasticPipelineClientSupplier());
+        Pipeline p = writeItemsToIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("id", "Frantisek")
+        );
+
         submitJob(p);
         assertSingleDocument();
     }
@@ -60,8 +61,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
             items[i] = new TestItem("id" + i, "name" + i);
         }
 
-        Pipeline p = given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex_pipeline(
-                elasticPipelineClientSupplier(), items);
+        Pipeline p = writeItemsToIndexPipeline("my-index", elasticPipelineClientSupplier(), items);
         submitJob(p);
         refreshIndex();
 
@@ -72,8 +72,12 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     @Test
     public void given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex() throws Exception {
-        Pipeline p = given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex_pipeline(
-                elasticPipelineClientSupplier());
+        Pipeline p = writeItemsToIndexUsingSourceFactoryMethodPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("id", "Frantisek")
+        );
+
         submitJob(p);
         refreshIndex();
 
@@ -86,8 +90,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
-        Pipeline p = given_documentInIndex_whenWriteToElasticSinkUpdateRequest_then_documentsInIndexUpdated_pipeline(
-                elasticPipelineClientSupplier(), id);
+        Pipeline p = updateItemsInIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
+        );
         submitJob(p);
         refreshIndex();
 
@@ -100,8 +107,12 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
-        Pipeline p = given_documentInIndex_whenWriteToElasticSinkDeleteRequest_then_documentIsDeleted_pipeline(
-                elasticPipelineClientSupplier(), id);
+        Pipeline p = deleteItemsFromIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
+        );
+
         submitJob(p);
         refreshIndex();
 
@@ -118,8 +129,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
     public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
         elasticClient.indices().create(new CreateIndexRequest("my-index"), RequestOptions.DEFAULT);
 
-        Pipeline p = given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail_pipeline(
-                elasticPipelineClientSupplier());
+        Pipeline p = updateItemsInIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("notExist", "Frantisek")
+        );
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(JetException.class)
@@ -134,8 +148,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Frantisek");
         String id = indexDocument("my-index", doc);
 
-        Pipeline p = documentInIndex_writeToElasticSinkDeleteRequestTwice_jobShouldFinishSuccessfully_pipeline(
-                elasticPipelineClientSupplier(), id);
+        Pipeline p = deleteItemsFromIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
+        );
 
         // Submit job 2x to delete non-existing document on 2nd run
         submitJob(p);
