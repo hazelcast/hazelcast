@@ -107,26 +107,6 @@ public final class NioAsyncSocket extends AsyncSocket {
         this.unflushedFramesCapacity = checkPositive("unflushedFramesCapacity", unflushedFramesCapacity);
     }
 
-    @Override
-    public void activate(Eventloop l) {
-        NioEventloop eventloop = (NioEventloop) checkNotNull(l);
-        this.eventloop = eventloop;
-        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
-
-        if(!eventloop.registerSocket(NioAsyncSocket.this)){
-            throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
-        }
-
-        eventloop.execute(() -> {
-            selector = eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-
-            if (!clientSide) {
-                key = socketChannel.register(selector, OP_READ, eventLoopHandler);
-            }
-        });
-    }
-
     public void setRegularSchedule(boolean regularSchedule) {
         this.regularSchedule = regularSchedule;
     }
@@ -205,6 +185,26 @@ public final class NioAsyncSocket extends AsyncSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public void activate(Eventloop l) {
+        NioEventloop eventloop = (NioEventloop) checkNotNull(l);
+        this.eventloop = eventloop;
+        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+
+        if (!eventloop.registerSocket(NioAsyncSocket.this)) {
+            throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
+        }
+
+        eventloop.execute(() -> {
+            selector = eventloop.selector;
+            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+
+            if (!clientSide) {
+                key = socketChannel.register(selector, OP_READ, eventLoopHandler);
+            }
+        });
     }
 
     @Override
