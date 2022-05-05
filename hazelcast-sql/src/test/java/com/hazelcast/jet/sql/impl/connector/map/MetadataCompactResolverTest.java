@@ -134,7 +134,7 @@ public class MetadataCompactResolverTest {
 
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")), options, ss))
-                .hasMessageContaining("Unable to resolve table metadata. Missing ['typeName'] option");
+                .hasMessageMatching("Unable to resolve table metadata\\. Missing '(key|value)CompactTypeName' option");
     }
 
     @Test

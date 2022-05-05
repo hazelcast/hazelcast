@@ -1009,7 +1009,7 @@ public final class AggregateOperations {
      * snippet 2 outputs a <em>single map</em>. To produce the single map,
      * Jet must do all the work on a single thread and hold all the data on a
      * single cluster member, so you lose the advantage of distributed
-     * computation. By contrast, snippet 2 allows Jet to partition the input by
+     * computation. By contrast, snippet 1 allows Jet to partition the input by
      * the grouping key and split the work across the cluster. This is why you
      * should prefer a {@code groupingKey} stage if you have just one level of
      * grouping.
