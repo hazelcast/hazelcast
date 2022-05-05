@@ -32,6 +32,7 @@
         <!--<Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>-->
         <!--<Logger name="com.hazelcast.test.mocknetwork" level="debug"/>-->
         <!--<Logger name="com.hazelcast.cp.internal" level="trace"/>-->
+        <Logger name="com.hazelcast.internal.ascii" level="debug"/>
         <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
         <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
         <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="trace"/>
