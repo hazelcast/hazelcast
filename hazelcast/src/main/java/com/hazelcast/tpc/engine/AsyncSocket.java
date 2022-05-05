@@ -6,7 +6,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.frame.Frame;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -66,6 +65,10 @@ public abstract class AsyncSocket implements Closeable {
     public final SocketAddress getLocalAddress() {
         return localAddress;
     }
+
+    public abstract void setSoLinger(int soLinger);
+
+    public abstract int getSoLinger();
 
     public abstract void setKeepAlive(boolean keepAlive);
 

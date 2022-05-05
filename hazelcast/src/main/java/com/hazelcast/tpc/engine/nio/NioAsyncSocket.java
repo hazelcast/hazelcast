@@ -23,6 +23,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static java.net.StandardSocketOptions.*;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
@@ -113,6 +114,24 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     public void setWriteThrough(boolean writeThrough) {
         this.writeThrough = writeThrough;
+    }
+
+    @Override
+    public void setSoLinger(int soLinger) {
+        try {
+            socketChannel.setOption(SO_LINGER, soLinger);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getSoLinger() {
+        try {
+            return socketChannel.getOption(SO_LINGER);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

@@ -88,26 +88,27 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void activate(Eventloop l) {
-        IOUringEventloop eventloop = (IOUringEventloop) l;
-        this.eventloop = eventloop;
-        this.eventloop.execute(() -> {
-            ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
-            iovArray = new IovArray(iovArrayBuffer);
-            sq = eventloop.sq;
-            eventloop.completionListeners.put(socket.intValue(), new EventloopHandler());
-            receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
-
-            if (!clientSide) {
-                sq_addRead();
-            }
-        });
-    }
-
-    @Override
     public void setReadHandler(AsyncSocketReadHandler readHandler) {
         this.readHandler = (IOUringReadHandler) checkNotNull(readHandler);
         this.readHandler.init(this);
+    }
+
+    @Override
+    public void setSoLinger(int soLinger) {
+        try {
+            socket.setSoLinger(soLinger);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getSoLinger() {
+        try {
+            return socket.getSoLinger();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -182,6 +183,22 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
+    @Override
+    public void activate(Eventloop l) {
+        IOUringEventloop eventloop = (IOUringEventloop) l;
+        this.eventloop = eventloop;
+        this.eventloop.execute(() -> {
+            ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
+            iovArray = new IovArray(iovArrayBuffer);
+            sq = eventloop.sq;
+            eventloop.completionListeners.put(socket.intValue(), new EventloopHandler());
+            receiveBuff = eventloop.allocator.directBuffer(getReceiveBufferSize());
+
+            if (!clientSide) {
+                sq_addRead();
+            }
+        });
+    }
 
     @Override
     public void flush() {

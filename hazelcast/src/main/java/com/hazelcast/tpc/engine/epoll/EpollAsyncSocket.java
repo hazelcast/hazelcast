@@ -73,30 +73,28 @@ public final class EpollAsyncSocket extends AsyncSocket {
         return eventloop;
     }
 
-    @Override
-    public void activate(Eventloop l) {
-        EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
-        this.eventloop = eventloop;
-        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
-
-        if(!eventloop.registerSocket(EpollAsyncSocket.this)){
-            throw new IllegalStateException("Can't activate socket, eventloop is not running");
-        }
-
-        eventloop.execute(() -> {
-            //selector = eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-
-
-//            if (!clientSide) {
-//                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
-//            }
-        });
-    }
 
     @Override
     public void setReadHandler(AsyncSocketReadHandler readHandler) {
         this.readHandler = (EpollReadHandler) checkNotNull(readHandler);
+    }
+
+    @Override
+    public void setSoLinger(int soLinger) {
+        try {
+            socket.setSoLinger(soLinger);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public int getSoLinger() {
+        try {
+            return socket.getSoLinger();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -185,6 +183,28 @@ public final class EpollAsyncSocket extends AsyncSocket {
             modifyEvents();
         }
     }
+
+    @Override
+    public void activate(Eventloop l) {
+        EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
+        this.eventloop = eventloop;
+        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+
+        if(!eventloop.registerSocket(EpollAsyncSocket.this)){
+            throw new IllegalStateException("Can't activate socket, eventloop is not running");
+        }
+
+        eventloop.execute(() -> {
+            //selector = eventloop.selector;
+            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+
+
+//            if (!clientSide) {
+//                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
+//            }
+        });
+    }
+
 
     private void modifyEvents() throws IOException {
 //        if (socket.isOpen() && isRegistered()) {
