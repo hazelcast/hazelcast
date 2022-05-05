@@ -74,16 +74,6 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
 
         if (OptUtils.isUnbounded(rightInput)) {
-            if (OptUtils.isUnbounded(leftInput)) {
-                call.transformTo(new StreamToStreamJoinPhysicalRel(
-                        logicalJoin.getCluster(),
-                        logicalJoin.getTraitSet().replace(PHYSICAL),
-                        leftInputConverted,
-                        rightInputConverted,
-                        logicalJoin.getCondition(),
-                        logicalJoin.getJoinType()
-                ));
-            }
             // This rule doesn't support joining of streaming data on the right side.
             // Stream can be on the left side.
             return;

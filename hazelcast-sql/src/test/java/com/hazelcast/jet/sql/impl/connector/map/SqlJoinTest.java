@@ -38,7 +38,7 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -54,31 +54,84 @@ public class SqlJoinTest {
 
         @BeforeClass
         public static void setUpClass() {
-            initialize(2, null);
+            initialize(1, null);
             sqlService = instance().getSql();
         }
 
         @Test
         public void when_streamToStreamJoin_then_success() {
             String stream1 = "stream1";
-            String stream2 = "stream2";
             TestStreamSqlConnector.create(
                     sqlService,
                     stream1,
                     singletonList("a"),
                     singletonList(BIGINT),
-                    row(0L));
+                    row(0L),
+                    row(0L)
+            );
 
+            assertTipOfStream(
+                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1",
+                    asList(
+                            new Row(0L, 0L),
+                            new Row(1L, 0L)
+                    )
+            );
+        }
+
+        @Test
+        public void when_streamToStreamJoinWithTimestampBounds_then_success() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
             TestStreamSqlConnector.create(
                     sqlService,
                     stream2,
                     singletonList("b"),
-                    singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                    row(timestampTz(0)));
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+//            assertTipOfStream(
+//                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 AS s1 " +
+//                            " ON 1 BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
+//                    singletonList(new Row(0L, timestamp(0L)))
+//            );
+            assertTipOfStream(
+                    "SELECT * FROM stream1 AS s1 JOIN stream2 AS s2 " +
+                            " ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
+                    singletonList(new Row(0L, timestamp(0L)))
+            );
+        }
+
+        @Test
+        public void when_streamToStreamJoinWithMultipleTimestampBounds_then_success() {
+            String stream1 = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream1,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
 
             assertTipOfStream(
-                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1",
-                    singletonList(new Row(0L, 0L))
+                    "SELECT * FROM TABLE(GENERATE_STREAM(2)) " +
+                            "JOIN stream1 AS s1 ON 1 BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS " +
+                            "JOIN stream2 AS s2 ON 1 BETWEEN s2.b AND s2.b + INTERVAL '0.002' SECONDS ",
+                    singletonList(new Row(0L, timestamp(0L), timestamp(0L)))
             );
         }
     }
@@ -108,7 +161,7 @@ public class SqlJoinTest {
                     "SELECT l.v, m.this " +
                             "FROM " + leftName + " l " +
                             "INNER JOIN " + mapName + " m ON l.v = m.__key + m.__key",
-                    asList(
+                    singletonList(
                             new Row(2, "value-1")
                     )
             );

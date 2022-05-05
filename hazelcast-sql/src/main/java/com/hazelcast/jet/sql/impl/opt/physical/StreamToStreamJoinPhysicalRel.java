@@ -30,10 +30,9 @@ import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.emptyMap;
 
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     protected StreamToStreamJoinPhysicalRel(
@@ -73,11 +72,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public Map<Byte, Map<Byte, Long>> postponeTimeMap() {
-        // TODO: implement it
-        Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
-        return postponeTimeMap;
+        return emptyMap();
     }
 
     @Override
