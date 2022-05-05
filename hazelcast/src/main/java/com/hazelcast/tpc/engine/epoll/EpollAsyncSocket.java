@@ -30,20 +30,20 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
     private final boolean clientSide;
     // immutable state
-    protected LinuxSocket socket;
-    public EpollEventloop eventloop;
-    protected boolean writeThrough;
+    private LinuxSocket socket;
+    private EpollEventloop eventloop;
+    private boolean writeThrough;
 
     // ======================================================
     // reading side of the channel.
     // ======================================================
-    protected ByteBuffer receiveBuffer;
+    private ByteBuffer receiveBuffer;
 
     // ======================================================
     // writing side of the channel.
     // ======================================================
     // private
-    public final IOVector ioVector = new IOVector();
+    private final IOVector ioVector = new IOVector();
     private int unflushedFramesCapacity = 65536;
 
     //  concurrent
@@ -51,7 +51,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     public MpmcArrayQueue<Frame> unflushedFrames;
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
-    protected int flags = Native.EPOLLET;
+    private int flags = Native.EPOLLET;
 
     private EpollReadHandler readHandler;
     private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
@@ -78,11 +78,16 @@ public final class EpollAsyncSocket extends AsyncSocket {
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+
+        if(!eventloop.registerSocket(EpollAsyncSocket.this)){
+            throw new IllegalStateException("Can't activate socket, eventloop is not running");
+        }
+
         eventloop.execute(() -> {
             //selector = eventloop.selector;
-            eventloop.registerSocket(EpollAsyncSocket.this);
             receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-//
+
+
 //            if (!clientSide) {
 //                key = socketChannel.register(selector, OP_READ, NioAsyncSocket.this);
 //            }
@@ -278,7 +283,10 @@ public final class EpollAsyncSocket extends AsyncSocket {
             } else {
                 eventloop.execute(() -> {
                     try {
-                        eventloop.registerSocket(EpollAsyncSocket.this);
+
+                        if(!eventloop.registerSocket(EpollAsyncSocket.this)){
+                            throw new IllegalStateException();
+                        }
                         logger.info("Socket listening at " + address);
                         future.complete(EpollAsyncSocket.this);
                     } catch (Exception e) {

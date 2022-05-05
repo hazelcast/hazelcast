@@ -28,11 +28,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private NioAsyncServerSocket(NioEventloop eventloop) {
         try {
-            this.eventloop = eventloop;
-            this.eventloop.registerServerSocket(this);
-            this.selector = eventloop.selector;
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
+            this.eventloop = eventloop;
+            this.selector = eventloop.selector;
+            if(!eventloop.registerServerSocket(this)){
+                close();
+                throw new IllegalStateException("EventLoop is not running");
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -29,10 +29,14 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     private IOUringAsyncServerSocket(IOUringEventloop eventloop) {
         try {
-            this.eventloop = checkNotNull(eventloop);
-            this.eventloop.registerServerSocket(this);
             this.serverSocket = LinuxSocket.newSocketStream(false);
             serverSocket.setBlocking();
+            this.eventloop = checkNotNull(eventloop);
+
+            if(!eventloop.registerServerSocket(this)){
+                close();
+                throw new IllegalStateException("EventLoop is not running");
+            }
 
             eventloop.execute(() -> {
                 eventloop.completionListeners.put(serverSocket.intValue(), new EventloopHandler());

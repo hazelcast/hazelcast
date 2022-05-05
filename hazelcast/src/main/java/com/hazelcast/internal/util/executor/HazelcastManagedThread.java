@@ -83,6 +83,14 @@ public class HazelcastManagedThread extends Thread {
 
     }
 
+    protected void beforeStart(){}
+
+    @Override
+    public synchronized void start() {
+        beforeStart();
+        super.start();
+    }
+
     @Override
     public final void run() {
         if (allowedCpus != null) {

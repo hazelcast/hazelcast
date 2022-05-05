@@ -110,9 +110,13 @@ public final class NioAsyncSocket extends AsyncSocket {
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+
+        if(!eventloop.registerSocket(NioAsyncSocket.this)){
+            throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
+        }
+
         eventloop.execute(() -> {
             selector = eventloop.selector;
-            eventloop.registerSocket(NioAsyncSocket.this);
             receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
 
             if (!clientSide) {

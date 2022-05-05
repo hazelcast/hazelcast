@@ -8,6 +8,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
+import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
+
 public final class NioEventloop extends Eventloop {
     final Selector selector;
 
@@ -28,7 +30,7 @@ public final class NioEventloop extends Eventloop {
 
     @Override
     protected void eventLoop() throws Exception {
-        while (running) {
+        while (state.get() == RUNNING) {
             runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();

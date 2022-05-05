@@ -9,6 +9,7 @@ import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
 
+import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 
@@ -55,7 +56,7 @@ public final class EpollEventloop extends Eventloop {
     @Override
     protected void eventLoop() throws Exception {
         int k = 0;
-        while (running) {
+        while (state.get() == RUNNING) {
             runConcurrentTasks();
             k++;
 

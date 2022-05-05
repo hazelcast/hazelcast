@@ -1,6 +1,8 @@
 package com.hazelcast.tpc.engine.iouring;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.tpc.engine.Eventloop;
+import com.hazelcast.tpc.engine.EventloopState;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.unix.FileDescriptor;
@@ -13,6 +15,9 @@ import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.netty.util.internal.PlatformDependent;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 
@@ -82,11 +87,11 @@ import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
  */
 public class IOUringEventloop extends Eventloop implements IOUringCompletionQueueCallback {
 
-    private final RingBuffer ringBuffer;
-    private final FileDescriptor eventfd;
-    public final IOUringSubmissionQueue sq;
-    private final IOUringCompletionQueue cq;
-    private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
+    private RingBuffer ringBuffer;
+    private final FileDescriptor eventfd = Native.newBlockingEventFd();
+    IOUringSubmissionQueue sq;
+    private IOUringCompletionQueue cq;
+    private long eventfdReadBuf = PlatformDependent.allocateMemory(8);
     // we could use an array.
     final IntObjectMap<CompletionListener> completionListeners = new IntObjectHashMap<>(4096);
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
@@ -94,13 +99,44 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
 
     protected StorageScheduler storageScheduler;
 
+    private int ringbufferSize = DEFAULT_RING_SIZE;
+    private int ioseqAsyncTreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
+    private int flags;
+
     public IOUringEventloop() {
-        this.ringBuffer = Native.createRingBuffer(DEFAULT_RING_SIZE, DEFAULT_IOSEQ_ASYNC_THRESHOLD);
+    }
+
+    @Override
+    protected void beforeStart() {
+        this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncTreshold, flags);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
-        this.eventfd = Native.newBlockingEventFd();
-        this.completionListeners.put(eventfd.intValue(), (fd, op, res, flags, data) -> sq_addEventRead());
+        this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
         this.storageScheduler = new StorageScheduler(this, 512);
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = checkNotNegative(flags, "flags can't be negative");
+    }
+
+    public int getRingbufferSize() {
+        return ringbufferSize;
+    }
+
+    public void setRingbufferSize(int ringbufferSize) {
+        this.ringbufferSize = checkPositive("ringbufferSize", ringbufferSize);
+    }
+
+    public int getIoseqAsyncTreshold() {
+        return ioseqAsyncTreshold;
+    }
+
+    public void setIoseqAsyncTreshold(int ioseqAsyncTreshold) {
+        this.ioseqAsyncTreshold = checkPositive("ioseqAsyncTreshold", ioseqAsyncTreshold);
     }
 
     public StorageScheduler getStorageScheduler() {
@@ -123,7 +159,7 @@ public class IOUringEventloop extends Eventloop implements IOUringCompletionQueu
     protected void eventLoop() {
         sq_addEventRead();
 
-        while (running) {
+        while (state.get() == RUNNING) {
             runConcurrentTasks();
 
             boolean moreWork = scheduler.tick();

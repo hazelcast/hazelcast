@@ -34,9 +34,13 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 
     private EpollAsyncServerSocket(EpollEventloop eventloop) {
 //        try {
-        this.eventloop = eventloop;
-        this.eventloop.registerServerSocket(this);
         this.serverSocket = LinuxSocket.newSocketStream();
+        this.eventloop = eventloop;
+        if(!eventloop.registerServerSocket(this)){
+            close();
+            throw new IllegalStateException("EventLoop is not running");
+        }
+
         // this.serverSocket.
 //            this.selector = eventloop.selector;
 //            this.serverSocketChannel = ServerSocketChannel.open();
