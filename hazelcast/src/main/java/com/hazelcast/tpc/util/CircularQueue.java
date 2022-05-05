@@ -1,4 +1,4 @@
-package com.hazelcast.tpc.engine;
+package com.hazelcast.tpc.util;
 
 import com.hazelcast.internal.util.QuickMath;
 

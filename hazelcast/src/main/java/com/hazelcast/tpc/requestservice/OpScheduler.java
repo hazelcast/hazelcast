@@ -1,7 +1,7 @@
 package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.tpc.engine.CircularQueue;
+import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.frame.Frame;

@@ -1,4 +1,4 @@
-package com.hazelcast.tpc;
+package com.hazelcast.tpc.util;
 
 public interface Allocator {
 

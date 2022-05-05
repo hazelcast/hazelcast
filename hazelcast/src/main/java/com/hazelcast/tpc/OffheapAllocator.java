@@ -1,7 +1,7 @@
 package com.hazelcast.tpc;
 
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
-import com.hazelcast.tpc.Allocator;
+import com.hazelcast.tpc.util.Allocator;
 import sun.misc.Unsafe;
 
 public final class OffheapAllocator implements Allocator {

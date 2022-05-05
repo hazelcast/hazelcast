@@ -1,7 +1,7 @@
 package com.hazelcast.tpc.engine.iouring;
 
-import com.hazelcast.tpc.engine.CircularQueue;
-import com.hazelcast.tpc.engine.SlabAllocator;
+import com.hazelcast.tpc.util.CircularQueue;
+import com.hazelcast.tpc.util.SlabAllocator;
 import com.hazelcast.table.impl.RandomLoadOp;
 import io.netty.channel.unix.Buffer;
 
