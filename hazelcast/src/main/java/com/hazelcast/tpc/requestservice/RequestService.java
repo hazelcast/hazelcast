@@ -352,7 +352,7 @@ public class RequestService {
         if (response.next != null) {
             int index = responseThreadCount == 0
                     ? 0
-                    : hashToIndex(response.getLong(OFFSET_REQ_CALL_ID), responseThreadCount);
+                    : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), responseThreadCount);
             responseThreads[index].queue.add(response);
             return;
         }
