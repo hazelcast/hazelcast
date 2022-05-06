@@ -125,7 +125,7 @@ public class HTTPCommunicator {
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
-    private ILogger logger;
+    private final ILogger logger;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this(instance, null);
@@ -152,10 +152,11 @@ public class HTTPCommunicator {
         this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
     }
 
-    public HTTPCommunicator(int port) {
+    HTTPCommunicator(int port) {
         this.baseRestAddress = "/127.0.0.1:" + port;
         this.address = "http:/" + this.baseRestAddress + "/hazelcast/rest/";
         this.sslEnabled = false;
+        this.logger = null;
     }
 
     public String getUrl(String suffix) {
@@ -552,7 +553,7 @@ public class HTTPCommunicator {
     }
 
     private void logRequest(String method, String url) {
-        if (logger.isFineEnabled()) {
+        if (logger != null && logger.isFineEnabled()) {
             logger.fine("Sending " + method + " request to " + url);
         }
     }
