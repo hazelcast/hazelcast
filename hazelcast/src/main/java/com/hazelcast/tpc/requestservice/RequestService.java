@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_CALL_ID;
 
 
@@ -98,6 +99,7 @@ public class RequestService {
     public volatile boolean shuttingdown = false;
     public final Managers managers;
     private final ConcurrentMap<SocketAddress, Requests> requestsPerChannel = new ConcurrentHashMap<>();
+    private final Requests localRequest = new Requests();
     private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
     private Engine engine;
@@ -348,10 +350,9 @@ public class RequestService {
     // channel so we don't need to do a requests lookup.
     public void handleResponse(Frame response) {
         if (response.next != null) {
-            // probably better to use call-id.
             int index = responseThreadCount == 0
                     ? 0
-                    : hashToIndex(response.getInt(Frame.OFFSET_PARTITION_ID), responseThreadCount);
+                    : hashToIndex(response.getLong(OFFSET_REQ_CALL_ID), responseThreadCount);
             responseThreads[index].queue.add(response);
             return;
         }
@@ -395,7 +396,7 @@ public class RequestService {
             request.acquire();
             Requests requests = getRequests(socket.getRemoteAddress());
             long callId = requests.nextCallId();
-            request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+            request.putLong(OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
             socket.writeAndFlush(request);
@@ -424,7 +425,7 @@ public class RequestService {
             request.acquire();
             Requests requests = getRequests(socket.getRemoteAddress());
             long callId = requests.nextCallId();
-            request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+            request.putLong(OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
             socket.writeAndFlush(request);
@@ -442,7 +443,7 @@ public class RequestService {
         request.acquire();
         Requests requests = getRequests(socket.getRemoteAddress());
         long callId = requests.nextCallId();
-        request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+        request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
         requests.map.put(callId, request);
         socket.writeAndFlush(request);
@@ -472,7 +473,7 @@ public class RequestService {
                 request.acquire();
                 long callId = c - k;
                 requests.map.put(callId, request);
-                request.putLong(Frame.OFFSET_REQ_CALL_ID, callId);
+                request.putLong(OFFSET_REQ_CALL_ID, callId);
                 k--;
             }
 
