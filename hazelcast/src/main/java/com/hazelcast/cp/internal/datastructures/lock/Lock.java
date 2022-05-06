@@ -252,7 +252,8 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
      */
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.emptyList();
+        LockInvocationKey ownerCopy = owner;
+        return ownerCopy != null ? Collections.singleton(ownerCopy.sessionId()) : Collections.emptyList();
     }
 
     @Override
