@@ -32,6 +32,7 @@ import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
+import com.hazelcast.cp.internal.operation.GetLocalCPMemberOp;
 import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
@@ -636,8 +637,18 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                     logger.warning(cpMember + " is not present in the cluster. It will be auto-removed after "
                             + config.getMissingCPMemberAutoRemovalSeconds() + " seconds.");
                 }
-            } else if (missingMembers.remove(cpMember) != null) {
-                logger.info(cpMember + " is removed from the missing members list as it is in the cluster.");
+            } else if (missingMembers.containsKey(cpMember)) {
+                OperationServiceImpl operationService = nodeEngine.getOperationService();
+                operationService
+                        .invokeOnTarget(RaftService.SERVICE_NAME, new GetLocalCPMemberOp(), cpMember.getAddress())
+                        .thenAccept(cpMemberInfo -> {
+                            if (cpMemberInfo != null && missingMembers.remove(cpMemberInfo) != null) {
+                                logger.info(cpMember
+                                        + " is removed from the missing members list as it is in the cluster.");
+                            }
+                        }
+                        );
+                logger.info("finish thread");
             }
         }
     }

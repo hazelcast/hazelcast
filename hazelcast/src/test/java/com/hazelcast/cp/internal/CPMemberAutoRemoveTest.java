@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPMember;
@@ -54,6 +55,27 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         assertTrueEventually(() -> {
             Collection<CPMemberInfo> activeMembers = getRaftService(instances[0]).getMetadataGroupManager()
                                                                                  .getActiveMembers();
+            assertThat(activeMembers, not(hasItem(terminatedMember)));
+            assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.empty());
+        });
+    }
+
+    @Test
+    public void when_missingCPNodeReplacedByNewNode_then_itIsAutomaticallyRemoved() {
+        missingRaftMemberRemovalSeconds = 10;
+        HazelcastInstance[] instances = newInstances(3, 3, 0);
+
+        CPMemberInfo terminatedMember = (CPMemberInfo) instances[2].getCPSubsystem().getLocalCPMember();
+        Address address = terminatedMember.getAddress();
+        instances[2].getLifecycleService().terminate();
+
+        Config config = createConfig(3, 3);
+        HazelcastInstance instance = factory.newHazelcastInstance(address, config);
+        waitUntilCPDiscoveryCompleted(instance);
+
+        assertTrueEventually(() -> {
+            Collection<CPMemberInfo> activeMembers = getRaftService(instances[0]).getMetadataGroupManager()
+                    .getActiveMembers();
             assertThat(activeMembers, not(hasItem(terminatedMember)));
             assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.empty());
         });

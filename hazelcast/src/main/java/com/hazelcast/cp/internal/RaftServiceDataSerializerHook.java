@@ -20,6 +20,7 @@ import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChang
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
+import com.hazelcast.cp.internal.operation.GetLocalCPMemberOp;
 import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
 import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
@@ -124,6 +125,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int TRIGGER_LEADER_ELECTION_OP = 50;
     public static final int UNSAFE_MODE_PARTITION_STATE = 51;
     public static final int UNSAFE_STATE_REPLICATE_OP = 52;
+    public static final int GET_LOCAL_CP_MEMBER = 53;
 
     @Override
     public int getFactoryId() {
@@ -238,6 +240,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new UnsafeModePartitionState();
                 case UNSAFE_STATE_REPLICATE_OP:
                     return new UnsafeStateReplicationOp();
+                case GET_LOCAL_CP_MEMBER:
+                    return new GetLocalCPMemberOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
