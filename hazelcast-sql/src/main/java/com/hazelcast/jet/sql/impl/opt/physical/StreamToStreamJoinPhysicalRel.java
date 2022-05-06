@@ -29,20 +29,27 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.Collections;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
+    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
+    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
+    private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
+
     protected StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
             RelNode right,
             RexNode condition,
-            JoinRelType joinType) {
+            JoinRelType joinType,
+            Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
+            Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
+            Map<Byte, Map<Byte, Long>> postponeTimeMap) {
         super(cluster, traitSet, left, right, condition, joinType);
+        this.leftTimeExtractors = leftTimeExtractors;
+        this.rightTimeExtractors = rightTimeExtractors;
+        this.postponeTimeMap = postponeTimeMap;
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -62,17 +69,15 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
-        // TODO: implement it
-        return Collections.singletonMap((byte) 0, row -> row.getRow().get(0));
+        return leftTimeExtractors;
     }
 
     public Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
-        // TODO: implement it
-        return Collections.singletonMap((byte) 1, row -> row.getRow().get(0));
+        return rightTimeExtractors;
     }
 
     public Map<Byte, Map<Byte, Long>> postponeTimeMap() {
-        return emptyMap();
+        return postponeTimeMap;
     }
 
     @Override
@@ -95,7 +100,10 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 left,
                 right,
                 getCondition(),
-                joinType
+                joinType,
+                leftTimeExtractors,
+                rightTimeExtractors,
+                postponeTimeMap
         );
     }
 }

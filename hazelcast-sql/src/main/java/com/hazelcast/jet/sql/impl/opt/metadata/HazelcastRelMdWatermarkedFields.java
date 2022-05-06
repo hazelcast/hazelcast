@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
@@ -161,11 +162,18 @@ public final class HazelcastRelMdWatermarkedFields
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
+        if (rel instanceof StreamToStreamJoinPhysicalRel) {
+            return extractWatermarkedFields((StreamToStreamJoinPhysicalRel) rel, mq);
+        }
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        // We currently support only nested-loop join and hash join that iterate the left side and forward
-        // WM in it. WM on the right side isn't forwarded.
-        // TODO: When we implement stream-to-stream join, we need to revisit this.
+        // For nested-loop join and hash join that iterate the left side and forward WM in it.
+        // WM on the right side isn't forwarded.
         return query.extractWatermarkedFields(rel.getLeft());
+    }
+
+    public WatermarkedFields extractWatermarkedFields(StreamToStreamJoinPhysicalRel rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        return query.extractWatermarkedFields(rel.getLeft()).merge(query.extractWatermarkedFields(rel.getRight()));
     }
 
     @SuppressWarnings("unused")

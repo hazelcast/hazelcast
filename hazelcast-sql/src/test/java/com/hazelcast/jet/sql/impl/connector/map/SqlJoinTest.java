@@ -48,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(Enclosed.class)
 public class SqlJoinTest {
 
+    @SuppressWarnings("resource")
     public static class SqlStreamingJoinCheckerTest extends SqlTestSupport {
 
         private static SqlService sqlService;
@@ -104,7 +105,7 @@ public class SqlJoinTest {
 
             assertTipOfStream(
                     "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
-                    singletonList(new Row(0L, timestamp(0L)))
+                    singletonList(new Row(timestamp(0L), timestamp(0L)))
             );
         }
 
@@ -145,7 +146,7 @@ public class SqlJoinTest {
             assertTipOfStream(
                     "SELECT * FROM s1 " +
                             "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECONDS AND s1.a " +
-                            "JOIN s3 ON s3.c BETWEEN s2.c AND s2.c + INTERVAL '0.005' SECONDS ",
+                            "JOIN s3 ON s3.c BETWEEN s2.b AND s2.b + INTERVAL '0.005' SECONDS ",
                     singletonList(new Row(0L, timestamp(0L), timestamp(1L)))
             );
         }
