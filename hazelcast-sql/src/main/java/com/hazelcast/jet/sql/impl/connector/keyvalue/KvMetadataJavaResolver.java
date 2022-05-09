@@ -228,6 +228,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     return new MappingField(name, type, path.toString());
                 }).collect(Collectors.toList());
 
+        // TODO [viliam] Can't we return the stream directly, rather than materializing it first?
         return topLevelFields.stream();
     }
 

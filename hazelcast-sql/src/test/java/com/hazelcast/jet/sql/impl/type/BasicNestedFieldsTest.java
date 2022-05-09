@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
@@ -333,7 +332,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     private TypesStorage typesStorage() {
-        return new TypesStorage(((HazelcastInstanceProxy) instance()).getOriginal().node.nodeEngine);
+        return new TypesStorage(getNodeEngineImpl(instance()));
     }
 
     private User initDefault() {

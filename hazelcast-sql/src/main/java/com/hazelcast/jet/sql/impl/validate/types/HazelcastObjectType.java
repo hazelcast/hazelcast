@@ -28,6 +28,7 @@ import java.util.List;
 public class HazelcastObjectType extends RelDataTypeImpl {
     private final boolean nullable;
     private final String name;
+
     public HazelcastObjectType(final String name, final List<Field> fields) {
         super(fields);
         this.name = name;

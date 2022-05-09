@@ -358,9 +358,11 @@ public final class OptUtils {
         return dataTypeMap.get(fieldType.getTypeName());
     }
 
-    private static void convertUserDefinedTypeRecursively(QueryDataType type,
-                                                                 RelDataTypeFactory typeFactory,
-                                                                 Map<String, RelDataType> typeMap) {
+    private static void convertUserDefinedTypeRecursively(
+            QueryDataType type,
+            RelDataTypeFactory typeFactory,
+            Map<String, RelDataType> typeMap
+    ) {
         if (typeMap.get(type.getTypeName()) != null) {
             return;
         }

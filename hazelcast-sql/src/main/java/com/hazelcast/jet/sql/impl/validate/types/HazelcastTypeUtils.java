@@ -346,7 +346,6 @@ public final class HazelcastTypeUtils {
                 return false;
             }
 
-
             // ROW source can be converted to target type
             // TODO: target type can be ROW in some expressions?
             if ((sourceType.getSqlTypeName() != targetType.getSqlTypeName())
