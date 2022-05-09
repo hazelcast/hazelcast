@@ -16,10 +16,10 @@ import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
-import com.hazelcast.tpc.engine.frame.ConcurrentPooledFrameAllocator;
+import com.hazelcast.tpc.engine.frame.ParallelFrameAllocator;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.engine.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
 import com.hazelcast.tpc.engine.frame.UnpooledFrameAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
@@ -148,8 +148,8 @@ public class RequestService {
     @NotNull
     private Engine newEngine() {
         Engine engine = new Engine(() -> {
-            FrameAllocator remoteResponseFrameAllocator = new ConcurrentPooledFrameAllocator(128, true);
-            FrameAllocator localResponseFrameAllocator = new NonConcurrentPooledFrameAllocator(128, true);
+            FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
+            FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
 
             return new OpScheduler(32768,
                     Integer.MAX_VALUE,
@@ -172,10 +172,10 @@ public class RequestService {
                 readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
                 readHandler.requestService = RequestService.this;
                 readHandler.requestFrameAllocator = poolRequests
-                        ? new NonConcurrentPooledFrameAllocator(128, true)
+                        ? new SerialFrameAllocator(128, true)
                         : new UnpooledFrameAllocator();
                 readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                        ? new ConcurrentPooledFrameAllocator(128, true)
+                        ? new ParallelFrameAllocator(128, true)
                         : new UnpooledFrameAllocator();
                 return readHandler;
             };
@@ -212,10 +212,10 @@ public class RequestService {
                     handler.opScheduler = (OpScheduler) eventloop.getScheduler();
                     handler.requestService = this;
                     handler.requestFrameAllocator = poolRequests
-                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            ? new SerialFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
                     handler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            ? new ParallelFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
                     return handler;
                 };
@@ -250,10 +250,10 @@ public class RequestService {
                     handler.opScheduler = (OpScheduler) eventloop.getScheduler();
                     handler.requestService = this;
                     handler.requestFrameAllocator = poolRequests
-                            ? new NonConcurrentPooledFrameAllocator(128, true)
+                            ? new SerialFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
                     handler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ConcurrentPooledFrameAllocator(128, true)
+                            ? new ParallelFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
                     return handler;
                 };

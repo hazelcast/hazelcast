@@ -7,7 +7,7 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class ConcurrentPooledFrameAllocator implements FrameAllocator {
+public class ParallelFrameAllocator implements FrameAllocator {
 
     private final MpmcArrayQueue<Frame> queue = new MpmcArrayQueue<>(4096);
 
@@ -31,7 +31,7 @@ public class ConcurrentPooledFrameAllocator implements FrameAllocator {
     private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
 
-    public ConcurrentPooledFrameAllocator(int minSize, boolean direct) {
+    public ParallelFrameAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
         this.direct = direct;
     }

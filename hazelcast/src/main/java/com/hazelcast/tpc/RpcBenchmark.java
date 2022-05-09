@@ -6,7 +6,7 @@ import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.engine.frame.NonConcurrentPooledFrameAllocator;
+import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
@@ -77,7 +77,7 @@ public class RpcBenchmark {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.setTcpNoDelay(true);
         clientSocket.setReadHandler(new NioReadHandler() {
-            private FrameAllocator responseFrameAllocator = new NonConcurrentPooledFrameAllocator(8, true);
+            private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
 
             @Override
             public void onRead(ByteBuffer buffer) {
@@ -120,7 +120,7 @@ public class RpcBenchmark {
         serverSocket.accept(socket -> {
             socket.setTcpNoDelay(true);
             socket.setReadHandler(new NioReadHandler() {
-                private FrameAllocator responseFrameAllocator = new NonConcurrentPooledFrameAllocator(8, true);
+                private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuffer buffer) {
