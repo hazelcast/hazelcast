@@ -5,6 +5,7 @@ import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import com.hazelcast.tpc.engine.nio.NioReadHandler;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
@@ -15,7 +16,7 @@ public class RequestNioReadHandler extends NioReadHandler {
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
     public OpScheduler opScheduler;
-    public RequestService requestService;
+    public Consumer<Frame> responseHandler;
 
     @Override
     public void onRead(ByteBuffer buffer) {
@@ -60,7 +61,7 @@ public class RequestNioReadHandler extends NioReadHandler {
         }
 
         if (responseChain != null) {
-            requestService.handleResponse(responseChain);
+            responseHandler.accept(responseChain);
         }
     }
 }

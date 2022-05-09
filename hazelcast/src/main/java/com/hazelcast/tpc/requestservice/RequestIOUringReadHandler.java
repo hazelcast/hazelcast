@@ -7,6 +7,7 @@ import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringReadHandler;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
@@ -15,7 +16,7 @@ public class RequestIOUringReadHandler implements IOUringReadHandler {
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
-    public RequestService requestService;
+    public Consumer<Frame> responseHandler;
     public OpScheduler opScheduler;
     private IOUringAsyncSocket asyncSocket;
 
@@ -75,7 +76,7 @@ public class RequestIOUringReadHandler implements IOUringReadHandler {
         }
 
         if (responses != null) {
-            requestService.handleResponse(responses);
+            responseHandler.accept(responses);
         }
     }
 }

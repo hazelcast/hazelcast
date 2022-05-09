@@ -95,12 +95,12 @@ public class RequestService {
     private final boolean responseThreadSpin;
     private final int requestTimeoutMs;
     private final boolean regularSchedule;
+    private final ResponseHandler responseHandler;
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
     private final ConcurrentMap<SocketAddress, Requests> requestsPerChannel = new ConcurrentHashMap<>();
     private final Requests localRequest = new Requests();
-    private final ResponseThread[] responseThreads;
     private int[] partitionIdToChannel;
     private Engine engine;
     private int concurrentRequestLimit;
@@ -119,9 +119,10 @@ public class RequestService {
         this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
         this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
-
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printEventloopInfo();
+
+        this.responseHandler = new ResponseHandler(responseThreadCount, responseThreadSpin, requestsPerChannel);
         this.thisAddress = nodeEngine.getThisAddress();
         this.engine = newEngine();
 
@@ -135,10 +136,6 @@ public class RequestService {
             partitionIdToChannel[k] = hashToIndex(k, socketCount);
         }
 
-        this.responseThreads = new ResponseThread[responseThreadCount];
-        for (int k = 0; k < responseThreadCount; k++) {
-            this.responseThreads[k] = new ResponseThread();
-        }
     }
 
     public int getRequestTimeoutMs() {
@@ -170,7 +167,7 @@ public class RequestService {
             Supplier<NioReadHandler> readHandlerSupplier = () -> {
                 RequestNioReadHandler readHandler = new RequestNioReadHandler();
                 readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
-                readHandler.requestService = RequestService.this;
+                readHandler.responseHandler = responseHandler;
                 readHandler.requestFrameAllocator = poolRequests
                         ? new SerialFrameAllocator(128, true)
                         : new UnpooledFrameAllocator();
@@ -202,22 +199,21 @@ public class RequestService {
         }
     }
 
-
     private void configureIOUring() {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             IOUringEventloop eventloop = (IOUringEventloop) engine.eventloop(k);
             try {
                 Supplier<IOUringReadHandler> readHandlerSupplier = () -> {
-                    RequestIOUringReadHandler handler = new RequestIOUringReadHandler();
-                    handler.opScheduler = (OpScheduler) eventloop.getScheduler();
-                    handler.requestService = this;
-                    handler.requestFrameAllocator = poolRequests
+                    RequestIOUringReadHandler readHandler = new RequestIOUringReadHandler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                    readHandler.responseHandler = responseHandler;
+                    readHandler.requestFrameAllocator = poolRequests
                             ? new SerialFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    handler.remoteResponseFrameAllocator = poolRemoteResponses
+                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
                             ? new ParallelFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    return handler;
+                    return readHandler;
                 };
                 readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
@@ -246,16 +242,16 @@ public class RequestService {
             EpollEventloop eventloop = (EpollEventloop) engine.eventloop(k);
             try {
                 Supplier<EpollReadHandler> readHandlerSupplier = () -> {
-                    RequestEpollReadHandler handler = new RequestEpollReadHandler();
-                    handler.opScheduler = (OpScheduler) eventloop.getScheduler();
-                    handler.requestService = this;
-                    handler.requestFrameAllocator = poolRequests
+                    RequestEpollReadHandler readHandler = new RequestEpollReadHandler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                    readHandler.responseHandler = responseHandler;
+                    readHandler.requestFrameAllocator = poolRequests
                             ? new SerialFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    handler.remoteResponseFrameAllocator = poolRemoteResponses
+                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
                             ? new ParallelFrameAllocator(128, true)
                             : new UnpooledFrameAllocator();
-                    return handler;
+                    return readHandler;
                 };
                 readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
@@ -316,9 +312,7 @@ public class RequestService {
                 throw new RuntimeException();
         }
 
-        for (ResponseThread responseThread : responseThreads) {
-            responseThread.start();
-        }
+        responseHandler.start();
     }
 
     private void ensureActive() {
@@ -340,70 +334,10 @@ public class RequestService {
             }
         }
 
-        for (ResponseThread responseThread : responseThreads) {
-            responseThread.shutdown();
-        }
+
+        responseHandler.shutdown();
     }
 
-
-    // TODO: We can simplify this by attaching the requests for a member, directly to that
-    // channel so we don't need to do a requests lookup.
-    public void handleResponse(Frame response) {
-        if (response.next != null) {
-            int index = responseThreadCount == 0
-                    ? 0
-                    : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), responseThreadCount);
-            responseThreads[index].queue.add(response);
-            return;
-        }
-
-        try {
-            Requests requests = requestsPerChannel.get(response.socket.getRemoteAddress());
-            if (requests == null) {
-                System.out.println("Dropping response " + response + ", requests not found");
-                response.release();
-            } else {
-                requests.complete();
-
-                long callId = response.getLong(OFFSET_RES_CALL_ID);
-                //System.out.println("response with callId:"+callId +" frame: "+response);
-
-                Frame request = requests.map.remove(callId);
-                if (request == null) {
-                    System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
-                } else {
-                    CompletableFuture future = request.future;
-                    future.complete(response);
-                    request.release();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public CompletableFuture invokeOnEventloop(Frame request, Address address, int eventloop) {
-        ensureActive();
-
-        CompletableFuture future = request.future;
-        if (address.equals(thisAddress)) {
-            engine.eventloop(eventloop).execute(request);
-        } else {
-            AsyncSocket socket = getConnection(address).sockets[eventloop];
-
-            // we need to acquire the frame because storage will release it once written
-            // and we need to keep the frame around for the response.
-            request.acquire();
-            Requests requests = getRequests(socket.getRemoteAddress());
-            long callId = requests.nextCallId();
-            request.putLong(OFFSET_REQ_CALL_ID, callId);
-            //System.out.println("request.refCount:"+request.refCount());
-            requests.map.put(callId, request);
-            socket.writeAndFlush(request);
-        }
-
-        return future;
-    }
 
     public CompletableFuture invokeOnPartition(Frame request, int partitionId) {
         ensureActive();
@@ -569,45 +503,6 @@ public class RequestService {
         }
     }
 
-    public class ResponseThread extends Thread {
-        public final MPSCQueue<Frame> queue;
-
-        public ResponseThread() {
-            super("ResponseThread");
-            this.queue = new MPSCQueue<>(this, null);
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (!shuttingdown) {
-                    Frame frame;
-                    if (responseThreadSpin) {
-                        do {
-                            frame = queue.poll();
-                        } while (frame == null);
-                    } else {
-                        frame = queue.take();
-                    }
-
-                    do {
-                        Frame next = frame.next;
-                        frame.next = null;
-                        handleResponse(frame);
-                        frame = next;
-                    } while (frame != null);
-                }
-            } catch (InterruptedException e) {
-                System.out.println("ResponseThread stopping due to interrupt");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void shutdown() {
-            interrupt();
-        }
-    }
 
     /**
      * Requests for a given member.

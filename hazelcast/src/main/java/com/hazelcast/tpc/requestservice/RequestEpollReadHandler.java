@@ -6,6 +6,7 @@ import com.hazelcast.tpc.engine.epoll.EpollAsyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
@@ -13,7 +14,7 @@ import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
 public class RequestEpollReadHandler implements EpollReadHandler {
 
     public OpScheduler opScheduler;
-    public RequestService requestService;
+    public Consumer<Frame> responseHandler;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
     private Frame inboundFrame;
@@ -67,7 +68,7 @@ public class RequestEpollReadHandler implements EpollReadHandler {
         }
 
         if (responseChain != null) {
-            requestService.handleResponse(responseChain);
+            responseHandler.accept(responseChain);
         }
     }
 }
