@@ -16,11 +16,11 @@ class ResponseHandler implements Consumer<Frame> {
     private final ResponseThread[] threads;
     private final int threadCount;
     private final boolean spin;
-    private final ConcurrentMap<SocketAddress, RequestService.Requests> requestRegistry;
+    private final RequestRegistry requestRegistry;
 
     ResponseHandler(int threadCount,
                     boolean spin,
-                    ConcurrentMap<SocketAddress, RequestService.Requests> requestRegistry) {
+                    RequestRegistry requestRegistry) {
         this.spin = spin;
         this.threadCount = threadCount;
         this.threads = new ResponseThread[threadCount];
@@ -53,7 +53,7 @@ class ResponseHandler implements Consumer<Frame> {
         }
 
         try {
-            RequestService.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
+            RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
                 response.release();

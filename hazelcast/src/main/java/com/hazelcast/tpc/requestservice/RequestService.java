@@ -5,7 +5,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
-import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.tpc.engine.AsyncSocket;
@@ -32,7 +31,6 @@ import com.hazelcast.tpc.engine.iouring.IOUringAsyncServerSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringReadHandler;
-import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -43,14 +41,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_CALL_ID;
 
 
 /**
@@ -99,9 +93,8 @@ public class RequestService {
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
-    private final ConcurrentMap<SocketAddress, Requests> requestsPerChannel = new ConcurrentHashMap<>();
-    private final Requests localRequest = new Requests();
     private int[] partitionIdToChannel;
+    private final RequestRegistry requestRegistry;
     private Engine engine;
     private int concurrentRequestLimit;
     private final Map<Eventloop, Supplier<? extends AsyncSocketReadHandler>> readHandlerSuppliers = new HashMap<>();
@@ -122,7 +115,8 @@ public class RequestService {
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         printEventloopInfo();
 
-        this.responseHandler = new ResponseHandler(responseThreadCount, responseThreadSpin, requestsPerChannel);
+        this.requestRegistry = new RequestRegistry(concurrentRequestLimit);
+        this.responseHandler = new ResponseHandler(responseThreadCount, responseThreadSpin, requestRegistry);
         this.thisAddress = nodeEngine.getThisAddress();
         this.engine = newEngine();
 
@@ -328,12 +322,7 @@ public class RequestService {
 
         engine.shutdown();
 
-        for (Requests requests : requestsPerChannel.values()) {
-            for (Frame request : requests.map.values()) {
-                request.future.completeExceptionally(new RuntimeException("Shutting down"));
-            }
-        }
-
+        requestRegistry.shutdown();
 
         responseHandler.shutdown();
     }
@@ -357,7 +346,7 @@ public class RequestService {
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-            Requests requests = getRequests(socket.getRemoteAddress());
+            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
             long callId = requests.nextCallId();
             request.putLong(OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
@@ -375,7 +364,7 @@ public class RequestService {
         // we need to acquire the frame because storage will release it once written
         // and we need to keep the frame around for the response.
         request.acquire();
-        Requests requests = getRequests(socket.getRemoteAddress());
+        RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
         long callId = requests.nextCallId();
         request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
@@ -398,7 +387,7 @@ public class RequestService {
             engine.eventloopForHash(partitionId).execute(requestList);
         } else {
             AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
-            Requests requests = getRequests(socket.getRemoteAddress());
+            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
 
             long c = requests.nextCallId(requestList.size());
 
@@ -492,72 +481,6 @@ public class RequestService {
         return socket;
     }
 
-    public Requests getRequests(SocketAddress address) {
-        Requests requests = requestsPerChannel.get(address);
-        if (requests == null) {
-            Requests newRequests = new Requests();
-            Requests foundRequests = requestsPerChannel.putIfAbsent(address, newRequests);
-            return foundRequests == null ? newRequests : foundRequests;
-        } else {
-            return requests;
-        }
-    }
 
 
-    /**
-     * Requests for a given member.
-     */
-    public class Requests {
-        final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
-        final PaddedAtomicLong started = new PaddedAtomicLong();
-        final PaddedAtomicLong completed = new PaddedAtomicLong();
-
-        public void complete() {
-            if (concurrentRequestLimit > -1) {
-                completed.incrementAndGet();
-            }
-        }
-
-        public long nextCallId() {
-            if (concurrentRequestLimit == -1) {
-                return started.incrementAndGet();
-            } else {
-                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
-                do {
-                    if (completed.get() + concurrentRequestLimit > started.get()) {
-                        return started.incrementAndGet();
-                    } else {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException();
-                        }
-                    }
-                } while (System.currentTimeMillis() < endTime);
-
-                throw new RuntimeException("Member is overloaded with requests");
-            }
-        }
-
-        public long nextCallId(int count) {
-            if (concurrentRequestLimit == -1) {
-                return started.addAndGet(count);
-            } else {
-                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
-                do {
-                    if (completed.get() + concurrentRequestLimit > started.get() + count) {
-                        return started.addAndGet(count);
-                    } else {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException();
-                        }
-                    }
-                } while (System.currentTimeMillis() < endTime);
-
-                throw new RuntimeException("Member is overloaded with requests");
-            }
-        }
-    }
 }
