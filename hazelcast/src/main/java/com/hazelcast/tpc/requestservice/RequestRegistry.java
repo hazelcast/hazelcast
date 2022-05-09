@@ -20,15 +20,13 @@ class RequestRegistry {
         this.concurrentRequestLimit = concurrentRequestLimit;
     }
 
-    void shutdown(){
+    void shutdown() {
         for (Requests requests : requestsPerSocket.values()) {
-            for (Frame request : requests.map.values()) {
-                request.future.completeExceptionally(new RuntimeException("Shutting down"));
-            }
+            requests.shutdown();
         }
     }
 
-    Requests get(SocketAddress address){
+    Requests get(SocketAddress address) {
         return requestsPerSocket.get(address);
     }
 
@@ -93,6 +91,12 @@ class RequestRegistry {
                 } while (currentTimeMillis() < endTime);
 
                 throw new RuntimeException("Member is overloaded with requests");
+            }
+        }
+
+        void shutdown() {
+            for (Frame request : map.values()) {
+                request.future.completeExceptionally(new RuntimeException("Shutting down"));
             }
         }
     }
