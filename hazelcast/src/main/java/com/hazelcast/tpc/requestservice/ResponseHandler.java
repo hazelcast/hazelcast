@@ -1,6 +1,5 @@
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.tpc.engine.frame.Frame;
 
@@ -31,42 +30,6 @@ class ResponseHandler implements Consumer<Frame> {
         }
     }
 
-    // TODO: We can simplify this by attaching the requests for a member, directly to that
-    // channel so we don't need to do a requests lookup.
-    public void handleResponse(Frame response) {
-        if (response.next != null) {
-            int index = threadCount == 0
-                    ? 0
-                    : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
-            threads[index].queue.add(response);
-            return;
-        }
-
-        try {
-            RequestService.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
-            if (requests == null) {
-                System.out.println("Dropping response " + response + ", requests not found");
-                response.release();
-            } else {
-                requests.complete();
-
-                long callId = response.getLong(OFFSET_RES_CALL_ID);
-                //System.out.println("response with callId:"+callId +" frame: "+response);
-
-                Frame request = requests.map.remove(callId);
-                if (request == null) {
-                    System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
-                } else {
-                    CompletableFuture future = request.future;
-                    future.complete(response);
-                    request.release();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     void start() {
         for (ResponseThread t : threads) {
             t.start();
@@ -84,7 +47,7 @@ class ResponseHandler implements Consumer<Frame> {
         if (response.next != null) {
             int index = threadCount == 0
                     ? 0
-                    : HashUtil.hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
+                    : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
             threads[index].queue.add(response);
             return;
         }
