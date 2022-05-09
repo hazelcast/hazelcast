@@ -1,5 +1,8 @@
 package com.hazelcast.tpc.engine.frame;
 
+/**
+ * A {@link FrameAllocator} that doesn't do any pooling of requests.
+ */
 public final class UnpooledFrameAllocator implements FrameAllocator {
 
     public UnpooledFrameAllocator() {

@@ -7,6 +7,9 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A {@link FrameAllocator} that can be used in parallel by multiple threads.
+ */
 public class ParallelFrameAllocator implements FrameAllocator {
 
     private final MpmcArrayQueue<Frame> queue = new MpmcArrayQueue<>(4096);

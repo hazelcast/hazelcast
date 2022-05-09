@@ -2,6 +2,9 @@ package com.hazelcast.tpc.engine.frame;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link FrameAllocator} that can only be used serially (so by a single thread).
+ */
 public final class SerialFrameAllocator implements FrameAllocator {
     private final int minSize;
     private final boolean direct;
