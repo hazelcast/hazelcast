@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.Protocols;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.networking.HandlerStatus.BLOCKED;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -66,27 +67,25 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         // sends anything and only swaps itself with the next encoder
         try {
             // First, decoder must receive the protocol
-            if (!isDecoderReceivedProtocol && !channel.isClientMode()) {
+            if (!isDecoderReceivedProtocol) {
+                return BLOCKED;
+            }
+            if (isDecoderVerifiedProtocol) {
+                // Set up the next encoder in the pipeline once the protocol is verified
+                setupNextEncoder();
                 return CLEAN;
             }
 
-            // Decoder didn't verify the protocol, protocol error should be sent
-            if (!isDecoderVerifiedProtocol && !channel.isClientMode()) {
+            // Decoder received protocol bytes, but verification failed. If we are server/acceptor, then respond with the
+            // UNEXPECTED_PROTOCOL response bytes.
+            if (!channel.isClientMode()) {
                 if (!sendProtocol()) {
                     return DIRTY;
                 }
-                // UNEXPECTED_PROTOCOL is sent (or at least in the socket
-                // buffer). We can now throw exception in the pipeline to close
-                // the channel.
-                throw new ProtocolException(exceptionMessage);
             }
-
-            if (isDecoderVerifiedProtocol || channel.isClientMode()) {
-                // Set up the next encoder in the pipeline if in client mode
-                setupNextEncoder();
-            }
-
-            return CLEAN;
+            // Either we are in the client mode or the UNEXPECTED_PROTOCOL is sent already (or at least placed into the
+            // destination buffer). We can now throw exception in the pipeline to close the channel.
+            throw new ProtocolException(exceptionMessage);
         } finally {
             upcast(dst).flip();
         }
