@@ -62,7 +62,7 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract int getSendBufferSize();
 
-    public abstract void setReadHandler(AsyncSocketReadHandler readHandler);
+    public abstract void setReadHandler(ReadHandler readHandler);
 
     public abstract void activate(Eventloop eventloop);
 

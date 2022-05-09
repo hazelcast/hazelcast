@@ -11,7 +11,7 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopType;
-import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
@@ -97,7 +97,7 @@ public class RequestService {
     private final RequestRegistry requestRegistry;
     private Engine engine;
     private int concurrentRequestLimit;
-    private final Map<Eventloop, Supplier<? extends AsyncSocketReadHandler>> readHandlerSuppliers = new HashMap<>();
+    private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
 
     public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;

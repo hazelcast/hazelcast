@@ -1,10 +1,10 @@
 package com.hazelcast.tpc.engine.epoll;
 
-import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.ReadHandler;
 
 import java.nio.ByteBuffer;
 
-public interface EpollReadHandler extends AsyncSocketReadHandler {
+public interface EpollReadHandler extends ReadHandler {
 
     void init(EpollAsyncSocket asyncSocket);
 

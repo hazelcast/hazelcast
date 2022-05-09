@@ -2,7 +2,7 @@ package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.AsyncSocketReadHandler;
+import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
@@ -10,7 +10,6 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -99,7 +98,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReadHandler(AsyncSocketReadHandler h) {
+    public void setReadHandler(ReadHandler h) {
         this.readHandler = (NioReadHandler) checkNotNull(h);
         this.readHandler.init(this);
     }
