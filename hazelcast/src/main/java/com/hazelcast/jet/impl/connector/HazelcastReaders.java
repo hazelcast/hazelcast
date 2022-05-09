@@ -58,7 +58,6 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
@@ -175,7 +174,7 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<
-                CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
+                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
                 new LocalMapReaderFunction(mapName)
         ) {
             @Override
@@ -186,7 +185,7 @@ public final class HazelcastReaders {
     }
 
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
-            ReadMapOrCacheP.Reader<CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
+            ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
         private String mapName;
 
@@ -198,7 +197,7 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>
+        public ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>
         applyEx(HazelcastInstance instance, InternalSerializationService serializationService) throws Exception {
             return new LocalMapReader(instance, serializationService, mapName);
         }
