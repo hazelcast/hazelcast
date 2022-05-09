@@ -113,6 +113,7 @@ public class RequestService {
         this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
+
         printEventloopInfo();
 
         this.requestRegistry = new RequestRegistry(concurrentRequestLimit);
@@ -129,7 +130,6 @@ public class RequestService {
         for (int k = 0; k < 271; k++) {
             partitionIdToChannel[k] = hashToIndex(k, socketCount);
         }
-
     }
 
     public int getRequestTimeoutMs() {
@@ -151,6 +151,12 @@ public class RequestService {
         engine.setEventloopBasename("Eventloop:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
         engine.createEventLoops();
         engine.printConfig();
+
+
+        if(socketCount % engine.eventloopCount()!=0){
+            throw new IllegalStateException("socket count is not multiple of reactor count");
+        }
+
         return engine;
     }
 
@@ -279,8 +285,8 @@ public class RequestService {
         java.lang.System.out.println("reactor.cpu-affinity:" + java.lang.System.getProperty("reactor.cpu-affinity"));
     }
 
-    public int toPort(Address address, int eventloopIdx) {
-        return (address.getPort() - 5701) * 100 + 11000 + eventloopIdx;
+    public int toPort(Address address, int socketId) {
+        return (address.getPort() - 5701) * 100 + 11000 + socketId % engine.eventloopCount();
     }
 
     public int partitionIdToChannel(int partitionId) {
@@ -480,7 +486,4 @@ public class RequestService {
         System.out.println("AsyncSocket " + address + " connected");
         return socket;
     }
-
-
-
 }
