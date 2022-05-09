@@ -17,10 +17,8 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -55,7 +53,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
-import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static java.util.Collections.singletonMap;
 
 class MockServer implements Server {
@@ -474,26 +471,6 @@ class MockServer implements Server {
 
         connectionMap.values().forEach(connection -> connection.close(null, null));
         connectionMap.clear();
-
-        final Member localMember = node.getLocalMember();
-        final Address thisAddress = localMember.getAddress();
-
-        for (Address address : nodeRegistry.getAddresses()) {
-            if (address.equals(thisAddress)) {
-                continue;
-            }
-
-            Node otherNode = nodeRegistry.getNode(address);
-            if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
-                logger.fine(otherNode.getThisAddress() + " is instructed to suspect from " + thisAddress);
-                try {
-                    suspectMember(otherNode, node, "Connection manager is stopped on " + localMember);
-                } catch (Throwable e) {
-                    ILogger otherLogger = otherNode.getLogger(MockServer.class);
-                    otherLogger.warning("While removing " + thisAddress, e);
-                }
-            }
-        }
     }
 
     public static boolean isTargetLeft(Node targetNode) {
