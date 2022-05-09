@@ -358,7 +358,7 @@ public class RequestService {
         }
 
         try {
-            Requests requests = requestsPerChannel.get(response.asyncSocket.getRemoteAddress());
+            Requests requests = requestsPerChannel.get(response.socket.getRemoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
                 response.release();

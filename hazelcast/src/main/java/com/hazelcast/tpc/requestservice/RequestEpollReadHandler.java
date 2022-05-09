@@ -43,7 +43,7 @@ public class RequestEpollReadHandler implements EpollReadHandler {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(flags);
-                inboundFrame.asyncSocket = asyncSocket;
+                inboundFrame.socket = asyncSocket;
             }
 
             int size = inboundFrame.size();

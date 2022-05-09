@@ -36,7 +36,7 @@ public class RequestNioReadHandler extends NioReadHandler {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(flags);
-                inboundFrame.asyncSocket = asyncSocket;
+                inboundFrame.socket = asyncSocket;
             }
 
             int size = inboundFrame.size();

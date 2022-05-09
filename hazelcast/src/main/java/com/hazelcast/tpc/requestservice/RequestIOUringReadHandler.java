@@ -44,7 +44,7 @@ public class RequestIOUringReadHandler implements IOUringReadHandler {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(frameFlags);
-                inboundFrame.asyncSocket = asyncSocket;
+                inboundFrame.socket = asyncSocket;
             }
 
             if (inboundFrame.remaining() > buf.readableBytes()) {
