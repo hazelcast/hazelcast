@@ -86,7 +86,7 @@ final class WatermarkRules {
                 return;
             }
 
-            Map.Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst();
+            Map.Entry<Integer, RexInputRef> watermarkedField = watermarkedFields.findFirst();
             if (watermarkedField == null) {
                 call.transformTo(wmRel);
                 return;

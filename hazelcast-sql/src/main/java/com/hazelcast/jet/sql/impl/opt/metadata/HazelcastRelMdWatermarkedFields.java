@@ -38,6 +38,7 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -114,7 +115,7 @@ public final class HazelcastRelMdWatermarkedFields
             return null;
         }
 
-        Map<Integer, RexNode> outputWmFields = new HashMap<>();
+        Map<Integer, RexInputRef> outputWmFields = new HashMap<>();
         List<RexNode> projectList = rel.getProgram().expandList(rel.getProgram().getProjectList());
         for (int i = 0; i < projectList.size(); i++) {
             RexNode project = projectList.get(i);
@@ -124,7 +125,7 @@ public final class HazelcastRelMdWatermarkedFields
             if (project2 instanceof RexInputRef) {
                 int index = ((RexInputRef) project2).getIndex();
                 if (inputWmFields.getPropertiesByIndex().containsKey(index)) {
-                    outputWmFields.put(i, project);
+                    outputWmFields.put(i, (RexInputRef) project);
                 }
             }
         }
@@ -149,7 +150,7 @@ public final class HazelcastRelMdWatermarkedFields
         // The fields, by which the aggregation groups, and which are aggregated on input, are watermarked
         // also on the output.
         Iterator<Integer> groupedIndexes = rel.getGroupSets().get(0).iterator();
-        Map<Integer, RexNode> outputProperties = new HashMap<>();
+        Map<Integer, RexInputRef> outputProperties = new HashMap<>();
         for (int outputIndex = 0; groupedIndexes.hasNext(); outputIndex++) {
             int groupedBy = groupedIndexes.next();
             if (inputWmFields.getPropertiesByIndex().containsKey(groupedBy)) {
@@ -171,9 +172,50 @@ public final class HazelcastRelMdWatermarkedFields
         return query.extractWatermarkedFields(rel.getLeft());
     }
 
+    /**
+     * Performs extraction of watermarked fields for stream to stream Join rel.
+     * <p>
+     * Here, we need to detect watermarked RexInputRefs were within child relations schema
+     * and pass them to Join relation to merge them correctly according to join rel schema.
+     * <p>
+     * Example : consider join of two events with fields (a, b) v (c, d).
+     * 'a' and 'd' are watermarked.
+     * <p>
+     * Then, we'll have : left_map {input_ref(a) -> 0}; right_map{input_ref(d) -> 3};
+     * In join relation we are able to merge {@link WatermarkedFields} in correct way
+     */
     public WatermarkedFields extractWatermarkedFields(StreamToStreamJoinPhysicalRel rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        return query.extractWatermarkedFields(rel.getLeft()).merge(query.extractWatermarkedFields(rel.getRight()));
+        RelNode left = rel.getLeft();
+        RelNode right = rel.getRight();
+        WatermarkedFields leftWmFields = query.extractWatermarkedFields(left);
+
+        Map<Integer, RexInputRef> leftPropsByIndex = leftWmFields.getPropertiesByIndex();
+        Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
+        Map<Integer, RexInputRef> rightPropsByIndex = query.extractWatermarkedFields(right).getPropertiesByIndex();
+        Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
+
+        for (Integer key : leftPropsByIndex.keySet()) {
+            RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
+            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                    leftResultInputRefMap.put(field.getIndex(),
+                            rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                }
+            }
+        }
+
+        for (Integer key : rightPropsByIndex.keySet()) {
+            RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
+            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                    rightResultInputRefMap.put(field.getIndex(),
+                            rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                }
+            }
+        }
+
+        return leftWmFields.join(leftResultInputRefMap, rightResultInputRefMap);
     }
 
     @SuppressWarnings("unused")

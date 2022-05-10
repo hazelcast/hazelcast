@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nullable;
@@ -29,9 +29,9 @@ import java.util.Objects;
 
 public final class WatermarkedFields implements Serializable {
 
-    private final Map<Integer, RexNode> propertiesByIndex;
+    private final Map<Integer, RexInputRef> propertiesByIndex;
 
-    public WatermarkedFields(Map<Integer, RexNode> propertiesByIndex) {
+    public WatermarkedFields(Map<Integer, RexInputRef> propertiesByIndex) {
         this.propertiesByIndex = Collections.unmodifiableMap(propertiesByIndex);
     }
 
@@ -40,20 +40,32 @@ public final class WatermarkedFields implements Serializable {
             return this;
         }
 
-        Map<Integer, RexNode> newPropertiesByIndex = new HashMap<>(this.propertiesByIndex);
+        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>(this.propertiesByIndex);
         newPropertiesByIndex.putAll(other.propertiesByIndex);
         assert this.propertiesByIndex.size() + other.propertiesByIndex.size() == newPropertiesByIndex.size();
         return new WatermarkedFields(newPropertiesByIndex);
     }
 
+    /**
+     * Should be used only for JOIN relation.
+     */
+    public WatermarkedFields join(Map<Integer, RexInputRef> leftMap, Map<Integer, RexInputRef> rightMap) {
+        assert !leftMap.isEmpty() && !rightMap.isEmpty();
+
+        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>();
+        newPropertiesByIndex.putAll(leftMap);
+        newPropertiesByIndex.putAll(rightMap);
+        return new WatermarkedFields(newPropertiesByIndex);
+    }
+
     @Nullable
-    public Map.Entry<Integer, RexNode> findFirst() {
+    public Map.Entry<Integer, RexInputRef> findFirst() {
         return propertiesByIndex.entrySet().iterator().next();
     }
 
     @Nullable
-    public Map.Entry<Integer, RexNode> findFirst(ImmutableBitSet indices) {
-        for (Entry<Integer, RexNode> entry : propertiesByIndex.entrySet()) {
+    public Map.Entry<Integer, RexInputRef> findFirst(ImmutableBitSet indices) {
+        for (Entry<Integer, RexInputRef> entry : propertiesByIndex.entrySet()) {
             if (indices.get(entry.getKey())) {
                 return entry;
             }
@@ -82,7 +94,7 @@ public final class WatermarkedFields implements Serializable {
         return propertiesByIndex.isEmpty();
     }
 
-    public Map<Integer, RexNode> getPropertiesByIndex() {
+    public Map<Integer, RexInputRef> getPropertiesByIndex() {
         return propertiesByIndex;
     }
 }

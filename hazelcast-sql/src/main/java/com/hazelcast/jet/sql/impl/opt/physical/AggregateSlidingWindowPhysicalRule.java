@@ -237,7 +237,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         if (watermarkedFields == null) {
             return null;
         }
-        Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst(logicalAggregate.getGroupSet());
+        Entry<Integer, RexInputRef> watermarkedField = watermarkedFields.findFirst(logicalAggregate.getGroupSet());
         return watermarkedField != null ? watermarkedField.getKey() : null;
     }
 }

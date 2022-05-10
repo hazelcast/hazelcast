@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -36,9 +35,6 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.immutables.value.Value;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -80,13 +76,15 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         super(config);
     }
 
-    public void check(RelOptRuleCall call) {
-        JoinLogicalRel join = call.rel(0);
+    @SuppressWarnings("ConstantConditions")
+    @Override
+    public void onMatch(RelOptRuleCall call) {
+        JoinLogicalRel logicalJoin = call.rel(0);
 
-        JoinRelType joinType = join.getJoinType();
+        JoinRelType joinType = logicalJoin.getJoinType();
         if (!(joinType == JoinRelType.INNER || joinType.isOuterJoin())) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types.")
+                    fail(logicalJoin, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types.")
             );
         }
 
@@ -99,96 +97,44 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         WatermarkedFields rightWms = metadataQuery(right).extractWatermarkedFields(right);
         if (leftWms == null || leftWms.isEmpty()) {
             call.transformTo(
-                    fail(join, "Left input of stream to stream JOIN doesn't contain watermarked columns")
+                    fail(logicalJoin, "Left input of stream to stream JOIN doesn't contain watermarked columns")
             );
         }
         if (rightWms == null || rightWms.isEmpty()) {
             call.transformTo(
-                    fail(join, "Right input of stream to stream JOIN doesn't contain watermarked columns")
+                    fail(logicalJoin, "Right input of stream to stream JOIN doesn't contain watermarked columns")
             );
         }
 
-        RexNode predicate = join.analyzeCondition().getRemaining(join.getCluster().getRexBuilder());
+        RexNode predicate = logicalJoin.analyzeCondition().getRemaining(logicalJoin.getCluster().getRexBuilder());
         if (!(predicate instanceof RexCall)) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN condition should contain time boundness predicate")
+                    fail(logicalJoin, "Stream to stream JOIN condition should contain time boundness predicate")
             );
         }
 
-        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(leftWms, rightWms);
+        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(logicalJoin);
         predicate.accept(visitor);
 
         if (!visitor.isValid) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN condition should contain time boundness predicate")
+                    fail(logicalJoin, "Stream to stream JOIN condition should contain time boundness predicate")
             );
         }
 
         leftBound = visitor.leftBound;
         rightBound = visitor.rightBound;
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        check(call);
-
-        assert leftBound != null && rightBound != null;
-
-        JoinLogicalRel logicalJoin = call.rel(0);
-
-        RelNode leftInput = call.rel(1);
-        RelNode rightInput = call.rel(2);
-
-        RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
-        RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
-
-        // region extractors
-        // TODO: we should know how much watermark keys do we have
-        WatermarkedFields leftWms = metadataQuery(leftInputConverted).extractWatermarkedFields(leftInputConverted);
-        WatermarkedFields rightWms = metadataQuery(rightInputConverted).extractWatermarkedFields(rightInputConverted);
-
-        Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
-        Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
-
-        Integer leftKey = leftWms.findFirst().getKey();
-        Integer rightKey = rightWms.findFirst().getKey();
-
-        // TODO: rework according to multiple watermarks gained from metadata query.
-        leftExtractors.put((byte) 0, row -> row.getRow().get(leftKey));
-        rightExtractors.put((byte) 1, row -> row.getRow().get(rightKey));
-
-        // endregion
-
-        // region postponeTimeMap
-        Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-
-        // self-reference
-        postponeTimeMap.put((byte) 0, new HashMap<>());
-        postponeTimeMap.get((byte) 0).put((byte) 0, 0L);
-        postponeTimeMap.put((byte) 1, new HashMap<>());
-        postponeTimeMap.get((byte) 1).put((byte) 1, 0L);
-
-        if (rightBound.f2() > 0L) {
-            postponeTimeMap.get(rightBound.f0().byteValue()).put(rightBound.f1().byteValue(), rightBound.f2());
-        }
-        if (leftBound.f2() < 0L) {
-            postponeTimeMap.get(rightBound.f1().byteValue()).put(rightBound.f0().byteValue(), rightBound.f2());
-        }
-
-        // endregion
 
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
                         logicalJoin.getCluster(),
                         logicalJoin.getTraitSet().replace(PHYSICAL),
-                        leftInputConverted,
-                        rightInputConverted,
+                        RelRule.convert(left, left.getTraitSet().replace(PHYSICAL)),
+                        RelRule.convert(right, right.getTraitSet().replace(PHYSICAL)),
                         logicalJoin.getCondition(),
                         logicalJoin.getJoinType(),
-                        leftExtractors,
-                        rightExtractors,
-                        postponeTimeMap
+                        leftBound,
+                        rightBound
                 )
         );
     }
@@ -204,6 +150,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
+        private final Join joinRel;
         private final WatermarkedFields leftWms;
         private final WatermarkedFields rightWms;
 
@@ -211,10 +158,12 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         public Tuple3<Integer, Integer, Long> rightBound = null;
         public boolean isValid = true;
 
-        private BoundsExtractorVisitor(WatermarkedFields leftWms, WatermarkedFields rightWms) {
+        private BoundsExtractorVisitor(Join joinRel) {
             super(true);
-            this.leftWms = leftWms;
-            this.rightWms = rightWms;
+            this.joinRel = joinRel;
+
+            this.leftWms = metadataQuery(joinRel.getLeft()).extractWatermarkedFields(joinRel.getLeft());
+            this.rightWms = metadataQuery(joinRel.getRight()).extractWatermarkedFields(joinRel.getRight());
         }
 
         // `a BETWEEN b and c` ---> `a >= b and a <= c`

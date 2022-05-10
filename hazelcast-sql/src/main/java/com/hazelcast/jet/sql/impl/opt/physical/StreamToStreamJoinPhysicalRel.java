@@ -18,23 +18,31 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
+import static java.util.Collections.emptyMap;
+
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
-    private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
+    private Tuple3<Integer, Integer, Long> leftBound;
+    private Tuple3<Integer, Integer, Long> rightBound;
 
     protected StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
@@ -43,13 +51,13 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             RelNode right,
             RexNode condition,
             JoinRelType joinType,
-            Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
-            Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
-            Map<Byte, Map<Byte, Long>> postponeTimeMap) {
+            Tuple3<Integer, Integer, Long> leftBound,
+            Tuple3<Integer, Integer, Long> rightBound
+    ) {
         super(cluster, traitSet, left, right, condition, joinType);
-        this.leftTimeExtractors = leftTimeExtractors;
-        this.rightTimeExtractors = rightTimeExtractors;
-        this.postponeTimeMap = postponeTimeMap;
+
+        this.leftBound = leftBound;
+        this.rightBound = rightBound;
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -68,16 +76,34 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         );
     }
 
-    public Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
+    public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
+        WatermarkedFields leftWms = metadataQuery(left).extractWatermarkedFields(left);
+
+        Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
+
+        for (RexInputRef value : leftWms.getPropertiesByIndex().values()) {
+            int i = value.getIndex();
+            leftTimeExtractors.put(i, row -> row.getRow().get(i));
+        }
+
         return leftTimeExtractors;
     }
 
-    public Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
+    public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
+        RelNode rightInputConverted = RelRule.convert(right, right.getTraitSet().replace(PHYSICAL));
+        WatermarkedFields rightWms = metadataQuery(rightInputConverted).extractWatermarkedFields(rightInputConverted);
+
+        Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
+
+        for (RexInputRef value : rightWms.getPropertiesByIndex().values()) {
+            int i = value.getIndex();
+            rightTimeExtractors.put(i, row -> row.getRow().get(i));
+        }
         return rightTimeExtractors;
     }
 
     public Map<Byte, Map<Byte, Long>> postponeTimeMap() {
-        return postponeTimeMap;
+        return emptyMap();
     }
 
     @Override
@@ -101,9 +127,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 right,
                 getCondition(),
                 joinType,
-                leftTimeExtractors,
-                rightTimeExtractors,
-                postponeTimeMap
+                leftBound,
+                rightBound
         );
     }
 }

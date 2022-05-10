@@ -81,6 +81,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSource
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
@@ -428,8 +429,8 @@ public class CreateDagVisitor {
                 "Stream-Stream Join",
                 StreamToStreamJoinP.supplier(
                         joinInfo,
-                        rel.leftTimeExtractors(),
-                        rel.rightTimeExtractors(),
+                        emptyMap(), // TODO: rel.leftTimeExtractors(),
+                        emptyMap(), // TODO: rel.rightTimeExtractors(),
                         rel.postponeTimeMap(),
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount())

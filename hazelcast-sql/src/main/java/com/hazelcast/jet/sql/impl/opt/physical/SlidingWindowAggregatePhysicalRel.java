@@ -39,6 +39,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.ImmutableBitSet;
@@ -144,7 +145,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     }
 
     public WatermarkedFields watermarkedFields() {
-        Map<Integer, RexNode> propertiesByIndex = new HashMap<>();
+        Map<Integer, RexInputRef> propertiesByIndex = new HashMap<>();
         RexBuilder rexBuilder = getCluster().getRexBuilder();
         for (Integer index : windowEndIndexes) {
             propertiesByIndex.put(index, rexBuilder.makeInputRef(getInput(), index));
@@ -181,6 +182,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
                 timestampExpression,
                 windowPolicyProvider,
                 numStages,
-                windowStartIndexes, windowEndIndexes);
+                windowStartIndexes,
+                windowEndIndexes);
     }
 }
