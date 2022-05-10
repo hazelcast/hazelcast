@@ -30,6 +30,7 @@ public class Frame {
 
     public static final int FLAG_OP = 1 << 1;
     public static final int FLAG_OP_RESPONSE = 2 << 1;
+    public static final int FLAG_OVERLOADED = 3 << 1;
 
     public CompletableFuture future;
     public Frame next;
@@ -82,7 +83,7 @@ public class Frame {
     public Frame writeRequestHeader(int partitionId, int opcode) {
         ensureRemaining(OFFSET_REQ_PAYLOAD);
         buff.putInt(-1); //size
-        buff.putInt(Frame.FLAG_OP);
+        buff.putInt(FLAG_OP);
         buff.putInt(partitionId);
         buff.putLong(-1); //callid
         buff.putInt(opcode);
@@ -92,11 +93,17 @@ public class Frame {
     public Frame writeResponseHeader(int partitionId, long callId) {
         ensureRemaining(OFFSET_RES_PAYLOAD);
         buff.putInt(-1);  //size
-        buff.putInt(Frame.FLAG_OP_RESPONSE);
+        buff.putInt(FLAG_OP_RESPONSE);
         buff.putInt(partitionId);
         buff.putLong(callId);
         return this;
     }
+
+    public Frame addFlags(int flags){
+        buff.putInt(buff.getInt(FLAG_OP_RESPONSE) | flags);
+        return this;
+    }
+
 
     public ByteBuffer byteBuffer() {
         return buff;

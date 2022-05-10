@@ -68,16 +68,16 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract void flush();
 
-    public abstract void write(Frame frame);
+    public abstract boolean write(Frame frame);
 
-    public abstract void writeAll(Collection<Frame> frames);
+    public abstract boolean writeAll(Collection<Frame> frames);
 
-    public abstract void writeAndFlush(Frame frame);
+    public abstract boolean writeAndFlush(Frame frame);
 
     /**
      * Should only be called from within the Eventloop.
      */
-    public abstract void unsafeWriteAndFlush(Frame frame);
+    public abstract boolean unsafeWriteAndFlush(Frame frame);
 
     public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
 

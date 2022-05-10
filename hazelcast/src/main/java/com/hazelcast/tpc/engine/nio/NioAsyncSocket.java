@@ -253,45 +253,52 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void write(Frame frame) {
-        unflushedFrames.add(frame);
+    public boolean write(Frame frame) {
+        return unflushedFrames.add(frame);
     }
 
     @Override
-    public void writeAll(Collection<Frame> frames) {
-        unflushedFrames.addAll(frames);
+    public boolean writeAll(Collection<Frame> frames) {
+        return unflushedFrames.addAll(frames);
     }
 
     @Override
-    public void writeAndFlush(Frame frame) {
-        write(frame);
+    public boolean writeAndFlush(Frame frame) {
+        boolean result = write(frame);
         flush();
+        return result;
     }
 
     @Override
-    public void unsafeWriteAndFlush(Frame frame) {
+    public boolean unsafeWriteAndFlush(Frame frame) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
         assert currentThread == eventloop;
 
+        boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 eventloop.localRunQueue.add(eventLoopHandler);
-                if (!ioVector.add(frame)) {
-                    unflushedFrames.add(frame);
+                if (ioVector.add(frame)) {
+                    result = true;
+                } else {
+                    result = unflushedFrames.add(frame);
                 }
             } else {
-                unflushedFrames.add(frame);
+                result = unflushedFrames.add(frame);
             }
         } else if (currentFlushThread == eventloop) {
-            if (!ioVector.add(frame)) {
-                unflushedFrames.add(frame);
+            if (ioVector.add(frame)) {
+                result = true;
+            } else {
+                result = unflushedFrames.add(frame);
             }
         } else {
-            unflushedFrames.add(frame);
+            result = unflushedFrames.add(frame);
             flush();
         }
+        return result;
     }
 
     @Override

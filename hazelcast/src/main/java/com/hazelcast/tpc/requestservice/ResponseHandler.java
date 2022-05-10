@@ -3,12 +3,11 @@ package com.hazelcast.tpc.requestservice;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.tpc.engine.frame.Frame;
 
-import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OVERLOADED;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_CALL_ID;
 
 class ResponseHandler implements Consumer<Frame> {
@@ -58,15 +57,16 @@ class ResponseHandler implements Consumer<Frame> {
                 System.out.println("Dropping response " + response + ", requests not found");
                 response.release();
             } else {
-                requests.complete();
-
                 long callId = response.getLong(OFFSET_RES_CALL_ID);
                 //System.out.println("response with callId:"+callId +" frame: "+response);
 
                 Frame request = requests.map.remove(callId);
                 if (request == null) {
                     System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                } else if (request.isFlagRaised(FLAG_OVERLOADED)) {
+
                 } else {
+                    requests.complete();
                     CompletableFuture future = request.future;
                     future.complete(response);
                     request.release();

@@ -8,6 +8,9 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OVERLOADED;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_PARTITION_ID;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_PAYLOAD;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 
@@ -57,14 +60,20 @@ public final class OpScheduler implements Scheduler {
     public void schedule(Op op) {
         scheduled.inc();
 
-        if (!runQueue.offer(op)) {
-            //todo: return false and send some kind of rejection message
-            throw new RuntimeException("Scheduler overloaded");
+        if (runQueue.offer(op)) {
+            runSingle();
+        } else {
+            Frame response = op.response;
+            int partitionId = op.request.getInt(OFFSET_PARTITION_ID);
+            long callId = op.request.getLong(OFFSET_REQ_CALL_ID);
+            response.writeResponseHeader(partitionId, callId)
+                    .addFlags(FLAG_OVERLOADED)
+                    .writeComplete();
+            sendResponse(op);
         }
-
-        runSingle();
     }
 
+    @Override
     public boolean tick() {
         ticks.inc();
 
@@ -88,13 +97,7 @@ public final class OpScheduler implements Scheduler {
             switch (runCode) {
                 case Op.COMPLETED:
                     completed.inc();
-                    if (op.request.future == null) {
-                        op.request.socket.unsafeWriteAndFlush(op.response);
-                    } else {
-                        op.request.future.complete(op.response);
-                    }
-                    op.request.release();
-                    op.release();
+                    sendResponse(op);
                     break;
                 case Op.BLOCKED:
                     break;
@@ -107,5 +110,15 @@ public final class OpScheduler implements Scheduler {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private void sendResponse(Op op) {
+        if (op.request.future == null) {
+            op.request.socket.unsafeWriteAndFlush(op.response);
+        } else {
+            op.request.future.complete(op.response);
+        }
+        op.request.release();
+        op.release();
     }
 }
