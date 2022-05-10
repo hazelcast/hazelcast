@@ -31,7 +31,7 @@ public class QueryOp extends Op {
 
         map.execute(query);
 
-        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
+        response.writeResponseHeader(partitionId, callId())
                 .writeLong(query.result)
                 .writeComplete();
 

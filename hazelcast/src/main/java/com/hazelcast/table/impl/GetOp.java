@@ -30,7 +30,7 @@ public final class GetOp extends Op {
 
         key.init(request);
 
-        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID));
+        response.writeResponseHeader(partitionId, callId());
         value.init(response);
         map.get(key, value);
         response.writeComplete();

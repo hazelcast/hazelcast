@@ -241,24 +241,23 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeSizedBytes(key)
                 .writeComplete();
         CompletableFuture<Frame> f = requestService.invokeOnPartition(request, partitionId);
-        Frame frame = null;
+        Frame response = null;
         try {
-            frame = f.get(requestTimeoutMs, MILLISECONDS);
-            frame.position(OFFSET_RES_PAYLOAD);
-            int length = frame.readInt();
+            response = f.get(requestTimeoutMs, MILLISECONDS);
+            int length = response.readInt();
 
             if (length == -1) {
                 return null;
             } else {
                 byte[] bytes = new byte[length];
-                frame.readBytes(bytes, length);
+                response.readBytes(bytes, length);
                 return bytes;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (frame != null) {
-                frame.release();
+            if (response != null) {
+                response.release();
             }
         }
     }

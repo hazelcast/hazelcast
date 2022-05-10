@@ -7,8 +7,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OVERLOADED;
+import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE_CONTROL;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_CALL_ID;
+import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.engine.frame.Frame.RESPONSE_TYPE_EXCEPTION;
+import static com.hazelcast.tpc.engine.frame.Frame.RESPONSE_TYPE_OVERLOAD;
 
 class ResponseHandler implements Consumer<Frame> {
 
@@ -41,6 +44,22 @@ class ResponseHandler implements Consumer<Frame> {
         }
     }
 
+    @Override
+    public void accept(Frame response) {
+        try {
+            if (response.next != null) {
+                int index = threadCount == 0
+                        ? 0
+                        : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
+                threads[index].queue.add(response);
+            } else {
+                process(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void process(Frame response) {
         RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
         if (requests == null) {
@@ -58,32 +77,30 @@ class ResponseHandler implements Consumer<Frame> {
             return;
         }
 
+        response.position(OFFSET_RES_PAYLOAD);
         CompletableFuture future = request.future;
-        if (request.isFlagRaised(FLAG_OVERLOADED)) {
-            future.completeExceptionally(new RuntimeException("Server is overloaded"));
-            response.release();
-        } else {
+        int flags = request.flags();
+        if ((flags & FLAG_OP_RESPONSE_CONTROL) == 0) {
             future.complete(response);
+        } else {
+            int type = request.readInt();
+            switch (type) {
+                case RESPONSE_TYPE_OVERLOAD:
+                    // we need to find better solution
+                    future.completeExceptionally(new RuntimeException("Server is overloaded"));
+                    response.release();
+                    break;
+                case RESPONSE_TYPE_EXCEPTION:
+                    future.completeExceptionally(new RuntimeException(response.readString()));
+                    response.release();
+                    break;
+                default:
+                    throw new RuntimeException();
+            }
         }
 
         requests.complete();
         request.release();
-    }
-
-    @Override
-    public void accept(Frame response) {
-        try {
-            if (response.next != null) {
-                int index = threadCount == 0
-                        ? 0
-                        : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
-                threads[index].queue.add(response);
-            } else {
-                process(response);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private class ResponseThread extends Thread {

@@ -33,7 +33,7 @@ public final class RandomLoadOp extends Op {
             eventloop.getStorageScheduler().scheduleLoad(StorageScheduler.dummyFile, 0, 100, this);
             return BLOCKED;
         } else {
-            response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
+            response.writeResponseHeader(partitionId, callId())
                     .writeComplete();
 
             return COMPLETED;

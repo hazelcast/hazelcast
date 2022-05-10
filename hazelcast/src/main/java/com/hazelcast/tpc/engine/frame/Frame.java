@@ -30,7 +30,10 @@ public class Frame {
 
     public static final int FLAG_OP = 1 << 1;
     public static final int FLAG_OP_RESPONSE = 1 << 2;
-    public static final int FLAG_OVERLOADED = 1 << 3;
+    public static final int FLAG_OP_RESPONSE_CONTROL = 1 << 3;
+
+    public static final int RESPONSE_TYPE_OVERLOAD = 0;
+    public static final int RESPONSE_TYPE_EXCEPTION = 1;
 
     public CompletableFuture future;
     public Frame next;
@@ -91,9 +94,13 @@ public class Frame {
     }
 
     public Frame writeResponseHeader(int partitionId, long callId) {
+       return writeResponseHeader(partitionId, callId, 0);
+    }
+
+    public Frame writeResponseHeader(int partitionId, long callId, int flags) {
         ensureRemaining(OFFSET_RES_PAYLOAD);
         buff.putInt(-1);  //size
-        buff.putInt(FLAG_OP_RESPONSE);
+        buff.putInt(FLAG_OP_RESPONSE | flags);
         buff.putInt(partitionId);
         buff.putLong(callId);
         return this;
@@ -108,6 +115,10 @@ public class Frame {
         int oldFlags = buff.getInt(OFFSET_FLAGS);
         buff.putInt(OFFSET_FLAGS, oldFlags | addedFlags);
         return this;
+    }
+
+    public int flags(){
+        return buff.getInt(OFFSET_FLAGS);
     }
 
     public ByteBuffer byteBuffer() {
@@ -184,6 +195,15 @@ public class Frame {
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
         }
+    }
+
+    public String readString() {
+        StringBuffer sb = new StringBuffer();
+        int size = buff.getInt();
+        for (int k = 0; k < size; k++) {
+            sb.append(buff.getChar());
+        }
+        return sb.toString();
     }
 
     public Frame writeLong(long value) {

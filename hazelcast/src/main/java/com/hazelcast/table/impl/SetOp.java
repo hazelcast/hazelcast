@@ -32,7 +32,7 @@ public final class SetOp extends Op {
 
         map.set(key, value);
 
-        response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID))
+        response.writeResponseHeader(partitionId, callId())
                 .writeComplete();
 
         return COMPLETED;

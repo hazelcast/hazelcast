@@ -8,15 +8,14 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OVERLOADED;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_PARTITION_ID;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.engine.frame.Frame.*;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_PAYLOAD;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.requestservice.Op.BLOCKED;
+import static com.hazelcast.tpc.requestservice.Op.COMPLETED;
+import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
 
 /**
- *
- *
  * todo: add control on number of requests of single socket.
  * overload can happen at 2 levels
  * 1) a single asyncsocket exceeding the maximum number of requests
@@ -29,13 +28,13 @@ import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
  * either requests or responses. We want to slow down the rate of sending
  * requests, but we don't want to slow down the rate of responses or
  * other data.
- *
  */
 public final class OpScheduler implements Scheduler {
 
     private final SwCounter scheduled = newSwCounter();
     private final SwCounter ticks = newSwCounter();
     private final SwCounter completed = newSwCounter();
+    private final SwCounter exceptions = newSwCounter();
     private final CircularQueue<Op> runQueue;
     private final int batchSize;
     private final FrameAllocator localResponseFrameAllocator;
@@ -77,15 +76,12 @@ public final class OpScheduler implements Scheduler {
     public void schedule(Op op) {
         scheduled.inc();
 
-
         if (runQueue.offer(op)) {
             runSingle();
         } else {
             Frame response = op.response;
-            int partitionId = op.request.getInt(OFFSET_PARTITION_ID);
-            long callId = op.request.getLong(OFFSET_REQ_CALL_ID);
-            response.writeResponseHeader(partitionId, callId)
-                    .addFlags(FLAG_OVERLOADED)
+            response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
+                    .writeInt(RESPONSE_TYPE_OVERLOAD)
                     .writeComplete();
             sendResponse(op);
         }
@@ -111,23 +107,39 @@ public final class OpScheduler implements Scheduler {
         }
 
         try {
-            int runCode = op.run();
+            int runCode;
+            Exception exception = null;
+            try {
+                runCode = op.run();
+            } catch (Exception e) {
+                exception = e;
+                runCode = EXCEPTION;
+            }
+
             switch (runCode) {
-                case Op.COMPLETED:
+                case COMPLETED:
                     completed.inc();
                     sendResponse(op);
                     break;
-                case Op.BLOCKED:
+                case BLOCKED:
+                    break;
+                case EXCEPTION:
+                    exceptions.inc();
+                    op.response.clear();
+                    op.response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
+                            .writeInt(RESPONSE_TYPE_EXCEPTION)
+                            .writeString(exception.getMessage())
+                            .writeComplete();
+                    sendResponse(op);
                     break;
                 default:
                     throw new RuntimeException();
             }
-
-            return !runQueue.isEmpty();
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
         }
+
+        return !runQueue.isEmpty();
     }
 
     private void sendResponse(Op op) {
