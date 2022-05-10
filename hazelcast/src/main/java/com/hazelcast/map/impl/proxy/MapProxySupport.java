@@ -709,10 +709,7 @@ abstract class MapProxySupport<K, V>
                         .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR,
                                 partitionPredicate.getTarget());
                 PartitionIdSet partitionIds = new PartitionIdSet(partitionService.getPartitionCount());
-                partitionPredicate.getPartitionKeys().forEach(o -> {
-                    Data key = toData(o);
-                    partitionIds.add(partitionService.getPartitionId(key));
-                });
+                partitionPredicate.getPartitionKeys().forEach(o -> partitionIds.add(partitionService.getPartitionId(o)));
 
                 // invokeOnPartitions is used intentionally here, instead of invokeOnPartition, since
                 // the later one doesn't support PartitionAwareOperationFactory, which we need to use
@@ -1313,10 +1310,7 @@ abstract class MapProxySupport<K, V>
             if (predicate instanceof PartitionPredicate) {
                 PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
                 PartitionIdSet partitionIds = new PartitionIdSet(partitionService.getPartitionCount());
-                partitionPredicate.getPartitionKeys().forEach(o -> {
-                    Data key = toData(o);
-                    partitionIds.add(partitionService.getPartitionId(key));
-                });
+                partitionPredicate.getPartitionKeys().forEach(o -> partitionIds.add(partitionService.getPartitionId(o)));
                 handleHazelcastInstanceAwareParams(partitionPredicate.getTarget());
 
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
@@ -1421,8 +1415,7 @@ abstract class MapProxySupport<K, V>
             PartitionIdSet partitionIds = new PartitionIdSet(partitionService.getPartitionCount());
             boolean allFalse = true;
             for (Object o : partitionPredicate.getPartitionKeys()) {
-                Data key = toData(o);
-                int partitionId = partitionService.getPartitionId(key);
+                int partitionId = partitionService.getPartitionId(o);
                 partitionIds.add(partitionId);
                 allFalse &= target.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
                     || target.mode() == TargetMode.PARTITION_OWNER && !target.partitions().contains(partitionId);
