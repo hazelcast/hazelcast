@@ -14,6 +14,23 @@ import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_PAYLOAD;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 
+/**
+ *
+ *
+ * todo: add control on number of requests of single socket.
+ * overload can happen at 2 levels
+ * 1) a single asyncsocket exceeding the maximum number of requests
+ * 2) a single asyncsocket exceeded the maximum number of request of the event loop
+ *
+ * In the first case we want to slow down the reader and signal sender.
+ * In the second case want to slow down all the readers and signal all senders.
+ *
+ * The problem with slowing down senders is that sockets can send
+ * either requests or responses. We want to slow down the rate of sending
+ * requests, but we don't want to slow down the rate of responses or
+ * other data.
+ *
+ */
 public final class OpScheduler implements Scheduler {
 
     private final SwCounter scheduled = newSwCounter();
@@ -59,6 +76,7 @@ public final class OpScheduler implements Scheduler {
 
     public void schedule(Op op) {
         scheduled.inc();
+
 
         if (runQueue.offer(op)) {
             runSingle();
