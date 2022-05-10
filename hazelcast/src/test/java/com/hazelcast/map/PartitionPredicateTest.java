@@ -209,6 +209,16 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
         assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
     }
 
+    @Test
+    public void partitionPredicateWithNullKeyThrowsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> Predicates.partitionPredicate(null, a -> true));
+    }
+
+    @Test
+    public void partitionPredicateWithNullPredicateThrowsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> Predicates.partitionPredicate("foo", null));
+    }
+
     private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {
         @Override
         public Integer process(Map.Entry<K, V> entry) {

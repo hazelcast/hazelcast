@@ -574,7 +574,7 @@ public final class Predicates {
      * @param target       the target {@link Predicate}
      * @param <K>          the type of keys the predicate operates on.
      * @param <V>          the type of values the predicate operates on.
-     * @throws NullPointerException     if partition key or target predicate is {@code null}
+     * @throws NullPointerException     if partitionKey or target predicate are {@code null}
      */
     public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {
         checkNotNull(partitionKey, "partitionKey can't be null");
@@ -588,7 +588,8 @@ public final class Predicates {
      * @param target       the target {@link Predicate}
      * @param <K>          the type of keys the predicate operates on.
      * @param <V>          the type of values the predicate operates on.
-     * @throws NullPointerException     if partition key or target predicate is {@code null}
+     * @throws NullPointerException     if partitionKeys or target predicate are {@code null}
+     * @throws IllegalArgumentException if partitionkeys is an empty set
      */
     public static <K, V> PartitionPredicate<K, V> partitionsPredicate(Set<? extends Object> partitionKeys,
                                                                       Predicate<K, V> target) {

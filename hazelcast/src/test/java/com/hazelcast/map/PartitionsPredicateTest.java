@@ -37,6 +37,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -230,6 +231,21 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
 
         assertEquals(partitionKeys, deserialized.getPartitionKeys());
         assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
+    }
+
+    @Test
+    public void partitionsPredicateWithNullSetThrowsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> Predicates.partitionsPredicate(null, a -> true));
+    }
+
+    @Test
+    public void partitionsPredicateWithEmptySetThrowsNullPointerException() {
+        assertThrows(IllegalArgumentException.class, () -> Predicates.partitionsPredicate(Collections.emptySet(), a -> true));
+    }
+
+    @Test
+    public void partitionsPredicateWithNullPredicateThrowsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> Predicates.partitionsPredicate(Collections.singleton("foo"), null));
     }
 
     private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {
