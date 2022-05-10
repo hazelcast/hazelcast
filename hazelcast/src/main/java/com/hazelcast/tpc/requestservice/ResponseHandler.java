@@ -41,6 +41,35 @@ class ResponseHandler implements Consumer<Frame> {
         }
     }
 
+    private void process(Frame response) {
+        RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
+        if (requests == null) {
+            System.out.println("Dropping response " + response + ", requests not found");
+            response.release();
+            return;
+        }
+
+        long callId = response.getLong(OFFSET_RES_CALL_ID);
+        //System.out.println("response with callId:"+callId +" frame: "+response);
+
+        Frame request = requests.map.remove(callId);
+        if (request == null) {
+            System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+            return;
+        }
+
+        CompletableFuture future = request.future;
+        if (request.isFlagRaised(FLAG_OVERLOADED)) {
+            future.completeExceptionally(new RuntimeException("Server is overloaded"));
+            response.release();
+        } else {
+            future.complete(response);
+        }
+
+        requests.complete();
+        request.release();
+    }
+
     @Override
     public void accept(Frame response) {
         try {
@@ -49,36 +78,9 @@ class ResponseHandler implements Consumer<Frame> {
                         ? 0
                         : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
                 threads[index].queue.add(response);
-                return;
-            }
-
-            RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
-            if (requests == null) {
-                System.out.println("Dropping response " + response + ", requests not found");
-                response.release();
-                return;
-            }
-
-            long callId = response.getLong(OFFSET_RES_CALL_ID);
-            //System.out.println("response with callId:"+callId +" frame: "+response);
-
-            Frame request = requests.map.remove(callId);
-            if (request == null) {
-                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
-                return;
-            }
-
-            requests.complete();
-
-            CompletableFuture future = request.future;
-            if (request.isFlagRaised(FLAG_OVERLOADED)) {
-                future.completeExceptionally(new RuntimeException("Server is overloaded"));
-                response.release();
             } else {
-                future.complete(response);
+                process(response);
             }
-
-            request.release();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -110,7 +112,7 @@ class ResponseHandler implements Consumer<Frame> {
                     do {
                         Frame next = frame.next;
                         frame.next = null;
-                        accept(frame);
+                        process(frame);
                         frame = next;
                     } while (frame != null);
                 }
