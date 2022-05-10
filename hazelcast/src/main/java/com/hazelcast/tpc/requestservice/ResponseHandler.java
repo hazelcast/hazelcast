@@ -43,35 +43,42 @@ class ResponseHandler implements Consumer<Frame> {
 
     @Override
     public void accept(Frame response) {
-        if (response.next != null) {
-            int index = threadCount == 0
-                    ? 0
-                    : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
-            threads[index].queue.add(response);
-            return;
-        }
-
         try {
+            if (response.next != null) {
+                int index = threadCount == 0
+                        ? 0
+                        : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
+                threads[index].queue.add(response);
+                return;
+            }
+
             RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
                 response.release();
-            } else {
-                long callId = response.getLong(OFFSET_RES_CALL_ID);
-                //System.out.println("response with callId:"+callId +" frame: "+response);
-
-                Frame request = requests.map.remove(callId);
-                if (request == null) {
-                    System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
-                } else if (request.isFlagRaised(FLAG_OVERLOADED)) {
-
-                } else {
-                    requests.complete();
-                    CompletableFuture future = request.future;
-                    future.complete(response);
-                    request.release();
-                }
+                return;
             }
+
+            long callId = response.getLong(OFFSET_RES_CALL_ID);
+            //System.out.println("response with callId:"+callId +" frame: "+response);
+
+            Frame request = requests.map.remove(callId);
+            if (request == null) {
+                System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+                return;
+            }
+
+            requests.complete();
+
+            CompletableFuture future = request.future;
+            if (request.isFlagRaised(FLAG_OVERLOADED)) {
+                future.completeExceptionally(new RuntimeException("Server is overloaded"));
+                response.release();
+            } else {
+                future.complete(response);
+            }
+
+            request.release();
         } catch (Exception e) {
             e.printStackTrace();
         }

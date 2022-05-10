@@ -29,8 +29,8 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 public class Frame {
 
     public static final int FLAG_OP = 1 << 1;
-    public static final int FLAG_OP_RESPONSE = 2 << 1;
-    public static final int FLAG_OVERLOADED = 3 << 1;
+    public static final int FLAG_OP_RESPONSE = 1 << 2;
+    public static final int FLAG_OVERLOADED = 1 << 3;
 
     public CompletableFuture future;
     public Frame next;
@@ -99,11 +99,16 @@ public class Frame {
         return this;
     }
 
-    public Frame addFlags(int flags){
-        buff.putInt(buff.getInt(FLAG_OP_RESPONSE) | flags);
-        return this;
+    public boolean isFlagRaised(int flag) {
+        int flags = buff.getInt(OFFSET_FLAGS);
+        return (flags & flag) != 0;
     }
 
+    public Frame addFlags(int addedFlags){
+        int oldFlags = buff.getInt(OFFSET_FLAGS);
+        buff.putInt(OFFSET_FLAGS, oldFlags | addedFlags);
+        return this;
+    }
 
     public ByteBuffer byteBuffer() {
         return buff;
@@ -119,10 +124,6 @@ public class Frame {
     public void setSize(int size) {
         //ensure capacity?
         buff.putInt(0, size);
-    }
-
-    public void init(int capacity) {
-        this.buff = ByteBuffer.allocate(capacity);
     }
 
     public Frame writeByte(byte value) {
@@ -237,11 +238,6 @@ public class Frame {
 
     public byte getByte(int index) {
         return buff.get(index);
-    }
-
-    public boolean isFlagRaised(int flag) {
-        int flags = buff.getInt(OFFSET_FLAGS);
-        return (flags & flag) != 0;
     }
 
     public Frame write(ByteBuffer src, int count) {

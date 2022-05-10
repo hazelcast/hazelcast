@@ -1,7 +1,5 @@
 package com.hazelcast.tpc.util;
 
-import com.hazelcast.internal.util.QuickMath;
-
 import java.util.Queue;
 
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
