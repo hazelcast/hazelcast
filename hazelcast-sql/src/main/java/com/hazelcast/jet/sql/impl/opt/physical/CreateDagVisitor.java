@@ -45,6 +45,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
@@ -65,6 +66,7 @@ import org.apache.calcite.rex.RexProgram;
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -425,13 +427,18 @@ public class CreateDagVisitor {
 
     public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
         JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = rel.leftTimeExtractors();
+        Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = rel.rightTimeExtractors();
+        Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> relPostponeTimeMap = rel.postponeTimeMap();
+
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
                 StreamToStreamJoinP.supplier(
                         joinInfo,
                         emptyMap(), // TODO: rel.leftTimeExtractors(),
                         emptyMap(), // TODO: rel.rightTimeExtractors(),
-                        rel.postponeTimeMap(),
+                        emptyMap(),
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount())
         );

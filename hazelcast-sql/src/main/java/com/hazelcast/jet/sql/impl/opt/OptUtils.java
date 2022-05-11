@@ -70,6 +70,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -491,5 +492,54 @@ public final class OptUtils {
             res.add(inlineExpression(inlinedExpressions, expr));
         }
         return res;
+    }
+
+    public static class RelField {
+        private final String name;
+        private final RelDataType type;
+
+        public RelField(String name, RelDataType type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public RelDataType getType() {
+            return type;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            RelField relField = (RelField) o;
+            return Objects.equals(name, relField.name)
+                    && Objects.equals(type, relField.type);
+        }
+
+        /**
+         * Same as {@link RelField#equals}
+         * but without object construction.
+         */
+        public boolean isEqual(String otherName, RelDataType otherType) {
+            return Objects.equals(name, otherName) && Objects.equals(type, otherType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type);
+        }
+
+        @Override
+        public String toString() {
+            return "RelField{" + "name='" + name + '\'' + ", type=" + type + '}';
+        }
     }
 }

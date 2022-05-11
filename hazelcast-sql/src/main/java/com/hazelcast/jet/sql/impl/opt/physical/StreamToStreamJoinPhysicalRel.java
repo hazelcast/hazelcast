@@ -18,14 +18,13 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
@@ -36,13 +35,12 @@ import org.apache.calcite.rex.RexNode;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
-import static java.util.Collections.emptyMap;
 
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
-    private Tuple3<Integer, Integer, Long> leftBound;
-    private Tuple3<Integer, Integer, Long> rightBound;
+    // Note: Same postponeTimeMap as required by TDD, but with rel field defined
+    // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
+    private final Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap;
 
     protected StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
@@ -51,13 +49,11 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             RelNode right,
             RexNode condition,
             JoinRelType joinType,
-            Tuple3<Integer, Integer, Long> leftBound,
-            Tuple3<Integer, Integer, Long> rightBound
+            Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
 
-        this.leftBound = leftBound;
-        this.rightBound = rightBound;
+        this.postponeTimeMap = postponeTimeMap;
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -77,9 +73,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
-        WatermarkedFields leftWms = metadataQuery(left).extractWatermarkedFields(left);
-
         Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
+        WatermarkedFields leftWms = metadataQuery(left).extractWatermarkedFields(left);
 
         for (RexInputRef value : leftWms.getPropertiesByIndex().values()) {
             int i = value.getIndex();
@@ -90,10 +85,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
-        RelNode rightInputConverted = RelRule.convert(right, right.getTraitSet().replace(PHYSICAL));
-        WatermarkedFields rightWms = metadataQuery(rightInputConverted).extractWatermarkedFields(rightInputConverted);
-
         Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
+        WatermarkedFields rightWms = metadataQuery(right).extractWatermarkedFields(right);
 
         for (RexInputRef value : rightWms.getPropertiesByIndex().values()) {
             int i = value.getIndex();
@@ -102,8 +95,14 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return rightTimeExtractors;
     }
 
-    public Map<Byte, Map<Byte, Long>> postponeTimeMap() {
-        return emptyMap();
+    /**
+     * SELECT * FROM ...
+     * JOIN ON b.1 BETWEEN a.1 AND a.1 + 1
+     * JOIN ON c.1 BETWEEN b.1 AND b.1 + 1
+     */
+
+    public Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap() {
+        return postponeTimeMap;
     }
 
     @Override
@@ -127,8 +126,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 right,
                 getCondition(),
                 joinType,
-                leftBound,
-                rightBound
+                postponeTimeMap
         );
     }
 }
