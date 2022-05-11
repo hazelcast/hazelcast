@@ -1,9 +1,18 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
@@ -39,8 +48,31 @@ public class DummyClient {
     @Test
     public void noMemberOnAddress() {
         ClientConfig config = newClientConfig();
-        config.getNetworkConfig().addAddress("erosb.eu");
-        HazelcastClient.newHazelcastClient(config);
+        config.getListenerConfigs().add(new ListenerConfig().setImplementation(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+                System.out.println("added");
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                System.out.println("removed");
+            }
+        }));
+        startMember(new Config());
+        startMember(new Config());
+        HazelcastClientInstanceImpl client = ((HazelcastClientProxy) HazelcastClient.newHazelcastClient(config)).client;
+        client.getConnectionManager().addConnectionListener(new ConnectionListener<ClientConnection>() {
+            @Override
+            public void connectionAdded(ClientConnection connection) {
+
+            }
+
+            @Override
+            public void connectionRemoved(ClientConnection connection) {
+
+            }
+        });
     }
 
     /**

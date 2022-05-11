@@ -926,7 +926,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof PartitionLostListener)
                 .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
-
+        getConnectionManager().addConnectionListener(null);
         configuredListeners.stream().filter(listener -> listener instanceof CPMembershipListener)
                 .forEach(listener -> getCPSubsystem().addMembershipListener((CPMembershipListener) listener));
 
