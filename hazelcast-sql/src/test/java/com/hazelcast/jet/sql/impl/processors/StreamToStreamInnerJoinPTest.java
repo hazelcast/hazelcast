@@ -233,6 +233,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 // right <- (9)
                                 jetRow(12L, 9L, 9L),
                                 // left <- (12, 13)
+                                // Note: join condition is not represented in postpone map here.
+                                // We are testing watermark emitting algorithm.
                                 jetRow(12L, 13L, 9L),
                                 // right <- wm(2, 15), 15-4 = 11
                                 // left <-  wm(1, 12)
