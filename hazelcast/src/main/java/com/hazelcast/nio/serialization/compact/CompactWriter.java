@@ -131,7 +131,7 @@ public interface CompactWriter {
     void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
     /**
-     * Reads a timestamp with timezone consisting of date, time and timezone offset.
+     * Writes a timestamp with timezone consisting of date, time and timezone offset.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
