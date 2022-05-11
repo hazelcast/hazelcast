@@ -44,8 +44,10 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -265,9 +267,21 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     }
 
     /** Reruns this operation with next {@link #runStage}*/
-    private void scheduleNextRun(RunStage nextState) {
-        runStage = nextState;
+    private void scheduleNextRun(RunStage nextStage) {
+        runStage = nextStage;
+        // since this operation is being rescheduled, its invocation time and call timeout
+        // need to be recalculated (instead of allocating & scheduling a clone)
+        resetCallTimeout();
         getNodeEngine().getOperationService().execute(this);
+    }
+
+    private void resetCallTimeout() {
+        long now = getNodeEngine().getClusterService().getClusterTime();
+        long memberHeartbeatTimeoutMillis = getNodeEngine().getProperties()
+                .getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
+        long callTimeout = now + memberHeartbeatTimeoutMillis;
+        OperationAccessor.setInvocationTime(this, now);
+        OperationAccessor.setCallTimeout(this, callTimeout);
     }
 
     @Override
