@@ -54,6 +54,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
 
         StreamSource<ChangeRecord> source = sourceBuilder("cdcMysql")
                 .setDatabaseWhitelist(DATABASE)
+                .setCustomProperty("snapshot.mode", "never")
                 .build();
 
         Pipeline pipeline = pipeline(source);
@@ -88,6 +89,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         StreamSource<ChangeRecord> source = sourceBuilder("cdcMysql")
                 .setDatabaseWhitelist(DATABASE)
                 .setTableWhitelist(DATABASE + ".someTable")
+                .setCustomProperty("snapshot.mode", "never")
                 .build();
 
         Pipeline pipeline = pipeline(source);
@@ -117,7 +119,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
         List<String> expectedRecords = Arrays.asList(
-                "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}",
+                "1001/0:SYNC:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}",
                 "1002/0:INSERT:TableRow {id=1002, value1=someValue4, value2=someValue5, value3=someValue6}"
         );
 
@@ -135,7 +137,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
 
         try {
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), Collections.singletonList(
-                    "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
+                    "1001/0:SYNC:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
             ));
             //then
             addColumnToTable(DATABASE, "someTable", "value_3");
