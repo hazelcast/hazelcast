@@ -383,6 +383,10 @@ public class MigrationManager {
         promotionPermit.set(false);
     }
 
+    public boolean isPromotionPermitAcquired() {
+        return promotionPermit.get();
+    }
+
     /**
      * Finalizes the active migration if it is equal to the {@code migrationInfo} or if this node was a backup replica before
      * the migration (see {@link FinalizeMigrationOperation}).

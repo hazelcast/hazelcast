@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -241,6 +242,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             );
         }
 
+        partitionService.getMigrationInterceptor().onPromotionStart(MigrationParticipant.DESTINATION, promotions);
+
         PromotionOperationCallback finalizePromotionsCallback = new FinalizePromotionOperationCallback(this, promotions.size());
 
         for (MigrationInfo promotion : promotions) {
@@ -282,6 +285,49 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         long callTimeout = now + memberHeartbeatTimeoutMillis;
         OperationAccessor.setInvocationTime(this, now);
         OperationAccessor.setCallTimeout(this, callTimeout);
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (e instanceof HazelcastInstanceNotActiveException) {
+            super.onExecutionFailure(e);
+            return;
+        }
+        InternalPartitionServiceImpl service = getService();
+        boolean promotionPermitAcquired = service.getMigrationManager().isPromotionPermitAcquired();
+        if (promotionPermitAcquired) {
+            getLogger().info("Promotion commit failed and the promotion permit is still acquired.");
+            switch (runStage) {
+                case BEFORE_PROMOTION:
+                    // migration-aware services were not invoked yet so nothing to rollback
+                    // ensure the promotion permit is released
+                    getLogger().info("Stage was BEFORE_PROMOTION, releasing the promotion permit");
+                    service.getMigrationManager().releasePromotionPermit();
+                    break;
+                case FINALIZE_PROMOTION:
+                    // partitions migrating flag was set and beforeMigration was called
+                    // need to run rollbackMigration, reset partition's migrating flag and release promotion permit
+                    getLogger().info("Stage was FINALIZE_MIGRATION, running rollback & cleaning migrating flag");
+                    for (MigrationInfo promotion : promotions) {
+                        Operation op = new FinalizePromotionOperation(promotion, false, null);
+                        op.setPartitionId(promotion.getPartitionId())
+                                .setNodeEngine(getNodeEngine())
+                                .setService(service);
+                        getNodeEngine().getOperationService().execute(op);
+                    }
+                    service.getMigrationManager().releasePromotionPermit();
+                    break;
+                case COMPLETE:
+                    // promotions are already done and partitions migrating flag is cleared
+                    // ensure the promotion permit is released
+                    getLogger().info("Stage was COMPLETE, releasing the promotion permit");
+                    service.getMigrationManager().releasePromotionPermit();
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown stage " + runStage);
+            }
+        }
+        super.onExecutionFailure(e);
     }
 
     @Override

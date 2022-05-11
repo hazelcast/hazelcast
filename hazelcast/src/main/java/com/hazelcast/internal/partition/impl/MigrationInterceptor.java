@@ -53,6 +53,9 @@ public interface MigrationInterceptor extends EventListener {
     default void onPromotionStart(MigrationParticipant participant, Collection<MigrationInfo> migrations) {
     }
 
+    default void onPromotionFinalize(MigrationParticipant participant, Collection<MigrationInfo> migrations) {
+    }
+
     default void onPromotionComplete(MigrationParticipant participant, Collection<MigrationInfo> migrations, boolean success) {
     }
 
