@@ -202,7 +202,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         if (targetHzType.isCustomType() && (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
                 sourceHzType.isCustomType())) {
-            return customTypesCompatible(sourceType, targetType);
+            return customTypesCoercion(sourceType, targetType, rowElement, scope);
         }
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
@@ -222,7 +222,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return true;
     }
 
-    private static boolean customTypesCompatible(final RelDataType source, final RelDataType target) {
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private boolean customTypesCoercion(
+            final RelDataType source,
+            final RelDataType target,
+            final SqlNode rowElement,
+            final SqlValidatorScope scope
+    ) {
         if (source.getFieldCount() != target.getFieldCount()) {
             // Partial field lists are not supported for now.
             return false;
@@ -233,11 +239,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     .equals(HazelcastTypeUtils.extractHzObjectType(target).getTypeName());
         }
 
+        assert rowElement instanceof SqlCall : "Row Element must an SqlCall";
+        final SqlCall sourceCall = rowElement.getKind().equals(SqlKind.ROW)
+                ? (SqlCall) rowElement
+                : ((SqlCall) rowElement).operand(0);
+
         for (int i = 0; i < source.getFieldList().size(); i++) {
+            final int currentIndex = i;
             final RelDataTypeField sourceField = source.getFieldList().get(i);
             final RelDataTypeField targetField = target.getFieldList().get(i);
+            final SqlNode elementNode = sourceCall.getOperandList().get(i);
             if (HazelcastTypeUtils.isHzObjectType(targetField.getType())) {
-                if (!customTypesCompatible(sourceField.getType(), targetField.getType())) {
+                if (!customTypesCoercion(sourceField.getType(), targetField.getType(), elementNode, scope)) {
                     return false;
                 } else {
                     continue;
@@ -253,14 +266,17 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
             boolean valid = sourceAndTargetAreNumeric(targetFieldHzType, sourceFieldHzType)
                     || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetFieldHzType, sourceFieldHzType)
-                    // TODO: temporal types
-//                    || targetIsTemporalAndSourceIsVarcharLiteral(targetFieldHzType, sourceHzType, rowElement)
+                    || targetIsTemporalAndSourceIsVarcharLiteral(targetFieldHzType, sourceFieldHzType, elementNode)
                     || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.NULL
                     || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
                     && targetFieldHzType.getTypeFamily() == QueryDataTypeFamily.JSON;
             if (!valid) {
                 return false;
             }
+
+            coerceNode(scope, elementNode, targetField.getType(), (node) -> {
+                sourceCall.setOperand(currentIndex, node);
+            });
         }
 
         return true;

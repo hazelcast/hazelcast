@@ -111,6 +111,6 @@ public class TypesStorage extends TablesStorage {
     }
 
     private boolean isJavaClass(Class<?> clazz) {
-        return !clazz.getPackage().getName().startsWith("java.");
+        return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
     }
 }

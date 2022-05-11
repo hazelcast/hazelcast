@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.io.IOException;
@@ -167,12 +168,12 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 return;
             }
 
-            final QueryDataTypeFamily typeFamily = Converters.getConverter(converterId).getTypeFamily();
-            this.queryDataType = typeFamily.equals(QueryDataTypeFamily.OBJECT)
+            final Converter converter = Converters.getConverter(converterId);
+            this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
                     && ((typeName != null && !typeName.isEmpty()) || className != null
                     && !className.isEmpty())
                     ? new QueryDataType(typeName, this.className)
-                    : QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily);
+                    : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }
 
         @Override

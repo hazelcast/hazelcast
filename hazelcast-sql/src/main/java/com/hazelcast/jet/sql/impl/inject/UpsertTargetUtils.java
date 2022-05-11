@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -49,18 +50,25 @@ public final class UpsertTargetUtils {
         for (int i = 0; i < type.getFields().size(); i++) {
             final QueryDataType.QueryDataTypeField typeField = type.getFields().get(i);
             final Class<?> typeFieldClass = getTypeFieldClass(typeField);
-
-            final Method setter = ReflectionUtils
-                    .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
             final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
                     ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
-                    : rowValue.getValues().get(i);
+                    : ToConverters.getToConverter(typeField.getDataType()).convert(rowValue.getValues().get(i));
+
+            Method setter = ReflectionUtils
+                    .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
+            if (setter == null && isJavaType(typeFieldClass)) {
+                setter = ReflectionUtils
+                        .findPropertySetter(targetClass, typeField.getName(), toPrimitive(typeFieldClass));
+            }
 
             if (setter != null) {
+                if (fieldValue == null && setter.getParameterTypes()[0].isPrimitive()) {
+                    throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + setter);
+                }
                 try {
                     setter.invoke(result, fieldValue);
                     continue;
-                } catch (IllegalAccessException | InvocationTargetException e) {
+                } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                     throw QueryException.error("Can not use setter for field " + typeField.getName(), e);
                 }
             }
@@ -71,6 +79,9 @@ public final class UpsertTargetUtils {
             }
 
             try {
+                if (fieldValue == null && field.getType().isPrimitive()) {
+                    throw QueryException.error("Cannot set NULL to a primitive field: " + field);
+                }
                 field.set(result, fieldValue);
             } catch (IllegalAccessException e) {
                 throw QueryException.error("Can not set value for field " + typeField.getName(), e);
@@ -86,6 +97,33 @@ public final class UpsertTargetUtils {
             return ReflectionUtils.loadClass(queryDataType.getTypeClassName());
         } else {
             return queryDataType.getConverter().getValueClass();
+        }
+    }
+
+    private static boolean isJavaType(Class<?> clazz) {
+        return clazz.isPrimitive() || clazz.getPackage().getName().startsWith("java");
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static Class<?> toPrimitive(Class<?> clazz) {
+        if (clazz == Boolean.class) {
+            return boolean.class;
+        } else if (clazz == Character.class) {
+            return char.class;
+        } else if (clazz == Byte.class) {
+            return byte.class;
+        } else if (clazz == Short.class) {
+            return short.class;
+        } else if (clazz == Integer.class) {
+            return int.class;
+        } else if (clazz == Long.class) {
+            return long.class;
+        } else if (clazz == Float.class) {
+            return float.class;
+        } else if (clazz == Double.class) {
+            return double.class;
+        } else {
+            return null;
         }
     }
 }

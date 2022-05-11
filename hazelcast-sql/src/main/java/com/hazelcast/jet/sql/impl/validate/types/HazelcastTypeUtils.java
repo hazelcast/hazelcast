@@ -340,18 +340,19 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
-        // TODO: simplify & check logic
         if (isStruct(sourceType) || isStruct(targetType)) {
             // if one of them isn't a struct
             if (!isStruct(sourceType) || !isStruct(targetType)) {
                 return false;
             }
 
-            // if they're different kinds of structs, probably going to be supported in the future
-//            if (sourceType.getSqlTypeName() != targetType.getSqlTypeName()) {
-////                return false;
-//                // TODO: check if Source = HZ_OBJECT and Target is ROW
-//            }
+
+            // ROW source can be converted to target type
+            // TODO: target type can be ROW in some expressions?
+            if ((sourceType.getSqlTypeName() != targetType.getSqlTypeName())
+                    && !(targetType.getSqlTypeName().equals(ROW) || sourceType.getSqlTypeName().equals(ROW))) {
+                return false;
+            }
 
             int n = targetType.getFieldCount();
             if (sourceType.getFieldCount() != n) {

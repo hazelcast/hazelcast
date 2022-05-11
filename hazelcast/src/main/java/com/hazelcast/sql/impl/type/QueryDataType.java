@@ -299,7 +299,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                             })));
                 } else {
                     final QueryDataType fieldDataType = QueryDataTypeUtils
-                            .resolveTypeForTypeFamily(Converters.getConverter(fieldConverterId).getTypeFamily());
+                            .resolveTypeForClass(Converters.getConverter(fieldConverterId).getValueClass());
                     currentType.getFields().add(new QueryDataTypeField(fieldName, fieldDataType));
                 }
             }

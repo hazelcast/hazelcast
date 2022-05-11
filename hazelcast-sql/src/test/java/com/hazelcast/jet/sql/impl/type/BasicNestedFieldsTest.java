@@ -19,11 +19,13 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -171,9 +173,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     @Test
     public void test_deepInsert() {
         initDefault();
-        // TODO: correct type coercion
         instance().getSql().execute("INSERT INTO test VALUES (2, " +
-                "(CAST(2 AS BIGINT), 'user2', (CAST(2 AS BIGINT), 'organization2', (CAST(2 AS BIGINT), 'office2'))))");
+                "(2, 'user2', (2, 'organization2', (2, 'office2'))))");
         assertRowsAnyOrder("SELECT "
                         + "test.this.name, "
                         + "test.this.organization.name, "
@@ -227,7 +228,49 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         typesStorage().registerType("NestedType", NestedPOJO.class);
         createMapping("test", Long.class, RegularPOJO.class);
 
-        instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', (CAST(1 AS BIGINT), 'child'))");
+        instance().getSql().execute("INSERT INTO test (__key, name, child) "
+                + "VALUES (1, 'parent', (1, 'child'))");
+        assertRowsAnyOrder("SELECT name, test.child.name FROM test",
+                rows(2, "parent", "child"));
+
+        instance().getSql()
+                .execute("UPDATE test SET child = (2, 'child2')");
+        assertRowsAnyOrder("SELECT test.child.id, test.child.name FROM test",
+                rows(2, 2L, "child2"));
+    }
+
+    @Test
+    @Ignore
+    public void test_typeCoercionUpserts() {
+        typesStorage().registerType("AllTypesValue", AllTypesValue.class);
+        createMapping("test", Long.class, AllTypesParent.class);
+
+        final String allTypesValueRowLiteral = "("
+                + "0,"
+                + "0,"
+                + "false,"
+                + "0,"
+                + "null,"
+                + "'0',"
+                + "null,"
+                + "0.0,"
+                + "0.0,"
+                + "null,"
+                + "0,"
+                + "null,"
+                + "null,"
+                + "null,"
+                + "0,"
+                + "null,"
+                + "null,"
+                + "null,"
+                + "0,"
+                + "null,"
+                + "null"
+                + ")";
+
+        instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', "
+                + allTypesValueRowLiteral + ")");
     }
 
     private TypesStorage typesStorage() {
@@ -592,6 +635,51 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         @Override
         public int hashCode() {
             return Objects.hash(id, name);
+        }
+    }
+
+    public static class AllTypesParent implements Serializable {
+        private String name;
+        private AllTypesValue child;
+
+        public AllTypesParent() { }
+
+        public AllTypesParent(final String name, final AllTypesValue child) {
+            this.name = name;
+            this.child = child;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public AllTypesValue getChild() {
+            return child;
+        }
+
+        public void setChild(final AllTypesValue child) {
+            this.child = child;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final AllTypesParent that = (AllTypesParent) o;
+            return Objects.equals(name, that.name) && Objects.equals(child, that.child);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, child);
         }
     }
 }
