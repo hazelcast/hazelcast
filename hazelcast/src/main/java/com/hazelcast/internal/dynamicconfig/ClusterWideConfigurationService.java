@@ -212,12 +212,12 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ConfigUpdateResult update(@Nullable Config newConfig) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     @Override
     public UUID updateAsync(String configPatch) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {

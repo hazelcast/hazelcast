@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * An ConfigNamespace that makes identification of config within a section possible.
+ * A ConfigNamespace that makes identification of config within a section possible.
  */
 public class ConfigNamespace {
     private final ConfigSections configSection;
@@ -29,8 +29,6 @@ public class ConfigNamespace {
     public ConfigNamespace(@Nonnull ConfigSections configSection, @Nonnull String configName) {
         this.configSection = configSection;
         this.configName = configName;
-        assert configSection.multipleOccurrence;
-
     }
 
     public ConfigNamespace(@Nonnull ConfigSections configSection) {
