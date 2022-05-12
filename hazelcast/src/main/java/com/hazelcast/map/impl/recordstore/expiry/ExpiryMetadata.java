@@ -169,7 +169,8 @@ public interface ExpiryMetadata {
     default int stripBaseTime(long value) {
         int diff = UNSET;
         if (value > 0) {
-            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
+            long toSeconds = MILLISECONDS.toSeconds(value - EPOCH_TIME);
+            return toSeconds >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) toSeconds;
         }
 
         return diff;

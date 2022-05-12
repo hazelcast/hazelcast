@@ -51,13 +51,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setTtl(long ttl) {
-        long ttlSeconds = MILLISECONDS.toSeconds(ttl);
-        if (ttlSeconds == 0 && ttl != 0) {
-            ttlSeconds = 1;
-        }
-
-        this.ttl = ttlSeconds > Integer.MAX_VALUE
-                ? Integer.MAX_VALUE : (int) ttlSeconds;
+        this.ttl = toSeconds(ttl);
         return this;
     }
 
@@ -80,13 +74,17 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setMaxIdle(long maxIdle) {
-        long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
-        if (maxIdleSeconds == 0 && maxIdle != 0) {
-            maxIdleSeconds = 1;
-        }
-        this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE
-                ? Integer.MAX_VALUE : (int) maxIdleSeconds;
+        this.maxIdle = toSeconds(maxIdle);
         return this;
+    }
+
+    private static int toSeconds(long millis) {
+        long seconds = MILLISECONDS.toSeconds(millis);
+        if (seconds == 0 && millis != 0) {
+            seconds = 1;
+        }
+        return seconds > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) seconds;
     }
 
     @Override
@@ -115,9 +113,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime == Long.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : stripBaseTime(expirationTime);
+        this.expirationTime = toStrippedSeconds(expirationTime);
         return this;
     }
 
@@ -147,10 +143,16 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime == Long.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : stripBaseTime(lastUpdateTime);
+        this.lastUpdateTime = toStrippedSeconds(lastUpdateTime);
         return this;
+    }
+
+    private int toStrippedSeconds(long millis) {
+        if (millis == Long.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+
+        return stripBaseTime(millis);
     }
 
     @Override
