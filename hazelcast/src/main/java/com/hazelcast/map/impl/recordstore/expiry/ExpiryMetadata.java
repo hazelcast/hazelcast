@@ -21,11 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.record.Record.EPOCH_TIME;
-import static com.hazelcast.map.impl.record.Record.UNSET;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 public interface ExpiryMetadata {
 
     @SuppressWarnings("checkstyle:anoninnerlength")
@@ -164,24 +159,5 @@ public interface ExpiryMetadata {
         setRawMaxIdle(in.readInt());
         setRawExpirationTime(in.readInt());
         setRawLastUpdateTime(in.readInt());
-    }
-
-    default int stripBaseTime(long value) {
-        int diff = UNSET;
-        if (value > 0) {
-            long toSeconds = MILLISECONDS.toSeconds(value - EPOCH_TIME);
-            return toSeconds >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) toSeconds;
-        }
-
-        return diff;
-    }
-
-    default long recomputeWithBaseTime(int value) {
-        if (value == UNSET) {
-            return 0L;
-        }
-
-        long exploded = SECONDS.toMillis(value);
-        return exploded + EPOCH_TIME;
     }
 }

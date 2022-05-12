@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -97,5 +98,19 @@ public final class ExpirationTimeSetter {
         }
         // if we are here, entry should live forever
         return Long.MAX_VALUE;
+    }
+
+    public static int toSeconds(long millis) {
+        long seconds = MILLISECONDS.toSeconds(millis);
+        if (seconds == 0 && millis != 0) {
+            seconds = 1;
+        }
+        return seconds > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) seconds;
+    }
+
+    public static long toMillis(int seconds) {
+        return seconds == Integer.MAX_VALUE
+                ? Long.MAX_VALUE : SECONDS.toMillis(seconds);
     }
 }
