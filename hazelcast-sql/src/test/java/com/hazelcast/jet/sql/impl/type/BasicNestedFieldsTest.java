@@ -25,13 +25,24 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Objects;
+
+import static java.time.ZoneOffset.UTC;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class BasicNestedFieldsTest extends SqlJsonTestSupport {
@@ -240,37 +251,85 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_typeCoercionUpserts() {
         typesStorage().registerType("AllTypesValue", AllTypesValue.class);
         createMapping("test", Long.class, AllTypesParent.class);
 
         final String allTypesValueRowLiteral = "("
-                + "0,"
-                + "0,"
-                + "false,"
-                + "0,"
+                + "1,"
+                + "1,"
+                + "true,"
+                + "1,"
+                + "'1970-01-01T00:00:00Z',"
+                + "'A',"
+                + "'1970-01-01T00:00:00Z',"
+                + "1.0,"
+                + "1.0,"
+                + "'1970-01-01T00:00:00Z',"
+                + "1,"
+                + "'1970-01-01',"
+                + "'1970-01-01T00:00:00',"
+                + "'00:00:00',"
+                + "1,"
                 + "null,"
-                + "'0',"
                 + "null,"
-                + "0.0,"
-                + "0.0,"
-                + "null,"
-                + "0,"
-                + "null,"
-                + "null,"
-                + "null,"
-                + "0,"
-                + "null,"
-                + "null,"
-                + "null,"
-                + "0,"
-                + "null,"
-                + "null"
+                + "'1970-01-01T00:00:00Z',"
+                + "1,"
+                + "'test',"
+                + "'1970-01-01T00:00:00Z'"
                 + ")";
 
         instance().getSql().execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', "
                 + allTypesValueRowLiteral + ")");
+
+        assertRowsAnyOrder("SELECT "
+                + "test.child.bigDecimal,"
+                + "test.child.bigInteger,"
+                + "test.child.byte0,"
+                + "test.child.boolean0,"
+                + "test.child.calendar,"
+                + "test.child.character0,"
+                + "test.child.\"date\","
+                + "test.child.double0,"
+                + "test.child.float0,"
+                + "test.child.instant,"
+                + "test.child.int0,"
+                + "test.child.localDate,"
+                + "test.child.localDateTime,"
+                + "test.child.\"localTime\","
+                + "test.child.long0,"
+                + "test.child.map,"
+
+                + "test.child.object,"
+                + "test.child.offsetDateTime,"
+                + "test.child.short0,"
+                + "test.child.string,"
+                + "test.child.zonedDateTime"
+
+                + " FROM test", rows(21,
+                new BigDecimal(1L),
+                new BigInteger("1"),
+                (byte) 1,
+                true,
+                GregorianCalendar.from(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, UTC)),
+                'A',
+                Date.from(Instant.ofEpochMilli(0)),
+                1.0,
+                1.0f,
+                Instant.ofEpochMilli(0),
+                1,
+                LocalDate.of(1970, 1, 1),
+                LocalDateTime.of(1970, 1, 1, 0, 0, 0),
+                LocalTime.of(0, 0, 0),
+                1L,
+                null,
+                null,
+                OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, UTC),
+                (short) 1,
+                "test",
+                ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, UTC)
+        ));
+        // TODO params
     }
 
     private TypesStorage typesStorage() {

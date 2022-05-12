@@ -21,6 +21,8 @@ import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -49,24 +51,24 @@ public final class UpsertTargetUtils {
 
         for (int i = 0; i < type.getFields().size(); i++) {
             final QueryDataType.QueryDataTypeField typeField = type.getFields().get(i);
-            final Class<?> typeFieldClass = getTypeFieldClass(typeField);
-            final Object fieldValue = rowValue.getValues().get(i) instanceof RowValue
+            final boolean isRowValueField = rowValue.getValues().get(i) instanceof RowValue;
+            final Object fieldValue = isRowValueField
                     ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
-                    : ToConverters.getToConverter(typeField.getDataType()).convert(rowValue.getValues().get(i));
-
-            Method setter = ReflectionUtils
-                    .findPropertySetter(targetClass, typeField.getName(), typeFieldClass);
-            if (setter == null && isJavaType(typeFieldClass)) {
-                setter = ReflectionUtils
-                        .findPropertySetter(targetClass, typeField.getName(), toPrimitive(typeFieldClass));
-            }
+                    : rowValue.getValues().get(i);
+            Method setter = ReflectionUtils.findPropertySetter(targetClass, typeField.getName());
 
             if (setter != null) {
                 if (fieldValue == null && setter.getParameterTypes()[0].isPrimitive()) {
                     throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + setter);
                 }
                 try {
-                    setter.invoke(result, fieldValue);
+                    if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                        setter.invoke(result, fieldValue);
+                    } else {
+                        setter.invoke(result, ToConverters
+                                .getToConverter(QueryDataTypeUtils.resolveTypeForClass(setter.getParameterTypes()[0]))
+                                .convert(fieldValue));
+                    }
                     continue;
                 } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                     throw QueryException.error("Can not use setter for field " + typeField.getName(), e);
@@ -82,48 +84,19 @@ public final class UpsertTargetUtils {
                 if (fieldValue == null && field.getType().isPrimitive()) {
                     throw QueryException.error("Cannot set NULL to a primitive field: " + field);
                 }
-                field.set(result, fieldValue);
+                // TODO: test
+                if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                    field.set(result, fieldValue);
+                } else {
+                    field.set(result, ToConverters
+                            .getToConverter(QueryDataTypeUtils.resolveTypeForClass(field.getClass()))
+                            .convert(fieldValue));
+                }
             } catch (IllegalAccessException e) {
                 throw QueryException.error("Can not set value for field " + typeField.getName(), e);
             }
         }
 
         return result;
-    }
-
-    public static Class<?> getTypeFieldClass(final QueryDataType.QueryDataTypeField typeField) {
-        final QueryDataType queryDataType = typeField.getDataType();
-        if (queryDataType.isCustomType()) {
-            return ReflectionUtils.loadClass(queryDataType.getTypeClassName());
-        } else {
-            return queryDataType.getConverter().getValueClass();
-        }
-    }
-
-    private static boolean isJavaType(Class<?> clazz) {
-        return clazz.isPrimitive() || clazz.getPackage().getName().startsWith("java");
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static Class<?> toPrimitive(Class<?> clazz) {
-        if (clazz == Boolean.class) {
-            return boolean.class;
-        } else if (clazz == Character.class) {
-            return char.class;
-        } else if (clazz == Byte.class) {
-            return byte.class;
-        } else if (clazz == Short.class) {
-            return short.class;
-        } else if (clazz == Integer.class) {
-            return int.class;
-        } else if (clazz == Long.class) {
-            return long.class;
-        } else if (clazz == Float.class) {
-            return float.class;
-        } else if (clazz == Double.class) {
-            return double.class;
-        } else {
-            return null;
-        }
     }
 }
