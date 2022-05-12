@@ -97,7 +97,8 @@ public class NativeMemoryConfig {
      */
     @Deprecated
     public MemorySize getSize() {
-        return new MemorySize(capacity.getValue(), capacity.getUnit());
+        return capacity instanceof MemorySize ? (MemorySize) capacity
+                : new MemorySize(capacity.getValue(), capacity.getUnit());
     }
 
     /**
