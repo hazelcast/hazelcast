@@ -17,12 +17,14 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.UUID;
 
 /**
@@ -79,4 +81,6 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     ClientConnection getConnectionForSql();
 
     String getConnectionType();
+
+    void addClientConnectionProcessListener(ClientConnectionProcessListener listener);
 }

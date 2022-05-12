@@ -4,6 +4,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
@@ -14,11 +16,17 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
 
 public class DummyClient {
+
+    @After
+    public void after() {
+        HazelcastInstanceFactory.terminateAll();
+    }
 
     /**
      * Logs: (infinite loop):
@@ -32,7 +40,6 @@ public class DummyClient {
         config.getNetworkConfig().addAddress("example.asdasd");
         config.getNetworkConfig().setConnectionTimeout(5000);
         HazelcastClient.newHazelcastClient(config);
-        // never fails, max backoff is 30sec, keeps retrying forever
     }
 
     /**
@@ -59,8 +66,20 @@ public class DummyClient {
                 System.out.println("removed");
             }
         }));
-        startMember(new Config());
-        startMember(new Config());
+        config.getListenerConfigs().add(new ListenerConfig().setImplementation(new ClientConnectionProcessListener() {
+
+            @Override
+            public void attemptingToConnectToAddress(Address address) {
+                System.out.println("attempt to connect: " + address);
+            }
+
+            @Override
+            public void connectionAttemptFailed(Object target) {
+                System.out.println("connection failed to " + target);
+            }
+        }));
+//        startMember(new Config());
+//        startMember(new Config());
         HazelcastClientInstanceImpl client = ((HazelcastClientProxy) HazelcastClient.newHazelcastClient(config)).client;
         client.getConnectionManager().addConnectionListener(new ConnectionListener<ClientConnection>() {
             @Override
@@ -73,6 +92,9 @@ public class DummyClient {
 
             }
         });
+
+        System.out.println("meh");
+        client.getMap("map-1").put(1, 2);
     }
 
     /**
@@ -140,9 +162,9 @@ public class DummyClient {
         Config memberConfig = new Config();
         startMember(memberConfig);
         ClientConfig config = newClientConfig();
+        config.getConnectionStrategyConfig().setAsyncStart(true);
         config.setClusterName("something-not-dev");
         HazelcastClient.newHazelcastClient(config);
-        HazelcastInstanceFactory.terminateAll();
     }
 
     /**
@@ -159,8 +181,6 @@ public class DummyClient {
         ClientConfig config = newClientConfig();
         config.getNetworkConfig().setAddresses(asList("localhost:5701", "localhost:5702"));
         HazelcastClient.newHazelcastClient(config);
-
-        HazelcastInstanceFactory.terminateAll();
     }
 
     private void startMember(Config config) {

@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -83,6 +84,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -134,6 +136,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
+    private final Collection<ClientConnectionProcessListener> connectionProcessListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
 
     private final long authenticationTimeout;
@@ -462,6 +465,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (ClientNotAllowedInClusterException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
+        } catch (HazelcastException e) {
+            logger.warning("Exception during initial connection to " + target + ": " + e);
+            if (e.getCause() instanceof IOException) {
+                connectionProcessListeners.forEach(listener -> listener.connectionAttemptFailed(target));
+            }
+            return null;
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             return null;
@@ -488,6 +497,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
+                    connectionProcessListeners.forEach(listener -> listener.attemptingToConnectToAddress(member.getAddress()));
                     Connection connection = connect(member, o -> getOrConnectToMember((Member) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
@@ -500,7 +510,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-
+                    connectionProcessListeners.forEach(listener -> listener.attemptingToConnectToAddress(address));
                     Connection connection = connect(address, o -> getOrConnectToAddress((Address) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
@@ -799,6 +809,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public void addConnectionListener(ConnectionListener connectionListener) {
         connectionListeners.add(connectionListener);
+    }
+
+    @Override
+    public void addClientConnectionProcessListener(ClientConnectionProcessListener listener) {
+        connectionProcessListeners.add(listener);
     }
 
     public Credentials getCurrentCredentials() {
