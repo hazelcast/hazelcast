@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.IMap;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -67,7 +68,7 @@ public class NativeMemoryConfig {
     public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
     private boolean enabled;
-    private MemorySize size = new MemorySize(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
+    private Capacity capacity = new Capacity(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
     private MemoryAllocatorType allocatorType = MemoryAllocatorType.POOLED;
 
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
@@ -81,7 +82,7 @@ public class NativeMemoryConfig {
 
     public NativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
         enabled = nativeMemoryConfig.enabled;
-        size = nativeMemoryConfig.size;
+        capacity = nativeMemoryConfig.capacity;
         allocatorType = nativeMemoryConfig.allocatorType;
         minBlockSize = nativeMemoryConfig.minBlockSize;
         pageSize = nativeMemoryConfig.pageSize;
@@ -91,9 +92,19 @@ public class NativeMemoryConfig {
 
     /**
      * Returns size of the native memory region.
+     *
+     * @deprecated since 5.2, {@link NativeMemoryConfig#getCapacity()} should be used instead.
      */
+    @Deprecated
     public MemorySize getSize() {
-        return size;
+        return new MemorySize(capacity.getValue(), capacity.getUnit());
+    }
+
+    /**
+     * Returns capacity of the native memory region.
+     */
+    public Capacity getCapacity() {
+        return capacity;
     }
 
     /**
@@ -105,10 +116,28 @@ public class NativeMemoryConfig {
      *
      * @param size memory size
      * @return this {@link NativeMemoryConfig} instance
+     *
+     * @deprecated since 5.2, {@link NativeMemoryConfig#setCapacity(Capacity)} should be used instead.
      */
+    @Deprecated
     public NativeMemoryConfig setSize(MemorySize size) {
-        this.size = isNotNull(size, "size");
+        this.capacity = isNotNull(size, "size");
         return this;
+    }
+
+    /**
+     * Sets capacity of the native memory region.
+     * <p>
+     * Total size of the memory blocks allocated in native memory region cannot exceed this capacity.
+     * When native memory region is completely allocated and in-use, further allocation requests will fail
+     * with {@link NativeOutOfMemoryError}.
+     *
+     * @param capacity capacity
+     * @return this {@link NativeMemoryConfig} instance
+     */
+    public NativeMemoryConfig setCapacity(Capacity capacity) {
+       this.capacity = isNotNull(capacity, "capacity");
+       return this;
     }
 
     /**
@@ -340,7 +369,7 @@ public class NativeMemoryConfig {
         if (Float.compare(that.metadataSpacePercentage, metadataSpacePercentage) != 0) {
             return false;
         }
-        if (!Objects.equals(size, that.size)) {
+        if (!Objects.equals(capacity, that.capacity)) {
             return false;
         }
         if (!persistentMemoryConfig.equals(that.persistentMemoryConfig)) {
@@ -352,7 +381,7 @@ public class NativeMemoryConfig {
     @Override
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
-        result = 31 * result + (size != null ? size.hashCode() : 0);
+        result = 31 * result + (capacity != null ? capacity.hashCode() : 0);
         result = 31 * result + (allocatorType != null ? allocatorType.hashCode() : 0);
         result = 31 * result + minBlockSize;
         result = 31 * result + pageSize;
@@ -365,7 +394,7 @@ public class NativeMemoryConfig {
     public String toString() {
         return "NativeMemoryConfig{"
                 + "enabled=" + enabled
-                + ", size=" + size
+                + ", capacity=" + capacity
                 + ", allocatorType=" + allocatorType
                 + ", minBlockSize=" + minBlockSize
                 + ", pageSize=" + pageSize

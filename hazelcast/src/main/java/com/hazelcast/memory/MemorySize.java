@@ -25,6 +25,7 @@ package com.hazelcast.memory;
  *
  * @deprecated  Since 5.1, {@link Capacity} should be used instead.
  */
+@Deprecated
 public final class MemorySize extends Capacity {
 
     public MemorySize(long value) {
