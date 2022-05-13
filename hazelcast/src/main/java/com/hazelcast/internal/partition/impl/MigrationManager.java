@@ -967,7 +967,7 @@ public class MigrationManager {
         private void processNewPartitionState(PartitionReplica[][] newState) {
             int migrationCount = 0;
             // List of migration queues per-partition
-            List<Queue<MigrationInfo>> listOfPartitionMigrationQueues = new ArrayList<>(newState.length);
+            List<Queue<MigrationInfo>> partitionMigrationQueues = new ArrayList<>(newState.length);
             Int2ObjectHashMap<PartitionReplica> lostPartitions = new Int2ObjectHashMap<>();
 
             for (int partitionId = 0; partitionId < newState.length; partitionId++) {
@@ -987,7 +987,7 @@ public class MigrationManager {
                     lostPartitions.put(partitionId, migrationCollector.lostPartitionDestination);
                 }
                 if (!migrationCollector.migrations.isEmpty()) {
-                    listOfPartitionMigrationQueues.add(migrationCollector.migrations);
+                    partitionMigrationQueues.add(migrationCollector.migrations);
                     migrationCount += migrationCollector.migrations.size();
                 }
             }
@@ -1009,7 +1009,7 @@ public class MigrationManager {
             partitionService.publishPartitionRuntimeState();
 
             if (migrationCount > 0) {
-                scheduleMigrations(listOfPartitionMigrationQueues);
+                scheduleMigrations(partitionMigrationQueues);
                 // Schedule a task to publish completed migrations after all migrations tasks are completed.
                 schedule(new PublishCompletedMigrationsTask());
             }
@@ -1019,8 +1019,8 @@ public class MigrationManager {
         /**
          * Schedules all migrations.
          */
-        private void scheduleMigrations(List<Queue<MigrationInfo>> listOfPartitionMigrationQueues) {
-            schedule(new MigrationPlanTask(listOfPartitionMigrationQueues));
+        private void scheduleMigrations(List<Queue<MigrationInfo>> partitionMigrationQueues) {
+            schedule(new MigrationPlanTask(partitionMigrationQueues));
         }
 
         private void logMigrationStatistics(int migrationCount) {
@@ -1116,7 +1116,7 @@ public class MigrationManager {
         /**
          * List of migration queues per-partition
          */
-        private final List<Queue<MigrationInfo>> listOfPartitionMigrationQueues;
+        private final List<Queue<MigrationInfo>> partitionMigrationQueues;
         /**
          * Queue for completed migrations.
          * It will be processed concurrently while migrations are running.
@@ -1137,17 +1137,17 @@ public class MigrationManager {
         private boolean failed;
         private volatile boolean aborted;
 
-        MigrationPlanTask(List<Queue<MigrationInfo>> listOfPartitionMigrationQueues) {
-            this.listOfPartitionMigrationQueues = listOfPartitionMigrationQueues;
-            this.completed = new ArrayBlockingQueue<>(listOfPartitionMigrationQueues.size());
+        MigrationPlanTask(List<Queue<MigrationInfo>> partitionMigrationQueues) {
+            this.partitionMigrationQueues = partitionMigrationQueues;
+            this.completed = new ArrayBlockingQueue<>(partitionMigrationQueues.size());
             this.migratingPartitions
-                    = new IntHashSet(listOfPartitionMigrationQueues
+                    = new IntHashSet(partitionMigrationQueues
                     .stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override
         public void run() {
-            migrationCount.set(listOfPartitionMigrationQueues
+            migrationCount.set(partitionMigrationQueues
                     .stream().mapToInt(Collection::size).sum());
 
             while (true) {
@@ -1187,7 +1187,7 @@ public class MigrationManager {
                         + ". Ignoring remaining migrations. Will recalculate the new migration plan. ("
                         + stats.formatToString(logger.isFineEnabled()) + ")");
                 migrationCount.set(0);
-                listOfPartitionMigrationQueues.clear();
+                partitionMigrationQueues.clear();
             } else {
                 logger.info("All migration tasks have been completed. (" + stats.formatToString(logger.isFineEnabled()) + ")");
             }
@@ -1241,7 +1241,7 @@ public class MigrationManager {
         private MigrationInfo next() {
             MigrationInfo m;
             while ((m = next0()) == null) {
-                if (listOfPartitionMigrationQueues.isEmpty()) {
+                if (partitionMigrationQueues.isEmpty()) {
                     break;
                 }
 
@@ -1263,7 +1263,7 @@ public class MigrationManager {
         }
 
         private MigrationInfo next0() {
-            Iterator<Queue<MigrationInfo>> iter = listOfPartitionMigrationQueues.iterator();
+            Iterator<Queue<MigrationInfo>> iter = partitionMigrationQueues.iterator();
             while (iter.hasNext()) {
                 Queue<MigrationInfo> q = iter.next();
                 if (q.isEmpty()) {
