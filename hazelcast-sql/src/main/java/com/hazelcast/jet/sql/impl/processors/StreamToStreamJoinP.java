@@ -72,8 +72,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow currItem;
 
     // NOTE: we are using LinkedList, because we are expecting:
-    // (1) removals in the middle,
-    // (2) traversing whole list without indexing.
+    //  (1) removals in the middle,
+    //  (2) traversing whole list without indexing.
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
 
@@ -94,12 +94,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.columnCount = columnCount;
 
         for (byte key : postponeTimeMap.keySet()) {
-            Map<Byte, Long> valueMap = postponeTimeMap.get(key);
-            Map<Byte, Long> map = new HashMap<>();
-            for (byte j : valueMap.keySet()) {
-                map.put(j, Long.MIN_VALUE);
+            Map<Byte, Long> wmMapState = new HashMap<>();
+            for (byte i : postponeTimeMap.keySet()) {
+                wmMapState.put(i, Long.MIN_VALUE);
             }
-            wmState.put(key, map);
+            wmState.put(key, wmMapState);
             lastEmittedWm.put(key, Long.MIN_VALUE);
         }
     }
@@ -125,7 +124,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.evalContext = ExpressionEvalContext.from(context);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
@@ -190,8 +188,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // Instead, we can emit WM with the minimum available time for this WM key.
         Watermark wm = null;
         byte wmKey = watermark.key();
-
-        long minItemTime = Math.min(findMinimumGroupTime(wmKey), findMinimumBufferTime(ordinal, wmKey));
+        long maxInputKeyGroupTime = findMaxInputKeyGroupTime(wmKey);
+        long minItemTime = maxInputKeyGroupTime == Long.MIN_VALUE
+                ? findMinimumBufferTime(ordinal, wmKey)
+                : Math.min(maxInputKeyGroupTime, findMinimumBufferTime(ordinal, wmKey));
         if (minItemTime != lastEmittedWm.get(wmKey)) {
             wm = new Watermark(minItemTime, wmKey);
         }
@@ -221,12 +221,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     private void applyToWmState(Watermark watermark) {
-        byte key = watermark.key();
-        final Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(key);
-
+        byte inputWmKey = watermark.key();
+        Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(inputWmKey);
         for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
-            long newLimit = watermark.timestamp() - entry.getValue();
-            wmState.get(key).put(entry.getKey(), newLimit);
+            Long newLimit = watermark.timestamp() - entry.getValue();
+            wmState.get(entry.getKey()).put(inputWmKey, newLimit);
         }
     }
 
@@ -240,15 +239,19 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return min;
     }
 
-    private long findMinimumGroupTime(byte group) {
-        long min = MAX_VALUE;
-        for (long i : wmState.get(group).values()) {
-            min = Math.min(min, i);
+    private long findMaxInputKeyGroupTime(byte group) {
+        long max = Long.MIN_VALUE;
+        for (Map<Byte, Long> map : wmState.values()) {
+            max = Math.max(max, map.get(group));
         }
-        return min;
+        return max;
     }
 
     private void clearExpiredItemsInBuffer(int ordinal) {
+        if (buffer[ordinal].isEmpty()) {
+            return;
+        }
+
         // remove items that are late according to all watermarks in them. Run after the wmState was changed.
         Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
         ToLongFunctionEx<JetSqlRow>[] extractors = new ToLongFunctionEx[currExtractors.values().size()];
@@ -257,24 +260,24 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         int i = 0;
         for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
             extractors[i] = entry.getValue();
-            limits[i] = findMinimumGroupTime(entry.getKey());
+            limits[i] = findMaxInputKeyGroupTime(entry.getKey());
             ++i;
         }
 
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
-                if (extractors[idx].applyAsLong(row) >= limits[idx]) {
-                    return false;
+                if (extractors[idx].applyAsLong(row) <= limits[idx]) {
+                    if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
+                        JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
+                        unusedEventsTracker[ordinal].remove(row);
+                        if (joinedRow != null) {
+                            pendingOutput.add(joinedRow);
+                        }
+                    }
+                    return true;
                 }
             }
-            if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
-                JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
-                unusedEventsTracker[ordinal].remove(row);
-                if (joinedRow != null) {
-                    pendingOutput.add(joinedRow);
-                }
-            }
-            return true;
+            return false;
         });
     }
 

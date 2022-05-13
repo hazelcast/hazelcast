@@ -53,6 +53,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -189,10 +190,10 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     @Test
     public void given_alwaysTrueCondition_when_twoWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
         // left ordinal
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 1, 0L, (byte) 2, 1L));
+        postponeTimeMap.put((byte) 0, emptyMap());
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 2, 1L));
         // right ordinal
-        postponeTimeMap.put((byte) 2, mapOf((byte) 1, 4L, (byte) 2, 0L));
+        postponeTimeMap.put((byte) 2, singletonMap((byte) 1, 4L));
 
         leftExtractors = new HashMap<>();
         leftExtractors.put((byte) 0, l -> l.getRow().get(0));
@@ -233,11 +234,13 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 // right <- (9)
                                 jetRow(12L, 9L, 9L),
                                 // left <- (12, 13)
+                                // Note: join condition is not represented in postpone map here.
+                                // We are testing watermark emitting algorithm.
                                 jetRow(12L, 13L, 9L),
                                 // right <- wm(2, 15), 15-4 = 11
-                                // left <-  wm(1, 12)
                                 wm((byte) 2, 11L),
-                                wm((byte) 1, 9L),
+                                // left <-  wm(1, 12), 12-1 = 11
+                                wm((byte) 1, 11L),
                                 // right <- wm(2, 15), 15-4 = 11
                                 wm((byte) 0, 12L),
                                 // right <- (16)
@@ -251,22 +254,23 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     }
 
     /*
+        Kinda of
         SELECT * FROM a
         JOIN b ON b.a BETWEEN a.a AND a.a + 1
-        JOIN c ON c.a BETWEEN b.a AND b.a + 2  -- 'c' contains WMs '2' and '3'.
+        JOIN c ON (c.c BETWEEN b.a AND b.a + 2) AND (c.d BETWEEN b.a AND b.a + 2)  -- 'c' contains WMs '2' and '3'.
      */
     @Test
     public void given_alwaysTrueCondition_when_twoWmKeysOnBothInputs_then_successful() {
         // left ordinal
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 1L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, emptyMap());
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 2, 1L));
         leftExtractors = new HashMap<>();
         leftExtractors.put((byte) 0, l -> l.getRow().get(0));
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
 
         // right ordinal
-        postponeTimeMap.put((byte) 2, mapOf((byte) 1, 2L, (byte) 2, 0L));
-        postponeTimeMap.put((byte) 3, mapOf((byte) 1, 2L, (byte) 3, 0L));
+        postponeTimeMap.put((byte) 2, singletonMap((byte) 1, 2L));
+        postponeTimeMap.put((byte) 3, singletonMap((byte) 1, 2L));
         rightExtractors = new HashMap<>();
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
@@ -311,11 +315,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(12L, 13L, 12L, 10L),
                                 jetRow(12L, 10L, 12L, 13L),
                                 jetRow(12L, 13L, 12L, 13L),
+                                // <- wm(key=0, t=12). There are still items in buffer.
                                 wm((byte) 0, 12L),
-                                wm((byte) 2, 12L),
-                                // MIN = min(16, 16 - 1) = 15
+                                // <- wm(key=2, t=15). Items were clean up, so 15-2=13.
+                                wm((byte) 2, 13L),
                                 wm((byte) 1, 15L),
-                                // MIN = min(16, 16 - 2) = 14
                                 wm((byte) 3, 14L),
                                 jetRow(16L, 17L, 16L, 17L),
                                 wm((byte) 0, 16L),
@@ -329,10 +333,10 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     @Test
     public void given_oddNumbersFilter_when_twoWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
         // left ordinal
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 1, 0L, (byte) 2, 1L));
+        postponeTimeMap.put((byte) 0, emptyMap());
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 2, 1L));
         // right ordinal
-        postponeTimeMap.put((byte) 2, mapOf((byte) 1, 4L, (byte) 2, 0L));
+        postponeTimeMap.put((byte) 2, singletonMap((byte) 1, 4L));
 
         leftExtractors = new HashMap<>();
         leftExtractors.put((byte) 0, l -> l.getRow().get(0));
@@ -393,11 +397,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     public void given_oddNumbersFilter_when_threeWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
         // region
         // left ordinal
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
-        postponeTimeMap.put((byte) 2, singletonMap((byte) 2, 0L));
+        postponeTimeMap.put((byte) 0, emptyMap());
+        postponeTimeMap.put((byte) 1, emptyMap());
+        postponeTimeMap.put((byte) 2, emptyMap());
         // right ordinal
-        postponeTimeMap.put((byte) 3, mapOf((byte) 1, 2L, (byte) 2, 2L, (byte) 3, 0L));
+        postponeTimeMap.put((byte) 3, mapOf((byte) 1, 2L, (byte) 2, 2L));
 
         leftExtractors = new HashMap<>();
         leftExtractors.put((byte) 0, l -> l.getRow().get(0));
@@ -454,7 +458,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                                 wm((byte) 0, 2L),
                                 wm((byte) 1, 2L),
                                 // 1 was removed, minimum in buffer -> 3
-                                wm((byte) 2, 3L),
+                                wm((byte) 2, 2L),
                                 // no wm(t > 3) was produced,
                                 // so (5,5,5,2) is valid here.
                                 jetRow(5L, 5L, 5L, 2L),
@@ -469,14 +473,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         Map<Byte, Long> map = new HashMap<>();
         map.put(key1, value1);
         map.put(key2, value2);
-        return map;
-    }
-
-    static Map<Byte, Long> mapOf(Byte key1, Long value1, Byte key2, Long value2, Byte key3, Long value3) {
-        Map<Byte, Long> map = new HashMap<>();
-        map.put(key1, value1);
-        map.put(key2, value2);
-        map.put(key3, value3);
         return map;
     }
 }

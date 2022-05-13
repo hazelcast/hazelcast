@@ -42,7 +42,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,6 +51,7 @@ import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUME
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -83,8 +83,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void given_leftJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.LEFT,
                 new int[]{0},
@@ -106,10 +106,11 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .inputs(asList(
-                        Collections.singletonList(
-                                wm((byte) 0, 0L)
+                        singletonList(
+                                wm((byte) 0, 1L)
                         ),
                         asList(
+                                wm((byte) 1, 1L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
@@ -119,17 +120,18 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .expectOutput(
                         asList(
                                 wm((byte) 0, 0L),
+                                wm((byte) 1, 0L),
                                 jetRow(null, 3L, 3L),
                                 jetRow(null, 5L, 5L),
-                                wm((byte) 1, 6L)
+                                wm((byte) 1, 5L)
                         )
                 );
     }
 
     @Test
     public void given_leftJoin_when_rowContainsMultipleColumns_then_successful() {
-        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.LEFT,
                 new int[]{0},
@@ -143,7 +145,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 leftExtractors,
                 rightExtractors,
                 postponeTimeMap,
-                Tuple2.tuple2(1, 1));
+                Tuple2.tuple2(2, 2));
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -172,9 +174,7 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                                 jetRow(3L, 3L, 2L, 2L),
                                 jetRow(1L, 1L, 3L, 3L),
                                 jetRow(3L, 3L, 3L, 3L),
-                                // MIN = 3
                                 wm((byte) 0, 3L),
-                                // MIN = 3
                                 wm((byte) 1, 3L)
                         )
                 );
@@ -182,8 +182,8 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void given_rightJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
-        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.RIGHT,
                 new int[]{0},
@@ -206,29 +206,31 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                 .disableProgressAssertion()
                 .inputs(asList(
                         asList(
+                                wm((byte) 0, 1L),
                                 jetRow(3L, 3L),
                                 jetRow(4L, 4L),
                                 jetRow(5L, 5L),
                                 wm((byte) 0, 6L)
                         ),
-                        asList(
-                                wm((byte) 1, 0L)
+                        singletonList(
+                                wm((byte) 1, 1L)
                         )
                 ))
                 .expectOutput(
                         asList(
+                                wm((byte) 0, 0L),
                                 wm((byte) 1, 0L),
                                 jetRow(3L, 3L, null),
                                 jetRow(5L, 5L, null),
-                                wm((byte) 0, 6L)
+                                wm((byte) 0, 5L)
                         )
                 );
     }
 
     @Test
     public void given_rightJoin_when_rowContainsMultipleColumns_then_successful() {
-        postponeTimeMap.put((byte) 0, mapOf((byte) 0, 0L, (byte) 1, 0L));
-        postponeTimeMap.put((byte) 1, mapOf((byte) 0, 0L, (byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
         joinInfo = new JetJoinInfo(
                 JoinRelType.RIGHT,
                 new int[]{0},
