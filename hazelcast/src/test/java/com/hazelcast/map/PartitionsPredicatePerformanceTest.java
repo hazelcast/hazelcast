@@ -42,6 +42,7 @@ import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,6 +53,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
     private static final int PARTITION_COUNT = 16;
 
     @Test(timeout = Long.MAX_VALUE)
+    @Ignore
     public void aggregate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         int[] partitionsToAggregate = new int[] { 1, 2, 4, 8, 16 };
@@ -64,7 +66,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
                     StringJoiner joiner = new StringJoiner(",");
                     joiner.add(partitions + "");
                     joiner.add(items + "");
-                    joiner.add((nanos / (double)SECONDS.toNanos(1)) * items + "");
+                    joiner.add((nanos / (double) SECONDS.toNanos(1)) * items + "");
                     allTrials.put(joiner.toString(), invokeTrial(nodeFactory, partitions, items, nanos));
                     System.out.println("Trial Complete");
                 }
@@ -152,7 +154,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
         private Map<String, Integer> partitions;
         private long spinWaitNanos;
 
-        public PartitionAwarePredicate(Map<String, Integer> partitions, long spinWaitNanos) {
+        PartitionAwarePredicate(Map<String, Integer> partitions, long spinWaitNanos) {
             this.partitions = partitions;
             this.spinWaitNanos = spinWaitNanos;
         }
