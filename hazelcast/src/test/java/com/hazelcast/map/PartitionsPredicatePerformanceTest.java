@@ -63,7 +63,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
         for (int partitions : partitionsToAggregate) {
             for (int items : itemsPerPartition) {
                 for (long nanos : predicateExecutionTimeNanos) {
-                    StringJoiner joiner = new StringJoiner(",");
+                    StringJoiner joiner = new StringJoiner("|");
                     joiner.add(partitions + "");
                     joiner.add(items + "");
                     joiner.add((nanos / (double) SECONDS.toNanos(1)) * items + "");
@@ -72,12 +72,13 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
                 }
             }
         }
-        System.out.println("Partitions Hit By Predicate,Items Per Partition,Predicate Load Factor (item seconds),min (ns), max (ns), mean (ns)");
+        System.out.println("Partitions Hit By Predicate | Items Per Partition | Predicate Load Factor (item seconds) | min (ms) | max (ms) | mean (ms)");
+        System.out.println("| --- | --- | --- | --- | --- | --- |");
         allTrials.forEach((trial, results) -> {
             System.out.print(trial);
-            System.out.print("," + results.get("min"));
-            System.out.print("," + results.get("max"));
-            System.out.print("," + results.get("mean"));
+            System.out.print("|" + results.get("min"));
+            System.out.print("|" + results.get("max"));
+            System.out.print("|" + results.get("mean"));
             System.out.println();
         });
     }
@@ -87,11 +88,16 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
         createCluster(nodeFactory, PARTITION_COUNT, itemsPerPartition).forEach((hzInstance, hzMap) -> {
             try {
                 Map<String, Integer> partitionIds = getPartitionIds(hzInstance, hzMap, partitionsToAggregate);
-
-                Predicate<String, Integer> aggPredicate = Predicates.partitionsPredicate(
-                        partitionIds.keySet(), new PartitionAwarePredicate(partitionIds, predicateSleepForNanos)
-                );
-                long endTime = System.currentTimeMillis() + SECONDS.toMillis(10);
+                Predicate<String, Integer> partitionAwarePredicate = new PartitionAwarePredicate(partitionIds, predicateSleepForNanos);
+                // For a single partition, use the partitionPredicate constructor (to check for backwards compatible performance regression)
+                Predicate<String, Integer> aggPredicate = partitionsToAggregate == 1
+                                                                  ? Predicates.partitionPredicate(partitionIds.keySet().stream().findFirst().get(), partitionAwarePredicate)
+                                                                  : Predicates.partitionsPredicate(partitionIds.keySet(), partitionAwarePredicate);
+                long warmupEndTime = System.currentTimeMillis() + SECONDS.toMillis(10);
+                while (System.currentTimeMillis() < warmupEndTime) {
+                    measure(hzMap, aggPredicate);
+                }
+                long endTime = System.currentTimeMillis() + SECONDS.toMillis(60);
                 double mean = measure(hzMap, aggPredicate);
                 double min = mean;
                 double max = mean;
@@ -105,9 +111,9 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
                     }
                     mean = (mean + result) / 2.0;
                 }
-                results.put("mean", mean);
-                results.put("max", max);
-                results.put("min", min);
+                results.put("mean", mean / (double) MILLISECONDS.toNanos(1));
+                results.put("max", max / (double) MILLISECONDS.toNanos(1));
+                results.put("min", min / (double) MILLISECONDS.toNanos(1));
             } finally {
                 hzInstance.getCluster().shutdown();
             }
@@ -125,10 +131,10 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
     private Map<String, Integer> getPartitionIds(HazelcastInstance instance, IMap<String, Integer> hzMap, int count) {
         final PartitionService partitionService = instance.getPartitionService();
         return partitionService.getPartitions().stream().limit(count)
-           .collect(Collectors.toMap(
-                   p -> hzMap.keySet().stream().filter(k -> partitionService.getPartition(k).getPartitionId() == p.getPartitionId()).findFirst().get(),
-                   p -> p.getPartitionId()
-           ));
+                       .collect(Collectors.toMap(
+                               p -> hzMap.keySet().stream().filter(k -> partitionService.getPartition(k).getPartitionId() == p.getPartitionId()).findFirst().get(),
+                               p -> p.getPartitionId()
+                       ));
     }
 
     private Map<HazelcastInstance, IMap<String, Integer>> createCluster(TestHazelcastInstanceFactory nodeFactory, int partitionCount, int itemsPerPartition) {
