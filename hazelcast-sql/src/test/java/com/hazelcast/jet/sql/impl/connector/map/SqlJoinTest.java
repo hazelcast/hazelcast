@@ -104,7 +104,8 @@ public class SqlJoinTest {
                     "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
 
             assertTipOfStream(
-                    "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECONDS ",
+                    "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
+                            "                             AND s1.a + INTERVAL '0.004' SECOND ",
                     singletonList(new Row(timestamp(0L), timestamp(0L)))
             );
         }

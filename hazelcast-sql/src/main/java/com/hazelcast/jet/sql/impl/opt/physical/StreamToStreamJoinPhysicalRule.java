@@ -24,7 +24,6 @@ import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -129,15 +128,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
         Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeMap = new HashMap<>();
 
-        RelNode leftConverted = RelRule.convert(left, left.getTraitSet().replace(PHYSICAL));
-        if (leftConverted instanceof RelSubset) {
-            if (((RelSubset) leftConverted).getBest() instanceof StreamToStreamJoinPhysicalRel) {
-                RelSubset relSubset = (RelSubset) leftConverted;
-                StreamToStreamJoinPhysicalRel streamToStreamJoin = (StreamToStreamJoinPhysicalRel) relSubset.getBest();
-                postponeMap.putAll(streamToStreamJoin.postponeTimeMap());
-            }
-        }
-
         OptUtils.RelField llRelation = new OptUtils.RelField(
                 visitor.leftBound.f0().getName(),
                 visitor.leftBound.f0().getType()
@@ -155,22 +145,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 visitor.rightBound.f1().getType()
         );
 
-        if (postponeMap.get(llRelation) == null) {
-            Map<OptUtils.RelField, Long> internalMap = new HashMap<>();
-            internalMap.put(lrRelation, visitor.leftBound.f2());
-            postponeMap.put(llRelation, internalMap);
-        } else {
-            postponeMap.get(llRelation).put(lrRelation, visitor.leftBound.f2());
-        }
+        // left bound multiplies by -1.
+        Map<OptUtils.RelField, Long> leftBoundMap = new HashMap<>();
+        leftBoundMap.put(llRelation, -visitor.leftBound.f2());
+        postponeMap.put(lrRelation, leftBoundMap);
 
-        if (postponeMap.get(rrRelation) == null) {
-            Map<OptUtils.RelField, Long> internalMap = new HashMap<>();
-            internalMap.put(rlRelation, visitor.rightBound.f2());
-            postponeMap.put(rrRelation, internalMap);
-        } else {
-            postponeMap.get(rrRelation).put(rlRelation, visitor.rightBound.f2());
-        }
-
+        Map<OptUtils.RelField, Long> rightBoundMap = new HashMap<>();
+        rightBoundMap.put(rrRelation, visitor.rightBound.f2());
+        postponeMap.put(rlRelation, rightBoundMap);
 
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
