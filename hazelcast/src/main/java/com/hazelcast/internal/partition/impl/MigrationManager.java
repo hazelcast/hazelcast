@@ -1362,7 +1362,7 @@ public class MigrationManager {
                     && migration.getDestinationNewReplicaIndex() == 0) {
 
                 throw new IllegalStateException("Promotion migrations must be handled by "
-                        + FixPartitionTableTask.class.getSimpleName() + " -> " + migration);
+                        + RepairPartitionTableTask.class.getSimpleName() + " -> " + migration);
             }
 
             Member partitionOwner = checkMigrationParticipantsAndGetPartitionOwner();
@@ -1639,7 +1639,7 @@ public class MigrationManager {
      * <p>
      * Invoked on the master node. Acquires partition service lock when scheduling the tasks on the migration queue.
      */
-    private class FixPartitionTableTask implements MigrationRunnable {
+    private class RepairPartitionTableTask implements MigrationRunnable {
         @Override
         public void run() {
             if (!partitionStateManager.isInitialized()) {
@@ -1916,7 +1916,7 @@ public class MigrationManager {
      * Task scheduled on the master node to fetch and repair the latest partition table.
      * It will first check if we need to fetch the new partition table and schedule a task to do so, along with a new
      * {@link ControlTask} to be executed afterwards. If we don't need to fetch the partition table it will send a
-     * {@link FixPartitionTableTask} to repair the existing partition table.
+     * {@link RepairPartitionTableTask} to repair the existing partition table.
      * Invoked on the master node. It will acquire the partition service lock.
      *
      * @see InternalPartitionServiceImpl#isFetchMostRecentPartitionTableTaskRequired()
@@ -1935,9 +1935,9 @@ public class MigrationManager {
                     return;
                 }
                 if (logger.isFinestEnabled()) {
-                    logger.finest("FixPartitionTableTask scheduled");
+                    logger.finest("RepairPartitionTableTask scheduled");
                 }
-                migrationQueue.add(new FixPartitionTableTask());
+                migrationQueue.add(new RepairPartitionTableTask());
             } finally {
                 partitionServiceLock.unlock();
             }
