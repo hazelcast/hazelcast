@@ -61,6 +61,14 @@ public class ConfigNamespace {
     }
 
     @Override
+    public String toString() {
+        return "ConfigNamespace{" +
+                "configSection=" + configSection +
+                ", configName='" + configName + '\'' +
+                '}';
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(configSection, configName);
     }
