@@ -483,13 +483,24 @@ public class TcpIpJoiner extends AbstractJoiner {
         SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
             SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
-            if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
-                logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
-                setTargetAddress(address);
-                startClusterMerge(address, request.getMemberListVersion());
-                return;
+             if (result == SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE) {
+                String targetAddressStr = address.getHost() + ":" + address.getPort();
+                Address thisAddress = node.address;
+                String thisAddressStr = thisAddress.getHost() + ":" + thisAddress.getPort();
+                if(getMembers().contains(targetAddressStr) && !getMembers().contains(thisAddressStr)) {
+                    startMerge(address, request);
+                }
+            }
+            else if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
+                 startMerge(address, request);
             }
         }
+    }
+
+    private void startMerge(Address address, SplitBrainJoinMessage request) {
+        logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
+        setTargetAddress(address);
+        startClusterMerge(address, request.getMemberListVersion());
     }
 
     @Override
