@@ -204,8 +204,8 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
      * @param result    completion value
      * @return          a completed future with the given {@code result} as its completion value.
      */
-    public static <V> InternalCompletableFuture<V> newCompletedFuture(Object result) {
-        InternalCompletableFuture future = new InternalCompletableFuture();
+    public static <V> InternalCompletableFuture<V> newCompletedFuture(V result) {
+        InternalCompletableFuture<V> future = new InternalCompletableFuture<>();
         future.complete(result);
         return future;
     }
