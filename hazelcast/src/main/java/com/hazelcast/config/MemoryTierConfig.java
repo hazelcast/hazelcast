@@ -98,14 +98,14 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
         return capacity.getValue();
     }
 
-    public String getCapacityMemoryUnitName() {
-        return capacity.getUnit().name();
+    public int getCapacityMemoryUnitType() {
+        return capacity.getUnit().ordinal();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(getCapacityValue());
-        out.writeString(getCapacityMemoryUnitName());
+        out.writeString(capacity.getUnit().name());
     }
 
     @Override

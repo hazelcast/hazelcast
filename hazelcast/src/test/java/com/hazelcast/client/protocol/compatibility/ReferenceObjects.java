@@ -797,7 +797,7 @@ public class ReferenceObjects {
     public static MemoryTierConfig aMemoryTierConfig;
     static {
         aMemoryTierConfig = new MemoryTierConfig();
-        aMemoryTierConfig.setCapacity(Capacity.of(aPositiveLong, MemoryUnit.MEGABYTES));
+        aMemoryTierConfig.setCapacity(Capacity.of(aPositiveLong, MemoryUnit.GIGABYTES));
     }
 
     public static DiskTierConfig aDiskTierConfig;

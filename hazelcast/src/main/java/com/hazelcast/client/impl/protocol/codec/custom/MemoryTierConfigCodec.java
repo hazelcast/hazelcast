@@ -24,10 +24,11 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("bffcf51b3ccb4c382b268d3e53c55f8b")
+@Generated("4ff0092d0990b2260a4675b735cd1008")
 public final class MemoryTierConfigCodec {
     private static final int CAPACITY_VALUE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = CAPACITY_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int CAPACITY_MEMORY_UNIT_TYPE_FIELD_OFFSET = CAPACITY_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = CAPACITY_MEMORY_UNIT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MemoryTierConfigCodec() {
     }
@@ -37,9 +38,8 @@ public final class MemoryTierConfigCodec {
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, CAPACITY_VALUE_FIELD_OFFSET, memoryTierConfig.getCapacityValue());
+        encodeInt(initialFrame.content, CAPACITY_MEMORY_UNIT_TYPE_FIELD_OFFSET, memoryTierConfig.getCapacityMemoryUnitType());
         clientMessage.add(initialFrame);
-
-        StringCodec.encode(clientMessage, memoryTierConfig.getCapacityMemoryUnitName());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -50,11 +50,10 @@ public final class MemoryTierConfigCodec {
 
         ClientMessage.Frame initialFrame = iterator.next();
         long capacityValue = decodeLong(initialFrame.content, CAPACITY_VALUE_FIELD_OFFSET);
-
-        java.lang.String capacityMemoryUnitName = StringCodec.decode(iterator);
+        int capacityMemoryUnitType = decodeInt(initialFrame.content, CAPACITY_MEMORY_UNIT_TYPE_FIELD_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createMemoryTierConfig(capacityValue, capacityMemoryUnitName);
+        return CustomTypeFactory.createMemoryTierConfig(capacityValue, capacityMemoryUnitType);
     }
 }

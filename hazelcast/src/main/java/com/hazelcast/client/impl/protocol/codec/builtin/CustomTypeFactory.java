@@ -250,9 +250,9 @@ public final class CustomTypeFactory {
         return new HazelcastJsonValue(value);
     }
 
-    public static MemoryTierConfig createMemoryTierConfig(long capacityValue, String capacityMemoryUnitName) {
+    public static MemoryTierConfig createMemoryTierConfig(long capacityValue, int capacityMemoryUnitType) {
         MemoryTierConfig config = new MemoryTierConfig();
-        config.setCapacity(Capacity.of(capacityValue, MemoryUnit.valueOf(capacityMemoryUnitName)));
+        config.setCapacity(Capacity.of(capacityValue, MemoryUnit.values()[capacityMemoryUnitType]));
         return config;
     }
 
