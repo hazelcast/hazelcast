@@ -38,11 +38,19 @@ public class MemberChannelInitializer
         OutboundHandler[] outboundHandlers = serverContext.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
         InboundHandler[] inboundHandlers = serverContext.createInboundHandlers(EndpointQualifier.MEMBER, connection);
 
-        SingleProtocolEncoder protocolEncoder = new SingleProtocolEncoder(new MemberProtocolEncoder(outboundHandlers));
+        OutboundHandler outboundHandler;
+        SingleProtocolEncoder protocolEncoder;
+        if (channel.isClientMode()) {
+            protocolEncoder = new SingleProtocolEncoder(outboundHandlers);
+            outboundHandler = new MemberProtocolEncoder(protocolEncoder);
+        } else {
+            protocolEncoder = new SingleProtocolEncoder(new MemberProtocolEncoder(outboundHandlers));
+            outboundHandler = protocolEncoder;
+        }
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(ProtocolType.MEMBER,
                 inboundHandlers, protocolEncoder);
 
-        channel.outboundPipeline().addLast(protocolEncoder);
+        channel.outboundPipeline().addLast(outboundHandler);
         channel.inboundPipeline().addLast(protocolDecoder);
     }
 }

@@ -60,6 +60,7 @@ import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -144,20 +145,23 @@ public class TcpServerControlTest {
     @Parameters
     public static List<Object> parameters() {
         return Arrays.asList(new Object[]{
-                // on MEMBER connections, only MEMBER addresses are registered
-                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
-                        localAddresses_memberOnly(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
+                // On MEMBER connections, only MEMBER addresses are registered in the acceptor side
+                // Initiator client and WAN addresses is also registered in the initiator side
                 new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberOnly(), true, singletonList(INITIATOR_MEMBER_ADDRESS)},
                 new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
-                        localAddresses_memberWan(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
+                        localAddresses_memberOnly(), false, Arrays.asList(INITIATOR_MEMBER_ADDRESS, INITIATOR_CLIENT_SOCKET_ADDRESS)},
+                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
+                        localAddresses_memberWan(), true, singletonList(INITIATOR_MEMBER_ADDRESS)},
+                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER, localAddresses_memberWan(), false,
+                        Arrays.asList(INITIATOR_MEMBER_ADDRESS, INITIATOR_CLIENT_SOCKET_ADDRESS, INITIATOR_WAN_ADDRESS)},
                 // when protocol type not supported by BindHandler, nothing is registered
                 new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 // when protocol type is WAN, initiator address is always registered
                 new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 new Object[]{WAN, "wan", ConnectionType.MEMBER,
-                        localAddresses_memberWan(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
+                        localAddresses_memberWan(), false, Arrays.asList(INITIATOR_WAN_ADDRESS, INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), true, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 // when protocol type is WAN, advertised public WAN server socket from initiator is also registered on the server
@@ -241,6 +245,7 @@ public class TcpServerControlTest {
                 UUID memberUuid = addressRegistry.uuidOf(address);
                 assertEquals(MEMBER_UUID,  memberUuid);
             }
+            assertContainsAll(expectedAddresses, addressRegistry.linkedAddressesOf(MEMBER_UUID).getAllAddresses());
         } catch (AssertionError error) {
             LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(MEMBER_UUID);
             if (linkedAddresses != null) {
@@ -260,7 +265,8 @@ public class TcpServerControlTest {
         MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, MEMBER_UUID);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
-        connection = new TcpServerConnection(connectionManager, lifecycleListener, 1, channel, false);
+        boolean acceptorSide = reply;
+        connection = new TcpServerConnection(connectionManager, lifecycleListener, 1, channel, acceptorSide);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }
