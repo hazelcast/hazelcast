@@ -32,15 +32,11 @@ import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
- * Together with {@link SingleProtocolDecoder}, this encoder decoder pair is
- * used for checking correct protocol is used or not. {@link
- * SingleProtocolDecoder} checks if the correct protocol is received. If the
- * protocol is correct, both encoder and decoder swaps itself with the next
- * handler in the pipeline. If it isn't {@link SingleProtocolEncoder} throws
- * {@link ProtocolException} and {@link SingleProtocolDecoder} sends {@value
- * Protocols#UNEXPECTED_PROTOCOL}. Note that in client mode {@link
- * SingleProtocolEncoder} has no effect, and it swaps itself with the next
- * handler.
+ * Together with {@link SingleProtocolDecoder}, this encoder-decoder pair is used to check if correct protocol is used.
+ * {@link SingleProtocolDecoder} checks if the proper protocol is received. If the protocol is correct, both encoder and decoder
+ * are replaced by the next handlers in the pipeline. If it isn't the {@link SingleProtocolEncoder} sends
+ * {@link Protocols#UNEXPECTED_PROTOCOL} response and throws a {@link ProtocolException}. Note that in client mode the
+ * {@link SingleProtocolEncoder} allows blocking packet writes until the (member-)protocol is confirmed.
  */
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
