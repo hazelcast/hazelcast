@@ -65,7 +65,7 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>5.1.6</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
