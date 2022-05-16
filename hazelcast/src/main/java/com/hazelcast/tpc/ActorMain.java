@@ -1,8 +1,8 @@
 package com.hazelcast.tpc;
 
 import com.hazelcast.tpc.actor.Actor;
-import com.hazelcast.tpc.actor.ActorHandle;
 import com.hazelcast.tpc.actor.EchoActor;
+import com.hazelcast.tpc.actor.LocalActorHandle;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.frame.Frame;
@@ -31,7 +31,7 @@ public class ActorMain {
         Actor actor = new EchoActor();
         actor.activate(eventloop);
 
-        ActorHandle handle = actor.getHandle();
+        LocalActorHandle handle = actor.getHandle();
         handle.send("foo");
         handle.send("bar");
     }

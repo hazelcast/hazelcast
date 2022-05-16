@@ -1,14 +1,6 @@
 package com.hazelcast.tpc.actor;
 
-public class ActorHandle {
+public interface ActorHandle {
 
-    private final Actor actor;
-
-    public ActorHandle(Actor actor) {
-        this.actor = actor;
-    }
-
-    public void send(Object message){
-        this.actor.send(message);
-    }
+    void send(Object message);
 }

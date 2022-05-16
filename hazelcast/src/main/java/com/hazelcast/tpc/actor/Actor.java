@@ -12,9 +12,9 @@ public abstract class Actor implements EventloopTask {
 
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private Eventloop eventloop;
-    private final ActorHandle handle = new ActorHandle(this);
+    private final LocalActorHandle handle = new LocalActorHandle(this);
 
-    public ActorHandle getHandle() {
+    public LocalActorHandle getHandle() {
         return handle;
     }
 
@@ -22,7 +22,7 @@ public abstract class Actor implements EventloopTask {
         return eventloop;
     }
 
-    public void activate(Eventloop eventloop){
+    public void activate(Eventloop eventloop) {
         this.eventloop = eventloop;
     }
 
@@ -52,12 +52,12 @@ public abstract class Actor implements EventloopTask {
         if (mailbox.isEmpty()) {
             scheduled.set(false);
 
-            if (!mailbox.isEmpty()) {
-                eventloop.execute(this);
+            if (mailbox.isEmpty()) {
+                return;
             }
-        } else {
-            eventloop.execute(this);
         }
+
+        eventloop.execute(this);
     }
 
     public abstract void process(Object msg);
