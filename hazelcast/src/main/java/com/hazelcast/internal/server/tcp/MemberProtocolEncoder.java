@@ -26,25 +26,27 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
+/**
+ * Writes the member protocol header bytes (HZC) to dst buffer and replaces itself by the next {@link OutboundHandler
+ * OutboundHandlers}.
+ */
 public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     private final OutboundHandler[] outboundHandlers;
 
     /**
-     * Decodes first 3 incoming bytes, validates against {@code supportedProtocol} and, when
-     * matching, replaces itself in the inbound pipeline with the {@code next InboundHandler}.
-     *
      * @param next the {@link OutboundHandler} to replace this one in the outbound pipeline
      *             upon match of protocol bytes
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public MemberProtocolEncoder(OutboundHandler[] next) {
+    public MemberProtocolEncoder(OutboundHandler... next) {
         this.outboundHandlers = next;
     }
 
@@ -63,10 +65,10 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
                 ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
                 connection.setConnectionType(ConnectionType.MEMBER);
                 channel.outboundPipeline().replace(this, outboundHandlers);
+                return CLEAN;
             }
 
-            // Return CLEAN as we already have all the necessary data in the destination buffer.
-            return CLEAN;
+            return DIRTY;
         } finally {
             upcast(dst).flip();
         }
