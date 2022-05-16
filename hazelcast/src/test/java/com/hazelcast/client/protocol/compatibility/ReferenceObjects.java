@@ -670,6 +670,7 @@ public class ReferenceObjects {
     public static int anInt = 25;
     public static int anEnum = 1;
     public static long aLong = -50992225L;
+    public static long aPositiveLong = 50992225L;
     public static UUID aUUID = new UUID(123456789, 987654321);
     public static byte[] aByteArray = new byte[]{aByte};
     public static long[] aLongArray = new long[]{aLong};
@@ -796,7 +797,7 @@ public class ReferenceObjects {
     public static MemoryTierConfig aMemoryTierConfig;
     static {
         aMemoryTierConfig = new MemoryTierConfig();
-        aMemoryTierConfig.setCapacity(Capacity.of(aLong, MemoryUnit.MEGABYTES));
+        aMemoryTierConfig.setCapacity(Capacity.of(aPositiveLong, MemoryUnit.MEGABYTES));
     }
 
     public static DiskTierConfig aDiskTierConfig;
