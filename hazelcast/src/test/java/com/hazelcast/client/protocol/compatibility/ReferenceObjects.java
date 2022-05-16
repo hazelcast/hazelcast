@@ -38,12 +38,16 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
@@ -61,6 +65,8 @@ import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
@@ -545,6 +551,20 @@ public class ReferenceObjects {
         return a.isFsync() == b.isFsync();
     }
 
+    public static boolean isEqual(DataPersistenceConfig a, DataPersistenceConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        return a.isFsync() == b.isFsync();
+    }
+
     public static boolean isEqual(TimedExpiryPolicyFactoryConfig a, TimedExpiryPolicyFactoryConfig b) {
         if (a == b) {
             return true;
@@ -609,6 +629,25 @@ public class ReferenceObjects {
         return a.getProperties() != null ? a.getProperties().equals(b.getProperties()) : b.getProperties() == null;
     }
 
+    public static boolean isEqual(TieredStoreConfig a, TieredStoreConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        if (!Objects.equals(a.getMemoryTierConfig(), b.getMemoryTierConfig())) {
+            return false;
+        }
+
+        return Objects.equals(a.getDiskTierConfig(), b.getDiskTierConfig());
+    }
+
     private static boolean isEqualStackTrace(StackTraceElement stackTraceElement1, StackTraceElement stackTraceElement2) {
         //Not using stackTraceElement.equals
         //because in IBM JDK stacktraceElements with null method name are not equal
@@ -622,7 +661,6 @@ public class ReferenceObjects {
             return false;
         }
         return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
-
     }
 
     // Static values below should not be a random value, because the values are used when generating compatibility files and
@@ -739,6 +777,14 @@ public class ReferenceObjects {
         aHotRestartConfig.setFsync(aBoolean);
     }
 
+    public static DataPersistenceConfig aDataPersistenceConfig;
+
+    static {
+        aDataPersistenceConfig = new DataPersistenceConfig();
+        aDataPersistenceConfig.setEnabled(aBoolean);
+        aDataPersistenceConfig.setFsync(aBoolean);
+    }
+
     public static MerkleTreeConfig aMerkleTreeConfig;
 
     static {
@@ -747,6 +793,26 @@ public class ReferenceObjects {
         aMerkleTreeConfig.setDepth(anInt);
     }
 
+    public static MemoryTierConfig aMemoryTierConfig;
+    static {
+        aMemoryTierConfig = new MemoryTierConfig();
+        aMemoryTierConfig.setCapacity(Capacity.of(aLong, MemoryUnit.MEGABYTES));
+    }
+
+    public static DiskTierConfig aDiskTierConfig;
+    static {
+        aDiskTierConfig = new DiskTierConfig();
+        aDiskTierConfig.setEnabled(aBoolean);
+        aDiskTierConfig.setDeviceName(aString);
+    }
+    public static TieredStoreConfig aTieredStoreConfig;
+
+    static {
+        aTieredStoreConfig = new TieredStoreConfig();
+        aTieredStoreConfig.setEnabled(aBoolean);
+        aTieredStoreConfig.setMemoryTierConfig(aMemoryTierConfig);
+        aTieredStoreConfig.setDiskTierConfig(aDiskTierConfig);
+    }
 
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(ListenerConfigHolder.ListenerConfigType.ITEM, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);

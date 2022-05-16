@@ -22,12 +22,16 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
@@ -38,6 +42,8 @@ import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -95,6 +101,13 @@ public final class CustomTypeFactory {
 
     public static HotRestartConfig createHotRestartConfig(boolean enabled, boolean fsync) {
         HotRestartConfig config = new HotRestartConfig();
+        config.setEnabled(enabled);
+        config.setFsync(fsync);
+        return config;
+    }
+
+    public static DataPersistenceConfig createDataPersistenceConfig(boolean enabled, boolean fsync) {
+        DataPersistenceConfig config = new DataPersistenceConfig();
         config.setEnabled(enabled);
         config.setFsync(fsync);
         return config;
@@ -235,5 +248,30 @@ public final class CustomTypeFactory {
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
         return new HazelcastJsonValue(value);
+    }
+
+    public static MemoryTierConfig createMemoryTierConfig(long capacityValue, String capacityMemoryUnitName) {
+        MemoryTierConfig config = new MemoryTierConfig();
+        config.setCapacity(Capacity.of(capacityValue, MemoryUnit.valueOf(capacityMemoryUnitName)));
+        return config;
+    }
+
+    public static DiskTierConfig createDiskTierConfig(boolean enabled, String deviceName) {
+        DiskTierConfig config = new DiskTierConfig();
+        config.setEnabled(enabled);
+        config.setDeviceName(deviceName);
+        return config;
+    }
+
+    public static TieredStoreConfig createTieredStoreConfig(
+            boolean enabled,
+            MemoryTierConfig memoryTierConfig,
+            DiskTierConfig diskTierConfig
+    ) {
+        TieredStoreConfig config = new TieredStoreConfig();
+        config.setEnabled(enabled);
+        config.setMemoryTierConfig(memoryTierConfig);
+        config.setDiskTierConfig(diskTierConfig);
+        return config;
     }
 }
