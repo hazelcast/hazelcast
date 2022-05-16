@@ -9,13 +9,19 @@ import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.tpc.engine.EventloopState.*;
+import static com.hazelcast.tpc.engine.Util.epochNanos;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
@@ -41,7 +47,11 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
 
+    PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
+
     protected volatile EventloopState state = CREATED;
+
+    public final Unsafe unsafe = new Unsafe();
 
     public EventloopState state() {
         return state;
@@ -173,7 +183,30 @@ public abstract class Eventloop extends HazelcastManagedThread {
         closeResources(registeredServerSockets);
     }
 
+    protected long earliestDeadlineEpochNanos = -1;
+
     protected void runLocalTasks() {
+        for (; ; ) {
+            ScheduledTask scheduledTask = scheduledTaskQueue.peek();
+            if (scheduledTask == null) {
+                break;
+            }
+
+            if (scheduledTask.deadlineEpochNanos > epochNanos()) {
+                // Task should not yet be executed.
+                earliestDeadlineEpochNanos = scheduledTask.deadlineEpochNanos;
+                break;
+            }
+
+            scheduledTaskQueue.poll();
+            earliestDeadlineEpochNanos = -1;
+            try {
+                scheduledTask.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         for (; ; ) {
             EventloopTask task = localRunQueue.poll();
             if (task == null) {
@@ -204,6 +237,99 @@ public abstract class Eventloop extends HazelcastManagedThread {
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
+        }
+    }
+
+    protected static class ScheduledTask implements EventloopTask, Comparable<ScheduledTask> {
+
+        private Future future;
+        private long deadlineEpochNanos;
+
+        @Override
+        public void run() throws Exception {
+            future.complete(null);
+        }
+
+        @Override
+        public int compareTo(Eventloop.ScheduledTask that) {
+            if (that.deadlineEpochNanos == this.deadlineEpochNanos) {
+                return 0;
+            }
+
+            return this.deadlineEpochNanos > that.deadlineEpochNanos ? 1 : -1;
+        }
+    }
+
+    public class Unsafe {
+
+        public <E> Future<E> newCompletedFuture(E value) {
+            Future<E> future = Future.newReadyFuture(value);
+            future.eventloop = Eventloop.this;
+            return future;
+        }
+
+        public <E> Future<E> newFuture() {
+            Future<E> future = Future.newFuture();
+            future.eventloop = Eventloop.this;
+            return future;
+        }
+
+        public void execute(EventloopTask task) {
+            localRunQueue.offer(task);
+        }
+
+        public Future sleep(long delay, TimeUnit unit) {
+            Future future = newFuture();
+            ScheduledTask scheduledTask = new ScheduledTask();
+            scheduledTask.future = future;
+            scheduledTask.deadlineEpochNanos = epochNanos() + unit.toNanos(delay);
+            scheduledTaskQueue.add(scheduledTask);
+            return future;
+        }
+
+        public <I, O> Future<List<O>> map(List<I> input, List<O> output, Function<I, O> function) {
+            Future future = newFuture();
+
+            //todo: task can be pooled
+            EventloopTask task = new EventloopTask() {
+                Iterator<I> it = input.iterator();
+
+                @Override
+                public void run() {
+                    if (it.hasNext()) {
+                        I item = it.next();
+                        O result = function.apply(item);
+                        output.add(result);
+                    }
+
+                    if (it.hasNext()) {
+                        unsafe.execute(this);
+                    } else {
+                        future.complete(output);
+                    }
+                }
+            };
+
+            execute(task);
+            return future;
+        }
+
+        public Future loop(Function<Eventloop, Boolean> loopFunction) {
+            Future future = newFuture();
+
+            //todo: task can be pooled
+            EventloopTask task = new EventloopTask() {
+                @Override
+                public void run() {
+                    if (loopFunction.apply(Eventloop.this)) {
+                        unsafe.execute(this);
+                    } else {
+                        future.complete(null);
+                    }
+                }
+            };
+            execute(task);
+            return future;
         }
     }
 }
