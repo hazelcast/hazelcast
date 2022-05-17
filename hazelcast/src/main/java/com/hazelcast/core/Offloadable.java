@@ -47,6 +47,8 @@ public interface Offloadable {
      */
     String OFFLOADABLE_EXECUTOR = ExecutionService.OFFLOADABLE_EXECUTOR;
 
+    String TSTORE_IO_EXECUTOR = ExecutionService.TSTORE_IO_EXECUTOR;
+
     /**
      * Returns the name of the executor to which the processing unit will be off-loaded.
      *

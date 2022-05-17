@@ -34,7 +34,7 @@ import java.io.IOException;
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
  */
-public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOperation {
+public class MapFetchEntriesOperation extends MapNoOffloadOperation implements ReadonlyOperation {
 
     private int fetchSize;
     private IterationPointer[] pointers;

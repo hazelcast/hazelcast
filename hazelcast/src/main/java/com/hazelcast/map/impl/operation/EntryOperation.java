@@ -515,4 +515,14 @@ EntryOperation extends LockAwareOperation
             return setUnlockRetryCount > SET_UNLOCK_FAST_RETRY_LIMIT;
         }
     }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
+    }
 }

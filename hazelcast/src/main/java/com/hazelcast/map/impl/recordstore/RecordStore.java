@@ -124,11 +124,11 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return {@code true} if entry is deleted, otherwise returns {@code false}
      */
-    boolean delete(Data dataKey, CallerProvenance provenance);
+    Object delete(Data dataKey, CallerProvenance provenance, boolean noPendingIO);
 
-    boolean remove(Data dataKey, Object testValue);
+    Object remove(Data dataKey, Object testValue);
 
-    boolean setTtl(Data key, long ttl);
+    Object setTtl(Data key, long ttl);
 
     boolean setTtlBackup(Data key, long ttl);
 
@@ -161,14 +161,14 @@ public interface RecordStore<R extends Record> {
      *                then its last access time is updated.
      * @return value of an entry in {@link RecordStore}
      */
-    Object get(Data dataKey, boolean backup, Address callerAddress, boolean touch);
+    Object get(Data dataKey, boolean backup, Address callerAddress, boolean touch, boolean noPendingIO);
 
     /**
      * Same as {@link #get(Data, boolean, Address, boolean)} with parameter {@code touch}
      * set {@code true}.
      */
     default Object get(Data dataKey, boolean backup, Address callerAddress) {
-        return get(dataKey, backup, callerAddress, true);
+        return get(dataKey, backup, callerAddress, true, false);
     }
 
     /**
@@ -197,7 +197,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean existInMemory(Data key);
 
-    boolean containsKey(Data dataKey, Address callerAddress);
+    R containsKey(Data dataKey, Address callerAddress);
 
     int getLockedEntryCount();
 
@@ -214,7 +214,7 @@ public interface RecordStore<R extends Record> {
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    boolean replace(Data dataKey, Object expect, Object update);
+    Object replace(Data dataKey, Object expect, Object update);
 
     Object putTransient(Data dataKey, Object value, long ttl, long maxIdle);
 
@@ -281,6 +281,8 @@ public interface RecordStore<R extends Record> {
                   CallerProvenance provenance);
 
     R getRecord(Data key);
+
+    R getRecord(Data key, boolean noPendingIO);
 
     /**
      * This method is used in replication operations.
@@ -469,6 +471,8 @@ public interface RecordStore<R extends Record> {
      * @see #get
      */
     R getRecordOrNull(Data key);
+
+    R getRecordOrNull(Data key, boolean noPendingIO);
 
     /**
      * Check if record is reachable according to TTL or idle times.
@@ -665,5 +669,17 @@ public interface RecordStore<R extends Record> {
 
     default void afterOperation() {
         // no-op
+    }
+
+    default boolean supportPendingIO() {
+        return false;
+    }
+
+    default boolean isPendingIO(Object result) {
+        return false;
+    }
+
+    default Offload newIOOperationOffload(Data keyData, MapOperation offloadedOperation, Object context) {
+        throw new IllegalStateException();
     }
 }

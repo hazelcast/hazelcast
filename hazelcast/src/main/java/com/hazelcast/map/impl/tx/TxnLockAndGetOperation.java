@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ public class TxnLockAndGetOperation
         if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, true);
         if (record == null && shouldLoad) {
             record = recordStore.loadRecordOrNull(dataKey, false, getCallerAddress());
         }
@@ -110,5 +111,15 @@ public class TxnLockAndGetOperation
     @Override
     public int getClassId() {
         return MapDataSerializerHook.TXN_LOCK_AND_GET;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

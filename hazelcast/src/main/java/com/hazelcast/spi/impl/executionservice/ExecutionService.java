@@ -106,6 +106,11 @@ public interface ExecutionService {
     String MC_EXECUTOR = "hz:mc";
 
     /**
+     * Name of tiered-store IO operations executor.
+     */
+    String TSTORE_IO_EXECUTOR = "hz:tstore-io";
+
+    /**
      * @param name          for the executor service
      * @param poolSize      the maximum number of threads to allow in the pool
      * @param queueCapacity the queue to use for holding tasks before they are executed.

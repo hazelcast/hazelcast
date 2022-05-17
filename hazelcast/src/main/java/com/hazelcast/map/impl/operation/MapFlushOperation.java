@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 /**
  * Flushes dirty entries upon call of {@link IMap#flush()}
  */
-public class MapFlushOperation extends MapOperation implements BackupAwareOperation, MutatingOperation {
+public class MapFlushOperation extends MapNoOffloadOperation implements BackupAwareOperation, MutatingOperation {
 
     private long sequence;
 

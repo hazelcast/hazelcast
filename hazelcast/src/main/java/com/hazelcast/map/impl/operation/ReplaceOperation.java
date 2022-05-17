@@ -33,8 +33,11 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
 
     @Override
     protected void runInternal() {
-        Object oldValue = recordStore.replace(dataKey, dataValue);
-        this.oldValue = mapServiceContext.toData(oldValue);
+        oldValue = recordStore.replace(dataKey, dataValue);
+        if (isPendingIO(oldValue)) {
+            return;
+        }
+        oldValue = mapServiceContext.toData(oldValue);
         successful = oldValue != null;
     }
 

@@ -50,7 +50,7 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
  *
  * @since 3.10
  */
-public class MergeOperation extends MapOperation
+public class MergeOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, BackupAwareOperation {
 
     private static final long MERGE_POLICY_CHECK_PERIOD = TimeUnit.MINUTES.toMillis(1);

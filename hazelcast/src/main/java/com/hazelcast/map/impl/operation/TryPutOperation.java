@@ -34,7 +34,7 @@ public class TryPutOperation extends BasePutOperation implements MutatingOperati
 
     @Override
     protected void runInternal() {
-        recordStore.put(dataKey, dataValue, UNSET, UNSET);
+        oldValue = recordStore.put(dataKey, dataValue, UNSET, UNSET);
     }
 
     @Override

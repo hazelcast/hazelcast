@@ -40,6 +40,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -291,7 +292,9 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
                 afterRun(op);
                 break;
             case OFFLOAD_ORDINAL:
-                op.afterRun();
+                if (!isPendingResult(op)) {
+                    op.afterRun();
+                }
                 Offload offload = (Offload) callStatus;
                 offload.init(nodeEngine, operationService.asyncOperations);
                 offload.start();
@@ -303,6 +306,9 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
                 throw new IllegalStateException();
         }
     }
+     private boolean isPendingResult(Operation op) {
+        return op instanceof MapOperation && ((MapOperation)op).isPendingResult();
+     }
 
     private void checkNodeState(Operation op) {
         NodeState state = node.getState();

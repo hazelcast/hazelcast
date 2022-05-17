@@ -34,7 +34,7 @@ import java.io.IOException;
  *
  * @see AwaitMapFlushOperation
  */
-public class NotifyMapFlushOperation extends MapOperation
+public class NotifyMapFlushOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, ReadonlyOperation, Notifier {
 
     private long sequence;

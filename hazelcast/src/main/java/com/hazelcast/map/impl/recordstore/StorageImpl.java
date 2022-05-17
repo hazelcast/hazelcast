@@ -72,7 +72,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void put(Data key, R record) {
+    public R put(Data key, R record) {
         R previousRecord = records.put(key, record);
 
         if (previousRecord == null) {
@@ -81,6 +81,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
             updateCostEstimate(-entryCostEstimator.calculateValueCost(previousRecord));
             updateCostEstimate(entryCostEstimator.calculateValueCost(record));
         }
+
+        return previousRecord;
     }
 
     @Override
@@ -95,7 +97,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public R get(Data key) {
+    public R get(Data key, boolean noPendingIO) {
         return records.get(key);
     }
 
@@ -129,10 +131,11 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void removeRecord(Data dataKey, R record) {
+    public R removeRecord(Data dataKey, R record) {
         records.remove(dataKey);
 
         updateCostEstimate(-entryCostEstimator.calculateEntryCost(dataKey, record));
+        return record;
     }
 
     protected void updateCostEstimate(long entrySize) {

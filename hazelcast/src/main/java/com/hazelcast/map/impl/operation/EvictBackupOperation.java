@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 
@@ -70,4 +71,13 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
         unlockKey = in.readBoolean();
     }
 
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
+    }
 }

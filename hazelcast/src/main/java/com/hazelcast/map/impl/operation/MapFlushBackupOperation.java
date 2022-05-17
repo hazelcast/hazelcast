@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * Empties backup write-behind-queues upon {@link IMap#flush()}
  */
-public class MapFlushBackupOperation extends MapOperation implements BackupOperation {
+public class MapFlushBackupOperation extends MapNoOffloadOperation implements BackupOperation {
 
     public MapFlushBackupOperation() {
     }

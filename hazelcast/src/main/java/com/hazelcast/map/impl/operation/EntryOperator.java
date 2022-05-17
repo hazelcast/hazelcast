@@ -163,7 +163,9 @@ public final class EntryOperator {
             return this;
         }
 
-        oldValue = recordStore.get(dataKey, backup, callerAddress, false);
+        oldValue = recordStore.get(dataKey, backup, callerAddress, false, true);
+        assert !recordStore.isPendingIO(oldValue);
+
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
@@ -267,6 +269,7 @@ public final class EntryOperator {
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
             if (mapOperation.isPostProcessing(recordStore)) {
+                assert !recordStore.supportPendingIO();
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();
                 entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
@@ -280,7 +283,7 @@ public final class EntryOperator {
         if (backup) {
             recordStore.removeBackup(dataKey, NOT_WAN);
         } else {
-            recordStore.delete(dataKey, NOT_WAN);
+            recordStore.delete(dataKey, NOT_WAN, true);
             mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
             stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }

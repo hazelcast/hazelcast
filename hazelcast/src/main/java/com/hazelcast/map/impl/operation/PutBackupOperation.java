@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import java.io.IOException;
 
 public class PutBackupOperation
-        extends MapOperation implements BackupOperation, Versioned {
+        extends MapNoOffloadOperation implements BackupOperation, Versioned {
 
     protected Record<Data> record;
     protected Data dataKey;
@@ -53,6 +53,7 @@ public class PutBackupOperation
     @Override
     protected void runInternal() {
         // TODO performance: we can put this record directly into record-store if memory format is BINARY
+        // TODO pass noPending request flag ???
         Record currentRecord = recordStore.putBackup(dataKey, record,
                 expiryMetadata, isPutTransient(), getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);

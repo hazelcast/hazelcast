@@ -20,12 +20,13 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation
         implements BackupAwareOperation, MutatingOperation {
 
-    protected transient Data dataOldValue;
+    protected transient Object result;
 
     public BaseRemoveOperation() {
     }
@@ -36,9 +37,10 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     protected void afterRunInternal() {
-        mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), dataOldValue);
+        assert !isPendingResult();
+        mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), result);
         mapEventPublisher.publishEvent(getCallerAddress(), name,
-                EntryEventType.REMOVED, dataKey, dataOldValue, null);
+                EntryEventType.REMOVED, dataKey, result, null);
         invalidateNearCache(dataKey);
         publishWanRemove(dataKey);
         evict(dataKey);
@@ -47,7 +49,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return result;
     }
 
     @Override
@@ -74,4 +76,15 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
     public void onWaitExpire() {
         sendResponse(null);
     }
+
+    @Override
+    public boolean isPendingResult() {
+        return isPendingIO(result);
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return recordStore.newIOOperationOffload(dataKey, this, result);
+    }
+
 }

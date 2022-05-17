@@ -21,11 +21,10 @@ import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
-
-    private Data result;
 
     public GetOperation() {
     }
@@ -39,10 +38,16 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     @Override
     protected void runInternal() {
         Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
-        if (noCopyReadAllowed(currentValue)) {
+        if (isPendingIO(currentValue)) {
+            // IO is required to perform the operation.
+            // The IO is offloaded and once the required record
+            // is in memory the operation will be re-submitted to
+            // the partition thread
+            result = currentValue;
+        } else if (noCopyReadAllowed(currentValue)) {
             // in case of a 'remote' call (e.g a client call) we prevent making
             // an on-heap copy of the off-heap data
-            result = (Data) currentValue;
+            result = currentValue;
         } else {
             // in case of a local call, we do make a copy, so we can safely share
             // it with e.g. near cache invalidation
@@ -52,8 +57,8 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     private boolean noCopyReadAllowed(Object currentValue) {
         return currentValue instanceof Data
-                && (!getNodeEngine().getLocalMember().getUuid().equals(getCallerUuid())
-                || !super.executedLocally());
+            && (!getNodeEngine().getLocalMember().getUuid().equals(getCallerUuid())
+            || !super.executedLocally());
     }
 
     @Override
@@ -82,7 +87,8 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     public Data getResponse() {
-        return result;
+        assert !isPendingIO(result);
+        return (Data) result;
     }
 
     @Override

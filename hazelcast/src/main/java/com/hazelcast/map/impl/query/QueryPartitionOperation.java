@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapNoOffloadOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class QueryPartitionOperation extends MapOperation
+public class QueryPartitionOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, ReadonlyOperation {
 
     private Query query;

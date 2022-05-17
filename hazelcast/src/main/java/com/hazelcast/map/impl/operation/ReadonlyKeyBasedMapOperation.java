@@ -20,6 +20,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
@@ -33,6 +34,8 @@ public abstract class ReadonlyKeyBasedMapOperation extends MapOperation
 
     protected Data dataKey;
     protected long threadId;
+
+    protected transient Object result;
 
     public ReadonlyKeyBasedMapOperation() {
     }
@@ -64,5 +67,15 @@ public abstract class ReadonlyKeyBasedMapOperation extends MapOperation
         super.readInternal(in);
         dataKey = IOUtil.readData(in);
         threadId = in.readLong();
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return isPendingIO(result);
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return recordStore.newIOOperationOffload(dataKey, this, result);
     }
 }

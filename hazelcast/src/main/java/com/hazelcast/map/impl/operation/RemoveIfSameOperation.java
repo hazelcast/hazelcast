@@ -39,13 +39,17 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     @Override
     protected void runInternal() {
-        successful = recordStore.remove(dataKey, testValue);
+        result = recordStore.remove(dataKey, testValue);
+        if (isPendingIO(result)) {
+            return;
+        }
+        successful = result != null;
     }
 
     @Override
     protected void afterRunInternal() {
         if (successful) {
-            dataOldValue = testValue;
+            result = testValue;
             super.afterRunInternal();
         }
     }

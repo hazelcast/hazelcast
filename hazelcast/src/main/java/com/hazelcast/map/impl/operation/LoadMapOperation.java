@@ -28,7 +28,7 @@ import java.io.IOException;
  * partition of the map key loader with the
  * {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER} role.
  */
-public class LoadMapOperation extends MapOperation implements MutatingOperation {
+public class LoadMapOperation extends MapNoOffloadOperation implements MutatingOperation {
 
     private boolean replaceExistingValues;
 

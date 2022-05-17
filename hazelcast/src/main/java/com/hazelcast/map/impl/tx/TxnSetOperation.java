@@ -79,13 +79,21 @@ public class TxnSetOperation extends BasePutOperation
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
         Record record = recordStore.getRecordOrNull(dataKey);
+        if (isPendingIO(record)) {
+            oldValue = record;
+            return;
+        }
         if (record == null || version == record.getVersion()) {
             EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
+            Object status = recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
+            if (isPendingIO(status)) {
+                oldValue = status;
+                return;
+            }
             shouldBackup = true;
         }
     }

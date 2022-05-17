@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class BasePutOperation
@@ -39,6 +40,7 @@ public abstract class BasePutOperation
 
     @Override
     protected void afterRunInternal() {
+        assert !isPendingResult();
         Object value = isPostProcessing(recordStore)
                 ? recordStore.getRecord(dataKey).getValue() : dataValue;
         mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
@@ -89,4 +91,15 @@ public abstract class BasePutOperation
     public void onWaitExpire() {
         sendResponse(null);
     }
+
+    @Override
+    public boolean isPendingResult() {
+        return isPendingIO(oldValue);
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return recordStore.newIOOperationOffload(dataKey, this, oldValue);
+    }
+
 }

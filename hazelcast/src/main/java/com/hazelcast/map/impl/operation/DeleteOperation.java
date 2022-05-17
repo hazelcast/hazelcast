@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 
@@ -27,7 +28,6 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     // package private for testing purposes
     boolean disableWanReplicationEvent;
-    private boolean success;
 
     public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey);
@@ -39,7 +39,11 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     @Override
     protected void runInternal() {
-        success = recordStore.delete(dataKey, getCallerProvenance());
+        result = recordStore.delete(dataKey, getCallerProvenance(), false);
+    }
+
+    private boolean isSuccess() {
+        return result != null && !isPendingResult();
     }
 
     @Override
@@ -49,19 +53,20 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     @Override
     public Object getResponse() {
-        return success;
+        assert !isPendingResult();
+        return isSuccess();
     }
 
     @Override
     protected void afterRunInternal() {
-        if (success) {
+        if (isSuccess()) {
             super.afterRunInternal();
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return success;
+        return isSuccess();
     }
 
     @Override

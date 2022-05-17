@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PutAllBackupOperation extends MapOperation
+public class PutAllBackupOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, BackupOperation, Versioned {
 
     private boolean disableWanReplicationEvent;

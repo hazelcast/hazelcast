@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -70,5 +71,15 @@ public class TxnUnlockBackupOperation
     @Override
     public int getClassId() {
         return MapDataSerializerHook.TXN_UNLOCK_BACKUP;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

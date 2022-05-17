@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -121,8 +122,12 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
         @Override
         protected void runInternal() {
-            dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey, getCallerProvenance()));
-            successful = dataOldValue != null;
+            result = recordStore.remove(dataKey, getCallerProvenance());
+            if (isPendingIO(result)) {
+                return;
+            }
+            result = mapService.getMapServiceContext().toData(result);
+            successful = result != null;
         }
 
         @Override
@@ -180,6 +185,16 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         @Override
         public int getClassId() {
             return 101;
+        }
+
+        @Override
+        public boolean isPendingResult() {
+            return false;
+        }
+
+        @Override
+        protected Offload newIOOperationOffload() {
+            return null;
         }
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -82,5 +83,15 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
     @Override
     public int getClassId() {
         return MapDataSerializerHook.TXN_PREPARE_BACKUP;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

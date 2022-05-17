@@ -41,9 +41,24 @@ final class TargetInvocation extends Invocation<Address> {
                      long tryPauseMillis,
                      long callTimeoutMillis,
                      boolean deserialize,
-                     ServerConnectionManager connectionManager) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager);
+                     ServerConnectionManager connectionManager,
+                     boolean reInvokeOperation) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager,
+            reInvokeOperation);
         this.target = target;
+    }
+
+    TargetInvocation(Context context,
+                     Operation op,
+                     Address target,
+                     Runnable doneCallback,
+                     int tryCount,
+                     long tryPauseMillis,
+                     long callTimeoutMillis,
+                     boolean deserialize,
+                     ServerConnectionManager connectionManager) {
+        this(context, op, target, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
+            connectionManager, false);
     }
 
     TargetInvocation(Context context,

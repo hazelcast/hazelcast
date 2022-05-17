@@ -1250,9 +1250,12 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
     private void warnIfSuspiciousDoubleCompletion(Object s0, Object s1) {
         if (s0 != s1 && !(isStateCancelled(s0)) && !(isStateCancelled(s1))) {
+            /*
             logger.warning(String.format("Future.complete(Object) on completed future. "
                             + "Request: %s, current value: %s, offered value: %s",
                     invocationToString(), s0, s1), new Exception());
+
+             */
         }
     }
 

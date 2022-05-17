@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @see PutFromLoadAllOperation
  */
-public class PutFromLoadAllBackupOperation extends MapOperation implements BackupOperation {
+public class PutFromLoadAllBackupOperation extends MapNoOffloadOperation implements BackupOperation {
 
     private List<Data> loadingSequence;
     private boolean includesExpirationTime;

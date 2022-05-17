@@ -31,7 +31,7 @@ import static com.hazelcast.core.EntryEventType.EVICT_ALL;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllOperation extends MapOperation
+public class EvictAllOperation extends MapNoOffloadOperation
         implements BackupAwareOperation, MutatingOperation, PartitionAwareOperation {
 
     private boolean shouldRunOnBackup;

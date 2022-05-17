@@ -40,7 +40,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Puts records to map which are loaded from map store by {@link IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends MapOperation
+public class PutFromLoadAllOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
 
     private List<Data> loadingSequence;

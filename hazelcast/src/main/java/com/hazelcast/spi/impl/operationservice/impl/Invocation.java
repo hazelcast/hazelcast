@@ -197,6 +197,11 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      */
     private final Runnable taskDoneCallback;
 
+    /**
+     * Whether the operation is re-invoked so that the operation's
+     * result should be sent through the already set response handler.
+     */
+    private final boolean reInvokeOperation;
 
     Invocation(Context context,
                Operation op,
@@ -206,6 +211,19 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                long callTimeoutMillis,
                boolean deserialize,
                ServerConnectionManager connectionManager) {
+        this(context, op, taskDoneCallback, tryCount, tryPauseMillis,
+            callTimeoutMillis, deserialize, connectionManager, false);
+    }
+
+    Invocation(Context context,
+               Operation op,
+               Runnable taskDoneCallback,
+               int tryCount,
+               long tryPauseMillis,
+               long callTimeoutMillis,
+               boolean deserialize,
+               ServerConnectionManager connectionManager,
+               boolean reInvokeOperation) {
         super(context.logger);
         this.context = context;
         this.op = op;
@@ -215,7 +233,9 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
         this.connectionManager = getConnectionManager(connectionManager);
+        this.reInvokeOperation = reInvokeOperation;
     }
+
 
     @Override
     public void sendResponse(Operation op, Object response) {
@@ -593,7 +613,9 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
 
         responseReceived = FALSE;
-        op.setOperationResponseHandler(this);
+        if (!reInvokeOperation) {
+            op.setOperationResponseHandler(this);
+        }
 
         if (isAsync) {
             context.operationExecutor.execute(op);

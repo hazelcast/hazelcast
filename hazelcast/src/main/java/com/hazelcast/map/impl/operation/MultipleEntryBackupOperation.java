@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 import java.util.Set;
@@ -80,5 +81,15 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
     @Override
     public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_BACKUP;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

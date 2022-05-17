@@ -40,7 +40,11 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
 
     @Override
     protected void runInternal() {
-        successful = recordStore.replace(dataKey, expect, dataValue);
+        oldValue = recordStore.replace(dataKey, expect, dataValue);
+        if (isPendingIO(oldValue)) {
+            return;
+        }
+        successful = oldValue != null;
         if (successful) {
             oldValue = expect;
         }

@@ -64,10 +64,17 @@ public class TxnDeleteOperation
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
         Record record = recordStore.getRecord(dataKey);
+        if (isPendingIO(record)) {
+            result = record;
+            return;
+        }
         if (record == null || version == record.getVersion()) {
-            dataOldValue = getNodeEngine().toData(recordStore.removeTxn(dataKey,
-                    getCallerProvenance(), transactionId));
-            successful = dataOldValue != null;
+            result = recordStore.removeTxn(dataKey, getCallerProvenance(), transactionId);
+            if (isPendingIO(result)) {
+                return;
+            }
+            result = getNodeEngine().toData(result);
+            successful = result != null;
         }
 
         if (record == null) {

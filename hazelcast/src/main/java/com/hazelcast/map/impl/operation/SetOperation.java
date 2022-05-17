@@ -38,6 +38,9 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     @Override
     protected void runInternal() {
         oldValue = recordStore.set(dataKey, dataValue, getTtl(), getMaxIdle());
+        if (isPendingIO(oldValue)) {
+            return;
+        }
         newRecord = oldValue == null;
     }
 

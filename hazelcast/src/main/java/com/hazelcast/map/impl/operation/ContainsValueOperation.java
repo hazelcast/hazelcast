@@ -21,12 +21,13 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class ContainsValueOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class ContainsValueOperation extends MapNoOffloadOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
     private Data testValue;

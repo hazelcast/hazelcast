@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,7 +36,7 @@ import java.util.LinkedList;
  * Used to transfer expired keys from owner replica to backup replicas.
  */
 public class EvictBatchBackupOperation
-        extends MapOperation implements BackupOperation {
+        extends MapNoOffloadOperation implements BackupOperation {
 
     private int primaryEntryCount;
     private String name;
@@ -160,5 +161,15 @@ public class EvictBatchBackupOperation
             expiredKeys.add(new ExpiredKey(IOUtil.readData(in), in.readLong()));
         }
         primaryEntryCount = in.readInt();
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

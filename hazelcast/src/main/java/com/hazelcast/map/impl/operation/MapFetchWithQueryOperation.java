@@ -41,7 +41,7 @@ import java.io.IOException;
  * com.hazelcast.projection.Projection, com.hazelcast.query.Predicate)
  * @since 3.9
  */
-public class MapFetchWithQueryOperation extends MapOperation implements ReadonlyOperation {
+public class MapFetchWithQueryOperation extends MapNoOffloadOperation implements ReadonlyOperation {
 
     private Query query;
     private int fetchSize;

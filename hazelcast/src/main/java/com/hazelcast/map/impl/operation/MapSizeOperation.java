@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-public class MapSizeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapSizeOperation extends MapNoOffloadOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private int size;
 

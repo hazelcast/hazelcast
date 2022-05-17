@@ -22,11 +22,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 
 public class SetTtlBackupOperation extends KeyBasedMapOperation implements BackupOperation {
     private long ttl;
+    private Object result;
 
     public SetTtlBackupOperation() {
 
@@ -44,7 +46,7 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     protected void runInternal() {
-        recordStore.setTtlBackup(dataKey, ttl);
+        result = recordStore.setTtlBackup(dataKey, ttl);
     }
 
     @Override
@@ -67,4 +69,15 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
         super.readInternal(in);
         ttl = in.readLong();
     }
+
+    @Override
+    public boolean isPendingResult() {
+        return isPendingIO(result);
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return recordStore.newIOOperationOffload(dataKey, this, result);
+    }
+
 }

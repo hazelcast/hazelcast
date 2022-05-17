@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 /**
  * Provides common backup operation functionality for {@link com.hazelcast.map.EntryProcessor}
@@ -36,6 +37,16 @@ abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
     }
 
     protected Predicate getPredicate() {
+        return null;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
         return null;
     }
 

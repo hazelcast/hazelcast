@@ -28,6 +28,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 
-public class MultipleEntryOperation extends MapOperation
+public class MultipleEntryOperation extends MapNoOffloadOperation
         implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
 
     protected Set<Data> keys;

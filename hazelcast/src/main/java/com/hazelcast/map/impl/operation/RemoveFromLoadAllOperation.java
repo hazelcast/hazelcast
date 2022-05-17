@@ -41,7 +41,7 @@ import java.util.List;
  *
  * @see IMap#loadAll(java.util.Set, boolean)
  */
-public class RemoveFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class RemoveFromLoadAllOperation extends MapNoOffloadOperation implements PartitionAwareOperation, MutatingOperation {
 
     private List<Data> keys;
 

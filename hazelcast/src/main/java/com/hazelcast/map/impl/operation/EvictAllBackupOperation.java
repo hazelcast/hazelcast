@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllBackupOperation extends MapOperation implements BackupOperation {
+public class EvictAllBackupOperation extends MapNoOffloadOperation implements BackupOperation {
 
     public EvictAllBackupOperation() {
         this(null);

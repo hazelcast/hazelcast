@@ -32,6 +32,7 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -39,7 +40,7 @@ import java.io.IOException;
 
 import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 
-public class AddIndexOperation extends MapOperation
+public class AddIndexOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
     /**
      * Configuration of the index.
@@ -131,5 +132,4 @@ public class AddIndexOperation extends MapOperation
     public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX;
     }
-
 }

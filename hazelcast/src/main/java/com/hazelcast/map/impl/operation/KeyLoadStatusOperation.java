@@ -28,7 +28,7 @@ import java.io.IOException;
  * Notifies record store about completion of key loading. The operation should be invoked
  * on a partition thread.
  */
-public class KeyLoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class KeyLoadStatusOperation extends MapNoOffloadOperation implements PartitionAwareOperation, MutatingOperation {
 
     private Throwable exception;
 

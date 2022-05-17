@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.MapNoOffloadOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
@@ -30,7 +31,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
  *
  * @since 3.9
  */
-public class MapEventJournalSubscribeOperation extends MapOperation
+public class MapEventJournalSubscribeOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, ReadonlyOperation {
 
     private EventJournalInitialSubscriberState response;

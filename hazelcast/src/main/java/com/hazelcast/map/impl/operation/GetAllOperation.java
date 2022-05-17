@@ -33,7 +33,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
-public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
+public class GetAllOperation extends MapNoOffloadOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     /**
      * Speculative factor to be used when initialising collections

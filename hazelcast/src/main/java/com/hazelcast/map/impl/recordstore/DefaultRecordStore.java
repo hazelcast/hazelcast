@@ -80,6 +80,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_PARAMS;
+import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_PARAMS;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 /**
@@ -188,7 +189,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record getRecord(Data key) {
-        return storage.get(key);
+        return getRecord(key, false);
+    }
+
+    public Record getRecord(Data key, boolean noPendingIO) {
+        return storage.get(key, noPendingIO);
     }
 
     @Override
@@ -554,6 +559,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private void removeBackupInternal(Data key, CallerProvenance provenance, UUID transactionId) {
         long now = getNow();
 
+        // TODO handle offloading
         Record record = getRecordOrNull(key, now, true);
         if (record == null) {
             return;
@@ -567,11 +573,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean delete(Data key, CallerProvenance provenance) {
+    public Object delete(Data key, CallerProvenance provenance, boolean noPendingIO) {
         checkIfLoaded();
         long now = getNow();
 
-        Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false, noPendingIO);
+        if (isPendingIO(record)) {
+            assert !noPendingIO;
+            return record;
+        }
+
         if (record == null) {
             if (persistenceEnabledFor(provenance)) {
                 mapDataStore.remove(key, now, null);
@@ -579,7 +590,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             return removeRecord(key, record, now, provenance, null) != null;
         }
-        return false;
+        return null;
     }
 
     @Override
@@ -598,6 +609,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        if (isPendingIO(record)) {
+            return record;
+        }
         Object oldValue;
         if (record == null) {
             oldValue = loadValueOf(key);
@@ -607,17 +621,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         } else {
             oldValue = removeRecord(key, record, now, provenance, transactionId);
+            if (isPendingIO(oldValue)) {
+                return oldValue;
+            }
             updateStatsOnRemove(now);
         }
         return oldValue;
     }
 
     @Override
-    public boolean remove(Data key, Object testValue) {
+    public Object remove(Data key, Object testValue) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        if (isPendingIO(record)) {
+            return record;
+        }
         Object oldValue;
         boolean removed = false;
         if (record == null) {
@@ -634,9 +654,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.remove(key, now, null);
             if (record != null) {
                 onStore(record);
+                // TODO handle pending status
                 mutationObserver.onRemoveRecord(key, record);
                 removeKeyFromExpirySystem(key);
-                storage.removeRecord(key, record);
+                Record status = storage.removeRecord(key, record);
+                if (isPendingIO(status)) {
+                    return status;
+                }
                 updateStatsOnRemove(now);
             }
             removed = true;
@@ -645,21 +669,30 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object get(Data key, boolean backup, Address callerAddress, boolean touch) {
+    public Object get(Data key, boolean backup, Address callerAddress, boolean touch, boolean noPendingIO) {
         checkIfLoaded();
         long now = getNow();
 
-        Record record = getRecordOrNull(key, now, backup);
+        Record record = getRecordOrNull(key, now, backup, noPendingIO);
+        if(isPendingIO(record)) {
+            assert !noPendingIO;
+            return record;
+        }
         if (record != null && touch) {
             accessRecord(key, record, now);
         } else if (record == null && mapDataStore != EMPTY_MAP_DATA_STORE) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = evictIfExpired(key, now, backup) ? null : record;
         }
-        Object value = record == null ? null : record.getValue();
-        value = mapServiceContext.interceptGet(interceptorRegistry, value);
 
+        Object value = getValueFromRecord(record);
+        value = mapServiceContext.interceptGet(interceptorRegistry, value);
         return value;
+    }
+
+    // Overwritten for tiered record store
+    Object getValueFromRecord(Record record) {
+        return record == null ? null : record.getValue();
     }
 
     /**
@@ -698,7 +731,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
-            Record record = getRecordOrNull(key, now, false);
+            Record record = getRecordOrNull(key, now, false, true);
             if (record != null) {
                 addToMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(key, record, now);
@@ -782,11 +815,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean containsKey(Data key, Address callerAddress) {
+    public Record containsKey(Data key, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        if (isPendingIO(record)) {
+            return record;
+        }
         if (record == null) {
             record = loadRecordOrNull(key, false, callerAddress);
         }
@@ -795,7 +831,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             accessRecord(key, record, now);
         }
 
-        return contains;
+        return record;
     }
 
     /**
@@ -830,7 +866,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
         Object oldValue = putInternal(key, null, ttl, UNSET, UNSET, now,
                 null, null, null, StaticParams.SET_TTL_BACKUP_PARAMS);
-        return oldValue != null;
+        return oldValue;
     }
 
     @Override
@@ -874,6 +910,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // Get record by checking expiry, if expired, evict record.
         Record record = getRecordOrNull(key, now, staticParams.isBackup());
+        Record record = getRecordOrNull(key, now, backup);
+        if (isPendingIO(record)) {
+            return record;
+        }
 
         // Variants of loading oldValue
         if (staticParams.isPutVanilla()) {
@@ -912,6 +952,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putNewRecord(key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
                     transactionId, staticParams.isPutFromLoad() ? LOADED : ADDED,
                     staticParams.isStore(), staticParams.isBackup());
+            Record status = putNewRecord(key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
+                    transactionId, putFromLoad ? LOADED : ADDED, store, backup);
+            if (isPendingIO(status)) {
+                return status;
+            }
         } else {
             oldValue = updateRecord(record, key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
                     transactionId, staticParams.isStore(),
@@ -929,7 +974,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
-        storage.put(key, record);
+        Record status = storage.put(key, record);
+        if (isPendingIO(status)) {
+            return status;
+        }
         expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
 
         if (entryEventType == EntryEventType.LOADED) {
@@ -996,7 +1044,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = (Data) mergingEntry.getRawKey();
-        Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false, true);
         Object newValue;
         Object oldValue;
         if (record == null) {
@@ -1046,11 +1094,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean replace(Data key, Object expect, Object update) {
+    public Object replace(Data key, Object expect, Object update) {
         long now = getNow();
         Object oldValue = putInternal(key, update, UNSET, UNSET, UNSET, now,
                 expect, null, null, StaticParams.REPLACE_IF_SAME_PARAMS);
-        return oldValue != null;
+        return oldValue;
+                true, true, false, true, true,
+                false, expect, false, true,
+                null, null, true, false);
+        return oldValue;
     }
 
     @Override
@@ -1161,24 +1213,36 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         mutationObserver.onRemoveRecord(key, record);
         removeKeyFromExpirySystem(key);
-        storage.removeRecord(key, record);
+        Record status = storage.removeRecord(key, record);
+        if (isPendingIO(status)) {
+            return status;
+        }
         return oldValue;
     }
 
     @Override
     public Record getRecordOrNull(Data key) {
+        return getRecordOrNull(key, false);
+    }
+
+    public Record getRecordOrNull(Data key, boolean noPendingIO) {
         long now = getNow();
-        return getRecordOrNull(key, now, false);
+        return getRecordOrNull(key, now, false, noPendingIO);
     }
 
     protected Record getRecordOrNull(Data key, long now, boolean backup) {
-        Record record = storage.get(key);
+        return getRecordOrNull(key, now, backup, false);
+    }
+
+    protected Record getRecordOrNull(Data key, long now, boolean backup, boolean noPendingIO) {
+        Record record = storage.get(key, noPendingIO);
         if (record != null) {
             return evictIfExpired(key, now, backup) ? null : record;
         }
 
         return null;
     }
+
 
     protected void onStore(Record record) {
         if (record == null || mapDataStore == EMPTY_MAP_DATA_STORE) {
@@ -1199,7 +1263,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
         List<DelayedEntry> delayedEntries = writeBehindQueue.asList();
         for (DelayedEntry delayedEntry : delayedEntries) {
-            Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
+            Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false, true);
             onStore(record);
         }
     }

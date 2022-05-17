@@ -37,7 +37,7 @@ import java.io.IOException;
  * @see NotifyMapFlushOperation
  */
 public class AwaitMapFlushOperation
-        extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, BlockingOperation {
+        extends MapNoOffloadOperation implements PartitionAwareOperation, ReadonlyOperation, BlockingOperation {
 
     /**
      * Flush will end after execution of this sequenced store-operation.

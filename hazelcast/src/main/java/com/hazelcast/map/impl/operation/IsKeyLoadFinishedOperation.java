@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 /**
  * Returns if the key loading and dispatching has finished on this partition
  */
-public class IsKeyLoadFinishedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class IsKeyLoadFinishedOperation extends MapNoOffloadOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
 

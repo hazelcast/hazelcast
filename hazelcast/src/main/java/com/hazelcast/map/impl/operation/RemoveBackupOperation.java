@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 
@@ -75,5 +76,15 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         disableWanReplicationEvent = in.readBoolean();
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

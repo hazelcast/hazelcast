@@ -49,7 +49,7 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
  * GOTCHA: This operation does NOT load missing keys from map-store for now.
  */
 
-public class PartitionWideEntryOperation extends MapOperation
+public class PartitionWideEntryOperation extends MapNoOffloadOperation
         implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
 
     protected MapEntries responses;

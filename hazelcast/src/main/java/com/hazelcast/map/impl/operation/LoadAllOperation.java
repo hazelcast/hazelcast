@@ -40,7 +40,7 @@ import java.util.List;
  * This operation is executed on the partition thread and loads values for keys
  * provided by the {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}.
  */
-public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class LoadAllOperation extends MapNoOffloadOperation implements PartitionAwareOperation, MutatingOperation {
 
     private List<Data> keys;
 

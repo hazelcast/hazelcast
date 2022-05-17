@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.serialization.Data;
@@ -25,11 +24,10 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
-
-    private EntryView<Data, Data> result;
 
     public GetEntryViewOperation() {
     }
@@ -41,7 +39,10 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     @Override
     protected void runInternal() {
         Record record = recordStore.getRecordOrNull(dataKey);
-        if (record != null) {
+        if (isPendingIO(record)) {
+            // Pending IO is needed
+            result = record;
+        } else if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());
             ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
             result = EntryViews.createSimpleEntryView(dataKey, value, record, expiryMetadata);

@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.io.IOException;
 public class SetTtlOperation extends LockAwareOperation
         implements BackupAwareOperation, MutatingOperation {
 
-    private transient boolean response;
+    private transient Object response;
 
     private long ttl;
 
@@ -54,7 +55,7 @@ public class SetTtlOperation extends LockAwareOperation
 
     @Override
     protected void afterRunInternal() {
-        Record record = recordStore.getRecord(dataKey);
+        Record record = recordStore.getRecord(dataKey, true);
         if (record != null) {
             publishWanUpdate(dataKey, record.getValue());
             invalidateNearCache(dataKey);
@@ -69,7 +70,7 @@ public class SetTtlOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        return response;
+        return response != null;
     }
 
     @Override
@@ -102,5 +103,15 @@ public class SetTtlOperation extends LockAwareOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return isPendingIO(response);
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return recordStore.newIOOperationOffload(dataKey, this, response);
     }
 }

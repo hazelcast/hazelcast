@@ -78,6 +78,7 @@ public abstract class InvocationBuilder {
     protected boolean failOnIndeterminateOperationState;
     protected boolean async = DEFAULT_ASYNC;
     protected ServerConnectionManager connectionManager;
+    protected boolean reInvokeOperation;
 
     /**
      * Creates an InvocationBuilder
@@ -160,6 +161,11 @@ public abstract class InvocationBuilder {
      */
     public InvocationBuilder setAsync() {
         this.async = true;
+        return this;
+    }
+
+    public InvocationBuilder setResubmitOperation(boolean value) {
+        this.reInvokeOperation = value;
         return this;
     }
 

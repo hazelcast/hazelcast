@@ -39,6 +39,9 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 
@@ -52,6 +55,9 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createWanEntryView;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runWithForcedEvictionStrategies;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -283,6 +289,30 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
     }
 
+    @Override
+    public CallStatus call() throws Exception {
+        if (this instanceof BlockingOperation) {
+            BlockingOperation blockingOperation = (BlockingOperation) this;
+            if (blockingOperation.shouldWait()) {
+                return WAIT;
+            }
+        }
+
+        run();
+        if (isPendingResult()) {
+            return newIOOperationOffload();
+        }
+        return returnsResponse() ? RESPONSE : VOID;
+    }
+
+    public abstract boolean isPendingResult();
+
+    protected abstract Offload newIOOperationOffload();
+
+    protected boolean isPendingIO(Object currentValue) {
+        return recordStore.isPendingIO(currentValue);
+    }
+
     private Invalidator getNearCacheInvalidator() {
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         return mapNearCacheManager.getInvalidator();
@@ -292,6 +322,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         if (mapContainer.getEvictor() == Evictor.NULL_EVICTOR) {
             return;
         }
+        assert !recordStore.supportPendingIO();
         recordStore.evictEntries(justAddedKey);
         disposeDeferredBlocks();
     }

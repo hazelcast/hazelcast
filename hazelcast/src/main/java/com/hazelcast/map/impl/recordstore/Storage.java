@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public interface Storage<K, R> {
 
-    void put(K key, R record);
+    R put(K key, R record);
 
     /**
      * Updates record's value. Performs an update in-place if the record can accommodate the
@@ -49,7 +49,11 @@ public interface Storage<K, R> {
      */
     R updateRecordValue(K key, R record, Object value);
 
-    R get(K key);
+    default R get(K key) {
+        return get(key, false);
+    }
+
+    R get(K key, boolean noPendingfIO);
 
     /**
      * Gives the same result as {@link #get(Object)}, but with the
@@ -60,7 +64,7 @@ public interface Storage<K, R> {
      */
     R getIfSameKey(K key);
 
-    void removeRecord(Data dataKey, @Nonnull R record);
+    R removeRecord(Data dataKey, @Nonnull R record);
 
     boolean containsKey(K key);
 

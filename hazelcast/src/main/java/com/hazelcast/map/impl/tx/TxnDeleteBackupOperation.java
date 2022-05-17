@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Offload;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -41,6 +42,7 @@ public class TxnDeleteBackupOperation extends RemoveBackupOperation {
     @Override
     protected void runInternal() {
         boolean exist = recordStore.existInMemory(dataKey);
+        // TODO no offloading
         recordStore.removeBackupTxn(dataKey, getCallerProvenance(), transactionId);
         recordStore.forceUnlock(dataKey);
         if (!exist) {
@@ -63,5 +65,15 @@ public class TxnDeleteBackupOperation extends RemoveBackupOperation {
     @Override
     public int getClassId() {
         return MapDataSerializerHook.TXN_DELETE_BACKUP;
+    }
+
+    @Override
+    public boolean isPendingResult() {
+        return false;
+    }
+
+    @Override
+    protected Offload newIOOperationOffload() {
+        return null;
     }
 }

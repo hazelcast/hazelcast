@@ -48,7 +48,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Used to reduce the number of remote invocations
  * of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
-public class PutAllOperation extends MapOperation
+public class PutAllOperation extends MapNoOffloadOperation
         implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation, Versioned {
 
     private transient int currentIndex;
@@ -144,6 +144,7 @@ public class PutAllOperation extends MapOperation
         if (triggerMapLoader && hasMapListener) {
             return recordStore.put(dataKey, dataValue, UNSET, UNSET);
         }
+        // TODO pass no pending IO flag
         recordStore.set(dataKey, dataValue, UNSET, UNSET);
         return null;
     }

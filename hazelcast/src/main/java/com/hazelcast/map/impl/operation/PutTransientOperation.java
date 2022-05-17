@@ -35,8 +35,11 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
 
     @Override
     protected void runInternal() {
-        oldValue = mapServiceContext.toData(recordStore.putTransient(dataKey,
-                dataValue, getTtl(), getMaxIdle()));
+        oldValue = recordStore.putTransient(dataKey, dataValue, getTtl(), getMaxIdle());
+        if (isPendingIO(oldValue)) {
+            return;
+        }
+        oldValue = mapServiceContext.toData(oldValue);
     }
 
     @Override

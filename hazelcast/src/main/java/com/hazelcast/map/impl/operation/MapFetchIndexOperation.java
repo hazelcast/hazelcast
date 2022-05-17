@@ -57,7 +57,7 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERA
  * of the requested partitions isn't indexed locally, it throws {@link
  * MissingPartitionException}.
  */
-public class MapFetchIndexOperation extends MapOperation implements ReadonlyOperation {
+public class MapFetchIndexOperation extends MapNoOffloadOperation implements ReadonlyOperation {
     private String indexName;
     private PartitionIdSet partitionIdSet;
     private IndexIterationPointer[] pointers;
