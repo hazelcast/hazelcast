@@ -245,7 +245,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         assert rowElement instanceof SqlCall : "Row Element must be an SqlCall";
         assert rowElement.getKind().equals(SqlKind.ROW);
-        final SqlCall sourceCall =(SqlCall) rowElement;
+        final SqlCall sourceCall = (SqlCall) rowElement;
 
         for (int i = 0; i < source.getFieldList().size(); i++) {
             final int currentIndex = i;
