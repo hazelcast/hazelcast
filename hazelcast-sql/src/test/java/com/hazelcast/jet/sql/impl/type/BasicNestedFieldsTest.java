@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -346,6 +347,42 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         initDefault();
         assertRowsAnyOrder("SELECT (((this).organization).office).name FROM test",
                 rows(1, "office1"));
+    }
+
+    @Test
+    public void test_joins() {
+        initDefault();
+        createMapping("test2", Long.class, User.class);
+        instance().getSql().execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
+
+        assertRowsAnyOrder("SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
+                        + "FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key",
+                rows(2, "office1", "office2"));
+
+        assertRowsAnyOrder("SELECT (((this).organization).office).name "
+                        + "FROM (SELECT t1.this FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
+                rows(1, "office1"));
+
+        assertRowsAnyOrder("SELECT (((this).organization).office).name "
+                        + "FROM (SELECT t2.this FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
+                rows(1, "office2"));
+
+        assertRowsAnyOrder("SELECT (((this1).organization).office).name, (((this2).organization).office).name "
+                        + "FROM (SELECT t1.this as this1, t2.this AS this2 FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
+                rows(2, "office1", "office2"));
+    }
+
+    // TODO: pre-processing for JOIN validation
+    @Test
+    @Ignore
+    public void test_joinsOnNestedFields() {
+        initDefault();
+        createMapping("test2", Long.class, User.class);
+        instance().getSql().execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
+
+        assertRowsAnyOrder("SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
+                        + "FROM test AS t1 JOIN test2 AS t2 ON (t1.this).id = (t2.this).id",
+                rows(2, "office1", "office2"));
     }
 
     private TypesStorage typesStorage() {
