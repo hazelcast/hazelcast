@@ -222,7 +222,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return true;
     }
 
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private boolean customTypesCoercion(
             final RelDataType source,
             final RelDataType target,
@@ -234,49 +233,29 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return false;
         }
 
+        if (rowElement.getKind() == SqlKind.AS) {
+            // unwrap an alias
+            return customTypesCoercion(source, target, ((SqlCall) rowElement).operand(0), scope);
+        }
+
         if (HazelcastTypeUtils.isHzObjectType(source)) {
             return HazelcastTypeUtils.extractHzObjectType(source).getTypeName()
                     .equals(HazelcastTypeUtils.extractHzObjectType(target).getTypeName());
         }
 
-        assert rowElement instanceof SqlCall : "Row Element must an SqlCall";
-        final SqlCall sourceCall = rowElement.getKind().equals(SqlKind.ROW)
-                ? (SqlCall) rowElement
-                : ((SqlCall) rowElement).operand(0);
+        assert rowElement instanceof SqlCall : "Row Element must be an SqlCall";
+        assert rowElement.getKind().equals(SqlKind.ROW);
+        final SqlCall sourceCall =(SqlCall) rowElement;
 
         for (int i = 0; i < source.getFieldList().size(); i++) {
             final int currentIndex = i;
-            final RelDataTypeField sourceField = source.getFieldList().get(i);
             final RelDataTypeField targetField = target.getFieldList().get(i);
             final SqlNode elementNode = sourceCall.getOperandList().get(i);
-            if (HazelcastTypeUtils.isHzObjectType(targetField.getType())) {
-                if (!customTypesCoercion(sourceField.getType(), targetField.getType(), elementNode, scope)) {
-                    return false;
-                } else {
-                    continue;
-                }
-            }
 
-            final QueryDataType sourceFieldHzType = HazelcastTypeUtils.toHazelcastType(sourceField.getType());
-            final QueryDataType targetFieldHzType = HazelcastTypeUtils.toHazelcastType(targetField.getType());
-
-            if (targetFieldHzType.getTypeFamily().equals(sourceFieldHzType.getTypeFamily())) {
-                continue;
-            }
-
-            boolean valid = sourceAndTargetAreNumeric(targetFieldHzType, sourceFieldHzType)
-                    || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetFieldHzType, sourceFieldHzType)
-                    || targetIsTemporalAndSourceIsVarcharLiteral(targetFieldHzType, sourceFieldHzType, elementNode)
-                    || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.NULL
-                    || sourceFieldHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                    && targetFieldHzType.getTypeFamily() == QueryDataTypeFamily.JSON;
-            if (!valid) {
+            if (!rowTypeElementCoercion(scope, elementNode, targetField.getType(),
+                    (node) -> sourceCall.setOperand(currentIndex, node))) {
                 return false;
             }
-
-            coerceNode(scope, elementNode, targetField.getType(), (node) -> {
-                sourceCall.setOperand(currentIndex, node);
-            });
         }
 
         return true;
