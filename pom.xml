@@ -1859,7 +1859,7 @@
                 -->
                 <groupId>org.apache.yetus</groupId>
                 <artifactId>audience-annotations</artifactId>
-                <version>0.12.0</version>
+                <version>0.14.0</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
