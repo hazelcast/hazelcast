@@ -67,6 +67,7 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,10 +168,54 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        if (node instanceof SqlSelect) {
+            preprocessSelect((SqlSelect) node, scope);
+        }
+
         super.validateQuery(node, scope, targetRowType);
         if (node instanceof SqlSelect) {
             validateSelect((SqlSelect) node, scope);
         }
+    }
+
+    private void preprocessSelect(SqlSelect select, SqlValidatorScope scope) {
+        final SqlNodeList selectList = select.getSelectList();
+        final List<SqlNode> rewritten = new ArrayList<>();
+        final String fromAlias = select.getFrom() != null && select.getFrom().getKind().equals(SqlKind.AS)
+                ? ((SqlCall) select.getFrom()).operand(1).toString()
+                : "";
+
+        for (final SqlNode selectItem : selectList) {
+            if (selectItem.getKind().equals(SqlKind.DOT)) {
+                final SqlCall item = (SqlCall) selectItem;
+                SqlNode left = item.operand(0);
+                SqlIdentifier right = item.operand(1);
+
+                final List<String> names = new ArrayList<>(right.names);
+
+                do {
+                    if (left instanceof SqlIdentifier) {
+                        names.addAll(0, ((SqlIdentifier) left).names);
+                        break;
+                    } else if (left instanceof SqlCall) {
+                        names.addAll(0, ((SqlIdentifier) ((SqlCall) left).operand(1)).names);
+                        left = ((SqlCall) left).operand(0);
+                    }
+
+                } while (left instanceof SqlCall && left.getKind().equals(SqlKind.DOT));
+
+                assert left instanceof SqlIdentifier : "Root of DOT expression chain must be an SqlIdentifier";
+                names.addAll(0, ((SqlIdentifier) left).names);
+
+                if (!fromAlias.isEmpty() && !names.get(0).equals(fromAlias)) {
+                    names.add(0, fromAlias);
+                }
+                rewritten.add(new SqlIdentifier(names, selectItem.getParserPosition()));
+            } else {
+                rewritten.add(selectItem);
+            }
+        }
+        select.setSelectList(new SqlNodeList(rewritten, selectList.getParserPosition()));
     }
 
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {

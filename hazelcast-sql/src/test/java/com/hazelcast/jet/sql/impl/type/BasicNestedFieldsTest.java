@@ -331,6 +331,23 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         // TODO params
     }
 
+    @Test
+    public void test_compoundAliases() {
+        initDefault();
+        assertRowsAnyOrder("SELECT ((org).office).name FROM " +
+                        "(SELECT (this).organization as org FROM (SELECT * FROM test))",
+                rows(1, "office1"));
+        assertRowsAnyOrder("SELECT (((this).organization).office).name FROM (SELECT * FROM test)",
+                rows(1, "office1"));
+    }
+
+    @Test
+    public void test_newDotOperatorSyntax() {
+        initDefault();
+        assertRowsAnyOrder("SELECT (((this).organization).office).name FROM test",
+                rows(1, "office1"));
+    }
+
     private TypesStorage typesStorage() {
         return new TypesStorage(getNodeEngineImpl(instance()));
     }
