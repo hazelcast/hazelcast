@@ -149,7 +149,9 @@ public class MapStoreConfigHolder {
             config.setFactoryClassName(factoryClassName);
         }
         config.setInitialLoadMode(InitialLoadMode.valueOf(initialLoadMode));
-        config.setProperties(PropertiesUtil.fromMap(properties));
+        if (properties != null) {
+            config.setProperties(PropertiesUtil.fromMap(properties));
+        }
         config.setWriteBatchSize(writeBatchSize);
         config.setWriteCoalescing(writeCoalescing);
         config.setWriteDelaySeconds(writeDelaySeconds);
