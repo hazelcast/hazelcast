@@ -107,7 +107,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
-                .groupingKey(i -> i);
+                                                   .groupingKey(i -> i);
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsync(bidirectionalStreaming(port), (service, key, item) -> {
             HelloRequest req = HelloRequest.newBuilder().setName(item).build();
@@ -206,7 +206,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
 
         BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
-                .groupingKey(i -> i);
+                                                   .groupingKey(i -> i);
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsync(unary(port), (service, key, item) -> {
             HelloRequest req = HelloRequest.newBuilder().setName(item).build();
@@ -289,9 +289,9 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
                 repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
-                    HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
-                    return service.call(req).thenApply(HelloReplyList::getMessageList);
-                });
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
 
         // Then
         List<String> expected = IntStream.range(0, ITEM_COUNT).boxed()
@@ -310,13 +310,13 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
-                .groupingKey(i -> i);
+                                                   .groupingKey(i -> i);
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
                 repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
-                    HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
-                    return service.call(req).thenApply(HelloReplyList::getMessageList);
-                });
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
 
         // Then
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
@@ -340,9 +340,9 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
                 repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
-                    HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
-                    return service.call(req).thenApply(HelloReplyList::getMessageList);
-                });
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
 
         // Then
         mapped.writeTo(Sinks.noop());
@@ -371,7 +371,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
     }
 
     private ServiceFactory<?, ? extends GrpcService<HelloRequestList, HelloReplyList>>
-    repeatedBidirectionalStreaming(int port) {
+            repeatedBidirectionalStreaming(int port) {
         return bidirectionalStreamingService(
                 () -> ManagedChannelBuilder.forAddress("localhost", port).usePlaintext(),
                 channel -> GreeterGrpc.newStub(channel)::sayHelloRepeatedBidirectional
@@ -380,9 +380,9 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
     private static Server createServer(BindableService service) throws IOException {
         Server server = ServerBuilder.forPort(0)
-                .executor(Executors.newFixedThreadPool(4))
-                .addService(service)
-                .build();
+                                     .executor(Executors.newFixedThreadPool(4))
+                                     .addService(service)
+                                     .build();
         server.start();
         return server;
     }
@@ -440,8 +440,8 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         @Override
         public void sayHelloUnary(HelloRequest request, StreamObserver<HelloReply> responseObserver) {
             HelloReply reply = HelloReply.newBuilder()
-                    .setMessage("Hello " + request.getName())
-                    .build();
+                                         .setMessage("Hello " + request.getName())
+                                         .build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
@@ -453,8 +453,8 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
                 @Override
                 public void onNext(HelloRequest value) {
                     HelloReply reply = HelloReply.newBuilder()
-                            .setMessage("Hello " + value.getName())
-                            .build();
+                                                 .setMessage("Hello " + value.getName())
+                                                 .build();
 
                     responseObserver.onNext(reply);
                 }
