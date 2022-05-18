@@ -35,6 +35,18 @@ public final class WatermarkedFields implements Serializable {
         this.propertiesByIndex = Collections.unmodifiableMap(propertiesByIndex);
     }
 
+    /**
+     * Should be used only for JOIN relation.
+     */
+    public static WatermarkedFields join(Map<Integer, RexInputRef> leftMap, Map<Integer, RexInputRef> rightMap) {
+        assert !leftMap.isEmpty() && !rightMap.isEmpty();
+
+        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>();
+        newPropertiesByIndex.putAll(leftMap);
+        newPropertiesByIndex.putAll(rightMap);
+        return new WatermarkedFields(newPropertiesByIndex);
+    }
+
     public WatermarkedFields merge(WatermarkedFields other) {
         if (other == null || other.propertiesByIndex.isEmpty()) {
             return this;
@@ -43,18 +55,6 @@ public final class WatermarkedFields implements Serializable {
         Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>(this.propertiesByIndex);
         newPropertiesByIndex.putAll(other.propertiesByIndex);
         assert this.propertiesByIndex.size() + other.propertiesByIndex.size() == newPropertiesByIndex.size();
-        return new WatermarkedFields(newPropertiesByIndex);
-    }
-
-    /**
-     * Should be used only for JOIN relation.
-     */
-    public WatermarkedFields join(Map<Integer, RexInputRef> leftMap, Map<Integer, RexInputRef> rightMap) {
-        assert !leftMap.isEmpty() && !rightMap.isEmpty();
-
-        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>();
-        newPropertiesByIndex.putAll(leftMap);
-        newPropertiesByIndex.putAll(rightMap);
         return new WatermarkedFields(newPropertiesByIndex);
     }
 

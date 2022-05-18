@@ -146,8 +146,8 @@ public class SqlJoinTest {
 
             assertTipOfStream(
                     "SELECT * FROM s1 " +
-                            "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECONDS AND s1.a " +
-                            "JOIN s3 ON s3.c BETWEEN s2.b AND s2.b + INTERVAL '0.005' SECONDS ",
+                            "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.1' SECONDS AND s1.a " +
+                            "JOIN s3 ON s3.c BETWEEN s2.b - INTERVAL '0.1' SECONDS AND s2.b + INTERVAL '0.5' SECONDS",
                     singletonList(new Row(0L, timestamp(0L), timestamp(1L)))
             );
         }

@@ -88,21 +88,11 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             );
         }
 
-        RelNode left = call.rel(1);
-        RelNode right = call.rel(2);
-
-        WatermarkedFields leftWms = metadataQuery(left).extractWatermarkedFields(left);
-        WatermarkedFields rightWms = metadataQuery(right).extractWatermarkedFields(right);
+        WatermarkedFields watermarkedFields = watermarkedFields(logicalJoin);
         // region checks
-        if (leftWms == null || leftWms.isEmpty()) {
+        if (watermarkedFields == null || watermarkedFields.isEmpty()) {
             call.transformTo(
-                    fail(logicalJoin, "Left input of stream to stream JOIN doesn't contain watermarked columns")
-            );
-            return;
-        }
-        if (rightWms == null || rightWms.isEmpty()) {
-            call.transformTo(
-                    fail(logicalJoin, "Right input of stream to stream JOIN doesn't contain watermarked columns")
+                    fail(logicalJoin, "Stream to stream JOIN must contain watermarked columns")
             );
             return;
         }
@@ -110,7 +100,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         RexNode predicate = logicalJoin.analyzeCondition().getRemaining(logicalJoin.getCluster().getRexBuilder());
         if (!(predicate instanceof RexCall)) {
             call.transformTo(
-                    fail(logicalJoin, "Stream to stream JOIN condition should contain time boundness predicate")
+                    fail(logicalJoin, "Stream to stream JOIN condition must contain time boundness predicate")
             );
             return;
         }
@@ -120,7 +110,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
         if (!visitor.isValid) {
             call.transformTo(
-                    fail(logicalJoin, "Stream to stream JOIN condition should contain time boundness predicate")
+                    fail(logicalJoin, "Stream to stream JOIN condition must contain time boundness predicate")
             );
             return;
         }
@@ -145,21 +135,20 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 visitor.rightBound.f1().getType()
         );
 
-        // left bound multiplies by -1.
         Map<OptUtils.RelField, Long> leftBoundMap = new HashMap<>();
-        leftBoundMap.put(llRelation, -visitor.leftBound.f2());
+        leftBoundMap.put(llRelation, visitor.leftBound.f2());
         postponeMap.put(lrRelation, leftBoundMap);
 
         Map<OptUtils.RelField, Long> rightBoundMap = new HashMap<>();
-        rightBoundMap.put(rrRelation, visitor.rightBound.f2());
-        postponeMap.put(rlRelation, rightBoundMap);
+        rightBoundMap.put(rlRelation, visitor.rightBound.f2());
+        postponeMap.put(rrRelation, rightBoundMap);
 
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
                         logicalJoin.getCluster(),
                         logicalJoin.getTraitSet().replace(PHYSICAL),
-                        RelRule.convert(left, left.getTraitSet().replace(PHYSICAL)),
-                        RelRule.convert(right, right.getTraitSet().replace(PHYSICAL)),
+                        RelRule.convert(call.rel(1), call.rel(1).getTraitSet().replace(PHYSICAL)),
+                        RelRule.convert(call.rel(2), call.rel(2).getTraitSet().replace(PHYSICAL)),
                         logicalJoin.getCondition(),
                         logicalJoin.getJoinType(),
                         postponeMap
@@ -176,31 +165,69 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         );
     }
 
+    /**
+     * Extracts all watermarked fields represented in JOIN relation row type.
+     *
+     * @param join root relation to start search from
+     * @return all found joined watermarked fields from rel tree
+     */
+    private static WatermarkedFields watermarkedFields(JoinLogicalRel join) {
+        RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
+        RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
+
+        WatermarkedFields leftFields = metadataQuery(join).extractWatermarkedFields(left);
+        WatermarkedFields rightFields = metadataQuery(join).extractWatermarkedFields(right);
+
+        Map<Integer, RexInputRef> leftPropsByIndex = leftFields.getPropertiesByIndex();
+        Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
+        Map<Integer, RexInputRef> rightPropsByIndex = rightFields.getPropertiesByIndex();
+        Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
+
+        for (Integer key : leftPropsByIndex.keySet()) {
+            RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
+            for (RelDataTypeField field : join.getRowType().getFieldList()) {
+                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                    leftResultInputRefMap.put(field.getIndex(),
+                            join.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                }
+            }
+        }
+
+        for (Integer key : rightPropsByIndex.keySet()) {
+            RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
+            for (RelDataTypeField field : join.getRowType().getFieldList()) {
+                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                    rightResultInputRefMap.put(field.getIndex(),
+                            join.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                }
+            }
+        }
+
+        return WatermarkedFields.join(leftResultInputRefMap, rightResultInputRefMap);
+    }
+
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
         private final Join joinRel;
-        private final WatermarkedFields leftInputWms;
-        private final WatermarkedFields rightInputWms;
+        private final WatermarkedFields watermarkedFields;
 
         public Tuple3<RelDataTypeField, RelDataTypeField, Long> leftBound = null;
         public Tuple3<RelDataTypeField, RelDataTypeField, Long> rightBound = null;
         public boolean isValid = true;
 
-        private BoundsExtractorVisitor(Join joinRel) {
+        private BoundsExtractorVisitor(JoinLogicalRel joinRel) {
             super(true);
             this.joinRel = joinRel;
-            this.leftInputWms = metadataQuery(joinRel.getLeft()).extractWatermarkedFields(joinRel.getLeft());
-            this.rightInputWms = metadataQuery(joinRel.getRight()).extractWatermarkedFields(joinRel.getRight());
+            this.watermarkedFields = watermarkedFields(joinRel);
         }
 
-        // `a BETWEEN b and c` ---> `a >= b and a <= c`
+        // Note: we're expecting equality or `a BETWEEN b and c` call here. Anything else will be rejected.
         @Override
         public Void visitCall(RexCall call) {
             switch (call.getKind()) {
                 case AND:
                     return super.visitCall(call);
                 case EQUALS:
-                    // TODO: enhance it.
                     if (call.getOperands().get(0) instanceof RexInputRef &&
                             call.getOperands().get(1) instanceof RexInputRef) {
                         RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
@@ -211,15 +238,15 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         rightBound = tuple3(leftField, rightField, 0L);
                     }
                     return null;
-                case LESS_THAN:
-                case LESS_THAN_OR_EQUAL:
-                    // We assume that right operand is right bound
-                    rightBound = extractBoundFromComparisonCall(call, leftInputWms, rightInputWms);
-                    break;
                 case GREATER_THAN:
                 case GREATER_THAN_OR_EQUAL:
                     // We assume that right operand is left bound
-                    leftBound = extractBoundFromComparisonCall(call, leftInputWms, rightInputWms);
+                    leftBound = extractBoundFromComparisonCall(call, watermarkedFields, true);
+                    break;
+                case LESS_THAN:
+                case LESS_THAN_OR_EQUAL:
+                    // We assume that right operand is right bound
+                    rightBound = extractBoundFromComparisonCall(call, watermarkedFields, false);
                     break;
                 default:
                     return null;
@@ -236,8 +263,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
          */
         private Tuple3<RelDataTypeField, RelDataTypeField, Long> extractBoundFromComparisonCall(
                 RexCall call,
-                WatermarkedFields leftFields,
-                WatermarkedFields rightFields
+                WatermarkedFields wmFields,
+                boolean isLeft
         ) {
             assert call.getOperands().get(0) instanceof RexInputRef;
             RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
@@ -245,20 +272,28 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
             RelDataTypeField leftField = joinRel.getRowType().getFieldList().get(leftOp.getIndex());
 
+            Tuple3<RelDataTypeField, RelDataTypeField, Long> boundToReturn = null;
+
             if (rightOp instanceof RexCall) {
-                Tuple2<RelDataTypeField, Long> timeBound = extractTimeBoundFromAddition(
-                        (RexCall) rightOp,
-                        leftFields,
-                        rightFields);
-                return isValid ? tuple3(leftField, timeBound.f0(), timeBound.f1()) : null;
+                Tuple2<RelDataTypeField, Long> timeBound = extractTimeBoundFromAddition((RexCall) rightOp, wmFields);
+                boundToReturn = isValid ? tuple3(leftField, timeBound.f0(), timeBound.f1()) : null;
             } else if (rightOp instanceof RexInputRef) {
                 RexInputRef rightIRef = (RexInputRef) rightOp;
                 RelDataTypeField rightField = joinRel.getRowType().getFieldList().get((rightIRef).getIndex());
-                return tuple3(leftField, rightField, 0L);
+                boundToReturn = tuple3(leftField, rightField, 0L);
             } else {
                 isValid = false;
-                return null;
             }
+
+            /*
+             It's needed to enlighten mathematical representation for group of canonical time-bound non-equations.
+             Read more: https://github.com/Fly-Style/hazelcast/blob/feat/5.2/stream-to-stream-join-design/docs/design/sql/15-stream-to-stream-join.md#implementation-of-multiple-watermarks-in-the-join-processor
+            */
+            if (isValid && isLeft) {
+                boundToReturn = tuple3(boundToReturn.f1(), boundToReturn.f0(), -boundToReturn.f2());
+            }
+
+            return boundToReturn;
         }
 
         /**
@@ -266,8 +301,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
          */
         private Tuple2<RelDataTypeField, Long> extractTimeBoundFromAddition(
                 RexCall call,
-                WatermarkedFields leftFields,
-                WatermarkedFields rightFields) {
+                WatermarkedFields watermarkedFields) {
             // Only plus/minus expressions are supported.
             // Also, one of the operands should be a constant.
             if (!(call.isA(SqlKind.PLUS) || call.isA(SqlKind.MINUS))) {
@@ -283,8 +317,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             // Note: straightforward way : `$ref + constant interval literal`
             if (operands.f0() instanceof RexInputRef) {
                 inputRef = (RexInputRef) operands.f0();
-                if (!(leftFields.getPropertiesByIndex().containsValue(inputRef)
-                        || rightFields.getPropertiesByIndex().containsValue(inputRef))) {
+                if (!watermarkedFields.getPropertiesByIndex().containsValue(inputRef)) {
                     isValid = false;
                     return tuple2(null, 0L);
                 }
