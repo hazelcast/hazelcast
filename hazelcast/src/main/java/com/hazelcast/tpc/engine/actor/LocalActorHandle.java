@@ -1,4 +1,4 @@
-package com.hazelcast.tpc.actor;
+package com.hazelcast.tpc.engine.actor;
 
 public class LocalActorHandle implements ActorHandle {
 

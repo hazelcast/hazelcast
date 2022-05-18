@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.tpc.engine.EventloopState.*;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
@@ -38,7 +37,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
-    protected Scheduler scheduler;
+    protected Scheduler scheduler = new NopScheduler();
     public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
 

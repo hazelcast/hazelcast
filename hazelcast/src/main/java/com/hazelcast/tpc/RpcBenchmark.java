@@ -67,7 +67,6 @@ public class RpcBenchmark {
     @NotNull
     private static NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
         NioEventloop clientEventLoop = new NioEventloop();
-        clientEventLoop.setScheduler(new DummyScheduler());
         clientEventLoop.setSpin(spin);
         if (clientCpu >= 0) {
             clientEventLoop.setThreadAffinity(new ThreadAffinity("" + clientCpu));
@@ -107,7 +106,6 @@ public class RpcBenchmark {
 
     private static NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioEventloop serverEventloop = new NioEventloop();
-        serverEventloop.setScheduler(new DummyScheduler());
         serverEventloop.setSpin(spin);
         if (serverCpu >= 0) {
             serverEventloop.setThreadAffinity(new ThreadAffinity("" + serverCpu));
@@ -143,19 +141,5 @@ public class RpcBenchmark {
         });
 
         return serverSocket;
-    }
-
-    static class DummyScheduler implements Scheduler {
-        public void setEventloop(Eventloop eventloop) {
-        }
-
-        @Override
-        public boolean tick() {
-            return false;
-        }
-
-        @Override
-        public void schedule(Frame task) {
-        }
     }
 }

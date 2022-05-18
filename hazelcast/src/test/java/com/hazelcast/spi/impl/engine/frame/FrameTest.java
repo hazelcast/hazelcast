@@ -9,7 +9,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nio.Bits.*;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE_OVERLOADED;
+import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE_CONTROL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,10 +22,10 @@ public class FrameTest {
     public void isFlagRaised_whenRaised() {
         Frame frame = new Frame(100)
                 .writeResponseHeader(1, 100)
-                .addFlags(FLAG_OP_RESPONSE_OVERLOADED)
+                .addFlags(FLAG_OP_RESPONSE_CONTROL)
                 .writeComplete();
 
-        assertTrue(frame.isFlagRaised(FLAG_OP_RESPONSE_OVERLOADED));
+        assertTrue(frame.isFlagRaised(FLAG_OP_RESPONSE_CONTROL));
     }
 
 
@@ -35,7 +35,7 @@ public class FrameTest {
                 .writeResponseHeader(1, 100)
                 .writeComplete();
 
-        assertFalse(frame.isFlagRaised(FLAG_OP_RESPONSE_OVERLOADED));
+        assertFalse(frame.isFlagRaised(FLAG_OP_RESPONSE_CONTROL));
     }
 
     @Test

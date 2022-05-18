@@ -1,14 +1,16 @@
-package com.hazelcast.tpc.actor;
+package com.hazelcast.tpc.engine.actor;
 
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopTask;
+import org.jctools.queues.MpscArrayQueue;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Actor implements EventloopTask {
 
-    private final ConcurrentLinkedQueue mailbox = new ConcurrentLinkedQueue();
+    public final static int DEFAULT_MAILBOX_CAPACITY = 512;
+
+    private final MpscArrayQueue mailbox;
 
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private Eventloop eventloop;
@@ -24,6 +26,14 @@ public abstract class Actor implements EventloopTask {
 
     public void activate(Eventloop eventloop) {
         this.eventloop = eventloop;
+    }
+
+    public Actor(){
+        this(DEFAULT_MAILBOX_CAPACITY);
+    }
+
+    public Actor(int mailboxCapacity){
+         mailbox = new MpscArrayQueue(mailboxCapacity);
     }
 
     void send(Object msg) {
