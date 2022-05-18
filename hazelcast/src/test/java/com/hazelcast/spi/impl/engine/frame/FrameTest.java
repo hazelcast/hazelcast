@@ -28,7 +28,6 @@ public class FrameTest {
         assertTrue(frame.isFlagRaised(FLAG_OP_RESPONSE_CONTROL));
     }
 
-
     @Test
     public void isFlagRaised_whenNotRaised() {
         Frame frame = new Frame(100)

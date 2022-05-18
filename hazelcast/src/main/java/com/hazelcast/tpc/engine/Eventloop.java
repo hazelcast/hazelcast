@@ -146,7 +146,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         wakeup();
     }
 
-    public Collection<AsyncSocket> asyncSockets() {
+    public Collection<AsyncSocket> registeredSockets() {
         return registeredSockets;
     }
 
