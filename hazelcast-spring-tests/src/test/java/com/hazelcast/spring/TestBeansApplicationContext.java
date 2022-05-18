@@ -115,7 +115,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertFalse(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
         assertEquals(6, config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
-        assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
+        assertEquals(64, config.getNativeMemoryConfig().getCapacity().getValue());
         QueueConfig testQueue = config.getQueueConfig("testQueue");
         assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
                 testQueue.getPriorityComparatorClassName());

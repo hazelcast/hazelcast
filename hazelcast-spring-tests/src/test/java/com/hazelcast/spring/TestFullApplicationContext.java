@@ -143,7 +143,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
@@ -1209,8 +1209,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testNativeMemoryConfig() {
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
@@ -1427,7 +1427,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig(deviceName1);
         assertEquals(deviceName1, localDeviceConfig.getName());

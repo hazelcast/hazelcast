@@ -56,7 +56,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -503,7 +503,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES));
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES));
         clientConfig.setNativeMemoryConfig(expected);
 
         NativeMemoryConfig actual = newConfigViaGenerator().getNativeMemoryConfig();
@@ -518,7 +518,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setEnabled(true)
                 .addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0))
@@ -537,7 +537,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setMode(PersistentMemoryMode.SYSTEM_MEMORY);
         clientConfig.setNativeMemoryConfig(expected);

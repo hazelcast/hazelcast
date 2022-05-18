@@ -38,7 +38,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.internal.util.TriTuple;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;

@@ -596,8 +596,8 @@ public class TestClientApplicationContext {
         NativeMemoryConfig nativeMemoryConfig = nativeMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
@@ -620,8 +620,8 @@ public class TestClientApplicationContext {
         NativeMemoryConfig nativeMemoryConfig = pmemSystemMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);

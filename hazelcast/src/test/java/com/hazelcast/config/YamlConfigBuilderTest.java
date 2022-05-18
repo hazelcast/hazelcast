@@ -31,7 +31,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -63,12 +63,12 @@ import java.util.Set;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
-import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -3206,7 +3206,7 @@ public class YamlConfigBuilderTest
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
-        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3234,7 +3234,7 @@ public class YamlConfigBuilderTest
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());

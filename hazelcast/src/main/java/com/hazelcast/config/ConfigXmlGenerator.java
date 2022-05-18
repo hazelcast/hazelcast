@@ -1128,8 +1128,8 @@ public class ConfigXmlGenerator {
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
                 .node("size", null,
-                        "unit", nativeMemoryConfig.getSize().getUnit(),
-                        "value", nativeMemoryConfig.getSize().getValue())
+                        "unit", nativeMemoryConfig.getCapacity().getUnit(),
+                        "value", nativeMemoryConfig.getCapacity().getValue())
                 .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());

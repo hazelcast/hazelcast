@@ -40,7 +40,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -934,7 +933,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -945,8 +944,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -958,7 +957,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         PersistentMemoryConfig origPmemConfig = expectedConfig.getPersistentMemoryConfig();
         origPmemConfig.setEnabled(true);
         origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
@@ -973,8 +972,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertTrue(pmemConfig.isEnabled());
@@ -997,7 +996,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
@@ -1009,8 +1008,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertFalse(pmemConfig.isEnabled());

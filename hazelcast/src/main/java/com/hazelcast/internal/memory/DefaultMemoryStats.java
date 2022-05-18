@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.memory;
 
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 
 import static com.hazelcast.internal.memory.MemoryStatsSupport.freePhysicalMemory;
 import static com.hazelcast.internal.memory.MemoryStatsSupport.totalPhysicalMemory;
@@ -98,12 +98,12 @@ public class DefaultMemoryStats implements MemoryStats {
     @Override
     public String toString() {
         return "MemoryStats{"
-                + "Total Physical: " + MemorySize.toPrettyString(getTotalPhysical())
-                + ", Free Physical: " + MemorySize.toPrettyString(getFreePhysical())
-                + ", Max Heap: " + MemorySize.toPrettyString(getMaxHeap())
-                + ", Committed Heap: " + MemorySize.toPrettyString(getCommittedHeap())
-                + ", Used Heap: " + MemorySize.toPrettyString(getUsedHeap())
-                + ", Free Heap: " + MemorySize.toPrettyString(getFreeHeap())
+                + "Total Physical: " + Capacity.toPrettyString(getTotalPhysical())
+                + ", Free Physical: " + Capacity.toPrettyString(getFreePhysical())
+                + ", Max Heap: " + Capacity.toPrettyString(getMaxHeap())
+                + ", Committed Heap: " + Capacity.toPrettyString(getCommittedHeap())
+                + ", Used Heap: " + Capacity.toPrettyString(getUsedHeap())
+                + ", Free Heap: " + Capacity.toPrettyString(getFreeHeap())
                 + ", " + getGCStats()
                 + '}';
     }
