@@ -129,6 +129,7 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
+import static com.hazelcast.map.impl.MapOperationStatsUpdater.incrementOperationStats;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.query.Predicates.alwaysFalse;
@@ -476,7 +477,7 @@ abstract class MapProxySupport<K, V>
                         .setResultDeserialized(false)
                         .invoke();
                 result = future.get();
-                mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
+                incrementOperationStats(operation, localMapStats, startTimeNanos);
             } else {
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -1435,7 +1436,7 @@ abstract class MapProxySupport<K, V>
         @Override
         public void accept(T t, Throwable throwable) {
             if (throwable == null) {
-                mapServiceContext.incrementOperationStats(startTime, localMapStats, name, operation);
+                incrementOperationStats(operation, localMapStats, startTime);
             }
         }
     }
