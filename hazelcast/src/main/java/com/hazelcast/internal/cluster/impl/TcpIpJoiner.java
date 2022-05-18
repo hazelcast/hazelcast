@@ -487,11 +487,10 @@ public class TcpIpJoiner extends AbstractJoiner {
                 String targetAddressStr = address.getHost() + ":" + address.getPort();
                 Address thisAddress = node.address;
                 String thisAddressStr = thisAddress.getHost() + ":" + thisAddress.getPort();
-                if(getMembers().contains(targetAddressStr) && !getMembers().contains(thisAddressStr)) {
+                if (getMembers().contains(targetAddressStr) && !getMembers().contains(thisAddressStr)) {
                     startMerge(address, request);
                 }
-            }
-            else if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
+            } else if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                  startMerge(address, request);
             }
         }
