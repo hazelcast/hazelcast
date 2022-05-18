@@ -18,13 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 
 public class PutOperation extends BasePutOperation implements MutatingOperation {
 

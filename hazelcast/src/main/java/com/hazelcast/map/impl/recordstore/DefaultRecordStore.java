@@ -674,7 +674,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup, noPendingIO);
-        if(isPendingIO(record)) {
+        if (isPendingIO(record)) {
             assert !noPendingIO;
             return record;
         }

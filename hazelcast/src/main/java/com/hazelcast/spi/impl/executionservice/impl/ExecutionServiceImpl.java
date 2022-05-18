@@ -59,7 +59,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
-@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount", "checkstyle:ExecutableStatementCount"})
 public final class ExecutionServiceImpl implements ExecutionService {
 
     private static final int CORE_POOL_SIZE = 3;

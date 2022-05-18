@@ -49,7 +49,8 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         boolean failOnIndeterminateOperationState,
                         ServerConnectionManager connectionManager,
                         boolean reInvokeOperation) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager, reInvokeOperation);
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
+            connectionManager, reInvokeOperation);
         this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 
@@ -62,8 +63,8 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         boolean deserialize,
                         boolean failOnIndeterminateOperationState,
                         ServerConnectionManager connectionManager) {
-        this(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, failOnIndeterminateOperationState,
-            connectionManager, false);
+        this(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
+            failOnIndeterminateOperationState, connectionManager, false);
     }
 
     PartitionInvocation(Context context,

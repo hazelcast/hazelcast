@@ -307,7 +307,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         }
     }
      private boolean isPendingResult(Operation op) {
-        return op instanceof MapOperation && ((MapOperation)op).isPendingResult();
+        return op instanceof MapOperation && ((MapOperation) op).isPendingResult();
      }
 
     private void checkNodeState(Operation op) {
