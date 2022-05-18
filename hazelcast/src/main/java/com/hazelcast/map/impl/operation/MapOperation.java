@@ -364,11 +364,11 @@ public abstract class MapOperation extends AbstractNamedOperation
         return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
     }
 
-    protected final Data getValueOrPostProcessedValue(Record record, Data dataValue) {
+    protected final Object getValueOrPostProcessedValue(Record record, Object dataValue) {
         if (!isPostProcessing(recordStore)) {
             return dataValue;
         }
-        return mapServiceContext.toData(record.getValue());
+        return record.getValue();
     }
 
     @Override

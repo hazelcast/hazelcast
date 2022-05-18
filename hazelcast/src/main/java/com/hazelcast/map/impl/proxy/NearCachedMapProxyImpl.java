@@ -154,7 +154,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putInternal(Object key, Data valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Object putInternal(Object key, Object valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);

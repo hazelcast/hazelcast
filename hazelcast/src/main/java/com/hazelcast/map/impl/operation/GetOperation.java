@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private Object result;
 
     public GetOperation() {
     }
@@ -38,22 +38,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     protected void runInternal() {
-        Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
-        if (noCopyReadAllowed(currentValue)) {
-            // in case of a 'remote' call (e.g a client call) we prevent making
-            // an on-heap copy of the off-heap data
-            result = (Data) currentValue;
-        } else {
-            // in case of a local call, we do make a copy, so we can safely share
-            // it with e.g. near cache invalidation
-            result = mapService.getMapServiceContext().toData(currentValue);
-        }
-    }
-
-    private boolean noCopyReadAllowed(Object currentValue) {
-        return currentValue instanceof Data
-                && (!getNodeEngine().getLocalMember().getUuid().equals(getCallerUuid())
-                || !super.executedLocally());
+        result = recordStore.get(dataKey, false, getCallerAddress());
     }
 
     @Override
@@ -81,7 +66,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public Data getResponse() {
+    public Object getResponse() {
         return result;
     }
 

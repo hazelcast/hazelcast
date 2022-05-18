@@ -409,16 +409,16 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected Data putInternal(Object key, Data valueData,
+    protected Object putInternal(Object key, Object valueData,
                                long ttl, TimeUnit ttlUnit,
                                long maxIdle, TimeUnit maxIdleUnit) {
 
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
-        return (Data) invokeOperation(keyData, operation);
+        return invokeOperation(keyData, operation);
     }
 
-    private MapOperation newPutOperation(Data keyData, Data valueData,
+    private MapOperation newPutOperation(Data keyData, Object valueData,
                                          long ttl, TimeUnit timeunit,
                                          long maxIdle, TimeUnit maxIdleUnit) {
         return operationProvider.createPutOperation(name, keyData, valueData,

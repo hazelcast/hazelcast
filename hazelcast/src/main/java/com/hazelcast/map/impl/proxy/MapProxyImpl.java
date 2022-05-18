@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
@@ -134,8 +135,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        Data result = putInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
+        Object valueData = null;
+        if (mapConfig.getInMemoryFormat() == InMemoryFormat.OBJECT) {
+            valueData = value;
+        } else {
+            valueData = toData(value);
+        }
+        Object result = putInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
         return toObject(result);
     }
 
@@ -149,7 +155,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        Data result = (Data) putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         return toObject(result);
     }
 

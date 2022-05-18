@@ -30,7 +30,7 @@ public abstract class BasePutOperation
     protected transient EntryEventType eventType;
     protected transient Record recordToBackup;
 
-    public BasePutOperation(String name, Data dataKey, Data value) {
+    public BasePutOperation(String name, Data dataKey, Object value) {
         super(name, dataKey, value);
     }
 
@@ -70,7 +70,7 @@ public abstract class BasePutOperation
         return newBackupOperation(dataKey, recordToBackup, dataValue);
     }
 
-    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
+    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Object dataValue) {
         ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         return new PutBackupOperation(name, dataKey, record, dataValue, metadata);
     }

@@ -34,11 +34,11 @@ public class PutBackupOperation
 
     protected Record<Data> record;
     protected Data dataKey;
-    protected Data dataValue;
+    protected Object dataValue;
     protected ExpiryMetadata expiryMetadata;
 
     public PutBackupOperation(String name, Data dataKey,
-                              Record<Data> record, Data dataValue,
+                              Record<Data> record, Object dataValue,
                               ExpiryMetadata expiryMetadata) {
         super(name);
         this.dataKey = dataKey;

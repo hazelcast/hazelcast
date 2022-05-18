@@ -37,7 +37,7 @@ public class TxnSetBackupOperation extends PutBackupOperation {
     }
 
     public TxnSetBackupOperation(String name, Data dataKey, Record<Data> record,
-                                 Data dataValue, ExpiryMetadata expiryMetadata, UUID transactionId) {
+                                 Object dataValue, ExpiryMetadata expiryMetadata, UUID transactionId) {
         super(name, dataKey, record, dataValue, expiryMetadata);
         this.transactionId = transactionId;
     }

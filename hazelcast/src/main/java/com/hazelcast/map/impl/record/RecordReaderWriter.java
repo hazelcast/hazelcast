@@ -16,14 +16,13 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.nio.IOUtil.readData;
-import static com.hazelcast.internal.nio.IOUtil.writeData;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 
 /**
  * Used when reading and writing records
@@ -33,8 +32,8 @@ public enum RecordReaderWriter {
 
     DATA_RECORD_WITH_STATS_READER_WRITER(TypeId.DATA_RECORD_WITH_STATS_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-            writeData(out, dataValue);
+        void writeRecord(ObjectDataOutput out, Record record, Object dataValue) throws IOException {
+            writeObject(out, dataValue);
             out.writeInt(record.getRawCreationTime());
             out.writeInt(record.getRawLastAccessTime());
             out.writeInt(record.getRawLastUpdateTime());
@@ -46,7 +45,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new DataRecordWithStats();
-            record.setValue(readData(in));
+            record.setValue(readObject(in));
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());
@@ -59,15 +58,15 @@ public enum RecordReaderWriter {
 
     SIMPLE_DATA_RECORD_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-            writeData(out, dataValue);
+        void writeRecord(ObjectDataOutput out, Record record, Object dataValue) throws IOException {
+            writeObject(out, dataValue);
             out.writeInt(record.getVersion());
         }
 
         @Override
         public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecord();
-            record.setValue(readData(in));
+            record.setValue(readObject(in));
             record.setVersion(in.readInt());
             return record;
         }
@@ -75,8 +74,8 @@ public enum RecordReaderWriter {
 
     SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-            writeData(out, dataValue);
+        void writeRecord(ObjectDataOutput out, Record record, Object dataValue) throws IOException {
+            writeObject(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getRawLastAccessTime());
         }
@@ -84,7 +83,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecordWithLRUEviction();
-            record.setValue(readData(in));
+            record.setValue(readObject(in));
             record.setVersion(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             return record;
@@ -93,8 +92,8 @@ public enum RecordReaderWriter {
 
     SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-            writeData(out, dataValue);
+        void writeRecord(ObjectDataOutput out, Record record, Object dataValue) throws IOException {
+            writeObject(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getHits());
         }
@@ -102,7 +101,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecordWithLFUEviction();
-            record.setValue(readData(in));
+            record.setValue(readObject(in));
             record.setVersion(in.readInt());
             record.setHits(in.readInt());
             return record;
@@ -142,7 +141,7 @@ public enum RecordReaderWriter {
     }
 
     abstract void writeRecord(ObjectDataOutput out,
-                              Record record, Data dataValue) throws IOException;
+                              Record record, Object dataValue) throws IOException;
 
     public abstract Record readRecord(ObjectDataInput in) throws IOException;
 }

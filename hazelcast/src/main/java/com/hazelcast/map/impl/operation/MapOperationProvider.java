@@ -40,7 +40,7 @@ import java.util.UUID;
  */
 public interface MapOperationProvider {
 
-    MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle);
+    MapOperation createPutOperation(String name, Data key, Object value, long ttl, long maxIdle);
 
     MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout);
 
