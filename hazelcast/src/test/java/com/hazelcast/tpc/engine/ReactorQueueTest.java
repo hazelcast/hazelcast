@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.engine;
+package com.hazelcast.tpc.engine;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

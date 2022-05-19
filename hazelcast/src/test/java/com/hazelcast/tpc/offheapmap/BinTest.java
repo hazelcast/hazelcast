@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.offheapmap;
+package com.hazelcast.tpc.offheapmap;
 
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.test.HazelcastParallelClassRunner;
