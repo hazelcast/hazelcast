@@ -35,13 +35,16 @@ import org.apache.calcite.rex.RexNode;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
-
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     // Note: Same postponeTimeMap as required by TDD, but with rel field defined
     // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
+    private final WatermarkedFields leftWatermarkedFields;
+    private final WatermarkedFields rightWatermarkedFields;
+    private final Map<Integer, Integer> joinToLeftInputFieldsMapping;
+    private final Map<Integer, Integer> joinToRightInputFieldsMapping;
     private final Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -49,9 +52,18 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             RelNode right,
             RexNode condition,
             JoinRelType joinType,
+            WatermarkedFields leftWatermarkedFields,
+            WatermarkedFields rightWatermarkedFields,
+            Map<Integer, Integer> joinToLeftInputFieldsMapping,
+            Map<Integer, Integer> joinToRightInputFieldsMapping,
             Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
+
+        this.leftWatermarkedFields = leftWatermarkedFields;
+        this.rightWatermarkedFields = rightWatermarkedFields;
+        this.joinToLeftInputFieldsMapping = joinToLeftInputFieldsMapping;
+        this.joinToRightInputFieldsMapping = joinToRightInputFieldsMapping;
 
         this.postponeTimeMap = postponeTimeMap;
     }
@@ -74,10 +86,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
-        WatermarkedFields leftWms = metadataQuery(left).extractWatermarkedFields(left);
-
-        for (RexInputRef value : leftWms.getPropertiesByIndex().values()) {
-            int i = value.getIndex();
+        for (RexInputRef value : leftWatermarkedFields.getPropertiesByIndex().values()) {
+            int i = joinToLeftInputFieldsMapping.get(value.getIndex());
             leftTimeExtractors.put(i, row -> row.getRow().get(i));
         }
 
@@ -86,10 +96,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
-        WatermarkedFields rightWms = metadataQuery(right).extractWatermarkedFields(right);
-
-        for (RexInputRef value : rightWms.getPropertiesByIndex().values()) {
-            int i = value.getIndex();
+        for (RexInputRef value : rightWatermarkedFields.getPropertiesByIndex().values()) {
+            int i = joinToRightInputFieldsMapping.get(value.getIndex());
             rightTimeExtractors.put(i, row -> row.getRow().get(i));
         }
         return rightTimeExtractors;
@@ -126,6 +134,10 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 right,
                 getCondition(),
                 joinType,
+                leftWatermarkedFields,
+                rightWatermarkedFields,
+                joinToLeftInputFieldsMapping,
+                joinToRightInputFieldsMapping,
                 postponeTimeMap
         );
     }
