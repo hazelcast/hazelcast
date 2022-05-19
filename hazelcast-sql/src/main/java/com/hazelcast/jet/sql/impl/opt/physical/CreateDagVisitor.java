@@ -46,6 +46,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.OptUtils.RelField;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
@@ -64,9 +65,11 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -100,11 +103,16 @@ public class CreateDagVisitor {
     private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
+    private final Map<OptUtils.RelField, Byte> watermarkedInputFields;
 
-    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
+    public CreateDagVisitor(
+            NodeEngine nodeEngine,
+            QueryParameterMetadata parameterMetadata,
+            Map<OptUtils.RelField, Byte> watermarkedInputFields) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
+        this.watermarkedInputFields = watermarkedInputFields;
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
@@ -430,7 +438,18 @@ public class CreateDagVisitor {
 
         Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = rel.leftTimeExtractors();
         Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = rel.rightTimeExtractors();
-        Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> relPostponeTimeMap = rel.postponeTimeMap();
+
+        Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
+
+        // map field descriptors to enumerated watermark scans
+        for (Entry<RelField, Map<RelField, Long>> entry : rel.postponeTimeMap().entrySet()) {
+            Map<Byte, Long> map = new HashMap<>();
+            for (Entry<RelField, Long> innerEntry : entry.getValue().entrySet()) {
+                map.put(watermarkedInputFields.get(innerEntry.getKey()), innerEntry.getValue());
+            }
+            postponeTimeMap.put(watermarkedInputFields.get(entry.getKey()), map);
+        }
+
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
@@ -438,7 +457,7 @@ public class CreateDagVisitor {
                         joinInfo,
                         emptyMap(), // TODO: rel.leftTimeExtractors(),
                         emptyMap(), // TODO: rel.rightTimeExtractors(),
-                        emptyMap(),
+                        postponeTimeMap,
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount())
         );

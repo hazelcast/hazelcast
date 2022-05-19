@@ -39,10 +39,12 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.OptUtils.RelField;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
@@ -95,6 +97,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -106,7 +109,9 @@ import org.apache.calcite.sql.util.SqlString;
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
@@ -651,7 +656,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
+        CreateDagVisitor visitor = new CreateDagVisitor(
+                nodeEngine,
+                parameterMetadata,
+                extractWatermarkedFieldsFromLeafNodes(physicalRel));
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
@@ -662,5 +670,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (table.getTarget() instanceof ViewTable) {
             throw QueryException.error("DML operations not supported for views");
         }
+    }
+
+    private Map<OptUtils.RelField, Byte> extractWatermarkedFieldsFromLeafNodes(RelNode root) {
+        final byte[] counter = {0};
+        Map<OptUtils.RelField, Byte> watermarkedFields = new HashMap<>();
+        RelVisitor visitor = new RelVisitor() {
+            @Override
+            public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+                if (node instanceof FullScanPhysicalRel) {
+                    FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
+                    int wmColIndex = scan.watermarkedColumnIndex();
+                    if (wmColIndex >= 0) {
+                        RelDataTypeField field = scan.getRowType().getFieldList().get(wmColIndex);
+                        watermarkedFields.put(new RelField(field.getName(), field.getType()), counter[0]++);
+                    }
+                }
+                super.visit(node, ordinal, parent);
+            }
+        };
+        visitor.go(root);
+
+        return watermarkedFields;
     }
 }
