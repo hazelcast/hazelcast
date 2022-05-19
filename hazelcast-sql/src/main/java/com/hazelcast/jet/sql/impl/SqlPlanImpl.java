@@ -1283,6 +1283,66 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
+    static class CreateTypePlan extends SqlPlanImpl {
+        private final String name;
+        private final String typeJavaClass;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final PlanExecutor planExecutor;
+
+        CreateTypePlan(
+                final PlanKey planKey,
+                final String name,
+                final String typeJavaClass,
+                final boolean replace, final boolean ifNotExists, final PlanExecutor planExecutor
+        ) {
+            super(planKey);
+            this.name = name;
+            this.typeJavaClass = typeJavaClass;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.planExecutor = planExecutor;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public String typeJavaClass() {
+            return typeJavaClass;
+        }
+
+        public boolean replace() {
+            return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
     private static void ensureNoArguments(String name, List<Object> arguments) {
         if (!arguments.isEmpty()) {
             throw QueryException.error(name + " does not support dynamic parameters");

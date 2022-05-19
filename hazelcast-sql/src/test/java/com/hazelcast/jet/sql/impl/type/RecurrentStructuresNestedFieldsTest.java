@@ -36,9 +36,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_fullyConnectedGraph() {
-        typesStorage().registerType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
-        typesStorage().registerType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
-        typesStorage().registerType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
+        createType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
+        createType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
+        createType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
 
         final FullyConnectedA a = new FullyConnectedA("A1");
         final FullyConnectedB b = new FullyConnectedB("B1");
@@ -70,9 +70,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_sameTypesDifferentInstances() {
-        typesStorage().registerType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
-        typesStorage().registerType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
-        typesStorage().registerType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
+        createType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
+        createType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
+        createType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
 
         // A1 -> B1 -> C1 -> A2 -> B2 -> C2 -> <A1>
         final FullyConnectedA a1 = new FullyConnectedA("A1");
@@ -118,7 +118,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
                 |   \     \
                [A1][A4]   [A3]
          */
-        typesStorage().registerType(DualPathGraph.class.getSimpleName(), DualPathGraph.class);
+        createType(DualPathGraph.class.getSimpleName(), DualPathGraph.class);
         DualPathGraph a1 = new DualPathGraph("A1");
         DualPathGraph a2 = new DualPathGraph("A2");
         DualPathGraph a3 = new DualPathGraph("A3");

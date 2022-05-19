@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
@@ -34,6 +35,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
@@ -57,6 +59,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
@@ -278,6 +281,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else if (node instanceof SqlExplainStatement) {
             return toExplainStatementPlan(planKey, context, parseResult);
+        } else if (node instanceof SqlCreateType) {
+            return toCreateTypePlan(planKey, (SqlCreateType) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -424,6 +429,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
 
         return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
+    }
+
+    private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {
+        // TODO: columns
+        final String typeJavaClass = sqlNode.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS);
+        return new CreateTypePlan(
+                planKey,
+                sqlNode.getName(),
+                typeJavaClass,
+                sqlNode.getReplace(),
+                sqlNode.ifNotExists(),
+                planExecutor
+        );
     }
 
     private SqlPlanImpl toPlan(

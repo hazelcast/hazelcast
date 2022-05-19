@@ -124,6 +124,11 @@ public interface SqlConnector {
     String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
 
     /**
+     * The class name of the Custom Type's underlying Java Class
+     */
+    String OPTION_TYPE_JAVA_CLASS = "typeJavaClass";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */

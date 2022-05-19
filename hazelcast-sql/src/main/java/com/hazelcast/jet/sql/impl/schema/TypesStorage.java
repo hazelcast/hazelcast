@@ -40,9 +40,9 @@ public class TypesStorage extends TablesStorage {
                 .orElse(null);
     }
 
-    public void registerType(final String name, final Class<?> typeClass) {
-        if (getTypeByClass(typeClass) != null || getType(name) != null) {
-            return;
+    public boolean registerType(final String name, final Class<?> typeClass, final boolean onlyIfAbsent) {
+        if ((getTypeByClass(typeClass) != null || getType(name) != null) && onlyIfAbsent) {
+            return false;
         }
 
         final Type type = new Type();
@@ -56,13 +56,16 @@ public class TypesStorage extends TablesStorage {
             type.setFields(getFieldsFromJavaClass(typeClass, type));
         }
 
-        put(name.toLowerCase(Locale.ROOT), type);
-        fixTypeReferences(type);
-    }
+        boolean result = true;
+        if (onlyIfAbsent) {
+            result = putIfAbsent(name.toLowerCase(Locale.ROOT), type);
+        } else {
+            put(name.toLowerCase(Locale.ROOT), type);
+        }
 
-    public void clear() {
-        // TODO: Consistency
-        getAllTypes().stream().map(Type::getName).forEach(this::removeType);
+        fixTypeReferences(type);
+
+        return result;
     }
 
     private void fixTypeReferences(final Type addedType) {

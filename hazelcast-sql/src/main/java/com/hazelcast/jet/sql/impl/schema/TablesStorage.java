@@ -88,6 +88,13 @@ public class TablesStorage {
         return previous == null;
     }
 
+    boolean putIfAbsent(String name, Type type) {
+        // TODO Case sensitive?
+        Object previous = storage().putIfAbsent(name, type);
+        awaitMappingOnAllMembers(name, type);
+        return previous == null;
+    }
+
     Mapping removeMapping(String name) {
         return (Mapping) storage().remove(name);
     }

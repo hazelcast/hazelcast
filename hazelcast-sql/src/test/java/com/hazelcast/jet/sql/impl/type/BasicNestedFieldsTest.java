@@ -19,10 +19,8 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -52,11 +50,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
         initialize(1, config);
-    }
-
-    @Before()
-    public void init() {
-        typesStorage().clear();
     }
 
     @Test
@@ -128,7 +121,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_selfRefType() {
-        typesStorage().registerType("SelfRefType", SelfRef.class);
+        createType("SelfRefType", SelfRef.class);
 
         final SelfRef first = new SelfRef(1L, "first");
         final SelfRef second = new SelfRef(2L, "second");
@@ -162,9 +155,9 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_circularlyRecurrentTypes() {
-        typesStorage().registerType("AType", A.class);
-        typesStorage().registerType("BType", B.class);
-        typesStorage().registerType("CType", C.class);
+        createType("AType", A.class);
+        createType("BType", B.class);
+        createType("CType", C.class);
 
         final A a = new A("a");
         final B b = new B("b");
@@ -196,10 +189,9 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_deepUpdate() {
-
-        typesStorage().registerType("AType", A.class);
-        typesStorage().registerType("BType", B.class);
-        typesStorage().registerType("CType", C.class);
+        createType("AType", A.class);
+        createType("BType", B.class);
+        createType("CType", C.class);
 
         final A a = new A("a");
         final B b = new B("b");
@@ -220,7 +212,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_mixedModeQuerying() {
-        typesStorage().registerType("NestedType", NestedPOJO.class);
+        createType("NestedType", NestedPOJO.class);
         createMapping("test", Long.class, RegularPOJO.class);
 
         instance().getMap("test")
@@ -236,7 +228,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_mixedModeUpsert() {
-        typesStorage().registerType("NestedType", NestedPOJO.class);
+        createType("NestedType", NestedPOJO.class);
         createMapping("test", Long.class, RegularPOJO.class);
 
         instance().getSql().execute("INSERT INTO test (__key, name, child) "
@@ -252,7 +244,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     @Test
     public void test_typeCoercionUpserts() {
-        typesStorage().registerType("AllTypesValue", AllTypesValue.class);
+        createType("AllTypesValue", AllTypesValue.class);
         createMapping("test", Long.class, AllTypesParent.class);
 
         final String allTypesValueRowLiteral = "("
@@ -385,15 +377,10 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
                 rows(2, "office1", "office2"));
     }
 
-    private TypesStorage typesStorage() {
-        return new TypesStorage(getNodeEngineImpl(instance()));
-    }
-
     private User initDefault() {
-        // TODO: sql
-        typesStorage().registerType("UserType", User.class);
-        typesStorage().registerType("OfficeType", Office.class);
-        typesStorage().registerType("OrganizationType", Organization.class);
+        createType("UserType", User.class);
+        createType("OfficeType", Office.class);
+        createType("OrganizationType", Organization.class);
 
         final IMap<Long, User> testMap = instance().getMap("test");
         execute("CREATE MAPPING test "

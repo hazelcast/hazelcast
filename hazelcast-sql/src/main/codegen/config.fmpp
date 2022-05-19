@@ -26,7 +26,6 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
@@ -42,6 +41,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
       "org.apache.calcite.sql.SqlCreate"
@@ -461,6 +461,7 @@ data: {
       "SqlCreateJob"
       "SqlCreateSnapshot"
       "SqlCreateView"
+      "SqlCreateType"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.

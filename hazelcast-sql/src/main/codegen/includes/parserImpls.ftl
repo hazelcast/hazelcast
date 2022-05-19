@@ -58,6 +58,37 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
+SqlCreate SqlCreateType(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    SqlIdentifier name;
+    SqlNodeList columns = SqlNodeList.EMPTY;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+{
+    <TYPE>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = SimpleIdentifier()
+    columns = MappingColumns()
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+    {
+        return new SqlCreateType(
+            name,
+            columns,
+            sqlOptions,
+            replace,
+            ifNotExists,
+            startPos.plus(getPos())
+        );
+    }
+}
+
 SqlNodeList MappingColumns():
 {
     SqlParserPos pos = getPos();

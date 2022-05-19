@@ -86,6 +86,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FAC
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -372,6 +373,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      */
     public static void createMapping(String name, Class<?> keyClass, Class<?> valueClass) {
         createMapping(instance(), name, keyClass, valueClass);
+    }
+
+    public static void createType(String name, Class<?> clazz) {
+        instance().getSql().execute(format("CREATE TYPE \"%s\" OPTIONS ('typeJavaClass'='%s')", name, clazz.getName()));
     }
 
     /**
