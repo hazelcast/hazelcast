@@ -30,7 +30,8 @@ final class StaticParams {
 
     static final StaticParams PUT_BACKUP_PARAMS = new StaticParams()
             .setPutVanilla(true)
-            .setCountAsAccess(true);
+            .setCountAsAccess(true)
+            .setBackup(true);
 
     static final StaticParams PUT_IF_ABSENT_PARAMS = new StaticParams()
             .setPutIfAbsent(true)
@@ -42,6 +43,11 @@ final class StaticParams {
     static final StaticParams PUT_FROM_LOAD_PARAMS = new StaticParams()
             .setPutVanilla(true)
             .setPutFromLoad(true);
+
+    static final StaticParams PUT_FROM_LOAD_BACKUP_PARAMS = new StaticParams()
+            .setPutVanilla(true)
+            .setPutFromLoad(true)
+            .setBackup(true);
 
     static final StaticParams SET_PARAMS = new StaticParams()
             .setPutVanilla(true)
@@ -61,6 +67,15 @@ final class StaticParams {
             .setStore(true)
             .setCheckIfLoaded(true)
             .setCountAsAccess(true);
+
+    static final StaticParams SET_TTL_BACKUP_PARAMS = new StaticParams()
+            .setPutIfExists(true)
+            .setSetTtl(true)
+            .setLoad(true)
+            .setStore(true)
+            .setCheckIfLoaded(true)
+            .setCountAsAccess(true)
+            .setBackup(true);
 
     static final StaticParams PUT_TRANSIENT_PARAMS = new StaticParams()
             .setPutVanilla(true)
@@ -83,6 +98,7 @@ final class StaticParams {
             .setCheckIfLoaded(true)
             .setCountAsAccess(true);
 
+    private boolean backup;
     private boolean load;
     private boolean store;
     private boolean putVanilla;
@@ -96,6 +112,11 @@ final class StaticParams {
     private boolean countAsAccess;
 
     private StaticParams() {
+    }
+
+    public StaticParams setBackup(boolean backup) {
+        this.backup = backup;
+        return this;
     }
 
     StaticParams setLoad(boolean load) {
@@ -151,6 +172,10 @@ final class StaticParams {
     StaticParams setCountAsAccess(boolean countAsAccess) {
         this.countAsAccess = countAsAccess;
         return this;
+    }
+
+    boolean isBackup() {
+        return backup;
     }
 
     boolean isLoad() {
