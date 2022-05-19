@@ -301,6 +301,7 @@ public final class HazelcastTypeUtils {
      * @param type2 the second type.
      * @return the type with the higher precedence.
      */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public static RelDataType withHigherPrecedence(RelDataType type1, RelDataType type2) {
         int precedence1 = precedenceOf(type1);
         int precedence2 = precedenceOf(type2);

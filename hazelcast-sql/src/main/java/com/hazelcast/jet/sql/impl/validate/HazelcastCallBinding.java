@@ -76,6 +76,7 @@ public class HazelcastCallBinding extends SqlCallBinding {
         return validator.newValidationError(call, error);
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static String getOperandTypes(
             SqlValidator validator,
             SqlCall call,
