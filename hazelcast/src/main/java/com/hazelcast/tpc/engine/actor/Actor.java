@@ -28,15 +28,16 @@ public abstract class Actor implements EventloopTask {
         this.eventloop = eventloop;
     }
 
-    public Actor(){
+    public Actor() {
         this(DEFAULT_MAILBOX_CAPACITY);
     }
 
-    public Actor(int mailboxCapacity){
-         mailbox = new MpscArrayQueue(mailboxCapacity);
+    public Actor(int mailboxCapacity) {
+        this.mailbox = new MpscArrayQueue(mailboxCapacity);
     }
 
     void send(Object msg) {
+        //todo: we need to deal with overload.
         mailbox.offer(msg);
 
         if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
@@ -65,9 +66,13 @@ public abstract class Actor implements EventloopTask {
             if (mailbox.isEmpty()) {
                 return;
             }
-        }
 
-        eventloop.execute(this);
+            if (scheduled.compareAndSet(false, true)) {
+                eventloop.execute(this);
+            }
+        } else {
+            eventloop.execute(this);
+        }
     }
 
     public abstract void process(Object msg);
