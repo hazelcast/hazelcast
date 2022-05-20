@@ -128,7 +128,9 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    boolean setTtl(Data key, long ttl, boolean backup);
+    boolean setTtl(Data key, long ttl);
+
+    boolean setTtlBackup(Data key, long ttl);
 
     /**
      * Callback which is called when the record is being accessed from the record or index store.
