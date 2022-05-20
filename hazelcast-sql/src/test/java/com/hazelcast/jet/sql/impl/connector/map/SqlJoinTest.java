@@ -70,14 +70,10 @@ public class SqlJoinTest {
                     row(0L),
                     row(0L)
             );
-
-            assertTipOfStream(
-                    "SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1",
-                    asList(
-                            new Row(0L, 0L),
-                            new Row(1L, 0L)
-                    )
-            );
+            assertThatThrownBy(() -> instance()
+                    .getSql()
+                    .execute("SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1")
+            ).hasMessageContaining("Left input of stream to stream JOIN");
         }
 
         @Test

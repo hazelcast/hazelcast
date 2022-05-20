@@ -92,8 +92,31 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             );
         }
 
-        Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields = watermarkedFields(join);
+        RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
+        RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
+
+        WatermarkedFields leftFields = metadataQuery(join).extractWatermarkedFields(left);
+        WatermarkedFields rightFields = metadataQuery(join).extractWatermarkedFields(right);
+
         // region checks
+        if (leftFields == null || leftFields.isEmpty()) {
+            call.transformTo(
+                    fail(join, "Left input of stream to stream JOIN must contain watermarked columns")
+            );
+            return;
+        }
+
+        if (rightFields == null || rightFields.isEmpty()) {
+            call.transformTo(
+                    fail(join, "Right input of stream to stream JOIN must contain watermarked columns")
+            );
+            return;
+        }
+
+        Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields = watermarkedFields(
+                join,
+                leftFields,
+                rightFields);
         if (watermarkedFields.f2() == null || watermarkedFields.f2().isEmpty()) {
             call.transformTo(
                     fail(join, "Stream to stream JOIN must contain watermarked columns")
@@ -179,24 +202,20 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     /**
      * Extracts all watermarked fields represented in JOIN relation row type.
      *
-     * @param join root relation to start search from
+     * @param join        root relation to start search from
+     * @param leftFields
+     * @param rightFields
      * @return left, right input and joint watermarked fields from rel tree
      */
-    private static Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields(
-            JoinLogicalRel join) {
-        RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
-        RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
-
-        WatermarkedFields leftFields = metadataQuery(join).extractWatermarkedFields(left);
-        WatermarkedFields rightFields = metadataQuery(join).extractWatermarkedFields(right);
-
+    private Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields(
+            JoinLogicalRel join, WatermarkedFields leftFields, WatermarkedFields rightFields) {
         Map<Integer, RexInputRef> leftPropsByIndex = leftFields.getPropertiesByIndex();
         Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
         Map<Integer, RexInputRef> rightPropsByIndex = rightFields.getPropertiesByIndex();
         Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
 
         for (Integer key : leftPropsByIndex.keySet()) {
-            RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
+            RelDataTypeField leftField = join.getLeft().getRowType().getFieldList().get(key);
             for (RelDataTypeField field : join.getRowType().getFieldList()) {
                 if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
                     leftResultInputRefMap.put(field.getIndex(),
@@ -206,7 +225,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         for (Integer key : rightPropsByIndex.keySet()) {
-            RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
+            RelDataTypeField leftField = join.getRight().getRowType().getFieldList().get(key);
             for (RelDataTypeField field : join.getRowType().getFieldList()) {
                 if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
                     rightResultInputRefMap.put(field.getIndex(),
