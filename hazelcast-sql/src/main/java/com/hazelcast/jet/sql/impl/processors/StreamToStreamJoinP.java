@@ -149,6 +149,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             pendingWatermark = null;
         }
 
+        byte wmKey = watermark.key();
+        // if watermark isn't present in watermark
+        // state - skip further processing.
+        if (!wmState.containsKey(wmKey)) {
+            return true;
+        }
+
         // update wm state
         applyToWmState(watermark);
 
@@ -162,7 +169,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // We can't immediately emit current WM, as it could render items in buffers late.
         // Instead, we can emit WM with the minimum available time for this WM key.
         Watermark wm = null;
-        byte wmKey = watermark.key();
         long maxInputKeyGroupTime = findMaxInputKeyGroupTime(wmKey);
         long minItemTime = maxInputKeyGroupTime == Long.MIN_VALUE
                 ? findMinimumBufferTime(ordinal, wmKey)
