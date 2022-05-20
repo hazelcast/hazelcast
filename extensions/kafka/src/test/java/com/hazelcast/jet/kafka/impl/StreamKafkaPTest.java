@@ -124,7 +124,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void test_nonExistentTopic() {
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), rec -> rec.value() + "-x", "nonExistentTopic"))
+        p.readFrom(KafkaSources.kafka(properties(), "nonExistentTopic"))
                 .withoutTimestamps()
                 .writeTo(Sinks.list("sink"));
 
