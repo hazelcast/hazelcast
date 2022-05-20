@@ -107,7 +107,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoinWithMultipleTimestampBounds_then_success() {
+        public void when_streamToStreamJoinWithDoubledTimestampBounds_then_success() {
             String stream1 = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -147,6 +147,64 @@ public class SqlJoinTest {
                     singletonList(new Row(timestamp(100L), timestamp(100L), timestamp(101L)))
             );
         }
+
+        @Test
+        public void when_streamToStreamJoinWithTripledTimestampBounds_then_success() {
+            String stream1 = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream1,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(100L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(100L)));
+
+            String stream3 = "stream3";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream3,
+                    singletonList("c"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(101L)));
+
+            String stream4 = "stream4";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream4,
+                    singletonList("d"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(102L)));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s3 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s4 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream4, DESCRIPTOR(d), INTERVAL '0.001' SECOND))");
+
+
+            assertTipOfStream(
+                    "SELECT * FROM s1 " +
+                            "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.1' SECONDS AND s1.a " +
+                            "JOIN s3 ON s3.c BETWEEN s2.b AND s2.b + INTERVAL '0.1' SECONDS " +
+                            "JOIN s4 ON s4.d BETWEEN s3.c AND s3.c + INTERVAL '0.1' SECONDS ",
+                    singletonList(new Row(
+                            timestamp(100L),
+                            timestamp(100L),
+                            timestamp(101L),
+                            timestamp(102L)))
+            );
+        }
+        // TODO: projection test.
     }
 
     public static class SqlInnerJoinTest extends SqlTestSupport {

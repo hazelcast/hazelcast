@@ -29,7 +29,7 @@ import java.util.Objects;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
- * Physical rule that drops {@link DropLateItemsPhysicalRel} from all inputs
+ * Physical rule that drops {@link DropLateItemsPhysicalRel} from <b>all</b> inputs
  * of {@link StreamToStreamJoinPhysicalRel}.
  * Note: <b>every</b> Join's input rel must be {@link DropLateItemsPhysicalRel}.
  * <p>

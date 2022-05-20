@@ -17,14 +17,17 @@
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.JoinHashPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
@@ -42,7 +45,6 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.util.Util;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -163,59 +165,57 @@ public final class HazelcastRelMdWatermarkedFields
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
-        if (rel instanceof StreamToStreamJoinPhysicalRel) {
-            return extractWatermarkedFields((StreamToStreamJoinPhysicalRel) rel, mq);
-        }
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        // For nested-loop join and hash join that iterate the left side and forward WM in it.
-        // WM on the right side isn't forwarded.
-        return query.extractWatermarkedFields(rel.getLeft());
-    }
 
-    /**
-     * Performs extraction of watermarked fields for stream to stream Join rel.
-     * <p>
-     * Here, we need to detect watermarked RexInputRefs were within child relations schema
-     * and pass them to Join relation to merge them correctly according to join rel schema.
-     * <p>
-     * Example : consider join of two events with fields (a, b) v (c, d).
-     * 'a' and 'd' are watermarked.
-     * <p>
-     * Then, we'll have : left_map {input_ref(a) -> 0}; right_map{input_ref(d) -> 3};
-     * In join relation we are able to merge {@link WatermarkedFields} in correct way
-     */
-    public WatermarkedFields extractWatermarkedFields(StreamToStreamJoinPhysicalRel rel, RelMetadataQuery mq) {
-        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        RelNode left = rel.getLeft();
-        RelNode right = rel.getRight();
-        WatermarkedFields leftWmFields = query.extractWatermarkedFields(left);
+        if (rel instanceof JoinNestedLoopPhysicalRel || rel instanceof JoinHashPhysicalRel) {
+            // For nested-loop join and hash join that iterate the left side and forward WM in it.
+            // WM on the right side isn't forwarded.
+            return query.extractWatermarkedFields(rel.getLeft());
+        } else {
+            /*
+             * Performs extraction of watermarked fields for stream to stream Join rel.
+             * <p>
+             * Here, we need to detect watermarked RexInputRefs were within child relations schema
+             * and pass them to Join relation to merge them correctly according to join rel schema.
+             * <p>
+             * Example : consider join of two events with fields (a, b) v (c, d).
+             * 'a' and 'd' are watermarked.
+             * <p>
+             * Then, we'll have : left_map {input_ref(a) -> 0}; right_map{input_ref(d) -> 3};
+             * In join relation we are able to merge {@link WatermarkedFields} in correct way.
+             */
+            RelNode left = RelRule.convert(rel.getLeft(), rel.getTraitSet().replace(Conventions.PHYSICAL));
+            RelNode right = RelRule.convert(rel.getRight(), rel.getTraitSet().replace(Conventions.PHYSICAL));
 
-        Map<Integer, RexInputRef> leftPropsByIndex = leftWmFields.getPropertiesByIndex();
-        Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
-        Map<Integer, RexInputRef> rightPropsByIndex = query.extractWatermarkedFields(right).getPropertiesByIndex();
-        Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
+            WatermarkedFields leftWmFields = query.extractWatermarkedFields(left);
+            WatermarkedFields rightWmFields = query.extractWatermarkedFields(right);
 
-        for (Integer key : leftPropsByIndex.keySet()) {
-            RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
-            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
-                    leftResultInputRefMap.put(field.getIndex(),
-                            rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+            Map<Integer, RexInputRef> leftPropsByIndex = leftWmFields.getPropertiesByIndex();
+            Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
+            Map<Integer, RexInputRef> rightPropsByIndex = rightWmFields.getPropertiesByIndex();
+            Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
+
+            for (Integer key : leftPropsByIndex.keySet()) {
+                RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
+                for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                    if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                        leftResultInputRefMap.put(field.getIndex(),
+                                rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                    }
                 }
             }
-        }
 
-        for (Integer key : rightPropsByIndex.keySet()) {
-            RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
-            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
-                    rightResultInputRefMap.put(field.getIndex(),
-                            rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+            for (Integer key : rightPropsByIndex.keySet()) {
+                RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
+                for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                    if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                        rightResultInputRefMap.put(field.getIndex(),
+                                rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                    }
                 }
             }
+            return WatermarkedFields.join(leftResultInputRefMap, rightResultInputRefMap);
         }
-
-        return leftWmFields.join(leftResultInputRefMap, rightResultInputRefMap);
     }
 
     @SuppressWarnings("unused")
@@ -247,7 +247,7 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelSubset subset, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
+        RelNode rel = subset.getBestOrOriginal();
         return query.extractWatermarkedFields(rel);
     }
 

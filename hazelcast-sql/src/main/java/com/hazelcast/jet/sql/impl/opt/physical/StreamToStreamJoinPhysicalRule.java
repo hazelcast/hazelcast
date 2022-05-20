@@ -95,8 +95,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
 
-        WatermarkedFields leftFields = metadataQuery(join).extractWatermarkedFields(left);
-        WatermarkedFields rightFields = metadataQuery(join).extractWatermarkedFields(right);
+        WatermarkedFields leftFields = metadataQuery(left).extractWatermarkedFields(left);
+        WatermarkedFields rightFields = metadataQuery(right).extractWatermarkedFields(right);
 
         // region checks
         if (leftFields == null || leftFields.isEmpty()) {
