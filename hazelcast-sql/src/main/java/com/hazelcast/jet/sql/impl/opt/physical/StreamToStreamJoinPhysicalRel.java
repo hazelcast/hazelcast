@@ -36,12 +36,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
-    // Note: Same postponeTimeMap as required by TDD, but with rel field defined
-    // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
     private final WatermarkedFields leftWatermarkedFields;
     private final WatermarkedFields rightWatermarkedFields;
     private final Map<Integer, Integer> joinToLeftInputFieldsMapping;
     private final Map<Integer, Integer> joinToRightInputFieldsMapping;
+    // Same postponeTimeMap as required by TDD, but with rel field defined
+    // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
     private final Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap;
 
     @SuppressWarnings("checkstyle:ParameterNumber")

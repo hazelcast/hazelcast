@@ -253,7 +253,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         List<RelDataTypeField> leftFieldsList = join.getLeft().getRowType().getFieldList();
         List<RelDataTypeField> rightFieldsList = join.getRight().getRowType().getFieldList();
         List<RelDataTypeField> joinFieldsList = join.getRowType().getFieldList();
-        // TODO: null-check
         Set<Integer> joinedWmKeys = watermarkedFieldsTuple.f2().getPropertiesByIndex().keySet();
 
         for (Integer idx : joinedWmKeys) {
@@ -375,8 +374,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         private Tuple2<RelDataTypeField, Long> extractTimeBoundFromAddition(
                 RexCall call,
                 WatermarkedFields watermarkedFields) {
-            // Only plus/minus expressions are supported.
-            // Also, one of the operands should be a constant.
             if (!(call.isA(SqlKind.PLUS) || call.isA(SqlKind.MINUS))) {
                 isValid = false;
                 return tuple2(null, 0L);
