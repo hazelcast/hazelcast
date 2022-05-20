@@ -118,7 +118,7 @@ public class SqlJoinTest {
                     stream1,
                     singletonList("a"),
                     singletonList(TIMESTAMP),
-                    row(timestamp(0L)));
+                    row(timestamp(100L)));
 
             String stream2 = "stream2";
             TestStreamSqlConnector.create(
@@ -126,7 +126,7 @@ public class SqlJoinTest {
                     stream2,
                     singletonList("b"),
                     singletonList(TIMESTAMP),
-                    row(timestamp(0L)));
+                    row(timestamp(100L)));
 
             String stream3 = "stream3";
             TestStreamSqlConnector.create(
@@ -134,7 +134,7 @@ public class SqlJoinTest {
                     stream3,
                     singletonList("c"),
                     singletonList(TIMESTAMP),
-                    row(timestamp(1L)));
+                    row(timestamp(101L)));
 
             sqlService.execute("CREATE VIEW s1 AS " +
                     "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
@@ -148,7 +148,7 @@ public class SqlJoinTest {
                     "SELECT * FROM s1 " +
                             "JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.1' SECONDS AND s1.a " +
                             "JOIN s3 ON s3.c BETWEEN s2.b - INTERVAL '0.1' SECONDS AND s2.b + INTERVAL '0.5' SECONDS",
-                    singletonList(new Row(0L, timestamp(0L), timestamp(1L)))
+                    singletonList(new Row(timestamp(100L), timestamp(100L), timestamp(101L)))
             );
         }
     }

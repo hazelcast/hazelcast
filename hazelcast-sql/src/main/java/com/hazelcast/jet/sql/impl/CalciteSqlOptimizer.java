@@ -108,7 +108,9 @@ import org.apache.calcite.sql.util.SqlString;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -659,7 +661,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateDagVisitor visitor = new CreateDagVisitor(
                 nodeEngine,
                 parameterMetadata,
-                extractWatermarkedFieldsFromLeafNodes(physicalRel));
+                extractWatermarkedFieldsFromRelTree(physicalRel));
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
@@ -672,9 +674,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private Map<OptUtils.RelField, Byte> extractWatermarkedFieldsFromLeafNodes(RelNode root) {
-        final byte[] counter = {0};
-        Map<OptUtils.RelField, Byte> watermarkedFields = new HashMap<>();
+    private Map<OptUtils.RelField, Byte> extractWatermarkedFieldsFromRelTree(RelNode root) {
+        Deque<RelField> watermarkedFieldsStack = new ArrayDeque<>();
         RelVisitor visitor = new RelVisitor() {
             @Override
             public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
@@ -683,13 +684,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     int wmColIndex = scan.watermarkedColumnIndex();
                     if (wmColIndex >= 0) {
                         RelDataTypeField field = scan.getRowType().getFieldList().get(wmColIndex);
-                        watermarkedFields.put(new RelField(field.getName(), field.getType()), counter[0]++);
+                        watermarkedFieldsStack.push(new RelField(field.getName(), field.getType()));
                     }
                 }
                 super.visit(node, ordinal, parent);
             }
         };
         visitor.go(root);
+
+        // We traverse rel tree with DFS algorithm,
+        // but we need to enumerate them in top-down way.
+        byte counter = 0;
+        Map<OptUtils.RelField, Byte> watermarkedFields = new HashMap<>();
+        while (!watermarkedFieldsStack.isEmpty()) {
+            watermarkedFields.put(watermarkedFieldsStack.pop(), counter++);
+        }
 
         return watermarkedFields;
     }

@@ -224,6 +224,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
      * It is required by processor for enlighten of row timestamp extraction.
      * For more information :{@link StreamToStreamJoinP#clearExpiredItemsInBuffer}
      */
+    @SuppressWarnings("JavadocReference")
     private Tuple2<Map<Integer, Integer>, Map<Integer, Integer>> joinToInputFieldsWmKeysMapping(
             JoinLogicalRel join,
             Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFieldsTuple) {
@@ -237,7 +238,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         Set<Integer> joinedWmKeys = watermarkedFieldsTuple.f2().getPropertiesByIndex().keySet();
 
         for (Integer idx : joinedWmKeys) {
-            // TODO: optimize
+            // TODO: optimize, only TIMESTAMP allowed?
             extractMapping(leftFieldsList, joinFieldsList, leftToJoinWmFieldsMapping, idx);
             extractMapping(rightFieldsList, joinFieldsList, rightToJoinWmFieldsMapping, idx);
         }
@@ -375,7 +376,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     return tuple2(null, 0L);
                 }
             } else if (operands.f0() instanceof RexLiteral) {
-                // Note: straightforward way : `constant + $ref`
+                // Note: opposite way : `constant + $ref`
                 literal = (RexLiteral) operands.f0();
             }
 
