@@ -62,6 +62,7 @@ data: {
       "SNAPSHOT"
       "SUSPEND"
       "VIEWS"
+      "TYPES"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -400,6 +401,7 @@ data: {
       "SNAPSHOT"
       "SUSPEND"
       "VIEWS"
+      "TYPES"
     ]
 
     # List of non-reserved keywords to add;

@@ -56,6 +56,20 @@ public class TypesDDLTest extends SqlJsonTestSupport {
         execute(format("CREATE TYPE IF NOT EXISTS FirstType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName()));
     }
 
+    @Test
+    public void test_showTypes() {
+        execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE TYPE SecondType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName()));
+        assertRowsAnyOrder("SHOW TYPES", rows(1, "FirstType", "SecondType"));
+    }
+
+    @Test
+    public void test_duplicateClass() {
+        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
+        assertThrows(HazelcastException.class, () -> instance().getSql()
+                .execute(format("CREATE TYPE SecondType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName())));
+    }
+
     void execute(String sql) {
         instance().getSql().execute(sql);
     }

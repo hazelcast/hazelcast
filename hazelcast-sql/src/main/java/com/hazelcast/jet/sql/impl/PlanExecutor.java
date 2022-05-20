@@ -71,6 +71,7 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -299,6 +300,10 @@ public class PlanExecutor {
                 rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
                         .map(record -> record.getConfig().getName())
                         .filter(Objects::nonNull);
+                break;
+            case TYPES:
+                rows = new TypesStorage(getNodeEngine(hazelcastInstance)).getAllTypes().stream()
+                        .map(Type::getName);
                 break;
             default:
                 throw new AssertionError("Unsupported SHOW statement target.");

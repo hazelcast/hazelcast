@@ -616,6 +616,8 @@ SqlShowStatement SqlShowStatement() :
         <VIEWS> { target = ShowStatementTarget.VIEWS; }
     |
         <JOBS> { target = ShowStatementTarget.JOBS; }
+    |
+        <TYPES> { target = ShowStatementTarget.TYPES; }
     )
     {
         return new SqlShowStatement(getPos(), target);
