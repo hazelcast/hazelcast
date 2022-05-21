@@ -36,7 +36,9 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
+import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
+import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
 
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
@@ -87,6 +89,7 @@ public final class HazelcastTypeUtils {
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
+        CALCITE_TO_HZ.put(SqlTypeName.UNKNOWN, QueryDataType.NULL);
 
         // The inverse mapping is not needed, because we map multiple interval type to two internal types.
         HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, INTERVAL_YEAR_MONTH);
@@ -284,6 +287,10 @@ public final class HazelcastTypeUtils {
         return typeFamily == INTERVAL_DAY_TIME || typeFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH;
     }
 
+    public static boolean isNullOrUnknown(SqlTypeName typeName) {
+        return typeName == SqlTypeName.NULL || typeName == SqlTypeName.UNKNOWN;
+    }
+
     /**
      * Selects a type having a higher precedence from the two given types.
      * <p>
@@ -294,10 +301,13 @@ public final class HazelcastTypeUtils {
      * @param type2 the second type.
      * @return the type with the higher precedence.
      */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public static RelDataType withHigherPrecedence(RelDataType type1, RelDataType type2) {
         int precedence1 = precedenceOf(type1);
         int precedence2 = precedenceOf(type2);
-        assert precedence1 != precedence2 || type1.getSqlTypeName() == type2.getSqlTypeName();
+        assert precedence1 != precedence2 || type1.getSqlTypeName() == type2.getSqlTypeName()
+                || type1.getSqlTypeName() == NULL && type2.getSqlTypeName() == UNKNOWN
+                || type1.getSqlTypeName() == UNKNOWN && type2.getSqlTypeName() == NULL;
 
         if (precedence1 == precedence2 && isNumericIntegerType(type1) && isNumericIntegerType(type2)) {
             int bitWidth1 = ((HazelcastIntegerType) type1).getBitWidth();

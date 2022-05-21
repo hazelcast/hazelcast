@@ -45,9 +45,9 @@ import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
@@ -122,7 +122,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
 
-        if (from.getSqlTypeName() == NULL || SqlUtil.isNullLiteral(node, false) || node.getKind() == SqlKind.DYNAMIC_PARAM) {
+        if (isNullOrUnknown(from.getSqlTypeName()) || SqlUtil.isNullLiteral(node, false)
+                || node.getKind() == SqlKind.DYNAMIC_PARAM) {
             // Never cast NULLs or dynamic params, just assign types to them
             return false;
         }

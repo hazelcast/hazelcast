@@ -87,6 +87,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static java.util.Arrays.asList;
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
@@ -187,7 +188,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 
-        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != SqlTypeName.NULL) {
+        if (literal != null && !isNullOrUnknown(((RexLiteral) convertedOperand).getTypeName())) {
             // There is a bug in RexBuilder.makeCast(). If the operand is a literal, it can directly return a literal with the
             // desired target type instead of an actual cast, but when doing that it doesn't check for numeric overflow.
             // For example if this method is converting [128 AS TINYINT] is converted to -1, which is obviously incorrect.
