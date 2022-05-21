@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
@@ -231,7 +232,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                         e.printStackTrace();
                     }
                 }
-                return AddressHelper.getSocketAddresses("127.0.0.1");
+                return AddressHelper.getSocketAddresses("127.0.0.1", ClientConnectionProcessListener.NOOP);
             }
 
             @Override

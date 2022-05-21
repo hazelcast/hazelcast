@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
@@ -38,7 +54,7 @@ public class DummyClient {
     public void addressNotFound() {
         ClientConfig config = newClientConfig();
         config.getNetworkConfig().addAddress("example.asdasd");
-        config.getNetworkConfig().setConnectionTimeout(5000);
+//        config.getNetworkConfig().setConnectionTimeout(5000);
         HazelcastClient.newHazelcastClient(config);
     }
 
@@ -64,18 +80,6 @@ public class DummyClient {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 System.out.println("removed");
-            }
-        }));
-        config.getListenerConfigs().add(new ListenerConfig().setImplementation(new ClientConnectionProcessListener() {
-
-            @Override
-            public void attemptingToConnectToAddress(Address address) {
-                System.out.println("attempt to connect: " + address);
-            }
-
-            @Override
-            public void connectionAttemptFailed(Object target) {
-                System.out.println("connection failed to " + target);
             }
         }));
 //        startMember(new Config());
@@ -162,7 +166,6 @@ public class DummyClient {
         Config memberConfig = new Config();
         startMember(memberConfig);
         ClientConfig config = newClientConfig();
-        config.getConnectionStrategyConfig().setAsyncStart(true);
         config.setClusterName("something-not-dev");
         HazelcastClient.newHazelcastClient(config);
     }
@@ -193,6 +196,23 @@ public class DummyClient {
     private ClientConfig newClientConfig() {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(10_000);
+        config.getListenerConfigs().add(new ListenerConfig().setImplementation(new ClientConnectionProcessListener() {
+
+            @Override
+            public void attemptingToConnectToAddress(Address address) {
+                System.out.println("attempt to connect: " + address);
+            }
+
+            @Override
+            public void connectionAttemptFailed(Object target) {
+                System.out.println("connection failed to " + target);
+            }
+
+            @Override
+            public void hostNotFound(String host) {
+                System.out.println("host not found: " + host);
+            }
+        }));
         return config;
     }
 }

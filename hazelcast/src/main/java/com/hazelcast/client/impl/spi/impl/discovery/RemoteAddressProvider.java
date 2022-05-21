@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
@@ -37,7 +38,13 @@ public class RemoteAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses() throws Exception {
+    public Addresses loadAddresses()
+            throws Exception {
+        return null;
+    }
+
+    @Override
+    public Addresses loadAddresses(ClientConnectionProcessListener listener) throws Exception {
         privateToPublic = getAddresses.call();
         return new Addresses(privateToPublic.keySet());
     }

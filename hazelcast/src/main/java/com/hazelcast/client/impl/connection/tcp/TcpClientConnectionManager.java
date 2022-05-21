@@ -136,7 +136,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
-    private final Collection<ClientConnectionProcessListener> connectionProcessListeners = new CopyOnWriteArrayList<>();
+    private volatile ClientConnectionProcessListener connectionProcessListener = ClientConnectionProcessListener.NOOP;
     private final NioNetworking networking;
 
     private final long authenticationTimeout;
@@ -468,7 +468,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (HazelcastException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             if (e.getCause() instanceof IOException) {
-                connectionProcessListeners.forEach(listener -> listener.connectionAttemptFailed(target));
+                connectionProcessListener.connectionAttemptFailed(target);
             }
             return null;
         } catch (Exception e) {
@@ -497,7 +497,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    connectionProcessListeners.forEach(listener -> listener.attemptingToConnectToAddress(member.getAddress()));
+                    connectionProcessListener.attemptingToConnectToAddress(member.getAddress());
                     Connection connection = connect(member, o -> getOrConnectToMember((Member) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
@@ -510,7 +510,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-                    connectionProcessListeners.forEach(listener -> listener.attemptingToConnectToAddress(address));
+                    connectionProcessListener.attemptingToConnectToAddress(address);
                     Connection connection = connect(address, o -> getOrConnectToAddress((Address) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
@@ -561,7 +561,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
         Collection<Address> addresses = new LinkedHashSet<>();
         try {
-            Addresses result = addressProvider.loadAddresses();
+            Addresses result = addressProvider.loadAddresses(connectionProcessListener);
             if (shuffleMemberList) {
                 // The relative order between primary and secondary addresses should not be changed.
                 // so we shuffle the lists separately and then add them to the final list so that
@@ -813,7 +813,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public void addClientConnectionProcessListener(ClientConnectionProcessListener listener) {
-        connectionProcessListeners.add(listener);
+        connectionProcessListener = connectionProcessListener.withAdditionalListener(listener);
     }
 
     public Credentials getCurrentCredentials() {
@@ -1000,14 +1000,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
+                connectionProcessListener.authenticationSuccess();
                 break;
             case CREDENTIALS_FAILED:
                 AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
                         + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured "
                         + "in the cluster or the credentials set in the Client security config could not be authenticated");
                 connection.close("Failed to authenticate connection", authException);
+                connectionProcessListener.credentialsFailed();
                 throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
+                connectionProcessListener.clientNotAllowedInCluster();
                 ClientNotAllowedInClusterException notAllowedException =
                         new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
                 connection.close("Failed to authenticate connection", notAllowedException);
