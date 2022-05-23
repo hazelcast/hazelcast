@@ -34,6 +34,8 @@ import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,7 +95,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
-            leftTimeExtractors.put(i, row -> dataType.getConverter().asBigint(row.getRow().get(i)));
+            // TODO: enhance conversion ?
+            leftTimeExtractors.put(i, row -> Timestamp.from(Instant.from(row.getRow().get(i))).getTime());
         }
 
         return leftTimeExtractors;
@@ -103,7 +106,11 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
         for (RexInputRef value : rightWatermarkedFields.getPropertiesByIndex().values()) {
             int i = joinToRightInputFieldsMapping.get(value.getIndex());
-            rightTimeExtractors.put(i, row -> row.getRow().get(i));
+            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
+            assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
+
+            // TODO: enhance conversion ?
+            rightTimeExtractors.put(i, row -> Timestamp.from(Instant.from(row.getRow().get(i))).getTime());
         }
         return rightTimeExtractors;
     }

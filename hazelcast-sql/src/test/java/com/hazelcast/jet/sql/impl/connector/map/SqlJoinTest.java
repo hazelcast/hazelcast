@@ -78,7 +78,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoinWithTimestampBounds_then_success() {
+        public void given_streamToStreamJoin_when_joinHasTimestampBounds_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -158,7 +158,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoinWithDoubledTimestampBounds_then_success() {
+        public void given_streamToStreamJoin_when_joinHasDoubledTimestampBounds_then_success() {
             String stream1 = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -200,7 +200,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoinWithTripledTimestampBounds_then_success() {
+        public void given_streamToStreamJoin_when_joinHasTripledTimestampBounds_then_success() {
             String stream1 = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -257,7 +257,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoinProjectOnTop_then_success() {
+        public void given_streamToStreamJoin_when_joinHasProjectOnTop_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -288,8 +288,8 @@ public class SqlJoinTest {
             );
         }
 
-//        @Test
-        public void when_streamToStreamJoinContinous_then_success() {
+        @Test
+        public void given_streamToStreamJoin_when_joinIsContinuous_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -297,7 +297,8 @@ public class SqlJoinTest {
                     singletonList("a"),
                     singletonList(TIMESTAMP_WITH_TIME_ZONE),
                     row(timestampTz(0L)),
-                    row(timestampTz(1L))
+                    row(timestampTz(1L)),
+                    row(timestampTz(2L))
             );
 
             String stream2 = "stream2";
@@ -315,10 +316,11 @@ public class SqlJoinTest {
             sqlService.execute("CREATE VIEW s2 AS " +
                     "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
 
-            assertTipOfStream(
+            assertRowsEventuallyInAnyOrder(
                     "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND ",
                     asList(
                             new Row(timestampTz(0L), timestampTz(1L)),
+                            new Row(timestampTz(2L), timestampTz(1L)),
                             new Row(timestampTz(1L), timestampTz(2L))
                     )
             );

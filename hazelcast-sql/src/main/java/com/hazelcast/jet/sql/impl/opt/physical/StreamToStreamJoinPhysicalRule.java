@@ -89,8 +89,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         JoinRelType joinType = join.getJoinType();
         if (!(joinType == JoinRelType.INNER || joinType.isOuterJoin())) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types.")
-            );
+                    fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types."));
         }
 
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
@@ -102,58 +101,47 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         // region checks
         if (leftFields == null || leftFields.isEmpty()) {
             call.transformTo(
-                    fail(join, "Left input of stream to stream JOIN must contain watermarked columns")
-            );
+                    fail(join, "Left input of stream to stream JOIN must contain watermarked columns"));
             return;
         }
 
         if (!checkWatermarkedFieldsAreTemporalType(leftFields)) {
             call.transformTo(
-                    fail(join, "Left input of stream to stream JOIN watermarked columns are not temporal")
-            );
+                    fail(join, "Left input of stream to stream JOIN watermarked columns are not temporal"));
             return;
         }
 
         if (rightFields == null || rightFields.isEmpty()) {
             call.transformTo(
-                    fail(join, "Right input of stream to stream JOIN must contain watermarked columns")
-            );
+                    fail(join, "Right input of stream to stream JOIN must contain watermarked columns"));
             return;
         }
 
         if (!checkWatermarkedFieldsAreTemporalType(rightFields)) {
             call.transformTo(
-                    fail(join, "Right input of stream to stream JOIN watermarked columns are not temporal")
-            );
+                    fail(join, "Right input of stream to stream JOIN watermarked columns are not temporal"));
             return;
         }
 
-        Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields = watermarkedFields(
-                join,
-                leftFields,
-                rightFields);
-        if (watermarkedFields.f2() == null || watermarkedFields.f2().isEmpty()) {
-            call.transformTo(
-                    fail(join, "Stream to stream JOIN must contain watermarked columns")
-            );
+        WatermarkedFields watermarkedFields = watermarkedFields(join, leftFields, rightFields);
+        if (watermarkedFields.isEmpty()) {
+            call.transformTo(fail(join, "Stream to stream JOIN must contain watermarked columns"));
             return;
         }
 
         RexNode predicate = join.analyzeCondition().getRemaining(join.getCluster().getRexBuilder());
         if (!(predicate instanceof RexCall)) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate")
-            );
+                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate"));
             return;
         }
 
-        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(join, watermarkedFields.f2());
+        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(join, watermarkedFields);
         predicate.accept(visitor);
 
         if (!visitor.isValid) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate")
-            );
+                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate"));
             return;
         }
         // endregion
@@ -196,8 +184,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         RelRule.convert(call.rel(2), call.rel(2).getTraitSet().replace(PHYSICAL)),
                         join.getCondition(),
                         join.getJoinType(),
-                        watermarkedFields.f0(),
-                        watermarkedFields.f1(),
+                        leftFields,
+                        rightFields,
                         wmFieldsMapping.f0(),
                         wmFieldsMapping.f1(),
                         postponeMap
@@ -234,7 +222,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
      * @param rightFields
      * @return left, right input and joint watermarked fields from rel tree
      */
-    private Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFields(
+    private WatermarkedFields watermarkedFields(
             JoinLogicalRel join, WatermarkedFields leftFields, WatermarkedFields rightFields) {
         Map<Integer, RexInputRef> leftPropsByIndex = leftFields.getPropertiesByIndex();
         Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
@@ -261,7 +249,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             }
         }
 
-        return Tuple3.tuple3(leftFields, rightFields, join(leftResultInputRefMap, rightResultInputRefMap));
+        return join(leftResultInputRefMap, rightResultInputRefMap);
     }
 
     /**
@@ -273,17 +261,16 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     @SuppressWarnings("JavadocReference")
     private Tuple2<Map<Integer, Integer>, Map<Integer, Integer>> joinToInputFieldsWmKeysMapping(
             JoinLogicalRel join,
-            Tuple3<WatermarkedFields, WatermarkedFields, WatermarkedFields> watermarkedFieldsTuple) {
+            WatermarkedFields joinedWmFields) {
         Map<Integer, Integer> leftToJoinWmFieldsMapping = new HashMap<>();
         Map<Integer, Integer> rightToJoinWmFieldsMapping = new HashMap<>();
 
         List<RelDataTypeField> leftFieldsList = join.getLeft().getRowType().getFieldList();
         List<RelDataTypeField> rightFieldsList = join.getRight().getRowType().getFieldList();
         List<RelDataTypeField> joinFieldsList = join.getRowType().getFieldList();
-        Set<Integer> joinedWmKeys = watermarkedFieldsTuple.f2().getPropertiesByIndex().keySet();
+        Set<Integer> joinedWmKeys = joinedWmFields.getPropertiesByIndex().keySet();
 
         for (Integer idx : joinedWmKeys) {
-            // TODO: optimize, only TIMESTAMP allowed?
             extractMapping(leftFieldsList, joinFieldsList, leftToJoinWmFieldsMapping, idx);
             extractMapping(rightFieldsList, joinFieldsList, rightToJoinWmFieldsMapping, idx);
         }
