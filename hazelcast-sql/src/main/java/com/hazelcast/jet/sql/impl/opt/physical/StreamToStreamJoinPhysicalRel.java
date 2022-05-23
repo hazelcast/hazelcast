@@ -21,9 +21,11 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -88,7 +90,10 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
         for (RexInputRef value : leftWatermarkedFields.getPropertiesByIndex().values()) {
             int i = joinToLeftInputFieldsMapping.get(value.getIndex());
-            leftTimeExtractors.put(i, row -> row.getRow().get(i));
+            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
+            assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
+
+            leftTimeExtractors.put(i, row -> dataType.getConverter().asBigint(row.getRow().get(i)));
         }
 
         return leftTimeExtractors;

@@ -39,6 +39,7 @@ import java.util.List;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -49,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SqlJoinTest {
 
     @SuppressWarnings("resource")
-    public static class SqlStreamingJoinCheckerTest extends SqlTestSupport {
+    public static class SqlStreamToStreamJoinTest extends SqlTestSupport {
 
         private static SqlService sqlService;
 
@@ -104,6 +105,56 @@ public class SqlJoinTest {
                             "                             AND     s1.a + INTERVAL '0.004' SECOND ",
                     singletonList(new Row(timestamp(0L), timestamp(0L)))
             );
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_leftInputHasNonTemporalWatermarkedType_then_throw() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(INTEGER),
+                    row(0L));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+
+            assertThatThrownBy(() -> instance()
+                    .getSql()
+                    .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
+            ).hasMessageContaining("Left input of stream to stream JOIN watermarked columns are not temporal");
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_rightInputHasNonTemporalWatermarkedType_then_throw() {
+            String stream1 = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream1,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(BIGINT),
+                    row(0L));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), 1))");
+
+            assertThatThrownBy(() -> instance()
+                    .getSql()
+                    .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
+            ).hasMessageContaining("Right input of stream to stream JOIN watermarked columns are not temporal");
         }
 
         @Test
@@ -204,7 +255,74 @@ public class SqlJoinTest {
                             timestamp(102L)))
             );
         }
-        // TODO: projection test.
+
+        @Test
+        public void when_streamToStreamJoinProjectOnTop_then_success() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L))
+            );
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(1L))
+            );
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            assertTipOfStream(
+                    "SELECT b FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.002' SECOND " +
+                            "                             AND     s1.a + INTERVAL '0.002' SECOND ",
+                    singletonList(new Row(timestamp(1L)))
+            );
+        }
+
+//        @Test
+        public void when_streamToStreamJoinContinous_then_success() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                    row(timestampTz(0L)),
+                    row(timestampTz(1L))
+            );
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                    row(timestampTz(1L)),
+                    row(timestampTz(2L))
+            );
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            assertTipOfStream(
+                    "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND ",
+                    asList(
+                            new Row(timestampTz(0L), timestampTz(1L)),
+                            new Row(timestampTz(1L), timestampTz(2L))
+                    )
+            );
+        }
     }
 
     public static class SqlInnerJoinTest extends SqlTestSupport {

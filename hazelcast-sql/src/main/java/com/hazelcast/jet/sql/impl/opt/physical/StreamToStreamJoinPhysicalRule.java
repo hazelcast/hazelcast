@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -106,9 +107,23 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
+        if (!checkWatermarkedFieldsAreTemporalType(leftFields)) {
+            call.transformTo(
+                    fail(join, "Left input of stream to stream JOIN watermarked columns are not temporal")
+            );
+            return;
+        }
+
         if (rightFields == null || rightFields.isEmpty()) {
             call.transformTo(
                     fail(join, "Right input of stream to stream JOIN must contain watermarked columns")
+            );
+            return;
+        }
+
+        if (!checkWatermarkedFieldsAreTemporalType(rightFields)) {
+            call.transformTo(
+                    fail(join, "Right input of stream to stream JOIN watermarked columns are not temporal")
             );
             return;
         }
@@ -197,6 +212,18 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 node.getRowType(),
                 message
         );
+    }
+
+    /**
+     * Checks if all watermarked fields are temporal type.
+     */
+    private boolean checkWatermarkedFieldsAreTemporalType(WatermarkedFields fields) {
+        for (RexInputRef ref : fields.getPropertiesByIndex().values()) {
+            if (!HazelcastTypeUtils.isTemporalType(ref.getType())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
