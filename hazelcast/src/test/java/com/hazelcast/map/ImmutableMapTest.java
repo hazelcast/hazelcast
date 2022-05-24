@@ -41,17 +41,28 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import org.junit.Assert;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ImmutableMapTest extends HazelcastTestSupport {
 
-    private transient HazelcastInstance local;
-    private transient HazelcastInstance remote;
+    private HazelcastInstance local;
+    private HazelcastInstance remote;
     private static final String OBJECT_MAP = "OBJECT_MAP";
     private static final String BINARY_MAP = "BINARY_MAP";
+    private static final ConstantString CONSTANT_VALUE = new ConstantString("I am a constant");
+    private static final VariableString VARIABLE_VALUE = new VariableString("I am a variable string");
     private static Config config;
+
+    private String localKey;
+    private String remoteKey;
+    private IMap<String, ConstantString> constantBinaryMap;
+    private IMap<String, ConstantString> constantObjectMap;
+    private IMap<String, VariableString> variableBinaryMap;
+    private IMap<String, VariableString> variableObjectMap;
+
 
     @BeforeClass
     public static void initConfig() {
@@ -67,6 +78,13 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances(config, 2);
         local = instances[0];
         remote = instances[1];
+
+        localKey = generateKeyOwnedBy(local);
+        remoteKey = generateKeyOwnedBy(remote);
+        constantBinaryMap = local.getMap(randomMapName(BINARY_MAP));
+        constantObjectMap = local.getMap(randomMapName(OBJECT_MAP));
+        variableBinaryMap = local.getMap(randomMapName(BINARY_MAP));
+        variableObjectMap = local.getMap(randomMapName(OBJECT_MAP));
     }
 
     @After
@@ -77,30 +95,36 @@ public class ImmutableMapTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialisationOnLocalPutAndGet() {
-        checkPutAndGet(local, Assert::assertTrue);
+        checkPutAndGet(localKey, generateKeyOwnedBy(local), Assert::assertTrue);
     }
 
     @Test
     public void testSerialisationOnRemotePutAndGet() {
-        checkPutAndGet(remote, Assert::assertFalse);
+        checkPutAndGet(remoteKey, generateKeyOwnedBy(remote), Assert::assertFalse);
     }
 
     @Test
     public void testSerialisationOnLocalPutAndRemove() {
-        checkPutAndRemove(local, Assert::assertTrue);
+        checkPutAndRemove(localKey, Assert::assertTrue);
     }
 
     @Test
     public void testSerialisationOnRemotePutAndRemove() {
-        checkPutAndRemove(remote, Assert::assertFalse);
+        checkPutAndRemove(remoteKey, Assert::assertFalse);
     }
 
-    private void checkPutAndGet(HazelcastInstance hz, Consumer<Boolean> checkAssertion) {
+    @Test
+    public void testSerialisationOnLocalPutAndContainsValue() {
+        checkPutAndContainsValue(localKey, Assert::assertTrue);
+    }
 
-        String putKey = generateKeyOwnedBy(hz);
-        String putIfAbsentKey = generateKeyOwnedBy(hz);
+    @Test
+    public void testSerialisationOnRemotePutAndContainsValue() {
+        checkPutAndContainsValue(remoteKey, Assert::assertFalse);
+    }
 
-        ConstantString constantValue = new ConstantString("I am a constant");
+    private void checkPutAndGet(String putKey, String putIfAbsentKey, Consumer<Boolean> checkAssertion) {
+
         ConstantString differentConstantValue = new ConstantString("I am a different constant");
 
         BiFunction<IMap<String, ConstantString>, ConstantString, ConstantString> constantPutFx =
@@ -108,17 +132,14 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         BiFunction<IMap<String, ConstantString>, ConstantString, ConstantString> constantPutIfAbsentFx =
             (map, value) -> map.putIfAbsent(putIfAbsentKey, value);
 
-        IMap<String, ConstantString> constantBinaryMap = local.getMap(randomMapName(BINARY_MAP));
-        checkPutGetForMap(putIfAbsentKey, constantValue, differentConstantValue, constantBinaryMap, constantPutIfAbsentFx,
+        checkPutGetForMap(putIfAbsentKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, constantPutIfAbsentFx,
             Assert::assertFalse);
-        checkPutGetForMap(putKey, constantValue, differentConstantValue, constantBinaryMap, constantPutFx, Assert::assertFalse);
+        checkPutGetForMap(putKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, constantPutFx, Assert::assertFalse);
 
-        IMap<String, ConstantString> constantObjectMap = local.getMap(randomMapName(OBJECT_MAP));
-        checkPutGetForMap(putIfAbsentKey, constantValue, differentConstantValue, constantObjectMap, constantPutIfAbsentFx,
+        checkPutGetForMap(putIfAbsentKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, constantPutIfAbsentFx,
             checkAssertion);
-        checkPutGetForMap(putKey, constantValue, differentConstantValue, constantObjectMap, constantPutFx, checkAssertion);
+        checkPutGetForMap(putKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, constantPutFx, checkAssertion);
 
-        VariableString variableValue = new VariableString("I am a variable string");
         VariableString differentVariableValue = new VariableString("I am a different variable string");
 
         BiFunction<IMap<String, VariableString>, VariableString, VariableString> variablePutFx =
@@ -126,15 +147,13 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         BiFunction<IMap<String, VariableString>, VariableString, VariableString> variablePutIfAbsentFx =
             (map, value) -> map.putIfAbsent(putIfAbsentKey, value);
 
-        IMap<String, VariableString> variableBinaryMap = local.getMap(randomMapName(BINARY_MAP));
-        checkPutGetForMap(putIfAbsentKey, variableValue, differentVariableValue, variableBinaryMap, variablePutIfAbsentFx,
+        checkPutGetForMap(putIfAbsentKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, variablePutIfAbsentFx,
             Assert::assertFalse);
-        checkPutGetForMap(putKey, variableValue, differentVariableValue, variableBinaryMap, variablePutFx, Assert::assertFalse);
+        checkPutGetForMap(putKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, variablePutFx, Assert::assertFalse);
 
-        IMap<String, VariableString> variableObjectMap = local.getMap(randomMapName(OBJECT_MAP));
-        checkPutGetForMap(putIfAbsentKey, variableValue, differentVariableValue, variableObjectMap, variablePutIfAbsentFx,
+        checkPutGetForMap(putIfAbsentKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, variablePutIfAbsentFx,
             Assert::assertFalse);
-        checkPutGetForMap(putKey, variableValue, differentVariableValue, variableObjectMap, variablePutFx, Assert::assertFalse);
+        checkPutGetForMap(putKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, variablePutFx, Assert::assertFalse);
     }
 
     private <T> void checkPutGetForMap(String key, T value1, T value2, IMap<String, T> map,
@@ -150,36 +169,46 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         checkAssertion.accept(value1 == oldValue);
     }
 
-    private void checkPutAndRemove(HazelcastInstance hz, Consumer<Boolean> checkAssertion) {
+    private void checkPutAndRemove(String key, Consumer<Boolean> checkAssertion) {
 
-        String key = generateKeyOwnedBy(hz);
-        ConstantString constantValue = new ConstantString("I am a constant");
+        checkPutRemoveForMap(key, CONSTANT_VALUE, constantBinaryMap, Assert::assertFalse);
 
-        IMap<String, ConstantString> constantBinaryMap = local.getMap(randomMapName(BINARY_MAP));
-        checkPutRemoveForMap(key, constantValue, constantBinaryMap, Assert::assertFalse);
+        checkPutRemoveForMap(key, CONSTANT_VALUE, constantObjectMap, checkAssertion);
 
-        IMap<String, ConstantString> constantObjectMap = local.getMap(randomMapName(OBJECT_MAP));
-        checkPutRemoveForMap(key, constantValue, constantObjectMap, checkAssertion);
+        checkPutRemoveForMap(key, VARIABLE_VALUE, variableBinaryMap, Assert::assertFalse);
 
-        VariableString variableValue = new VariableString("I am a variable string");
-
-        IMap<String, VariableString> variableBinaryMap = local.getMap(randomMapName(BINARY_MAP));
-        checkPutRemoveForMap(key, variableValue, variableBinaryMap, Assert::assertFalse);
-
-        IMap<String, VariableString> variableObjectMap = local.getMap(randomMapName(OBJECT_MAP));
-        checkPutRemoveForMap(key, variableValue, variableObjectMap, Assert::assertFalse);
+        checkPutRemoveForMap(key, VARIABLE_VALUE, variableObjectMap, Assert::assertFalse);
     }
 
-    private void checkPutRemoveForMap(String key, Object value, IMap map, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutRemoveForMap(String key, T value, IMap<String, T> map, Consumer<Boolean> checkAssertion) {
 
         map.put(key, value);
-        Object removedValue = map.remove(key);
+        T removedValue = map.remove(key);
         assertEquals(value, removedValue);
         checkAssertion.accept(value == removedValue);
     }
 
+    private void checkPutAndContainsValue(String key, Consumer<Boolean> checkAssertion) {
 
-    // containsValue
+        checkPutContainsValueForMap(key, CONSTANT_VALUE, constantBinaryMap, Assert::assertFalse);
+
+        checkPutContainsValueForMap(key, CONSTANT_VALUE, constantObjectMap, checkAssertion);
+
+        checkPutContainsValueForMap(key, VARIABLE_VALUE, variableBinaryMap, Assert::assertFalse);
+
+        checkPutContainsValueForMap(key, VARIABLE_VALUE, variableObjectMap, Assert::assertFalse);
+    }
+
+    private <T> void checkPutContainsValueForMap(String key, T value, IMap<String, T> map, Consumer<Boolean> checkAssertion) {
+
+        map.put(key, value);
+        assertTrue(map.containsValue(value));
+        T getValue = map.get(key);
+        assertEquals(value, getValue);
+        checkAssertion.accept(value == getValue);
+    }
+
+    // containsValue - Done
     // remove(k, v)
     // delete
     // getAsync
