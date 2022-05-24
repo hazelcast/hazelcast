@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.ImmutableMapSupport;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
@@ -26,7 +28,7 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
 
     protected transient boolean successful;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value) {
+    public PutIfAbsentOperation(String name, Data dataKey, Object value) {
         super(name, dataKey, value);
     }
 
@@ -35,9 +37,24 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
 
     @Override
     protected void runInternal() {
-        Object oldValue = recordStore.putIfAbsent(dataKey, dataValue,
-                getTtl(), getMaxIdle(), getCallerAddress());
-        this.oldValue = mapServiceContext.toData(oldValue);
+
+        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.OBJECT) {
+
+            if (dataValue instanceof Data) {
+                // At this point, dataValue should be deserialized. So, it cannot be an instance of Data
+                throw new IllegalStateException("Unexpected type for data value in putIfAbsent. " + dataValue);
+            } else {
+                if (ImmutableMapSupport.isConsideredImmutable(dataValue, this)) {
+                    oldValue = recordStore.putIfAbsent(dataKey, dataValue, getTtl(), getMaxIdle(), getCallerAddress());
+                } else {
+                    oldValue = recordStore.putIfAbsent(dataKey, ImmutableMapSupport.defensiveCopy(dataValue, mapServiceContext),
+                        getTtl(), getMaxIdle(), getCallerAddress());
+                }
+            }
+        } else {
+            oldValue = recordStore.putIfAbsent(dataKey, mapServiceContext.toData(dataValue), getTtl(), getMaxIdle(),
+                getCallerAddress());
+        }
         successful = this.oldValue == null;
     }
 

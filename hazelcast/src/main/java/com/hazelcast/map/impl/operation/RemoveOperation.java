@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.ImmutableMapSupport;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
 
@@ -32,7 +33,11 @@ public class RemoveOperation extends BaseRemoveOperation {
 
     @Override
     protected void runInternal() {
-        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
+
+        dataOldValue = recordStore.remove(dataKey, getCallerProvenance());
+        if (!ImmutableMapSupport.isConsideredImmutable(dataOldValue, this)) {
+            dataOldValue = ImmutableMapSupport.defensiveCopy(dataOldValue, mapServiceContext);
+        }
         successful = dataOldValue != null;
     }
 

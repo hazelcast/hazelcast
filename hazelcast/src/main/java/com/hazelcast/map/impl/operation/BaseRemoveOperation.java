@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 public abstract class BaseRemoveOperation extends LockAwareOperation
         implements BackupAwareOperation, MutatingOperation {
 
-    protected transient Data dataOldValue;
+    protected transient Object dataOldValue;
 
     public BaseRemoveOperation() {
     }

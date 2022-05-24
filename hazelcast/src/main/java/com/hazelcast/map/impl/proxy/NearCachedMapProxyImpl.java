@@ -184,7 +184,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Object putIfAbsentInternal(Object key, Object value, long ttl, TimeUnit ttlUnit, long maxIdle,
+                                         TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.putIfAbsentInternal(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -328,7 +329,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data removeInternal(Object key) {
+    protected Object removeInternal(Object key) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.removeInternal(key);

@@ -82,7 +82,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+    public MapOperation createPutIfAbsentOperation(String name, Data key, Object value, long ttl, long maxIdle) {
         if (hasNoExpiry(ttl, maxIdle)) {
             return new PutIfAbsentOperation(name, key, value);
         } else {

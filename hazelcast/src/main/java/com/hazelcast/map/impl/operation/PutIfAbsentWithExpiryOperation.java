@@ -28,7 +28,7 @@ public class PutIfAbsentWithExpiryOperation extends PutIfAbsentOperation {
     private long ttl;
     private long maxIdle;
 
-    public PutIfAbsentWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+    public PutIfAbsentWithExpiryOperation(String name, Data dataKey, Object value, long ttl, long maxIdle) {
         super(name, dataKey, value);
         this.ttl = ttl;
         this.maxIdle = maxIdle;

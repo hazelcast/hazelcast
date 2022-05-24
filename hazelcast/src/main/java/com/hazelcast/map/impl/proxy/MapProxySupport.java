@@ -433,16 +433,16 @@ abstract class MapProxySupport<K, V>
         return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected Data putIfAbsentInternal(Object key, Data value,
+    protected Object putIfAbsentInternal(Object key, Object value,
                                        long ttl, TimeUnit ttlUnit,
                                        long maxIdle, TimeUnit maxIdleUnit) {
 
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
-        return (Data) invokeOperation(keyData, operation);
+        return invokeOperation(keyData, operation);
     }
 
-    private MapOperation newPutIfAbsentOperation(Data keyData, Data valueData,
+    private MapOperation newPutIfAbsentOperation(Data keyData, Object valueData,
                                                  long ttl, TimeUnit timeunit,
                                                  long maxIdle, TimeUnit maxIdleUnit) {
         return operationProvider.createPutIfAbsentOperation(name, keyData, valueData,
@@ -655,10 +655,10 @@ abstract class MapProxySupport<K, V>
         return operationProvider.createLoadAllOperation(name, keys, replaceExistingValues);
     }
 
-    protected Data removeInternal(Object key) {
+    protected Object removeInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
-        return (Data) invokeOperation(keyData, operation);
+        return invokeOperation(keyData, operation);
     }
 
     protected void deleteInternal(Object key) {

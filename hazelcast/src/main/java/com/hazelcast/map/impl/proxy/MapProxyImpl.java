@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
@@ -135,13 +134,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
-        Object valueData = null;
-        if (mapConfig.getInMemoryFormat() == InMemoryFormat.OBJECT) {
-            valueData = value;
-        } else {
-            valueData = toData(value);
-        }
-        Object result = putInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
+        Object result = putInternal(key, value, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
         return toObject(result);
     }
 
@@ -181,8 +174,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
+        Object result = putIfAbsentInternal(key, value, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
         return toObject(result);
     }
 
@@ -196,7 +188,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
+        Object result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
         return toObject(result);
     }
 
@@ -274,9 +266,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public V remove(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-        Data result = removeInternal(key);
-        return toObject(result);
+        return toObject(removeInternal(key));
     }
 
     @Override
@@ -1315,7 +1305,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return null;
         }
 
-        Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET, TimeUnit.MILLISECONDS);
+        Object result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET, TimeUnit.MILLISECONDS);
         if (result == null) {
             return newValue;
         } else {
@@ -1367,7 +1357,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 }
             } else {
                 if (newValue != null) {
-                    Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                    Object result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
                             TimeUnit.MILLISECONDS);
                     if (result == null) {
                         return newValue;
@@ -1410,7 +1400,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return null;
                 }
             } else {
-                Data result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Object result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;
