@@ -21,7 +21,6 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
-import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -42,7 +41,6 @@ import org.immutables.value.Value;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -173,9 +171,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         rightBoundMap.put(rlRelation, visitor.rightBound.f2());
         postponeMap.put(rrRelation, rightBoundMap);
 
-        Tuple2<Map<Integer, Integer>, Map<Integer, Integer>> wmFieldsMapping =
-                joinToInputFieldsWmKeysMapping(join, watermarkedFields);
-
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
                         join.getCluster(),
@@ -186,8 +181,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         join.getJoinType(),
                         leftFields,
                         rightFields,
-                        wmFieldsMapping.f0(),
-                        wmFieldsMapping.f1(),
                         postponeMap
                 )
         );
@@ -250,32 +243,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         return join(leftResultInputRefMap, rightResultInputRefMap);
-    }
-
-    /**
-     * Creates mapping between join rel watermarked fields indices
-     * and separately left and right input rel watermarked fields indices.
-     * It is required by processor for enlighten of row timestamp extraction.
-     * For more information :{@link StreamToStreamJoinP#clearExpiredItemsInBuffer}
-     */
-    @SuppressWarnings("JavadocReference")
-    private Tuple2<Map<Integer, Integer>, Map<Integer, Integer>> joinToInputFieldsWmKeysMapping(
-            JoinLogicalRel join,
-            WatermarkedFields joinedWmFields) {
-        Map<Integer, Integer> leftToJoinWmFieldsMapping = new HashMap<>();
-        Map<Integer, Integer> rightToJoinWmFieldsMapping = new HashMap<>();
-
-        List<RelDataTypeField> leftFieldsList = join.getLeft().getRowType().getFieldList();
-        List<RelDataTypeField> rightFieldsList = join.getRight().getRowType().getFieldList();
-        List<RelDataTypeField> joinFieldsList = join.getRowType().getFieldList();
-        Set<Integer> joinedWmKeys = joinedWmFields.getPropertiesByIndex().keySet();
-
-        for (Integer idx : joinedWmKeys) {
-            extractMapping(leftFieldsList, joinFieldsList, leftToJoinWmFieldsMapping, idx);
-            extractMapping(rightFieldsList, joinFieldsList, rightToJoinWmFieldsMapping, idx);
-        }
-
-        return tuple2(leftToJoinWmFieldsMapping, rightToJoinWmFieldsMapping);
     }
 
     private void extractMapping(

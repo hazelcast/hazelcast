@@ -471,6 +471,10 @@ public class CreateDagVisitor {
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount())
         );
+
+        // TODO: clarify it.
+        joinVertex.localParallelism(1);
+
         // region DAG
         Vertex leftInput = ((PhysicalRel) rel.getLeft()).accept(this);
         Vertex rightInput = ((PhysicalRel) rel.getRight()).accept(this);

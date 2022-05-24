@@ -61,6 +61,10 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
         return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
     }
 
+    public DropLateItemsLogicalRel copy(RelTraitSet traitSet, RelNode input) {
+        return new DropLateItemsLogicalRel(getCluster(), traitSet, input, wmField);
+    }
+
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)

@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -320,8 +321,57 @@ public class SqlJoinTest {
                     "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND ",
                     asList(
                             new Row(timestampTz(0L), timestampTz(1L)),
+                            new Row(timestampTz(1L), timestampTz(1L)),
                             new Row(timestampTz(2L), timestampTz(1L)),
-                            new Row(timestampTz(1L), timestampTz(2L))
+                            new Row(timestampTz(0L), timestampTz(2L)),
+                            new Row(timestampTz(1L), timestampTz(2L)),
+                            new Row(timestampTz(2L), timestampTz(2L))
+                    )
+            );
+        }
+
+        @Ignore("Doesn't work due to single watermark usage.")
+        @Test
+        public void given_streamToStreamJoin_when_joinConditionApplies_then_success() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    asList("a", "b"),
+                    asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                    row(timestampTz(1L), 1),
+                    row(timestampTz(2L), 2),
+                    row(timestampTz(3L), 3),
+                    row(timestampTz(4L), 4),
+                    row(timestampTz(5L), 5)
+            );
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    asList("x", "y"),
+                    asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                    row(timestampTz(1L), 1),
+                    row(timestampTz(2L), 2),
+                    row(timestampTz(3L), 3),
+                    row(timestampTz(4L), 4),
+                    row(timestampTz(5L), 5)
+            );
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(x), INTERVAL '0.001' SECOND))");
+
+            assertRowsEventuallyInAnyOrder(
+                    "SELECT b, y FROM s1" +
+                            " JOIN s2 ON s2.x BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND WHERE b % 2 = 0 ",
+                    asList(
+                            new Row(2, 2),
+                            new Row(2, 3),
+                            new Row(2, 4),
+                            new Row(4, 4)
                     )
             );
         }

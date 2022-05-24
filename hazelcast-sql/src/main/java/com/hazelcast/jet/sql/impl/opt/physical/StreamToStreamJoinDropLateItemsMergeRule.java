@@ -56,7 +56,7 @@ public class StreamToStreamJoinDropLateItemsMergeRule extends RelRule<RelRule.Co
                 .operandSupplier(b0 -> b0
                         .operand(StreamToStreamJoinPhysicalRel.class)
                         .trait(PHYSICAL)
-                        .inputs(b1 -> b1
+                        .unorderedInputs(b1 -> b1
                                 .operand(DropLateItemsPhysicalRel.class)
                                 .anyInputs()))
                 .build();
