@@ -77,7 +77,6 @@ import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
-import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_PARAMS;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -163,7 +162,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     private void flush(ArrayList<Data> dataKeys,
                        ArrayList<Record> records, boolean backup) {
-        if (mapDataStore == EMPTY_MAP_DATA_STORE) {
+        if (!hasMapStore) {
             return;
         }
 
@@ -652,7 +651,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, backup);
         if (record != null && touch) {
             accessRecord(key, record, now);
-        } else if (record == null && mapDataStore != EMPTY_MAP_DATA_STORE) {
+        } else if (record == null && hasMapStore) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = evictIfExpired(key, now, backup) ? null : record;
         }
@@ -707,7 +706,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         // then try to load missing keys from map-store
-        if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
+        if (hasMapStore && !keys.isEmpty()) {
             Map loadedEntries = loadEntries(keys, callerAddress);
             addToMapEntrySet(loadedEntries, mapEntries);
         }
@@ -925,10 +924,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long maxIdle, long expiryTime, long now, UUID transactionId,
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
-        Record record = createRecord(key, newValue, now);
-        if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
-            putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
+
+        if (hasMapStore && store) {
+            newValue = putMapStore(key, newValue, ttl, maxIdle, now, transactionId);
         }
+
+        Record record = createRecord(key, newValue, now);
+
+        if (hasMapStore && store) {
+            onStore(record);
+        }
+
         storage.put(key, record);
         expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
 
@@ -951,9 +957,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record.onAccess(now);
         }
 
-        if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
-            newValue = putIntoMapStore(record, key, newValue,
-                    ttl, maxIdle, now, transactionId);
+        if (hasMapStore && store) {
+            newValue = putMapStore(key, newValue, ttl, maxIdle, now, transactionId);
+            onStore(record);
         }
 
         storage.updateRecordValue(key, record, newValue);
@@ -972,16 +978,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return loadRecordOrNull(key, backup, callerAddress);
     }
 
-    protected Object putIntoMapStore(Record record, Data key, Object newValue,
-                                     long ttlMillis, long maxIdleMillis,
-                                     long now, UUID transactionId) {
-        long expirationTime = expirySystem.calculateExpirationTime(ttlMillis, maxIdleMillis, now, now);
-        newValue = mapDataStore.add(key, newValue, expirationTime, now, transactionId);
-        if (mapDataStore.isPostProcessingMapStore()) {
-            storage.updateRecordValue(key, record, newValue);
-        }
-        onStore(record);
-        return newValue;
+    protected Object putMapStore(Data key, Object newValue,
+                                 long ttlMillis, long maxIdleMillis,
+                                 long now, UUID transactionId) {
+        long expirationTime = mapDataStore.isWithExpirationTime()
+                ? expirySystem.calculateExpirationTime(ttlMillis, maxIdleMillis, now, now) : UNSET;
+        return mapDataStore.add(key, newValue, expirationTime, now, transactionId);
     }
 
     @Override
@@ -1181,7 +1183,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected void onStore(Record record) {
-        if (record == null || mapDataStore == EMPTY_MAP_DATA_STORE) {
+        if (record == null || !hasMapStore) {
             return;
         }
 
@@ -1211,7 +1213,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void checkIfLoaded() {
-        if (mapDataStore == EMPTY_MAP_DATA_STORE
+        if (!hasMapStore
                 || loadingFutures.isEmpty()) {
             return;
         }

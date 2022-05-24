@@ -49,7 +49,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * This class has all logic to remove expired entries. Expiry reason
- * can be ttl or idleness. An instance of this class is created for
+ * can be ttl or idleness.
+ * <p>
+ * An instance of this class is created for
  * each {@link RecordStore} and it is always accessed by same single thread.
  */
 public class ExpirySystemImpl implements ExpirySystem {

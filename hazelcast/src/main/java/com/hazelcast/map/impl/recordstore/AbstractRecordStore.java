@@ -44,11 +44,15 @@ import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
+
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
+
     protected final int partitionId;
+    protected final boolean hasMapStore;
     protected final String name;
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
@@ -77,6 +81,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
+        this.hasMapStore = mapDataStore != EMPTY_MAP_DATA_STORE;
         this.lockStore = createLockStore();
         this.mutationObserver = new CompositeMutationObserver<>();
     }
