@@ -255,10 +255,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                      boolean putTransient, CallerProvenance provenance,
                                      UUID transactionId) {
         long now = getNow();
-        putInternal(key, value, ttl, maxIdle, expiryTime, now,
-                null, null, null, PUT_BACKUP_PARAMS);
-
-        Record record = getRecord(key);
+        Record record = putBackupInternal(key, value, ttl, maxIdle, expiryTime,
+                now, transactionId, PUT_BACKUP_PARAMS);
 
         if (persistenceEnabledFor(provenance)) {
             if (putTransient) {
@@ -884,7 +882,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (record != null) {
                 return record.getValue();
             }
-        } else if (staticParams.isPutIfExists()) {
+        } else if (staticParams.isReplace()) {
             // For methods like setTtl and replace,
             // when no matching record, just return.
             record = getOrLoadRecord(record, key, now, callerAddress, staticParams.isBackup());
@@ -893,18 +891,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             oldValue = record.getValue();
             newValue = staticParams.isSetTtl() ? oldValue : newValue;
-        }
 
-        // For method replace, if current value is not expected one, return.
-        if (staticParams.isPutIfEqual()
-                && !valueComparator.isEqual(expectedValue, oldValue, serializationService)) {
-            return null;
+            // For method replace, if current value is not expected one, return.
+            if (staticParams.isReplaceIfSame()
+                    && !valueComparator.isEqual(expectedValue, oldValue, serializationService)) {
+                return null;
+            }
         }
 
         // Intercept put on owner partition.
-        if (!staticParams.isBackup()) {
-            newValue = mapServiceContext.interceptPut(interceptorRegistry, oldValue, newValue);
-        }
+        newValue = mapServiceContext.interceptPut(interceptorRegistry, oldValue, newValue);
 
         // Put new record or update existing one.
         if (record == null) {
@@ -917,6 +913,26 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     staticParams.isCountAsAccess(), staticParams.isBackup());
         }
         return oldValue;
+    }
+
+    private Record putBackupInternal(Data key, Object newValue, long ttl,
+                                     long maxIdle, long expiryTime, long now,
+                                     @Nullable UUID transactionId, StaticParams staticParams) {
+
+        // Get record by checking expiry, if expired, evict record.
+        Record record = getRecordOrNull(key, now, staticParams.isBackup());
+
+        // Put new record or update existing one.
+        if (record == null) {
+            record = putNewRecord(key, null, newValue, ttl, maxIdle, expiryTime, now,
+                    transactionId, staticParams.isPutFromLoad() ? LOADED : ADDED,
+                    staticParams.isStore(), staticParams.isBackup());
+        } else {
+            updateRecord(record, key, record.getValue(), newValue, ttl, maxIdle, expiryTime, now,
+                    transactionId, staticParams.isStore(),
+                    staticParams.isCountAsAccess(), staticParams.isBackup());
+        }
+        return record;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -1138,7 +1154,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle) {
         long now = getNow();
         Object oldValue = putInternal(dataKey, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.SET_WTH_NO_ACCESS_PARAMS);
+                null, null, null, StaticParams.SET_WITH_NO_ACCESS_PARAMS);
         return oldValue == null;
     }
 

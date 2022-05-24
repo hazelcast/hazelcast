@@ -55,13 +55,13 @@ final class StaticParams {
             .setCheckIfLoaded(true)
             .setCountAsAccess(true);
 
-    static final StaticParams SET_WTH_NO_ACCESS_PARAMS = new StaticParams()
+    static final StaticParams SET_WITH_NO_ACCESS_PARAMS = new StaticParams()
             .setPutVanilla(true)
             .setStore(true)
             .setCheckIfLoaded(true);
 
     static final StaticParams SET_TTL_PARAMS = new StaticParams()
-            .setPutIfExists(true)
+            .setReplace(true)
             .setSetTtl(true)
             .setLoad(true)
             .setStore(true)
@@ -69,10 +69,9 @@ final class StaticParams {
             .setCountAsAccess(true);
 
     static final StaticParams SET_TTL_BACKUP_PARAMS = new StaticParams()
-            .setPutIfExists(true)
+            .setReplace(true)
             .setSetTtl(true)
             .setLoad(true)
-            .setStore(true)
             .setCheckIfLoaded(true)
             .setCountAsAccess(true)
             .setBackup(true);
@@ -84,15 +83,15 @@ final class StaticParams {
             .setCountAsAccess(true);
 
     static final StaticParams REPLACE_PARAMS = new StaticParams()
-            .setPutIfExists(true)
+            .setReplace(true)
             .setLoad(true)
             .setStore(true)
             .setCheckIfLoaded(true)
             .setCountAsAccess(true);
 
     static final StaticParams REPLACE_IF_SAME_PARAMS = new StaticParams()
-            .setPutIfExists(true)
-            .setPutIfEqual(true)
+            .setReplace(true)
+            .setReplaceIfSame(true)
             .setLoad(true)
             .setStore(true)
             .setCheckIfLoaded(true)
@@ -103,8 +102,8 @@ final class StaticParams {
     private boolean store;
     private boolean putVanilla;
     private boolean putIfAbsent;
-    private boolean putIfExists;
-    private boolean putIfEqual;
+    private boolean replace;
+    private boolean replaceIfSame;
     private boolean putFromLoad;
     private boolean isTransient;
     private boolean setTtl;
@@ -139,13 +138,13 @@ final class StaticParams {
         return this;
     }
 
-    StaticParams setPutIfExists(boolean putIfExists) {
-        this.putIfExists = putIfExists;
+    StaticParams setReplace(boolean replace) {
+        this.replace = replace;
         return this;
     }
 
-    StaticParams setPutIfEqual(boolean putIfEqual) {
-        this.putIfEqual = putIfEqual;
+    StaticParams setReplaceIfSame(boolean replaceIfSame) {
+        this.replaceIfSame = replaceIfSame;
         return this;
     }
 
@@ -194,12 +193,12 @@ final class StaticParams {
         return putVanilla;
     }
 
-    boolean isPutIfExists() {
-        return putIfExists;
+    boolean isReplace() {
+        return replace;
     }
 
-    boolean isPutIfEqual() {
-        return putIfEqual;
+    boolean isReplaceIfSame() {
+        return replaceIfSame;
     }
 
     boolean isPutFromLoad() {
