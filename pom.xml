@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.150</aws.sdk.version>
+        <aws.sdk.version>1.12.226</aws.sdk.version>
         <classgraph.version>4.8.139</classgraph.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
