@@ -90,12 +90,16 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
 
     @After
     public void after() {
-        cleanUpCluster(cluster);
+        if (cluster != null) {
+            cleanUpCluster(cluster);
+        }
 
         helper.deleteStream();
 
-        results.clear();
-        results.destroy();
+        if (results != null) {
+            results.clear();
+            results.destroy();
+        }
     }
 
     protected HazelcastInstance hz() {
