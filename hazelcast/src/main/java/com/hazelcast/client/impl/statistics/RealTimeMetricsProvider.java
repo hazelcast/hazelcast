@@ -22,10 +22,9 @@ import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.*;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_DISCRIMINATOR_ENDPOINT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 
 class RealTimeMetricsProvider implements DynamicMetricsProvider {
 

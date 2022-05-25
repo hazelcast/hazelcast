@@ -20,8 +20,6 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
-import com.hazelcast.client.console.ClientConsoleApp;
-import com.hazelcast.client.impl.proxy.RealTimeClientMapProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.InstanceTrackingConfig;

@@ -1,21 +1,37 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RealTimeClientMapProxy extends ClientMapProxy {
-    public final static String LIMIT_NAME = "limit";
-    public final static String PUT_OPERATION_NAME = "put";
-    public final static String GET_OPERATION_NAME = "get";
+    public static final String LIMIT_NAME = "limit";
+    public static final String PUT_OPERATION_NAME = "put";
+    public static final String GET_OPERATION_NAME = "get";
 
     private ILogger logger;
     private long limitMsecs;
-    public String limitString;
+    private String limitString;
 
     private final ConcurrentHashMap<String, AtomicLong> realTimeStats = new ConcurrentHashMap();
 
@@ -35,6 +51,10 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
         return realTimeStats;
     }
 
+    public void setLimitString(String limitString) {
+        this.limitString = limitString;
+    }
+
     public long getPutLatency() {
         return 0;
     }
@@ -44,7 +64,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
     }
 
     @Override
-    public Object get(@NotNull Object key) {
+    public Object get(@Nonnull Object key) {
         long start = System.nanoTime();
         Object value = super.get(key);
 
@@ -54,7 +74,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
     }
 
     @Override
-    public Object put(@NotNull Object key, @NotNull Object value) {
+    public Object put(@Nonnull Object key, @Nonnull Object value) {
         long start = System.nanoTime();
         Object oldValue = super.put(key, value);
 
