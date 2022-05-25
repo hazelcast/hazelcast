@@ -75,7 +75,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>6.8.23</version>
+            <version>7.17.4</version>
         </dependency>
 
         <!-- TEST -->
