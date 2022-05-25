@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -330,7 +329,6 @@ public class SqlJoinTest {
             );
         }
 
-        @Ignore("Doesn't work due to single watermark usage.")
         @Test
         public void given_streamToStreamJoin_when_joinConditionApplies_then_success() {
             String stream = "stream1";
