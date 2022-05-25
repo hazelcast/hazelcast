@@ -23,6 +23,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.client.impl.proxy.RealTimeClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -214,6 +215,11 @@ public class DefaultClientExtension implements ClientExtension {
                 checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
                 return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
             } else {
+                Long mapLimit = clientConfig.getRealTimeConfig().getMapLimit(id);
+                if (mapLimit != null) {
+                    return new RealTimeClientMapProxy(MapService.SERVICE_NAME, id, context);
+                }
+
                 return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
             }
         };

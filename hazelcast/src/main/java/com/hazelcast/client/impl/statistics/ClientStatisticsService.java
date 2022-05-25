@@ -94,6 +94,7 @@ public class ClientStatisticsService {
 
         metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
         client.getMetricsRegistry().registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getProxyManager()));
+        client.getMetricsRegistry().registerDynamicMetricsProvider(new RealTimeMetricsProvider(client.getProxyManager()));
 
         long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
 

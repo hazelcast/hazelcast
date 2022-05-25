@@ -82,6 +82,74 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
+    public void testRealTimeStatistics() {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastClientInstanceImpl client = createRealTimeHazelcastClient();
+        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+
+        long clientConnectionTime = System.currentTimeMillis();
+
+        // wait enough time for statistics collection
+        waitForFirstStatisticsCollection(client, clientEngine);
+
+        Map<String, String> stats = getStats(client, clientEngine);
+
+        String connStat = stats.get("clusterConnectionTimestamp");
+        assertNotNull(format("clusterConnectionTimestamp should not be null (%s)", stats), connStat);
+        Long connectionTimeStat = Long.valueOf(connStat);
+        assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
+
+        TcpClientConnection aConnection = (TcpClientConnection) client.getConnectionManager().getActiveConnections().iterator().next();
+        String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
+        assertEquals(expectedClientAddress, stats.get("clientAddress"));
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
+        assertEquals(client.getName(), stats.get("clientName"));
+
+        // time measured by us after client connection should be greater than the connection time reported by the statistics
+        assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
+                connectionTimeStat, clientConnectionTime, stats), clientConnectionTime >= connectionTimeStat);
+
+        String mapHits = stats.get(MAP_HITS_KEY);
+        assertNull(format("%s should be null (%s)", MAP_HITS_KEY, stats), mapHits);
+        String cacheHits = stats.get(CACHE_HITS_KEY);
+        assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
+
+        String lastStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
+        final long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
+
+        // this creates empty map statistics
+        client.getMap(MAP_NAME);
+
+        // wait enough time for statistics collection
+        waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
+
+        assertTrueEventually(() -> {
+            Map<String, String> stats12 = getStats(client, clientEngine);
+            String mapHits12 = stats12.get(MAP_HITS_KEY);
+            assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats12), mapHits12);
+            assertEquals(format("Expected 0 map hits (%s)", stats12), "0", mapHits12);
+            String cacheHits12 = stats12.get(CACHE_HITS_KEY);
+            assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats12), cacheHits12);
+
+            // verify that collection is periodic
+            verifyThatCollectionIsPeriodic(stats12, lastCollectionTime);
+        });
+
+        // produce map and cache stat
+        produceSomeStats(hazelcastInstance, client);
+
+        assertTrueEventually(() -> {
+            Map<String, String> stats1 = getStats(client, clientEngine);
+            String mapHits1 = stats1.get(MAP_HITS_KEY);
+            assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats1), mapHits1);
+            assertEquals(format("Expected 1 map hits (%s)", stats1), "1", mapHits1);
+            String cacheHits1 = stats1.get(CACHE_HITS_KEY);
+            assertNotNull(format("%s should not be null (%s)", CACHE_HITS_KEY, stats1), cacheHits1);
+            assertEquals(format("Expected 1 cache hits (%s)", stats1), "1", cacheHits1);
+        });
+    }
+
+    @Test
     public void testStatisticsCollectionNonDefaultPeriod() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client = createHazelcastClient();
@@ -258,6 +326,17 @@ public class ClientStatisticsTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getMetricsConfig()
                 .setCollectionFrequencySeconds(STATS_PERIOD_SECONDS);
+
+        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        return getHazelcastClientInstanceImpl(clientInstance);
+    }
+
+    private HazelcastClientInstanceImpl createRealTimeHazelcastClient() {
+        ClientConfig clientConfig = new ClientConfig();
+
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        clientConfig.getMetricsConfig().setCollectionFrequencySeconds(STATS_PERIOD_SECONDS);
+        clientConfig.getRealTimeConfig().setMapLimit(MAP_NAME, 50, TimeUnit.MILLISECONDS);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         return getHazelcastClientInstanceImpl(clientInstance);
