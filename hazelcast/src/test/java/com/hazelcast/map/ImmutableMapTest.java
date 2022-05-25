@@ -265,67 +265,6 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         }
     }
 
-    // containsValue - Done
-    // remove(k, v) - Done
-    // delete  - Does not return a value
-    // getAsync - Done
-    // putAsync
-    // putAsync(ttl)
-    // putAsync(ttl, idleTime)
-    // setAsync  - Does not return a value
-    // setAsync(ttl) - Does not return a value
-    // setAsync(ttl, idleTime) - Does not return a value
-    // removeAsync
-    // tryRemove
-    // tryPut(timeout) - Does not return value
-    // put(ttl) - calls putInternal
-    // put(ttl, idleTime) - calls putInternal
-    // putTransient - Does not return a value
-    // putTransient(idleTime) - Does not return a value
-    // putIfAbsent()
-    // putIfAbsent(ttl)
-    // putIfAbsent(ttl, idleTime)
-    // replace(old, new)
-    // replace()
-    // set - Does not return a value
-    // replace
-
-//    @Test
-//    public void testConstantStringSeraliseOnPut() {
-//
-//        String key = "1";
-//
-//        ConstantString example = new ConstantString("example");
-//        objectMap.put(key, example);
-//        binaryMap.put(key, example);
-//
-//        objectMap.put()
-//
-//        ConstantString objectGet = objectMap.get(key);
-//        ConstantString binaryGet = binaryMap.get(key);
-//
-//        assertEquals(example, objectGet);
-//        assertEquals(example, binaryGet);
-//
-//        assertFalse(example == binaryGet);
-//    //    assertTrue(example == objectGet);
-//
-//        binaryGet = binaryMap.put(key, new ConstantString("Hello"));
-//        objectGet = objectMap.put(key, new ConstantString("Hello"));
-//
-//        assertEquals(example, objectGet);
-//        assertEquals(example, binaryGet);
-//
-//        assertFalse(example == binaryGet);
-//    //    assertTrue(example == objectGet);
-//
-//        // 3 puts, entrySet, get, multinode, putAll, getAll, executeOnKey, executeOnKeys, submitOnKey, submitOnKeys, remove, aggregate
-//
-//        // IF backup reads are allowed - check multinode
-//        // Near cache reads - check for defensive copy
-//
-//    }
-
     public static class ConstantString implements DataSerializable, Immutable {
         private String str;
         ConstantString(String str) {
