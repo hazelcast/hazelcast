@@ -55,18 +55,18 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
         this.limitString = limitString;
     }
 
-    public long getPutLatency() {
-        return getLatency(PUT_OPERATION_NAME);
+    public long getPutLatencyAndReset() {
+        return getLatencyAndReset(PUT_OPERATION_NAME);
     }
 
-    public long getGetLatency() {
-        return getLatency(GET_OPERATION_NAME);
+    public long getGetLatencyAndReset() {
+        return getLatencyAndReset(GET_OPERATION_NAME);
     }
 
-    private long getLatency(String opName) {
+    private long getLatencyAndReset(String opName) {
         AtomicLong latency = realTimeStats.get(opName);
         if (latency != null) {
-            return latency.get();
+            return latency.getAndSet(0);
         }
 
         return 0;
@@ -100,9 +100,10 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
         long endTime = System.nanoTime();
         long latency = endTime - start;
 
-        if (TimeUnit.MILLISECONDS.convert(latency, TimeUnit.NANOSECONDS) > limitMsecs) {
+        long latencyInMs = TimeUnit.MILLISECONDS.convert(latency, TimeUnit.NANOSECONDS);
+        if (latencyInMs > limitMsecs) {
             logger.warning("The real-time configured limit (" + limitMsecs + " msecs) is exceeded for "
-                    + PUT_OPERATION_NAME + " for map " + getName() + ". The measured latency is " + latency + " msecs.");
+                    + PUT_OPERATION_NAME + " for map " + getName() + ". The measured latency is " + latencyInMs + " msecs.");
         }
 
         realTimeStats.compute(operationName, (opName, currentLatency) -> {

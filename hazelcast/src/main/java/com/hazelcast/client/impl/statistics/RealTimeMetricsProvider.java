@@ -51,14 +51,14 @@ class RealTimeMetricsProvider implements DynamicMetricsProvider {
                                             .withDiscriminator(MAP_DISCRIMINATOR_NAME, realTimeClientMapProxy.getName())
                                             .withTag(OPERATION_PREFIX, RealTimeClientMapProxy.PUT_OPERATION_NAME)
                                             .withTag(RealTimeClientMapProxy.LIMIT_NAME, realTimeClientMapProxy.getLimitString()),
-                                    realTimeClientMapProxy.getPutLatency());
+                                    realTimeClientMapProxy.getPutLatencyAndReset());
                             descriptor.reset();
                             context.collect(descriptor
                                             .withMetric(MetricDescriptorConstants.CLIENT_METRIC_LATENCY)
                                             .withDiscriminator(MAP_DISCRIMINATOR_NAME, realTimeClientMapProxy.getName())
                                             .withTag(OPERATION_PREFIX, RealTimeClientMapProxy.GET_OPERATION_NAME)
                                             .withTag(RealTimeClientMapProxy.LIMIT_NAME, realTimeClientMapProxy.getLimitString()),
-                                    realTimeClientMapProxy.getGetLatency());
+                                    realTimeClientMapProxy.getGetLatencyAndReset());
                         });
     }
 }

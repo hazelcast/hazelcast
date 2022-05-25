@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.proxy.RealTimeClientMapProxy;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -31,6 +32,10 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptorConstants;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.AbstractMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
@@ -87,66 +93,27 @@ public class ClientStatisticsTest extends ClientTestSupport {
         final HazelcastClientInstanceImpl client = createRealTimeHazelcastClient();
         final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
-        long clientConnectionTime = System.currentTimeMillis();
+        // put an entry into map
+        IMap<String, String> map = client.getMap(MAP_NAME);
+        for (int i = 0; i < 1000; i++) {
+
+        }
+        map.put("myKey", "myValue");
+        map.get("myKey");
 
         // wait enough time for statistics collection
         waitForFirstStatisticsCollection(client, clientEngine);
 
-        Map<String, String> stats = getStats(client, clientEngine);
+        Map.Entry<MetricDescriptor, Long> stats = getRealTimeStats(client, clientEngine, MAP_NAME,
+                RealTimeClientMapProxy.PUT_OPERATION_NAME);
 
-        String connStat = stats.get("clusterConnectionTimestamp");
-        assertNotNull(format("clusterConnectionTimestamp should not be null (%s)", stats), connStat);
-        Long connectionTimeStat = Long.valueOf(connStat);
-        assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
+        MetricDescriptor metricDescriptor = stats.getKey();
+        assertNotNull(metricDescriptor);
+        assertEquals(MetricDescriptorConstants.CLIENT_METRIC_LATENCY, metricDescriptor.metric());
 
-        TcpClientConnection aConnection = (TcpClientConnection) client.getConnectionManager().getActiveConnections().iterator().next();
-        String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
-        assertEquals(expectedClientAddress, stats.get("clientAddress"));
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
-        assertEquals(client.getName(), stats.get("clientName"));
-
-        // time measured by us after client connection should be greater than the connection time reported by the statistics
-        assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
-                connectionTimeStat, clientConnectionTime, stats), clientConnectionTime >= connectionTimeStat);
-
-        String mapHits = stats.get(MAP_HITS_KEY);
-        assertNull(format("%s should be null (%s)", MAP_HITS_KEY, stats), mapHits);
-        String cacheHits = stats.get(CACHE_HITS_KEY);
-        assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
-
-        String lastStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
-        final long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
-
-        // this creates empty map statistics
-        client.getMap(MAP_NAME);
-
-        // wait enough time for statistics collection
-        waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
-
-        assertTrueEventually(() -> {
-            Map<String, String> stats12 = getStats(client, clientEngine);
-            String mapHits12 = stats12.get(MAP_HITS_KEY);
-            assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats12), mapHits12);
-            assertEquals(format("Expected 0 map hits (%s)", stats12), "0", mapHits12);
-            String cacheHits12 = stats12.get(CACHE_HITS_KEY);
-            assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats12), cacheHits12);
-
-            // verify that collection is periodic
-            verifyThatCollectionIsPeriodic(stats12, lastCollectionTime);
-        });
-
-        // produce map and cache stat
-        produceSomeStats(hazelcastInstance, client);
-
-        assertTrueEventually(() -> {
-            Map<String, String> stats1 = getStats(client, clientEngine);
-            String mapHits1 = stats1.get(MAP_HITS_KEY);
-            assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats1), mapHits1);
-            assertEquals(format("Expected 1 map hits (%s)", stats1), "1", mapHits1);
-            String cacheHits1 = stats1.get(CACHE_HITS_KEY);
-            assertNotNull(format("%s should not be null (%s)", CACHE_HITS_KEY, stats1), cacheHits1);
-            assertEquals(format("Expected 1 cache hits (%s)", stats1), "1", cacheHits1);
-        });
+        assertEquals(RealTimeClientMapProxy.PUT_OPERATION_NAME, metricDescriptor.tagValue(MetricDescriptorConstants.OPERATION_PREFIX));
+        assertEquals("50000000", metricDescriptor.tagValue(RealTimeClientMapProxy.LIMIT_NAME));
+        assertGreaterOrEquals("put latency", stats.getValue(), 4);
     }
 
     @Test
@@ -380,6 +347,37 @@ public class ClientStatisticsTest extends ClientTestSupport {
         Map.Entry<UUID, ClientStatistics> statEntry = entries.iterator().next();
         assertEquals(client.getLocalEndpoint().getUuid(), statEntry.getKey());
         return parseClientAttributeValue(statEntry.getValue().clientAttributes());
+    }
+
+    private static Map.Entry<MetricDescriptor, Long> getRealTimeStats(HazelcastClientInstanceImpl client,
+                                                                      ClientEngineImpl clientEngine, String mapName,
+                                                                      String opName) {
+        Map<UUID, ClientStatistics> clientStatistics = clientEngine.getClientStatistics();
+        assertNotNull("clientStatistics should not be null", clientStatistics);
+        assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
+        Set<Map.Entry<UUID, ClientStatistics>> entries = clientStatistics.entrySet();
+        Map.Entry<UUID, ClientStatistics> statEntry = entries.iterator().next();
+        assertEquals(client.getLocalEndpoint().getUuid(), statEntry.getKey());
+
+        ClientStatistics statistics = statEntry.getValue();
+
+        final AbstractMap.SimpleEntry<String, AbstractMap.SimpleEntry<MetricDescriptor, Long>> foundResult = new AbstractMap.SimpleEntry<>(mapName, null);
+        MetricsCompressor.extractMetrics(statistics.metricsBlob(), new MetricConsumer() {
+            @Override
+            public void consumeLong(MetricDescriptor descriptor, long value) {
+                if (descriptor.metric().equals(MetricDescriptorConstants.CLIENT_METRIC_LATENCY)
+                        && opName.equals(descriptor.tagValue(MetricDescriptorConstants.OPERATION_PREFIX))) {
+                    foundResult.setValue(new AbstractMap.SimpleEntry<>(descriptor, value));
+                }
+            }
+
+            @Override
+            public void consumeDouble(MetricDescriptor descriptor, double value) {
+
+            }
+        });
+
+        return foundResult.getValue();
     }
 
     private static Map<String, String> parseClientAttributeValue(String value) {
