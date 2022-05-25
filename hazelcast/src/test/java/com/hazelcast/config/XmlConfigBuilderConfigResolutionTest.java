@@ -38,6 +38,8 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class XmlConfigBuilderConfigResolutionTest {
 
+    private static final String CONFIG_FILE_PREFIX = XmlConfigBuilderConfigResolutionTest.class.getSimpleName() + "foo";
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -52,8 +54,8 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_xml() throws Exception {
-        helper.givenXmlConfigFileInWorkDir("foo.xml", "cluster-xml-file");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
+        helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".xml", "cluster-xml-file");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".xml");
 
         Config config = new XmlConfigBuilder().build();
         assertEquals("cluster-xml-file", config.getInstanceName());
@@ -61,8 +63,8 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_xml() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.xml", "cluster-xml-classpath");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
+        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".xml", "cluster-xml-classpath");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
 
         Config config = new XmlConfigBuilder().build();
         assertEquals("cluster-xml-classpath", config.getInstanceName());
@@ -91,13 +93,13 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonXml_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo.yaml", "irrelevant");
+        File file = helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yaml", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
@@ -105,13 +107,13 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonXml_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.yaml", "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
+        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yaml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
@@ -132,11 +134,11 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".yaml");
 
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
@@ -144,13 +146,13 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo", "irrelevant");
+        File file = helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX, "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo");
+        expectedException.expectMessage(CONFIG_FILE_PREFIX);
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
@@ -158,13 +160,13 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nosuffix_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo", "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
+        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX, "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX);
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo");
+        expectedException.expectMessage(CONFIG_FILE_PREFIX);
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
