@@ -71,6 +71,7 @@ public final class MetricDescriptorConstants {
     public static final String CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS = "maxCurrentInvocations";
     public static final String CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE = "eventQueueSize";
     public static final String CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED = "eventsProcessed";
+    public static final String CLIENT_METRIC_LATENCY = "latency";
     // ===[/CLIENT]=====================================================
 
     // ===[CLUSTER]=====================================================

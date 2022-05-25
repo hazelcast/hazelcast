@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptorConstants;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
@@ -43,6 +44,8 @@ class RealTimeMetricsProvider implements DynamicMetricsProvider {
             return;
         }
 
+
+        descriptor.withMetric(MetricDescriptorConstants.CLIENT_METRIC_LATENCY);
         clientContext.getProxyManager().getDistributedObjects().stream()
                 .filter(proxy -> proxy instanceof RealTimeClientMapProxy)
                         .forEach(proxy -> {
