@@ -76,6 +76,8 @@ public class ClientConfig {
      */
     private ClientSecurityConfig securityConfig = new ClientSecurityConfig();
 
+    private RealTimeConfig realTimeConfig = new RealTimeConfig();
+
     /**
      * The Network Configuration properties like:
      * addresses to connect, smart-routing, socket-options...
@@ -1057,6 +1059,6 @@ public class ClientConfig {
     }
 
     public RealTimeConfig getRealTimeConfig() {
-        return null;
+        return realTimeConfig;
     }
 }
