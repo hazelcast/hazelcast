@@ -62,7 +62,7 @@ Hazelcast repository continues its development as with a next major version.
 
 There are 2 outstanding items to resolve:
 - some checkstyle rules were ignored for Jet code
-- Jet had some stricker rules regarding public javadoc, this is now not in
+- Jet had some stricter rules regarding public javadoc, this is now not in
   place, ideally we should apply it to the whole product
 
 ## Distribution
