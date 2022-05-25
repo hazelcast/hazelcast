@@ -56,6 +56,19 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
     }
 
     public long getPutLatency() {
+        return getLatency(PUT_OPERATION_NAME);
+    }
+
+    public long getGetLatency() {
+        return getLatency(GET_OPERATION_NAME);
+    }
+
+    private long getLatency(String opName) {
+        AtomicLong latency = realTimeStats.get(opName);
+        if (latency != null) {
+            return latency.get();
+        }
+
         return 0;
     }
 
@@ -83,7 +96,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
         return oldValue;
     }
 
-    private void updateLatency(long start, String putOperationName) {
+    private void updateLatency(long start, String operationName) {
         long endTime = System.nanoTime();
         long latency = endTime - start;
 
@@ -92,7 +105,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
                     + PUT_OPERATION_NAME + " for map " + getName() + ". The measured latency is " + latency + " msecs.");
         }
 
-        realTimeStats.compute(putOperationName, (opName, currentLatency) -> {
+        realTimeStats.compute(operationName, (opName, currentLatency) -> {
             if (currentLatency == null) {
                 currentLatency = new AtomicLong();
             }

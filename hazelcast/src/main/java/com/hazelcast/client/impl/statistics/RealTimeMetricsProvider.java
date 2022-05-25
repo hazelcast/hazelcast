@@ -37,13 +37,10 @@ class RealTimeMetricsProvider implements DynamicMetricsProvider {
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        //descriptor.withPrefix(NEARCACHE_PREFIX);
-
         ClientContext clientContext = proxyManager.getContext();
         if (clientContext == null) {
             return;
         }
-
 
         descriptor.withMetric(MetricDescriptorConstants.CLIENT_METRIC_LATENCY);
         clientContext.getProxyManager().getDistributedObjects().stream()
@@ -55,6 +52,13 @@ class RealTimeMetricsProvider implements DynamicMetricsProvider {
                                             .withTag(OPERATION_PREFIX, RealTimeClientMapProxy.PUT_OPERATION_NAME)
                                             .withTag(RealTimeClientMapProxy.LIMIT_NAME, realTimeClientMapProxy.getLimitString()),
                                     realTimeClientMapProxy.getPutLatency());
+                            descriptor.reset();
+                            context.collect(descriptor
+                                            .withMetric(MetricDescriptorConstants.CLIENT_METRIC_LATENCY)
+                                            .withDiscriminator(MAP_DISCRIMINATOR_NAME, realTimeClientMapProxy.getName())
+                                            .withTag(OPERATION_PREFIX, RealTimeClientMapProxy.GET_OPERATION_NAME)
+                                            .withTag(RealTimeClientMapProxy.LIMIT_NAME, realTimeClientMapProxy.getLimitString()),
+                                    realTimeClientMapProxy.getGetLatency());
                         });
     }
 }
