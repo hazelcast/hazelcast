@@ -70,13 +70,25 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode leftInput = call.rel(1);
         RelNode rightInput = call.rel(2);
 
-        RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
-        RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
-
         if (OptUtils.isUnbounded(rightInput)) {
             // This rule doesn't support joining of streaming data on the right side.
             // Stream can be on the left side.
             return;
+        }
+
+        RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
+        RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
+
+        // we don't use hash join for unbounded left input because it doesn't refresh the right side
+        if (OptUtils.isBounded(leftInput)) {
+            RelNode rel = new JoinHashPhysicalRel(
+                    logicalJoin.getCluster(),
+                    logicalJoin.getTraitSet().replace(PHYSICAL),
+                    leftInputConverted,
+                    rightInputConverted,
+                    logicalJoin.getCondition(),
+                    logicalJoin.getJoinType());
+            call.transformTo(rel);
         }
 
         if (rightInput instanceof TableScan) {
@@ -92,16 +104,6 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
                 );
                 call.transformTo(rel2);
             }
-        } else {
-            // we don't use hash join for unbounded left input because it doesn't refresh the right side
-            RelNode rel = new JoinHashPhysicalRel(
-                    logicalJoin.getCluster(),
-                    logicalJoin.getTraitSet().replace(PHYSICAL),
-                    leftInputConverted,
-                    rightInputConverted,
-                    logicalJoin.getCondition(),
-                    logicalJoin.getJoinType());
-            call.transformTo(rel);
         }
     }
 }
