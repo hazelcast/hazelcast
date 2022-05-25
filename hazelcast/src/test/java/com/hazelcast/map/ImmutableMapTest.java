@@ -30,8 +30,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -40,8 +39,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import org.junit.Assert;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -94,124 +94,181 @@ public class ImmutableMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialisationOnLocalPutAndGet() {
-        checkPutAndGet(localKey, generateKeyOwnedBy(local), Assert::assertTrue);
+    public void testSerialisationOnPutGet() {
+        checkPutAndGet(this::checkPutGet);
     }
 
     @Test
-    public void testSerialisationOnRemotePutAndGet() {
-        checkPutAndGet(remoteKey, generateKeyOwnedBy(remote), Assert::assertFalse);
+    public void testSerialisationOnPutIfAbsentGet() {
+        checkPutAndGet(this::checkPutIfAbsentGet);
     }
 
     @Test
-    public void testSerialisationOnLocalPutAndRemove() {
-        checkPutAndRemove(localKey, Assert::assertTrue);
+    public void testSerialisationOnPutGetAsync() {
+        checkPutAndFoo(this::checkPutGetAsync);
     }
 
     @Test
-    public void testSerialisationOnRemotePutAndRemove() {
-        checkPutAndRemove(remoteKey, Assert::assertFalse);
+    public void testSerialisationOnPutRemove() {
+        checkPutAndFoo(this::checkPutRemove);
     }
 
     @Test
-    public void testSerialisationOnLocalPutAndContainsValue() {
-        checkPutAndContainsValue(localKey, Assert::assertTrue);
+    public void testSerialisationOnPutRemoveKV() {
+        checkPutAndFoo(this::checkPutRemoveKV);
     }
 
     @Test
-    public void testSerialisationOnRemotePutAndContainsValue() {
-        checkPutAndContainsValue(remoteKey, Assert::assertFalse);
+    public void testSerialisationOnPutContainsValue() {
+        checkPutAndFoo(this::checkPutContainsValue);
     }
 
-    private void checkPutAndGet(String putKey, String putIfAbsentKey, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutAndGet(Consumer5<T> func) {
+
+        Consumer5<ConstantString> funcConstString = (Consumer5<ConstantString>) func;
+        Consumer5<VariableString> funcVarString = (Consumer5<VariableString>) func;
 
         ConstantString differentConstantValue = new ConstantString("I am a different constant");
-
-        BiFunction<IMap<String, ConstantString>, ConstantString, ConstantString> constantPutFx =
-            (map, value) -> map.put(putKey, value);
-        BiFunction<IMap<String, ConstantString>, ConstantString, ConstantString> constantPutIfAbsentFx =
-            (map, value) -> map.putIfAbsent(putIfAbsentKey, value);
-
-        checkPutGetForMap(putIfAbsentKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, constantPutIfAbsentFx,
-            Assert::assertFalse);
-        checkPutGetForMap(putKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, constantPutFx, Assert::assertFalse);
-
-        checkPutGetForMap(putIfAbsentKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, constantPutIfAbsentFx,
-            checkAssertion);
-        checkPutGetForMap(putKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, constantPutFx, checkAssertion);
-
         VariableString differentVariableValue = new VariableString("I am a different variable string");
 
-        BiFunction<IMap<String, VariableString>, VariableString, VariableString> variablePutFx =
-            (map, value) -> map.put(putKey, value);
-        BiFunction<IMap<String, VariableString>, VariableString, VariableString> variablePutIfAbsentFx =
-            (map, value) -> map.putIfAbsent(putIfAbsentKey, value);
+        try {
 
-        checkPutGetForMap(putIfAbsentKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, variablePutIfAbsentFx,
-            Assert::assertFalse);
-        checkPutGetForMap(putKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, variablePutFx, Assert::assertFalse);
+            // Immutable value on a local map with InMemoryFormat.OBJECT should not serialize/deserialize.
+            // Serialisation should happen in all other cases
+            funcConstString.accept(localKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, false);
+            funcConstString.accept(localKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, true);
+            funcVarString.accept(localKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, false);
+            funcVarString.accept(localKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, false);
 
-        checkPutGetForMap(putIfAbsentKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, variablePutIfAbsentFx,
-            Assert::assertFalse);
-        checkPutGetForMap(putKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, variablePutFx, Assert::assertFalse);
+            funcConstString.accept(remoteKey, CONSTANT_VALUE, differentConstantValue, constantBinaryMap, false);
+            funcConstString.accept(remoteKey, CONSTANT_VALUE, differentConstantValue, constantObjectMap, false);
+            funcVarString.accept(remoteKey, VARIABLE_VALUE, differentVariableValue, variableBinaryMap, false);
+            funcVarString.accept(remoteKey, VARIABLE_VALUE, differentVariableValue, variableObjectMap, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private <T> void checkPutGetForMap(String key, T value1, T value2, IMap<String, T> map,
-                                       BiFunction<IMap<String, T>, T, T> putMethod, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutGet(String key, T value1, T value2, IMap<String, T> map, boolean checkAssertion) {
 
-        putMethod.apply(map, value1);
+        map.put(key, value1);
         T getValue = map.get(key);
         assertEquals(value1, getValue);
-        checkAssertion.accept(value1 == getValue);
+        if (checkAssertion) {
+            assertTrue(value1 == getValue);
+        } else {
+            assertFalse(value1 == getValue);
+        }
 
-        T oldValue = putMethod.apply(map, value2);
+        T oldValue = map.put(key, value2);
         assertEquals(value1, oldValue);
-        checkAssertion.accept(value1 == oldValue);
+        if (checkAssertion) {
+            assertTrue(value1 == oldValue);
+        } else {
+            assertFalse(value1 == oldValue);
+        }
     }
 
-    private void checkPutAndRemove(String key, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutIfAbsentGet(String key, T value1, T value2, IMap<String, T> map, boolean checkAssertion) {
 
-        checkPutRemoveForMap(key, CONSTANT_VALUE, constantBinaryMap, Assert::assertFalse);
+        map.putIfAbsent(key, value1);
+        T getValue = map.get(key);
+        assertEquals(value1, getValue);
+        if (checkAssertion) {
+            assertTrue(value1 == getValue);
+        } else {
+            assertFalse(value1 == getValue);
+        }
 
-        checkPutRemoveForMap(key, CONSTANT_VALUE, constantObjectMap, checkAssertion);
+        T oldValue = map.putIfAbsent(key, value2);
+        assertEquals(value1, oldValue);
+        if (checkAssertion) {
+            assertTrue(value1 == oldValue);
+        } else {
+            assertFalse(value1 == oldValue);
+        }
 
-        checkPutRemoveForMap(key, VARIABLE_VALUE, variableBinaryMap, Assert::assertFalse);
-
-        checkPutRemoveForMap(key, VARIABLE_VALUE, variableObjectMap, Assert::assertFalse);
+        T nonReplacedValue = map.get(key);
+        assertEquals(value1, nonReplacedValue);
+        if (checkAssertion) {
+            assertTrue(value1 == nonReplacedValue);
+        } else {
+            assertFalse(value1 == nonReplacedValue);
+        }
     }
 
-    private <T> void checkPutRemoveForMap(String key, T value, IMap<String, T> map, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutAndFoo(Consumer4<T> func) {
+
+        Consumer4<ConstantString> funcConstString = (Consumer4<ConstantString>) func;
+        Consumer4<VariableString> funcVarString = (Consumer4<VariableString>) func;
+
+        try {
+
+            // Immutable value on a local map with InMemoryFormat.OBJECT should not serialize/deserialize.
+            // Serialisation should happen in all other cases
+            funcConstString.accept(localKey, CONSTANT_VALUE, constantBinaryMap, false);
+            funcConstString.accept(localKey, CONSTANT_VALUE, constantObjectMap, true);
+            funcVarString.accept(localKey, VARIABLE_VALUE, variableBinaryMap, false);
+            funcVarString.accept(localKey, VARIABLE_VALUE, variableObjectMap, false);
+
+            funcConstString.accept(remoteKey, CONSTANT_VALUE, constantBinaryMap, false);
+            funcConstString.accept(remoteKey, CONSTANT_VALUE, constantObjectMap, false);
+            funcVarString.accept(remoteKey, VARIABLE_VALUE, variableBinaryMap, false);
+            funcVarString.accept(remoteKey, VARIABLE_VALUE, variableObjectMap, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void checkPutRemove(String key, T value, IMap<String, T> map, boolean checkAssertion) {
 
         map.put(key, value);
         T removedValue = map.remove(key);
         assertEquals(value, removedValue);
-        checkAssertion.accept(value == removedValue);
+        if (checkAssertion) {
+            assertTrue(value == removedValue);
+        } else {
+            assertFalse(value == removedValue);
+        }
     }
 
-    private void checkPutAndContainsValue(String key, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutRemoveKV(String key, T value, IMap<String, T> map, boolean throwAway) {
 
-        checkPutContainsValueForMap(key, CONSTANT_VALUE, constantBinaryMap, Assert::assertFalse);
-
-        checkPutContainsValueForMap(key, CONSTANT_VALUE, constantObjectMap, checkAssertion);
-
-        checkPutContainsValueForMap(key, VARIABLE_VALUE, variableBinaryMap, Assert::assertFalse);
-
-        checkPutContainsValueForMap(key, VARIABLE_VALUE, variableObjectMap, Assert::assertFalse);
+        map.put(key, value);
+        assertTrue(map.remove(key, value));
+        assertNull(map.get(key));
     }
 
-    private <T> void checkPutContainsValueForMap(String key, T value, IMap<String, T> map, Consumer<Boolean> checkAssertion) {
+    private <T> void checkPutContainsValue(String key, T value, IMap<String, T> map, boolean checkAssertion) {
 
         map.put(key, value);
         assertTrue(map.containsValue(value));
         T getValue = map.get(key);
         assertEquals(value, getValue);
-        checkAssertion.accept(value == getValue);
+        if (checkAssertion) {
+            assertTrue(value == getValue);
+        } else {
+            assertFalse(value == getValue);
+        }
+    }
+
+    private <T> void checkPutGetAsync(String key, T value, IMap<String, T> map, boolean checkAssertion)
+        throws ExecutionException, InterruptedException {
+
+        map.put(key, value);
+        T getValue = map.getAsync(key).toCompletableFuture().get();
+        assertEquals(value, getValue);
+        if (checkAssertion) {
+            assertTrue(value == getValue);
+        } else {
+            assertFalse(value == getValue);
+        }
     }
 
     // containsValue - Done
-    // remove(k, v)
-    // delete
-    // getAsync
+    // remove(k, v) - Done
+    // delete  - Does not return a value
+    // getAsync - Done
     // putAsync
     // putAsync(ttl)
     // putAsync(ttl, idleTime)
@@ -356,5 +413,15 @@ public class ImmutableMapTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             str = in.readString();
         }
+    }
+
+    @FunctionalInterface
+    interface Consumer4<T> {
+        void accept(String key, T value, IMap<String, T> map, boolean condition) throws Exception;
+    }
+
+    @FunctionalInterface
+    interface Consumer5<T> {
+        void accept(String key, T value1, T value2, IMap<String, T> map, boolean condition) throws Exception;
     }
 }

@@ -667,7 +667,7 @@ abstract class MapProxySupport<K, V>
         invokeOperation(keyData, operation);
     }
 
-    protected boolean removeInternal(Object key, Data value) {
+    protected boolean removeInternal(Object key, Object value) {
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = operationProvider.createRemoveIfSameOperation(name, keyData, value);
         return (Boolean) invokeOperation(keyData, operation);
@@ -826,7 +826,7 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public boolean containsValueInternal(Data dataValue) {
+    public boolean containsValueInternal(Object dataValue) {
         try {
             OperationFactory operationFactory = operationProvider.createContainsValueOperationFactory(name, dataValue);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);

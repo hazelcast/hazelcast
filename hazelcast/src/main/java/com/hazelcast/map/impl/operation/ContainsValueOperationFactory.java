@@ -20,7 +20,6 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -28,12 +27,12 @@ import java.io.IOException;
 public final class ContainsValueOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
-    private Data value;
+    private Object value;
 
     public ContainsValueOperationFactory() {
     }
 
-    public ContainsValueOperationFactory(String name, Data value) {
+    public ContainsValueOperationFactory(String name, Object value) {
         this.name = name;
         this.value = value;
     }
@@ -46,13 +45,13 @@ public final class ContainsValueOperationFactory extends AbstractMapOperationFac
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        IOUtil.writeData(out, value);
+        IOUtil.writeObject(out, value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        value = IOUtil.readData(in);
+        value = IOUtil.readObject(in);
     }
 
     @Override

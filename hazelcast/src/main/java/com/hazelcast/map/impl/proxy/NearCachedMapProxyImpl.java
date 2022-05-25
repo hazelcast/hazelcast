@@ -358,7 +358,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected boolean removeInternal(Object key, Data value) {
+    protected boolean removeInternal(Object key, Object value) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.removeInternal(key, value);

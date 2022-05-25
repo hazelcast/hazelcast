@@ -44,7 +44,7 @@ public interface MapOperationProvider {
 
     MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout);
 
-    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle);
+    MapOperation createSetOperation(String name, Data dataKey, Object value, long ttl, long maxIdle);
 
     MapOperation createPutIfAbsentOperation(String name, Data key, Object value, long ttl, long maxIdle);
 
@@ -56,7 +56,7 @@ public interface MapOperationProvider {
 
     MapOperation createReplaceOperation(String name, Data dataKey, Data value);
 
-    MapOperation createRemoveIfSameOperation(String name, Data dataKey, Data value);
+    MapOperation createRemoveIfSameOperation(String name, Data dataKey, Object value);
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
 
@@ -163,7 +163,7 @@ public interface MapOperationProvider {
 
     OperationFactory createMultipleEntryOperationFactory(String name, Set<Data> keys, EntryProcessor entryProcessor);
 
-    OperationFactory createContainsValueOperationFactory(String name, Data testValue);
+    OperationFactory createContainsValueOperationFactory(String name, Object testValue);
 
     OperationFactory createEvictAllOperationFactory(String name);
 

@@ -26,13 +26,13 @@ import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
 
-    private Data testValue;
+    private Object testValue;
     private boolean successful;
 
     public RemoveIfSameOperation() {
     }
 
-    public RemoveIfSameOperation(String name, Data dataKey, Data value) {
+    public RemoveIfSameOperation(String name, Data dataKey, Object value) {
         super(name, dataKey);
         testValue = value;
     }
@@ -68,13 +68,13 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeData(out, testValue);
+        IOUtil.writeObject(out, testValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        testValue = IOUtil.readData(in);
+        testValue = IOUtil.readObject(in);
     }
 
     @Override

@@ -274,8 +274,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        return removeInternal(key, valueData);
+        return removeInternal(key, value);
     }
 
     @Override
@@ -304,8 +303,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public boolean containsValue(@Nonnull Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        return containsValueInternal(valueData);
+        return containsValueInternal(value);
     }
 
     @Override

@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.map.impl.ImmutableMapSupport;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,9 +31,9 @@ import java.io.IOException;
 public class ContainsValueOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
-    private Data testValue;
+    private Object testValue;
 
-    public ContainsValueOperation(String name, Data testValue) {
+    public ContainsValueOperation(String name, Object testValue) {
         super(name);
         this.testValue = testValue;
     }
@@ -41,7 +43,22 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
 
     @Override
     protected void runInternal() {
-        contains = recordStore.containsValue(testValue);
+
+        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.OBJECT) {
+
+            if (testValue instanceof Data) {
+                // At this point, testValue should be deserialized. So, it cannot be an instance of Data
+                throw new IllegalStateException("Unexpected type for value in containsValue. " + testValue);
+            } else {
+                if (ImmutableMapSupport.isConsideredImmutable(testValue, this)) {
+                    contains = recordStore.containsValue(testValue);
+                } else {
+                    contains = recordStore.containsValue(ImmutableMapSupport.defensiveCopy(testValue, mapServiceContext));
+                }
+            }
+        } else {
+            contains = recordStore.containsValue(testValue);
+        }
     }
 
     @Override
@@ -52,13 +69,13 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeData(out, testValue);
+        IOUtil.writeObject(out, testValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        testValue = IOUtil.readData(in);
+        testValue = IOUtil.readObject(in);
     }
 
     @Override

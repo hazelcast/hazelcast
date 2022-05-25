@@ -73,7 +73,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+    public MapOperation createSetOperation(String name, Data dataKey, Object value, long ttl, long maxIdle) {
         if (hasNoExpiry(ttl, maxIdle)) {
             return new SetOperation(name, dataKey, value);
         } else {
@@ -120,7 +120,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createRemoveIfSameOperation(String name, Data dataKey, Data value) {
+    public MapOperation createRemoveIfSameOperation(String name, Data dataKey, Object value) {
         return new RemoveIfSameOperation(name, dataKey, value);
     }
 
@@ -160,7 +160,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createContainsValueOperationFactory(String name, Data testValue) {
+    public OperationFactory createContainsValueOperationFactory(String name, Object testValue) {
         return new ContainsValueOperationFactory(name, testValue);
     }
 
