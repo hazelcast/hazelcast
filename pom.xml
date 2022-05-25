@@ -114,7 +114,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.2</parquet.version>
         <picocli.version>4.4.0</picocli.version>
-        <postgresql.version>42.2.25</postgresql.version>
+        <postgresql.version>42.3.6</postgresql.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.13</scala.version>
