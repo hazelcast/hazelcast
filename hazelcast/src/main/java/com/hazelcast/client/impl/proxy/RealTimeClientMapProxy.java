@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RealTimeClientMapProxy extends ClientMapProxy {
@@ -30,7 +29,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
     public static final String GET_OPERATION_NAME = "get";
 
     private ILogger logger;
-    private long limitMsecs;
+    private long limitNsecs;
     private String limitString;
 
     private final ConcurrentHashMap<String, AtomicLong> realTimeStats = new ConcurrentHashMap();
@@ -42,7 +41,7 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
 
         Long limit = context.getClientConfig().getRealTimeConfig().getMapLimit(name);
         if (limit != null) {
-            limitMsecs = limit;
+            limitNsecs = limit;
             limitString = Long.toString(limit);
         }
     }
@@ -100,10 +99,14 @@ public class RealTimeClientMapProxy extends ClientMapProxy {
         long endTime = System.nanoTime();
         long latency = endTime - start;
 
-        long latencyInMs = TimeUnit.MILLISECONDS.convert(latency, TimeUnit.NANOSECONDS);
-        if (latencyInMs > limitMsecs) {
-            logger.warning("The real-time configured limit (" + limitMsecs + " msecs) is exceeded for "
-                    + PUT_OPERATION_NAME + " for map " + getName() + ". The measured latency is " + latencyInMs + " msecs.");
+        if (latency > limitNsecs) {
+            logger.warning("The real-time configured limit (" + limitNsecs + " nsecs) is exceeded for "
+                    + operationName + " for map " + getName() + ". The measured latency is " + latency + " nsecs.");
+        } else {
+            if (logger.isFineEnabled()) {
+                logger.fine("The real-time configured limit (" + limitNsecs + " nsecs) for "
+                        + operationName + " for map " + getName() + ". The measured latency is " + latency + " nsecs.");
+            }
         }
 
         realTimeStats.compute(operationName, (opName, currentLatency) -> {

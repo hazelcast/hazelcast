@@ -17,6 +17,7 @@
 package com.hazelcast.client.statistics;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -88,6 +89,25 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
+    public void testRealTimeClientOnly() {
+        final HazelcastClientInstanceImpl client = createRealTimeHazelcastClient();
+
+        IMap<String, String> map = client.getMap(MAP_NAME);
+
+        while (true) {
+            String key = randomString();
+            map.put(key, randomString());
+            map.get(key);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+        @Test
     public void testRealTimeStatistics() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client = createRealTimeHazelcastClient();
@@ -303,9 +323,9 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getMetricsConfig().setCollectionFrequencySeconds(STATS_PERIOD_SECONDS);
-        clientConfig.getRealTimeConfig().setMapLimit(MAP_NAME, 50, TimeUnit.MILLISECONDS);
+        clientConfig.getRealTimeConfig().setMapLimit(MAP_NAME, 20, TimeUnit.MICROSECONDS);
 
-        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance clientInstance = HazelcastClient.newHazelcastClient(clientConfig);
         return getHazelcastClientInstanceImpl(clientInstance);
     }
 
