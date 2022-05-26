@@ -66,6 +66,17 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
+    @Ignore
+    public void test_complexProjections() {
+        initDefault();
+        final String sql = "SELECT "
+                + "ABS((this).id) * 2 AS C1, "
+                + "FLOOR(CAST(((this).organization).id AS REAL) * 5.0 / 2.0) AS c2"
+                + " FROM test";
+        assertRowsAnyOrder(sql, rows(4, 2, 2.0));
+    }
+
+    @Test
     public void test_wholeObjectSelect() {
         final User user = initDefault();
         final Organization organization = user.getOrganization();
@@ -227,6 +238,26 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
+    public void test_mixedModeAliasQuerying() {
+        createType("NestedType", NestedPOJO.class);
+        execute(String.format("CREATE MAPPING test ("
+                + "__key BIGINT,"
+                + "parentName VARCHAR EXTERNAL NAME \"name\","
+                + "childObj NestedType EXTERNAL NAME \"child\""
+                + ")"
+                + "TYPE IMap "
+                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='java', 'valueJavaClass'='%s')", RegularPOJO.class.getName()));
+
+        instance().getMap("test")
+                .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
+
+        assertRowsAnyOrder("SELECT parentName, (childObj).name FROM (SELECT * FROM test)", rows(2,
+                "parentPojo", "childPojo"
+        ));
+        assertRowsAnyOrder("SELECT childObj FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+    }
+
+    @Test
     public void test_mixedModeUpsert() {
         createType("NestedType", NestedPOJO.class);
         createMapping("test", Long.class, RegularPOJO.class);
@@ -366,14 +397,13 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
 
     // TODO: pre-processing for JOIN validation
     @Test
-    @Ignore
     public void test_joinsOnNestedFields() {
         initDefault();
         createMapping("test2", Long.class, User.class);
         instance().getSql().execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
         assertRowsAnyOrder("SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
-                        + "FROM test AS t1 JOIN test2 AS t2 ON (t1.this).id = (t2.this).id",
+                        + "FROM test AS t1 JOIN test2 AS t2 ON (ABS((t1.this).id) = (t2.this).id AND (t1.this).id = (t2.this).id)",
                 rows(2, "office1", "office2"));
     }
 

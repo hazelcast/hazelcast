@@ -253,7 +253,11 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                         + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
                         + ", resolved: " + type.getTypeFamily());
             }
+            if (userField.type().isCustomType()) {
+                userField.setType(resolveDataType(classField.getValue(), typesStorage));
+            }
         }
+
         return userFieldsByPath.values().stream();
     }
 

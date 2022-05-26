@@ -40,6 +40,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.JoinConditionType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -168,6 +169,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        // TODO: remove-after-calcite-patch
         if (node instanceof SqlSelect) {
             preprocessSelect((SqlSelect) node, scope);
         }
@@ -186,36 +188,35 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 : "";
 
         for (final SqlNode selectItem : selectList) {
-            if (selectItem.getKind().equals(SqlKind.DOT)) {
-                final SqlCall item = (SqlCall) selectItem;
-                SqlNode left = item.operand(0);
-                SqlIdentifier right = item.operand(1);
-
-                final List<String> names = new ArrayList<>(right.names);
-
-                do {
-                    if (left instanceof SqlIdentifier) {
-                        names.addAll(0, ((SqlIdentifier) left).names);
-                        break;
-                    } else if (left instanceof SqlCall) {
-                        names.addAll(0, ((SqlIdentifier) ((SqlCall) left).operand(1)).names);
-                        left = ((SqlCall) left).operand(0);
-                    }
-
-                } while (left instanceof SqlCall && left.getKind().equals(SqlKind.DOT));
-
-                assert left instanceof SqlIdentifier : "Root of DOT expression chain must be an SqlIdentifier";
-                names.addAll(0, ((SqlIdentifier) left).names);
+            if (selectItem.getKind().equals(SqlKind.DOT) && selectItem instanceof SqlCall) {
+                final List<String> names = extractNamesFromDotCallChain((SqlCall) selectItem);
 
                 if (!fromAlias.isEmpty() && !names.get(0).equals(fromAlias)) {
                     names.add(0, fromAlias);
                 }
+
                 rewritten.add(new SqlIdentifier(names, selectItem.getParserPosition()));
             } else {
                 rewritten.add(selectItem);
             }
         }
         select.setSelectList(new SqlNodeList(rewritten, selectList.getParserPosition()));
+    }
+
+    private List<String> extractNamesFromDotCallChain(final SqlCall root) {
+        final List<String> names = new ArrayList<>();
+
+        SqlNode current = root;
+        while (current instanceof SqlCall && ((SqlCall) current).operandCount() == 2) {
+            assert ((SqlCall) current).operand(1) instanceof SqlIdentifier;
+            names.addAll(0, ((SqlIdentifier) ((SqlCall) current).operand(1)).names);
+            current = ((SqlCall) current).operand(0);
+        }
+
+        assert current instanceof SqlIdentifier;
+        names.addAll(0, ((SqlIdentifier) current).names);
+
+        return names;
     }
 
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {
@@ -281,10 +282,38 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
+        // TODO: remove-after-calcite-patch
+        if (join.getCondition() != null && join.getConditionType().equals(JoinConditionType.ON)) {
+            rewriteDotCalls(join.getCondition());
+        }
+
         super.validateJoin(join, scope);
 
         if (join.getJoinType() == FULL) {
             throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
+        }
+    }
+
+    void rewriteDotCalls(SqlNode node) {
+        if (!(node instanceof SqlCall)) {
+            return;
+        }
+
+        final SqlCall call = (SqlCall) node;
+        if (!call.getKind().equals(SqlKind.DOT)) {
+            for (int i = 0; i < call.operandCount(); i++) {
+                final SqlNode operand = call.operand(i);
+                if (!(operand instanceof SqlCall)) {
+                    continue;
+                }
+                final SqlCall callOperand = (SqlCall) operand;
+                if (callOperand.getKind().equals(SqlKind.DOT)) {
+                    final List<String> names = extractNamesFromDotCallChain(callOperand);
+                    call.setOperand(i, new SqlIdentifier(names, callOperand.getParserPosition()));
+                } else {
+                    rewriteDotCalls(callOperand);
+                }
+            }
         }
     }
 

@@ -70,6 +70,10 @@ public class MappingField implements IdentifiedDataSerializable {
         return requireNonNull((QueryDataType) properties.get(TYPE), "missing type property");
     }
 
+    public void setType(QueryDataType type) {
+        properties.put(TYPE, type);
+    }
+
     /**
      * The external name of a field. For example, in case of IMap or Kafka,
      * it always starts with `__key` or `this`.

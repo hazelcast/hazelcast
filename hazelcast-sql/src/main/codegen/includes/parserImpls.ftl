@@ -72,11 +72,8 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
     name = SimpleIdentifier()
-    columns = MappingColumns()
-    [
-        <OPTIONS>
-        sqlOptions = SqlOptions()
-    ]
+    <OPTIONS>
+    sqlOptions = SqlOptions()
     {
         return new SqlCreateType(
             name,
@@ -234,15 +231,29 @@ QueryDataType DateTimeTypes() :
 QueryDataType ObjectTypes() :
 {
     QueryDataType type;
+    SqlIdentifier typeId;
 }
 {
     (
         <OBJECT> { type = QueryDataType.OBJECT; }
     |
         <JSON> { type = QueryDataType.JSON; }
+    |
+        type = CustomObjectType()
     )
     {
         return type;
+    }
+}
+
+QueryDataType CustomObjectType() :
+{
+    SqlIdentifier typeName;
+}
+{
+    typeName = SimpleIdentifier()
+    {
+        return new QueryDataType(typeName.getSimple());
     }
 }
 
