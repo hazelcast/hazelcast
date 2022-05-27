@@ -100,6 +100,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     }
 
     private QueryDataType resolveDataType(final Class<?> clazz, final TypesStorage typesStorage) {
+        if (typesStorage == null) {
+            // TODO: wiring in tests?
+            return QueryDataType.OBJECT;
+        }
         final Type rootType = typesStorage.getTypeByClass(clazz);
         if (rootType == null) {
             return QueryDataType.OBJECT;
@@ -253,7 +257,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                         + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
                         + ", resolved: " + type.getTypeFamily());
             }
-            if (userField.type().isCustomType()) {
+
+            if (userField != null && userField.type().isCustomType()) {
                 userField.setType(resolveDataType(classField.getValue(), typesStorage));
             }
         }
