@@ -182,6 +182,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob " +
                 "OPTIONS (" +
                 // we use non-default value for each config option
+                "'description'='some random description'," +
                 "'processingGuarantee'='exactlyOnce'," +
                 "'snapshotIntervalMillis'='6000'," +
                 "'autoScaling'='false'," +
@@ -194,6 +195,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
         JobConfig config = instance().getJet().getJob("testJob").getConfig();
 
+        assertEquals("some random description", config.getDescription());
         assertEquals(EXACTLY_ONCE, config.getProcessingGuarantee());
         assertEquals(6000, config.getSnapshotIntervalMillis());
         assertFalse("isAutoScaling", config.isAutoScaling());

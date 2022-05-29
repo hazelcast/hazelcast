@@ -70,6 +70,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private transient boolean locked;
 
     private String name;
+    private String description;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
     private boolean autoScaling = true;
@@ -114,6 +115,30 @@ public class JobConfig implements IdentifiedDataSerializable {
     public JobConfig setName(@Nullable String name) {
         throwIfLocked();
         this.name = name;
+        return this;
+    }
+
+    /**
+     * Returns description of the job or {@code null} if no description was given.
+     */
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * Sets description of the job.
+     * <p>
+     * The default value is {@code null}. Must be set to {@code null} for
+     * {@linkplain JetService#newLightJob(Pipeline) light jobs}.
+     *
+     * @return {@code this} instance for fluent API
+     * @since 5.2
+     */
+    @Nonnull
+    public JobConfig setDescription(@Nullable String description) {
+        throwIfLocked();
+        this.description = description;
         return this;
     }
 
@@ -1398,6 +1423,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
+        out.writeString(description);
         out.writeObject(processingGuarantee);
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
@@ -1418,6 +1444,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
+        description = in.readString();
         processingGuarantee = in.readObject();
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
@@ -1451,6 +1478,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && enableMetrics == jobConfig.enableMetrics
                 && storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion
                 && Objects.equals(name, jobConfig.name)
+                && Objects.equals(description, jobConfig.description)
                 && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
                 && Objects.equals(customClassPaths, jobConfig.customClassPaths)
@@ -1464,7 +1492,7 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
+        return Objects.hash(name, description, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
                 customClassPaths, serializerConfigs, arguments, classLoaderFactory, initialSnapshotName,
                 maxProcessorAccumulatedRecords, timeoutMillis);
@@ -1472,10 +1500,10 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "JobConfig {name=" + name + ", processingGuarantee=" + processingGuarantee + ", snapshotIntervalMillis="
-                + snapshotIntervalMillis + ", autoScaling=" + autoScaling + ", suspendOnFailure=" + suspendOnFailure +
-                ", splitBrainProtectionEnabled=" + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics +
-                ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
+        return "JobConfig {name=" + name + ", description=" + description + ", processingGuarantee=" + processingGuarantee +
+                ", snapshotIntervalMillis=" + snapshotIntervalMillis + ", autoScaling=" + autoScaling + ", suspendOnFailure=" +
+                suspendOnFailure + ", splitBrainProtectionEnabled=" + splitBrainProtectionEnabled + ", enableMetrics=" +
+                enableMetrics + ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
                 ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
                 ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +

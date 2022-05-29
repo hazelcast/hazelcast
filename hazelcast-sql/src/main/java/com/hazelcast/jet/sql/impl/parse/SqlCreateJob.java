@@ -143,6 +143,9 @@ public class SqlCreateJob extends SqlCreate {
             }
 
             switch (key) {
+                case "description":
+                    jobConfig.setDescription(value);
+                    break;
                 case "processingGuarantee":
                     switch (value) {
                         case "exactlyOnce":
