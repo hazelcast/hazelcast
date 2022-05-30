@@ -58,7 +58,8 @@ public class ShutdownRequestOperation
                 if (logger.isFinestEnabled()) {
                     logger.finest("Received shutdown request from " + caller);
                 }
-                if (member.getUuid().equals(uuid)) {
+                // RU_COMPAT 5.1
+                 if (isClusterVersionLessThanV52() || member.getUuid().equals(uuid)) {
                     partitionService.onShutdownRequest(member);
                 } else {
                     logger.warning("Ignoring shutdown request from " + uuid + " because it is not a member");
@@ -69,6 +70,12 @@ public class ShutdownRequestOperation
         } else {
             logger.warning("Received shutdown request from " + caller + " but this node is not master.");
         }
+    }
+
+    // RU_COMPAT 5.1
+    private boolean isClusterVersionLessThanV52() {
+        return getNodeEngine().getClusterService()
+                .getClusterVersion().isLessThan(Versions.V5_2);
     }
 
     @Override

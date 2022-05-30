@@ -61,7 +61,8 @@ public class ShutdownResponseOperation
                 logger.finest("Received shutdown response from " + caller);
             }
 
-            if (nodeEngine.getLocalMember().getUuid().equals(uuid)) {
+            if (isClusterVersionLessThanV52()
+                    || nodeEngine.getLocalMember().getUuid().equals(uuid)) {
                 partitionService.onShutdownResponse();
             } else {
                 logger.warning("Ignoring shutdown response for " + uuid + " since it's not the expected member");
@@ -69,6 +70,12 @@ public class ShutdownResponseOperation
         } else {
             logger.warning("Received shutdown response from " + caller + " but it's not the known master");
         }
+    }
+
+    // RU_COMPAT 5.1
+    private boolean isClusterVersionLessThanV52() {
+        return getNodeEngine().getClusterService()
+                .getClusterVersion().isLessThan(Versions.V5_2);
     }
 
     @Override
