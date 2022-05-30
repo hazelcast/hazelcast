@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.tpc.engine;
 
 
@@ -14,6 +30,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +42,7 @@ import java.util.function.Function;
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.tpc.engine.EventloopState.*;
-import static com.hazelcast.tpc.engine.Util.epochNanos;
+import static com.hazelcast.tpc.util.Util.epochNanos;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
@@ -45,17 +63,21 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
 
+    public final ConcurrentMap context = new ConcurrentHashMap();
+
     protected Scheduler scheduler = new NopScheduler();
     public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
 
-    protected volatile EventloopState state = CREATED;
+    protected volatile EventloopState state = NEW;
 
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
     public final Unsafe unsafe = new Unsafe();
+
+    protected long earliestDeadlineEpochNanos = -1;
 
     /**
      * Returns the state of the Eventloop.
@@ -96,7 +118,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         for (; ; ) {
             EventloopState oldState = state;
             switch (oldState) {
-                case CREATED:
+                case NEW:
                     if (STATE.compareAndSet(this, oldState, TERMINATED)) {
                         return;
                     }
@@ -209,7 +231,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     @Override
     public final void executeRun() {
         try {
-            if (!STATE.compareAndSet(this, CREATED, RUNNING)) {
+            if (!STATE.compareAndSet(this, NEW, RUNNING)) {
                 throw new IllegalStateException("Can't start eventLoop, invalid state:" + state);
             }
 
@@ -224,8 +246,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
             System.out.println(getName() + " terminated");
         }
     }
-
-    protected long earliestDeadlineEpochNanos = -1;
 
     protected void runLocalTasks() {
         for (; ; ) {
