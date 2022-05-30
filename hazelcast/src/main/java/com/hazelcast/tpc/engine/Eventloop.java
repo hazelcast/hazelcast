@@ -181,15 +181,11 @@ public abstract class Eventloop extends HazelcastManagedThread {
             logger.severe(e);
         } finally {
             state = SHUTDOWN;
-            closeSockets();
+            closeResources(registeredSockets);
+            closeResources(registeredServerSockets);
             terminationLatch.countDown();
             System.out.println(getName() + " terminated");
         }
-    }
-
-    private void closeSockets() {
-        closeResources(registeredSockets);
-        closeResources(registeredServerSockets);
     }
 
     protected long earliestDeadlineEpochNanos = -1;

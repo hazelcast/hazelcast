@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class SocketIntegrationTest {
+public class IOUringSocketIntegrationTest {
     public static int requestTotal = 1000;
     public static int concurrency = 1;
 
@@ -55,7 +55,7 @@ public class SocketIntegrationTest {
 
     @Test
     public void test() throws InterruptedException {
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5010);
 
         IOUringAsyncServerSocket socket = newServer(serverAddress);
 
@@ -74,11 +74,8 @@ public class SocketIntegrationTest {
         }
         clientSocket.flush();
 
-        latch.await();
-
         assertOpenEventually(latch);
     }
-
 
     @NotNull
     private IOUringAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
@@ -115,6 +112,7 @@ public class SocketIntegrationTest {
 
     private IOUringAsyncServerSocket newServer(SocketAddress serverAddress) {
         IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(serverEventloop);
+        serverSocket.setReuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {

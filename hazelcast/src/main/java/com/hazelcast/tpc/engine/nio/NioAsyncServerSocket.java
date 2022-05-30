@@ -1,5 +1,6 @@
 package com.hazelcast.tpc.engine.nio;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.tpc.engine.AsyncServerSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 
@@ -12,6 +13,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -105,13 +107,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
-
+            closeResource(serverSocketChannel);
             eventloop.deregisterSocket(this);
-            try {
-                serverSocketChannel.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 

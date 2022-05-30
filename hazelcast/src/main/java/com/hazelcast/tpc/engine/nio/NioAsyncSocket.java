@@ -306,10 +306,8 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
 
-            eventloop.execute(() -> {
-                closeResource(socketChannel);
-                eventloop.deregisterSocket(NioAsyncSocket.this);
-            });
+            closeResource(socketChannel);
+            eventloop.deregisterSocket(NioAsyncSocket.this);
         }
     }
 

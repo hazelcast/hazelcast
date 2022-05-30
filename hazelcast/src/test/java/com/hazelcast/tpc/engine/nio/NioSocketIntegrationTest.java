@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class SocketIntegrationTest {
+public class NioSocketIntegrationTest {
     public static int requestTotal = 1000;
     public static int concurrency = 1;
 
@@ -74,8 +74,6 @@ public class SocketIntegrationTest {
         }
         clientSocket.flush();
 
-        latch.await();
-
         assertOpenEventually(latch);
     }
 
@@ -115,6 +113,7 @@ public class SocketIntegrationTest {
 
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(serverEventloop);
+        serverSocket.setReuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
