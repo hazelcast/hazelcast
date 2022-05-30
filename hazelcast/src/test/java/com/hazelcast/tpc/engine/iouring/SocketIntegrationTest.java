@@ -66,7 +66,7 @@ public class SocketIntegrationTest {
         System.out.println("Starting");
 
         for (int k = 0; k < concurrency; k++) {
-            Frame frame = new Frame(128);
+            Frame frame = new Frame(128, true);
             frame.writeInt(-1);
             frame.writeLong(requestTotal / concurrency);
             frame.complete();
@@ -85,7 +85,7 @@ public class SocketIntegrationTest {
         IOUringAsyncSocket clientSocket = IOUringAsyncSocket.open();
         clientSocket.setTcpNoDelay(true);
         clientSocket.setReadHandler(new IOUringReadHandler() {
-            private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
+            private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
             public void onRead(ByteBuf buffer) {
@@ -99,7 +99,7 @@ public class SocketIntegrationTest {
                     if (l == 0) {
                         latch.countDown();
                     } else {
-                        Frame frame = responseFrameAllocator.allocate(8);
+                        Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l);
                         frame.complete();
@@ -120,7 +120,7 @@ public class SocketIntegrationTest {
         serverSocket.accept(socket -> {
             socket.setTcpNoDelay(true);
             socket.setReadHandler(new IOUringReadHandler() {
-                private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
+                private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuf buffer) {
@@ -131,7 +131,7 @@ public class SocketIntegrationTest {
                         int size = buffer.readInt();
                         long l = buffer.readLong();
 
-                        Frame frame = responseFrameAllocator.allocate(8);
+                        Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
                         frame.complete();

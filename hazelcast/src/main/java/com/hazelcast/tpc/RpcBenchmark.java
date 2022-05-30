@@ -2,8 +2,6 @@ package com.hazelcast.tpc;
 
 
 import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
@@ -76,7 +74,7 @@ public class RpcBenchmark {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.setTcpNoDelay(true);
         clientSocket.setReadHandler(new NioReadHandler() {
-            private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
+            private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
             public void onRead(ByteBuffer buffer) {
@@ -90,7 +88,7 @@ public class RpcBenchmark {
                     if (l == 0) {
                         latch.countDown();
                     } else {
-                        Frame frame = responseFrameAllocator.allocate(8);
+                        Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l);
                         frame.complete();
@@ -118,7 +116,7 @@ public class RpcBenchmark {
         serverSocket.accept(socket -> {
             socket.setTcpNoDelay(true);
             socket.setReadHandler(new NioReadHandler() {
-                private FrameAllocator responseFrameAllocator = new SerialFrameAllocator(8, true);
+                private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuffer buffer) {
@@ -129,7 +127,7 @@ public class RpcBenchmark {
                         int size = buffer.getInt();
                         long l = buffer.getLong();
 
-                        Frame frame = responseFrameAllocator.allocate(8);
+                        Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
                         frame.complete();
