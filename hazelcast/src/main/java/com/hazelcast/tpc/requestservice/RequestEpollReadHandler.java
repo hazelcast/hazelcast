@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestEpollReadHandler implements EpollReadHandler {
+public class RequestEpollReadHandler extends EpollReadHandler {
 
     public OpScheduler opScheduler;
     public Consumer<Frame> responseHandler;

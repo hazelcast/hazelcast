@@ -4,9 +4,13 @@ import com.hazelcast.tpc.engine.ReadHandler;
 
 import java.nio.ByteBuffer;
 
-public interface EpollReadHandler extends ReadHandler {
+public abstract class EpollReadHandler implements ReadHandler {
 
-    void init(EpollAsyncSocket asyncSocket);
+    private EpollAsyncSocket asyncSocket;
 
-    void onRead(ByteBuffer receiveBuffer);
+    public void init(EpollAsyncSocket asyncSocket){
+        this.asyncSocket = asyncSocket;
+    }
+
+    public abstract void onRead(ByteBuffer receiveBuffer);
 }

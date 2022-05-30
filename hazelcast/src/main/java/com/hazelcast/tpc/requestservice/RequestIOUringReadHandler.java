@@ -12,18 +12,13 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestIOUringReadHandler implements IOUringReadHandler {
+public class RequestIOUringReadHandler extends IOUringReadHandler {
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;
     public Consumer<Frame> responseHandler;
     public OpScheduler opScheduler;
     private IOUringAsyncSocket asyncSocket;
-
-    @Override
-    public void init(IOUringAsyncSocket asyncSocket) {
-        this.asyncSocket = asyncSocket;
-    }
 
     @Override
     public void onRead(ByteBuf buf) {

@@ -44,7 +44,7 @@ public class StorageScheduler {
         this.reqAllocator = new SlabAllocator<>(maxConcurrency, IoRequest::new);
         this.parkedQueue = new CircularQueue<>(maxConcurrency);
 
-        registerFile(dummyFile);
+        //registerFile(dummyFile);
     }
 
     // todo: we can do actual registration on the rb.

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -65,6 +66,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
         this.spin = spin;
     }
 
+    private final CountDownLatch terminationLatch = new CountDownLatch(1);
+
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
         scheduler.setEventloop(this);
@@ -93,6 +96,11 @@ public abstract class Eventloop extends HazelcastManagedThread {
                     return;
             }
         }
+    }
+
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException{
+        terminationLatch.await(timeout, unit);
+        return state == SHUTDOWN;
     }
 
     protected abstract void wakeup();
@@ -174,6 +182,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         } finally {
             state = SHUTDOWN;
             closeSockets();
+            terminationLatch.countDown();
             System.out.println(getName() + " terminated");
         }
     }

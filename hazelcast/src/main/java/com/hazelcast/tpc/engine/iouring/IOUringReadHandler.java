@@ -3,9 +3,13 @@ package com.hazelcast.tpc.engine.iouring;
 import com.hazelcast.tpc.engine.ReadHandler;
 import io.netty.buffer.ByteBuf;
 
-public interface IOUringReadHandler extends ReadHandler {
+public abstract class IOUringReadHandler implements ReadHandler {
 
-    void init(IOUringAsyncSocket asyncSocket);
+    protected IOUringAsyncSocket asyncSocket;
 
-    void onRead(ByteBuf receiveBuffer);
+    public void init(IOUringAsyncSocket asyncSocket){
+        this.asyncSocket = asyncSocket;
+    }
+
+    public abstract void onRead(ByteBuf receiveBuffer);
 }
