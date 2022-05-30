@@ -302,6 +302,9 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
+    /**
+     * Exposes methods that should only be called from within the Eventloop.
+     */
     public class Unsafe {
 
         public <E> Future<E> newCompletedFuture(E value) {
