@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class CompatibilityLayerTest {
+public class CompatibilityModeTest {
 
     private HazelcastInstance node1;
     private HazelcastInstance node2;
@@ -29,30 +29,22 @@ public class CompatibilityLayerTest {
     @After
     public void after() {
         if (node1 != null) {
-            System.out.println("node1 shutdown started");
             node1.shutdown();
-            System.out.println("node1 shutdown completed");
         }
 
         if (node2 != null) {
-            System.out.println("node2 shutdown started");
             node2.shutdown();
-            System.out.println("node2 shutdown started");
         }
     }
 
     @Test
     public void test() {
         IMap map = node1.getMap("foo");
-        System.out.println("Map created");
 
-        int count = 1000;
+        int count = 10_000;
         for (int k = 0; k < count; k++) {
             map.put(k, k);
-            System.out.println(k);
         }
-
-        System.out.println("Done");
 
         assertEquals(count, map.size());
     }
