@@ -18,9 +18,9 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 public final class NioAsyncServerSocket extends AsyncServerSocket {
 
-    private ServerSocketChannel serverSocketChannel;
-    private Selector selector;
-    private NioEventloop eventloop;
+    private final ServerSocketChannel serverSocketChannel;
+    private final Selector selector;
+    private final NioEventloop eventloop;
 
     public static NioAsyncServerSocket open(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
