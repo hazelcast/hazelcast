@@ -1,6 +1,7 @@
 package com.hazelcast.tpc.engine;
 
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.tpc.engine.EventloopState.*;
 import static com.hazelcast.tpc.engine.Util.epochNanos;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -105,7 +107,23 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected abstract void wakeup();
 
-    public boolean registerResource(Closeable resource) {
+    /**
+     * Registers a resource on this Eventloop.
+     *
+     * Registered resources are automatically closed when the eventloop closes.
+     * Some examples: AsyncSocket and AsyncServerSocket.
+     *
+     * If the Eventloop isn't in the running state, false is returned.
+     *
+     * This method is thread-safe.
+     *
+     * @param resource
+     * @return true if the resource was successfully register, false otherwise.
+     * @throws NullPointerException if resource is null.
+     */
+    public final boolean registerResource(Closeable resource) {
+        checkNotNull(resource, "resource can't be null");
+
         if (state != RUNNING) {
             return false;
         }
@@ -120,8 +138,30 @@ public abstract class Eventloop extends HazelcastManagedThread {
         return true;
     }
 
-    public void deregisterResource(Closeable resource) {
+    /**
+     * Deregisters a resource.
+     *
+     * This method is thread-safe.
+     *
+     * This method can be called no matter the state of the Eventloop.
+     *
+     * @param resource the resource to deregister.
+     */
+    public final void deregisterResource(Closeable resource) {
+        checkNotNull(resource, "resource can't be null");
+
         resources.remove(resource);
+    }
+
+    /**
+     * Gets a collection of all registered resources.
+     *
+     * This method is thread-safe.
+     *
+     * @return the collection of all registered resources.
+     */
+    public Collection<Closeable> resources() {
+        return resources;
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -143,10 +183,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public void execute(Frame request) {
         concurrentRunQueue.add(request);
         wakeup();
-    }
-
-    public Collection<Closeable> resources() {
-        return resources;
     }
 
     @Override
