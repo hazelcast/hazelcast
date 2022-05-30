@@ -8,6 +8,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -38,8 +39,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
             = newUpdater(Eventloop.class, EventloopState.class, "state");
 
     protected final ILogger logger = Logger.getLogger(getClass());
-    protected final Set<AsyncSocket> registeredSockets = new CopyOnWriteArraySet<>();
-    protected final Set<AsyncServerSocket> registeredServerSockets = new CopyOnWriteArraySet<>();
+    protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
@@ -105,42 +105,23 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected abstract void wakeup();
 
-    public boolean registerSocket(AsyncSocket socket) {
+    public boolean registerResource(Closeable resource) {
         if (state != RUNNING) {
             return false;
         }
 
-        registeredSockets.add(socket);
+        resources.add(resource);
 
         if (state != RUNNING) {
-            registeredSockets.remove(socket);
-            return false;
-        }
-
-        return true;
-    }
-
-    public void deregisterSocket(AsyncSocket socket) {
-        registeredSockets.remove(socket);
-    }
-
-    public boolean registerServerSocket(AsyncServerSocket serverSocket) {
-        if (state != RUNNING) {
-            return false;
-        }
-
-        registeredServerSockets.add(serverSocket);
-
-        if (state != RUNNING) {
-            registeredServerSockets.remove(serverSocket);
+            resources.remove(resource);
             return false;
         }
 
         return true;
     }
 
-    public void deregisterSocket(AsyncServerSocket socket) {
-        registeredServerSockets.remove(socket);
+    public void deregisterResource(Closeable resource) {
+        resources.remove(resource);
     }
 
     protected abstract void eventLoop() throws Exception;
@@ -164,8 +145,8 @@ public abstract class Eventloop extends HazelcastManagedThread {
         wakeup();
     }
 
-    public Collection<AsyncSocket> registeredSockets() {
-        return registeredSockets;
+    public Collection<Closeable> resources() {
+        return resources;
     }
 
     @Override
@@ -181,8 +162,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
             logger.severe(e);
         } finally {
             state = SHUTDOWN;
-            closeResources(registeredSockets);
-            closeResources(registeredServerSockets);
+            closeResources(resources);
             terminationLatch.countDown();
             System.out.println(getName() + " terminated");
         }

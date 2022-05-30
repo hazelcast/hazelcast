@@ -190,7 +190,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         this.eventloop = eventloop;
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
-        if (!eventloop.registerSocket(EpollAsyncSocket.this)) {
+        if (!eventloop.registerResource(EpollAsyncSocket.this)) {
             throw new IllegalStateException("Can't activate socket, eventloop is not running");
         }
 
@@ -316,7 +316,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
                 }
             }
 
-            eventloop.deregisterSocket(this);
+            eventloop.deregisterResource(this);
         }
     }
 
@@ -332,7 +332,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
                 eventloop.execute(() -> {
                     try {
 
-                        if (!eventloop.registerSocket(EpollAsyncSocket.this)) {
+                        if (!eventloop.registerResource(EpollAsyncSocket.this)) {
                             throw new IllegalStateException();
                         }
                         logger.info("Socket listening at " + address);

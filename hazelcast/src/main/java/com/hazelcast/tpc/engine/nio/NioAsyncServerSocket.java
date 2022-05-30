@@ -1,8 +1,6 @@
 package com.hazelcast.tpc.engine.nio;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.tpc.engine.AsyncServerSocket;
-import com.hazelcast.tpc.engine.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,7 +32,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             serverSocketChannel.configureBlocking(false);
             this.eventloop = eventloop;
             this.selector = eventloop.selector;
-            if (!eventloop.registerServerSocket(this)) {
+            if (!eventloop.registerResource(this)) {
                 close();
                 throw new IllegalStateException("EventLoop is not running");
             }
@@ -108,7 +106,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
             closeResource(serverSocketChannel);
-            eventloop.deregisterSocket(this);
+            eventloop.deregisterResource(this);
         }
     }
 

@@ -211,7 +211,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         this.eventloop = eventloop;
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
-        if (!eventloop.registerSocket(NioAsyncSocket.this)) {
+        if (!eventloop.registerResource(NioAsyncSocket.this)) {
             throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
         }
 
@@ -307,7 +307,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             System.out.println("Closing  " + this);
 
             closeResource(socketChannel);
-            eventloop.deregisterSocket(NioAsyncSocket.this);
+            eventloop.deregisterResource(NioAsyncSocket.this);
         }
     }
 

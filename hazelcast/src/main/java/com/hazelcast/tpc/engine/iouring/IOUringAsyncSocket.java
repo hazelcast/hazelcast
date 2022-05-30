@@ -295,7 +295,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 }
             }
 
-            eventloop.deregisterSocket(this);
+            eventloop.deregisterResource(this);
         }
     }
 

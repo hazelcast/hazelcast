@@ -2,7 +2,6 @@ package com.hazelcast.tpc.engine.epoll;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
@@ -11,11 +10,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 // https://stackoverflow.com/questions/51777259/how-to-code-an-epoll-based-sockets-client-in-c
 public final class EpollAsyncServerSocket extends AsyncServerSocket {
@@ -36,7 +31,7 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
 //        try {
         this.serverSocket = LinuxSocket.newSocketStream();
         this.eventloop = eventloop;
-        if (!eventloop.registerServerSocket(this)) {
+        if (!eventloop.registerResource(this)) {
             close();
             throw new IllegalStateException("EventLoop is not running");
         }
@@ -131,7 +126,7 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
-            eventloop.deregisterSocket(this);
+            eventloop.deregisterResource(this);
             try {
                 serverSocket.close();
             } catch (IOException e) {

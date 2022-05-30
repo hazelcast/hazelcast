@@ -50,9 +50,9 @@ public final class MonitorThread extends Thread {
                 this.prevMillis = currentMillis;
 
                 for (Eventloop eventloop : eventloops) {
-                    for (AsyncSocket socket : eventloop.registeredSockets()) {
-                        monitor(socket, elapsed);
-                    }
+//                    for (AsyncSocket socket : eventloop.resources()) {
+//                        monitor(socket, elapsed);
+//                    }
                 }
 
                 if (!silent) {

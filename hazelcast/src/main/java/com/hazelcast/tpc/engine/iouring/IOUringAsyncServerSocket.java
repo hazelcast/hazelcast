@@ -1,8 +1,6 @@
 package com.hazelcast.tpc.engine.iouring;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.tpc.engine.AsyncServerSocket;
-import com.hazelcast.tpc.engine.Eventloop;
 import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
 import io.netty.incubator.channel.uring.LinuxSocket;
 import io.netty.incubator.channel.uring.SockaddrIn;
@@ -33,7 +31,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             serverSocket.setBlocking();
             this.eventloop = checkNotNull(eventloop);
 
-            if (!eventloop.registerServerSocket(this)) {
+            if (!eventloop.registerResource(this)) {
                 close();
                 throw new IllegalStateException("EventLoop is not running");
             }
@@ -129,7 +127,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
 
-            eventloop.deregisterSocket(this);
+            eventloop.deregisterResource(this);
             try {
                 serverSocket.close();
             } catch (IOException e) {
