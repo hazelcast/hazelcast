@@ -1720,7 +1720,7 @@
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
-                <version>7.9</version>
+                <version>9.23</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
