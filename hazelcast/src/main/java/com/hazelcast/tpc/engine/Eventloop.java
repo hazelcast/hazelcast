@@ -1,7 +1,6 @@
 package com.hazelcast.tpc.engine;
 
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -54,8 +53,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected volatile EventloopState state = CREATED;
 
+    private final CountDownLatch terminationLatch = new CountDownLatch(1);
+
     public final Unsafe unsafe = new Unsafe();
 
+    /**
+     * Returns the state of the Eventloop.
+     *
+     * This method is thread-safe.
+     *
+     * @return the state.
+     */
     public EventloopState state() {
         return state;
     }
@@ -68,8 +76,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
         this.spin = spin;
     }
 
-    private final CountDownLatch terminationLatch = new CountDownLatch(1);
-
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
         scheduler.setEventloop(this);
@@ -79,17 +85,24 @@ public abstract class Eventloop extends HazelcastManagedThread {
         return scheduler;
     }
 
+    /**
+     * Shuts down the Eventloop.
+     *
+     * This call can safely be made no matter the state of the Eventloop.
+     *
+     * This method is thread-safe.
+     */
     public void shutdown() {
         for (; ; ) {
             EventloopState oldState = state;
             switch (oldState) {
                 case CREATED:
-                    if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
+                    if (STATE.compareAndSet(this, oldState, TERMINATED)) {
                         return;
                     }
                     break;
                 case RUNNING:
-                    if (STATE.compareAndSet(this, oldState, SHUTTING_DOWN)) {
+                    if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
                         wakeup();
                         return;
                     }
@@ -100,9 +113,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
+    /**
+     * Awaits for the termination of the Eventloop.
+     *
+     * @param timeout the timeout
+     * @param unit the TimeUnit
+     * @return true if the Eventloop is terminated.
+     * @throws InterruptedException
+     */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException{
         terminationLatch.await(timeout, unit);
-        return state == SHUTDOWN;
+        return state == TERMINATED;
     }
 
     protected abstract void wakeup();
@@ -197,7 +218,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
             e.printStackTrace();
             logger.severe(e);
         } finally {
-            state = SHUTDOWN;
+            state = TERMINATED;
             closeResources(resources);
             terminationLatch.countDown();
             System.out.println(getName() + " terminated");
