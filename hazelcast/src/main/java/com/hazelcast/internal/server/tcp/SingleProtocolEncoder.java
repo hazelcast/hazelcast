@@ -121,17 +121,31 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     // Used by SingleProtocolDecoder in order to swap
     // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
+        // this update order below must stay in reverse order with access order in SingleProtocolEncode#onWrite
         isDecoderVerifiedProtocol = true;
         isDecoderReceivedProtocol = true;
-        channel.outboundPipeline().wakeup();
+        // This channel can become null when SingleProtocolEncoder is not active handler of the outbound
+        // pipeline, when the previous MemberProtocolEncoder doesn't replace itself with SingleProtocolEncoder
+        // yet. In this case, this outboundPipeline().wakeup() call can be ignored since it is not possible
+        // to enter the blocked state from the path that isDecoderReceivedProtocol check is performed.
+        if (channel != null) {
+            channel.outboundPipeline().wakeup();
+        }
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
     public void signalWrongProtocol(String exceptionMessage) {
+        // this update order below must stay in reverse order with access order in SingleProtocolEncode#onWrite
         this.exceptionMessage = exceptionMessage;
         isDecoderVerifiedProtocol = false;
         isDecoderReceivedProtocol = true;
-        channel.outboundPipeline().wakeup();
+        // This channel can become null when SingleProtocolEncoder is not active handler of the outbound
+        // pipeline, when the previous MemberProtocolEncoder doesn't replace itself with SingleProtocolEncoder
+        // yet. In this case, this outboundPipeline().wakeup() call can be ignored since it is not possible
+        // to enter the blocked state from the path that isDecoderReceivedProtocol check is performed.
+        if (channel != null) {
+            channel.outboundPipeline().wakeup();
+        }
     }
 
     public OutboundHandler getFirstOutboundHandler() {
