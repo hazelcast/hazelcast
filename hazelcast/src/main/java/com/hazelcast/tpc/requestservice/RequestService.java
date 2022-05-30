@@ -132,6 +132,10 @@ public class RequestService {
         }
     }
 
+    public Engine getEngine() {
+        return engine;
+    }
+
     public int getRequestTimeoutMs() {
         return requestTimeoutMs;
     }
@@ -322,7 +326,7 @@ public class RequestService {
     }
 
     public void shutdown() {
-        logger.info("Shutting down RequestService");
+        System.out.println("RequestService shutdown");
 
         shuttingdown = true;
 
@@ -331,6 +335,8 @@ public class RequestService {
         requestRegistry.shutdown();
 
         responseHandler.shutdown();
+
+        System.out.println("RequestService terminated");
     }
 
 
@@ -486,4 +492,5 @@ public class RequestService {
         System.out.println("AsyncSocket " + address + " connected");
         return socket;
     }
+
 }

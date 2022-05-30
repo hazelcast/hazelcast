@@ -201,4 +201,6 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
      * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
+
+    int toPartitionThreadIndex(int partitionId);
 }

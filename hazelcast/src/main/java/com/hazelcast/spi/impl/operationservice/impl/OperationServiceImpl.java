@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.TPCOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
@@ -49,6 +50,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.tpc.engine.Engine;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -185,8 +187,9 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
-        this.operationExecutor = new OperationExecutorImpl(
-                properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
+        Engine engine = nodeEngine.getRequestService().getEngine();
+        this.operationExecutor = new TPCOperationExecutor(
+                properties, node.loggingService, engine, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getNodeExtension(), hzName, configClassLoader);
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
