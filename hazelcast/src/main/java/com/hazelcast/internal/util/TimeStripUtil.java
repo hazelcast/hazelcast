@@ -44,7 +44,7 @@ public final class TimeStripUtil {
      * (see:
      * https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
      */
-    private static final long EPOCH_TIME_MILLIS = zeroOutMs(1514764800000L);
+    public static final long EPOCH_TIME_MILLIS = zeroOutMs(1514764800000L);
     private static final int UNSET = -1;
 
     private TimeStripUtil() {

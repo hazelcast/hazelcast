@@ -78,11 +78,6 @@ public final class ExpirationTimeSetter {
      * @return time in millis
      */
     private static long pickRightTimeInMillis(int secondsFromMapConfig, long millisFromOperation) {
-        if (millisFromOperation < 0
-                && (secondsFromMapConfig == 0 || secondsFromMapConfig == Integer.MAX_VALUE)) {
-            return Long.MAX_VALUE;
-        }
-
         if (millisFromOperation > 0) {
             // if user set millisFromOperation when calling operation, use it
             return millisFromOperation;
@@ -92,7 +87,7 @@ public final class ExpirationTimeSetter {
             return Long.MAX_VALUE;
         }
 
-        if (secondsFromMapConfig > 0) {
+        if (secondsFromMapConfig > 0 && secondsFromMapConfig < Integer.MAX_VALUE) {
             // if this is the first creation of entry, try to get expiry value from mapConfig
             return SECONDS.toMillis(secondsFromMapConfig);
         }
