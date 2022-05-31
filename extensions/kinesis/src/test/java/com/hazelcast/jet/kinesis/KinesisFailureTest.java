@@ -48,10 +48,10 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static com.hazelcast.test.TestStringUtils.repeat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.testcontainers.shaded.org.apache.commons.lang.StringUtils.repeat;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisFailureTest extends AbstractKinesisTest {

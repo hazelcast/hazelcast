@@ -131,7 +131,7 @@ random member - it might not be from the larger same-version group. To
 address this, we need to add member-to-member variants of `SqlExecute`,
 `SqlFetch` and `SqlCancel` operations so that a query submitted from a
 non-smart client can be redirected to execute on a member from the
-larger same-version subset. This wil also address the current limitation
+larger same-version subset. This will also address the current limitation
 that SQL queries can't be submitted from lite members.
 
 ### LoadBalancer changes

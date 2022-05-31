@@ -82,6 +82,7 @@ public final class TcpServerControl {
         process(connection, handshake);
     }
 
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private synchronized void process(TcpServerConnection connection, MemberHandshake handshake) {
         if (logger.isFinestEnabled()) {
             logger.finest("Handshake " + connection + ", complete message is " + handshake);
@@ -90,11 +91,25 @@ public final class TcpServerControl {
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
         List<Address> allAliases = new ArrayList<>();
         // if we support member protocol in the corresponding cm, we want to give priority to member
-        // public address in address registration phase
-        if (supportedProtocolTypes.contains(ProtocolType.MEMBER)
-                && remoteAddressesPerProtocolType.containsKey(ProtocolType.MEMBER)) {
-            allAliases.addAll(remoteAddressesPerProtocolType.remove(ProtocolType.MEMBER));
+        // public address in the address registration process.
+        if (supportedProtocolTypes.contains(ProtocolType.MEMBER)) {
+            Collection<Address> memberAddresses = remoteAddressesPerProtocolType.remove(ProtocolType.MEMBER);
+            if (memberAddresses != null) {
+                allAliases.addAll(memberAddresses);
+            }
+            if (!connection.isAcceptorSide()) {
+                // On the connection initiator side, also add WAN socket addresses of the remote member
+                // as aliases since the wan connections can be initiated using the connection manager
+                // that is only support the MEMBER protocol; and we also want to register the wan socket
+                // addresses in this case
+                Collection<Address> wanAddresses = remoteAddressesPerProtocolType.remove(ProtocolType.WAN);
+                if (wanAddresses != null) {
+                    allAliases.addAll(wanAddresses);
+                }
+            }
         }
+
+        // Add other aliases of the supported protocols
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -158,13 +173,19 @@ public final class TcpServerControl {
                 primaryAddress = remoteAddressAliases.iterator().next();
             }
         }
-        // On the acceptor side, this target address is null, on the connector side,
-        // it may not be the same as the connected address in some conditions.
+        // On the acceptor side, the target address is null;
+        // On the connector (connection initiator) side, the target address
+        // is equal to requested target address (while creating connection,
+        // we set the requested target address as a remoteAddress of the
+        // connection), and it may not be the same
+        // as the connected address (remoteEndpointAddress) in some cases
+        // (e.g. when a hostname are used as a target address or in a network
+        // setup including network proxies/tunneling). Here, we store this target
+        // address in the separate variable as we will override the remote address
+        // of the connection with the primaryAddress below
         Address targetAddress = connection.getRemoteAddress();
-        Address connectedAddress = new Address(connection.getRemoteSocketAddress());
-        remoteAddressAliases.add(connectedAddress);
-
         connection.setRemoteAddress(primaryAddress);
+
         serverContext.onSuccessfulConnection(primaryAddress);
         if (handshake.isReply()) {
             new SendMemberHandshakeTask(logger, serverContext, connection, primaryAddress, false,

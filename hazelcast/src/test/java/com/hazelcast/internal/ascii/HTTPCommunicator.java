@@ -22,6 +22,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -124,13 +125,14 @@ public class HTTPCommunicator {
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
+    private final ILogger logger;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this(instance, null);
     }
 
     public HTTPCommunicator(HazelcastInstance instance, String baseRestAddress) {
-
+        logger = instance.getLoggingService().getLogger(HTTPCommunicator.class);
         AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
         SSLConfig sslConfig;
         if (anc.isEnabled()) {
@@ -150,10 +152,11 @@ public class HTTPCommunicator {
         this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
     }
 
-    public HTTPCommunicator(int port) {
+    HTTPCommunicator(int port) {
         this.baseRestAddress = "/127.0.0.1:" + port;
         this.address = "http:/" + this.baseRestAddress + "/hazelcast/rest/";
         this.sslEnabled = false;
+        this.logger = null;
     }
 
     public String getUrl(String suffix) {
@@ -472,6 +475,7 @@ public class HTTPCommunicator {
     }
 
     private ConnectionResponse doHead(String url) throws IOException {
+        logRequest("HEAD", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -485,6 +489,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse doGet(String url) throws IOException {
+        logRequest("GET", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -499,6 +504,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse doPost(String url, String... params) throws IOException {
+        logRequest("POST", url);
         CloseableHttpClient client = newClient();
 
         List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
@@ -532,6 +538,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse doDelete(String url) throws IOException {
+        logRequest("DELETE", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -542,6 +549,12 @@ public class HTTPCommunicator {
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
+        }
+    }
+
+    private void logRequest(String method, String url) {
+        if (logger != null && logger.isFineEnabled()) {
+            logger.fine("Sending " + method + " request to " + url);
         }
     }
 

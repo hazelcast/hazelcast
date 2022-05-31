@@ -474,6 +474,18 @@ public final class Util {
     }
 
     /**
+     * Adds items of an array. Creates no GC litter (if you use non-capturing lambda for
+     * {@code toIntF}, else new lambda instance is created for each call).
+     */
+    public static <E> int sum(E[] array, ToIntFunction<E> toIntF, int size) {
+        int sum = 0;
+        for (int i = 0; i < size; i++) {
+            sum += toIntF.applyAsInt(array[i]);
+        }
+        return sum;
+    }
+
+    /**
      * Escapes the vertex name for graphviz by prefixing the quote character
      * with backslash.
      */
