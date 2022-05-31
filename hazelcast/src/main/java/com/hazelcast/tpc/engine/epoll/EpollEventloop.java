@@ -64,7 +64,7 @@ public final class EpollEventloop extends Eventloop {
 
     @Override
     public void wakeup() {
-        if (spin || Thread.currentThread() == this) {
+        if (spin || Thread.currentThread() == eventloopThread) {
             return;
         }
 
@@ -80,7 +80,7 @@ public final class EpollEventloop extends Eventloop {
             runConcurrentTasks();
             k++;
 
-            System.out.println(getName() + " eventLoop run " + k);
+            System.out.println(eventloopThread.getName() + " eventLoop run " + k);
 
             boolean moreWork = scheduler.tick();
 

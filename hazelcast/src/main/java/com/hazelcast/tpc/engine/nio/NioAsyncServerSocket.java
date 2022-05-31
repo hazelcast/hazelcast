@@ -17,6 +17,7 @@
 package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
+import com.hazelcast.tpc.engine.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +38,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
     private final NioEventloop eventloop;
+    private final Eventloop.EventloopThread eventloopThread;
 
     public static NioAsyncServerSocket open(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
@@ -47,6 +49,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
             this.eventloop = eventloop;
+            this.eventloopThread = eventloop.getEventloopThread();
             this.selector = eventloop.selector;
             if (!eventloop.registerResource(this)) {
                 close();
@@ -129,7 +132,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void bind(SocketAddress local) {
         try {
-            System.out.println(eventloop.getName() + " Binding to " + local);
+            System.out.println(eventloopThread.getName() + " Binding to " + local);
             serverSocketChannel.bind(local);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -139,7 +142,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     public void accept(Consumer<NioAsyncSocket> consumer) {
         eventloop.execute(() -> {
             serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
-            System.out.println(eventloop.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+            System.out.println(eventloopThread.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
         });
     }
 

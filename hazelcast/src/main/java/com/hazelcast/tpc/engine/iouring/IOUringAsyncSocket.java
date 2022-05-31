@@ -44,6 +44,7 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     private final boolean clientSide;
+    private Eventloop.EventloopThread eventloopThread;
 
     public static IOUringAsyncSocket open() {
         return new IOUringAsyncSocket();
@@ -203,6 +204,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     public void activate(Eventloop l) {
         IOUringEventloop eventloop = (IOUringEventloop) l;
         this.eventloop = eventloop;
+        this.eventloopThread = eventloop.getEventloopThread();
         this.eventloop.execute(() -> {
             ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
             iovArray = new IovArray(iovArrayBuffer);
@@ -220,7 +222,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     public void flush() {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloop) {
+            if (currentThread == eventloopThread) {
                 eventloop.localRunQueue.add(eventloopHandler);
             } else {
                 eventloop.execute(eventloopHandler);
@@ -266,7 +268,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == eventloop;
+        assert currentThread == eventloopThread;
 
         boolean result;
         if (currentFlushThread == null) {
@@ -280,7 +282,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             } else {
                 result = unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == eventloop) {
+        } else if (currentFlushThread == eventloopThread) {
             if (ioVector.add(frame)) {
                 result = true;
             } else {

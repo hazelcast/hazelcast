@@ -130,18 +130,18 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    protected void beforeStart() {
+    protected void beforeEventloop() {
         this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncTreshold, flags);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
         this.storageScheduler = new StorageScheduler(this, 512);
-        super.beforeStart();
+        super.beforeEventloop();
     }
 
     @Override
     public void wakeup() {
-        if (spin || Thread.currentThread() == this) {
+        if (spin || Thread.currentThread() == eventloopThread) {
             return;
         }
 

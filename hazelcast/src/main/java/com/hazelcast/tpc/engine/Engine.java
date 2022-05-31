@@ -35,6 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 import static java.lang.System.out;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The Engine is effectively an array of eventloops
@@ -48,7 +49,7 @@ public final class Engine {
     private final Supplier<Scheduler> schedulerSupplier;
     private boolean spin;
     private EventloopType eventloopType;
-    private final ThreadAffinity threadAffinity;
+    private ThreadAffinity threadAffinity;
     private Eventloop[] eventloops;
     private int eventloopCount;
     private String eventloopBasename = "eventloop-";
@@ -86,11 +87,7 @@ public final class Engine {
      */
     public Engine setThreadAffinity(ThreadAffinity threadAffinity) {
         checkNotNull(threadAffinity);
-
-        for (Eventloop eventloop : eventloops) {
-            eventloop.setThreadAffinity(threadAffinity);
-        }
-
+        this.threadAffinity = threadAffinity;
         return this;
     }
 
@@ -146,36 +143,38 @@ public final class Engine {
             switch (eventloopType) {
                 case NIO:
                     NioConfiguration nioConfig = new NioConfiguration();
-                    nioConfig.setScheduler(schedulerSupplier.get());
+                    nioConfig.setThreadName(eventloopBasename + idx);
                     nioConfig.setSpin(spin);
+                    nioConfig.setScheduler(schedulerSupplier.get());
+                    nioConfig.setThreadAffinity(threadAffinity);
                     eventloop = new NioEventloop(nioConfig);
                     break;
                 case EPOLL:
                     EpollConfiguration epollConfig = new EpollConfiguration();
+                    epollConfig.setThreadName(eventloopBasename + idx);
                     epollConfig.setSpin(spin);
                     epollConfig.setScheduler(schedulerSupplier.get());
+                    epollConfig.setThreadAffinity(threadAffinity);
                     eventloop = new EpollEventloop(epollConfig);
                     break;
                 case IOURING:
                     IOUringConfiguration ioUringConfig = new IOUringConfiguration();
+                    ioUringConfig.setThreadName(eventloopBasename + idx);
                     ioUringConfig.setSpin(spin);
                     ioUringConfig.setScheduler(schedulerSupplier.get());
+                    ioUringConfig.setThreadAffinity(threadAffinity);
                     eventloop = new IOUringEventloop(ioUringConfig);
                     break;
                 default:
                     throw new IllegalStateException("Unknown reactorType:" + eventloopType);
             }
 
-            eventloop.setName(eventloopBasename + idx);
             eventloops[idx] = eventloop;
         }
     }
 
     public void start() {
         for (Eventloop eventloop : eventloops) {
-            if (threadAffinity != null) {
-                eventloop.setThreadAffinity(threadAffinity);
-            }
             eventloop.start();
         }
 
@@ -190,7 +189,7 @@ public final class Engine {
 
         try {
             for (Eventloop eventloop : eventloops) {
-                eventloop.join(TimeUnit.SECONDS.toMillis(5));
+                eventloop.awaitTermination(5, SECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

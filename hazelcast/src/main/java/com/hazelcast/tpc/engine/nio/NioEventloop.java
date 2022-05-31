@@ -42,7 +42,7 @@ public final class NioEventloop extends Eventloop {
 
     @Override
     public void wakeup() {
-        if (spin || Thread.currentThread() == this) {
+        if (spin || Thread.currentThread() == eventloopThread) {
             return;
         }
 

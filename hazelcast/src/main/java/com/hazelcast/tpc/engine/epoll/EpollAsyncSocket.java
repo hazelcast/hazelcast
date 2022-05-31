@@ -40,6 +40,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 // add padding around Nio channel
 public final class EpollAsyncSocket extends AsyncSocket {
 
+    private Eventloop.EventloopThread eventloopThread;
+
     public static EpollAsyncSocket open() {
         return new EpollAsyncSocket();
     }
@@ -88,7 +90,6 @@ public final class EpollAsyncSocket extends AsyncSocket {
     public EpollEventloop getEventloop() {
         return eventloop;
     }
-
 
     @Override
     public void setReadHandler(ReadHandler readHandler) {
@@ -204,6 +205,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     public void activate(Eventloop l) {
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;
+        this.eventloopThread = eventloop.getEventloopThread();
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
         if (!eventloop.registerResource(EpollAsyncSocket.this)) {
@@ -247,7 +249,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     public void flush() {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloop) {
+            if (currentThread == eventloopThread) {
                 eventloop.localRunQueue.add(eventLoopHandler);
             } else if (writeThrough) {
                 eventLoopHandler.run();
@@ -289,7 +291,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == eventloop;
+        assert currentThread == eventloopThread;
 
         boolean result;
         if (currentFlushThread == null) {
@@ -304,7 +306,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
             } else {
                 result = unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == eventloop) {
+        } else if (currentFlushThread == eventloopThread) {
             if (ioVector.add(frame)) {
                 result = true;
             } else {

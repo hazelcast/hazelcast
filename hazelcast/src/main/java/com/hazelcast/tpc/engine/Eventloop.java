@@ -17,6 +17,7 @@
 package com.hazelcast.tpc.engine;
 
 
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -53,7 +54,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  *
  * A single eventloop can deal with many server ports.
  */
-public abstract class Eventloop extends HazelcastManagedThread {
+public abstract class Eventloop {
 
     protected final static AtomicReferenceFieldUpdater<Eventloop, EventloopState> STATE
             = newUpdater(Eventloop.class, EventloopState.class, "state");
@@ -80,12 +81,19 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected long earliestDeadlineEpochNanos = -1;
 
+    protected final EventloopThread eventloopThread;
+
     public Eventloop(AbstractConfiguration config) {
         this.spin = spin;
         this.scheduler = config.scheduler;
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.setEventloop(this);
+        this.eventloopThread = new EventloopThread(config);
+    }
+
+    public EventloopThread getEventloopThread() {
+        return eventloopThread;
     }
 
     /**
@@ -99,12 +107,27 @@ public abstract class Eventloop extends HazelcastManagedThread {
         return state;
     }
 
+
+    protected void beforeEventloop() {
+    }
+
     /**
      * Executes the actual eventloop.
      *
      * @throws Exception
      */
     protected abstract void eventLoop() throws Exception;
+
+    /**
+     * Starts the eventloop.
+     */
+    public void start() {
+        if (!STATE.compareAndSet(Eventloop.this, NEW, RUNNING)) {
+            throw new IllegalStateException("Can't start eventLoop, invalid state:" + state);
+        }
+
+        eventloopThread.start();
+    }
 
     /**
      * Shuts down the Eventloop.
@@ -213,7 +236,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
      * @throws NullPointerException if task is null.
      */
     public final void execute(EventloopTask task) {
-        if (Thread.currentThread() == this) {
+        if (Thread.currentThread() == eventloopThread) {
             localRunQueue.offer(task);
         } else {
             concurrentRunQueue.add(task);
@@ -241,25 +264,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
     public final void execute(Frame request) {
         concurrentRunQueue.add(request);
         wakeup();
-    }
-
-    @Override
-    public final void executeRun() {
-        try {
-            if (!STATE.compareAndSet(this, NEW, RUNNING)) {
-                throw new IllegalStateException("Can't start eventLoop, invalid state:" + state);
-            }
-
-            eventLoop();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            logger.severe(e);
-        } finally {
-            state = TERMINATED;
-            closeResources(resources);
-            terminationLatch.countDown();
-            System.out.println(getName() + " terminated");
-        }
     }
 
     protected final void runLocalTasks() {
@@ -326,6 +330,16 @@ public abstract class Eventloop extends HazelcastManagedThread {
         private Scheduler scheduler = new NopScheduler();
         private int localRunQueueCapacity = 1024;
         private int concurrentRunQueueCapacity = 4096;
+        private String threadName;
+        private ThreadAffinity threadAffinity;
+
+        public void setThreadName(String threadName) {
+            this.threadName = threadName;
+        }
+
+        public void setThreadAffinity(ThreadAffinity threadAffinity) {
+            this.threadAffinity = threadAffinity;
+        }
 
         public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
             this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
@@ -361,6 +375,34 @@ public abstract class Eventloop extends HazelcastManagedThread {
             }
 
             return this.deadlineEpochNanos > that.deadlineEpochNanos ? 1 : -1;
+        }
+    }
+
+    public final class EventloopThread extends HazelcastManagedThread {
+
+        private EventloopThread(AbstractConfiguration config) {
+            if (config.threadName != null) {
+                setName(config.threadName);
+            }
+            if (config.threadAffinity != null) {
+                setThreadAffinity(config.threadAffinity);
+            }
+        }
+
+        @Override
+        public final void executeRun() {
+            try {
+                beforeEventloop();
+                eventLoop();
+            } catch (Throwable e) {
+                e.printStackTrace();
+                logger.severe(e);
+            } finally {
+                state = TERMINATED;
+                closeResources(resources);
+                terminationLatch.countDown();
+                System.out.println(getName() + " terminated");
+            }
         }
     }
 

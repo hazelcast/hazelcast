@@ -60,6 +60,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     // immutable state
     private SocketChannel socketChannel;
     public NioEventloop eventloop;
+    private Eventloop.EventloopThread eventloopThread;
     private SelectionKey key;
     private Selector selector;
 
@@ -225,6 +226,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     public void activate(Eventloop l) {
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
+        this.eventloopThread = eventloop.getEventloopThread();
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
         if (!eventloop.registerResource(NioAsyncSocket.this)) {
@@ -245,7 +247,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     public void flush() {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloop) {
+            if (currentThread == eventloopThread) {
                 eventloop.localRunQueue.add(eventLoopHandler);
             } else if (writeThrough) {
                 eventLoopHandler.run();
@@ -290,7 +292,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
-        assert currentThread == eventloop;
+        assert currentThread == eventloopThread;
 
         boolean result;
         if (currentFlushThread == null) {
@@ -304,7 +306,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             } else {
                 result = unflushedFrames.add(frame);
             }
-        } else if (currentFlushThread == eventloop) {
+        } else if (currentFlushThread == eventloopThread) {
             if (ioVector.add(frame)) {
                 result = true;
             } else {

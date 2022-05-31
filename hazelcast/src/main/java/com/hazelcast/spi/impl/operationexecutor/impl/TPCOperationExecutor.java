@@ -41,6 +41,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
+import com.hazelcast.tpc.engine.Eventloop.EventloopThread;
 import com.hazelcast.tpc.engine.EventloopTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -433,7 +434,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
         }
 
         // we are only allowed to execute partition aware actions on an Eventloop
-        if (currentThread.getClass() != Eventloop.class) {
+        if (currentThread.getClass() != EventloopThread.class) {
             return false;
         }
 
@@ -456,7 +457,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
             return true;
         }
 
-        if (currentThread instanceof Eventloop) {
+        if (currentThread instanceof EventloopThread) {
             return false;
         }
 
