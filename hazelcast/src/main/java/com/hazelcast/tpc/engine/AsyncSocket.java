@@ -56,10 +56,28 @@ public abstract class AsyncSocket implements Closeable {
      */
     public abstract Eventloop getEventloop();
 
+    /**
+     * Returns the remote address.
+     *
+     * If the AsyncSocket isn't connected, null is returned.
+     *
+     * This method is thread-safe.
+     *
+     * @return the remote address.
+     */
     public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
 
+    /**
+     * Returns the local address.
+     *
+     * If the AsyncSocket isn't connected, null is returned.
+     *
+     * This method is thread-safe.
+     *
+     * @return the local address.
+     */
     public final SocketAddress getLocalAddress() {
         return localAddress;
     }
@@ -86,6 +104,17 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract void setReadHandler(ReadHandler readHandler);
 
+    /**
+     * Activates an AsyncSocket by hooking it up to an EventLoop.
+     *
+     * This method is not thread-safe.
+     *
+     * This method should only be called once.
+     *
+     * @param eventloop
+     * @throws NullPointerException if eventloop is null.
+     * @throws IllegalStateException if the AsyncSocket is already activated.
+     */
     public abstract void activate(Eventloop eventloop);
 
     /**
@@ -134,6 +163,8 @@ public abstract class AsyncSocket implements Closeable {
     public abstract boolean writeAndFlush(Frame frame);
 
     /**
+     * Writes a frame and ensure it gets written.
+     *
      * Should only be called from within the Eventloop.
      */
     public abstract boolean unsafeWriteAndFlush(Frame frame);
@@ -167,7 +198,7 @@ public abstract class AsyncSocket implements Closeable {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
 }

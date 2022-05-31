@@ -224,6 +224,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public void activate(Eventloop l) {
+        if (this.eventloop != null) {
+            throw new IllegalStateException("Can't activate an already activated AsyncSocket");
+        }
+
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.getEventloopThread();
@@ -325,7 +329,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             System.out.println("Closing  " + this);
 
             closeResource(socketChannel);
-            eventloop.deregisterResource(NioAsyncSocket.this);
+            if (eventloop != null) {
+                eventloop.deregisterResource(NioAsyncSocket.this);
+            }
         }
     }
 

@@ -69,7 +69,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     // isolated state.
     public IovArray iovArray;
-    public IOVector ioVector = new IOVector();
+    public final IOVector ioVector = new IOVector();
     private IOUringReadHandler readHandler;
     private final EventloopHandler eventloopHandler = new EventloopHandler();
 
@@ -202,6 +202,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     @Override
     public void activate(Eventloop l) {
+        if (this.eventloop != null) {
+            throw new IllegalStateException("Can't activate an already activated AsyncSocket");
+        }
+
         IOUringEventloop eventloop = (IOUringEventloop) l;
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.getEventloopThread();
@@ -313,10 +317,11 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 }
             }
 
-            eventloop.deregisterResource(this);
+            if (eventloop != null) {
+                eventloop.deregisterResource(this);
+            }
         }
     }
-
 
     private void sq_addRead() {
         //System.out.println("sq_addRead writerIndex:" + b.writerIndex() + " capacity:" + b.capacity());

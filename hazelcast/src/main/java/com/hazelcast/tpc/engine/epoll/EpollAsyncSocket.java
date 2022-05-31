@@ -203,6 +203,10 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
     @Override
     public void activate(Eventloop l) {
+        if (this.eventloop != null) {
+            throw new IllegalStateException("Can't activate an already activated AsyncSocket");
+        }
+
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.getEventloopThread();
