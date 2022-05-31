@@ -30,6 +30,7 @@ import io.netty.util.collection.IntObjectMap;
 import io.netty.util.internal.PlatformDependent;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
@@ -220,7 +221,7 @@ public class IOUringEventloop extends Eventloop {
         }
 
         public void setStorageScheduler(StorageScheduler storageScheduler) {
-            this.storageScheduler = storageScheduler;
+            this.storageScheduler = checkNotNull(storageScheduler);
         }
     }
 }
