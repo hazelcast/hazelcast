@@ -1557,10 +1557,6 @@
                 <exclusions>
                     <!-- The following dependencies are not needed for our use of Hadoop -->
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.eclipse.jetty</groupId>
                         <artifactId>jetty-servlet</artifactId>
                     </exclusion>
