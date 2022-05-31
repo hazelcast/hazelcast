@@ -61,13 +61,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Predicate;
 
-import static com.hazelcast.jet.core.metrics.MetricNames.COALESCED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM_LATENCY;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_BATCHES;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
-import static com.hazelcast.jet.core.metrics.MetricNames.TOP_OBSERVED_WM;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.CLOSE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
@@ -112,7 +110,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<InboundEdgeStream[]> instreamGroupQueue;
-    private final WatermarkCoalescer watermarkCoalescer;
+    private final KeyedWatermarkCoalsescerMap watermarkCoalescer;
     private final ILogger logger;
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
@@ -130,7 +128,7 @@ public class ProcessorTasklet implements Tasklet {
     private long pendingSnapshotId2;
 
     private SnapshotBarrier currentBarrier;
-    private Watermark pendingWatermark;
+    private Watermark[] pendingWatermark;
 
     // Tells whether we are operating in exactly-once or at-least-once mode.
     // In other words, whether a barrier from all inputs must be present before
@@ -172,8 +170,8 @@ public class ProcessorTasklet implements Tasklet {
         this.instreams = instreams;
         this.instreamGroupQueue = createInstreamGroupQueue(instreams);
         this.outstreams = outstreams.stream()
-                                    .sorted(comparing(OutboundEdgeStream::ordinal))
-                                    .toArray(OutboundEdgeStream[]::new);
+                .sorted(comparing(OutboundEdgeStream::ordinal))
+                .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
         String prefix = prefix(context.jobConfig().getName(),
                 context.jobId(), context.vertexName(), context.globalProcessorIndex());
@@ -190,7 +188,10 @@ public class ProcessorTasklet implements Tasklet {
         pendingSnapshotId1 = pendingSnapshotId2 = ssContext.activeSnapshotIdPhase1() + 1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
-        watermarkCoalescer = WatermarkCoalescer.create(instreams.size());
+        // TODO: let's make default as 32.
+        //noinspection CheckStyle
+        pendingWatermark = new Watermark[32];
+        watermarkCoalescer = new KeyedWatermarkCoalsescerMap();
     }
 
     private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
@@ -269,7 +270,8 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public ProgressState call() {
         assert state != END : "already in terminal state";
         progTracker.reset();
@@ -297,20 +299,29 @@ public class ProcessorTasklet implements Tasklet {
     private void stateMachineStep() {
         switch (state) {
             case PROCESS_WATERMARK:
-                if (pendingWatermark == null) {
-                    long wm = watermarkCoalescer.checkWmHistory();
-                    if (wm == NO_NEW_WM) {
-                        state = NULLARY_PROCESS;
-                        stateMachineStep(); // recursion
-                        break;
+                boolean mayTransformToNullaryProcess = true;
+                for (byte key : currInstream.wmKeys()) {
+                    if (pendingWatermark[key] == null) {
+                        long wm = watermarkCoalescer.checkWmHistory(key);
+                        if (wm == NO_NEW_WM) {
+                            state = NULLARY_PROCESS;
+                            stateMachineStep(); // recursion
+                            break;
+                        }
+                        pendingWatermark[key] = new Watermark(wm, key);
                     }
-                    pendingWatermark = new Watermark(wm);
+                    if (!(pendingWatermark[key].timestamp() == IDLE_MESSAGE.timestamp()
+                            ? outbox.offer(new Watermark(IDLE_MESSAGE.timestamp(), key))
+                            : doWithClassLoader(context.classLoader(),
+                            () -> processor.tryProcessWatermark(pendingWatermark[key])))
+                    ) {
+                        mayTransformToNullaryProcess = false;
+                    } else {
+                        pendingWatermark[key] = null;
+                    }
                 }
-                if (pendingWatermark.equals(IDLE_MESSAGE)
-                        ? outbox.offer(IDLE_MESSAGE)
-                        : doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(pendingWatermark))) {
+                if (mayTransformToNullaryProcess) {
                     state = NULLARY_PROCESS;
-                    pendingWatermark = null;
                 }
                 break;
 
@@ -551,10 +562,10 @@ public class ProcessorTasklet implements Tasklet {
             // check if the last drained item is special
             Object lastItem = inbox.queue().peekLast();
             if (lastItem instanceof Watermark) {
-                long newWmValue = ((Watermark) inbox.queue().removeLast()).timestamp();
-                long wm = watermarkCoalescer.observeWm(currInstream.ordinal(), newWmValue);
+                Watermark newWm = ((Watermark) inbox.queue().removeLast());
+                long wm = watermarkCoalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp());
                 if (wm != NO_NEW_WM) {
-                    pendingWatermark = new Watermark(wm);
+                    pendingWatermark[newWm.key()] = new Watermark(wm, newWm.key());
                 }
             } else if (lastItem instanceof SnapshotBarrier) {
                 SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
@@ -565,13 +576,15 @@ public class ProcessorTasklet implements Tasklet {
 
             if (result.isDone()) {
                 receivedBarriers.clear(currInstream.ordinal());
-                long wm = watermarkCoalescer.queueDone(currInstream.ordinal());
-                // Note that there can be a WM received from upstream and the result can be done after single drain.
-                // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
-                if (wm != NO_NEW_WM) {
-                    assert pendingWatermark == null || pendingWatermark.timestamp() < wm
-                            : "trying to assign lower WM. Old=" + pendingWatermark.timestamp() + ", new=" + wm;
-                    pendingWatermark = new Watermark(wm);
+                for (byte key : currInstream.wmKeys()) {
+                    long wm = watermarkCoalescer.queueDone(key, currInstream.ordinal());
+                    // Note that there can be a WM received from upstream and the result can be done after single drain.
+                    // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
+                    if (wm != NO_NEW_WM) {
+                        assert pendingWatermark[key] == null || pendingWatermark[key].timestamp() < wm
+                                : "trying to assign lower WM. Old=" + pendingWatermark[key].timestamp() + ", new=" + wm;
+                        pendingWatermark[key] = new Watermark(wm, key);
+                    }
                 }
                 instreamCursor.remove();
                 numActiveOrdinals--;
@@ -593,8 +606,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll())
-                       .map(CircularListCursor::new)
-                       .orElse(null);
+                .map(CircularListCursor::new)
+                .orElse(null);
     }
 
     @Override
@@ -667,8 +680,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
@@ -689,8 +702,8 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
-        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
+//        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
+//        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 

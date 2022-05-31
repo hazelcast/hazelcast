@@ -101,7 +101,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     // want to make this configurable
     private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
 
-    /** Snapshot of partition table used to route items on partitioned edges */
+    /**
+     * Snapshot of partition table used to route items on partitioned edges
+     */
     private Map<Address, int[]> partitionAssignment;
 
     private JobConfig jobConfig;
@@ -119,10 +121,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private final transient Map<Address, Connection> memberConnections = new HashMap<>();
 
-    /** dest vertex id --> dest ordinal --> sender addr -> receiver tasklet */
+    /**
+     * dest vertex id --> dest ordinal --> sender addr -> receiver tasklet
+     */
     private final transient Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = new HashMap<>();
 
-    /** dest vertex id --> dest ordinal --> dest addr --> sender tasklet */
+    /**
+     * dest vertex id --> dest ordinal --> dest addr --> sender tasklet
+     */
     private final transient Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = new HashMap<>();
 
     private final transient Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
@@ -203,6 +209,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
+            // TODO: Support keyed watermarks for Pipeline API.
             if (!isLightJob) {
                 // Note that we create the snapshot queues for all non-light jobs, even if they don't have
                 // processing guarantee enabled, because in EE one can request a snapshot also for
@@ -275,34 +282,34 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * depends on the localParallelism of the vertex. When one instance of the {@link ProcessorTasklet} wants to send data
      * over the V1 -> V2 edge:
      * - If {@link ProcessorTasklet} for V1 and {@link ProcessorTasklet} for V2 are on current member, the communication
-     *   is done through the local conveyors.
+     * is done through the local conveyors.
      * - If {@link ProcessorTasklet} for V1 is on remote member, on current member we have to create {@link ReceiverTasklet}
-     *   that will receive the data from V1 and pass it to V2. The communication between {@link ReceiverTasklet} and V2
-     *   {@link ProcessorTasklet} is done through the local conveyors.
+     * that will receive the data from V1 and pass it to V2. The communication between {@link ReceiverTasklet} and V2
+     * {@link ProcessorTasklet} is done through the local conveyors.
      * - If {@link ProcessorTasklet} for V2 is on remote member, on current member we have to create {@link SenderTasklet}
-     *   that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
-     *   is done through the concurrent conveyors.
+     * that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
+     * is done through the concurrent conveyors.
      * To make it even more clear that's what are our possibilities (http://viz-js.com/):
-     *
+     * <p>
      * digraph Local {
-     *     subgraph cluster_0 {
-     *         "V1 ProcessorTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
-     *         label = "member #1";
-     *     }
+     * subgraph cluster_0 {
+     * "V1 ProcessorTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     * label = "member #1";
      * }
-     *
+     * }
+     * <p>
      * digraph Remote {
-     *     subgraph cluster_0 {
-     *         "V1 ProcessorTasklet" -> "V1 SenderTasklet" [label="concurrent conveyor"]
-     *         label = "member #1";
-     *     }
-     *
-     *     subgraph cluster_1 {
-     *         "V2 ReceiverTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
-     *         label = "member #2";
-     *     }
-     *
-     *     "V1 SenderTasklet" -> "V2 ReceiverTasklet" [label="network"]
+     * subgraph cluster_0 {
+     * "V1 ProcessorTasklet" -> "V1 SenderTasklet" [label="concurrent conveyor"]
+     * label = "member #1";
+     * }
+     * <p>
+     * subgraph cluster_1 {
+     * "V2 ReceiverTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     * label = "member #2";
+     * }
+     * <p>
+     * "V1 SenderTasklet" -> "V2 ReceiverTasklet" [label="network"]
      * }
      */
     private void createLocalConveyorsAndSenderReceiverTasklets(long jobId, InternalSerializationService jobSerializationService) {
@@ -494,7 +501,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Each edge is represented by an array of conveyors between the producers and consumers.
      * There are as many conveyors as there are consumers.
      * Each conveyor has one queue per producer.
-     *
+     * <p>
      * For a distributed edge, there is one additional producer per member represented
      * by the ReceiverTasklet.
      */
@@ -575,10 +582,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.get(edge.edgeId());
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             OutboundCollector[] localCollectors = IntStream.range(0, downstreamParallelism)
-                            .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
-                            .mapToObj(i -> new ConveyorCollector(localConveyors[i],
-                                    processorIndex / downstreamParallelism, null))
-                            .toArray(OutboundCollector[]::new);
+                    .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
+                    .mapToObj(i -> new ConveyorCollector(localConveyors[i],
+                            processorIndex / downstreamParallelism, null))
+                    .toArray(OutboundCollector[]::new);
             return compositeCollector(localCollectors, edge, totalPartitionCount, true, false);
         } else {
             OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
@@ -597,9 +604,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 throw new JetException("An edge distributing to a specific member must be partitioned: " + edge);
             }
             if (!ptionArrgmt.getRemotePartitionAssignment().containsKey(edge.getDistributedTo())
-                && !edge.getDistributedTo().equals(nodeEngine.getThisAddress())) {
+                    && !edge.getDistributedTo().equals(nodeEngine.getThisAddress())) {
                 throw new JetException("The target member of an edge is not present in the cluster or is a lite member: "
-                                       + edge);
+                        + edge);
             }
         }
 
@@ -655,7 +662,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ConcurrentConveyor<Object> conveyor = createConveyorArray(
                     1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
 
-            InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
+            InboundEdgeStream inboundEdgeStream = newEdgeStream(
+                    edge,
+                    conveyor,
                     jobPrefix + "/toVertex:" + edge.destVertex().name() + "-toMember:" + destAddr,
                     adaptedComparator);
             SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
@@ -801,14 +810,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public int getStoreSnapshotTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof StoreSnapshotTasklet)
-                             .count();
+                .filter(t -> t instanceof StoreSnapshotTasklet)
+                .count();
     }
 
     public int getProcessorTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof ProcessorTasklet)
-                             .count();
+                .filter(t -> t instanceof ProcessorTasklet)
+                .count();
     }
 
     public int getHigherPriorityVertexCount() {

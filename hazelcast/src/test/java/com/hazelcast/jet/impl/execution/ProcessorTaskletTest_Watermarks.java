@@ -284,8 +284,8 @@ public class ProcessorTaskletTest_Watermarks {
         for (ProgressState r; (r = tasklet.call()) != NO_PROGRESS; ) {
             assertEquals("Failed to make progress", MADE_PROGRESS, r);
             assertTrue(String.format(
-                    "tasklet.call() invoked %d times without reaching %s. Last state was %s",
-                    CALL_COUNT_LIMIT, NO_PROGRESS, r),
+                            "tasklet.call() invoked %d times without reaching %s. Last state was %s",
+                            CALL_COUNT_LIMIT, NO_PROGRESS, r),
                     ++iterCount < CALL_COUNT_LIMIT);
         }
     }

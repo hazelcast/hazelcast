@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
@@ -35,7 +36,6 @@ import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -154,7 +154,7 @@ public class Planner {
             @Nonnull Map<Transform, List<Transform>> adjacencyMap
     ) {
         ArrayList<Transform> chain = new ArrayList<>();
-        for (;;) {
+        for (; ; ) {
             if (!(transform instanceof MapTransform || transform instanceof FlatMapTransform)) {
                 break;
             }
@@ -188,9 +188,9 @@ public class Planner {
                 if (inputMapFn != null) {
                     flatMapFn = flatMapFn == null
                             ? (Object t) -> {
-                                Object mappedValue = inputMapFn.apply(t);
-                                return mappedValue != null ? function.apply(mappedValue) : Traversers.empty();
-                            }
+                        Object mappedValue = inputMapFn.apply(t);
+                        return mappedValue != null ? function.apply(mappedValue) : Traversers.empty();
+                    }
                             : flatMapFn.andThen(r -> r.map(inputMapFn).flatMap(function));
                 } else {
                     flatMapFn = flatMapFn == null
@@ -311,8 +311,14 @@ public class Planner {
     private static <T> EventTimePolicy<T> withFrameSize(
             EventTimePolicy<T> original, long watermarkThrottlingFrameSize
     ) {
-        return eventTimePolicy(original.timestampFn(), original.wrapFn(), original.newWmPolicyFn(),
-                watermarkThrottlingFrameSize, 0, original.idleTimeoutMillis());
+        return eventTimePolicy(
+                original.timestampFn(),
+                original.wrapFn(),
+                original.newWmPolicyFn(),
+                watermarkThrottlingFrameSize,
+                0,
+                original.idleTimeoutMillis(),
+                original.wmKey());
     }
 
     public static <E> List<E> tailList(List<E> list) {

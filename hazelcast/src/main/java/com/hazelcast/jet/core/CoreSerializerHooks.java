@@ -52,11 +52,12 @@ class CoreSerializerHooks {
                 @Override
                 public void write(ObjectDataOutput out, Watermark object) throws IOException {
                     out.writeLong(object.timestamp());
+                    out.writeByte(object.key());
                 }
 
                 @Override
                 public Watermark read(ObjectDataInput in) throws IOException {
-                    return new Watermark(in.readLong());
+                    return new Watermark(in.readLong(), in.readByte());
                 }
             };
         }

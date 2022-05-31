@@ -29,7 +29,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
  * Implements {@link Watermark} coalescing. Tracks WMs on input queues and
  * decides when to forward the WM. The watermark should be forwarded when
  * it has been received from all input streams (ignoring idle streams).
- *
+ * <p>
  * The class also handles idle messages from inputs (coming in the form of a
  * watermark equal to {@link #IDLE_MESSAGE}). When such a message is received,
  * that input is switched to <em>idle</em> and excluded from coalescing. Any
@@ -42,7 +42,15 @@ public abstract class WatermarkCoalescer {
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
-    private WatermarkCoalescer() { }
+    protected final byte key;
+
+    private WatermarkCoalescer() {
+        key = 0;
+    }
+
+    private WatermarkCoalescer(byte key) {
+        this.key = key;
+    }
 
     /**
      * Called when the queue with the given index is exhausted.
@@ -66,7 +74,7 @@ public abstract class WatermarkCoalescer {
      * @param queueIndex index of the queue on which the WM was received.
      * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
+     * watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
      */
     public abstract long observeWm(int queueIndex, long wmValue);
 
@@ -76,7 +84,7 @@ public abstract class WatermarkCoalescer {
      * idle marker.
      *
      * @return the watermark value to emit, {@link #IDLE_MESSAGE} or
-     *      {@link #NO_NEW_WM} if no watermark should be forwarded
+     * {@link #NO_NEW_WM} if no watermark should be forwarded
      */
     public abstract long checkWmHistory();
 
@@ -89,6 +97,10 @@ public abstract class WatermarkCoalescer {
      * Returns the highest received watermark from any input.
      */
     public abstract long topObservedWm();
+
+    public byte key() {
+        return key;
+    }
 
     /**
      * Factory method.
@@ -105,6 +117,19 @@ public abstract class WatermarkCoalescer {
             default:
                 return new StandardImpl(queueCount);
         }
+    }
+
+    /**
+     * Factory method.
+     *
+     * @param queueCount number of queues
+     * @param key        watermark key
+     */
+    public static WatermarkCoalescer create(int queueCount, byte key) {
+        if (queueCount == 1) {
+            return new SingleInputImpl(key);
+        }
+        return new StandardImpl(queueCount);
     }
 
     /**
@@ -150,6 +175,13 @@ public abstract class WatermarkCoalescer {
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
         private final Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+
+        SingleInputImpl() {
+        }
+
+        SingleInputImpl(byte key) {
+            super(key);
+        }
 
         @Override
         public long queueDone(int queueIndex) {
@@ -204,6 +236,13 @@ public abstract class WatermarkCoalescer {
         private boolean idleMessagePending;
 
         StandardImpl(int queueCount) {
+            isIdle = new boolean[queueCount];
+            queueWms = new long[queueCount];
+            Arrays.fill(queueWms, Long.MIN_VALUE);
+        }
+
+        StandardImpl(int queueCount, byte key) {
+            super(key);
             isIdle = new boolean[queueCount];
             queueWms = new long[queueCount];
             Arrays.fill(queueWms, Long.MIN_VALUE);

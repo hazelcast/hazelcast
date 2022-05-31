@@ -40,7 +40,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * following concerns:
  *
  * <h4>1. Reading partition by partition</h4>
- *
+ * <p>
  * Upon restart it can happen that partition <em>P1</em> has one very
  * recent event and <em>P2</em> has an old one. If we poll <em>P1</em>
  * first and emit its recent event, it will advance the watermark. When we
@@ -50,7 +50,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * watermark that is correct with respect to all the partitions.
  *
  * <h4>2. Some partition having no data</h4>
- *
+ * <p>
  * It can happen that some partition does not have any events at all while
  * others do, or the processor doesn't get any external partitions assigned
  * to it. If we simply wait for the timestamps in all partitions to advance
@@ -63,12 +63,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * will exclude this processor from watermark coalescing.
  *
  * <h4>3. Wrapping of events</h4>
- *
+ * <p>
  * Events may need to be wrapped with the extracted timestamp if {@link
  * EventTimePolicy#wrapFn()} is set.
  *
  * <h4>4. Throttling of Watermarks</h4>
- *
+ * <p>
  * Watermarks are only consumed by windowing operations and emitting
  * watermarks more frequently than the given {@link
  * EventTimePolicy#watermarkThrottlingFrameSize()} is wasteful since they
@@ -76,7 +76,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * emitted according to the throttling frame size.
  *
  * <h3>Usage</h3>
- *
+ * <p>
  * The API is designed to be used as a flat-mapping step in the {@link
  * Traverser} that holds the output data. Your source can follow this
  * pattern:
@@ -103,7 +103,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     return false;
  * }
  * }</pre>
- *
+ * <p>
  * Other methods:
  * <ul><li>
  *     Call {@link #addPartitions} and {@link #removePartition} to change your
@@ -122,7 +122,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * </ul>
  *
  * @param <T> the event type
- *
  * @since Jet 3.0
  */
 public class EventTimeMapper<T> {
@@ -137,6 +136,7 @@ public class EventTimeMapper<T> {
     private static final WatermarkPolicy[] EMPTY_WATERMARK_POLICIES = {};
     private static final long[] EMPTY_LONGS = {};
 
+    private final byte wmKey;
     private final long idleTimeoutNanos;
     @Nullable
     private final ToLongFunction<? super T> timestampFn;
@@ -161,6 +161,7 @@ public class EventTimeMapper<T> {
      *                        Sources#streamFromProcessorWithWatermarks}
      */
     public EventTimeMapper(EventTimePolicy<? super T> eventTimePolicy) {
+        this.wmKey = eventTimePolicy.wmKey();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(eventTimePolicy.idleTimeoutMillis());
         this.timestampFn = eventTimePolicy.timestampFn();
         this.wrapFn = eventTimePolicy.wrapFn();
@@ -269,12 +270,12 @@ public class EventTimeMapper<T> {
         if (min > lastEmittedWm) {
             long newWm = watermarkThrottlingFrame != null ? watermarkThrottlingFrame.floorFrameTs(min) : Long.MIN_VALUE;
             if (newWm > lastEmittedWm) {
-                traverser.append(new Watermark(newWm));
+                traverser.append(new Watermark(newWm, wmKey));
                 lastEmittedWm = newWm;
             }
         }
         if (allAreIdle) {
-            traverser.append(IDLE_MESSAGE);
+            traverser.append(new Watermark(IDLE_MESSAGE.timestamp(), wmKey));
         }
     }
 
@@ -375,7 +376,7 @@ public class EventTimeMapper<T> {
      * See {@link #getWatermark(int)}.
      *
      * @param partitionIndex 0-based source partition index.
-     * @param wm watermark value to restore
+     * @param wm             watermark value to restore
      */
     public void restoreWatermark(int partitionIndex, long wm) {
         watermarks[partitionIndex] = wm;

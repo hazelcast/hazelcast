@@ -39,6 +39,11 @@ public interface InboundEdgeStream {
     int priority();
 
     /**
+     * Returns watermark keys observed in the represented edge.
+     */
+    byte[] wmKeys();
+
+    /**
      * Passes the items from the queues to the predicate while it returns {@code true}.
      */
     @Nonnull
@@ -60,12 +65,14 @@ public interface InboundEdgeStream {
     int sizes();
 
     /**
-     * Returns the top WM observed on any of the input queues.
+     * Returns the top WM observed on any of
+     * the input queues for specified watermark key.
      */
-    long topObservedWm();
+    long topObservedWm(byte key);
 
     /**
-     * Returns the last coalesced WM that was forwarded from the edge.
+     * Returns the last coalesced WM that was forwarded
+     * from the edge for specified watermark key.
      */
-    long coalescedWm();
+    long coalescedWm(byte key);
 }

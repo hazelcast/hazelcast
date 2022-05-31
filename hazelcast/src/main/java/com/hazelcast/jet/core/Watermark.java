@@ -18,6 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.impl.execution.BroadcastItem;
 
+import java.util.Objects;
+
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
@@ -36,12 +38,22 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 public final class Watermark implements BroadcastItem {
 
     private final long timestamp;
+    private final byte key;
 
     /**
      * Constructs a new watermark item.
      */
     public Watermark(long timestamp) {
         this.timestamp = timestamp;
+        this.key = 0;
+    }
+
+    /**
+     * Constructs a new watermark item with specified key.
+     */
+    public Watermark(long timestamp, byte key) {
+        this.timestamp = timestamp;
+        this.key = key;
     }
 
     /**
@@ -51,20 +63,29 @@ public final class Watermark implements BroadcastItem {
         return timestamp;
     }
 
+    /**
+     * Returns the key of this watermark item.
+     */
+    public byte key() {
+        return key;
+    }
+
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof Watermark && this.timestamp == ((Watermark) o).timestamp;
+        return this == o || o instanceof Watermark
+                && this.timestamp == ((Watermark) o).timestamp
+                && this.key == ((Watermark) o).key;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(timestamp);
+        return Objects.hash(timestamp, key);
     }
 
     @Override
     public String toString() {
         return timestamp == IDLE_MESSAGE.timestamp
                 ? "Watermark{IDLE_MESSAGE}"
-                : "Watermark{ts=" + toLocalTime(timestamp) + '}';
+                : "Watermark{ts=" + toLocalTime(timestamp) + ", key = " + key + '}';
     }
 }

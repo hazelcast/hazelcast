@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
@@ -58,9 +59,9 @@ public final class ConcurrentInboundEdgeStream {
 
     /**
      * @param waitForAllBarriers If {@code true}, a queue that had a barrier won't
-     *          be drained until the same barrier is received from all other
-     *          queues. This will enforce exactly-once vs. at-least-once, if it
-     *          is {@code false}.
+     *                           be drained until the same barrier is received from all other
+     *                           queues. This will enforce exactly-once vs. at-least-once, if it
+     *                           is {@code false}.
      */
     public static InboundEdgeStream create(
             @Nonnull ConcurrentConveyor<Object> conveyor,
@@ -77,6 +78,22 @@ public final class ConcurrentInboundEdgeStream {
         }
     }
 
+    public static InboundEdgeStream create(
+            @Nonnull ConcurrentConveyor<Object> conveyor,
+            int ordinal,
+            int priority,
+            boolean waitForAllBarriers,
+            @Nonnull String debugName,
+            byte[] wmKeys,
+            @Nullable ComparatorEx<?> comparator
+    ) {
+        if (comparator == null) {
+            return new RoundRobinDrain(conveyor, ordinal, priority, debugName, waitForAllBarriers, wmKeys);
+        } else {
+            return new OrderedDrain(conveyor, ordinal, priority, debugName, comparator);
+        }
+    }
+
     private abstract static class InboundEdgeStreamBase implements InboundEdgeStream {
         final ProgressTracker tracker = new ProgressTracker();
         final ConcurrentConveyor<Object> conveyor;
@@ -85,7 +102,10 @@ public final class ConcurrentInboundEdgeStream {
         final ILogger logger;
 
         private InboundEdgeStreamBase(
-                @Nonnull ConcurrentConveyor<Object> conveyor, int ordinal, int priority, @Nonnull String debugName) {
+                @Nonnull ConcurrentConveyor<Object> conveyor,
+                int ordinal,
+                int priority,
+                @Nonnull String debugName) {
             this.conveyor = conveyor;
             this.ordinal = ordinal;
             this.priority = priority;
@@ -103,6 +123,11 @@ public final class ConcurrentInboundEdgeStream {
         @Override
         public int priority() {
             return priority;
+        }
+
+        @Override
+        public byte[] wmKeys() {
+            return new byte[]{0};
         }
 
         @Override
@@ -134,12 +159,12 @@ public final class ConcurrentInboundEdgeStream {
 
     /**
      * This implementation performs a single {@code drainTo} operation on all
-     * the input queues queues and forwards the data to the destination, while
+     * the input queues and forwards the data to the destination, while
      * handling watermarks & barriers.
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
-        private final WatermarkCoalescer watermarkCoalescer;
+        private final KeyedWatermarkCoalsescerMap watermarkCoalescer;
         private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
         // Tells whether we are operating in exactly-once or at-least-once mode.
         // In other words, whether a barrier from all queues must be present before
@@ -158,11 +183,32 @@ public final class ConcurrentInboundEdgeStream {
             super(conveyor, ordinal, priority, debugName);
 
             this.waitForAllBarriers = waitForAllBarriers;
-            watermarkCoalescer = WatermarkCoalescer.create(conveyor.queueCount());
+            this.watermarkCoalescer = new KeyedWatermarkCoalsescerMap();
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 
-        @Nonnull @Override
+        RoundRobinDrain(
+                @Nonnull ConcurrentConveyor<Object> conveyor,
+                int ordinal,
+                int priority,
+                @Nonnull String debugName,
+                boolean waitForAllBarriers,
+                byte[] wmKeys
+        ) {
+            super(conveyor, ordinal, priority, debugName);
+
+            this.waitForAllBarriers = waitForAllBarriers;
+            this.watermarkCoalescer = new KeyedWatermarkCoalsescerMap(wmKeys, conveyor.queueCount());
+            receivedBarriers = new BitSet(conveyor.queueCount());
+        }
+
+        @Override
+        public byte[] wmKeys() {
+            return watermarkCoalescer.keys();
+        }
+
+        @Nonnull
+        @Override
         public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
             tracker.reset();
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
@@ -182,22 +228,29 @@ public final class ConcurrentInboundEdgeStream {
                 if (itemDetector.item == DONE_ITEM) {
                     conveyor.removeQueue(queueIndex);
                     receivedBarriers.clear(queueIndex);
-                    long wmTimestamp = watermarkCoalescer.queueDone(queueIndex);
-                    if (maybeEmitWm(wmTimestamp, dest)) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Queue " + queueIndex + " is done, forwarding "
-                                    + new Watermark(wmTimestamp));
-                        }
+
+                    boolean done = true;
+                    for (byte key : watermarkCoalescer.keys()) {
+                        long wmTimestamp = watermarkCoalescer.queueDone(key, queueIndex);
+                        done &= maybeEmitWm(wmTimestamp, key, dest);
+                    }
+                    if (done) {
                         return conveyor.liveQueueCount() == 0 ? DONE : MADE_PROGRESS;
                     }
+
                 } else if (itemDetector.item instanceof Watermark) {
-                    long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
-                    boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(queueIndex, wmTimestamp), dest);
+                    Watermark watermark = (Watermark) itemDetector.item;
+                    watermarkCoalescer.register(watermark.key(), conveyor.queueCount());
+                    boolean forwarded = maybeEmitWm(
+                            watermarkCoalescer.observeWm(watermark.key(), queueIndex, watermark.timestamp()),
+                            watermark.key(),
+                            dest);
                     if (logger.isFinestEnabled()) {
                         logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
+                                + " with key = " + watermark.key()
                                 + (forwarded ? ", forwarded=" : ", not forwarded")
-                                + ", coalescedWm=" + toLocalTime(watermarkCoalescer.coalescedWm())
-                                + ", topObservedWm=" + toLocalTime(topObservedWm()));
+                                + ", coalescedWm=" + toLocalTime(coalescedWm(watermark.key()))
+                                + ", topObservedWm=" + toLocalTime(topObservedWm(watermark.key())));
                     }
                     if (forwarded) {
                         return MADE_PROGRESS;
@@ -223,8 +276,13 @@ public final class ConcurrentInboundEdgeStream {
                 }
             }
 
-            // try to emit WM based on history
-            if (maybeEmitWm(watermarkCoalescer.checkWmHistory(), dest)) {
+            // try to emit all WMs based on history
+            boolean returnProgress = true;
+            for (Entry<Byte, WatermarkCoalescer> entry : watermarkCoalescer.entries()) {
+                returnProgress &= maybeEmitWm(entry.getValue().checkWmHistory(), entry.getKey(), dest);
+            }
+
+            if (returnProgress) {
                 return MADE_PROGRESS;
             }
 
@@ -263,9 +321,9 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers.set(queueIndex);
         }
 
-        private boolean maybeEmitWm(long timestamp, Predicate<Object> dest) {
+        private boolean maybeEmitWm(long timestamp, byte key, Predicate<Object> dest) {
             if (timestamp != NO_NEW_WM) {
-                boolean res = dest.test(new Watermark(timestamp));
+                boolean res = dest.test(new Watermark(timestamp, key));
                 assert res : "test result expected to be true";
                 return true;
             }
@@ -273,13 +331,13 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Override
-        public long topObservedWm() {
-            return watermarkCoalescer.topObservedWm();
+        public long topObservedWm(byte key) {
+            return watermarkCoalescer.topObservedWm(key);
         }
 
         @Override
-        public long coalescedWm() {
-            return watermarkCoalescer.coalescedWm();
+        public long coalescedWm(byte key) {
+            return watermarkCoalescer.coalescedWm(key);
         }
 
         /**
@@ -341,7 +399,8 @@ public final class ConcurrentInboundEdgeStream {
             }
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
             tracker.reset();
             tracker.notDone();
@@ -354,7 +413,7 @@ public final class ConcurrentInboundEdgeStream {
             }
 
             outer:
-            for (;;) {
+            for (; ; ) {
                 // find the current minimum item at the tail of queues
                 Object minItem = null;
                 for (int i = 0; i < drainedItems.size(); i++) {
@@ -393,12 +452,12 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Override
-        public long topObservedWm() {
+        public long topObservedWm(byte key) {
             return Long.MIN_VALUE;
         }
 
         @Override
-        public long coalescedWm() {
+        public long coalescedWm(byte key) {
             return Long.MIN_VALUE;
         }
 

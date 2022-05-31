@@ -54,13 +54,15 @@ public class ConcurrentInboundEdgeStreamTest {
     private InboundEdgeStream stream;
     private ConcurrentConveyor<Object> conveyor;
 
+    private byte[] wmKeys = new byte[]{0};
+
     @Before
     public void setUp() {
         q1 = new OneToOneConcurrentArrayQueue<>(128);
         q2 = new OneToOneConcurrentArrayQueue<>(128);
         conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, false, "cies", null);
+        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, false, "cies", wmKeys, null);
     }
 
     @Test
@@ -133,7 +135,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_receivingBarriers_then_waitForBarrier() {
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", null);
+        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", wmKeys, null);
 
         add(q1, barrier(0));
         add(q2, 1);
@@ -149,7 +151,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_receivingBarriersWhileDone_then_coalesce() {
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", null);
+        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", wmKeys, null);
 
         add(q1, 1, barrier(0));
         add(q2, DONE_ITEM);

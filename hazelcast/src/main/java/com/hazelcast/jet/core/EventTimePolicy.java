@@ -55,12 +55,11 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *     to propagate the event timestamps through the pipeline regardless of
  *     the transformation the user does on the event objects themselves.
  * </li></ul>
- *
+ * <p>
  * This class should be used with {@link EventTimeMapper} when implementing a
  * source processor.
  *
  * @param <T> event type
- *
  * @since Jet 3.0
  */
 public final class EventTimePolicy<T> implements Serializable {
@@ -91,6 +90,7 @@ public final class EventTimePolicy<T> implements Serializable {
     private final long watermarkThrottlingFrameSize;
     private final long watermarkThrottlingFrameOffset;
     private final long idleTimeoutMillis;
+    private byte wmKey;
 
     private EventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,
@@ -98,7 +98,8 @@ public final class EventTimePolicy<T> implements Serializable {
             @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
-            long idleTimeoutMillis
+            long idleTimeoutMillis,
+            byte wmKey
     ) {
         checkNotNegative(watermarkThrottlingFrameSize, "watermarkThrottlingFrameSize must be >= 0");
         checkNotNegative(watermarkThrottlingFrameOffset, "watermarkThrottlingFrameOffset must be >= 0");
@@ -111,23 +112,58 @@ public final class EventTimePolicy<T> implements Serializable {
         this.idleTimeoutMillis = idleTimeoutMillis;
         this.watermarkThrottlingFrameSize = watermarkThrottlingFrameSize;
         this.watermarkThrottlingFrameOffset = watermarkThrottlingFrameOffset;
+        this.wmKey = wmKey;
+    }
+
+    /**
+     * Creates and returns a new event time policy with keyed watermark.
+     * To get a policy that results in no timestamping, call {@link #noEventTime()}.
+     *
+     * @param timestampFn                    function that extracts the timestamp from the event;
+     *                                       if null, Jet will use the source's native timestamp
+     * @param wrapFn                         function that transforms the received item and its
+     *                                       timestamp into the emitted item
+     * @param newWmPolicyFn                  factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize   the frame length to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param watermarkThrottlingFrameOffset the frame offset to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis              the timeout after which a partition will be
+     *                                       marked as <em>idle</em>. Use 0 to disable the feature.
+     * @param wmKey                          watermark key
+     */
+    public static <T> EventTimePolicy<T> eventTimePolicy(
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull ObjLongBiFunction<? super T, ?> wrapFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
+            long idleTimeoutMillis,
+            byte wmKey
+    ) {
+        checkSerializable(timestampFn, "timestampFn");
+        checkSerializable(wrapFn, "wrapFn");
+        checkSerializable(newWmPolicyFn, "newWmPolicyFn");
+
+        return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize,
+                watermarkThrottlingFrameOffset, idleTimeoutMillis, wmKey);
     }
 
     /**
      * Creates and returns a new event time policy. To get a policy that
      * results in no timestamping, call {@link #noEventTime()}.
      *
-     * @param timestampFn function that extracts the timestamp from the event;
-     *      if null, Jet will use the source's native timestamp
-     * @param wrapFn function that transforms the received item and its
-     *      timestamp into the emitted item
-     * @param newWmPolicyFn factory of the watermark policy objects
-     * @param watermarkThrottlingFrameSize the frame length to which we
-     *      throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param timestampFn                    function that extracts the timestamp from the event;
+     *                                       if null, Jet will use the source's native timestamp
+     * @param wrapFn                         function that transforms the received item and its
+     *                                       timestamp into the emitted item
+     * @param newWmPolicyFn                  factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize   the frame length to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
      * @param watermarkThrottlingFrameOffset the frame offset to which we
-     *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
-     * @param idleTimeoutMillis the timeout after which a partition will be
-     *      marked as <em>idle</em>. Use 0 to disable the feature.
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis              the timeout after which a partition will be
+     *                                       marked as <em>idle</em>. Use 0 to disable the feature.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,
@@ -138,11 +174,11 @@ public final class EventTimePolicy<T> implements Serializable {
             long idleTimeoutMillis
     ) {
         checkSerializable(timestampFn, "timestampFn");
-        checkSerializable(timestampFn, "wrapFn");
+        checkSerializable(wrapFn, "wrapFn");
         checkSerializable(newWmPolicyFn, "newWmPolicyFn");
 
         return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize,
-                watermarkThrottlingFrameOffset, idleTimeoutMillis);
+                watermarkThrottlingFrameOffset, idleTimeoutMillis, (byte) 0);
     }
 
     /**
@@ -150,15 +186,43 @@ public final class EventTimePolicy<T> implements Serializable {
      * results in no watermarks being emitted, call {@link
      * #noEventTime()}.
      *
-     * @param timestampFn function that extracts the timestamp from the event;
-     *      if null, Jet will use the source's native timestamp
-     * @param newWmPolicyFn factory of the watermark policy objects
-     * @param watermarkThrottlingFrameSize the frame length to which we
-     *      throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param timestampFn                    function that extracts the timestamp from the event;
+     *                                       if null, Jet will use the source's native timestamp
+     * @param newWmPolicyFn                  factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize   the frame length to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
      * @param watermarkThrottlingFrameOffset the frame offset to which we
-     *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
-     * @param idleTimeoutMillis the timeout after which a partition will be
-     *      marked as <em>idle</em>.
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis              the timeout after which a partition will be
+     *                                       marked as <em>idle</em>.
+     * @param wmKey                          watermark key
+     */
+    public static <T> EventTimePolicy<T> eventTimePolicy(
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
+            long idleTimeoutMillis,
+            byte wmKey
+    ) {
+        return eventTimePolicy(timestampFn, noWrapping(), newWmPolicyFn, watermarkThrottlingFrameSize,
+                watermarkThrottlingFrameOffset, idleTimeoutMillis, wmKey);
+    }
+
+    /**
+     * Creates and returns a new event time policy. To get a policy that
+     * results in no watermarks being emitted, call {@link
+     * #noEventTime()}.
+     *
+     * @param timestampFn                    function that extracts the timestamp from the event;
+     *                                       if null, Jet will use the source's native timestamp
+     * @param newWmPolicyFn                  factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize   the frame length to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param watermarkThrottlingFrameOffset the frame offset to which we
+     *                                       throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis              the timeout after which a partition will be
+     *                                       marked as <em>idle</em>.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,
@@ -252,5 +316,9 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public long idleTimeoutMillis() {
         return idleTimeoutMillis;
+    }
+
+    public byte wmKey() {
+        return wmKey;
     }
 }
