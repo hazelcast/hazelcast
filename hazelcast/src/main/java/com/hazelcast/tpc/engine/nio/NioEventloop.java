@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static com.hazelcast.tpc.util.Util.epochNanos;
@@ -64,12 +65,10 @@ public final class NioEventloop extends Eventloop {
                     if (earliestDeadlineEpochNanos == -1) {
                         keyCount = selector.select();
                     } else {
-                        long timeoutNanos = earliestDeadlineEpochNanos - epochNanos();
-                        if (timeoutNanos < 0) {
-                            timeoutNanos = 0;
-                        }
-
-                        keyCount = selector.select(NANOSECONDS.toMillis(timeoutNanos));
+                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineEpochNanos - epochNanos());
+                        keyCount = timeoutMillis <= 0
+                                ? selector.selectNow()
+                                : selector.select(timeoutMillis);
                     }
                 } else {
                     keyCount = selector.selectNow();

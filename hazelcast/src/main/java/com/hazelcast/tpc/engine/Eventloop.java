@@ -86,26 +86,33 @@ public abstract class Eventloop extends HazelcastManagedThread {
      *
      * @return the state.
      */
-    public EventloopState state() {
+    public final EventloopState state() {
         return state;
     }
 
-    public boolean isSpin() {
+    public final boolean isSpin() {
         return spin;
     }
 
-    public void setSpin(boolean spin) {
+    public final void setSpin(boolean spin) {
         this.spin = spin;
     }
 
-    public void setScheduler(Scheduler scheduler) {
+    public final void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
         scheduler.setEventloop(this);
     }
 
-    public Scheduler getScheduler() {
+    public final Scheduler getScheduler() {
         return scheduler;
     }
+
+    /**
+     * Executes the actual eventloop.
+     *
+     * @throws Exception
+     */
+    protected abstract void eventLoop() throws Exception;
 
     /**
      * Shuts down the Eventloop.
@@ -114,7 +121,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
      *
      * This method is thread-safe.
      */
-    public void shutdown() {
+    public final void shutdown() {
         for (; ; ) {
             EventloopState oldState = state;
             switch (oldState) {
@@ -139,11 +146,11 @@ public abstract class Eventloop extends HazelcastManagedThread {
      * Awaits for the termination of the Eventloop.
      *
      * @param timeout the timeout
-     * @param unit the TimeUnit
+     * @param unit    the TimeUnit
      * @return true if the Eventloop is terminated.
      * @throws InterruptedException
      */
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException{
+    public final boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         terminationLatch.await(timeout, unit);
         return state == TERMINATED;
     }
@@ -203,13 +210,17 @@ public abstract class Eventloop extends HazelcastManagedThread {
      *
      * @return the collection of all registered resources.
      */
-    public Collection<Closeable> resources() {
+    public final Collection<Closeable> resources() {
         return resources;
     }
 
-    protected abstract void eventLoop() throws Exception;
-
-    public void execute(EventloopTask task) {
+    /**
+     * Executes an EventloopTask on this Eventloop.
+     *
+     * @param task the task to execute.
+     * @throws NullPointerException if task is null.
+     */
+    public final void execute(EventloopTask task) {
         if (Thread.currentThread() == this) {
             localRunQueue.offer(task);
         } else {
@@ -218,12 +229,24 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    public void execute(Collection<Frame> requests) {
+    /**
+     * Executes a collection of frames on this Eventloop.
+     *
+     * @param requests the collection of requests.
+     * @throws NullPointerException if requests is null or an request is null.
+     */
+    public final void execute(Collection<Frame> requests) {
         concurrentRunQueue.addAll(requests);
         wakeup();
     }
 
-    public void execute(Frame request) {
+    /**
+     * Executes a request on this eventloop.
+     *
+     * @param request the request to execute.
+     * @throws NullPointerException if request is null.
+     */
+    public final void execute(Frame request) {
         concurrentRunQueue.add(request);
         wakeup();
     }
@@ -247,7 +270,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    protected void runLocalTasks() {
+    protected final void runLocalTasks() {
         for (; ; ) {
             ScheduledTask scheduledTask = scheduledTaskQueue.peek();
             if (scheduledTask == null) {
@@ -283,7 +306,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    protected void runConcurrentTasks() {
+    protected final void runConcurrentTasks() {
         for (; ; ) {
             Object task = concurrentRunQueue.poll();
             if (task == null) {
@@ -302,7 +325,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
     }
 
-    protected static class ScheduledTask implements EventloopTask, Comparable<ScheduledTask> {
+    protected static final class ScheduledTask implements EventloopTask, Comparable<ScheduledTask> {
 
         private Future future;
         private long deadlineEpochNanos;
@@ -325,7 +348,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
     /**
      * Exposes methods that should only be called from within the Eventloop.
      */
-    public class Unsafe {
+    public final class Unsafe {
 
         public <E> Future<E> newCompletedFuture(E value) {
             Future<E> future = Future.newReadyFuture(value);
@@ -379,6 +402,12 @@ public abstract class Eventloop extends HazelcastManagedThread {
             return future;
         }
 
+        /**
+         * Keeps calling the loop function until it returns false.
+         *
+         * @param loopFunction the function that is called in a loop.
+         * @return the future that is completed as soon as the loop finishes.
+         */
         public Future loop(Function<Eventloop, Boolean> loopFunction) {
             Future future = newFuture();
 
