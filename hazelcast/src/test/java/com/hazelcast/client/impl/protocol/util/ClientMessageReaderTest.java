@@ -142,7 +142,7 @@ public class ClientMessageReaderTest {
         buffer.get(part2, 0, 252);
 
         // Message Length = 1000 + 6 bytes
-        // part1 = 750, part2 = 250, part3 = 4 bytes
+        // part1 = 750, part2 = 252, part3 = 4 bytes
         byte[] part3 = new byte[buffer.remaining()];
         buffer.get(part3);
 
@@ -154,6 +154,39 @@ public class ClientMessageReaderTest {
         assertFalse(reader.readFrom(part1Buffer, true));
         assertFalse(reader.readFrom(part2Buffer, true));
         assertTrue(reader.readFrom(part3Buffer, true));
+
+        ClientMessage messageRead = reader.getClientMessage();
+        ClientMessage.ForwardFrameIterator iterator = messageRead.frameIterator();
+
+        assertTrue(iterator.hasNext());
+        ClientMessage.Frame frameRead = iterator.next();
+        assertArrayEquals(frame.content, frameRead.content);
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testRead_whenTheFrameLengthAndFlagsNotReceivedAtFirst() {
+        ClientMessage.Frame frame = createFrameWithRandomBytes(100);
+
+        ClientMessage message = ClientMessage.createForEncode();
+        message.add(frame);
+
+        ByteBuffer buffer = writeToBuffer(message);
+        int capacity = buffer.capacity();
+        // Set limit to a small value so that we can simulate
+        // that the frame length and flags are not read yet.
+        upcast(buffer).limit(4);
+
+        ClientMessageReader reader = new ClientMessageReader(-1);
+
+        // should not be able to read with just 4 bytes of data
+        assertFalse(reader.readFrom(buffer, true));
+
+        upcast(buffer).limit(capacity);
+
+        // should be able to read when the rest of the data comes
+        assertTrue(reader.readFrom(buffer, true));
 
         ClientMessage messageRead = reader.getClientMessage();
         ClientMessage.ForwardFrameIterator iterator = messageRead.frameIterator();
