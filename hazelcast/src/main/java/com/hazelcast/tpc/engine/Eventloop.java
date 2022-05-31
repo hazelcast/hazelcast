@@ -65,7 +65,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     public final ConcurrentMap context = new ConcurrentHashMap();
 
-    protected Scheduler scheduler = new NopScheduler();
+    protected final Scheduler scheduler;
     public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
     protected boolean spin;
 
@@ -79,6 +79,12 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected long earliestDeadlineEpochNanos = -1;
 
+    public Eventloop(Config config){
+        this.spin = spin;
+        this.scheduler = config.scheduler;
+        scheduler.setEventloop(this);
+    }
+
     /**
      * Returns the state of the Eventloop.
      *
@@ -88,23 +94,6 @@ public abstract class Eventloop extends HazelcastManagedThread {
      */
     public final EventloopState state() {
         return state;
-    }
-
-    public final boolean isSpin() {
-        return spin;
-    }
-
-    public final void setSpin(boolean spin) {
-        this.spin = spin;
-    }
-
-    public final void setScheduler(Scheduler scheduler) {
-        this.scheduler = scheduler;
-        scheduler.setEventloop(this);
-    }
-
-    public final Scheduler getScheduler() {
-        return scheduler;
     }
 
     /**
@@ -322,6 +311,32 @@ public abstract class Eventloop extends HazelcastManagedThread {
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
+        }
+    }
+
+    public Scheduler getScheduler() {
+        return scheduler;
+    }
+
+    public static class Config{
+        protected boolean spin;
+        private Scheduler scheduler = new NopScheduler();
+
+        public final boolean isSpin() {
+            return spin;
+        }
+
+        public final void setSpin(boolean spin) {
+            this.spin = spin;
+        }
+
+        public final void setScheduler(Scheduler scheduler) {
+            this.scheduler = scheduler;
+
+        }
+
+        public final Scheduler getScheduler() {
+            return scheduler;
         }
     }
 

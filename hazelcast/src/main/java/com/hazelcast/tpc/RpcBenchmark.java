@@ -80,8 +80,9 @@ public class RpcBenchmark {
 
     @NotNull
     private static NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        NioEventloop clientEventLoop = new NioEventloop();
-        clientEventLoop.setSpin(spin);
+        NioEventloop.NioConfig config = new NioEventloop.NioConfig();
+        config.setSpin(spin);
+        NioEventloop clientEventLoop = new NioEventloop(config);
         if (clientCpu >= 0) {
             clientEventLoop.setThreadAffinity(new ThreadAffinity("" + clientCpu));
         }
@@ -119,8 +120,9 @@ public class RpcBenchmark {
     }
 
     private static NioAsyncServerSocket newServer(SocketAddress serverAddress) {
-        NioEventloop serverEventloop = new NioEventloop();
-        serverEventloop.setSpin(spin);
+        NioEventloop.NioConfig config = new NioEventloop.NioConfig();
+        config.setSpin(spin);
+        NioEventloop serverEventloop = new NioEventloop(config);
         if (serverCpu >= 0) {
             serverEventloop.setThreadAffinity(new ThreadAffinity("" + serverCpu));
         }

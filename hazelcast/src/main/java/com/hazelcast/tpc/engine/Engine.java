@@ -17,10 +17,13 @@
 package com.hazelcast.tpc.engine;
 
 import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfig;
 import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfig;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
+import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfig;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -139,25 +142,31 @@ public final class Engine {
     public void createEventLoops() {
         this.eventloops = new Eventloop[eventloopCount];
         for (int idx = 0; idx < eventloops.length; idx++) {
-            Scheduler scheduler = schedulerSupplier.get();
             Eventloop eventloop;
             switch (eventloopType) {
                 case NIO:
-                    eventloop = new NioEventloop();
+                    NioConfig nioConfig = new NioConfig();
+                    nioConfig.setScheduler(schedulerSupplier.get());
+                    nioConfig.setSpin(spin);
+                    eventloop = new NioEventloop(nioConfig);
                     break;
                 case EPOLL:
-                    eventloop = new EpollEventloop();
+                    EpollConfig epollConfig = new EpollConfig();
+                    epollConfig.setSpin(spin);
+                    epollConfig.setScheduler(schedulerSupplier.get());
+                    eventloop = new EpollEventloop(epollConfig);
                     break;
                 case IOURING:
-                    eventloop = new IOUringEventloop();
+                    IOUringConfig ioUringConfig = new IOUringConfig();
+                    ioUringConfig.setSpin(spin);
+                    ioUringConfig.setScheduler(schedulerSupplier.get());
+                    eventloop = new IOUringEventloop(ioUringConfig);
                     break;
                 default:
                     throw new IllegalStateException("Unknown reactorType:" + eventloopType);
             }
 
             eventloop.setName(eventloopBasename + idx);
-            eventloop.setScheduler(scheduler);
-            eventloop.setSpin(spin);
             eventloops[idx] = eventloop;
         }
     }

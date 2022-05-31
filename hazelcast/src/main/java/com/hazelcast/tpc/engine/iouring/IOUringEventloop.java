@@ -113,12 +113,20 @@ public class IOUringEventloop extends Eventloop {
 
     protected StorageScheduler storageScheduler;
 
-    private int ringbufferSize = DEFAULT_RING_SIZE;
-    private int ioseqAsyncTreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
+    private int ringbufferSize;
+    private int ioseqAsyncTreshold;
     private int flags;
     private final EventloopHandler eventLoopHandler = new EventloopHandler();
 
     public IOUringEventloop() {
+        this(new IOUringConfig());
+    }
+
+    public IOUringEventloop(IOUringConfig config){
+        super(config);
+        this.ringbufferSize = config.ringbufferSize;
+        this.ioseqAsyncTreshold = config.ioseqAsyncTreshold;
+        this.flags = config.flags;
     }
 
     @Override
@@ -129,38 +137,6 @@ public class IOUringEventloop extends Eventloop {
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
         this.storageScheduler = new StorageScheduler(this, 512);
         super.beforeStart();
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public void setFlags(int flags) {
-        this.flags = checkNotNegative(flags, "flags can't be negative");
-    }
-
-    public int getRingbufferSize() {
-        return ringbufferSize;
-    }
-
-    public void setRingbufferSize(int ringbufferSize) {
-        this.ringbufferSize = checkPositive("ringbufferSize", ringbufferSize);
-    }
-
-    public int getIoseqAsyncTreshold() {
-        return ioseqAsyncTreshold;
-    }
-
-    public void setIoseqAsyncTreshold(int ioseqAsyncTreshold) {
-        this.ioseqAsyncTreshold = checkPositive("ioseqAsyncTreshold", ioseqAsyncTreshold);
-    }
-
-    public void setStorageScheduler(StorageScheduler storageScheduler) {
-        this.storageScheduler = storageScheduler;
-    }
-
-    public StorageScheduler getStorageScheduler() {
-        return storageScheduler;
     }
 
     @Override
@@ -206,6 +182,10 @@ public class IOUringEventloop extends Eventloop {
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
     }
 
+    public StorageScheduler getStorageScheduler() {
+        return storageScheduler;
+    }
+
     private class EventloopHandler implements IOUringCompletionQueueCallback {
         @Override
         public void handle(int fd, int res, int flags, byte op, short data) {
@@ -216,6 +196,47 @@ public class IOUringEventloop extends Eventloop {
                 l.handle(fd, res, flags, op, data);
             }
         }
+    }
+
+    public static class IOUringConfig extends Config{
+        private int flags;
+        private int ringbufferSize = DEFAULT_RING_SIZE;
+        private int ioseqAsyncTreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
+        private StorageScheduler storageScheduler;
+
+        public int getFlags() {
+            return flags;
+        }
+
+        public void setFlags(int flags) {
+            this.flags = checkNotNegative(flags, "flags can't be negative");
+        }
+
+        public int getRingbufferSize() {
+            return ringbufferSize;
+        }
+
+        public void setRingbufferSize(int ringbufferSize) {
+            this.ringbufferSize = checkPositive("ringbufferSize", ringbufferSize);
+        }
+
+        public int getIoseqAsyncTreshold() {
+            return ioseqAsyncTreshold;
+        }
+
+        public void setIoseqAsyncTreshold(int ioseqAsyncTreshold) {
+            this.ioseqAsyncTreshold = checkPositive("ioseqAsyncTreshold", ioseqAsyncTreshold);
+        }
+
+        public void setStorageScheduler(StorageScheduler storageScheduler) {
+            this.storageScheduler = storageScheduler;
+        }
+
+        public StorageScheduler getStorageScheduler() {
+            return storageScheduler;
+        }
+
+
     }
 }
 

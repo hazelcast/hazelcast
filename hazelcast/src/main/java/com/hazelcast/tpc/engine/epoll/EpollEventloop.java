@@ -36,7 +36,12 @@ public final class EpollEventloop extends Eventloop {
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollEventloop() {
+    public EpollEventloop(){
+        this(new EpollConfig());
+    }
+
+    public EpollEventloop(EpollConfig config) {
+        super(config);
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
         this.eventFd = Native.newEventFd();
@@ -157,4 +162,7 @@ public final class EpollEventloop extends Eventloop {
         }
     }
 
+
+    public static class EpollConfig extends Config{
+    }
 }
