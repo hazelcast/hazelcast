@@ -28,6 +28,7 @@ import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopType;
 import com.hazelcast.tpc.engine.ReadHandler;
+import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
@@ -158,18 +159,22 @@ public class RequestService {
 
     @NotNull
     private Engine newEngine() {
-        Engine engine = new Engine(() -> {
-            FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
-            FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
+        Engine.Configuration configuration = new Engine.Configuration();
+        configuration.setEventloopBasename("Eventloop:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
+        configuration.setSchedulerSupplier(new Supplier<Scheduler>() {
+            @Override
+            public Scheduler get() {
+                FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
+                FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
 
-            return new OpScheduler(32768,
-                    Integer.MAX_VALUE,
-                    managers,
-                    localResponseFrameAllocator,
-                    remoteResponseFrameAllocator);
+                return new OpScheduler(32768,
+                        Integer.MAX_VALUE,
+                        managers,
+                        localResponseFrameAllocator,
+                        remoteResponseFrameAllocator);
+            }
         });
-        engine.setEventloopBasename("Eventloop:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
-        engine.createEventLoops();
+        Engine engine = new Engine(configuration);
         engine.printConfig();
 
 

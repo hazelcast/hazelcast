@@ -47,97 +47,25 @@ public final class Engine {
 
     private final boolean monitorSilent;
     private final Supplier<Scheduler> schedulerSupplier;
-    private boolean spin;
-    private EventloopType eventloopType;
-    private ThreadAffinity threadAffinity;
-    private Eventloop[] eventloops;
-    private int eventloopCount;
-    private String eventloopBasename = "eventloop-";
-    private MonitorThread monitorThread;
+    private final boolean spin;
+    private final EventloopType eventloopType;
+    private final ThreadAffinity threadAffinity;
+    private final String eventloopBasename;
+    private final int eventloopCount;
+    private final Eventloop[] eventloops;
+    private final MonitorThread monitorThread;
 
-    public Engine(Supplier<Scheduler> schedulerSupplier) {
-        this.schedulerSupplier = checkNotNull(schedulerSupplier);
-        this.eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        this.spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
-        this.eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
-        this.threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
-        this.monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
-    }
-
-    public EventloopType getEventloopType() {
-        return eventloopType;
-    }
-
-    public Engine setEventLoopType(EventloopType eventloopType) {
-        this.eventloopType = checkNotNull(eventloopType);
-        return this;
-    }
-
-    public Eventloop[] eventloops() {
-        return eventloops;
-    }
-
-    /**
-     * Sets the ThreadAffinity for the reactor threads.
-     *
-     * Can only be called before the {@link #start()}.
-     *
-     * @param threadAffinity the ThreadAffinity
-     * @throws NullPointerException if threadAffinity is null.
-     */
-    public Engine setThreadAffinity(ThreadAffinity threadAffinity) {
-        checkNotNull(threadAffinity);
-        this.threadAffinity = threadAffinity;
-        return this;
-    }
-
-    public Engine setEventloopBasename(String baseName) {
-        this.eventloopBasename = checkNotNull(baseName, "baseName");
-        return this;
-    }
-
-    public Engine setEventloopCount(int eventloopCount) {
-        this.eventloopCount = checkPositive("reactorCount", eventloopCount);
-        return this;
-    }
-
-    public int eventloopCount() {
-        return eventloopCount;
-    }
-
-    public void forEach(Consumer<Eventloop> function) {
-        for (Eventloop eventloop : eventloops) {
-            function.accept(eventloop);
-        }
-    }
-
-    public Engine setSpin(boolean evenloopSpin) {
-        this.spin = evenloopSpin;
-        return this;
-    }
-
-    public Eventloop eventloopForHash(int hash) {
-        return eventloops[hashToIndex(hash, eventloops.length)];
-    }
-
-    public Eventloop eventloop(int eventloopIdx) {
-        return eventloops[eventloopIdx];
-    }
-
-    public void run(int eventloopIdx, Collection<Frame> frames) {
-        eventloops[eventloopIdx].execute(frames);
-    }
-
-    public void run(int eventloopIdx, Frame frame) {
-        eventloops[eventloopIdx].execute(frame);
-    }
-
-    public void run(int eventloopIdx, EventloopTask task) {
-        eventloops[eventloopIdx].execute(task);
-    }
-
-    public void createEventLoops() {
+    public Engine(Configuration configuration) {
+        this.schedulerSupplier = configuration.schedulerSupplier;
+        this.eventloopCount = configuration.eventloopCount;
+        this.spin = configuration.spin;
+        this.eventloopType = configuration.eventloopType;
+        this.threadAffinity = configuration.threadAffinity;
+        this.monitorSilent = configuration.monitorSilent;
+        this.eventloopBasename = configuration.eventloopBasename;
         this.eventloops = new Eventloop[eventloopCount];
+        this.monitorThread = new MonitorThread(eventloops, monitorSilent);
+
         for (int idx = 0; idx < eventloops.length; idx++) {
             Eventloop eventloop;
             switch (eventloopType) {
@@ -173,12 +101,50 @@ public final class Engine {
         }
     }
 
+    public EventloopType getEventloopType() {
+        return eventloopType;
+    }
+
+    public Eventloop[] eventloops() {
+        return eventloops;
+    }
+
+    public int eventloopCount() {
+        return eventloopCount;
+    }
+
+    public void forEach(Consumer<Eventloop> function) {
+        for (Eventloop eventloop : eventloops) {
+            function.accept(eventloop);
+        }
+    }
+
+    public Eventloop eventloopForHash(int hash) {
+        return eventloops[hashToIndex(hash, eventloops.length)];
+    }
+
+    public Eventloop eventloop(int eventloopIdx) {
+        return eventloops[eventloopIdx];
+    }
+
+    public void run(int eventloopIdx, Collection<Frame> frames) {
+        eventloops[eventloopIdx].execute(frames);
+    }
+
+    public void run(int eventloopIdx, Frame frame) {
+        eventloops[eventloopIdx].execute(frame);
+    }
+
+    public void run(int eventloopIdx, EventloopTask task) {
+        eventloops[eventloopIdx].execute(task);
+    }
+
     public void start() {
         for (Eventloop eventloop : eventloops) {
             eventloop.start();
         }
 
-        this.monitorThread = new MonitorThread(eventloops, monitorSilent);
+
         this.monitorThread.start();
     }
 
@@ -204,5 +170,52 @@ public final class Engine {
         out.println("reactor.spin:" + spin);
         out.println("reactor.type:" + eventloopType);
         out.println("reactor.cpu-affinity:" + threadAffinity);
+    }
+
+    /**
+     * Contains the configuration of the {@link Engine}.
+     */
+    public static class Configuration {
+        private Supplier<Scheduler> schedulerSupplier;
+        private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+        private boolean spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
+        private EventloopType eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
+        private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
+        private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
+        private String eventloopBasename = "eventloop-";
+
+        /**
+         * Sets the ThreadAffinity for the reactor threads.
+         *
+         * @param threadAffinity the ThreadAffinity
+         * @throws NullPointerException if threadAffinity is null.
+         */
+        public void setThreadAffinity(ThreadAffinity threadAffinity) {
+            this.threadAffinity = checkNotNull(threadAffinity, "threadAffinity can't be null");
+        }
+
+        public void setEventloopBasename(String baseName) {
+            this.eventloopBasename = checkNotNull(baseName, "baseName can't be null");
+        }
+
+        public void setEventloopCount(int eventloopCount) {
+            this.eventloopCount = checkPositive("reactorCount", eventloopCount);
+        }
+
+        public void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
+            this.schedulerSupplier = checkNotNull(schedulerSupplier, "schedulerSupplier can't be null");
+        }
+
+        public void setSpin(boolean spin) {
+            this.spin = spin;
+        }
+
+        public void setEventloopType(EventloopType eventloopType) {
+            this.eventloopType = checkNotNull(eventloopType);
+        }
+
+        public void setMonitorSilent(boolean monitorSilent) {
+            this.monitorSilent = monitorSilent;
+        }
     }
 }
