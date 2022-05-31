@@ -1,18 +1,5 @@
 # Stream to stream JOIN
 
-### Table of Contents
-
-+ [Background](#background)
-    * [Goals](#goals)
-+ [Functional Design](#functional-design)
-    * [Summary of Functionality](#summary-of-functionality)
-+ [Technical Design](#technical-design)
-    + [Overall Design](#overall-design)
-    + [JOIN processor design and algorithm description](#join-processor-design-and-algorithm-description)
-    + [Watermarks](#watermarks)
-    + [Memory management](#memory-management)
-+ [Testing Criteria](#testing-criteria)
-
 |||
 |---|---|
 |Related Jira|[HZ-986](https://hazelcast.atlassian.net/browse/HZ-986)|
@@ -39,7 +26,7 @@ goals are:
 - different join types (`INNER` , `LEFT`/`RIGHT` `OUTER` `JOIN`s).
 
 The state of the join processor must be bounded (i.e. no support for stream-to-stream joins without a time bound)
-and the latency must be minimal (i.e. emit the joined row as soon as the processor receives them.
+and the latency must be minimal (i.e. emit the joined row as soon as the processor receives them).
 
 ### Functional Design
 
@@ -74,7 +61,7 @@ Consider the following query:
      ON d.delivery_time BETWEEN o.order_time AND o.order_time + INTERVAL '1' HOUR
 ```
 
-The `<table>_ordered` is a view on a containing the `IMPOSE_ORDER` function on top of `<table>`.
+The `<table>_ordered` is a view containing the `IMPOSE_ORDER` function on top of `<table>`.
 
 Example result set is shown in Table 1:
 
@@ -110,7 +97,9 @@ least one such inequation for each input. If there are multiple inequations of
 this for either input, we'll use the lowest constant. If we can't convert the
 inequation into this form, we'll not use that part of the join condition for a
 time bound. Obviously, we'll apply the whole condition after joining. The point
-here is only to extract the part needed to bound the buffering time.
+here is only to extract the part needed to bound the buffering time. If there's
+a disjunction (OR expression), we will not implement such query, even if all
+disjunct parts contain the needed time bounds.
 
 The "constant" is a time for which the processor has to buffer items from
 `inputX`, after items from `inputY`. It's also the time by which we postpone the
@@ -134,15 +123,15 @@ i2.time >= i1.time - 1
 Based on these conditions, the processor will buffer events from `i1` for 4 time
 units after the `i2` watermark. For example, when the watermark from `i2`
 reaches the value `10`, a buffered event from `i1` with `i1.time = 5` will never
-fulfill the join condition of `i1.time >= i2.time - 4` for any new non-late `i2`
+satisfy the join condition of `i1.time >= i2.time - 4` for any new non-late `i2`
 event we can possibly receive, because `5` is not greater than or equal to `10 -
 4`. Therefore, we can remove all events with `i1.time <= 5` from the buffer, and
 emit the watermark with time=6 to the output.
 
 The second condition allows the processor to remove items from the other buffer.
 
-However, this scenario is not easy to extend to inputs with multiple timestamps,
-let's look at that.
+This scenario is straightforward to generalize to inputs with multiple
+timestamps, let's look at that.
 
 ##### Generalizing the behavior for multiple watermarks
 
@@ -151,60 +140,26 @@ two watermarks: one for `i1` and one for `i2`. If the output of this processor
 is input to another join processor (e.g. in case of a join of three streams),
 there will be two watermarks on one input.
 
-Currently, Jet doesn't support this. To support it, we'll add the `key` field to the 
-`Watermark` class:
+Currently, Jet doesn't support this. To support it, we'll add the `key` field to
+the `Watermark` class. This topic is covered in [a separate
+TDD](14-keyed-watermark-support.md).
 
-```java
-public final class Watermark implements BroadcastItem {
-    private final int key;        // <-- new field
-    private final long timestamp;
-    // ...
-}
-```
+With keyed watermarks, a stream of events can have multiple watermarked fields,
+each watermark can have a different value.
 
-This way a stream of events can have multiple watermarked events, each watermark
-can have a different value.
-
-Now the rules for removing items from buffer and for watermark forwarding from
-the previous case aren't sufficient. A basic rule for watermark processing is
-that a watermark must never overtake an event coming before it. If there are two
-watermarks in a stream, and we postpone the event, we must postpone both
-watermarks so that that event is not late when the processor eventually emits
-it.
-
-Let's look at an example of a processor with a single input, but with 2
-watermarks in it, one for `time0` and one for `time1`. The processor postpones
-events until they would be late. The processor receives the following item and
-stores it in its buffer:
-
-```
-event(time0=12, time1=20)
-```
-
-Later the processor receives `wm(time0=15)`. We cannot forward the watermark
-yet, because even though the event is late according to `time0`, it's not late
-according to `time1` (no wm for `time1` was received yet). We can emit
-`wm(time0=12)`, because that's the oldest event in our buffer that we will emit,
-and we will not receive any new event where `time0` would be less than 15.
-
-Later on, the processor receives `wm(time1=21)`. It emits `event(time0=12,
-time1=20)` and removes it from the buffer. At this moment, the processor can
-emit `wm(time0=15)`, because that's what we received from the input, and there's
-nothing older held in the buffer that we could potentially emit. It can also
-emit `wm(time1=21)`, as now there's no event held back in the buffer.
+Since the individual time bounds must all be satisfied, if any of them isn't we
+can eliminate the item.
 
 ##### Implementation of multiple watermarks in the JOIN processor
 
-Above we have shown how to solve two watermarks in one input. The postponing
-processor did exactly what the join processor does with the join buffers. It
-holds back the events for as long as there can be a matching event received from
-the other input, and postpones watermarks for as long as it holds back the
-events. And when it removes the event from the buffer, it can emit watermarks.
+The processor holds back the events for as long as there can be a matching event
+received from the other input, and postpones watermarks for as long as it holds
+back the events. When it removes the event from the buffer, it can emit
+watermarks.
 
 We still don't know how to determine, when the processor can remove rows from
 buffer in case of multiple watermarks on either input. The processor can remove
-an event from buffer, when all the time-bound constraints from the other side
-are false.
+an event from the buffer, when any time-bound constraint is false.
 
 To store the postponing information, we now need to use a map:
 ```
@@ -267,13 +222,14 @@ Watermark keys:
 `postponeTimeMap`:
 
 ```
-0 -> [{0, 0}]
-1 -> [{1, 0}, {2, 1}]
-2 -> [{1, 4}, {2, 0}]
+inputWmKey -> [{outputWmKey, postponeTime}, ...]
+0 -> []
+1 -> [{2, 1}]
+2 -> [{1, 4}]
 ```
 
 Note that the entries for relation between `order` and `delivery` and between
-`order` and `return` are not included in the list, as noted above.
+`order` and `return` are not included in the lists, as noted above.
 
 We'll track the received watermarks in the following `wmState` nested map:
 
@@ -281,50 +237,75 @@ We'll track the received watermarks in the following `wmState` nested map:
 outputWmKey -> inputWmKey -> wmValue
 ```
 
-The `List` elements will match those of `postponeTimeMap`. In our example that
-is for output WM key `0`, the list will have one element with the WM value for
-input WM key 0 etc. Initially, we'll store `-inf` for all values.
+The inner map elements will match the elements of `postponeTimeMap`. In our
+example that is for output WM key `0` the inner map will be empty, for output WM
+key `1` the inner map will have one entry for key `2` etc. The initial values
+will be `-inf`.
 
 ```
-initial wm state: 0:{0:-inf}, 1:{1:-inf, 2:-inf}, 2:{1:-inf, 2:-inf}
+initial wm state: 0:{}, 1:{2:-inf}, 2:{1:-inf}
 in:  l{o.time=102, d.time=101}
 -> leftBuffer: [l{o.time=102, d.time=101}]
 in:  l{o.time=102, d.time=103}
 -> leftBuffer: [l{o.time=102, d.time=101}, l{o.time=102, d.time=103}]
 in:  wm0(103)
--> wm state: 0:{0:103}, 1:{1:-inf, 2:-inf}, 2:{1:-inf, 2:-inf}
-# 103 is the new minimum for wm0, but we can't emit it now as it would render items in
-leftBuffer late. We also can't remove them from the buffer, as they're not late due
-their d.time. We can emit wm0(102) as that will not render any items in buffers late
+-> wm state: 0:{}, 1:{2:-inf}, 2:{1:-inf}
+# the wm0 doesn't affect the wmState
+# 103 is the new value for wm0, but we can't emit it now as it would render items in
+  the buffers late. We also can't remove those items from the buffer, as a matching 
+  row can still be received. We can emit wm0(102) as that will not render any items 
+  in buffers late
 out: wm0(102)
-in:  r{r.time=99}
-out: joined{o.time=102, d.time=101, r.time=99}
-# not emitting joined{o.time=102, d.time=103, r.time=99}, as the join condition is false,
-even though we have these left and right rows in the buffers
--> rightBuffer: [r{r.time=99}]
+in:  r{r.time=100}
+out: joined{o.time=102, d.time=101, r.time=100}
+-> rightBuffer: [r{r.time=100}]
 in:  wm1(102)
--> wm state: 0:{0:103}, 1:{1:102, 2:-inf}, 2:{1:101, 2:-inf}
-in:  wm2(110)
--> wm state: 0:{0:103}, 1:{1:102, 2:106}, 2:{1:101, 2:110}
-# new minimum in key=1 is 102 and in key=2 is 101. Now we remove anything that is late
-from buffers according to all their watermarked timestamps
--> leftBuffer: [l{o.time=102, d.time=103}]
+-> wm state: 0:{}, 1:{2:-inf}, 2:{1:101}
+# New maximum in wmState[2] is 101, it means we can eliminate anything with r.time<101.
+# In plain words, the join condition will be false for r.time=100 for any new row.
 -> rightBuffer: []
+# For wm1, we can now output wm1(101), as the value 102 would render items in leftBuffer late.
+out: wm1(101)
+in:  wm2(110)
+-> wm state: 0:{}, 1:{2:106}, 2:{1:101}
+# new maximum in key=1 is 106. Now we remove anything from buffers with d.time<106
+-> leftBuffer: []
+-> rightBuffer: []
+# we can also emit all watermarks up to the last received value, as the buffers are now empty
+out: wm0(103)
+out: wm1(102)
+out: wm2(110)
 ```
 
-To prove that the example is correct, now there must not be anything that the processor
-can possibly receive, that would join with the rows that we removed from the buffers.
+To prove that the example is correct, there:
+1. must not be anything that the processor can possibly receive, that would join
+   with the rows that we removed from the buffers (i.e. "we didn't remove too
+   much")
+2. must not be anything in the buffer what would not join with the lowest row
+   the processor could possibly receive in the future (i.e. "we don't store what
+   we won't need again")
 
 ```
-in:  l{o.time=103, d.time=102}  # the oldest possible event in the left input
+Rule 1:
+in:  l{o.time=103, d.time=102}
 # this wouldn't join with the removed r{r.time=99}, not even with r{r.time=100}
-in:  r{r.time=110}  # the oldest possible event in the right input
+in:  r{r.time=110}
 # this wouldn't join with the removed l{o.time=102, d.time=101}
+
+Rule 2:
+Buffers are empty, so it's obviously true. But let's evaluate the lowest items that we would
+not remove:
+leftBuffer: l{o.time=-inf, d.time=106}
+rightBuffer: r{r.time=101}
+in:  l{o.time=103, d.time=102}
+# this would join with r{r.time=101}
+in:  r{r.time=106}
+# this wouldn't join with l{o.time=103, d.time=102}
 ```
 
 ##### Processor design
 
-The processor should be independent from SQL and be available as public Core
+The processor should be independent of SQL and be available as public Core
 API. Pipeline API is nice to have for 5.2. It's code will be in the core module
 and cannot depend on Apache Calcite objects.
 
@@ -347,17 +328,18 @@ defined watermark key.
 5. If a  watermark with key `key` is received:
    1. Iterate the value of `postponeTimeMap` for the watermark's key and update the same input/output
        WM keys in the `wmState`, postponed by the `postponeTime`
-   2. Compute minimum for each output WM in the `wmState`.
-   3. Remove all _expired_ events in left/right buffers: _Expired_ items are all items with all watermarked 
-      timestamps less than minimum computed in the previous step.
+   2. Compute new maximum for each output WM in the `wmState`.
+   3. Remove all _expired_ events in left & right buffers: _Expired_ items are all items with any watermarked 
+      timestamp less than the maximum computed in the previous step.
    4. If doing an outer join, emit events removed from the buffer, with `null`s for the other side, if the
       event was never joined.
    5. From the remaining elements in the buffer, compute the minimum time value in each watermark
       timestamp column.
-   6. Emit as watermarks as the minimum computed in steps 2 and 5, for each output WM key.
+   6. For each WM key, emit a new watermark as the minimum of value computed in step 5 and of the last received value for 
+      that WM key.
 6. If an event is received:
     1. Store the event in left/right buffer.
-    2. For each event in opposite buffer emit the joined event (if the whole join condition is `true`).
+    2. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
 
 ### Questions
 
@@ -373,6 +355,12 @@ A: We cannot support non-constant bounds because the processor won't be able to 
 from the buffer. For the above example, the processor doesn't know when it is safe to remove `delivery` event from the
 buffer, because it can always receive an order event with `delivery_deadline` large enough to join with any `delivery` event,
 hence the state would be unbounded, which is not allowed.
+
+##### Edge cases
+
+There can be a time bound between timestamps on the same input, which we should take into account.
+
+Example: TODO
 
 #### Memory management
 
