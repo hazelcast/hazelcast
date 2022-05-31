@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -237,8 +236,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
-    // TODO: fix nullability
     public void test_mixedModeAliasQuerying() {
         createType("NestedType", NestedPOJO.class);
         execute(String.format("CREATE MAPPING test ("
@@ -357,8 +354,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
-    // TODO: fix nullability
     public void test_compoundAliases() {
         initDefault();
         assertRowsAnyOrder("SELECT ((org).office).name FROM " +
@@ -369,8 +364,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
-    // TODO: fix nullability
     public void test_newDotOperatorSyntax() {
         initDefault();
         assertRowsAnyOrder("SELECT (((this).organization).office).name FROM test",
@@ -378,8 +371,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
-    // TODO: fix nullability
     public void test_joins() {
         initDefault();
         createMapping("test2", Long.class, User.class);
@@ -403,8 +394,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     }
 
     @Test
-    @Ignore
-    // TODO: fix nullability
     public void test_joinsOnNestedFields() {
         initDefault();
         createMapping("test2", Long.class, User.class);

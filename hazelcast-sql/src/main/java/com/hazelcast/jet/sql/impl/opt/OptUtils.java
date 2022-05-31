@@ -383,7 +383,10 @@ public final class OptUtils {
                     fieldRelDataType = typeMap.get(fieldType.getTypeName());
                 }
             } else {
-                fieldRelDataType = typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType));
+                fieldRelDataType = typeFactory.createTypeWithNullability(
+                        typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType)),
+                        true
+                );
             }
 
             fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
