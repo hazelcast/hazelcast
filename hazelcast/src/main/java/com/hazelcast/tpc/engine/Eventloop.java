@@ -41,6 +41,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.tpc.engine.EventloopState.*;
 import static com.hazelcast.tpc.util.Util.epochNanos;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -61,12 +62,12 @@ public abstract class Eventloop extends HazelcastManagedThread {
     protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
 
     public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    public final MpmcArrayQueue concurrentRunQueue = new MpmcArrayQueue(4096);
+    public final MpmcArrayQueue concurrentRunQueue;
 
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final Scheduler scheduler;
-    public final CircularQueue<EventloopTask> localRunQueue = new CircularQueue<>(1024);
+    public final CircularQueue<EventloopTask> localRunQueue;
     protected boolean spin;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
@@ -79,9 +80,11 @@ public abstract class Eventloop extends HazelcastManagedThread {
 
     protected long earliestDeadlineEpochNanos = -1;
 
-    public Eventloop(Config config){
+    public Eventloop(AbstractConfiguration config) {
         this.spin = spin;
         this.scheduler = config.scheduler;
+        this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
+        this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.setEventloop(this);
     }
 
@@ -318,12 +321,18 @@ public abstract class Eventloop extends HazelcastManagedThread {
         return scheduler;
     }
 
-    public static class Config{
-        protected boolean spin;
+    public static class AbstractConfiguration {
+        private boolean spin;
         private Scheduler scheduler = new NopScheduler();
+        private int localRunQueueCapacity = 1024;
+        private int concurrentRunQueueCapacity = 4096;
 
-        public final boolean isSpin() {
-            return spin;
+        public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
+            this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
+        }
+
+        public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
+            this.concurrentRunQueueCapacity = checkPositive("concurrentRunQueueCapacity", concurrentRunQueueCapacity);
         }
 
         public final void setSpin(boolean spin) {
@@ -331,12 +340,7 @@ public abstract class Eventloop extends HazelcastManagedThread {
         }
 
         public final void setScheduler(Scheduler scheduler) {
-            this.scheduler = scheduler;
-
-        }
-
-        public final Scheduler getScheduler() {
-            return scheduler;
+            this.scheduler = checkNotNull(scheduler);
         }
     }
 

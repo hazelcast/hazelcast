@@ -17,13 +17,13 @@
 package com.hazelcast.tpc.engine;
 
 import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfig;
+import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfiguration;
 import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfig;
+import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfiguration;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
-import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfig;
+import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -145,19 +145,19 @@ public final class Engine {
             Eventloop eventloop;
             switch (eventloopType) {
                 case NIO:
-                    NioConfig nioConfig = new NioConfig();
+                    NioConfiguration nioConfig = new NioConfiguration();
                     nioConfig.setScheduler(schedulerSupplier.get());
                     nioConfig.setSpin(spin);
                     eventloop = new NioEventloop(nioConfig);
                     break;
                 case EPOLL:
-                    EpollConfig epollConfig = new EpollConfig();
+                    EpollConfiguration epollConfig = new EpollConfiguration();
                     epollConfig.setSpin(spin);
                     epollConfig.setScheduler(schedulerSupplier.get());
                     eventloop = new EpollEventloop(epollConfig);
                     break;
                 case IOURING:
-                    IOUringConfig ioUringConfig = new IOUringConfig();
+                    IOUringConfiguration ioUringConfig = new IOUringConfiguration();
                     ioUringConfig.setSpin(spin);
                     ioUringConfig.setScheduler(schedulerSupplier.get());
                     eventloop = new IOUringEventloop(ioUringConfig);

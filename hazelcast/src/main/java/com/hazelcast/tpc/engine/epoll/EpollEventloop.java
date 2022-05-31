@@ -37,10 +37,10 @@ public final class EpollEventloop extends Eventloop {
     private final EpollEventArray events;
 
     public EpollEventloop(){
-        this(new EpollConfig());
+        this(new EpollConfiguration());
     }
 
-    public EpollEventloop(EpollConfig config) {
+    public EpollEventloop(EpollConfiguration config) {
         super(config);
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
@@ -162,7 +162,9 @@ public final class EpollEventloop extends Eventloop {
         }
     }
 
-
-    public static class EpollConfig extends Config{
+    /**
+     * Contains the configuration for the {@link EpollEventloop}.
+     */
+    public static class EpollConfiguration extends AbstractConfiguration {
     }
 }

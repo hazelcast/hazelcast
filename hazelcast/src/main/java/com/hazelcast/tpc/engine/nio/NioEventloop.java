@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static com.hazelcast.tpc.util.Util.epochNanos;
@@ -33,10 +32,10 @@ public final class NioEventloop extends Eventloop {
     final Selector selector;
 
     public NioEventloop() {
-        this(new NioConfig());
+        this(new NioConfiguration());
     }
 
-    public NioEventloop(NioConfig config) {
+    public NioEventloop(NioConfiguration config) {
         super(config);
         this.selector = SelectorOptimizer.newSelector(logger);
     }
@@ -98,6 +97,9 @@ public final class NioEventloop extends Eventloop {
         }
     }
 
-    public static class NioConfig extends Config {
+    /**
+     * Contains the configuration for the {@link NioEventloop}.
+     */
+    public static class NioConfiguration extends AbstractConfiguration {
     }
 }

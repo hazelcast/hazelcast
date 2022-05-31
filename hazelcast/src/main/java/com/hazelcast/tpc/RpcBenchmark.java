@@ -80,7 +80,7 @@ public class RpcBenchmark {
 
     @NotNull
     private static NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        NioEventloop.NioConfig config = new NioEventloop.NioConfig();
+        NioEventloop.NioConfiguration config = new NioEventloop.NioConfiguration();
         config.setSpin(spin);
         NioEventloop clientEventLoop = new NioEventloop(config);
         if (clientCpu >= 0) {
@@ -120,7 +120,7 @@ public class RpcBenchmark {
     }
 
     private static NioAsyncServerSocket newServer(SocketAddress serverAddress) {
-        NioEventloop.NioConfig config = new NioEventloop.NioConfig();
+        NioEventloop.NioConfiguration config = new NioEventloop.NioConfiguration();
         config.setSpin(spin);
         NioEventloop serverEventloop = new NioEventloop(config);
         if (serverCpu >= 0) {
