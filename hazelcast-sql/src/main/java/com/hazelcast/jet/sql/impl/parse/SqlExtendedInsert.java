@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+
 public class SqlExtendedInsert extends SqlInsert {
 
     private final SqlNodeList extendedKeywords;
@@ -128,10 +130,9 @@ public class SqlExtendedInsert extends SqlInsert {
             if (field instanceof MapTableField) {
                 QueryPath path = ((MapTableField) field).getPath();
                 if (path.getPath() == null
-                        && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
-                    // TODO: reevaluate
-                    //throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
-                    continue;
+                        && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
+                        && !field.getType().isCustomType()) {
+                    throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
                 }
             }
         }

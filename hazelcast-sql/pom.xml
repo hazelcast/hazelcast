@@ -320,6 +320,7 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <exclude>org.apache.calcite.sql.validate.SqlValidatorImpl</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -607,6 +608,11 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+            <version>1.1.0</version>
         </dependency>
 
         <!-- TEST -->
