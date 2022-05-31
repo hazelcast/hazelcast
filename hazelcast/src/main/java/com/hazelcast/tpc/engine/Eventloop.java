@@ -92,6 +92,10 @@ public abstract class Eventloop {
         this.eventloopThread = new EventloopThread(config);
     }
 
+    public Scheduler getScheduler() {
+        return scheduler;
+    }
+
     public EventloopThread getEventloopThread() {
         return eventloopThread;
     }
@@ -107,7 +111,13 @@ public abstract class Eventloop {
         return state;
     }
 
-
+    /**
+     * Is called before the {@link #eventLoop()} is called.
+     *
+     * This method can be used to initialize resources.
+     *
+     * Is called from the {@link EventloopThread}.
+     */
     protected void beforeEventloop() {
     }
 
@@ -321,9 +331,6 @@ public abstract class Eventloop {
         }
     }
 
-    public Scheduler getScheduler() {
-        return scheduler;
-    }
 
     public static class AbstractConfiguration {
         private boolean spin;

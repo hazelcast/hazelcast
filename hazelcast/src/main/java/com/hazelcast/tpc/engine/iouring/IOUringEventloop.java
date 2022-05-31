@@ -114,7 +114,7 @@ public class IOUringEventloop extends Eventloop {
     protected StorageScheduler storageScheduler;
 
     private int ringbufferSize;
-    private int ioseqAsyncTreshold;
+    private int ioseqAsyncThreshold;
     private int flags;
     private final EventloopHandler eventLoopHandler = new EventloopHandler();
 
@@ -125,13 +125,13 @@ public class IOUringEventloop extends Eventloop {
     public IOUringEventloop(IOUringConfiguration config) {
         super(config);
         this.ringbufferSize = config.ringbufferSize;
-        this.ioseqAsyncTreshold = config.ioseqAsyncTreshold;
+        this.ioseqAsyncThreshold = config.ioseqAsyncThreshold;
         this.flags = config.flags;
     }
 
     @Override
     protected void beforeEventloop() {
-        this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncTreshold, flags);
+        this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncThreshold, flags);
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
@@ -204,7 +204,7 @@ public class IOUringEventloop extends Eventloop {
     public static class IOUringConfiguration extends AbstractConfiguration {
         private int flags;
         private int ringbufferSize = DEFAULT_RING_SIZE;
-        private int ioseqAsyncTreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
+        private int ioseqAsyncThreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
         private StorageScheduler storageScheduler;
 
         public void setFlags(int flags) {
@@ -215,8 +215,8 @@ public class IOUringEventloop extends Eventloop {
             this.ringbufferSize = checkPositive("ringbufferSize", ringbufferSize);
         }
 
-        public void setIoseqAsyncTreshold(int ioseqAsyncTreshold) {
-            this.ioseqAsyncTreshold = checkPositive("ioseqAsyncTreshold", ioseqAsyncTreshold);
+        public void setIoseqAsyncThreshold(int ioseqAsyncThreshold) {
+            this.ioseqAsyncThreshold = checkPositive("ioseqAsyncThreshold", ioseqAsyncThreshold);
         }
 
         public void setStorageScheduler(StorageScheduler storageScheduler) {
