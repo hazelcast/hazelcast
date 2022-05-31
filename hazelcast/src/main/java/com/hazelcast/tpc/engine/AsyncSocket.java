@@ -48,6 +48,12 @@ public abstract class AsyncSocket implements Closeable {
 
     public final SwCounter readEvents = newSwCounter();
 
+    /**
+     * Returns the {@link Eventloop} this AsyncSocket belongs to.
+     *
+     * @return the {@link Eventloop} this AsyncSocket belongs to or null if
+     * the AsyncSocket has not been activated yet.
+     */
     public abstract Eventloop getEventloop();
 
     public final SocketAddress getRemoteAddress() {
@@ -82,12 +88,49 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract void activate(Eventloop eventloop);
 
+    /**
+     * Ensures that any scheduled frames are flushed to the socket.
+     *
+     * What happens under the hood is that the AsyncSocket is scheduled in the
+     * {@link Eventloop} where at some point in the future the frames get written
+     * to the socket.
+     *
+     * This method is thread-safe.
+     */
     public abstract void flush();
 
+    /**
+     * Writes a frame to the AsyncSocket with scheduling the AsyncSocket
+     * in the eventloop.
+     *
+     * This call can be used to buffer a series of request and then call
+     * {@link #flush()}.
+     *
+     * This method is thread-safe.
+     *
+     * There is no guarantee that frame is actually going to be received by the caller if
+     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     *
+     * @param frame the frame to write.
+     * @return true if the frame was accepted, false if there was an overload.
+     */
     public abstract boolean write(Frame frame);
 
     public abstract boolean writeAll(Collection<Frame> frames);
 
+    /**
+     * Writes a frame and flushes it.
+     *
+     * This is the same as calling {@link #write(Frame)} followed by a {@link #flush()}.
+     *
+     * There is no guarantee that frame is actually going to be received by the caller if
+     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     *
+     * This method is thread-safe.
+     *
+     * @param frame the frame to write.
+     * @return true if the frame was accepted, false if there was an overload.
+     */
     public abstract boolean writeAndFlush(Frame frame);
 
     /**
@@ -95,11 +138,31 @@ public abstract class AsyncSocket implements Closeable {
      */
     public abstract boolean unsafeWriteAndFlush(Frame frame);
 
+    /**
+     * Connects asynchronously to some address.
+     *
+     * @param address the address to connect to.
+     * @return a {@link CompletableFuture}
+     */
     public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
 
+    /**
+     * Closes this {@link AsyncSocket}.
+     *
+     * This method is thread-safe.
+     *
+     * If the AsyncSocket is already closed, the call is ignored.
+     */
     public abstract void close();
 
-    public boolean isClosed() {
+    /**
+     * Checks if this AsyncSocket is closed.
+     *
+     * This method is thread-safe.
+     *
+     * @return true if closed, false otherwise.
+     */
+    public final boolean isClosed() {
         return closed.get();
     }
 
