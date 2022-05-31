@@ -66,7 +66,7 @@ public final class Engine {
         this.eventloops = new Eventloop[eventloopCount];
         this.monitorThread = new MonitorThread(eventloops, monitorSilent);
 
-        for (int idx = 0; idx < eventloops.length; idx++) {
+        for (int idx = 0; idx < eventloopCount; idx++) {
             Eventloop eventloop;
             switch (eventloopType) {
                 case NIO:
