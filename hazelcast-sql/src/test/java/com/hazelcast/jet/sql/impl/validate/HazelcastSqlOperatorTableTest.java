@@ -68,7 +68,8 @@ public class HazelcastSqlOperatorTableTest {
                     || operator instanceof HazelcastTableFunction
                     || operator instanceof HazelcastWindowTableFunction
                     || operator instanceof HazelcastCaseOperator
-                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT;
+                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT
+                    || operator == HazelcastSqlOperatorTable.DOT;
 
             assertTrue("Operator must implement one of classes from " + HazelcastFunction.class.getPackage().toString()
                     + ": " + operator.getClass().getSimpleName(), valid);
@@ -84,7 +85,8 @@ public class HazelcastSqlOperatorTableTest {
                     || operator == HazelcastSqlOperatorTable.NOT_IN
                     || operator == HazelcastSqlOperatorTable.UNION
                     || operator == HazelcastSqlOperatorTable.UNION_ALL
-                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT) {
+                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT
+                    || operator == HazelcastSqlOperatorTable.DOT) {
                 continue;
             }
             boolean valid = operator.getReturnTypeInference() instanceof HazelcastReturnTypeInference;

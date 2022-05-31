@@ -88,6 +88,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("IMPOSE_ORDER")
                     || field.getName().equals("TUMBLE")
                     || field.getName().equals("HOP")
+                    || field.getName().equals("DOT")
             ) {
                 continue;
             }
