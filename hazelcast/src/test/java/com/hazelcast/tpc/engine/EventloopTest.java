@@ -19,10 +19,10 @@ public abstract class EventloopTest {
     @Test
     public void testLifecycle() throws InterruptedException {
         Eventloop eventloop = createEventloop();
-        assertEquals(NEW, eventloop.state);
+        assertEquals(NEW, eventloop.state());
 
         eventloop.start();
-        assertEquals(RUNNING, eventloop.state);
+        assertEquals(RUNNING, eventloop.state());
 
         CountDownLatch started = new CountDownLatch(1);
         eventloop.execute(() -> {
@@ -32,9 +32,9 @@ public abstract class EventloopTest {
 
         started.countDown();
         eventloop.shutdown();
-        assertEquals(SHUTDOWN, eventloop.state);
+        assertEquals(SHUTDOWN, eventloop.state());
 
         assertTrue(eventloop.awaitTermination(5, SECONDS));
-        assertEquals(TERMINATED, eventloop.state);
+        assertEquals(TERMINATED, eventloop.state());
     }
 }
