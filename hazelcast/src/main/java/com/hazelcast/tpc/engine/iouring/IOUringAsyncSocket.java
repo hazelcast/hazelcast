@@ -24,6 +24,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;
+import io.netty.incubator.channel.uring.IOUring;
 import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
 import io.netty.incubator.channel.uring.LinuxSocket;
 import org.jctools.queues.MpmcArrayQueue;
@@ -42,6 +43,11 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_WRITEV;
 
 public final class IOUringAsyncSocket extends AsyncSocket {
+
+    static {
+        // Ensure JNI is initialized as soon as this class is loaded
+        IOUring.ensureAvailability();
+    }
 
     private final boolean clientSide;
     private Eventloop.EventloopThread eventloopThread;

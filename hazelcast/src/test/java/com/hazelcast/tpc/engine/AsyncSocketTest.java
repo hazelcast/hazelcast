@@ -1,7 +1,5 @@
 package com.hazelcast.tpc.engine;
 
-import com.hazelcast.internal.nio.IOUtil;
-import jnr.constants.platform.Sock;
 import org.junit.After;
 import org.junit.Test;
 
@@ -49,10 +47,11 @@ public abstract class AsyncSocketTest {
 
     @Test(expected = IllegalStateException.class)
     public void activate_whenAlreadyActivated(){
-        AsyncSocket socket = createAsyncSocket();
         Eventloop eventloop1 = createEventloop();
-        eventloop1.start();
         Eventloop eventloop2 = createEventloop();
+
+        AsyncSocket socket = createAsyncSocket();
+        eventloop1.start();
         eventloop2.start();
 
         socket.activate(eventloop1);
