@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AsyncServerSocket implements Closeable {
 
     protected final ILogger logger = Logger.getLogger(this.getClass());
-    protected AtomicBoolean closed = new AtomicBoolean(false);
+    protected final AtomicBoolean closed = new AtomicBoolean(false);
 
     public final SocketAddress getLocalAddress() {
         try {
