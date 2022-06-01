@@ -108,7 +108,7 @@ public class RpcBenchmark {
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l);
-                        frame.complete();
+                        frame.writeComplete();
                         asyncSocket.unsafeWriteAndFlush(frame);
                     }
                 }
@@ -148,7 +148,7 @@ public class RpcBenchmark {
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
-                        frame.complete();
+                        frame.writeComplete();
                         asyncSocket.unsafeWriteAndFlush(frame);
                     }
                 }

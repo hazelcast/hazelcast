@@ -69,7 +69,7 @@ public class IOUringSocketIntegrationTest {
             Frame frame = new Frame(128, true);
             frame.writeInt(-1);
             frame.writeLong(requestTotal / concurrency);
-            frame.complete();
+            frame.writeComplete();
             clientSocket.write(frame);
         }
         clientSocket.flush();
@@ -99,7 +99,7 @@ public class IOUringSocketIntegrationTest {
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l);
-                        frame.complete();
+                        frame.writeComplete();
                         asyncSocket.unsafeWriteAndFlush(frame);
                     }
                 }
@@ -132,7 +132,7 @@ public class IOUringSocketIntegrationTest {
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
-                        frame.complete();
+                        frame.writeComplete();
                         asyncSocket.unsafeWriteAndFlush(frame);
                     }
                 }
