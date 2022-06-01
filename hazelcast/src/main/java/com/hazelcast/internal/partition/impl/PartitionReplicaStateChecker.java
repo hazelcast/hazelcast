@@ -218,7 +218,7 @@ public class PartitionReplicaStateChecker {
         return timeoutInMillis - sleep;
     }
 
-    private boolean checkAndTriggerReplicaSync() {
+    public boolean checkAndTriggerReplicaSync() {
         if (!needsReplicaStateCheck()) {
             return true;
         }

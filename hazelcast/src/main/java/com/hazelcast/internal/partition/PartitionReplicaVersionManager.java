@@ -87,4 +87,6 @@ public interface PartitionReplicaVersionManager {
      * @return service namespace for operation
      */
     ServiceNamespace getServiceNamespace(Operation operation);
+
+    void markPartitionReplicaAsSyncRequired(int partitionId, ServiceNamespace namespace, int replicaIndex);
 }

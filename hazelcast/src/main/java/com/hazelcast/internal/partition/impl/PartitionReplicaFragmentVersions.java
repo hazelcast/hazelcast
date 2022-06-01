@@ -16,18 +16,19 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.Arrays;
 
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.impl.PartitionReplicaManager.REQUIRES_SYNC;
 import static java.lang.System.arraycopy;
 
 // read and updated only by partition threads
 final class PartitionReplicaFragmentVersions {
     private final int partitionId;
     private final ServiceNamespace namespace;
-    private final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
+    private final long[] versions = new long[MAX_BACKUP_COUNT];
     /**
      * Shows whether partition has missing backups somewhere between the last applied backup
      * and the last incremental backup received.
@@ -60,7 +61,7 @@ final class PartitionReplicaFragmentVersions {
         int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long newVersion = newVersions[index];
-        return currentVersion > newVersion;
+        return currentVersion > newVersion || currentVersion == REQUIRES_SYNC;
     }
 
     /**
@@ -97,6 +98,10 @@ final class PartitionReplicaFragmentVersions {
 
     boolean isDirty() {
         return dirty;
+    }
+
+    void markAsSyncRequired(int replicaIndex) {
+        versions[replicaIndex - 1] = REQUIRES_SYNC;
     }
 
     void clear() {

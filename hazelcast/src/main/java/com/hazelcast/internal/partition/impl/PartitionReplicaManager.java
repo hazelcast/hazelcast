@@ -68,6 +68,8 @@ import static java.util.Collections.newSetFromMap;
  */
 public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
+    public static final long REQUIRES_SYNC = -1;
+
     /**
      * Allow running partition replica sync on generic operation threads? Default is true.
      * System property supplied as a workaround in case of unexpected issues.
@@ -320,6 +322,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     // called in operation threads
     public boolean isPartitionReplicaVersionDirty(int partitionId, ServiceNamespace namespace) {
         return replicaVersions[partitionId].isDirty(namespace);
+    }
+
+    @Override
+    public void markPartitionReplicaAsSyncRequired(int partitionId, ServiceNamespace namespace, int replicaIndex) {
+        replicaVersions[partitionId].markAsSyncRequired(namespace, replicaIndex);
     }
 
     @Override
