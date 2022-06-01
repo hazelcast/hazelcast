@@ -68,8 +68,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
 
-    private final Queue<JetSqlRow> pendingOutput = new ArrayDeque<>();
-    private Watermark pendingWatermark;
+    private final Queue<Object> pendingOutput = new ArrayDeque<>();
 
     public StreamToStreamJoinP(
             final JetJoinInfo joinInfo,
@@ -140,18 +139,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        // if pending watermarks available - try to send them
-        if (pendingWatermark != null) {
-            if (!tryEmit(pendingWatermark)) {
-                return false;
-            }
-            lastEmittedWm.replace(pendingWatermark.key(), pendingWatermark.timestamp());
-            pendingWatermark = null;
+        if (!processPendingOutput()) {
+            return false;
         }
 
         byte wmKey = watermark.key();
-        // if watermark isn't present in watermark
-        // state - skip further processing.
+        // if watermark isn't present in watermark state, ignore it.
         if (!wmState.containsKey(wmKey)) {
             return true;
         }
@@ -184,8 +177,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // and of the last received value for that WM key.
         if (wm != null) {
             if (!tryEmit(wm)) {
-                assert pendingWatermark == null;
-                pendingWatermark = wm;
+                pendingOutput.add(wm);
                 return false;
             } else {
                 lastEmittedWm.replace(wm.key(), wm.timestamp());
@@ -211,6 +203,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(inputWmKey);
         for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
             Long newLimit = watermark.timestamp() - entry.getValue();
+            assert wmState.get(entry.getKey()).get(inputWmKey) < newLimit : "old=" + wmState.get(entry.getKey()).get(inputWmKey) + ", new=" + newLimit;
             wmState.get(entry.getKey()).put(inputWmKey, newLimit);
         }
     }
