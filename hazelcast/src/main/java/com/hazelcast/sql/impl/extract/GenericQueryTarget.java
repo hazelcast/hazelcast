@@ -101,7 +101,9 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
                 return deserialized;
             }
         } else {
-            assert serialized != null;
+            if (serialized == null) {
+                return null;
+            }
 
             if (serialized.isPortable() || serialized.isCompact()) {
                 // Return Portable/Compact as Data.
