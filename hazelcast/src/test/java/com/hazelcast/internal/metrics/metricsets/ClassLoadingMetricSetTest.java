@@ -31,15 +31,20 @@ import org.junit.runner.RunWith;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_JET_EXTENSIONS_PREFIX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet.JET_EXTENSION_TO_CLASS_MAPPING;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
+
+    private static final String JET_EXTENSION_AVAILABLE_IN_CLASSPATH = "avro";
 
     private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 
@@ -80,6 +85,26 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge(CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT);
 
         assertTrueEventually(() -> assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100));
+    }
+
+    @Test
+    public void availableJetExtensions() {
+        final String metricName = CLASSLOADING_JET_EXTENSIONS_PREFIX + "." + JET_EXTENSION_AVAILABLE_IN_CLASSPATH;
+        final LongGauge gauge = metricsRegistry.newLongGauge(metricName);
+
+        assertTrueEventually(() -> assertThat(gauge.read()).isOne());
+    }
+
+    @Test
+    public void unavailableJetExtensions() {
+        JET_EXTENSION_TO_CLASS_MAPPING.keySet().stream()
+                .filter(name -> !JET_EXTENSION_AVAILABLE_IN_CLASSPATH.equals(name))
+                .forEach(extensionName -> {
+                    final String metricName = CLASSLOADING_JET_EXTENSIONS_PREFIX + "." + extensionName;
+                    final LongGauge gauge = metricsRegistry.newLongGauge(metricName);
+
+                    assertTrueEventually(() -> assertThat(gauge.read()).isZero());
+                });
     }
 
 }

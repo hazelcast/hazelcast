@@ -52,6 +52,7 @@ public final class MetricDescriptorConstants {
     public static final String CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT = "classloading.loadedClassesCount";
     public static final String CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT = "classloading.totalLoadedClassesCount";
     public static final String CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT = "classloading.unloadedClassesCount";
+    public static final String CLASSLOADING_JET_EXTENSIONS_PREFIX = "classloading.jet.extensions";
     // ===[/CLASS LOADING]==============================================
 
     // ===[CLIENT]======================================================
