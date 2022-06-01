@@ -141,8 +141,6 @@ public abstract class Eventloop {
         eventloopThread.start();
     }
 
-
-
     /**
      * Shuts down the Eventloop.
      *
@@ -402,7 +400,7 @@ public abstract class Eventloop {
         }
 
         @Override
-        public final void executeRun() {
+        public void executeRun() {
             try {
                 beforeEventloop();
                 eventLoop();
