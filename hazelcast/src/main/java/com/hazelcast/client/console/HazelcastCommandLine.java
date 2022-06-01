@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.BuildInfo;
@@ -44,6 +45,8 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -195,7 +198,7 @@ public class HazelcastCommandLine implements Runnable {
         targetsMixin.replace(targets);
 
         HazelcastBootstrap.executeJar(
-                () -> getHazelcastClient(false),
+                () -> getHazelcastClient(false, verbosity.ignoreVersionMismatch),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
@@ -462,7 +465,7 @@ public class HazelcastCommandLine implements Runnable {
         this.targetsMixin.replace(targets);
         this.verbosity.merge(verbosity);
         configureLogging();
-        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever);
+        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever, verbosity.ignoreVersionMismatch);
         try {
             consumer.accept(hz);
         } finally {
@@ -470,8 +473,22 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    private HazelcastInstance getHazelcastClient(boolean retryClusterConnectForever) {
-        return uncheckCall(() -> hzClientFn.apply(getClientConfig(retryClusterConnectForever)));
+    private HazelcastInstance getHazelcastClient(boolean retryClusterConnectForever, boolean ignoreVersionMismatch) {
+        return uncheckCall(() -> {
+            HazelcastInstance client = hzClientFn.apply(getClientConfig(retryClusterConnectForever));
+            HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+
+            MemberVersion masterVersion = clientImpl.getClientClusterService().getMasterMember().getVersion();
+            String fullClientVersion = getBuildInfo().getVersion();
+
+            Version clientVersion = Version.of(fullClientVersion);
+            if (!ignoreVersionMismatch && !masterVersion.asVersion().equals(clientVersion)) {
+                throw new HazelcastException("Server and client must have matching minor version. "
+                        + "Server version " + masterVersion + ", hz-cli version " + fullClientVersion);
+            }
+
+            return client;
+        });
     }
 
     @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "Generates false positive")
@@ -640,8 +657,16 @@ public class HazelcastCommandLine implements Runnable {
         )
         private boolean isVerbose;
 
+        @Option(names = {"--ignore-version-mismatch"},
+                description = "Ignore check between client and server versions "
+                        + "(by default they must have matching minor version)",
+                defaultValue = "false"
+        )
+        private boolean ignoreVersionMismatch;
+
         void merge(Verbosity other) {
             isVerbose |= other.isVerbose;
+            ignoreVersionMismatch |= other.ignoreVersionMismatch;
         }
     }
 
