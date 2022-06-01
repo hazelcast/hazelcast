@@ -156,18 +156,20 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return true;
         }
 
-        // update wm state
+        // 5.1 : update wm state
         applyToWmState(watermark);
 
-        // try to clear buffers if possible
+        // 5.2 & 5.3
         clearExpiredItemsInBuffer(ordinal);
 
         if (!processPendingOutput()) {
             return false;
         }
 
-        // We can't immediately emit current WM, as it could render items in buffers late.
-        // Instead, we can emit WM with the minimum available time for this WM key.
+        // Note: We can't immediately emit current WM, as it could render items in buffers late.
+
+        // 5.5 : from the remaining elements in the buffer, compute
+        // the minimum time value in each watermark timestamp column.
         Watermark wm = null;
         long maxInputKeyGroupTime = findMaxInputKeyGroupTime(wmKey);
         long minItemTime = maxInputKeyGroupTime == Long.MIN_VALUE
@@ -177,6 +179,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             wm = new Watermark(minItemTime, wmKey);
         }
 
+        // 5.6 For each WM key, emit a new watermark
+        // as the minimum of value computed in step 5
+        // and of the last received value for that WM key.
         if (wm != null) {
             if (!tryEmit(wm)) {
                 assert pendingWatermark == null;
@@ -233,7 +238,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return;
         }
 
-        // remove items that are late according to all watermarks in them. Run after the wmState was changed.
+        // 5.2 : compute new maximum for each output WM in the `wmState`.
         Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
         ToLongFunctionEx<JetSqlRow>[] extractors = new ToLongFunctionEx[currExtractors.values().size()];
         long[] limits = new long[currExtractors.values().size()];
@@ -245,10 +250,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             ++i;
         }
 
+        // 5.3 Remove all expired events in left & right buffers
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
                 if (extractors[idx].applyAsLong(row) <= limits[idx]) {
                     if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
+                        // 5.4 : If doing an outer join, emit events removed from the buffer,
+                        // with `null`s for the other side, if the event was never joined.
                         JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
                         unusedEventsTracker[ordinal].remove(row);
                         if (joinedRow != null) {
