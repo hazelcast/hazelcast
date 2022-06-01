@@ -156,13 +156,8 @@ public class IOUringEventloop extends Eventloop {
     protected void eventLoop() {
         sq_addEventRead();
 
-        while (state == RUNNING) {
-            runConcurrentTasks();
-
-            boolean moreWork = scheduler.tick();
-
-            runLocalTasks();
-
+        boolean moreWork = false;
+        do {
             if (cq.hasCompletions()) {
                 cq.process(eventLoopHandler);
             } else if (spin || moreWork) {
@@ -176,7 +171,13 @@ public class IOUringEventloop extends Eventloop {
                 }
                 wakeupNeeded.set(false);
             }
-        }
+
+            runConcurrentTasks();
+
+            moreWork = scheduler.tick();
+
+            runLocalTasks();
+        } while (state == RUNNING);
     }
 
     private void sq_addEventRead() {

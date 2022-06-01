@@ -53,13 +53,8 @@ public final class NioEventloop extends Eventloop {
 
     @Override
     protected void eventLoop() throws Exception {
-        while (state == RUNNING) {
-            runConcurrentTasks();
-
-            boolean moreWork = scheduler.tick();
-
-            runLocalTasks();
-
+        boolean moreWork = false;
+        do {
             int keyCount;
             if (spin || moreWork) {
                 keyCount = selector.selectNow();
@@ -94,7 +89,13 @@ public final class NioEventloop extends Eventloop {
                     }
                 }
             }
-        }
+
+            runConcurrentTasks();
+
+            moreWork = scheduler.tick();
+
+            runLocalTasks();
+        } while (state == RUNNING);
     }
 
     /**

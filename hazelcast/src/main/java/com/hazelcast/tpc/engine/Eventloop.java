@@ -56,6 +56,8 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  */
 public abstract class Eventloop {
 
+    private static final EventloopTask SHUTDOWN_TASK = () -> {};
+
     protected final static AtomicReferenceFieldUpdater<Eventloop, EventloopState> STATE
             = newUpdater(Eventloop.class, EventloopState.class, "state");
 
@@ -139,6 +141,8 @@ public abstract class Eventloop {
         eventloopThread.start();
     }
 
+
+
     /**
      * Shuts down the Eventloop.
      *
@@ -157,6 +161,7 @@ public abstract class Eventloop {
                     break;
                 case RUNNING:
                     if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
+                        concurrentRunQueue.add(SHUTDOWN_TASK);
                         wakeup();
                         return;
                     }
