@@ -82,7 +82,7 @@ import static java.util.stream.Collectors.toMap;
  *         <li>the inbox contains all input items (if snapshots are not restored)</li>
  *     </ul>
  *
- *     <li>every time the inbox gets empty does snapshot or snapshot+restore
+ *     <li>every time the inbox gets empty it does snapshot or snapshot+restore
  *
  *     <li>{@linkplain #disableCompleteCall() optionally} calls {@link
  *     Processor#complete()} until it returns {@code true} or until the
@@ -206,13 +206,14 @@ public final class TestSupport {
 
     private final ProcessorMetaSupplier metaSupplier;
     private ProcessorSupplier supplier;
-    private List<List<?>> inputs = emptyList();
-    private int[] priorities = {};
+    private List<ItemWithOrdinal> inputOutput = emptyList();
     private boolean assertProgress = true;
     private boolean doSnapshots = true;
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
+    private boolean outputCanOccurEarlier;
+    private final List<ItemWithOrdinal> accumulatedExpectedOutput = new ArrayList<>();
     private Runnable beforeEachRun = () -> { };
 
     private int localProcessorIndex;
@@ -267,8 +268,7 @@ public final class TestSupport {
      * @return {@code this} instance for fluent API
      */
     public TestSupport input(@Nonnull List<?> input) {
-        this.inputs = singletonList(input);
-        this.priorities = new int[]{0};
+        this.inputOutput = mixInputs(singletonList(input), new int[]{0});
         return this;
     }
 
@@ -308,8 +308,7 @@ public final class TestSupport {
         if (inputs.size() != priorities.length) {
             throw new IllegalArgumentException("Number of inputs must be equal to number of priorities");
         }
-        this.inputs = inputs;
-        this.priorities = priorities;
+        this.inputOutput = mixInputs(inputs, priorities);
         return this;
     }
 
@@ -336,9 +335,55 @@ public final class TestSupport {
      * @throws AssertionError if some assertion does not hold
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
+        if (!(inputOutput instanceof ArrayList)) {
+            inputOutput = new ArrayList<>(inputOutput);
+        }
+
+        for (int ordinal = 0; ordinal < expectedOutputs.size(); ordinal++) {
+            for (Object item : expectedOutputs.get(ordinal)) {
+                inputOutput.add(outItem(ordinal, item));
+            }
+        }
+
         assertOutput(
-            expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
+                expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
         );
+    }
+
+    /**
+     * Runs the test and expects an exact sequence of input and output items.
+     * The output must occur in the expected order given by the {@code
+     * inputOutput} parameter, that is a particular output item must occur after
+     * particular input items. If the output happens elsewhere or doesn't happen
+     * after that input item, the test fails.
+     * <p>
+     * The order is asserted precisely only when the inbox contains at most 1
+     * item.
+     * <p>
+     * {@code inputOutput} is a sequence if {@code {integer, Object}} tuples,
+     * where the integer denotes:<ul>
+     *     <li>if positive, the item is an input item on ordinal {@code i}
+     *     <li>if negative, the item is an expected output item on ordinal {@code
+     *         -i - 1}
+     * </ul>
+     * <p>
+     * The number of input and output edges is equal to the maximum ordinal
+     * found for input and output, plus one. If there's no input or output item,
+     * the processor will have zero input or output ordinals. Use {@code null}
+     * item if you want to increase the number of ordinals, without adding an
+     * item to the ordinal, that item will be ignored, except for using its
+     * ordinal.
+     *
+     * @param inputOutput the input and expected output items
+     */
+    public void expectExactOutput(List<ItemWithOrdinal> inputOutput) {
+        this.inputOutput = inputOutput;
+
+        outputOrdinalCount = inputOutput.stream().mapToInt(ItemWithOrdinal::ordinal).max().orElse(0);
+        outputCanOccurEarlier = false;
+        assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
+
+        run();
     }
 
     /**
@@ -351,42 +396,12 @@ public final class TestSupport {
      * @param assertFn an assertion function which takes the current mode and the collected output
      */
     public void assertOutput(int outputOrdinalCount, BiConsumer<TestMode, List<List<Object>>> assertFn) {
-        assertOutputFn = assertFn;
+        this.assertOutputFn = assertFn;
+
         this.outputOrdinalCount = outputOrdinalCount;
-        try {
-            TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
-            if (hazelcastInstance != null) {
-                metaSupplierContext.setHazelcastInstance(hazelcastInstance);
-            }
-            if (jobConfig != null) {
-                metaSupplierContext.setJobConfig(jobConfig);
-            }
-            metaSupplier.init(metaSupplierContext);
-            Address address = hazelcastInstance != null
-                    ? hazelcastInstance.getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
-            supplier = metaSupplier.get(singletonList(address)).apply(address);
-            TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
-            if (hazelcastInstance != null) {
-                supplierContext.setHazelcastInstance(hazelcastInstance);
-            }
-            if (jobConfig != null) {
-                supplierContext.setJobConfig(jobConfig);
-            }
-            supplier.init(supplierContext);
-            runTest(new TestMode(false, 0, 1));
-            if (inputs.stream().mapToInt(List::size).sum() > 0) {
-                // only run this version if there is an input
-                runTest(new TestMode(false, 0, EdgeConfig.DEFAULT_QUEUE_SIZE));
-            }
-            if (doSnapshots) {
-                runTest(new TestMode(true, 1, 1));
-                runTest(new TestMode(true, 2, 1));
-                runTest(new TestMode(true, Integer.MAX_VALUE, 1));
-            }
-            supplier.close(null);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
+        outputCanOccurEarlier = true;
+
+        run();
     }
 
     /**
@@ -554,9 +569,8 @@ public final class TestSupport {
     }
 
     /**
-     * Execute test before each test run
+     * Action to execute before each test scenario.
      *
-     * @param runnable runnable to be executed before each test run
      * @return {@code this} instance for fluent API
      */
     public TestSupport executeBeforeEachRun(Runnable runnable) {
@@ -564,6 +578,47 @@ public final class TestSupport {
         return this;
     }
 
+    private void run() {
+        // filter null items from inputOutput. They are there only to affect the number of ordinals. See class javadoc.
+        inputOutput.removeIf(item -> item.item == null);
+
+        try {
+            TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
+            if (hazelcastInstance != null) {
+                metaSupplierContext.setHazelcastInstance(hazelcastInstance);
+            }
+            if (jobConfig != null) {
+                metaSupplierContext.setJobConfig(jobConfig);
+            }
+            metaSupplier.init(metaSupplierContext);
+            Address address = hazelcastInstance != null
+                    ? hazelcastInstance.getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
+            supplier = metaSupplier.get(singletonList(address)).apply(address);
+            TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
+            if (hazelcastInstance != null) {
+                supplierContext.setHazelcastInstance(hazelcastInstance);
+            }
+            if (jobConfig != null) {
+                supplierContext.setJobConfig(jobConfig);
+            }
+            supplier.init(supplierContext);
+            runTest(new TestMode(false, 0, 1));
+            if (inputOutput.stream().anyMatch(ItemWithOrdinal::isInput)) {
+                // only run this version if there is any input
+                runTest(new TestMode(false, 0, EdgeConfig.DEFAULT_QUEUE_SIZE));
+            }
+            if (doSnapshots) {
+                runTest(new TestMode(true, 1, 1));
+                runTest(new TestMode(true, 2, 1));
+                runTest(new TestMode(true, Integer.MAX_VALUE, 1));
+            }
+            supplier.close(null);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void runTest(TestMode testMode) throws Exception {
         beforeEachRun.run();
 
@@ -576,7 +631,7 @@ public final class TestSupport {
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
         int idleCount = 0;
-        System.out.println("### Running the test, mode=" + testMode.toString());
+        System.out.println("### Running the test, mode=" + testMode);
 
         TestInbox inbox = new TestInbox();
         int inboxOrdinal = -1;
@@ -584,7 +639,7 @@ public final class TestSupport {
         boolean isCooperative = processor[0].isCooperative();
 
         // we'll use 1-capacity outbox to test outbox rejection
-        TestOutbox[] outbox = {createOutbox()};
+        TestOutbox[] outbox = {createOutbox(outputOrdinalCount)};
         List<List<Object>> actualOutputs = new ArrayList<>(outputOrdinalCount);
         for (int i = 0; i < outputOrdinalCount; i++) {
             actualOutputs.add(new ArrayList<>());
@@ -599,19 +654,25 @@ public final class TestSupport {
         snapshotAndRestore(processor, outbox, actualOutputs, doSnapshots, doRestoreEvery, restoreCount);
 
         // call the process() method
-        List<ObjectWithOrdinal> input = mixInputs(inputs, priorities);
-        int inputPosition = 0;
-        while (inputPosition < input.size() || !inbox.isEmpty()) {
-            if (inbox.isEmpty() && inputPosition < input.size()) {
-                inboxOrdinal = input.get(inputPosition).ordinal;
+        int ioPosition = 0;
+        while (ioPosition < inputOutput.size() || !inbox.isEmpty()) {
+            if (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
+                accumulatedExpectedOutput.add(inputOutput.get(ioPosition));
+                ioPosition++;
+                continue;
+            }
+
+            if (inbox.isEmpty()) {
+                inboxOrdinal = inputOutput.get(ioPosition).ordinal();
                 for (int added = 0;
-                        inputPosition < input.size()
-                                && added < testMode.inboxLimit()
-                                && inboxOrdinal == input.get(inputPosition).ordinal
-                                && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
-                        added++
+                     ioPosition < inputOutput.size()
+                             && added < testMode.inboxLimit()
+                             && inputOutput.get(ioPosition).isInput()
+                             && inboxOrdinal == inputOutput.get(ioPosition).ordinal
+                             && (added == 0 || !(inputOutput.get(ioPosition).item instanceof Watermark));
+                     added++
                 ) {
-                    ObjectWithOrdinal objectWithOrdinal = input.get(inputPosition++);
+                    ItemWithOrdinal objectWithOrdinal = inputOutput.get(ioPosition++);
                     inbox.queue().add(objectWithOrdinal.item);
                     inboxOrdinal = objectWithOrdinal.ordinal;
                 }
@@ -635,11 +696,14 @@ public final class TestSupport {
             }
             outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
             if (inbox.isEmpty()) {
+                if (!outputCanOccurEarlier) {
+                    assertOutputFn.accept(testMode, actualOutputs);
+                }
                 snapshotAndRestore(processor, outbox, actualOutputs, doSnapshots, doRestoreEvery, restoreCount);
             }
         }
 
-        if (logInputOutput && !inputs.isEmpty()) {
+        if (logInputOutput && inputOutput.stream().anyMatch(ItemWithOrdinal::isInput)) {
             System.out.println(LocalTime.now() + " Input processed, calling complete()");
         }
 
@@ -711,14 +775,14 @@ public final class TestSupport {
      * Sorts the objects from multiple inputs into an order in which they will
      * be passed to processor, based on priorities.
      */
-    private static List<ObjectWithOrdinal> mixInputs(List<List<?>> inputs, int[] priorities) {
+    private static List<ItemWithOrdinal> mixInputs(List<List<?>> inputs, int[] priorities) {
         SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
         for (int i = 0; i < priorities.length; i++) {
             ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
                             .add(i);
         }
 
-        List<ObjectWithOrdinal> result = new ArrayList<>();
+        List<ItemWithOrdinal> result = new ArrayList<>();
         for (List<Integer> ordinals : ordinalsByPriority.values()) {
             boolean allDone;
             int index = 0;
@@ -727,7 +791,7 @@ public final class TestSupport {
                 for (Integer ordinal : ordinals) {
                     if (inputs.get(ordinal).size() > index) {
                         Object item = inputs.get(ordinal).get(index);
-                        result.add(new ObjectWithOrdinal(ordinal, item));
+                        result.add(new ItemWithOrdinal(ordinal, item));
                         allDone = false;
                     }
                 }
@@ -738,7 +802,7 @@ public final class TestSupport {
         return result;
     }
 
-    private TestOutbox createOutbox() {
+    private TestOutbox createOutbox(long outputOrdinalCount) {
         return new TestOutbox(IntStream.generate(() -> 1).limit(outputOrdinalCount).toArray(), 1);
     }
 
@@ -807,7 +871,7 @@ public final class TestSupport {
         assert outbox[0].snapshotQueue().isEmpty();
         processor[0].close();
         processor[0] = newProcessorFromSupplier();
-        outbox[0] = createOutbox();
+        outbox[0] = createOutbox(outputOrdinalCount);
         initProcessor(processor[0], outbox[0]);
 
         int lastInboxSize = snapshotInbox.queue().size();
@@ -960,14 +1024,54 @@ public final class TestSupport {
                    .collect(Collectors.joining("\n"));
     }
 
-    private static class ObjectWithOrdinal {
-        final int ordinal;
-        final Object item;
+    public static final class ItemWithOrdinal {
+        private final int ordinal;
+        private final Object item;
 
-        ObjectWithOrdinal(int ordinal, Object item) {
+        private ItemWithOrdinal(int ordinal, Object item) {
             this.ordinal = ordinal;
             this.item = item;
         }
+
+        public boolean isInput() {
+            return ordinal >= 0;
+        }
+
+        public boolean isOutput() {
+            return ordinal < 0;
+        }
+
+        public int ordinal() {
+            return isInput() ? ordinal : -ordinal - 1;
+        }
+
+        public Object item() {
+            return item;
+        }
+    }
+
+    public static ItemWithOrdinal inItem(int ordinal, Object item) {
+        checkNotNegative(ordinal, "ordinal");
+        return new ItemWithOrdinal(ordinal, item);
+    }
+
+    public static ItemWithOrdinal outItem(int ordinal, Object item) {
+        checkNotNegative(ordinal, "ordinal");
+        return new ItemWithOrdinal(-ordinal - 1, item);
+    }
+
+    private List<List<?>> transformToListList(List<ItemWithOrdinal> items) {
+        List<List<?>> res = new ArrayList<>();
+        for (int i = 0; i < outputOrdinalCount; i++) {
+            res.add(new ArrayList<>());
+        }
+        for (ItemWithOrdinal item : items) {
+            assert item.isOutput();
+            @SuppressWarnings("unchecked")
+            List<Object> innerList = (List<Object>) res.get(item.ordinal());
+            innerList.add(item.item);
+        }
+        return res;
     }
 
     /**
