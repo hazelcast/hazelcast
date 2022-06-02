@@ -355,25 +355,21 @@ public final class TestSupport {
      * Runs the test and expects an exact sequence of input and output items.
      * The output must occur in the expected order given by the {@code
      * inputOutput} parameter, that is a particular output item must occur after
-     * particular input items. If the output happens elsewhere or doesn't happen
-     * after that input item, the test fails.
+     * particular input items. If the output happens at other time, the test
+     * fails.
      * <p>
-     * The order is asserted precisely only when the inbox contains at most 1
-     * item.
+     * To create `ItemWithOrdinal` instances, use the {@link #in} and {@link
+     * #out} static factory methods.
      * <p>
-     * {@code inputOutput} is a sequence if {@code {integer, Object}} tuples,
-     * where the integer denotes:<ul>
-     *     <li>if positive, the item is an input item on ordinal {@code i}
-     *     <li>if negative, the item is an expected output item on ordinal {@code
-     *         -i - 1}
-     * </ul>
+     * The output after the last input item is asserted after the `complete()`
+     * method calls, not immediately after processing of the last input item.
      * <p>
-     * The number of input and output edges is equal to the maximum ordinal
-     * found for input and output, plus one. If there's no input or output item,
-     * the processor will have zero input or output ordinals. Use {@code null}
-     * item if you want to increase the number of ordinals, without adding an
-     * item to the ordinal, that item will be ignored, except for using its
-     * ordinal.
+     * The number of input and output edges of the processor will be equal to
+     * the maximum ordinal found for input and output, plus one. If there's no
+     * input or output item, the processor will have zero input or output
+     * ordinals. Use a dummy {@code null} item if you want to increase the
+     * number of ordinals in that case, this item will be ignored, except for
+     * using its ordinal.
      *
      * @param inputOutput the input and expected output items
      */
@@ -641,7 +637,7 @@ public final class TestSupport {
         boolean isCooperative = processor[0].isCooperative();
 
         // we'll use 1-capacity outbox to test outbox rejection
-        TestOutbox[] outbox = {createOutbox(outputOrdinalCount)};
+        TestOutbox[] outbox = {createOutbox()};
         List<List<Object>> actualOutputs = new ArrayList<>(outputOrdinalCount);
         for (int i = 0; i < outputOrdinalCount; i++) {
             actualOutputs.add(new ArrayList<>());
@@ -679,10 +675,18 @@ public final class TestSupport {
             int lastInboxSize = inbox.size();
 
             // add to accumulatedExpectedOutput
-            if (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
+            while (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
                 accumulatedExpectedOutput.add(inputOutput.get(ioPosition));
                 ioPosition++;
-                continue;
+            }
+
+            if (inbox.isEmpty()) {
+                if (ioPosition < inputOutput.size()) {
+                    throw new IllegalArgumentException("Invalid test case: there's expected output before first input -" +
+                            " there's no processor call that could have produced that output, and we're not calling" +
+                            " complete() yet");
+                }
+                break;
             }
 
             String methodName;
@@ -810,7 +814,7 @@ public final class TestSupport {
         return result;
     }
 
-    private TestOutbox createOutbox(long outputOrdinalCount) {
+    private TestOutbox createOutbox() {
         return new TestOutbox(IntStream.generate(() -> 1).limit(outputOrdinalCount).toArray(), 1);
     }
 
@@ -879,7 +883,7 @@ public final class TestSupport {
         assert outbox[0].snapshotQueue().isEmpty();
         processor[0].close();
         processor[0] = newProcessorFromSupplier();
-        outbox[0] = createOutbox(outputOrdinalCount);
+        outbox[0] = createOutbox();
         initProcessor(processor[0], outbox[0]);
 
         int lastInboxSize = snapshotInbox.queue().size();
