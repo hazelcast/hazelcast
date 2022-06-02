@@ -192,14 +192,15 @@ public interface SqlConnector {
      * @param nodeEngine an instance of {@link NodeEngine}
      * @param options    user-provided options
      * @param userFields user-provided list of fields, possibly empty
+     * @param externalName
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    );
+            @Nonnull List<MappingField> userFields,
+            @Nonnull String externalName);
 
     /**
      * Creates a {@link Table} object with the given fields. Should return

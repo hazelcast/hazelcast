@@ -98,7 +98,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
@@ -116,7 +116,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -134,7 +134,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -151,7 +151,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when

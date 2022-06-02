@@ -63,8 +63,8 @@ class SeriesSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
+            @Nonnull List<MappingField> userFields,
+            String externalName) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 

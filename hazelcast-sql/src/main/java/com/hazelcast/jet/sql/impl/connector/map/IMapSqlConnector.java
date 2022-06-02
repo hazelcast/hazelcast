@@ -112,8 +112,8 @@ public class IMapSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
+            @Nonnull List<MappingField> userFields,
+            String externalName) {
         if (nodeEngine.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled()) {
             return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
         } else {
