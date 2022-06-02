@@ -102,7 +102,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public IOUringEventloop getEventloop() {
+    public IOUringEventloop eventloop() {
         return eventloop;
     }
 

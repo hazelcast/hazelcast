@@ -20,7 +20,7 @@ import com.hazelcast.tpc.engine.ReadHandler;
 
 import java.nio.ByteBuffer;
 
-public abstract class NioReadHandler implements ReadHandler {
+public abstract class NioAsyncReadHandler implements ReadHandler {
 
     protected NioAsyncSocket asyncSocket;
 

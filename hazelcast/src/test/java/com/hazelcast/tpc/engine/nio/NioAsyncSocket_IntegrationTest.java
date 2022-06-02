@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class NioSocketIntegrationTest {
+public class NioAsyncSocket_IntegrationTest {
     public static int requestTotal = 1000;
     public static int concurrency = 1;
 
@@ -82,7 +82,7 @@ public class NioSocketIntegrationTest {
     private NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new NioReadHandler() {
+        clientSocket.setReadHandler(new NioAsyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -118,7 +118,7 @@ public class NioSocketIntegrationTest {
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             socket.setTcpNoDelay(true);
-            socket.setReadHandler(new NioReadHandler() {
+            socket.setReadHandler(new NioAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.tpc.engine;
 
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -29,7 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AsyncSocket implements Closeable {
+
+/**
+ * This class is not thread-safe.
+ *
+ * The SyncSocket is blocking; so therefor should not be used inside an {@link Eventloop}.
+ */
+public abstract class SyncSocket implements Closeable {
+
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean();
 
@@ -38,16 +29,11 @@ public abstract class AsyncSocket implements Closeable {
 
     protected final SwCounter framesWritten = newSwCounter();
 
+    protected final SwCounter framesRead = newSwCounter();
+
     protected final SwCounter bytesRead = newSwCounter();
 
     protected final SwCounter bytesWritten = newSwCounter();
-
-    protected final SwCounter framesRead = newSwCounter();
-
-    protected final SwCounter handleWriteCnt = newSwCounter();
-
-    protected final SwCounter readEvents = newSwCounter();
-
 
     public long framesWritten() {
         return framesWritten.get();
@@ -64,22 +50,6 @@ public abstract class AsyncSocket implements Closeable {
     public long framesRead() {
         return framesRead.get();
     }
-
-    public long handleWriteCnt() {
-        return handleWriteCnt.get();
-    }
-
-    public long readEvents() {
-        return readEvents.get();
-    }
-
-    /**
-     * Returns the {@link Eventloop} this AsyncSocket belongs to.
-     *
-     * @return the {@link Eventloop} this AsyncSocket belongs to or null if
-     * the AsyncSocket has not been activated yet.
-     */
-    public abstract Eventloop eventloop();
 
     /**
      * Returns the remote address.
@@ -127,20 +97,9 @@ public abstract class AsyncSocket implements Closeable {
 
     public abstract int getSendBufferSize();
 
-    public abstract void setReadHandler(ReadHandler readHandler);
+    public abstract Frame read();
 
-    /**
-     * Activates an AsyncSocket by hooking it up to an EventLoop.
-     *
-     * This method is not thread-safe.
-     *
-     * This method should only be called once.
-     *
-     * @param eventloop
-     * @throws NullPointerException if eventloop is null.
-     * @throws IllegalStateException if the AsyncSocket is already activated.
-     */
-    public abstract void activate(Eventloop eventloop);
+    public abstract Frame tryRead();
 
     /**
      * Ensures that any scheduled frames are flushed to the socket.
@@ -154,11 +113,11 @@ public abstract class AsyncSocket implements Closeable {
     public abstract void flush();
 
     /**
-     * Writes a frame to the AsyncSocket without scheduling the AsyncSocket
+     * Writes a frame to the AsyncSocket with scheduling the AsyncSocket
      * in the eventloop.
      *
      * This call can be used to buffer a series of request and then call
-     * {@link #flush()} to trigger the actual writting to the socket.
+     * {@link #flush()}.
      *
      * This method is thread-safe.
      *
@@ -169,8 +128,6 @@ public abstract class AsyncSocket implements Closeable {
      * @return true if the frame was accepted, false if there was an overload.
      */
     public abstract boolean write(Frame frame);
-
-    public abstract boolean writeAll(Collection<Frame> frames);
 
     /**
      * Writes a frame and flushes it.
@@ -188,19 +145,12 @@ public abstract class AsyncSocket implements Closeable {
     public abstract boolean writeAndFlush(Frame frame);
 
     /**
-     * Writes a frame and ensure it gets written.
-     *
-     * Should only be called from within the Eventloop.
-     */
-    public abstract boolean unsafeWriteAndFlush(Frame frame);
-
-    /**
      * Connects asynchronously to some address.
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}
      */
-    public abstract CompletableFuture<AsyncSocket> connect(SocketAddress address);
+    public abstract void connect(SocketAddress address);
 
     /**
      * Closes this {@link AsyncSocket}.
@@ -227,3 +177,4 @@ public abstract class AsyncSocket implements Closeable {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
 }
+

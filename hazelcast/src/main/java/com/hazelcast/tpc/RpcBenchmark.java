@@ -24,7 +24,7 @@ import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
-import com.hazelcast.tpc.engine.nio.NioReadHandler;
+import com.hazelcast.tpc.engine.nio.NioAsyncReadHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -90,7 +90,7 @@ public class RpcBenchmark {
 
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new NioReadHandler() {
+        clientSocket.setReadHandler(new NioAsyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -133,7 +133,7 @@ public class RpcBenchmark {
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             socket.setTcpNoDelay(true);
-            socket.setReadHandler(new NioReadHandler() {
+            socket.setReadHandler(new NioAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

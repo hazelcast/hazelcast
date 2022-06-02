@@ -56,7 +56,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private int unflushedFramesCapacity = 65536;
     private final boolean clientSide;
-    private NioReadHandler readHandler;
+    private NioAsyncReadHandler readHandler;
     // immutable state
     private SocketChannel socketChannel;
     public NioEventloop eventloop;
@@ -106,7 +106,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public NioEventloop getEventloop() {
+    public NioEventloop eventloop() {
         return eventloop;
     }
 
@@ -116,7 +116,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public void setReadHandler(ReadHandler h) {
-        this.readHandler = (NioReadHandler) checkNotNull(h);
+        this.readHandler = (NioAsyncReadHandler) checkNotNull(h);
         this.readHandler.init(this);
     }
 

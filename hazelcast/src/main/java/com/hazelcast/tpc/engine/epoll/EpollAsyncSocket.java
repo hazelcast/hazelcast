@@ -87,7 +87,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public EpollEventloop getEventloop() {
+    public EpollEventloop eventloop() {
         return eventloop;
     }
 

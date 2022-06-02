@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class IOUringSocketIntegrationTest {
+public class IOUringAsyncSocket_IntegrationTest {
     public static int requestTotal = 1000;
     public static int concurrency = 1;
 

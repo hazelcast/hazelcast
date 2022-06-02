@@ -18,7 +18,7 @@ package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.engine.nio.NioReadHandler;
+import com.hazelcast.tpc.engine.nio.NioAsyncReadHandler;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestNioReadHandler extends NioReadHandler {
+public class RequestNioReadHandler extends NioAsyncReadHandler {
 
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;

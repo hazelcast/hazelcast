@@ -40,7 +40,7 @@ import com.hazelcast.tpc.engine.frame.UnpooledFrameAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
-import com.hazelcast.tpc.engine.nio.NioReadHandler;
+import com.hazelcast.tpc.engine.nio.NioAsyncReadHandler;
 import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncSocket;
@@ -189,7 +189,7 @@ public class RequestService {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) engine.eventloop(k);
 
-            Supplier<NioReadHandler> readHandlerSupplier = () -> {
+            Supplier<NioAsyncReadHandler> readHandlerSupplier = () -> {
                 RequestNioReadHandler readHandler = new RequestNioReadHandler();
                 readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
                 readHandler.responseHandler = responseHandler;
