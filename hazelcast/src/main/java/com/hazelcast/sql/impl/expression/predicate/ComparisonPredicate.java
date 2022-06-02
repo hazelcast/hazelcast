@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -53,6 +54,11 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
     public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
         assert left.getType().equals(right.getType());
         return new ComparisonPredicate(left, right, comparisonMode);
+    }
+
+    @Nonnull
+    public ComparisonMode mode() {
+        return mode;
     }
 
     @Override

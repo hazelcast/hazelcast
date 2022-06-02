@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -37,6 +38,16 @@ public abstract class BiExpression<T> implements Expression<T> {
     protected BiExpression(Expression<?> operand1, Expression<?> operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
+    }
+
+    @Nonnull
+    public Expression<?> operand1() {
+        return operand1;
+    }
+
+    @Nonnull
+    public Expression<?> operand2() {
+        return operand2;
     }
 
     @Override

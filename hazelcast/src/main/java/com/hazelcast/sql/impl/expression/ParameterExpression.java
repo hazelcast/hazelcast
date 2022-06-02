@@ -46,6 +46,10 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
         return new ParameterExpression<>(index, type);
     }
 
+    public int index() {
+        return index;
+    }
+
     @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;
