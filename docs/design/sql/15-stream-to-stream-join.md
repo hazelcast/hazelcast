@@ -76,7 +76,7 @@ __Table 1__
 ### Technical Design
 
 SQL engine should use a specialized Jet processor to perform JOIN operation for two input streams. The join condition
-must constrain the required buffering time of events from both inputs; otherwise, the query will be rejected from 
+must constrain the required buffering time of events from both inputs; otherwise, the query will be rejected from
 execution because the engine would have to keep ever-growing state.
 
 #### JOIN processor design and algorithm
@@ -180,7 +180,7 @@ timeA - 0`.
 
 ##### Example
 
-Let's look at an example. 
+Let's look at an example.
 ```sql
 select *
 from orders o
@@ -327,19 +327,19 @@ defined watermark key.
 4. Prepare two buffers : `leftBuffer` to store input events from ordinal 0 and `rightBuffer` to store input events from ordinal 1.
 5. If a  watermark with key `key` is received:
    1. Iterate the value of `postponeTimeMap` for the watermark's key and update the same input/output
-       WM keys in the `wmState`, postponed by the `postponeTime`
+      WM keys in the `wmState`, postponed by the `postponeTime`
    2. Compute new maximum for each output WM in the `wmState`.
-   3. Remove all _expired_ events in left & right buffers: _Expired_ items are all items with any watermarked 
+   3. Remove all _expired_ events in left & right buffers: _Expired_ items are all items with any watermarked
       timestamp less than the maximum computed in the previous step.
    4. If doing an outer join, emit events removed from the buffer, with `null`s for the other side, if the
       event was never joined.
    5. From the remaining elements in the buffer, compute the minimum time value in each watermark
       timestamp column.
-   6. For each WM key, emit a new watermark as the minimum of value computed in step 5 and of the last received value for 
+   6. For each WM key, emit a new watermark as the minimum of value computed in step 5 and of the last received value for
       that WM key.
 6. If an event is received:
-    1. Store the event in left/right buffer.
-    2. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
+   1. Store the event in left/right buffer.
+   2. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
 
 ### Questions
 
@@ -358,9 +358,44 @@ hence the state would be unbounded, which is not allowed.
 
 ##### Edge cases
 
-There can be a time bound between timestamps on the same input, which we should take into account.
+- There can be a time bound between timestamps on the same input, which we should take into account.
 
 Example: TODO
+
+- Reception of one WM can cause emission of multiple WMs. Example: see the end
+  of the example above.
+
+- A received row might not be late, but still can't possibly join any future
+  rows from the other input. In this case it's not added to the buffers, and
+  it's joined with null row in case of an outer join.
+
+```
+Example1:
+in: l{l.time=0}
+-> leftBuffer=[l{l.time=0}:unused]
+in: r{r.time=0}
+-> rightBuffer=[r{r.time=0}:unused]
+out: j{l.time=0, r.time=0}
+-> leftBuffer=[l{l.time=0}:used]
+-> rightBuffer=[r{r.time=0}:used]
+in: wm(l.time=1)
+-> rightBuffer=[]
+in: r{r.time=0}
+out: j{l.time=0, r.time=0}
+# rightBuffer remains empty
+```
+
+```
+Example2:
+in: r{r.time=0}
+-> rightBuffer=[r{r.time=0}:unused]
+in: wm(l.time=1)
+-> rightBuffer=[]
+out: j{l.time=null, r.time=0}
+in: r{r.time=0}
+out: j{l.time=null, r.time=0}
+# rightBuffer remains empty
+```
 
 #### Memory management
 
