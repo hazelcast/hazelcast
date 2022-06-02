@@ -60,6 +60,7 @@ import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -212,7 +213,7 @@ public final class TestSupport {
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
-    private boolean outputCanOccurEarlier;
+    private boolean outputMustOccurOnTime;
     private final List<ItemWithOrdinal> accumulatedExpectedOutput = new ArrayList<>();
     private Runnable beforeEachRun = () -> { };
 
@@ -341,7 +342,7 @@ public final class TestSupport {
 
         for (int ordinal = 0; ordinal < expectedOutputs.size(); ordinal++) {
             for (Object item : expectedOutputs.get(ordinal)) {
-                inputOutput.add(outItem(ordinal, item));
+                inputOutput.add(out(ordinal, item));
             }
         }
 
@@ -376,11 +377,11 @@ public final class TestSupport {
      *
      * @param inputOutput the input and expected output items
      */
-    public void expectExactOutput(List<ItemWithOrdinal> inputOutput) {
-        this.inputOutput = inputOutput;
+    public void expectExactOutput(ItemWithOrdinal... inputOutput) {
+        this.inputOutput = asList(inputOutput);
 
-        outputOrdinalCount = inputOutput.stream().mapToInt(ItemWithOrdinal::ordinal).max().orElse(0);
-        outputCanOccurEarlier = false;
+        outputOrdinalCount = this.inputOutput.stream().mapToInt(ItemWithOrdinal::ordinal).max().orElse(-1) + 1;
+        outputMustOccurOnTime = true;
         assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
 
         run();
@@ -399,7 +400,7 @@ public final class TestSupport {
         this.assertOutputFn = assertFn;
 
         this.outputOrdinalCount = outputOrdinalCount;
-        outputCanOccurEarlier = true;
+        outputMustOccurOnTime = false;
 
         run();
     }
@@ -621,6 +622,7 @@ public final class TestSupport {
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void runTest(TestMode testMode) throws Exception {
         beforeEachRun.run();
+        accumulatedExpectedOutput.clear();
 
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
             : "Illegal combination: don't do snapshots, but do restore";
@@ -656,12 +658,6 @@ public final class TestSupport {
         // call the process() method
         int ioPosition = 0;
         while (ioPosition < inputOutput.size() || !inbox.isEmpty()) {
-            if (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
-                accumulatedExpectedOutput.add(inputOutput.get(ioPosition));
-                ioPosition++;
-                continue;
-            }
-
             if (inbox.isEmpty()) {
                 inboxOrdinal = inputOutput.get(ioPosition).ordinal();
                 for (int added = 0;
@@ -681,6 +677,14 @@ public final class TestSupport {
                 }
             }
             int lastInboxSize = inbox.size();
+
+            // add to accumulatedExpectedOutput
+            if (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
+                accumulatedExpectedOutput.add(inputOutput.get(ioPosition));
+                ioPosition++;
+                continue;
+            }
+
             String methodName;
             methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor);
             boolean madeProgress = inbox.size() < lastInboxSize ||
@@ -696,8 +700,12 @@ public final class TestSupport {
             }
             outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
             if (inbox.isEmpty()) {
-                if (!outputCanOccurEarlier) {
-                    assertOutputFn.accept(testMode, actualOutputs);
+                if (outputMustOccurOnTime) {
+                    // if there isn't more input to be processed, don't assert the output. The output after
+                    // the last input item can be generated in `complete()`
+                    if (ioPosition < inputOutput.size()) {
+                        assertOutputFn.accept(testMode, actualOutputs);
+                    }
                 }
                 snapshotAndRestore(processor, outbox, actualOutputs, doSnapshots, doRestoreEvery, restoreCount);
             }
@@ -1048,14 +1056,28 @@ public final class TestSupport {
         public Object item() {
             return item;
         }
+
+        @Override
+        public String toString() {
+            return "ordinal=" + ordinal +
+                    ", item=" + item;
+        }
     }
 
-    public static ItemWithOrdinal inItem(int ordinal, Object item) {
+    public static ItemWithOrdinal in(Object item) {
+        return in(0, item);
+    }
+
+    public static ItemWithOrdinal in(int ordinal, Object item) {
         checkNotNegative(ordinal, "ordinal");
         return new ItemWithOrdinal(ordinal, item);
     }
 
-    public static ItemWithOrdinal outItem(int ordinal, Object item) {
+    public static ItemWithOrdinal out(Object item) {
+        return out(0, item);
+    }
+
+    public static ItemWithOrdinal out(int ordinal, Object item) {
         checkNotNegative(ordinal, "ordinal");
         return new ItemWithOrdinal(-ordinal - 1, item);
     }
