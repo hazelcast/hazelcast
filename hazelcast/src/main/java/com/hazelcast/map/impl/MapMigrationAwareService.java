@@ -174,16 +174,17 @@ class MapMigrationAwareService
             depopulateIndexes(event, "commitMigration");
         }
 
+        PartitionContainer partitionContainer
+                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         if (SOURCE == event.getMigrationEndpoint()) {
             // Do not change order of below methods
             removeWbqCountersHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
+            partitionContainer.cleanUp();
         }
 
-        PartitionContainer partitionContainer
-                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
             // in case the record store has been created without
             // loading during migration trigger again if loading
@@ -216,6 +217,9 @@ class MapMigrationAwareService
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
+
+            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+            partitionContainer.cleanUp();
         }
 
         mapServiceContext.nullifyOwnedPartitions();
