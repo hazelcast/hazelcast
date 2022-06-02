@@ -54,10 +54,10 @@ public final class SerialFrameAllocator implements FrameAllocator {
                 frames[k] = frame;
             }
         }
-
-        if (allocateCnt % 10_000_000 == 0) {
-            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
-        }
+//
+//        if (allocateCnt % 10_000_000 == 0) {
+//            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
+//        }
 
         Frame frame = frames[index];
         frames[index] = null;

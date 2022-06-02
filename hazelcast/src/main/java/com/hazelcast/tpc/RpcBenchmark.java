@@ -65,7 +65,7 @@ public class RpcBenchmark {
             Frame frame = new Frame(128);
             frame.writeInt(-1);
             frame.writeLong(requestTotal / concurrency);
-            frame.complete();
+            frame.writeComplete();
             clientSocket.write(frame);
         }
         clientSocket.flush();
