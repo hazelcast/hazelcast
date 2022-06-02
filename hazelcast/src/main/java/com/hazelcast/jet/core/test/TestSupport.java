@@ -376,7 +376,11 @@ public final class TestSupport {
     public void expectExactOutput(ItemWithOrdinal... inputOutput) {
         this.inputOutput = asList(inputOutput);
 
-        outputOrdinalCount = this.inputOutput.stream().mapToInt(ItemWithOrdinal::ordinal).max().orElse(-1) + 1;
+        outputOrdinalCount = this.inputOutput.stream()
+                .filter(ItemWithOrdinal::isOutput)
+                .mapToInt(ItemWithOrdinal::ordinal)
+                .max()
+                .orElse(-1) + 1;
         outputMustOccurOnTime = true;
         assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
 
