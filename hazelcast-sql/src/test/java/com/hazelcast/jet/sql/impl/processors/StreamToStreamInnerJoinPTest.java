@@ -47,6 +47,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.core.test.TestSupport.in;
+import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -71,7 +73,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
-    private Map<Byte, Map<Byte, Long>> postponeTimeMap;
+    private Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
     private JetJoinInfo joinInfo;
 
     @BeforeClass
@@ -81,8 +83,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        //noinspection unchecked
-        postponeTimeMap = new HashMap<>();
         joinInfo = new JetJoinInfo(
                 JoinRelType.INNER,
                 new int[]{0},
@@ -93,9 +93,19 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_alwaysTrueCondition_when_singleWmKeyPerInput_then_successful() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
+    public void test_equalTimes_singleWmKeyPerInput() {
+        // FROM l JOIN r ON l.time=r.time
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
+        joinInfo = new JetJoinInfo(
+                JoinRelType.INNER,
+                new int[]{0},
+                new int[]{0},
+                null,
+                ComparisonPredicate.create(
+                        ColumnExpression.create(0, BIGINT),
+                        ColumnExpression.create(1, BIGINT),
+                        ComparisonMode.EQUALS));
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -109,31 +119,18 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableProgressAssertion()
                 .disableSnapshots()
-                .inputs(asList(
-                        asList(
-                                jetRow(0L),
-                                jetRow(1L),
-                                wm((byte) 0, 1L)
-                        ),
-                        asList(
-                                jetRow(0L),
-                                jetRow(1L),
-                                wm((byte) 1, 1L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                // left <- 0
-                                // right <- 0
-                                jetRow(0L, 0L),
-                                // left <- 1
-                                jetRow(1L, 0L),
-                                // right <- 1
-                                jetRow(0L, 1L),
-                                jetRow(1L, 1L),
-                                wm((byte) 0, 1L),
-                                wm((byte) 1, 1L)
-                        )
+                .expectExactOutput(
+                        in(0, jetRow(0L)),
+                        in(1, jetRow(0L)),
+                        out(jetRow(0L, 0L)),
+                        in(0, jetRow(1L)),
+                        in(1, jetRow(1L)),
+                        out(jetRow(1L, 1L)),
+                        in(wm((byte) 0, 1L)),
+                        out(wm((byte) 0, 0L)),
+                        in(wm((byte) 1, 1L)),
+                        out(wm((byte) 0, 1L)),
+                        out(wm((byte) 1, 1L))
                 );
     }
 
@@ -212,44 +209,26 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableProgressAssertion()
                 .disableSnapshots()
-                .inputs(asList(
-                        asList(
-                                jetRow(12L, 9L),
-                                jetRow(12L, 13L),
-                                wm((byte) 1, 12L),
-                                wm((byte) 0, 13L),
-                                wm((byte) 1, 13L)
-                        ),
-                        asList(
-                                jetRow(9L),
-                                wm((byte) 2, 15L),
-                                wm((byte) 2, 15L),
-                                jetRow(16L),
-                                jetRow(16L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                // left <- (12, 9)
-                                // right <- (9)
-                                jetRow(12L, 9L, 9L),
-                                // left <- (12, 13)
-                                // Note: join condition is not represented in postpone map here.
-                                // We are testing watermark emitting algorithm.
-                                jetRow(12L, 13L, 9L),
-                                // right <- wm(2, 15), 15-4 = 11
-                                wm((byte) 2, 11L),
-                                // left <-  wm(1, 12), 12-1 = 11
-                                wm((byte) 1, 11L),
-                                // right <- wm(2, 15), 15-4 = 11
-                                wm((byte) 0, 12L),
-                                // right <- (16)
-                                jetRow(12L, 13L, 16L),
-                                // left <- (13)
-                                wm((byte) 1, 12L),
-                                jetRow(12L, 13L, 16L)
-
-                        )
+                .expectExactOutput(
+                        in(0, jetRow(12L, 9L)),
+                        in(1, jetRow(9L)),
+                        out(jetRow(12L, 9L, 9L)),
+                        in(0, jetRow(12L, 13L)),
+                        // Note: join condition is not represented in postpone map here.
+                        // We are testing watermark emitting algorithm.
+                        out(jetRow(12L, 13L, 9L)),
+                        in(1, wm((byte) 2, 15L)),
+                        out(wm((byte) 2, 11L)),
+                        in(0, wm((byte) 1, 12L)),
+                        out(wm((byte) 1, 11L)),
+                        out(wm((byte) 0, 12L)),
+                        in(0, wm((byte) 0, 13L)),
+                        in(1, jetRow(16L)),
+                        out(jetRow(12L, 13L, 16L)),
+                        in(0, wm((byte) 1, 13L)),
+                        out(wm((byte) 1, 12L)),
+                        in(1, jetRow(16L)),
+                        out(jetRow(12L, 13L, 16L))
                 );
     }
 

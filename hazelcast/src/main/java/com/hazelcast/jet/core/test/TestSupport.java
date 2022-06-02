@@ -347,7 +347,7 @@ public final class TestSupport {
         }
 
         assertOutput(
-            expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
+                expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
         );
     }
 
@@ -376,7 +376,11 @@ public final class TestSupport {
     public void expectExactOutput(ItemWithOrdinal... inputOutput) {
         this.inputOutput = asList(inputOutput);
 
-        outputOrdinalCount = this.inputOutput.stream().mapToInt(ItemWithOrdinal::ordinal).max().orElse(-1) + 1;
+        outputOrdinalCount = this.inputOutput.stream()
+                .filter(ItemWithOrdinal::isOutput)
+                .mapToInt(ItemWithOrdinal::ordinal)
+                .max()
+                .orElse(-1) + 1;
         outputMustOccurOnTime = true;
         assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
 
@@ -914,7 +918,7 @@ public final class TestSupport {
         if (isCooperative) {
             if (cooperativeTimeout > 0) {
                 assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
+                        toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
                         elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
             }
             // print warning
@@ -1027,13 +1031,13 @@ public final class TestSupport {
      */
     private static String listToString(List<?> list) {
         return list.stream()
-                .map(obj -> {
-                    if (obj instanceof Object[]) {
-                        return Arrays.toString((Object[]) obj);
-                    }
-                    return String.valueOf(obj);
-                })
-                .collect(Collectors.joining("\n"));
+                   .map(obj -> {
+                       if (obj instanceof Object[]) {
+                           return Arrays.toString((Object[]) obj);
+                       }
+                       return String.valueOf(obj);
+                   })
+                   .collect(Collectors.joining("\n"));
     }
 
     public static final class ItemWithOrdinal {

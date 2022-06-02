@@ -28,12 +28,14 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
@@ -53,7 +55,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
-    private final Tuple2<Integer, Integer> columnCount;
+    private final Tuple2<Integer, Integer> columnCounts;
 
     private final Map<Byte, Map<Byte, Long>> wmState = new HashMap<>();
     private final Map<Byte, Long> lastEmittedWm = new HashMap<>();
@@ -69,33 +71,36 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
+    private JetSqlRow emptyLeftRow;
+    private JetSqlRow emptyRightRow;
 
     public StreamToStreamJoinP(
             final JetJoinInfo joinInfo,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
             final Map<Byte, Map<Byte, Long>> postponeTimeMap,
-            final Tuple2<Integer, Integer> columnCount
+            final Tuple2<Integer, Integer> columnCounts
     ) {
         this.joinInfo = joinInfo;
         this.leftTimeExtractors = leftTimeExtractors;
         this.rightTimeExtractors = rightTimeExtractors;
         this.postponeTimeMap = postponeTimeMap;
-        this.columnCount = columnCount;
+        this.columnCounts = columnCounts;
 
-        for (byte key : postponeTimeMap.keySet()) {
-            Map<Byte, Long> wmMapState = new HashMap<>();
-            for (byte i : postponeTimeMap.keySet()) {
-                wmMapState.put(i, Long.MIN_VALUE);
+        for (Entry<Byte, Map<Byte, Long>> en : postponeTimeMap.entrySet()) {
+            for (byte innerKey : en.getValue().keySet()) {
+                wmState.computeIfAbsent(innerKey, x -> new HashMap<>()).put(en.getKey(), Long.MIN_VALUE);
+                lastEmittedWm.put(innerKey, Long.MIN_VALUE);
             }
-            wmState.put(key, wmMapState);
-            lastEmittedWm.put(key, Long.MIN_VALUE);
         }
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         this.evalContext = ExpressionEvalContext.from(context);
+        SerializationService ss = evalContext.getSerializationService();
+        emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
+        emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
     }
 
     @Override
@@ -105,7 +110,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return false;
         }
 
-        //  having side input, traverse opposite buffer
+        // having side input, traverse the opposite buffer
         if (currItem == null) {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
@@ -139,13 +144,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        if (!processPendingOutput()) {
-            return false;
+        if (!pendingOutput.isEmpty()) {
+            return processPendingOutput();
         }
 
-        byte wmKey = watermark.key();
         // if watermark isn't present in watermark state, ignore it.
-        if (!wmState.containsKey(wmKey)) {
+        if (!wmState.containsKey(watermark.key())) {
             return true;
         }
 
@@ -153,37 +157,27 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         applyToWmState(watermark);
 
         // 5.2 & 5.3
-        clearExpiredItemsInBuffer(ordinal);
-
-        if (!processPendingOutput()) {
-            return false;
-        }
+        clearExpiredItemsInBuffer(0);
+        clearExpiredItemsInBuffer(1);
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
 
         // 5.5 : from the remaining elements in the buffer, compute
         // the minimum time value in each watermark timestamp column.
-        Watermark wm = null;
-        long maxInputKeyGroupTime = findMaxInputKeyGroupTime(wmKey);
-        long minItemTime = maxInputKeyGroupTime == Long.MIN_VALUE
-                ? findMinimumBufferTime(ordinal, wmKey)
-                : Math.min(maxInputKeyGroupTime, findMinimumBufferTime(ordinal, wmKey));
-        if (minItemTime != lastEmittedWm.get(wmKey)) {
-            wm = new Watermark(minItemTime, wmKey);
-        }
-
-        // 5.6 For each WM key, emit a new watermark
-        // as the minimum of value computed in step 5
-        // and of the last received value for that WM key.
-        if (wm != null) {
-            if (!tryEmit(wm)) {
-                pendingOutput.add(wm);
-                return false;
-            } else {
-                lastEmittedWm.replace(wm.key(), wm.timestamp());
+        for (Entry<Byte, Map<Byte, Long>> en : wmState.entrySet()) {
+            long maxInputKeyGroupTime = findMaxInputKeyGroupTime(en.getValue().values());
+            long minimumBufferTime = findMinimumBufferTime(ordinal, watermark.key());
+            long newWmTime = Math.min(maxInputKeyGroupTime, minimumBufferTime);
+            // 5.6 For each WM key, emit a new watermark
+            // as the minimum of value computed in step 5
+            // and of the last received value for that WM key.
+            if (newWmTime > lastEmittedWm.get(en.getKey())) {
+                pendingOutput.add(new Watermark(newWmTime, en.getKey()));
+                lastEmittedWm.put(en.getKey(), newWmTime);
             }
         }
-        return true;
+
+        return processPendingOutput();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -218,10 +212,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return min;
     }
 
-    private long findMaxInputKeyGroupTime(byte group) {
+    private long findMaxInputKeyGroupTime(Collection<Long> values) {
         long max = Long.MIN_VALUE;
-        for (Map<Byte, Long> map : wmState.values()) {
-            max = Math.max(max, map.get(group));
+        for (long value : values) {
+            max = Math.max(max, value);
         }
         return max;
     }
@@ -239,14 +233,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         int i = 0;
         for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
             extractors[i] = entry.getValue();
-            limits[i] = findMaxInputKeyGroupTime(entry.getKey());
+            limits[i] = findMaxInputKeyGroupTime(wmState.get(entry.getKey()).values());
             ++i;
         }
 
         // 5.3 Remove all expired events in left & right buffers
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
-                if (extractors[idx].applyAsLong(row) <= limits[idx]) {
+                if (extractors[idx].applyAsLong(row) < limits[idx]) {
                     if (!joinInfo.isInner() && unusedEventsTracker[ordinal].contains(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
@@ -265,14 +259,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     // If current join type is LEFT/RIGHT and a row don't have a matching row on the other side
     // we should to produce input row with null-filled opposite side.
-    @SuppressWarnings("ConstantConditions")
     private JetSqlRow composeRowWithNulls(JetSqlRow row, int ordinal) {
         JetSqlRow joinedRow = null;
-        SerializationService ss = row.getSerializationService();
         if (ordinal == 1 && joinInfo.isLeftOuter()) {
             // fill LEFT side with nulls
             joinedRow = ExpressionUtil.join(
-                    new JetSqlRow(ss, new Object[columnCount.f0()]),
+                    emptyLeftRow,
                     row,
                     joinInfo.condition(),
                     evalContext
@@ -281,7 +273,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // fill RIGHT side with nulls
             joinedRow = ExpressionUtil.join(
                     row,
-                    new JetSqlRow(ss, new Object[columnCount.f1()]),
+                    emptyRightRow,
                     joinInfo.condition(),
                     evalContext
             );
