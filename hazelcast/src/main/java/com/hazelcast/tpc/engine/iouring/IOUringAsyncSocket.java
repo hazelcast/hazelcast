@@ -76,7 +76,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     // isolated state.
     public IovArray iovArray;
     public final IOVector ioVector = new IOVector();
-    private IOUringReadHandler readHandler;
+    private IOUringAsyncReadHandler readHandler;
     private final EventloopHandler eventloopHandler = new EventloopHandler();
 
     private IOUringAsyncSocket() {
@@ -112,7 +112,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     @Override
     public void setReadHandler(ReadHandler readHandler) {
-        this.readHandler = (IOUringReadHandler) checkNotNull(readHandler);
+        this.readHandler = (IOUringAsyncReadHandler) checkNotNull(readHandler);
         this.readHandler.init(this);
     }
 

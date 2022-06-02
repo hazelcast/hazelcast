@@ -20,7 +20,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
-import com.hazelcast.tpc.engine.iouring.IOUringReadHandler;
+import com.hazelcast.tpc.engine.iouring.IOUringAsyncReadHandler;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
 
-public class RequestIOUringReadHandler extends IOUringReadHandler {
+public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
     private Frame inboundFrame;
     public FrameAllocator requestFrameAllocator;
     public FrameAllocator remoteResponseFrameAllocator;

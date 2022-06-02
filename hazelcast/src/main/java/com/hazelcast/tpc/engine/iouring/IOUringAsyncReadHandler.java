@@ -19,7 +19,7 @@ package com.hazelcast.tpc.engine.iouring;
 import com.hazelcast.tpc.engine.ReadHandler;
 import io.netty.buffer.ByteBuf;
 
-public abstract class IOUringReadHandler implements ReadHandler {
+public abstract class IOUringAsyncReadHandler implements ReadHandler {
 
     protected IOUringAsyncSocket asyncSocket;
 

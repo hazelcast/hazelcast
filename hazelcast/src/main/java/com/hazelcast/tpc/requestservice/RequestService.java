@@ -47,7 +47,7 @@ import com.hazelcast.tpc.engine.epoll.EpollAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncServerSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
-import com.hazelcast.tpc.engine.iouring.IOUringReadHandler;
+import com.hazelcast.tpc.engine.iouring.IOUringAsyncReadHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -228,7 +228,7 @@ public class RequestService {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             IOUringEventloop eventloop = (IOUringEventloop) engine.eventloop(k);
             try {
-                Supplier<IOUringReadHandler> readHandlerSupplier = () -> {
+                Supplier<IOUringAsyncReadHandler> readHandlerSupplier = () -> {
                     RequestIOUringReadHandler readHandler = new RequestIOUringReadHandler();
                     readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
                     readHandler.responseHandler = responseHandler;
