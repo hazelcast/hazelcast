@@ -711,8 +711,6 @@ hazelcast:
         trustStoreType: PKCS12
     socket-interceptor:
       enabled: false
-    symmetric-encryption:
-      enabled: false
     member-address-provider:
       enabled: false
       class-name: com.hazelcast.MemberAddressProviderImpl
