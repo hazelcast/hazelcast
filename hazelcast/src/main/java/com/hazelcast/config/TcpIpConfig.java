@@ -121,7 +121,6 @@ public class TcpIpConfig {
         this.members.clear();
         List<String> tempList = new ArrayList<>();
         for (String member : members) {
-            // TODO [ufuk]: consider this check throwing exception after adding dynamic update support
             String memberText = checkHasText(member, "member must contain text");
             tempList.addAll(Arrays.asList(MEMBER_TEXT_SPLIT_PATTERN.split(memberText.trim())));
         }

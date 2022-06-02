@@ -56,6 +56,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -649,6 +650,21 @@ public class DynamicConfigYamlGenerator {
         }
 
         parent.put("wan-replication", child);
+    }
+
+    public static void tcpIpConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        TcpIpConfig tcpIpConfig;
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
+        } else {
+            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", tcpIpConfig.isEnabled());
+        child.put("connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
+        addNonNullToMap(child, "member-list", tcpIpConfig.getMembers());
+        addNonNullToMap(child, "required-member", tcpIpConfig.getRequiredMember());
+        parent.put("tcp-ip", child);
     }
 
     private static Map<String, Object> getWanConsumerConfigsAsMap(WanConsumerConfig wanConsumerConfig) {

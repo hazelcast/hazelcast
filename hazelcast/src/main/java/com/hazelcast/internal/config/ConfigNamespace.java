@@ -62,10 +62,10 @@ public class ConfigNamespace {
 
     @Override
     public String toString() {
-        return "ConfigNamespace{" +
-                "configSection=" + configSection +
-                ", configName='" + configName + '\'' +
-                '}';
+        return "ConfigNamespace{"
+                + "configSection=" + configSection
+                + ", configName='" + configName + '\''
+                + '}';
     }
 
     @Override

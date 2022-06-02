@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-
 /**
  * Operation to update the member list in the tcp-ip join config at runtime.
  */
@@ -47,12 +45,20 @@ public class UpdateTcpIpMemberListOperation extends AbstractManagementOperation 
     @Override
     public void run() throws Exception {
         Config config = ((NodeEngineImpl) getNodeEngine()).getNode().getConfig();
-        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
+        Object activeNetworkConfig;
+        TcpIpConfig tcpIpConfig;
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            activeNetworkConfig = config.getAdvancedNetworkConfig();
+            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
+        } else {
+            activeNetworkConfig = config.getNetworkConfig();
+            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        }
         if (tcpIpConfig.isEnabled()) {
             tcpIpConfig.setMembers(members);
             ConfigurationService configurationService
                     = getNodeEngine().getService(ClusterWideConfigurationService.SERVICE_NAME);
-            configurationService.persist(tcpIpConfig);
+            configurationService.persist(activeNetworkConfig);
         } else {
             throw new IllegalStateException("TCP-IP join config is not enabled");
         }
