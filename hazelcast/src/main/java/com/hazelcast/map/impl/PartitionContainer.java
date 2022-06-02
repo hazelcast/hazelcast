@@ -251,7 +251,6 @@ public class PartitionContainer {
     // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
-
     Indexes getIndexes(String name) {
         Indexes ixs = indexes.get(name);
         if (ixs == null) {
