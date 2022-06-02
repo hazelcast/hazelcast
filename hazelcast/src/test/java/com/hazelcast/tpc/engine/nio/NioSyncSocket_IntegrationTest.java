@@ -70,6 +70,7 @@ public class NioSyncSocket_IntegrationTest {
 
     private void createClient(SocketAddress serverAddress) {
         clientSocket = NioSyncSocket.open();
+        clientSocket.setTcpNoDelay(true);
         clientSocket.setReadHandler(new NioSyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
