@@ -224,7 +224,7 @@ class MapMigrationAwareService
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            final MapContainer mapContainer = recordStore.getMapContainer();
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex() || indexes.isGlobal()) {
@@ -286,7 +286,7 @@ class MapMigrationAwareService
 
         PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            MapContainer mapContainer = recordStore.getMapContainer();
 
             Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             indexes.createIndexesFromRecordedDefinitions();
@@ -339,7 +339,7 @@ class MapMigrationAwareService
 
         PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            MapContainer mapContainer = recordStore.getMapContainer();
             Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with

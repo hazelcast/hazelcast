@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -38,26 +36,19 @@ import java.util.List;
  */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     private final RexNode wmField;
-    private final ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider;
 
     protected DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            RexNode wmField,
-            ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider
+            RexNode wmField
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
-        this.allowedLagProvider = allowedLagProvider;
     }
 
     public RexNode wmField() {
         return wmField;
-    }
-
-    public ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider() {
-        return allowedLagProvider;
     }
 
     @Override
@@ -67,7 +58,7 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField, allowedLagProvider);
+        return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
     }
 
     @Override

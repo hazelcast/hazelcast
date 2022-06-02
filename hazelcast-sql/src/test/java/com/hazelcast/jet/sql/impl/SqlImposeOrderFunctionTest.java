@@ -268,18 +268,18 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     public void test_lateItemsDropping() {
         String name = createTable(
                 row(timestampTz(28), "Alice"),
-                row(timestampTz(29), "Bob"),
+                row(timestampTz(27), "Bob"),
                 row(timestampTz(30), "Caitlyn"),
                 row(timestampTz(30), "Dorian"),
                 row(timestampTz(31), "Elijah"),
-                row(timestampTz(5), "Zedd")
+                row(timestampTz(29), "Zedd")
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
                 asList(
                         new Row(timestampTz(28), "Alice"),
-                        new Row(timestampTz(29), "Bob"),
+                        new Row(timestampTz(27), "Bob"),
                         new Row(timestampTz(30), "Caitlyn"),
                         new Row(timestampTz(30), "Dorian"),
                         new Row(timestampTz(31), "Elijah")

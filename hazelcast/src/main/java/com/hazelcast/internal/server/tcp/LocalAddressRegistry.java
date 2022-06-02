@@ -119,11 +119,34 @@ public class LocalAddressRegistry {
                     linkedAddressesRegistrationCountPair = new Pair(linkedAddresses, new AtomicInteger(1));
                     // remove previous addresses from the addressToUuid map
                     previousAddresses.getAllAddresses().forEach(address -> addressToUuid.remove(address, uuid));
+                    logger.warning(previousAddresses + " previously registered for the instance uuid=" + instanceUuid
+                            + " are overridden by a new distinct set of addresses: " + linkedAddresses
+                            + ". We expect to see this log only when persistence is enabled"
+                            + " where a new member restarts with the same member uuid by picking up"
+                            + " different addresses for itself AND where some stale connections to the"
+                            + " old shutdown member having the same uuid, is not closed yet on this"
+                            + " member.");
                 }
             }
-            linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, instanceUuid));
-            if (logger.isFinestEnabled()) {
-                logger.finest(linkedAddresses + " registered for the instance uuid=" + instanceUuid
+            linkedAddresses.getAllAddresses().forEach(address -> {
+                if (addressToUuid.containsKey(address)) {
+                    logger.warning("Address: " + address + " is previously registered with the member uuid: "
+                            + addressToUuid.get(address) + " to our addressToMemberUuid map, now registered with"
+                            + "/overridden by a new member uuid: " + instanceUuid + ". In the case, the overridden"
+                            + " member uuid belongs to an old member that is recently restarted, this override is"
+                            + " expected and it does not create any harm as it will delete the entry of old stale"
+                            + " connections. But, if you use the intersecting set of addresses in the two different"
+                            + " members in your cluster topology, please use the different set of addresses in the"
+                            + " connected members. Tip: We can encounter members using these same addresses in WAN"
+                            + " setups including clusters that belong to two private networks. If you want only"
+                            + " the WAN addresses of the target cluster to be registered, use advanced networking"
+                            + " in the both clusters, configure your wan server sockets and your wan publishers with"
+                            + " some wan endpoint config.");
+                }
+                addressToUuid.put(address, instanceUuid);
+            });
+            if (logger.isFineEnabled()) {
+                logger.fine(linkedAddresses + " registered for the instance uuid=" + instanceUuid
                         + " currently all registered addresses for this instance uuid: "
                         + linkedAddressesRegistrationCountPair.getAddresses());
             }

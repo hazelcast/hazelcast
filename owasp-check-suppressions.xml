@@ -238,6 +238,7 @@
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
        <cve>CVE-2020-9488</cve>
+       <cve>CVE-2020-9493</cve>
        <cve>CVE-2022-23307</cve>
     </suppress>
 </suppressions>

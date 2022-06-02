@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
-import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -46,21 +45,17 @@ public class LateItemsDropP extends AbstractProcessor {
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
     private final Expression<?> timestampExpression;
-    private long allowedLag;
-    private final ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider;
 
     private ExpressionEvalContext evalContext;
     private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(Expression<?> timestampExpression, ToLongFunctionEx<ExpressionEvalContext> allowedLagProvider) {
+    public LateItemsDropP(Expression<?> timestampExpression) {
         this.timestampExpression = timestampExpression;
-        this.allowedLagProvider = allowedLagProvider;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         this.evalContext = ExpressionEvalContext.from(context);
-        this.allowedLag = allowedLagProvider.applyAsLong(evalContext);
         super.init(context);
     }
 
@@ -68,7 +63,7 @@ public class LateItemsDropP extends AbstractProcessor {
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Row row = ((JetSqlRow) item).getRow();
         long timestamp = WindowUtils.extractMillis(timestampExpression.eval(row, evalContext));
-        if (timestamp + allowedLag < currentWm) {
+        if (timestamp < currentWm) {
             logLateEvent(getLogger(), currentWm, item);
             lateEventsDropped.inc();
             return true;

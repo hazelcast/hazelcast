@@ -96,7 +96,7 @@
         <classgraph.version>4.8.139</classgraph.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.1</hadoop.version>
+        <hadoop.version>3.3.3</hadoop.version>
         <jackson.version>2.12.6</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
@@ -114,6 +114,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.2</parquet.version>
         <picocli.version>4.4.0</picocli.version>
+        <postgresql.version>42.2.25</postgresql.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.13</scala.version>
@@ -140,7 +141,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.15.3</testcontainers.version>
+        <testcontainers.version>1.17.1</testcontainers.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -1541,6 +1542,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client-bom</artifactId>
+                <version>1.41.4</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -1549,8 +1557,12 @@
                 <exclusions>
                     <!-- The following dependencies are not needed for our use of Hadoop -->
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.eclipse.jetty</groupId>
@@ -1684,9 +1696,9 @@
                 <version>${mysql.connector.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.htrace</groupId>
-                <artifactId>htrace-core4</artifactId>
-                <version>4.2.0-incubating.hazelcast-2</version>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
@@ -1703,11 +1715,6 @@
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
                 <version>1.7.4</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.http-client</groupId>
-                <artifactId>google-http-client</artifactId>
-                <version>1.36.0</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
@@ -1803,11 +1810,6 @@
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
               <version>2.0.48.Final</version>
-            </dependency>
-            <dependency>
-              <groupId>com.google.http-client</groupId>
-              <artifactId>google-http-client-jackson2</artifactId>
-              <version>1.40.1</version>
             </dependency>
             <dependency>
               <groupId>com.google.api-client</groupId>

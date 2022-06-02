@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.google.common.collect.Iterables;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
@@ -75,7 +74,6 @@ final class WatermarkRules {
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(scan.getInputs(), OptUtils::toLogicalInput)),
                     toEventTimePolicyProvider(scan),
-                    lagTimeProvider(scan),
                     wmIndex);
 
             if (wmIndex < 0) {
@@ -98,8 +96,7 @@ final class WatermarkRules {
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    watermarkedField.getValue(),
-                    wmRel.lagTimeProvider()
+                    watermarkedField.getValue()
             );
             call.transformTo(dropLateItemsRel);
         }
@@ -120,11 +117,6 @@ final class WatermarkRules {
                         0,
                         EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
             };
-        }
-
-        private ToLongFunctionEx<ExpressionEvalContext> lagTimeProvider(LogicalTableFunctionScan function) {
-            Expression<?> lagExpression = lagExpression(function);
-            return context -> WindowUtils.extractMillis(lagExpression, context);
         }
 
         private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {

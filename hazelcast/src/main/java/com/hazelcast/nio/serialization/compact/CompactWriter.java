@@ -91,12 +91,12 @@ public interface CompactWriter {
     void writeFloat64(@Nonnull String fieldName, double value);
 
     /**
-     * Writes an UTF-8 encoded string.
+     * Writes a UTF-8 encoded string.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeString(@Nonnull String fieldName, String value);
+    void writeString(@Nonnull String fieldName, @Nullable String value);
 
     /**
      * Writes an arbitrary precision and scale floating point number.
@@ -107,7 +107,7 @@ public interface CompactWriter {
     void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
     /**
-     * Writes a time consisting of hour, minute, second, and nano seconds.
+     * Writes a time consisting of hour, minute, second, and nanoseconds.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
@@ -131,7 +131,7 @@ public interface CompactWriter {
     void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
     /**
-     * Reads a timestamp with timezone consisting of date, time and timezone offset.
+     * Writes a timestamp with timezone consisting of date, time and timezone offset.
      *
      * @param fieldName name of the field.
      * @param value     to be written.

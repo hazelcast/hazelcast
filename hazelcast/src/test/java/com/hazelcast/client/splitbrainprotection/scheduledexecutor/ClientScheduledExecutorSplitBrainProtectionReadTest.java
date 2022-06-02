@@ -50,6 +50,8 @@ public class ClientScheduledExecutorSplitBrainProtectionReadTest extends Schedul
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

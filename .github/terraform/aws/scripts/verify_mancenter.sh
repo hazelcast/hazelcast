@@ -1,13 +1,13 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 EXPECTED_SIZE=$1
 
 verify_hazelcast_cluster_size() {
     EXPECTED_SIZE=$1
     for i in `seq 1 6`; do
-        local MEMBER_COUNT=$(cat ~/logs/mancenter.stdout.log | grep -E " Started communication with (a new )?member" | wc -l) 
+        local MEMBER_COUNT=$(grep -cE " Started communication with (a new )?member" ~/logs/mancenter.stdout.log)
 
         if [ "$MEMBER_COUNT" == "$EXPECTED_SIZE" ] ; then
             echo "Hazelcast cluster size equal to ${EXPECTED_SIZE}"

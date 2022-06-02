@@ -22,9 +22,10 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
+
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 
 /**
  * The special interface that provides a utility method to perform a recursive operand type inference before
@@ -62,7 +63,7 @@ public interface HazelcastOperandTypeCheckerAware {
         for (int i = 0; i < binding.getOperandCount(); i++) {
             RelDataType operandType = binding.getOperandType(i);
 
-            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
+            if (isNullOrUnknown(operandType.getSqlTypeName())) {
                 resolveOperands = true;
 
                 break;

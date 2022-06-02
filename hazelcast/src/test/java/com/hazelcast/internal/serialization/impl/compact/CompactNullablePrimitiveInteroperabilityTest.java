@@ -77,7 +77,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsNullable(serializedRecord);
     }
 
@@ -125,7 +125,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsPrimitive(serializedRecord);
     }
 
@@ -171,7 +171,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         GenericRecord serializedRecord = serializationService.toObject(data);
 
-        assertTrue(serializedRecord instanceof CompactInternalGenericRecord);
+        assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadNullAsPrimitiveThrowsException(serializedRecord);
     }
 
