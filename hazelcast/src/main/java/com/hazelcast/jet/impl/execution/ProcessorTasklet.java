@@ -24,7 +24,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.collection.FixedCapacityArrayList;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
@@ -47,9 +50,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
@@ -94,8 +97,6 @@ import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.sum;
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toCollection;
 
 public class ProcessorTasklet implements Tasklet {
 
@@ -110,7 +111,7 @@ public class ProcessorTasklet implements Tasklet {
     private final BitSet receivedBarriers; // indicates if current snapshot is received on the ordinal
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
-    private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private final Queue<InboundEdgeStream[]> instreamGroupQueue;
     private final WatermarkCoalescer watermarkCoalescer;
     private final ILogger logger;
     private final SerializationService serializationService;
@@ -169,10 +170,7 @@ public class ProcessorTasklet implements Tasklet {
         this.processor = processor;
         this.numActiveOrdinals = instreams.size();
         this.instreams = instreams;
-        this.instreamGroupQueue = new ArrayDeque<>(instreams.stream()
-                .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new,
-                        toCollection(ArrayList<InboundEdgeStream>::new)))
-                .values());
+        this.instreamGroupQueue = createInstreamGroupQueue(instreams);
         this.outstreams = outstreams.stream()
                 .sorted(comparing(OutboundEdgeStream::ordinal))
                 .toArray(OutboundEdgeStream[]::new);
@@ -193,6 +191,31 @@ public class ProcessorTasklet implements Tasklet {
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(instreams.size());
+    }
+
+    private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
+        Int2ObjectHashMap<MutableInteger> priorityCounters = new Int2ObjectHashMap<>();
+        for (InboundEdgeStream instream : instreams) {
+            priorityCounters.computeIfAbsent(instream.priority(), priority -> new MutableInteger()).getAndInc();
+        }
+
+        Map<Integer, FixedCapacityArrayList<InboundEdgeStream>> priorityToStreams = new TreeMap<>();
+        for (Map.Entry<Integer, MutableInteger> priorityWithCounter : priorityCounters.entrySet()) {
+            FixedCapacityArrayList<InboundEdgeStream> streams =
+                    new FixedCapacityArrayList<>(InboundEdgeStream.class, priorityWithCounter.getValue().value);
+            priorityToStreams.put(priorityWithCounter.getKey(), streams);
+        }
+
+        for (InboundEdgeStream instream : instreams) {
+            priorityToStreams.get(instream.priority()).add(instream);
+        }
+
+        Queue<InboundEdgeStream[]> queue = new ArrayDeque<>(priorityToStreams.size());
+        for (FixedCapacityArrayList<InboundEdgeStream> streams : priorityToStreams.values()) {
+            queue.add(streams.asArray());
+        }
+
+        return queue;
     }
 
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
@@ -504,12 +527,15 @@ public class ProcessorTasklet implements Tasklet {
 
         // We need to collect metrics before draining the queues into Inbox,
         // otherwise they would appear empty even for slow processors
-        queuesCapacity.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::capacities));
-        queuesSize.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::sizes));
+        queuesCapacity.set(instreamCursor == null ? 0 :
+                sum(instreamCursor.getArray(), InboundEdgeStream::capacities, instreamCursor.getSize()));
+        queuesSize.set(instreamCursor == null ? 0 :
+                sum(instreamCursor.getArray(), InboundEdgeStream::sizes, instreamCursor.getSize()));
 
         if (instreamCursor == null) {
             return;
         }
+
         final InboundEdgeStream first = instreamCursor.value();
         ProgressState result;
         do {

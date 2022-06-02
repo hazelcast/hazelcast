@@ -207,7 +207,7 @@ public class TaskletExecutionService {
             }
         }
         for (int i = 0; i < trackersByThread.length; i++) {
-            cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
+            cooperativeWorkers[i].trackers.addAll(0, trackersByThread[i]);
             cooperativeWorkers[i].newTaskletSemaphore.release();
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
@@ -368,6 +368,9 @@ public class TaskletExecutionService {
                 // garbage-free iteration -- relies on implementation in COWArrayList that doesn't use an Iterator
                 trackers.forEach(runTasklet);
                 iterationCount.inc();
+                if (!progressTracker.isMadeProgress() && newTaskletSemaphore.drainPermits() > 0) {
+                    progressTracker.madeProgress();
+                }
                 if (progressTracker.isMadeProgress()) {
                     idleCount = 0;
                 } else {

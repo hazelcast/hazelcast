@@ -822,8 +822,7 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
 
     /**
-     * Enables collecting debug metrics. Debug metrics are sent to the
-     * diagnostics only.
+     * Enables collecting debug metrics.
      */
     public static final HazelcastProperty METRICS_DEBUG
             = new HazelcastProperty("hazelcast.metrics.debug.enabled");

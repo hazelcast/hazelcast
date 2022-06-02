@@ -63,9 +63,16 @@ public class AddMapConfigMessageTask
             config.setEntryListenerConfigs(
                     (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
-        config.setMerkleTreeConfig(parameters.merkleTreeConfig);
-        config.setEventJournalConfig(parameters.eventJournalConfig);
-        config.setHotRestartConfig(parameters.hotRestartConfig);
+        if (parameters.merkleTreeConfig != null) {
+            config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        }
+        if (parameters.eventJournalConfig != null) {
+            config.setEventJournalConfig(parameters.eventJournalConfig);
+        }
+        if (parameters.hotRestartConfig != null) {
+            config.setHotRestartConfig(parameters.hotRestartConfig);
+        }
+
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setAttributeConfigs(parameters.attributeConfigs);
         config.setReadBackupData(parameters.readBackupData);
@@ -77,8 +84,12 @@ public class AddMapConfigMessageTask
         }
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
-        config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        if (parameters.evictionConfig != null) {
+            config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
+        }
+        if (parameters.mergePolicy != null) {
+            config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        }
         if (parameters.nearCacheConfig != null) {
             config.setNearCacheConfig(parameters.nearCacheConfig.asNearCacheConfig(serializationService));
         }

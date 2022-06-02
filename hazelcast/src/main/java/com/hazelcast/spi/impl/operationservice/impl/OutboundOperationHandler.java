@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -42,6 +43,13 @@ public class OutboundOperationHandler {
     }
 
     public boolean send(Operation op, Address target) {
+        return send(op, target, node.getServer().getConnectionManager(MEMBER));
+    }
+
+    public boolean send(Operation op, Address target, ServerConnectionManager cm) {
+        if (cm == null) {
+            cm = node.getServer().getConnectionManager(MEMBER);
+        }
         checkNotNull(target, "Target is required!");
 
         if (thisAddress.equals(target)) {
@@ -49,9 +57,7 @@ public class OutboundOperationHandler {
         }
 
         int streamId = op.getPartitionId();
-        return node.getServer()
-                .getConnectionManager(MEMBER)
-                .transmit(toPacket(op), target, streamId);
+        return cm.transmit(toPacket(op), target, streamId);
     }
 
     public boolean send(Operation op, ServerConnection connection) {
