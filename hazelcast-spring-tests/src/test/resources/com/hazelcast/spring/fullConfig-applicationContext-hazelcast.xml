@@ -177,16 +177,24 @@
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
 
-
-                <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
-                        factory-implementation="dummySSLContextFactory"/>
+                <hz:ssl enabled="false" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+                    <hz:properties>
+                        <hz:property name="protocol">TLS</hz:property>
+                        <hz:property name="mutualAuthentication">REQUIRED</hz:property>
+                        <hz:property name="keyStore">/opt/hazelcast.keystore</hz:property>
+                        <hz:property name="keyStorePassword">secret.97531</hz:property>
+                        <hz:property name="keyStoreType">PKCS12</hz:property>
+                        <hz:property name="trustStore">/opt/hazelcast.truststore</hz:property>
+                        <hz:property name="trustStorePassword">changeit</hz:property>
+                        <hz:property name="trustStoreType">PKCS12</hz:property>
+                    </hz:properties>
+                </hz:ssl>
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
                                        implementation="dummySocketInterceptor"/>
-                <hz:symmetric-encryption enabled="false"
-                                         algorithm="PBEWithMD5AndDES"
-                                         salt="thesalt"
-                                         password="thepass"
-                                         iteration-count="19"/>
+                <!--
+                The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
+                 -->
+                <hz:symmetric-encryption enabled="false"/>
                 <hz:reuse-address>true</hz:reuse-address>
                 <hz:member-address-provider enabled="false" class-name="com.hazelcast.spring.DummyMemberAddressProvider">
                     <hz:properties>
