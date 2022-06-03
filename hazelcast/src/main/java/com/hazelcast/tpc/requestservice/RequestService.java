@@ -420,7 +420,7 @@ public class RequestService {
         if (address.equals(thisAddress)) {
             engine.eventloopForHash(partitionId).execute(requestList);
         } else {
-            SyncSocket socket = null;getConnection(address).sockets[partitionIdToChannel[partitionId]];
+            SyncSocket socket = null;//getConnection(address).sockets[partitionIdToChannel[partitionId]];
             RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
 
             long c = requests.nextCallId(requestList.size());
@@ -434,7 +434,7 @@ public class RequestService {
                 k--;
             }
 
-            socket.writeAll(requestList);
+            //socket.writeAll(requestList);
             socket.flush();
         }
     }

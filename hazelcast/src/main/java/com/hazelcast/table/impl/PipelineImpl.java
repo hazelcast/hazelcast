@@ -63,7 +63,7 @@ public final class PipelineImpl implements Pipeline {
                 .writeComplete();
 
 
-        requestService.invokeOnPartition();
+        //requestService.invokeOnPartition();
     }
 
     @Override
@@ -72,14 +72,14 @@ public final class PipelineImpl implements Pipeline {
     }
 
     public void await(){
-        for(Future<Frame> f: futures){
-            try {
-                Frame frame = f.get(requestService.getRequestTimeoutMs(), MILLISECONDS);
-                frame.release();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+//        for(Future<Frame> f: futures){
+//            try {
+//                Frame frame = f.get(requestService.getRequestTimeoutMs(), MILLISECONDS);
+//                frame.release();
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
     }
 
     public int getPartitionId() {
@@ -87,6 +87,6 @@ public final class PipelineImpl implements Pipeline {
     }
 
     public List<Frame> getRequests() {
-        return requests;
+        return null;//requests;
     }
 }

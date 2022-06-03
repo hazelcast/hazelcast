@@ -41,6 +41,9 @@ public abstract class Actor implements EventloopTask {
     }
 
     public void activate(Eventloop eventloop) {
+        if(this.eventloop!=null){
+            throw new IllegalStateException("Can't activate an already activated actor");
+        }
         this.eventloop = eventloop;
     }
 
