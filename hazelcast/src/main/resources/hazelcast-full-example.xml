@@ -544,18 +544,15 @@
         * <ssl>:
         Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
         Enterprise.
-        The default configuration uses JSSE engine available in Java.
+        The default configuration usually uses JSSE engine available in Java.
+        Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines. E.g.
         <ssl enabled="true">
-            <factory-class-name>
-                com.hazelcast.nio.ssl.BasicSSLContextFactory
-            </factory-class-name>
+            <factory-class-name>com.hazelcast.nio.ssl.OpenSSLEngineFactory</factory-class-name>
             <properties>
-                <property name="keyStore">keyStore</property>
-                <property name="keyStorePassword">keyStorePassword</property>
-                <property name="keyManagerAlgorithm">SunX509</property>
-                <property name="trustManagerAlgorithm">SunX509</property>
-                <property name="protocol">TLS</property>
-                <property name="mutualAuthentication">REQUIRED</property>
+                <property name="protocol">TLSv1.2</property>
+                <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
             </properties>
         </ssl>
         * <socket-interceptor>:
