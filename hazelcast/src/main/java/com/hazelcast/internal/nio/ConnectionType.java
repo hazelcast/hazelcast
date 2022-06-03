@@ -82,6 +82,11 @@ public final class ConnectionType {
      */
     public static final String MC_JAVA_CLIENT = "MCJVM";
 
+    /**
+     * Command Line client Connection Type
+     */
+    public static final String CL_CLIENT = "CLC";
+
     private static final Map<String, Integer> ID_MAP = new HashMap<>();
 
     static {
