@@ -80,8 +80,8 @@ public class IOUringAsyncSocket_IntegrationTest {
     @NotNull
     private IOUringAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
         IOUringAsyncSocket clientSocket = IOUringAsyncSocket.open();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new IOUringAsyncReadHandler() {
+        clientSocket.tcpNoDelay(true);
+        clientSocket.readHandler(new IOUringAsyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -112,12 +112,12 @@ public class IOUringAsyncSocket_IntegrationTest {
 
     private IOUringAsyncServerSocket newServer(SocketAddress serverAddress) {
         IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(serverEventloop);
-        serverSocket.setReuseAddress(true);
+        serverSocket.reuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
-            socket.setTcpNoDelay(true);
-            socket.setReadHandler(new IOUringAsyncReadHandler() {
+            socket.tcpNoDelay(true);
+            socket.readHandler(new IOUringAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

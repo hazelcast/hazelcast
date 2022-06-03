@@ -71,7 +71,7 @@ public final class OpScheduler implements Scheduler {
     }
 
     @Override
-    public void setEventloop(Eventloop eventloop) {
+    public void eventloop(Eventloop eventloop) {
         this.eventloop = eventloop;
     }
 

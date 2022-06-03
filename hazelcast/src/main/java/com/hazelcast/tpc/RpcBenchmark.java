@@ -89,8 +89,8 @@ public class RpcBenchmark {
         clientEventLoop.start();
 
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new NioAsyncReadHandler() {
+        clientSocket.tcpNoDelay(true);
+        clientSocket.readHandler(new NioAsyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -132,8 +132,8 @@ public class RpcBenchmark {
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
-            socket.setTcpNoDelay(true);
-            socket.setReadHandler(new NioAsyncReadHandler() {
+            socket.tcpNoDelay(true);
+            socket.readHandler(new NioAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

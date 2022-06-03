@@ -66,7 +66,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public IOUringEventloop getEventloop() {
+    public IOUringEventloop eventloop() {
         return eventloop;
     }
 
@@ -112,7 +112,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void setReuseAddress(boolean reuseAddress) {
+    public void reuseAddress(boolean reuseAddress) {
         try {
             serverSocket.setReuseAddress(reuseAddress);
         } catch (IOException e) {
@@ -121,7 +121,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void setReceiveBufferSize(int size) {
+    public void receiveBufferSize(int size) {
         try {
             serverSocket.setReceiveBufferSize(size);
         } catch (IOException e) {
@@ -130,7 +130,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public int getReceiveBufferSize() {
+    public int receiveBufferSize() {
         try {
             return serverSocket.getReceiveBufferSize();
         } catch (IOException e) {
@@ -171,7 +171,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         eventloop.execute(() -> {
             this.consumer = consumer;
             sq_addAccept();
-            System.out.println("ServerSocket listening at " + getLocalAddress());
+            System.out.println("ServerSocket listening at " + localAddress());
         });
     }
 

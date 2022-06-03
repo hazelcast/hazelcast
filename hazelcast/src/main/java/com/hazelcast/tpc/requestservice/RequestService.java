@@ -29,6 +29,7 @@ import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopType;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.Scheduler;
+import com.hazelcast.tpc.engine.SyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
@@ -191,7 +192,7 @@ public class RequestService {
 
             Supplier<NioAsyncReadHandler> readHandlerSupplier = () -> {
                 RequestNioReadHandler readHandler = new RequestNioReadHandler();
-                readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                 readHandler.responseHandler = responseHandler;
                 readHandler.requestFrameAllocator = poolRequests
                         ? new SerialFrameAllocator(128, true)
@@ -206,16 +207,16 @@ public class RequestService {
             try {
                 int port = toPort(thisAddress, k);
                 NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
-                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                serverSocket.setReuseAddress(true);
+                serverSocket.receiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.reuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.accept(socket -> {
-                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
+                    socket.readHandler(readHandlerSuppliers.get(eventloop).get());
                     socket.setWriteThrough(writeThrough);
                     socket.setRegularSchedule(regularSchedule);
-                    socket.setSendBufferSize(socketConfig.sendBufferSize);
-                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.sendBufferSize(socketConfig.sendBufferSize);
+                    socket.receiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.tcpNoDelay(socketConfig.tcpNoDelay);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
@@ -230,7 +231,7 @@ public class RequestService {
             try {
                 Supplier<IOUringAsyncReadHandler> readHandlerSupplier = () -> {
                     RequestIOUringReadHandler readHandler = new RequestIOUringReadHandler();
-                    readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
                     readHandler.requestFrameAllocator = poolRequests
                             ? new SerialFrameAllocator(128, true)
@@ -245,15 +246,15 @@ public class RequestService {
                 int port = toPort(thisAddress, k);
 
                 IOUringAsyncServerSocket serverSocket = IOUringAsyncServerSocket.open(eventloop);
-                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                serverSocket.setReuseAddress(true);
+                serverSocket.receiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.reuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.listen(10);
                 serverSocket.accept(socket -> {
-                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
-                    socket.setSendBufferSize(socketConfig.sendBufferSize);
-                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.readHandler(readHandlerSuppliers.get(eventloop).get());
+                    socket.sendBufferSize(socketConfig.sendBufferSize);
+                    socket.receiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.tcpNoDelay(socketConfig.tcpNoDelay);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
@@ -268,7 +269,7 @@ public class RequestService {
             try {
                 Supplier<EpollReadHandler> readHandlerSupplier = () -> {
                     RequestEpollReadHandler readHandler = new RequestEpollReadHandler();
-                    readHandler.opScheduler = (OpScheduler) eventloop.getScheduler();
+                    readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
                     readHandler.requestFrameAllocator = poolRequests
                             ? new SerialFrameAllocator(128, true)
@@ -283,15 +284,15 @@ public class RequestService {
                 int port = toPort(thisAddress, k);
 
                 EpollAsyncServerSocket serverSocket = EpollAsyncServerSocket.open(eventloop);
-                serverSocket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                serverSocket.setReuseAddress(true);
+                serverSocket.receiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.reuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.listen(10);
                 serverSocket.accept(socket -> {
-                    socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
-                    socket.setSendBufferSize(socketConfig.sendBufferSize);
-                    socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-                    socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.readHandler(readHandlerSuppliers.get(eventloop).get());
+                    socket.sendBufferSize(socketConfig.sendBufferSize);
+                    socket.receiveBufferSize(socketConfig.receiveBufferSize);
+                    socket.tcpNoDelay(socketConfig.tcpNoDelay);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
@@ -322,7 +323,7 @@ public class RequestService {
         logger.info("Starting RequestService");
         engine.start();
 
-        EventloopType eventloopType = engine.getEventloopType();
+        EventloopType eventloopType = engine.eventloopType();
         switch (eventloopType) {
             case NIO:
                 configureNio();
@@ -379,7 +380,7 @@ public class RequestService {
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
+            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
             long callId = requests.nextCallId();
             request.putLong(OFFSET_REQ_CALL_ID, callId);
             //System.out.println("request.refCount:"+request.refCount());
@@ -397,7 +398,7 @@ public class RequestService {
         // we need to acquire the frame because storage will release it once written
         // and we need to keep the frame around for the response.
         request.acquire();
-        RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
+        RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
         long callId = requests.nextCallId();
         request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
@@ -419,8 +420,8 @@ public class RequestService {
         if (address.equals(thisAddress)) {
             engine.eventloopForHash(partitionId).execute(requestList);
         } else {
-            AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
-            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.getRemoteAddress());
+            SyncSocket socket = null;getConnection(address).sockets[partitionIdToChannel[partitionId]];
+            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
 
             long c = requests.nextCallId(requestList.size());
 
@@ -485,7 +486,7 @@ public class RequestService {
         Eventloop eventloop = engine.eventloopForHash(channelIndex);
 
         AsyncSocket socket;
-        switch (engine.getEventloopType()) {
+        switch (engine.eventloopType()) {
             case NIO:
                 NioAsyncSocket nioSocket = NioAsyncSocket.open();
                 nioSocket.setWriteThrough(writeThrough);
@@ -502,10 +503,10 @@ public class RequestService {
                 throw new RuntimeException();
         }
 
-        socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
-        socket.setSendBufferSize(socketConfig.sendBufferSize);
-        socket.setReceiveBufferSize(socketConfig.receiveBufferSize);
-        socket.setTcpNoDelay(socketConfig.tcpNoDelay);
+        socket.readHandler(readHandlerSuppliers.get(eventloop).get());
+        socket.sendBufferSize(socketConfig.sendBufferSize);
+        socket.receiveBufferSize(socketConfig.receiveBufferSize);
+        socket.tcpNoDelay(socketConfig.tcpNoDelay);
         socket.activate(eventloop);
 
         CompletableFuture future = socket.connect(address);

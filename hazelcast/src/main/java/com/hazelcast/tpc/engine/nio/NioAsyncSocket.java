@@ -115,7 +115,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReadHandler(ReadHandler h) {
+    public void readHandler(ReadHandler h) {
         this.readHandler = (NioAsyncReadHandler) checkNotNull(h);
         this.readHandler.init(this);
     }
@@ -133,7 +133,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setSoLinger(int soLinger) {
+    public void soLinger(int soLinger) {
         try {
             socketChannel.setOption(SO_LINGER, soLinger);
         } catch (IOException e) {
@@ -142,7 +142,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int getSoLinger() {
+    public int soLinger() {
         try {
             return socketChannel.getOption(SO_LINGER);
         } catch (IOException e) {
@@ -151,7 +151,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setKeepAlive(boolean keepAlive) {
+    public void keepAlive(boolean keepAlive) {
         try {
             socketChannel.setOption(SO_KEEPALIVE, keepAlive);
         } catch (IOException e) {
@@ -178,7 +178,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setTcpNoDelay(boolean tcpNoDelay) {
+    public void tcpNoDelay(boolean tcpNoDelay) {
         try {
             socketChannel.setOption(TCP_NODELAY, tcpNoDelay);
         } catch (IOException e) {
@@ -187,7 +187,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int getReceiveBufferSize() {
+    public int receiveBufferSize() {
         try {
             return socketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {
@@ -196,7 +196,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReceiveBufferSize(int size) {
+    public void receiveBufferSize(int size) {
         try {
             socketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -205,7 +205,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int getSendBufferSize() {
+    public int sendBufferSize() {
         try {
             return socketChannel.getOption(SO_SNDBUF);
         } catch (IOException e) {
@@ -214,7 +214,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setSendBufferSize(int size) {
+    public void sendBufferSize(int size) {
         try {
             socketChannel.setOption(SO_SNDBUF, size);
         } catch (IOException e) {
@@ -230,7 +230,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
-        this.eventloopThread = eventloop.getEventloopThread();
+        this.eventloopThread = eventloop.eventloopThread();
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
         if (!eventloop.registerResource(NioAsyncSocket.this)) {
@@ -239,7 +239,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         eventloop.execute(() -> {
             selector = eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+            receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
 
             if (!clientSide) {
                 key = socketChannel.register(selector, OP_READ, eventLoopHandler);

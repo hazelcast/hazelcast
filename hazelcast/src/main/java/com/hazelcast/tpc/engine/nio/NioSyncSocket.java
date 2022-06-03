@@ -5,9 +5,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -39,7 +37,7 @@ public final class NioSyncSocket extends SyncSocket {
         }
     }
 
-    public void setReadHandler(NioSyncReadHandler readHandler){
+    public void readHandler(NioSyncReadHandler readHandler) {
         this.readHandler = checkNotNull(readHandler, "readHandler can't be null");
     }
 
@@ -48,7 +46,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public void setSoLinger(int soLinger) {
+    public void soLinger(int soLinger) {
         try {
             socketChannel.setOption(SO_LINGER, soLinger);
         } catch (IOException e) {
@@ -57,7 +55,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public int getSoLinger() {
+    public int soLinger() {
         try {
             return socketChannel.getOption(SO_LINGER);
         } catch (IOException e) {
@@ -66,7 +64,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public void setKeepAlive(boolean keepAlive) {
+    public void keepAlive(boolean keepAlive) {
         try {
             socketChannel.setOption(SO_KEEPALIVE, keepAlive);
         } catch (IOException e) {
@@ -93,7 +91,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public void setTcpNoDelay(boolean tcpNoDelay) {
+    public void tcpNoDelay(boolean tcpNoDelay) {
         try {
             socketChannel.setOption(TCP_NODELAY, tcpNoDelay);
         } catch (IOException e) {
@@ -102,7 +100,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public int getReceiveBufferSize() {
+    public int receiveBufferSize() {
         try {
             return socketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {
@@ -111,7 +109,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public void setReceiveBufferSize(int size) {
+    public void receiveBufferSize(int size) {
         try {
             socketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -120,7 +118,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public int getSendBufferSize() {
+    public int sendBufferSize() {
         try {
             return socketChannel.getOption(SO_SNDBUF);
         } catch (IOException e) {
@@ -129,7 +127,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public void setSendBufferSize(int size) {
+    public void sendBufferSize(int size) {
         try {
             socketChannel.setOption(SO_SNDBUF, size);
         } catch (IOException e) {
@@ -140,7 +138,7 @@ public final class NioSyncSocket extends SyncSocket {
     @Override
     public Frame read() {
         if (receiveBuffer == null) {
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+            receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
             receiveBuffer.flip();
         }
 
@@ -174,7 +172,7 @@ public final class NioSyncSocket extends SyncSocket {
     @Override
     public Frame tryRead() {
         if (receiveBuffer == null) {
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+            receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
             receiveBuffer.flip();
         }
 
@@ -224,12 +222,9 @@ public final class NioSyncSocket extends SyncSocket {
 
     @Override
     public boolean writeAndFlush(Frame frame) {
-        if (write(frame)) {
-            flush();
-            return true;
-        } else {
-            return false;
-        }
+        boolean result = write(frame);
+        flush();
+        return result;
     }
 
     @Override

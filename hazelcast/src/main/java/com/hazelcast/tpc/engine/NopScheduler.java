@@ -20,7 +20,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 
 public class NopScheduler implements Scheduler {
     @Override
-    public void setEventloop(Eventloop eventloop) {
+    public void eventloop(Eventloop eventloop) {
     }
 
     @Override

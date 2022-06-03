@@ -81,8 +81,8 @@ public class NioAsyncSocket_IntegrationTest {
     @NotNull
     private NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new NioAsyncReadHandler() {
+        clientSocket.tcpNoDelay(true);
+        clientSocket.readHandler(new NioAsyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -113,12 +113,12 @@ public class NioAsyncSocket_IntegrationTest {
 
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(serverEventloop);
-        serverSocket.setReuseAddress(true);
+        serverSocket.reuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
-            socket.setTcpNoDelay(true);
-            socket.setReadHandler(new NioAsyncReadHandler() {
+            socket.tcpNoDelay(true);
+            socket.readHandler(new NioAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

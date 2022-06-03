@@ -28,7 +28,7 @@ public abstract class AsyncServerSocket implements Closeable {
     protected final ILogger logger = Logger.getLogger(this.getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public final SocketAddress getLocalAddress() {
+    public final SocketAddress localAddress() {
         try {
             return getLocalAddress0();
         } catch (Error e) {
@@ -38,7 +38,7 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
-    public abstract Eventloop getEventloop();
+    public abstract Eventloop eventloop();
 
     protected abstract SocketAddress getLocalAddress0() throws Exception;
 
@@ -48,11 +48,11 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public abstract boolean isReuseAddress();
 
-    public abstract void setReuseAddress(boolean reuseAddress);
+    public abstract void reuseAddress(boolean reuseAddress);
 
-    public abstract void setReceiveBufferSize(int size);
+    public abstract void receiveBufferSize(int size);
 
-    public abstract int getReceiveBufferSize();
+    public abstract int receiveBufferSize();
 
     public abstract void bind(SocketAddress socketAddress);
 
@@ -67,6 +67,6 @@ public abstract class AsyncServerSocket implements Closeable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
+        return getClass().getSimpleName() + "[" + localAddress() + "]";
     }
 }

@@ -7,7 +7,6 @@ import com.hazelcast.tpc.engine.frame.Frame;
 
 import java.io.Closeable;
 import java.net.SocketAddress;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -60,7 +59,7 @@ public abstract class SyncSocket implements Closeable {
      *
      * @return the remote address.
      */
-    public final SocketAddress getRemoteAddress() {
+    public final SocketAddress remoteAddress() {
         return remoteAddress;
     }
 
@@ -73,29 +72,29 @@ public abstract class SyncSocket implements Closeable {
      *
      * @return the local address.
      */
-    public final SocketAddress getLocalAddress() {
+    public final SocketAddress localAddress() {
         return localAddress;
     }
 
-    public abstract void setSoLinger(int soLinger);
+    public abstract void soLinger(int soLinger);
 
-    public abstract int getSoLinger();
+    public abstract int soLinger();
 
-    public abstract void setKeepAlive(boolean keepAlive);
+    public abstract void keepAlive(boolean keepAlive);
 
     public abstract boolean isKeepAlive();
 
-    public abstract void setTcpNoDelay(boolean tcpNoDelay);
+    public abstract void tcpNoDelay(boolean tcpNoDelay);
 
     public abstract boolean isTcpNoDelay();
 
-    public abstract void setReceiveBufferSize(int size);
+    public abstract void receiveBufferSize(int size);
 
-    public abstract int getReceiveBufferSize();
+    public abstract int receiveBufferSize();
 
-    public abstract void setSendBufferSize(int size);
+    public abstract void sendBufferSize(int size);
 
-    public abstract int getSendBufferSize();
+    public abstract int sendBufferSize();
 
     public abstract Frame read();
 

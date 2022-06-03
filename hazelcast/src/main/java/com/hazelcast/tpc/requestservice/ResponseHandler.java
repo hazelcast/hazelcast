@@ -77,7 +77,7 @@ class ResponseHandler implements Consumer<Frame> {
     }
 
     private void process(Frame response) {
-        RequestRegistry.Requests requests = requestRegistry.get(response.socket.getRemoteAddress());
+        RequestRegistry.Requests requests = requestRegistry.get(response.socket.remoteAddress());
         if (requests == null) {
             System.out.println("Dropping response " + response + ", requests not found");
             response.release();

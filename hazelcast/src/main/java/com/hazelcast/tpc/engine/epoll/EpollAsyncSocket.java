@@ -92,12 +92,12 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReadHandler(ReadHandler readHandler) {
+    public void readHandler(ReadHandler readHandler) {
         this.readHandler = (EpollReadHandler) checkNotNull(readHandler);
     }
 
     @Override
-    public void setSoLinger(int soLinger) {
+    public void soLinger(int soLinger) {
         try {
             socket.setSoLinger(soLinger);
         } catch (IOException e) {
@@ -106,7 +106,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int getSoLinger() {
+    public int soLinger() {
         try {
             return socket.getSoLinger();
         } catch (IOException e) {
@@ -115,7 +115,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setKeepAlive(boolean keepAlive) {
+    public void keepAlive(boolean keepAlive) {
         try {
             socket.setKeepAlive(keepAlive);
         } catch (IOException e) {
@@ -142,7 +142,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setTcpNoDelay(boolean tcpNoDelay) {
+    public void tcpNoDelay(boolean tcpNoDelay) {
         try {
             socket.setTcpNoDelay(tcpNoDelay);
         } catch (IOException e) {
@@ -152,7 +152,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
 
     @Override
-    public int getReceiveBufferSize() {
+    public int receiveBufferSize() {
         try {
             return socket.getReceiveBufferSize();
         } catch (IOException e) {
@@ -161,7 +161,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setReceiveBufferSize(int size) {
+    public void receiveBufferSize(int size) {
         try {
             socket.setReceiveBufferSize(size);
         } catch (IOException e) {
@@ -170,7 +170,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int getSendBufferSize() {
+    public int sendBufferSize() {
         try {
             return socket.getSendBufferSize();
         } catch (IOException e) {
@@ -179,7 +179,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void setSendBufferSize(int size) {
+    public void sendBufferSize(int size) {
         try {
             socket.setSendBufferSize(size);
         } catch (IOException e) {
@@ -209,7 +209,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;
-        this.eventloopThread = eventloop.getEventloopThread();
+        this.eventloopThread = eventloop.eventloopThread();
         this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
 
         if (!eventloop.registerResource(EpollAsyncSocket.this)) {
@@ -218,7 +218,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         eventloop.execute(() -> {
             //selector = eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+            receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
 
 
 //            if (!clientSide) {

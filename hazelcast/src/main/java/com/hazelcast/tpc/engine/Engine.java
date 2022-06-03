@@ -26,7 +26,6 @@ import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
 
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -101,7 +100,7 @@ public final class Engine {
         }
     }
 
-    public EventloopType getEventloopType() {
+    public EventloopType eventloopType() {
         return eventloopType;
     }
 

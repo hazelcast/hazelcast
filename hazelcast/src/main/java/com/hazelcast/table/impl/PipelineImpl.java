@@ -16,6 +16,8 @@
 
 package com.hazelcast.table.impl;
 
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
+import com.hazelcast.tpc.engine.SyncSocket;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import com.hazelcast.tpc.requestservice.RequestService;
@@ -28,6 +30,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 // todo: we don't need a frame for all the requests. We should just add to an existing frame.
@@ -35,9 +38,9 @@ public final class PipelineImpl implements Pipeline {
 
     private final RequestService requestService;
     private final FrameAllocator frameAllocator;
-    private List<Frame> requests = new ArrayList<>();
-    private List<CompletableFuture> futures = new ArrayList<>();
+    private final Long2ObjectHashMap longToObjectHashMap = new Long2ObjectHashMap();
     private int partitionId = -1;
+    private SyncSocket syncSocket;
 
     public PipelineImpl(RequestService requestService, FrameAllocator frameAllocator) {
         this.requestService = requestService;
@@ -56,12 +59,11 @@ public final class PipelineImpl implements Pipeline {
         }
 
         Frame request = frameAllocator.allocate(32)
-                .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
                 .writeComplete();
 
-        futures.add(request.future);
-        requests.add(request);
+
+        requestService.invokeOnPartition();
     }
 
     @Override
@@ -72,7 +74,7 @@ public final class PipelineImpl implements Pipeline {
     public void await(){
         for(Future<Frame> f: futures){
             try {
-                Frame frame = f.get(requestService.getRequestTimeoutMs(), TimeUnit.MILLISECONDS);
+                Frame frame = f.get(requestService.getRequestTimeoutMs(), MILLISECONDS);
                 frame.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);

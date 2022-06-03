@@ -11,10 +11,8 @@ import org.junit.experimental.categories.Category;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
-import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertNotNull;
@@ -70,8 +68,8 @@ public class NioSyncSocket_IntegrationTest {
 
     private void createClient(SocketAddress serverAddress) {
         clientSocket = NioSyncSocket.open();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setReadHandler(new NioSyncReadHandler() {
+        clientSocket.tcpNoDelay(true);
+        clientSocket.readHandler(new NioSyncReadHandler() {
             private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
             @Override
@@ -92,12 +90,12 @@ public class NioSyncSocket_IntegrationTest {
 
     private void createServer(SocketAddress serverAddress) {
         serverSocket = NioAsyncServerSocket.open(eventloop);
-        serverSocket.setReuseAddress(true);
+        serverSocket.reuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
-            socket.setTcpNoDelay(true);
-            socket.setReadHandler(new NioAsyncReadHandler() {
+            socket.tcpNoDelay(true);
+            socket.readHandler(new NioAsyncReadHandler() {
                 private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
 
                 @Override

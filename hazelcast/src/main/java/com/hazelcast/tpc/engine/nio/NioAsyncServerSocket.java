@@ -49,7 +49,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
             this.eventloop = eventloop;
-            this.eventloopThread = eventloop.getEventloopThread();
+            this.eventloopThread = eventloop.eventloopThread();
             this.selector = eventloop.selector;
             if (!eventloop.registerResource(this)) {
                 close();
@@ -61,7 +61,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public NioEventloop getEventloop() {
+    public NioEventloop eventloop() {
         return eventloop;
     }
 
@@ -94,7 +94,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void setReuseAddress(boolean reuseAddress) {
+    public void reuseAddress(boolean reuseAddress) {
         try {
             serverSocketChannel.setOption(SO_REUSEADDR, reuseAddress);
         } catch (IOException e) {
@@ -103,7 +103,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void setReceiveBufferSize(int size) {
+    public void receiveBufferSize(int size) {
         try {
             serverSocketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -112,7 +112,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public int getReceiveBufferSize() {
+    public int receiveBufferSize() {
         try {
             return serverSocketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {

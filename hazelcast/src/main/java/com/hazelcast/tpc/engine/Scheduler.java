@@ -20,7 +20,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 
 public interface Scheduler {
 
-    void setEventloop(Eventloop eventloop);
+    void eventloop(Eventloop eventloop);
 
     boolean tick();
 

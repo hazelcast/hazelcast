@@ -90,15 +90,15 @@ public abstract class Eventloop {
         this.scheduler = config.scheduler;
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
-        scheduler.setEventloop(this);
+        scheduler.eventloop(this);
         this.eventloopThread = new EventloopThread(config);
     }
 
-    public Scheduler getScheduler() {
+    public Scheduler scheduler() {
         return scheduler;
     }
 
-    public EventloopThread getEventloopThread() {
+    public EventloopThread eventloopThread() {
         return eventloopThread;
     }
 
