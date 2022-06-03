@@ -79,6 +79,8 @@ public abstract class Eventloop {
 
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
+    private final PromiseAllocator promiseAllocator;
+
     public final Unsafe unsafe = new Unsafe();
 
     protected long earliestDeadlineEpochNanos = -1;
@@ -92,6 +94,7 @@ public abstract class Eventloop {
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.eventloop(this);
         this.eventloopThread = new EventloopThread(config);
+        this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
 
     public Scheduler scheduler() {
@@ -370,12 +373,12 @@ public abstract class Eventloop {
 
     protected static final class ScheduledTask implements EventloopTask, Comparable<ScheduledTask> {
 
-        private Future future;
+        private Promise promise;
         private long deadlineEpochNanos;
 
         @Override
         public void run() throws Exception {
-            future.complete(null);
+            promise.complete(null);
         }
 
         @Override
@@ -424,33 +427,31 @@ public abstract class Eventloop {
      */
     public final class Unsafe {
 
-        public <E> Future<E> newCompletedFuture(E value) {
-            Future<E> future = Future.newReadyFuture(value);
-            future.eventloop = Eventloop.this;
-            return future;
+        public <E> Promise<E> newCompletedPromise(E value) {
+            Promise<E> promise = promiseAllocator.allocate();
+            promise.complete(value);
+            return promise;
         }
 
-        public <E> Future<E> newFuture() {
-            Future<E> future = Future.newFuture();
-            future.eventloop = Eventloop.this;
-            return future;
+        public <E> Promise<E> newPromise() {
+            return promiseAllocator.allocate();
         }
 
         public void execute(EventloopTask task) {
             localRunQueue.offer(task);
         }
 
-        public Future sleep(long delay, TimeUnit unit) {
-            Future future = newFuture();
+        public Promise sleep(long delay, TimeUnit unit) {
+            Promise promise = newPromise();
             ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.future = future;
+            scheduledTask.promise = promise;
             scheduledTask.deadlineEpochNanos = epochNanos() + unit.toNanos(delay);
             scheduledTaskQueue.add(scheduledTask);
-            return future;
+            return promise;
         }
 
-        public <I, O> Future<List<O>> map(List<I> input, List<O> output, Function<I, O> function) {
-            Future future = newFuture();
+        public <I, O> Promise<List<O>> map(List<I> input, List<O> output, Function<I, O> function) {
+            Promise promise = newPromise();
 
             //todo: task can be pooled
             EventloopTask task = new EventloopTask() {
@@ -467,13 +468,13 @@ public abstract class Eventloop {
                     if (it.hasNext()) {
                         unsafe.execute(this);
                     } else {
-                        future.complete(output);
+                        promise.complete(output);
                     }
                 }
             };
 
             execute(task);
-            return future;
+            return promise;
         }
 
         /**
@@ -482,8 +483,8 @@ public abstract class Eventloop {
          * @param loopFunction the function that is called in a loop.
          * @return the future that is completed as soon as the loop finishes.
          */
-        public Future loop(Function<Eventloop, Boolean> loopFunction) {
-            Future future = newFuture();
+        public Promise loop(Function<Eventloop, Boolean> loopFunction) {
+            Promise promise = newPromise();
 
             //todo: task can be pooled
             EventloopTask task = new EventloopTask() {
@@ -492,12 +493,12 @@ public abstract class Eventloop {
                     if (loopFunction.apply(Eventloop.this)) {
                         unsafe.execute(this);
                     } else {
-                        future.complete(null);
+                        promise.complete(null);
                     }
                 }
             };
             execute(task);
-            return future;
+            return promise;
         }
     }
 }

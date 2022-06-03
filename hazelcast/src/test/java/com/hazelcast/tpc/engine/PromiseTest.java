@@ -16,20 +16,25 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class FutureTest {
+public class PromiseTest {
 
     private NioEventloop eventloop;
+    private PromiseAllocator promiseAllocator;
 
     @Before
     public void before() {
         eventloop = new NioEventloop();
         eventloop.start();
+
+        promiseAllocator = new PromiseAllocator(eventloop, 1024);
     }
 
     @After
@@ -41,18 +46,39 @@ public class FutureTest {
     }
 
     @Test
+    public void test_pooling(){
+        Promise promise = new Promise(eventloop);
+
+        promise.allocator = promiseAllocator;
+
+        assertEquals(1, promise.refCount);
+        assertEquals(0, promiseAllocator.size());
+
+        promise.acquire();
+        assertEquals(2, promise.refCount);
+        assertEquals(0, promiseAllocator.size());
+
+        promise.release();
+        assertEquals(1, promise.refCount);
+        assertEquals(0, promiseAllocator.size());
+
+        promise.release();
+        assertFalse(promise.isDone());
+        assertEquals(1, promiseAllocator.size());
+    }
+
+    @Test
     public void test_thenOnCompletedFuture(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise promise = new Promise(eventloop);
 
         String result = "foobar";
-        future.complete(result);
+        promise.complete(result);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
 
-        future.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -65,28 +91,26 @@ public class FutureTest {
 
     @Test(expected = NullPointerException.class)
     public void test_completeExceptionallyWhenNull(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise future = new Promise(eventloop);
 
         future.completeExceptionally(null);
     }
 
     @Test
     public void test_completeExceptionally(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise promise = new Promise(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
-        future.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
         Exception exception = new Exception();
-        future.completeExceptionally(exception);
+        promise.completeExceptionally(exception);
 
         assertOpenEventually(executed);
         assertNull(valueRef.get());
@@ -96,29 +120,27 @@ public class FutureTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_completeExceptionally_whenAlreadyCompleted(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise promise = new Promise(eventloop);
 
-        future.completeExceptionally(new Throwable());
-        future.completeExceptionally(new Throwable());
+        promise.completeExceptionally(new Throwable());
+        promise.completeExceptionally(new Throwable());
     }
 
     @Test
     public void test_complete(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise promise = new Promise(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
-        future.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
         String result = "foobar";
-        future.complete(result);
+        promise.complete(result);
 
         assertOpenEventually(executed);
         assertSame(result, valueRef.get());
@@ -127,10 +149,9 @@ public class FutureTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_complete_whenAlreadyCompleted(){
-        Future future = Future.newFuture();
-        future.eventloop = eventloop;
+        Promise promise = new Promise(eventloop);
 
-        future.complete("first");
-        future.complete("second");
+        promise.complete("first");
+        promise.complete("second");
     }
 }
