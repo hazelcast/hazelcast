@@ -545,7 +545,7 @@
         Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
         Enterprise.
         The default configuration usually uses JSSE engine available in Java.
-        Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines. E.g.
+        Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
         <ssl enabled="true">
             <factory-class-name>com.hazelcast.nio.ssl.OpenSSLEngineFactory</factory-class-name>
             <properties>

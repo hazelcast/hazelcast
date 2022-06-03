@@ -162,20 +162,18 @@ hazelcast-client:
   #         kerberos-host: kerb-host-name
   #         kerberos-config-file: kerb.conf
   # * "ssl":
-  #     Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-  #     Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-  #     your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-  #     By default, it is disabled. The following is an example:
+  #     Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+  #      Enterprise.
+  #      The default configuration usually uses JSSE engine available in Java.
+  #      Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
   #     ssl:
   #       enabled: true
-  #       factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
+  #       factory-class-name: com.hazelcast.nio.ssl.OpenSSLEngineFactory
   #       properties:
-  #         keyStore: keyStore
-  #         keyStorePassword: keyStorePassword
-  #         keyManagerAlgorithm: SunX509
-  #         trustManagerAlgorithm: SunX509
-  #         protocol: TLS
-  #         mutualAuthentication: REQUIRED
+  #         protocol: TLSv1.2
+  #         trustCertCollectionFile: /opt/hazelcast/trusted-certs.pem
+  #         keyFile: /opt/hazelcast/privkey.pem
+  #         keyCertChainFile: /opt/hazelcast/chain.pem
   # * "aws":
   #     Set its "enabled" sub-element to true for discovery within Amazon EC2.
   #     Please refer to https://github.com/hazelcast/hazelcast-aws/#configuration for the configuration details.
