@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import org.apache.kafka.connect.source.SourceConnector;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -55,6 +56,7 @@ public final class DebeziumCdcSources {
      *
      * @param name the name of this source, must unique, will be passed
      *             to the underlying Kafka Connect source
+     * @param connectorClass name of the Debezium connector class
      * @return a builder you can use to set the source's properties and
      * then construct it
      */
@@ -67,17 +69,60 @@ public final class DebeziumCdcSources {
     /**
      * Creates a CDC source that streams change data from a
      * Debezium-supported database to a Hazelcast Jet pipeline.
+     *
+     * @param name the name of this source, must unique, will be passed
+     *             to the underlying Kafka Connect source
+     * @param connectorClass class of the Debezium Connector which will be used for the CDC
+     * @return a builder you can use to set the source's properties and
+     * then construct it
+     */
+    @Nonnull
+    public static Builder<ChangeRecord> debezium(
+            @Nonnull String name,
+            @Nonnull Class<? extends SourceConnector> connectorClass) {
+        return new Builder<>(name, connectorClass.getName(),
+                (properties, eventTimePolicy) -> new ChangeRecordCdcSourceP(properties, eventTimePolicy));
+    }
+
+    /**
+     * Creates a CDC source that streams change data from a
+     * Debezium-supported database to a Hazelcast Jet pipeline.
      * <p>
      * Differs from the {@link #debezium(String, String) regular source}
      * in that it does the least possible amount of processing of the
      * raw Debezium data. Just returns a pair of JSON strings, one is
      * the key of the Debezium CDC event, the other the value.
      *
+     * @param name the name of this source, must unique, will be passed
+     *             to the underlying Kafka Connect source
+     * @param connectorClass name of the Debezium connector class
      * @return a builder you can use to set the source's properties and then construct it
      */
     @Nonnull
     public static Builder<Entry<String, String>> debeziumJson(@Nonnull String name, @Nonnull String connectorClass) {
         return new Builder<>(name, connectorClass,
+                (properties, eventTimePolicy) -> new JsonCdcSourceP(properties, eventTimePolicy));
+    }
+
+    /**
+     * Creates a CDC source that streams change data from a
+     * Debezium-supported database to a Hazelcast Jet pipeline.
+     * <p>
+     * Differs from the {@link #debezium(String, String) regular source}
+     * in that it does the least possible amount of processing of the
+     * raw Debezium data. Just returns a pair of JSON strings, one is
+     * the key of the Debezium CDC event, the other the value.
+     *
+     * @param name the name of this source, must unique, will be passed
+     *             to the underlying Kafka Connect source
+     * @param connectorClass class of the Debezium Connector which will be used for the CDC
+     * @return a builder you can use to set the source's properties and then construct it
+     */
+    @Nonnull
+    public static Builder<Entry<String, String>> debeziumJson(
+            @Nonnull String name,
+            @Nonnull Class<? extends SourceConnector> connectorClass) {
+        return new Builder<>(name, connectorClass.getName(),
                 (properties, eventTimePolicy) -> new JsonCdcSourceP(properties, eventTimePolicy));
     }
 

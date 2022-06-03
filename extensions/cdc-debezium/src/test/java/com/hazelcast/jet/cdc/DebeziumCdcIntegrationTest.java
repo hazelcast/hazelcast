@@ -27,6 +27,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import io.debezium.connector.mysql.MySqlConnector;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -132,7 +133,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     @Nonnull
     private StreamSource<ChangeRecord> mySqlSource(MySQLContainer<?> container) {
         return DebeziumCdcSources.debezium("mysql",
-                        "io.debezium.connector.mysql.MySqlConnector")
+                        MySqlConnector.class)
                         .setProperty("include.schema.changes", "false")
                         .setProperty("database.hostname", container.getContainerIpAddress())
                         .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
@@ -193,7 +194,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             );
 
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("mysql",
-                    "io.debezium.connector.mysql.MySqlConnector")
+                    MySqlConnector.class)
                     .setProperty("include.schema.changes", "false")
                     .setProperty("database.hostname", container.getContainerIpAddress())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
