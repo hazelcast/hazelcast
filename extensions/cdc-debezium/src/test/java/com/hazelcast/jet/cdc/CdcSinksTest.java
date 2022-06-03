@@ -51,18 +51,22 @@ public class CdcSinksTest extends PipelineTestSupport {
     private static final String ID = "id";
     private static final String EMAIL = "email";
 
-    private static final ChangeRecord SYNC1 = new ChangeRecordImpl(0, 0, "{\"" + ID + "\":1001}",
-            "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
+    private static final ChangeRecord SYNC1 = new ChangeRecordImpl(0, 0,  Operation.SYNC,
+            "{\"" + ID + "\":1001}",
+            null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sally.thomas@acme.com\",\"__op\":\"r\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord INSERT2 = new ChangeRecordImpl(0, 1, "{\"" + ID + "\":1002}",
-            "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
+    private static final ChangeRecord INSERT2 = new ChangeRecordImpl(0, 1, Operation.INSERT,
+            "{\"" + ID + "\":1002}",
+            null, "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"c\",\"__ts_ms\":1588927306269,\"__deleted\":\"false\"}");
-    private static final ChangeRecord UPDATE1 = new ChangeRecordImpl(0, 2, "{\"" + ID + "\":1001}",
-            "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
+    private static final ChangeRecord UPDATE1 = new ChangeRecordImpl(0, 2,  Operation.UPDATE,
+            "{\"" + ID + "\":1001}",
+            null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sthomas@acme.com\",\"__op\":\"u\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord DELETE2 = new ChangeRecordImpl(0, 3, "{\"" + ID + "\":1002}",
+    private static final ChangeRecord DELETE2 = new ChangeRecordImpl(0, 3, Operation.DELETE,
+            "{\"" + ID + "\":1002}",
             "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
-                    "\"gbailey@foobar.com\",\"__op\":\"d\",\"__ts_ms\":1588927306269,\"__deleted\":\"true\"}");
+                    "\"gbailey@foobar.com\",\"__op\":\"d\",\"__ts_ms\":1588927306269,\"__deleted\":\"true\"}", null);
 
     private List<HazelcastInstance> remoteCluster;
 
@@ -205,13 +209,13 @@ public class CdcSinksTest extends PipelineTestSupport {
         SupplierEx<Iterator<? extends ChangeRecord>> supplier = () -> Arrays.asList(
                 SYNC1,
                 UPDATE1,
-                new ChangeRecordImpl(0, 10, UPDATE1.key().toJson(),
+                new ChangeRecordImpl(0, 10, Operation.UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")),
-                new ChangeRecordImpl(0, 11, UPDATE1.key().toJson(),
+                new ChangeRecordImpl(0, 11, Operation.UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas3@acme.com")),
-                new ChangeRecordImpl(0, 12, UPDATE1.key().toJson(),
+                new ChangeRecordImpl(0, 12, Operation.UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
-                new ChangeRecordImpl(0, 13, UPDATE1.key().toJson(),
+                new ChangeRecordImpl(0, 13, Operation.UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
         ).iterator();
         Util.checkSerializable(supplier, "kaka");
@@ -274,7 +278,7 @@ public class CdcSinksTest extends PipelineTestSupport {
     public void sourceSwitch() {
         p.readFrom(items(() -> Arrays.asList(
                 UPDATE1, INSERT2,
-                new ChangeRecordImpl(1, 0, UPDATE1.key().toJson(),
+                new ChangeRecordImpl(1, 0, Operation.UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")))
                 .iterator()))
                 .writeTo(localSync());

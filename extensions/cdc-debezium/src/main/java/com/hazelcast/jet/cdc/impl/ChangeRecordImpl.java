@@ -22,35 +22,40 @@ import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 public class ChangeRecordImpl implements ChangeRecord {
 
     private final long sequenceSource;
     private final long sequenceValue;
     private final String keyJson;
-    private final String valueJson;
 
-    private String json;
     private Long timestamp;
-    private Operation operation;
+    private final Operation operation;
     private String database;
     private String schema;
     private String table;
     private RecordPart key;
-    private RecordPart value;
+    private final RecordPart oldValue;
+    private final RecordPart newValue;
 
     public ChangeRecordImpl(
             long sequenceSource,
             long sequenceValue,
+            Operation operation,
             @Nonnull String keyJson,
-            @Nonnull String valueJson
+            @Nullable String oldValueJson,
+            @Nullable String newValueJson
     ) {
         this.sequenceSource = sequenceSource;
         this.sequenceValue = sequenceValue;
-        this.keyJson = Objects.requireNonNull(keyJson, "keyJson");
-        this.valueJson = Objects.requireNonNull(valueJson, "valueJson");
+        this.operation = operation;
+        this.keyJson = requireNonNull(keyJson, "keyJson");
+        this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
+        this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
     }
 
     @Override
@@ -68,10 +73,6 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Override
     @Nonnull
     public Operation operation() throws ParsingException {
-        if (operation == null) {
-            String opAlias = get(value().toMap(), "__op", String.class);
-            operation = Operation.get(opAlias);
-        }
         return operation;
     }
 
@@ -123,19 +124,38 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Override
     @Nonnull
     public RecordPart value() {
-        if (value == null) {
-            value = new RecordPartImpl(valueJson);
+        switch (operation) {
+            case SYNC:
+            case INSERT:
+            case UPDATE: return newValue();
+            case DELETE: return oldValue();
+            default: throw new IllegalArgumentException("cannot call .value() for operation " + operation);
         }
-        return value;
+    }
+    @Override
+    @Nonnull
+    public RecordPart newValue() {
+        return newValue;
+    }
+    @Override
+    @Nonnull
+    public RecordPart oldValue() {
+        return oldValue;
+    }
+    @Override
+    public String getNewValueJson() {
+        return newValue == null ? null : newValue.toJson();
+    }
+    @Override
+    public String getOldValueJson() {
+        return oldValue == null ? null : oldValue.toJson();
     }
 
     @Override
     @Nonnull
     public String toJson() {
-        if (json == null) {
-            json = String.format("key:{%s}, value:{%s}", keyJson, valueJson);
-        }
-        return json;
+        return String.format("key:{%s}, value:{%s}", keyJson,
+                operation == Operation.DELETE ? getOldValueJson() : getNewValueJson());
     }
 
     @Override
@@ -153,7 +173,13 @@ public class ChangeRecordImpl implements ChangeRecord {
     }
 
     public String getValueJson() {
-        return valueJson;
+        switch (operation) {
+            case SYNC:
+            case INSERT:
+            case UPDATE: return getNewValueJson();
+            case DELETE: return getOldValueJson();
+            default: throw new IllegalArgumentException("cannot call .getValueJson() for operation " + operation);
+        }
     }
 
     @Override
@@ -175,7 +201,8 @@ public class ChangeRecordImpl implements ChangeRecord {
         int hash = (int) sequenceSource;
         hash = 31 * hash + (int) sequenceValue;
         hash = 31 * hash + keyJson.hashCode();
-        hash = 31 * hash + valueJson.hashCode();
+        hash = 31 * hash + oldValue.toJson().hashCode();
+        hash = 31 * hash + newValue.toJson().hashCode();
         return hash;
     }
 
@@ -191,6 +218,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         return this.sequenceSource == that.sequenceSource &&
                 this.sequenceValue == that.sequenceValue &&
                 this.keyJson.equals(that.keyJson) &&
-                this.valueJson.equals(that.valueJson);
+                this.oldValue.equals(that.oldValue) &&
+                this.newValue.equals(that.newValue);
     }
 }

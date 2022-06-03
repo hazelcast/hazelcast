@@ -19,6 +19,9 @@ package com.hazelcast.jet.cdc;
 import com.hazelcast.jet.annotation.EvolvingApi;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
  * Information pertaining to a single data change event (insert, delete or
@@ -145,7 +148,7 @@ public interface ChangeRecord {
      * Returns the value part of the CDC event. It includes fields like the
      * timestamp, operation, and database record data.
      * <p>
-     * For <em>insert</em> and <em>update</em> operations the value describes
+     * For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value describes
      * the database record as it looks AFTER the event, so the latest image.
      * <p>
      * For <em>delete</em> operations the value describes the database record as
@@ -153,6 +156,48 @@ public interface ChangeRecord {
      */
     @Nonnull
     RecordPart value();
+
+    /**
+     * Returns the new value of the record. For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value
+     * describes the database record as it looks AFTER the event, so the latest image, for <em>delete</em> it returns null.
+     */
+    @Nullable
+    default RecordPart newValue() {
+        try {
+            switch (operation()) {
+                case SYNC:
+                case INSERT:
+                case UPDATE: return value();
+                default: return null;
+            }
+        } catch (ParsingException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Returns the new value of the record. For <em>update</em> and <em>delete</em> operations the value
+     * describes the database record as it looks <strong>before</strong> the event,
+     * for <em>sync</em> and <em>insert</em> it returns null.
+     */
+    @Nullable
+    default RecordPart oldValue() {
+        try {
+            return operation() == Operation.DELETE ? value() : null;
+        } catch (ParsingException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Returns {@link #newValue()} as JSON.
+     */
+    String getNewValueJson();
+
+    /**
+     * Returns {@link #oldValue()} as JSON.
+     */
+    String getOldValueJson();
 
     /**
      * Returns the raw JSON string from the CDC event underlying this {@code

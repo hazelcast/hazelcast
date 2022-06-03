@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.cdc.impl;
 
+import com.hazelcast.jet.cdc.Operation;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -54,17 +55,22 @@ public class CdcSerializerHooks {
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
+                    out.writeString(record.operation().code());
                     out.writeUTF(record.getKeyJson());
-                    out.writeUTF(record.getValueJson());
+                    out.writeUTF(record.getOldValueJson());
+                    out.writeUTF(record.getNewValueJson());
                 }
 
                 @Override
                 public ChangeRecordImpl read(ObjectDataInput in) throws IOException {
                     long sequenceSource = in.readLong();
                     long sequenceValue = in.readLong();
-                    String keyJson = in.readUTF();
-                    String valueJson = in.readUTF();
-                    return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
+                    Operation operation = Operation.get(in.readString());
+                    String keyJson = in.readString();
+                    String oldValueJson = in.readString();
+                    String newValueJson = in.readString();
+                    return new ChangeRecordImpl(sequenceSource, sequenceValue, operation, keyJson,
+                            oldValueJson, newValueJson);
                 }
             };
         }
