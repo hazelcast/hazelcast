@@ -38,7 +38,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
  */
 public abstract class WatermarkCoalescer {
 
-    public static final Watermark IDLE_MESSAGE = new Watermark(Long.MAX_VALUE);
+    public static final long IDLE_TIME = Long.MAX_VALUE;
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_TIME);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
@@ -126,10 +127,14 @@ public abstract class WatermarkCoalescer {
      * @param key        watermark key
      */
     public static WatermarkCoalescer create(int queueCount, byte key) {
-        if (queueCount == 1) {
-            return new SingleInputImpl(key);
+        switch (queueCount) {
+            case 0:
+                return new ZeroInputImpl();
+            case 1:
+                return new SingleInputImpl(key);
+            default:
+                return new StandardImpl(queueCount, key);
         }
-        return new StandardImpl(queueCount);
     }
 
     /**

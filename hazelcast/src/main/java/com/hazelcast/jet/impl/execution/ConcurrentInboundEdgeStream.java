@@ -32,9 +32,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
@@ -84,7 +86,7 @@ public final class ConcurrentInboundEdgeStream {
             int priority,
             boolean waitForAllBarriers,
             @Nonnull String debugName,
-            byte[] wmKeys,
+            @Nullable byte[] wmKeys,
             @Nullable ComparatorEx<?> comparator
     ) {
         if (comparator == null) {
@@ -126,9 +128,7 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Override
-        public byte[] wmKeys() {
-            return new byte[]{0};
-        }
+        public abstract Set<Byte> wmKeys();
 
         @Override
         public boolean isDone() {
@@ -143,6 +143,11 @@ public final class ConcurrentInboundEdgeStream {
         @Override
         public int capacities() {
             return conveyorSum(QueuedPipe::capacity);
+        }
+
+        @Override
+        public int queues() {
+            return conveyor.queueCount();
         }
 
         private int conveyorSum(ToIntFunction<QueuedPipe<Object>> toIntF) {
@@ -203,7 +208,7 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Override
-        public byte[] wmKeys() {
+        public Set<Byte> wmKeys() {
             return watermarkCoalescer.keys();
         }
 
@@ -459,6 +464,15 @@ public final class ConcurrentInboundEdgeStream {
         @Override
         public long coalescedWm(byte key) {
             return Long.MIN_VALUE;
+        }
+
+        /**
+         * Returns empty set, since ordered drain
+         * doesn't use watermarks for processing.
+         */
+        @Override
+        public Set<Byte> wmKeys() {
+            return Collections.emptySet();
         }
 
         @Override

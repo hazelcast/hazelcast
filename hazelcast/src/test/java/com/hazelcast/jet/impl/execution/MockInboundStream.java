@@ -23,7 +23,9 @@ import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -35,7 +37,7 @@ import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 public class MockInboundStream implements InboundEdgeStream {
     private int ordinal;
     private int priority;
-    private byte[] keys;
+    private Set<Byte> keys;
     private final Deque<Object> mockData;
     private final int chunkSize;
 
@@ -46,10 +48,11 @@ public class MockInboundStream implements InboundEdgeStream {
         this.chunkSize = chunkSize;
         this.mockData = new ArrayDeque<>(mockData);
 
-        this.keys = new byte[]{0};
+        this.keys = new HashSet<>();
+        this.keys.add((byte) 0);
     }
 
-    MockInboundStream(int priority, List<?> mockData, int chunkSize, byte[] keys) {
+    MockInboundStream(int priority, List<?> mockData, int chunkSize, Set<Byte> keys) {
         this.priority = priority;
         this.chunkSize = chunkSize;
         this.mockData = new ArrayDeque<>(mockData);
@@ -101,7 +104,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public byte[] wmKeys() {
+    public Set<Byte> wmKeys() {
         return keys;
     }
 
@@ -112,6 +115,11 @@ public class MockInboundStream implements InboundEdgeStream {
     @Override
     public int sizes() {
         return mockData.size();
+    }
+
+    @Override
+    public int queues() {
+        return 1;
     }
 
     @Override

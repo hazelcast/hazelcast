@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -41,7 +42,7 @@ public interface InboundEdgeStream {
     /**
      * Returns watermark keys observed in the represented edge.
      */
-    byte[] wmKeys();
+    Set<Byte> wmKeys();
 
     /**
      * Passes the items from the queues to the predicate while it returns {@code true}.
@@ -63,6 +64,11 @@ public interface InboundEdgeStream {
      * Returns the total number of items in input queues.
      */
     int sizes();
+
+    /**
+     * Returns the total number of available input queues.
+     */
+    int queues();
 
     /**
      * Returns the top WM observed on any of

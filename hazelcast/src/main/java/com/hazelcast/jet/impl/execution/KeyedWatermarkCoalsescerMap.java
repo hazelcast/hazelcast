@@ -37,13 +37,8 @@ public class KeyedWatermarkCoalsescerMap {
         watermarkCoalescerMap.putIfAbsent(key, WatermarkCoalescer.create(queueCount, key));
     }
 
-    public byte[] keys() {
-        byte[] arr = new byte[watermarkCoalescerMap.size()];
-        int idx = 0;
-        for (byte b : watermarkCoalescerMap.keySet()) {
-            arr[idx++] = b;
-        }
-        return arr;
+    public Set<Byte> keys() {
+        return watermarkCoalescerMap.keySet();
     }
 
     public Set<Entry<Byte, WatermarkCoalescer>> entries() {
