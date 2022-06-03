@@ -338,7 +338,6 @@ public abstract class Eventloop {
         }
     }
 
-
     public static class AbstractConfiguration {
         private boolean spin;
         private Scheduler scheduler = new NopScheduler();

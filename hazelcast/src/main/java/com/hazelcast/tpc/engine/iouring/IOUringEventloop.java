@@ -33,8 +33,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
+import static com.hazelcast.tpc.util.Util.epochNanos;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
 /**
@@ -128,6 +130,7 @@ public class IOUringEventloop extends Eventloop {
         this.ringbufferSize = config.ringbufferSize;
         this.ioseqAsyncThreshold = config.ioseqAsyncThreshold;
         this.flags = config.flags;
+        this.storageScheduler = config.storageScheduler;
     }
 
     @Override
@@ -165,7 +168,17 @@ public class IOUringEventloop extends Eventloop {
             } else {
                 wakeupNeeded.set(true);
                 if (concurrentRunQueue.isEmpty()) {
-                    sq.submitAndWait();
+                    if (earliestDeadlineEpochNanos != -1) {
+                        long timeoutNanos = earliestDeadlineEpochNanos - epochNanos();
+                        if (timeoutNanos > 0) {
+                            sq.addTimeout(timeoutNanos, (short) 0);
+                            sq.submitAndWait();
+                        } else {
+                            sq.submit();
+                        }
+                    } else {
+                        sq.submitAndWait();
+                    }
                 } else {
                     sq.submit();
                 }
@@ -184,7 +197,7 @@ public class IOUringEventloop extends Eventloop {
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
     }
 
-    public StorageScheduler getStorageScheduler() {
+    public StorageScheduler storageScheduler() {
         return storageScheduler;
     }
 
@@ -193,7 +206,9 @@ public class IOUringEventloop extends Eventloop {
         public void handle(int fd, int res, int flags, byte op, short data) {
             CompletionListener l = completionListeners.get(fd);
             if (l == null) {
-                System.out.println("no listener found for fd:" + fd + " op:" + op);
+                if (op != Native.IORING_OP_TIMEOUT) {
+                    System.out.println("no listener found for fd:" + fd + " op:" + op);
+                }
             } else {
                 l.handle(fd, res, flags, op, data);
             }
