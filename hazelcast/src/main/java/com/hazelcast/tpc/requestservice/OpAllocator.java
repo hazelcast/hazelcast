@@ -23,7 +23,7 @@ import com.hazelcast.table.impl.GetOp;
 import com.hazelcast.table.impl.NoOp;
 import com.hazelcast.table.impl.QueryOp;
 import com.hazelcast.table.impl.RandomLoadOp;
-import com.hazelcast.table.impl.SelectByKeyOperation;
+import com.hazelcast.table.impl.SelectByKeyOp;
 import com.hazelcast.table.impl.SetOp;
 import com.hazelcast.table.impl.UpsertOp;
 
@@ -53,7 +53,7 @@ public final class OpAllocator {
 
         this.pools = new Pool[MAX_OPCODE + 1];
         pools[TABLE_UPSERT] = new Pool(UpsertOp::new);
-        pools[TABLE_SELECT_BY_KEY] = new Pool(SelectByKeyOperation::new);
+        pools[TABLE_SELECT_BY_KEY] = new Pool(SelectByKeyOp::new);
         pools[NOOP] = new Pool(NoOp::new);
         pools[RANDOM_LOAD] = new Pool(RandomLoadOp::new);
         pools[GET] = new Pool(GetOp::new);

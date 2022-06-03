@@ -33,9 +33,9 @@ public class ActorBenchmark {
 
         CountdownActor actor1 = new CountdownActor();
         CountdownActor actor2 = new CountdownActor();
-        actor1.that = actor2.getHandle();
+        actor1.that = actor2.handle();
         actor1.latch = latch;
-        actor2.that = actor1.getHandle();
+        actor2.that = actor1.handle();
         actor2.latch = latch;
 
         actor1.activate(eventloop);
@@ -46,7 +46,7 @@ public class ActorBenchmark {
         long requestTotal = 1_000_000_000L;
         LongValue v = new LongValue();
         v.value = requestTotal;
-        actor1.getHandle().send(v);
+        actor1.handle().send(v);
         latch.await();
         long duration = System.currentTimeMillis() - start;
         float throughput = requestTotal * 1000f / duration;

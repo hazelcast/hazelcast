@@ -31,7 +31,7 @@ public class ActorMain {
         Actor actor = new EchoActor();
         actor.activate(eventloop);
 
-        LocalActorHandle handle = actor.getHandle();
+        LocalActorHandle handle = actor.handle();
         handle.send("foo");
         handle.send("bar");
     }

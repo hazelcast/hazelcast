@@ -28,6 +28,17 @@ public class ActorTest {
         eventloop.start();
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void test_activate_whenAlreadyActivated(){
+        Actor actor = new Actor() {
+            @Override
+            public void process(Object msg) {
+            }
+        };
+        actor.activate(eventloop);
+        actor.activate(eventloop);
+    }
+
     @Test
     public void test_receiveMsg(){
         CountDownLatch executed = new CountDownLatch(1);
@@ -39,7 +50,7 @@ public class ActorTest {
                 executed.countDown();
             }
         };
-        ActorHandle handle = actor.getHandle();
+        ActorHandle handle = actor.handle();
         actor.activate(eventloop);
         String msg = "Message";
         handle.send(msg);

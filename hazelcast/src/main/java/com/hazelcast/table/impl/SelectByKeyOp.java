@@ -20,9 +20,9 @@ import com.hazelcast.tpc.requestservice.Op;
 
 import static com.hazelcast.tpc.requestservice.OpCodes.TABLE_SELECT_BY_KEY;
 
-public final class SelectByKeyOperation extends Op {
+public final class SelectByKeyOp extends Op {
 
-    public SelectByKeyOperation() {
+    public SelectByKeyOp() {
         super(TABLE_SELECT_BY_KEY);
     }
 

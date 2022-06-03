@@ -16,12 +16,14 @@
 
 package com.hazelcast.tpc.engine.actor;
 
-public class LocalActorHandle implements ActorHandle {
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+public final class LocalActorHandle implements ActorHandle {
 
     private final Actor actor;
 
     public LocalActorHandle(Actor actor) {
-        this.actor = actor;
+        this.actor = checkNotNull(actor);
     }
 
     @Override

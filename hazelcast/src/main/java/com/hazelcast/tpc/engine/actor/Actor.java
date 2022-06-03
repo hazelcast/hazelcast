@@ -22,30 +22,16 @@ import org.jctools.queues.MpscArrayQueue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 public abstract class Actor implements EventloopTask {
 
     public final static int DEFAULT_MAILBOX_CAPACITY = 512;
 
     private final MpscArrayQueue mailbox;
-
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private Eventloop eventloop;
     private final LocalActorHandle handle = new LocalActorHandle(this);
-
-    public LocalActorHandle getHandle() {
-        return handle;
-    }
-
-    public Eventloop getEventloop() {
-        return eventloop;
-    }
-
-    public void activate(Eventloop eventloop) {
-        if(this.eventloop!=null){
-            throw new IllegalStateException("Can't activate an already activated actor");
-        }
-        this.eventloop = eventloop;
-    }
 
     public Actor() {
         this(DEFAULT_MAILBOX_CAPACITY);
@@ -53,6 +39,45 @@ public abstract class Actor implements EventloopTask {
 
     public Actor(int mailboxCapacity) {
         this.mailbox = new MpscArrayQueue(mailboxCapacity);
+    }
+
+    /**
+     * Returns the handle of the actor.
+     *
+     * @return the handle of the actor.
+     */
+    public LocalActorHandle handle() {
+        return handle;
+    }
+
+    /**
+     * Returns the {@link Eventloop} this actor belongs to.
+     *
+     * @return the Eventloop this actor belongs to. If the actor hasn't been activated yet,
+     * <code>null</code> is returned.
+     */
+    public Eventloop eventloop() {
+        return eventloop;
+    }
+
+    /**
+     * Activates the Actor on the given eventloop.
+     *
+     * This method is not thread-safe.
+     *
+     * This method should only be called once.
+     *
+     * @param eventloop the Eventloop this actor belongs to.
+     * @throws IllegalStateException when the actor is already activated.
+     * @throws NullPointerException  when eventloop is <code>null</code>.
+     */
+    public void activate(Eventloop eventloop) {
+        checkNotNull(eventloop);
+
+        if (this.eventloop != null) {
+            throw new IllegalStateException("Can't activate an already activated actor");
+        }
+        this.eventloop = eventloop;
     }
 
     void send(Object msg) {
