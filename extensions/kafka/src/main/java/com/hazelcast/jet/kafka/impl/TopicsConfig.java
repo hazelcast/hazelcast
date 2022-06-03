@@ -91,7 +91,7 @@ public class TopicsConfig implements Serializable {
             return partitionsInitialOffsets.get(partition);
         }
 
-        public TopicConfig putInitialOffset(int partition, long offset) {
+        public TopicConfig putPartitionInitialOffset(int partition, long offset) {
             partitionsInitialOffsets.put(partition, offset);
             return this;
         }

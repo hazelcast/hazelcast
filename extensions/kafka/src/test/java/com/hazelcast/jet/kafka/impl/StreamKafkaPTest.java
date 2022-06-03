@@ -173,14 +173,14 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         TopicsConfig topicsConfig = new TopicsConfig()
                 .putTopicConfig(new TopicConfig(topic1Name)
                         // 20 total records will be skipped from topic1
-                        .putInitialOffset(0, 5L)
-                        .putInitialOffset(1, 5L)
-                        .putInitialOffset(2, 5L)
-                        .putInitialOffset(3, 5L))
+                        .putPartitionInitialOffset(0, 5L)
+                        .putPartitionInitialOffset(1, 5L)
+                        .putPartitionInitialOffset(2, 5L)
+                        .putPartitionInitialOffset(3, 5L))
                 .putTopicConfig(new TopicConfig(topic2Name)
                         // 10 total records will be skipped from topic2
-                        .putInitialOffset(0, 5L)
-                        .putInitialOffset(2, 5L));
+                        .putPartitionInitialOffset(0, 5L)
+                        .putPartitionInitialOffset(2, 5L));
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(
