@@ -73,7 +73,7 @@ public final class Promise<E> {
      * Completes this Promise with the provided exceptional value.
      *
      * @param value the exceptional value.
-     * @throws NullPointerException if value is null.
+     * @throws NullPointerException  if value is null.
      * @throws IllegalStateException if the Promise is already completed.
      */
     public void completeExceptionally(Throwable value) {

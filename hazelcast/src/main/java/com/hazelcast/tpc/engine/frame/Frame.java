@@ -110,7 +110,7 @@ public class Frame {
     }
 
     public Frame writeResponseHeader(int partitionId, long callId) {
-       return writeResponseHeader(partitionId, callId, 0);
+        return writeResponseHeader(partitionId, callId, 0);
     }
 
     public Frame writeResponseHeader(int partitionId, long callId, int flags) {
@@ -127,13 +127,13 @@ public class Frame {
         return (flags & flag) != 0;
     }
 
-    public Frame addFlags(int addedFlags){
+    public Frame addFlags(int addedFlags) {
         int oldFlags = buff.getInt(OFFSET_FLAGS);
         buff.putInt(OFFSET_FLAGS, oldFlags | addedFlags);
         return this;
     }
 
-    public int flags(){
+    public int flags() {
         return buff.getInt(OFFSET_FLAGS);
     }
 

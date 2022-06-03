@@ -42,11 +42,11 @@ public abstract class Op {
         this.opcode = opcode;
     }
 
-    public int partitionId(){
+    public int partitionId() {
         return request.getInt(OFFSET_PARTITION_ID);
     }
 
-    public long callId(){
+    public long callId() {
         return request.getLong(OFFSET_REQ_CALL_ID);
     }
 

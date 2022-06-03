@@ -56,7 +56,8 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  */
 public abstract class Eventloop {
 
-    private static final EventloopTask SHUTDOWN_TASK = () -> {};
+    private static final EventloopTask SHUTDOWN_TASK = () -> {
+    };
 
     protected final static AtomicReferenceFieldUpdater<Eventloop, EventloopState> STATE
             = newUpdater(Eventloop.class, EventloopState.class, "state");

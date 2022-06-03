@@ -23,7 +23,7 @@ public abstract class IOUringAsyncReadHandler implements ReadHandler {
 
     protected IOUringAsyncSocket asyncSocket;
 
-    public void init(IOUringAsyncSocket asyncSocket){
+    public void init(IOUringAsyncSocket asyncSocket) {
         this.asyncSocket = asyncSocket;
     }
 

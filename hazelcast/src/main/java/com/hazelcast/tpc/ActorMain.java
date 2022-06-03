@@ -24,7 +24,7 @@ import com.hazelcast.tpc.engine.nio.NioEventloop;
 
 public class ActorMain {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         Eventloop eventloop = new NioEventloop();
         eventloop.start();
 

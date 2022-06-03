@@ -24,7 +24,7 @@ public abstract class EpollReadHandler implements ReadHandler {
 
     private EpollAsyncSocket asyncSocket;
 
-    public void init(EpollAsyncSocket asyncSocket){
+    public void init(EpollAsyncSocket asyncSocket) {
         this.asyncSocket = asyncSocket;
     }
 

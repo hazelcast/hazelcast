@@ -179,7 +179,7 @@ public class RequestService {
         engine.printConfig();
 
 
-        if(socketCount % engine.eventloopCount()!=0){
+        if (socketCount % engine.eventloopCount() != 0) {
             throw new IllegalStateException("socket count is not multiple of reactor count");
         }
 

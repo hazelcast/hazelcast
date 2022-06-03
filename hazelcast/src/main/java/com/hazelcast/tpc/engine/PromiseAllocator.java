@@ -29,8 +29,8 @@ final class PromiseAllocator {
         this.array = new Promise[capacity];
     }
 
-    int size(){
-        return index+1;
+    int size() {
+        return index + 1;
     }
 
     Promise allocate() {

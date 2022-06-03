@@ -27,7 +27,7 @@ public final class LocalActorHandle implements ActorHandle {
     }
 
     @Override
-    public void send(Object message){
+    public void send(Object message) {
         this.actor.send(message);
     }
 }

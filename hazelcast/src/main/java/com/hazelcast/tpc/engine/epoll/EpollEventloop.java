@@ -36,7 +36,7 @@ public final class EpollEventloop extends Eventloop {
     private final FileDescriptor timerFd;
     private final EpollEventArray events;
 
-    public EpollEventloop(){
+    public EpollEventloop() {
         this(new EpollConfiguration());
     }
 

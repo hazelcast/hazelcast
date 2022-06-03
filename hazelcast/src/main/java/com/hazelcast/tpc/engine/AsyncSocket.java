@@ -137,7 +137,7 @@ public abstract class AsyncSocket implements Closeable {
      * This method should only be called once.
      *
      * @param eventloop
-     * @throws NullPointerException if eventloop is null.
+     * @throws NullPointerException  if eventloop is null.
      * @throws IllegalStateException if the AsyncSocket is already activated.
      */
     public abstract void activate(Eventloop eventloop);

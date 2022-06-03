@@ -16,7 +16,7 @@
 
 package com.hazelcast.tpc.engine.actor;
 
-public class EchoActor extends Actor{
+public class EchoActor extends Actor {
 
     public EchoActor() {
     }
