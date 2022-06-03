@@ -18,6 +18,7 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.jet.kafka.KafkaProcessors;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -82,7 +84,8 @@ public class TopicsConfig implements Serializable {
         private final String topicName;
         private final Map<Integer, Long> partitionsInitialOffsets = new HashMap<>();
 
-        public TopicConfig(String topicName) {
+        public TopicConfig(@Nonnull String topicName) {
+            checkNotNull(topicName);
             this.topicName = topicName;
         }
 
