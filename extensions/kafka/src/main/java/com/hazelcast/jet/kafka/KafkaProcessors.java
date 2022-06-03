@@ -21,12 +21,12 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
+import com.hazelcast.jet.kafka.impl.TopicsConfig;
 import com.hazelcast.jet.kafka.impl.WriteKafkaP;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Properties;
 
 import static com.hazelcast.jet.kafka.impl.StreamKafkaP.PREFERRED_LOCAL_PARALLELISM;
@@ -44,18 +44,18 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * KafkaSources#kafka(Properties, FunctionEx, String...)}.
+     * KafkaSources#kafka(Properties, FunctionEx, TopicsConfig)}}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            @Nonnull String... topics
+            @Nonnull TopicsConfig topicsConfig
     ) {
-        Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
+        Preconditions.checkPositive(topicsConfig.getTopicNames().size(), "At least one topic must be supplied");
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
-                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, eventTimePolicy)
+                StreamKafkaP.processorSupplier(properties, topicsConfig, projectionFn, eventTimePolicy)
         );
     }
 

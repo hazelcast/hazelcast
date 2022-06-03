@@ -50,7 +50,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
         kafkaTestSupport.createTopic("topic", 1);
         DAG dag = new DAG();
         dag.newVertex("src", KafkaProcessors.streamKafkaP(getProperties(kafkaTestSupport.getBrokerConnectionString()),
-                FunctionEx.identity(), EventTimePolicy.noEventTime(), "topic"))
+                FunctionEx.identity(), EventTimePolicy.noEventTime(), new TopicsConfig().putTopic("test")))
            .localParallelism(1);
 
         Job job = createHazelcastInstance().getJet().newJob(dag);

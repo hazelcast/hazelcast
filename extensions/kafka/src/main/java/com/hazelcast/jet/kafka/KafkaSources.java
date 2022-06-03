@@ -19,14 +19,17 @@ package com.hazelcast.jet.kafka;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.kafka.impl.TopicsConfig;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.Util.entry;
@@ -53,6 +56,18 @@ public final class KafkaSources {
             @Nonnull String ... topics
     ) {
         return KafkaSources.<K, V, Entry<K, V>>kafka(properties, r -> entry(r.key(), r.value()), topics);
+    }
+
+    /**
+     * Convenience for {@link #kafka(Properties, FunctionEx, TopicsConfig)}.
+     */
+    @Nonnull
+    public static <K, V, T> StreamSource<T> kafka(
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<ConsumerRecord<K, V>, T> projectionFn,
+            @Nonnull String ... topics
+    ) {
+        return kafka(properties, projectionFn, new TopicsConfig().putTopics(Arrays.asList(topics)));
     }
 
     /**
@@ -123,16 +138,18 @@ public final class KafkaSources {
      * @param projectionFn function to create output objects from the Kafka record.
      *                    If the projection returns a {@code null} for an item,
      *                    that item will be filtered out.
-     * @param topics the topics to consume, at least one is required
+     * @param topicsConfig configuration for the topics to consume, at least one
+     *                     topic must be specified in the configuration.
      */
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(
             @Nonnull Properties properties,
             @Nonnull FunctionEx<ConsumerRecord<K, V>, T> projectionFn,
-            @Nonnull String ... topics
+            @Nonnull TopicsConfig topicsConfig
     ) {
-        checkPositive(topics.length, "At least one topic required");
+        Set<String> topics = topicsConfig.getTopicNames();
+        checkPositive(topics.size(), "At least one topic required");
         return streamFromProcessorWithWatermarks("kafkaSource(" + String.join(",", topics) + ")",
-                true, w -> streamKafkaP(properties, projectionFn, w, topics));
+                true, w -> streamKafkaP(properties, projectionFn, w, topicsConfig));
     }
 }

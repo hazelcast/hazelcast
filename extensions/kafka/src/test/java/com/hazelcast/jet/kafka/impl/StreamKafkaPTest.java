@@ -33,9 +33,11 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.kafka.KafkaSources;
+import com.hazelcast.jet.kafka.impl.TopicsConfig.TopicConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -78,6 +80,9 @@ import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -155,6 +160,51 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 assertTrue("missing entry: " + value, list.contains(value));
             }
         }, 5);
+    }
+
+    @Test
+    public void when_partitionsInitialOffsetsProvided_thenRecordsReadFromAppropriatePosition() {
+        for (int i = 0; i < 100; i++) {
+            kafkaTestSupport.produce(topic1Name, i,  String.valueOf(i));
+            kafkaTestSupport.produce(topic2Name, i,  String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .putTopicConfig(new TopicConfig(topic1Name)
+                        // 20 total records will be skipped from topic1
+                        .putInitialOffset(0, 5L)
+                        .putInitialOffset(1, 5L)
+                        .putInitialOffset(2, 5L)
+                        .putInitialOffset(3, 5L))
+                .putTopicConfig(new TopicConfig(topic2Name)
+                        // 10 total records will be skipped from topic2
+                        .putInitialOffset(0, 5L)
+                        .putInitialOffset(2, 5L));
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.<Integer, String, String>kafka(
+                        properties(), r -> r.value() + "@" + r.topic(), topicsConfig
+                ))
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
+
+        instance().getJet().newJob(p);
+        sleepAtLeastSeconds(3);
+
+        IList<String> list = instance().getList("sink");
+        assertTrueEventually(() -> assertEquals(170, list.size()), 5);
+
+        // group retrieved records by topic and check if expected number of records were skipped
+        Map<String, List<String>> recordsByTopic = list.stream()
+                .map(entry -> entry.split("@"))
+                .map(entry -> Tuple2.tuple2(entry[0], entry[1]))
+                .collect(groupingBy(Tuple2::f1, mapping(Tuple2::f0, toList())));
+
+        assertThat(recordsByTopic.get(topic1Name).size())
+                .isEqualTo(80);
+        assertThat(recordsByTopic.get(topic2Name).size())
+                .isEqualTo(90);
     }
 
     @Test
