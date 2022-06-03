@@ -86,7 +86,7 @@ public abstract class Eventloop {
     protected final EventloopThread eventloopThread;
 
     public Eventloop(AbstractConfiguration config) {
-        this.spin = spin;
+        this.spin = config.spin;
         this.scheduler = config.scheduler;
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
