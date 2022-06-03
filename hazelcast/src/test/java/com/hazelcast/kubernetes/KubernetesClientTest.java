@@ -26,6 +26,11 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,12 +49,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class KubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
-
     private static final String TOKEN = "sample-token";
     private static final String CA_CERTIFICATE = "sample-ca-certificate";
     private static final String NAMESPACE = "sample-namespace";
@@ -751,6 +754,55 @@ public class KubernetesClientTest {
         // exception
     }
 
+    @Test
+    public void apiAccessWithTokenRefresh() throws IOException {
+        // Token is read from the file, first token value is value-1
+        Path file = Files.createTempFile("token", null);
+        Files.write(file, "value-1".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
+
+        stubFor(get(urlMatching("/apis/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-1"))
+                .willReturn(aResponse().withStatus(200).withBody("{}")));
+        stubFor(get(urlMatching("/api/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-1"))
+                .willReturn(aResponse().withStatus(200).withBody("{}")));
+        stubFor(get(urlMatching("/api/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-2"))
+                .willReturn(aResponse().withStatus(402).withBody("{}")));
+        stubFor(get(urlMatching("/apis/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-2"))
+                .willReturn(aResponse().withStatus(402).withBody("{}")));
+
+        KubernetesClient client = newKubernetesClient(new FileReaderTokenProvider(file.toString()));
+        client.endpoints();
+        assertFalse(client.isKnownExceptionAlreadyLogged());
+
+        // Token is rotated
+        Files.write(file, "value-2".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
+
+        // Api server will not accept token with old value
+        stubFor(get(urlMatching("/apis/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-1"))
+                .willReturn(aResponse().withStatus(402).withBody("{}")));
+        stubFor(get(urlMatching("/api/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-1"))
+                .willReturn(aResponse().withStatus(402).withBody("{}")));
+        stubFor(get(urlMatching("/api/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-2"))
+                .willReturn(aResponse().withStatus(200).withBody("{}")));
+        stubFor(get(urlMatching("/apis/.*")).atPriority(1)
+                .withHeader("Authorization", equalTo("Bearer value-2"))
+                .willReturn(aResponse().withStatus(200).withBody("{}")));
+
+        client.endpoints();
+        assertFalse(client.isKnownExceptionAlreadyLogged());
+        try {
+            Files.delete(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static String podsListResponse() {
         //language=JSON
         return "{\n"
@@ -1059,12 +1111,16 @@ public class KubernetesClientTest {
         return newKubernetesClient(false);
     }
 
+    private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
+        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, CA_CERTIFICATE, RETRIES, ExposeExternallyMode.AUTO, true, null, null);
+    }
+
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
         return newKubernetesClient(useNodeNameAsExternalAddress, null, null);
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
-        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
         return newKubernetesClient(ExposeExternallyMode.AUTO, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
     }
 
@@ -1074,7 +1130,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue, KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
     }
 
     private static List<String> format(List<Endpoint> addresses) {
