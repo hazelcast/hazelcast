@@ -99,7 +99,7 @@
         <classgraph.version>4.8.139</classgraph.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.1</hadoop.version>
+        <hadoop.version>3.3.3</hadoop.version>
         <jackson.version>2.12.6</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
@@ -1463,8 +1463,12 @@
                 <exclusions>
                     <!-- The following dependencies are not needed for our use of Hadoop -->
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.eclipse.jetty</groupId>
@@ -1607,11 +1611,6 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.htrace</groupId>
-                <artifactId>htrace-core4</artifactId>
-                <version>4.2.0-incubating.hazelcast-2</version>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
