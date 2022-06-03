@@ -55,7 +55,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     private static final DockerImageName MYSQL_IMAGE =
             DockerImageName.parse("debezium/example-mysql:1.9.3.Final").asCompatibleSubstituteFor("mysql");
     private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:1.9.3.Final").asCompatibleSubstituteFor("postgres");
+            DockerImageName.parse("debezium/example-postgres:1.7").asCompatibleSubstituteFor("postgres");
     @Test
     public void mysql() throws Exception {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
