@@ -388,6 +388,9 @@ public abstract class Eventloop {
         }
     }
 
+    /**
+     * The {@link Thread} that executes the {@link Eventloop}.
+     */
     public final class EventloopThread extends HazelcastManagedThread {
 
         private EventloopThread(AbstractConfiguration config) {

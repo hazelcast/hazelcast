@@ -74,7 +74,7 @@ public abstract class AsyncSocket implements Closeable {
     }
 
     /**
-     * Returns the {@link Eventloop} this AsyncSocket belongs to.
+     * Returns the {@link Eventloop} this {@link AsyncSocket} belongs to.
      *
      * @return the {@link Eventloop} this AsyncSocket belongs to or null if
      * the AsyncSocket has not been activated yet.
