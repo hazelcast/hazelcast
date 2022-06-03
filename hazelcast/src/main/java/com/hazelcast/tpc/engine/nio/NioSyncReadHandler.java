@@ -7,10 +7,10 @@ import java.nio.ByteBuffer;
 
 public abstract class NioSyncReadHandler implements ReadHandler {
 
-    protected NioSyncSocket syncSocket;
+    protected NioSyncSocket socket;
 
-    public void init(NioSyncSocket syncSocket) {
-        this.syncSocket = syncSocket;
+    public void init(NioSyncSocket socket) {
+        this.socket = socket;
     }
 
     public abstract Frame decode(ByteBuffer buffer);

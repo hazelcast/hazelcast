@@ -59,7 +59,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private NioAsyncReadHandler readHandler;
     // immutable state
     private SocketChannel socketChannel;
-    public NioEventloop eventloop;
+    private NioEventloop eventloop;
     private Eventloop.EventloopThread eventloopThread;
     private SelectionKey key;
     private Selector selector;

@@ -21,10 +21,10 @@ import io.netty.buffer.ByteBuf;
 
 public abstract class IOUringAsyncReadHandler implements ReadHandler {
 
-    protected IOUringAsyncSocket asyncSocket;
+    protected IOUringAsyncSocket socket;
 
-    public void init(IOUringAsyncSocket asyncSocket) {
-        this.asyncSocket = asyncSocket;
+    public void init(IOUringAsyncSocket socket) {
+        this.socket = socket;
     }
 
     public abstract void onRead(ByteBuf receiveBuffer);

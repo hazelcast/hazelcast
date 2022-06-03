@@ -48,28 +48,27 @@ public abstract class AsyncSocket implements Closeable {
 
     protected final SwCounter readEvents = newSwCounter();
 
-
-    public long framesWritten() {
+    public final long framesWritten() {
         return framesWritten.get();
     }
 
-    public long bytesRead() {
+    public final long bytesRead() {
         return bytesRead.get();
     }
 
-    public long bytesWritten() {
+    public final long bytesWritten() {
         return bytesWritten.get();
     }
 
-    public long framesRead() {
+    public final long framesRead() {
         return framesRead.get();
     }
 
-    public long handleWriteCnt() {
+    public final long handleWriteCnt() {
         return handleWriteCnt.get();
     }
 
-    public long readEvents() {
+    public final long readEvents() {
         return readEvents.get();
     }
 
@@ -132,9 +131,9 @@ public abstract class AsyncSocket implements Closeable {
     /**
      * Activates an AsyncSocket by hooking it up to an EventLoop.
      *
-     * This method is not thread-safe.
-     *
      * This method should only be called once.
+     *
+     * This method is not thread-safe.
      *
      * @param eventloop
      * @throws NullPointerException  if eventloop is null.
@@ -160,10 +159,10 @@ public abstract class AsyncSocket implements Closeable {
      * This call can be used to buffer a series of request and then call
      * {@link #flush()} to trigger the actual writting to the socket.
      *
-     * This method is thread-safe.
-     *
      * There is no guarantee that frame is actually going to be received by the caller if
      * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     *
+     * This method is thread-safe.
      *
      * @param frame the frame to write.
      * @return true if the frame was accepted, false if there was an overload.

@@ -101,7 +101,7 @@ public class NioAsyncSocket_IntegrationTest {
                         frame.writeInt(-1);
                         frame.writeLong(l);
                         frame.writeComplete();
-                        asyncSocket.unsafeWriteAndFlush(frame);
+                        socket.unsafeWriteAndFlush(frame);
                     }
                 }
             }
@@ -134,7 +134,7 @@ public class NioAsyncSocket_IntegrationTest {
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
                         frame.complete();
-                        asyncSocket.unsafeWriteAndFlush(frame);
+                        socket.unsafeWriteAndFlush(frame);
                     }
                 }
             });

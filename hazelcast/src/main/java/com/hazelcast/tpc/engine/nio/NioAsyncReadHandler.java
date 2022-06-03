@@ -22,10 +22,10 @@ import java.nio.ByteBuffer;
 
 public abstract class NioAsyncReadHandler implements ReadHandler {
 
-    protected NioAsyncSocket asyncSocket;
+    protected NioAsyncSocket socket;
 
-    public void init(NioAsyncSocket asyncSocket) {
-        this.asyncSocket = asyncSocket;
+    public void init(NioAsyncSocket socket) {
+        this.socket = socket;
     }
 
     public abstract void onRead(ByteBuffer buffer);

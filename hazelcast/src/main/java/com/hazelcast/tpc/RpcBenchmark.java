@@ -109,7 +109,7 @@ public class RpcBenchmark {
                         frame.writeInt(-1);
                         frame.writeLong(l);
                         frame.writeComplete();
-                        asyncSocket.unsafeWriteAndFlush(frame);
+                        socket.unsafeWriteAndFlush(frame);
                     }
                 }
             }
@@ -149,7 +149,7 @@ public class RpcBenchmark {
                         frame.writeInt(-1);
                         frame.writeLong(l - 1);
                         frame.writeComplete();
-                        asyncSocket.unsafeWriteAndFlush(frame);
+                        socket.unsafeWriteAndFlush(frame);
                     }
                 }
             });

@@ -109,7 +109,7 @@ public class NioSyncSocket_IntegrationTest {
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
                         frame.complete();
-                        asyncSocket.unsafeWriteAndFlush(frame);
+                        socket.unsafeWriteAndFlush(frame);
                     }
                 }
             });

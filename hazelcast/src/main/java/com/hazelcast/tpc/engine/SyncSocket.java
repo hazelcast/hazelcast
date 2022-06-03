@@ -34,26 +34,26 @@ public abstract class SyncSocket implements Closeable {
 
     protected final SwCounter bytesWritten = newSwCounter();
 
-    public long framesWritten() {
+    public final long framesWritten() {
         return framesWritten.get();
     }
 
-    public long bytesRead() {
+    public final long bytesRead() {
         return bytesRead.get();
     }
 
-    public long bytesWritten() {
+    public final long bytesWritten() {
         return bytesWritten.get();
     }
 
-    public long framesRead() {
+    public final long framesRead() {
         return framesRead.get();
     }
 
     /**
      * Returns the remote address.
      *
-     * If the AsyncSocket isn't connected, null is returned.
+     * If the SyncSocket isn't connected, null is returned.
      *
      * This method is thread-safe.
      *
@@ -66,7 +66,7 @@ public abstract class SyncSocket implements Closeable {
     /**
      * Returns the local address.
      *
-     * If the AsyncSocket isn't connected, null is returned.
+     * If the SyncSocket isn't connected, null is returned.
      *
      * This method is thread-safe.
      *
@@ -96,32 +96,45 @@ public abstract class SyncSocket implements Closeable {
 
     public abstract int sendBufferSize();
 
+    /**
+     * Reads a single Frame from this SyncSocket and will block if there is no frame.
+     *
+     * This method is not thread-safe.
+     *
+     * @return the read Frame.
+     * @throws java.io.UncheckedIOException if a problem happened while reading the frame.
+     */
     public abstract Frame read();
 
+    /**
+     * Tries to read a single Frame from this SyncSocket.
+     *
+     * This method is not thread-safe.
+     *
+     * @return the read frame or null if not enough data was available to read a full frame.
+     * @throws java.io.UncheckedIOException if a problem happened while reading the frame.
+     */
     public abstract Frame tryRead();
 
     /**
-     * Ensures that any scheduled frames are flushed to the socket.
+     * Writes any scheduled frames are flushed to the socket. THis call blocks until any
+     * scheduled frame have been written to the socket.
      *
-     * What happens under the hood is that the AsyncSocket is scheduled in the
-     * {@link Eventloop} where at some point in the future the frames get written
-     * to the socket.
-     *
-     * This method is thread-safe.
+     * This method is not thread-safe.
      */
     public abstract void flush();
 
     /**
-     * Writes a frame to the AsyncSocket with scheduling the AsyncSocket
-     * in the eventloop.
+     * Writes a frame to the SyncSocket. The frame isn't actually written; it is just
+     * buffered.
      *
      * This call can be used to buffer a series of request and then call
      * {@link #flush()}.
      *
-     * This method is thread-safe.
+     * This method is not thread-safe.
      *
      * There is no guarantee that frame is actually going to be received by the caller if
-     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     * the SyncSocket has accepted the frame. E.g. when the connection closes.
      *
      * @param frame the frame to write.
      * @return true if the frame was accepted, false if there was an overload.
@@ -129,14 +142,16 @@ public abstract class SyncSocket implements Closeable {
     public abstract boolean write(Frame frame);
 
     /**
-     * Writes a frame and flushes it.
+     * Writes a frame and writes it to the socket.
      *
      * This is the same as calling {@link #write(Frame)} followed by a {@link #flush()}.
      *
      * There is no guarantee that frame is actually going to be received by the caller if
-     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     * the SyncSocket has accepted the frame. E.g. when the connection closes.
      *
      * This method is thread-safe.
+     *
+     * If there was no space, a {@link #flush()} is still triggered.
      *
      * @param frame the frame to write.
      * @return true if the frame was accepted, false if there was an overload.
@@ -144,7 +159,7 @@ public abstract class SyncSocket implements Closeable {
     public abstract boolean writeAndFlush(Frame frame);
 
     /**
-     * Connects asynchronously to some address.
+     * Connects synchronously to some address.
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}
@@ -152,7 +167,7 @@ public abstract class SyncSocket implements Closeable {
     public abstract void connect(SocketAddress address);
 
     /**
-     * Closes this {@link AsyncSocket}.
+     * Closes this {@link SyncSocket}.
      *
      * This method is thread-safe.
      *
@@ -161,7 +176,7 @@ public abstract class SyncSocket implements Closeable {
     public abstract void close();
 
     /**
-     * Checks if this AsyncSocket is closed.
+     * Checks if this SyncSocket is closed.
      *
      * This method is thread-safe.
      *
