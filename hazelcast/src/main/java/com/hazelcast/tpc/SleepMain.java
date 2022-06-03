@@ -28,10 +28,12 @@ public class SleepMain {
         eventloop.start();
 
         eventloop.execute(() -> {
-            eventloop.unsafe.sleep(10, SECONDS)
-                    .then(o -> System.out.println("Slept 10"));
-            eventloop.unsafe.sleep(5, SECONDS)
-                    .then(o -> System.out.println("Slept 5"));
+            eventloop.unsafe.sleep(10, SECONDS).then((o, o2) -> {
+                        System.out.println("Slept 10");
+            });
+            eventloop.unsafe.sleep(10, SECONDS).then((o, o2) -> {
+                System.out.println("Slept 5");
+            });
         });
     }
 }

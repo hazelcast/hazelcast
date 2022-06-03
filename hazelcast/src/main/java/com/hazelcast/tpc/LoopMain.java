@@ -22,6 +22,7 @@ import com.hazelcast.tpc.engine.nio.NioEventloop;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public class LoopMain {
 
@@ -42,16 +43,6 @@ public class LoopMain {
                     return false;
                 }
             }
-        }).then(o -> System.out.println("Loop ready")));
-
-        List<Integer> input = new ArrayList<>();
-        input.add(1);
-        input.add(2);
-        input.add(3);
-
-        eventloop.execute(() -> eventloop.unsafe.map(input, new ArrayList<>(), (FunctionEx<Integer, Integer>) integer -> integer * 2)
-                .then(integers -> System.out.println(integers)));
-
+        }).then((BiConsumer<Object, Throwable>) (o, o2) -> System.out.println("Ready")));
     }
-
 }

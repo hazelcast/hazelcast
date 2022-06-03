@@ -34,17 +34,13 @@ public abstract class Eventloop_Unsafe_Test {
     public void test_sleep() {
         AtomicInteger executedCount = new AtomicInteger();
         long startMs = System.currentTimeMillis();
-        eventloop.execute(new EventloopTask() {
-            @Override
-            public void run() throws Exception {
-                eventloop.unsafe.sleep(1, SECONDS).then(o -> executedCount.incrementAndGet());
-            }
-        });
+        eventloop.execute(() -> eventloop.unsafe.sleep(1, SECONDS)
+                .then((o, ex) -> executedCount.incrementAndGet()));
 
 
         assertEqualsEventually(1, executedCount);
-        long duration = System.currentTimeMillis() -startMs;
-        System.out.println("duration:"+duration+" ms");
+        long duration = System.currentTimeMillis() - startMs;
+        System.out.println("duration:" + duration + " ms");
     }
 
     @Test
@@ -56,7 +52,7 @@ public abstract class Eventloop_Unsafe_Test {
         eventloop.execute(() -> eventloop.unsafe.loop(eventloop -> {
             executedCount.incrementAndGet();
             return executedCount.get() < iterations;
-        }).then(o -> completed.countDown()));
+        }).then((o,ex) -> completed.countDown()));
 
 
         assertOpenEventually(completed);

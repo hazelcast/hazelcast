@@ -16,9 +16,12 @@
 
 package com.hazelcast.tpc.engine;
 
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class Future<E> {
 
@@ -33,15 +36,32 @@ public class Future<E> {
     }
 
     private Object value;
+    private boolean exceptional;
     Eventloop eventloop;
-    private List<Consumer> consumers = new ArrayList<>();
+    private List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
 
     private Future(Object value) {
         this.value = value;
     }
 
-    public void completeExceptionally(Throwable throwable){
-        complete(new Exceptional(throwable));
+    public void completeExceptionally(Throwable value) {
+        checkNotNull(value);
+
+        if (this.value != EMPTY) {
+            throw new IllegalStateException();
+        }
+        this.value = value;
+        this.exceptional = true;
+
+        if (!consumers.isEmpty()) {
+            for (BiConsumer consumer : consumers) {
+                try {
+                    consumer.accept(null, value);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public void complete(Object value) {
@@ -51,9 +71,9 @@ public class Future<E> {
         this.value = value;
 
         if (!consumers.isEmpty()) {
-            for (Consumer consumer : consumers) {
+            for (BiConsumer consumer : consumers) {
                 try {
-                    consumer.accept(value);
+                    consumer.accept(value, null);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -61,14 +81,13 @@ public class Future<E> {
         }
     }
 
-    //todo: better handling of exceptional.
-    public void then(Consumer<E> consumer) {
+    public void then(BiConsumer<E, Throwable> consumer) {
         if (this.value != EMPTY) {
-
             // todo: from pool
-            Task task = new Task();
+            Task<E> task = new Task<>();
             task.consumer = consumer;
             task.value = value;
+            task.exceptional = exceptional;
 
             eventloop.execute(task);
         } else {
@@ -76,21 +95,18 @@ public class Future<E> {
         }
     }
 
-    private static class Task implements EventloopTask {
-        private Consumer consumer;
+    private static class Task<E> implements EventloopTask {
+        private BiConsumer<E, Throwable> consumer;
         private Object value;
+        private boolean exceptional;
 
         @Override
         public void run() throws Exception {
-            consumer.accept(value);
-        }
-    }
-
-    private class Exceptional{
-        private Throwable value;
-
-        public Exceptional(Throwable value) {
-            this.value = value;
+            if (exceptional) {
+                consumer.accept(null, (Throwable) value);
+            } else {
+                consumer.accept((E) value, null);
+            }
         }
     }
 }
