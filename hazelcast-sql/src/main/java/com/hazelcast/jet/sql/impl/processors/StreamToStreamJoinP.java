@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -28,8 +29,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,8 +56,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
 
-    private final Map<Byte, Map<Byte, Long>> wmState = new HashMap<>();
-    private final Map<Byte, Long> lastEmittedWm = new HashMap<>();
+    private final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
+    private final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+    private final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
@@ -88,9 +88,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.columnCounts = columnCounts;
 
         for (Entry<Byte, Map<Byte, Long>> en : postponeTimeMap.entrySet()) {
-            for (byte innerKey : en.getValue().keySet()) {
-                wmState.computeIfAbsent(innerKey, x -> new HashMap<>()).put(en.getKey(), Long.MIN_VALUE);
-                lastEmittedWm.put(innerKey, Long.MIN_VALUE);
+            for (Byte innerKey : en.getValue().keySet()) {
+                wmState.put(innerKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
+                lastEmittedWm.put(innerKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
             }
         }
     }
@@ -110,9 +110,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return false;
         }
 
+        // TODO drop late items
+
         // having side input, traverse the opposite buffer
         if (currItem == null) {
             currItem = (JetSqlRow) item;
+            // TODO handle items after limit in wmState - don't add them to the buffer, outer-join them
             buffer[ordinal].add(currItem);
             iterator = buffer[1 - ordinal].iterator();
             if (!joinInfo.isInner()) {
@@ -120,26 +123,25 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
         }
 
-        if (!iterator.hasNext()) {
-            iterator = null;
-            currItem = null;
-            return true;
+        while (iterator.hasNext()) {
+            JetSqlRow oppositeBufferItem = iterator.next();
+            JetSqlRow preparedOutput = ExpressionUtil.join(
+                    ordinal == 0 ? currItem : oppositeBufferItem,
+                    ordinal == 0 ? oppositeBufferItem : currItem,
+                    joinInfo.condition(),
+                    evalContext);
+            // it is used already once
+            unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
+
+            if (preparedOutput != null && !tryEmit(preparedOutput)) {
+                pendingOutput.add(preparedOutput);
+                return false;
+            }
         }
 
-        JetSqlRow oppositeBufferItem = iterator.next();
-        JetSqlRow preparedOutput = ExpressionUtil.join(
-                ordinal == 0 ? currItem : oppositeBufferItem,
-                ordinal == 0 ? oppositeBufferItem : currItem,
-                joinInfo.condition(),
-                evalContext
-        );
-        // it is used already once
-        unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
-
-        if (preparedOutput != null && !tryEmit(preparedOutput)) {
-            pendingOutput.add(preparedOutput);
-        }
-        return false;
+        iterator = null;
+        currItem = null;
+        return true;
     }
 
     @Override
@@ -152,6 +154,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (!wmState.containsKey(watermark.key())) {
             return true;
         }
+        lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
         // 5.1 : update wm state
         applyToWmState(watermark);
@@ -162,16 +165,17 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
 
+        // TODO stale comments
         // 5.5 : from the remaining elements in the buffer, compute
         // the minimum time value in each watermark timestamp column.
-        for (Entry<Byte, Map<Byte, Long>> en : wmState.entrySet()) {
-            long maxInputKeyGroupTime = findMaxInputKeyGroupTime(en.getValue().values());
-            long minimumBufferTime = findMinimumBufferTime(ordinal, watermark.key());
-            long newWmTime = Math.min(maxInputKeyGroupTime, minimumBufferTime);
+        for (Entry<Byte, Long> en : wmState.entrySet()) {
+            long minimumBufferTime = findMinimumBufferTime(ordinal, en.getKey());
+            long lastReceivedWm = this.lastReceivedWm.getValue(en.getKey());
+            long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
             // 5.6 For each WM key, emit a new watermark
             // as the minimum of value computed in step 5
             // and of the last received value for that WM key.
-            if (newWmTime > lastEmittedWm.get(en.getKey())) {
+            if (newWmTime > lastEmittedWm.getValue(en.getKey())) {
                 pendingOutput.add(new Watermark(newWmTime, en.getKey()));
                 lastEmittedWm.put(en.getKey(), newWmTime);
             }
@@ -193,31 +197,27 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     private void applyToWmState(Watermark watermark) {
-        byte inputWmKey = watermark.key();
+        Byte inputWmKey = watermark.key();
         Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(inputWmKey);
         for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
             Long newLimit = watermark.timestamp() - entry.getValue();
-            assert wmState.get(entry.getKey()).get(inputWmKey) < newLimit : "old=" + wmState.get(entry.getKey()).get(inputWmKey) + ", new=" + newLimit;
-            wmState.get(entry.getKey()).put(inputWmKey, newLimit);
+            wmState.merge(entry.getKey(), newLimit, Long::max);
         }
     }
 
     private long findMinimumBufferTime(int ordinal, byte key) {
-        ToLongFunctionEx<JetSqlRow> extractor = ordinal == 0 ? leftTimeExtractors.get(key) : rightTimeExtractors.get(key);
+        ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
+        if (extractor == null) {
+            extractor = rightTimeExtractors.get(key);
+        } else {
+            assert !rightTimeExtractors.containsKey(key) : "extractor for the same key on both inputs";
+        }
 
         long min = MAX_VALUE;
         for (JetSqlRow row : buffer[ordinal]) {
             min = Math.min(min, extractor.applyAsLong(row));
         }
         return min;
-    }
-
-    private long findMaxInputKeyGroupTime(Collection<Long> values) {
-        long max = Long.MIN_VALUE;
-        for (long value : values) {
-            max = Math.max(max, value);
-        }
-        return max;
     }
 
     private void clearExpiredItemsInBuffer(int ordinal) {
@@ -233,7 +233,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         int i = 0;
         for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
             extractors[i] = entry.getValue();
-            limits[i] = findMaxInputKeyGroupTime(wmState.get(entry.getKey()).values());
+            limits[i] = wmState.get(entry.getKey());
             ++i;
         }
 

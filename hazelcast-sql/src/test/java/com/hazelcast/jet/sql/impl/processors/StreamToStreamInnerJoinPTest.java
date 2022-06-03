@@ -73,7 +73,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
-    private Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
+    private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
     private JetJoinInfo joinInfo;
 
     @BeforeClass
@@ -117,8 +117,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .disableProgressAssertion()
                 .disableSnapshots()
+                .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(0L)),
                         in(1, jetRow(0L)),
