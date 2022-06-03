@@ -36,6 +36,7 @@ import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
 import static com.hazelcast.tpc.util.Util.epochNanos;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
+import static io.netty.incubator.channel.uring.Native.IORING_OP_TIMEOUT;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
@@ -150,8 +151,7 @@ public class IOUringEventloop extends Eventloop {
         }
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-            // write to the evfd which will then wake-up epoll_wait(...)
-            Native.eventFdWrite(eventfd.intValue(), 1L);
+             Native.eventFdWrite(eventfd.intValue(), 1L);
         }
     }
 
@@ -206,7 +206,7 @@ public class IOUringEventloop extends Eventloop {
         public void handle(int fd, int res, int flags, byte op, short data) {
             CompletionListener l = completionListeners.get(fd);
             if (l == null) {
-                if (op != Native.IORING_OP_TIMEOUT) {
+                if (op != IORING_OP_TIMEOUT) {
                     System.out.println("no listener found for fd:" + fd + " op:" + op);
                 }
             } else {
