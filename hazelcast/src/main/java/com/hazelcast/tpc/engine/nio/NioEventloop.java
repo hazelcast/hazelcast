@@ -101,6 +101,6 @@ public final class NioEventloop extends Eventloop {
     /**
      * Contains the configuration for the {@link NioEventloop}.
      */
-    public static class NioConfiguration extends AbstractConfiguration {
+    public static class NioConfiguration extends Configuration {
     }
 }

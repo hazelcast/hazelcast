@@ -16,6 +16,7 @@
 
 package com.hazelcast.tpc.engine;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfiguration;
 import com.hazelcast.tpc.engine.frame.Frame;
@@ -30,10 +31,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
-import static java.lang.System.out;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -45,58 +46,44 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class Engine {
 
     private final boolean monitorSilent;
-    private final Supplier<Scheduler> schedulerSupplier;
-    private final boolean spin;
     private final EventloopType eventloopType;
-    private final ThreadAffinity threadAffinity;
-    private final String eventloopBasename;
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final MonitorThread monitorThread;
 
     public Engine(Configuration configuration) {
-        this.schedulerSupplier = configuration.schedulerSupplier;
         this.eventloopCount = configuration.eventloopCount;
-        this.spin = configuration.spin;
         this.eventloopType = configuration.eventloopType;
-        this.threadAffinity = configuration.threadAffinity;
         this.monitorSilent = configuration.monitorSilent;
-        this.eventloopBasename = configuration.eventloopBasename;
         this.eventloops = new Eventloop[eventloopCount];
         this.monitorThread = new MonitorThread(eventloops, monitorSilent);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
-            Eventloop eventloop;
             switch (eventloopType) {
                 case NIO:
-                    NioConfiguration nioConfig = new NioConfiguration();
-                    nioConfig.setThreadName(eventloopBasename + idx);
-                    nioConfig.setSpin(spin);
-                    nioConfig.setScheduler(schedulerSupplier.get());
-                    nioConfig.setThreadAffinity(threadAffinity);
-                    eventloop = new NioEventloop(nioConfig);
+                    NioConfiguration nioConfiguration = new NioConfiguration();
+                    nioConfiguration.setThreadAffinity(configuration.threadAffinity);
+                    nioConfiguration.setThreadName("eventloop-" + idx);
+                    configuration.eventloopConfigUpdater.accept(nioConfiguration);
+                    eventloops[idx] = new NioEventloop(nioConfiguration);
                     break;
                 case EPOLL:
-                    EpollConfiguration epollConfig = new EpollConfiguration();
-                    epollConfig.setThreadName(eventloopBasename + idx);
-                    epollConfig.setSpin(spin);
-                    epollConfig.setScheduler(schedulerSupplier.get());
-                    epollConfig.setThreadAffinity(threadAffinity);
-                    eventloop = new EpollEventloop(epollConfig);
+                    EpollConfiguration epollConfiguration = new EpollConfiguration();
+                    epollConfiguration.setThreadAffinity(configuration.threadAffinity);
+                    epollConfiguration.setThreadName("eventloop-" + idx);
+                    configuration.eventloopConfigUpdater.accept(epollConfiguration);
+                    eventloops[idx] = new EpollEventloop(epollConfiguration);
                     break;
                 case IOURING:
-                    IOUringConfiguration ioUringConfig = new IOUringConfiguration();
-                    ioUringConfig.setThreadName(eventloopBasename + idx);
-                    ioUringConfig.setSpin(spin);
-                    ioUringConfig.setScheduler(schedulerSupplier.get());
-                    ioUringConfig.setThreadAffinity(threadAffinity);
-                    eventloop = new IOUringEventloop(ioUringConfig);
+                    IOUringConfiguration ioUringConfiguration = new IOUringConfiguration();
+                    ioUringConfiguration.setThreadName("eventloop-" + idx);
+                    ioUringConfiguration.setThreadAffinity(configuration.threadAffinity);
+                    configuration.eventloopConfigUpdater.accept(ioUringConfiguration);
+                    eventloops[idx] = new IOUringEventloop(ioUringConfiguration);
                     break;
                 default:
-                    throw new IllegalStateException("Unknown reactorType:" + eventloopType);
+                    throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
             }
-
-            eventloops[idx] = eventloop;
         }
     }
 
@@ -164,53 +151,26 @@ public final class Engine {
         monitorThread.shutdown();
     }
 
-    public void printConfig() {
-        out.println("reactor.count:" + eventloopCount);
-        out.println("reactor.spin:" + spin);
-        out.println("reactor.type:" + eventloopType);
-        out.println("reactor.cpu-affinity:" + threadAffinity);
-    }
-
     /**
      * Contains the configuration of the {@link Engine}.
      */
     public static class Configuration {
-        private Supplier<Scheduler> schedulerSupplier;
         private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        private boolean spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
         private EventloopType eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
         private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
-        private String eventloopBasename = "eventloop-";
+        private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {};
 
-        /**
-         * Sets the ThreadAffinity for the reactor threads.
-         *
-         * @param threadAffinity the ThreadAffinity
-         * @throws NullPointerException if threadAffinity is null.
-         */
-        public void setThreadAffinity(ThreadAffinity threadAffinity) {
-            this.threadAffinity = checkNotNull(threadAffinity, "threadAffinity can't be null");
+        public void setEventloopType(EventloopType eventloopType) {
+            this.eventloopType = checkNotNull(eventloopType,"eventloopType can't be null");
         }
 
-        public void setEventloopBasename(String baseName) {
-            this.eventloopBasename = checkNotNull(baseName, "baseName can't be null");
+        public void setEventloopConfigUpdater(Consumer<Eventloop.Configuration> eventloopConfigUpdater) {
+            this.eventloopConfigUpdater = eventloopConfigUpdater;
         }
 
         public void setEventloopCount(int eventloopCount) {
             this.eventloopCount = checkPositive("reactorCount", eventloopCount);
-        }
-
-        public void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
-            this.schedulerSupplier = checkNotNull(schedulerSupplier, "schedulerSupplier can't be null");
-        }
-
-        public void setSpin(boolean spin) {
-            this.spin = spin;
-        }
-
-        public void setEventloopType(EventloopType eventloopType) {
-            this.eventloopType = checkNotNull(eventloopType);
         }
 
         public void setMonitorSilent(boolean monitorSilent) {

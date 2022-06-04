@@ -28,7 +28,6 @@ import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.EventloopType;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.SyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
@@ -132,8 +131,6 @@ public class RequestService {
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
 
-        printEventloopInfo();
-
         this.requestRegistry = new RequestRegistry(concurrentRequestLimit);
         this.responseHandler = new ResponseHandler(responseThreadCount, responseThreadSpin, requestRegistry);
         this.thisAddress = nodeEngine.getThisAddress();
@@ -161,32 +158,51 @@ public class RequestService {
     @NotNull
     private Engine newEngine() {
         Engine.Configuration configuration = new Engine.Configuration();
-        configuration.setEventloopBasename("Eventloop:[" + thisAddress.getHost() + ":" + thisAddress.getPort() + "]:");
-        configuration.setSchedulerSupplier(new Supplier<Scheduler>() {
-            @Override
-            public Scheduler get() {
-                FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
-                FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
+        configuration.setEventloopConfigUpdater(eventloopConfiguration -> {
+            FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
+            FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
 
-                return new OpScheduler(32768,
-                        Integer.MAX_VALUE,
-                        managers,
-                        localResponseFrameAllocator,
-                        remoteResponseFrameAllocator);
-            }
+            OpScheduler opScheduler = new OpScheduler(32768,
+                    Integer.MAX_VALUE,
+                    managers,
+                    localResponseFrameAllocator,
+                    remoteResponseFrameAllocator);
+
+            eventloopConfiguration.setScheduler(opScheduler);
         });
-        Engine engine = new Engine(configuration);
-        engine.printConfig();
 
+        Engine engine = new Engine(configuration);
 
         if (socketCount % engine.eventloopCount() != 0) {
-            throw new IllegalStateException("socket count is not multiple of reactor count");
+            throw new IllegalStateException("socket count is not multiple of eventloop count");
         }
 
         return engine;
     }
 
-    private void configureNio() {
+    public void start() {
+        logger.info("Starting RequestService");
+        engine.start();
+
+        EventloopType eventloopType = engine.eventloopType();
+        switch (eventloopType) {
+            case NIO:
+                startNio();
+                break;
+            case EPOLL:
+                startEpoll();
+                break;
+            case IOURING:
+                startIOUring();
+                break;
+            default:
+                throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
+        }
+
+        responseHandler.start();
+    }
+
+    private void startNio() {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) engine.eventloop(k);
 
@@ -225,7 +241,7 @@ public class RequestService {
         }
     }
 
-    private void configureIOUring() {
+    private void startIOUring() {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             IOUringEventloop eventloop = (IOUringEventloop) engine.eventloop(k);
             try {
@@ -263,7 +279,7 @@ public class RequestService {
         }
     }
 
-    private void configureEpoll() {
+    private void startEpoll() {
         for (int k = 0; k < engine.eventloopCount(); k++) {
             EpollEventloop eventloop = (EpollEventloop) engine.eventloop(k);
             try {
@@ -301,44 +317,12 @@ public class RequestService {
         }
     }
 
-    private void printEventloopInfo() {
-        java.lang.System.out.println("reactor.responsethread.count:" + responseThreadCount);
-        java.lang.System.out.println("reactor.write-through:" + writeThrough);
-        java.lang.System.out.println("reactor.channels:" + socketCount);
-        java.lang.System.out.println("reactor.pool-requests:" + poolRequests);
-        java.lang.System.out.println("reactor.pool-local-responses:" + poolLocalResponses);
-        java.lang.System.out.println("reactor.pool-remote-responses:" + poolRemoteResponses);
-        java.lang.System.out.println("reactor.cpu-affinity:" + java.lang.System.getProperty("reactor.cpu-affinity"));
-    }
-
     public int toPort(Address address, int socketId) {
         return (address.getPort() - 5701) * 100 + 11000 + socketId % engine.eventloopCount();
     }
 
     public int partitionIdToChannel(int partitionId) {
         return hashToIndex(partitionId, socketCount);
-    }
-
-    public void start() {
-        logger.info("Starting RequestService");
-        engine.start();
-
-        EventloopType eventloopType = engine.eventloopType();
-        switch (eventloopType) {
-            case NIO:
-                configureNio();
-                break;
-            case EPOLL:
-                configureEpoll();
-                break;
-            case IOURING:
-                configureIOUring();
-                break;
-            default:
-                throw new RuntimeException();
-        }
-
-        responseHandler.start();
     }
 
     private void ensureActive() {
@@ -514,5 +498,4 @@ public class RequestService {
         System.out.println("AsyncSocket " + address + " connected");
         return socket;
     }
-
 }

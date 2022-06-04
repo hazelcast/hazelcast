@@ -37,7 +37,6 @@ import static com.hazelcast.tpc.util.Util.epochNanos;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;
 import static io.netty.incubator.channel.uring.Native.IORING_OP_TIMEOUT;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
 /**
@@ -218,7 +217,7 @@ public class IOUringEventloop extends Eventloop {
     /**
      * Contains the configuration for the {@link IOUringEventloop}.
      */
-    public static class IOUringConfiguration extends AbstractConfiguration {
+    public static class IOUringConfiguration extends Configuration {
         private int flags;
         private int ringbufferSize = DEFAULT_RING_SIZE;
         private int ioseqAsyncThreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;

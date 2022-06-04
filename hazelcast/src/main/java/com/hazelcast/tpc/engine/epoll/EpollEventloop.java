@@ -165,6 +165,6 @@ public final class EpollEventloop extends Eventloop {
     /**
      * Contains the configuration for the {@link EpollEventloop}.
      */
-    public static class EpollConfiguration extends AbstractConfiguration {
+    public static class EpollConfiguration extends Configuration {
     }
 }

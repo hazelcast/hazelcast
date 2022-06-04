@@ -45,6 +45,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.tpc.engine.EventloopState.*;
 import static com.hazelcast.tpc.util.Util.epochNanos;
+import static java.lang.System.getProperty;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
@@ -88,7 +89,7 @@ public abstract class Eventloop {
 
     protected final EventloopThread eventloopThread;
 
-    public Eventloop(AbstractConfiguration config) {
+    public Eventloop(Configuration config) {
         this.spin = config.spin;
         this.scheduler = config.scheduler;
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
@@ -338,8 +339,11 @@ public abstract class Eventloop {
         }
     }
 
-    public static class AbstractConfiguration {
-        private boolean spin;
+    /**
+     * Contains the Configuration for the {@link Eventloop}.
+     */
+    public static class Configuration {
+        private boolean spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
         private Scheduler scheduler = new NopScheduler();
         private int localRunQueueCapacity = 1024;
         private int concurrentRunQueueCapacity = 4096;
@@ -396,7 +400,7 @@ public abstract class Eventloop {
      */
     public final class EventloopThread extends HazelcastManagedThread {
 
-        private EventloopThread(AbstractConfiguration config) {
+        private EventloopThread(Configuration config) {
             if (config.threadName != null) {
                 setName(config.threadName);
             }
