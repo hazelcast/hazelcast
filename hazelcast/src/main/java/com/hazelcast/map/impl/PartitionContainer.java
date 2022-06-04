@@ -240,10 +240,25 @@ public class PartitionContainer {
     }
 
     /**
-     * Called when this container's enclosing partition is removed from the
-     * member, i.e. during migration.
+     * Cleans up the container's state if the enclosing partition is migrated
+     * off this member. Whether cleanup is needed is decided based on the
+     * provided {@code replicaIndex}.
+     *
+     * @param replicaIndex The replica index to use for deciding per map whether
+     *                     cleanup is necessary or not
      */
-    public void cleanUp() {
+    final void cleanUpOnMigration(int replicaIndex) {
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+
+        mapServiceContext.getMapContainers().keySet().stream()
+                .filter(mapName -> replicaIndex == -1
+                        || replicaIndex > nodeEngine.getConfig().findMapConfig(mapName).getTotalBackupCount())
+                .forEach(this::cleanUpMap);
+    }
+
+    protected void cleanUpMap(String mapName) {
+        // overridden in enterprise
     }
 
     // -------------------------------------------------------------------------------------------------------------

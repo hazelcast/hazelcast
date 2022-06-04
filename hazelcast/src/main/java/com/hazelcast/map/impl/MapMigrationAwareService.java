@@ -183,9 +183,7 @@ class MapMigrationAwareService
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
 
-            if (event.getNewReplicaIndex() == -1) {
-                partitionContainer.cleanUp();
-            }
+            partitionContainer.cleanUpOnMigration(event.getNewReplicaIndex());
         }
 
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
@@ -222,10 +220,8 @@ class MapMigrationAwareService
                     event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
 
-            if (event.getNewReplicaIndex() == -1) {
-                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
-                partitionContainer.cleanUp();
-            }
+            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+            partitionContainer.cleanUpOnMigration(event.getCurrentReplicaIndex());
         }
 
         mapServiceContext.nullifyOwnedPartitions();
