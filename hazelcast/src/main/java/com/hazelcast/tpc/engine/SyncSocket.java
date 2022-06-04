@@ -8,17 +8,21 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import java.io.Closeable;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 
 /**
- * This class is not thread-safe.
- *
  * The SyncSocket is blocking; so therefor should not be used inside an {@link Eventloop}.
+ *
+ * Most methods in this class are not thread-safe.
  */
 public abstract class SyncSocket implements Closeable {
+
+    public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean();

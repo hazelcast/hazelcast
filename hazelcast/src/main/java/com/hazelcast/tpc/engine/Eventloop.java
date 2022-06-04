@@ -354,6 +354,12 @@ public abstract class Eventloop {
             this.threadName = threadName;
         }
 
+        /**
+         * Sets the {@link ThreadAffinity}. If the threadAffinity is null, no thread affinity
+         * is applied.
+         *
+         * @param threadAffinity the ThreadAffinity.
+         */
         public void setThreadAffinity(ThreadAffinity threadAffinity) {
             this.threadAffinity = threadAffinity;
         }

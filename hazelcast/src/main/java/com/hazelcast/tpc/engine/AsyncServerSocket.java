@@ -21,9 +21,13 @@ import com.hazelcast.logging.Logger;
 
 import java.io.Closeable;
 import java.net.SocketAddress;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AsyncServerSocket implements Closeable {
+
+    public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final ILogger logger = Logger.getLogger(this.getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);

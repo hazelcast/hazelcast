@@ -130,8 +130,7 @@ public final class Engine {
             eventloop.start();
         }
 
-
-        this.monitorThread.start();
+        monitorThread.start();
     }
 
     public void shutdown() {

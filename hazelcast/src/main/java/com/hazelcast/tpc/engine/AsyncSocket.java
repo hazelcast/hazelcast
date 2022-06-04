@@ -25,11 +25,20 @@ import java.io.Closeable;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
+/**
+ * A Socket that is asynchronous. So reads and writes do not block, but are executed
+ * on an {@link Eventloop}.
+ */
 public abstract class AsyncSocket implements Closeable {
+
+    public final ConcurrentMap context = new ConcurrentHashMap();
+
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean();
 
