@@ -43,6 +43,7 @@ import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.impl.DefaultAddressPickerTest.findIPv6NonLoopbackInterface;
 import static com.hazelcast.spi.properties.ClusterProperty.PREFER_IPv4_STACK;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNotNull;
@@ -53,7 +54,7 @@ import static org.junit.Assume.assumeNotNull;
 public class IpVersionPreferenceTest {
 
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv4Stack = clear(PREFER_IPV4_STACK);
     @Rule

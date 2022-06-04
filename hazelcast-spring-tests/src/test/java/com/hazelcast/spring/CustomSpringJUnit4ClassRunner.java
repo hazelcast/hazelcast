@@ -48,7 +48,7 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
         ConfigFactoryAccessor.setConfigSupplier(() -> {
             Config config = smallInstanceConfig();
             config.setProperty("java.net.preferIPv4Stack", "true");
-            config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+            config.setProperty(ClusterProperty.SERVER_LOCAL_ADDRESS.getName(), "127.0.0.1");
             config.setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false");
             config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
             return config;

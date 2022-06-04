@@ -42,6 +42,7 @@ import java.util.Collection;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.Collections.singleton;
@@ -56,7 +57,7 @@ public class DefaultAddressPickerHostnameTest {
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv4 = set(PREFER_IPV4_STACK, "true");
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
 
     private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();

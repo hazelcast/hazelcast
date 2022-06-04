@@ -27,8 +27,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
@@ -52,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 public class LiteMemberJoinTest {
 
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
 
     private final String name = randomString();
 

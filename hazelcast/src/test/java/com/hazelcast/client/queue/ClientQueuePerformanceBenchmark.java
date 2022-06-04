@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Random;
@@ -39,7 +40,7 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
     private static IQueue<Object> queue;
 
     public static void main(String[] args) {
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        ClusterProperty.SERVER_LOCAL_ADDRESS.setSystemProperty("127.0.0.1");
         server = Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);

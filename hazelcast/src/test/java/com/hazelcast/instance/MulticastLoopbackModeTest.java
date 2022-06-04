@@ -16,9 +16,9 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -35,6 +35,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
@@ -65,7 +66,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 
     private void createTestEnvironment(boolean loopbackMode) throws Exception {
         Config config = new Config();
-        config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), "127.0.0.1");
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
         multicastConfig.setEnabled(true);
         multicastConfig.setLoopbackModeEnabled(loopbackMode);

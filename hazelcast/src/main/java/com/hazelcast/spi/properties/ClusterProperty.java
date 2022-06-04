@@ -409,6 +409,19 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
 
     /**
+     * It is an overrider property for the default server socket listener’s IP address.
+     * If this property is set, then this is the address where the server socket is bound to.
+     */
+    public static final HazelcastProperty SERVER_LOCAL_ADDRESS
+            = new HazelcastProperty("hazelcast.local.localAddress");
+
+    /**
+     * It is an overrider property for the default public address to be advertised to other cluster members and clients.
+     */
+    public static final HazelcastProperty SERVER_PUBLIC_ADDRESS
+            = new HazelcastProperty("hazelcast.local.publicAddress");
+
+    /**
      * The delay until the first run of the split-brain handler.
      */
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS

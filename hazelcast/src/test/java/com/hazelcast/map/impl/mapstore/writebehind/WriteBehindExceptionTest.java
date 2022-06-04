@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindExceptionTest extends AbstractMapStoreTest {
@@ -53,7 +55,7 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
     private <K, V> void testWriteBehindUsesStoreAllUntilException(MapStore<K, V> mapStore) throws InterruptedException {
         mapStore.setLoadAllKeys(false);
         Config config = newConfig(mapStore, 5);
-        config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), "127.0.0.1");
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, String> map = instance.getMap("map");
         IMap<Integer, String> map2 = instance.getMap("map2");

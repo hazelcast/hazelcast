@@ -55,6 +55,8 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_PUBLIC_ADDRESS;
 
 class DefaultAddressPicker
         implements AddressPicker {
@@ -290,7 +292,7 @@ class DefaultAddressPicker
     }
 
     private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
-        String address = config.getProperty("hazelcast.local.localAddress");
+        String address = hazelcastProperties.getString(SERVER_LOCAL_ADDRESS);
         if (address != null) {
             address = address.trim();
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
@@ -304,7 +306,7 @@ class DefaultAddressPicker
     }
 
     private AddressDefinition getPublicAddress(int port) throws UnknownHostException {
-        String address = config.getProperty("hazelcast.local.publicAddress");
+        String address = hazelcastProperties.getString(SERVER_PUBLIC_ADDRESS);
         if (address == null) {
             address = publicAddressConfig;
         }

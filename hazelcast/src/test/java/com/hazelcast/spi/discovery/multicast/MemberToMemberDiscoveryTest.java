@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
@@ -50,7 +51,7 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     @Rule
     public final OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
     @Rule
-    public final OverridePropertyRule overrideHazelcastLocalAddressRule = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule overrideHazelcastLocalAddressRule = clear(SERVER_LOCAL_ADDRESS.getName());
 
     private Config config;
 

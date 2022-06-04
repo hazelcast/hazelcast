@@ -33,7 +33,7 @@ public class SimpleMapTestFromClient {
     static {
         ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("0");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        ClusterProperty.SERVER_LOCAL_ADDRESS.setSystemProperty("127.0.0.1");
         ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         ClusterProperty.SOCKET_BIND_ANY.setSystemProperty("false");
     }

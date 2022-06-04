@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 public class MulticastJoinTest extends AbstractJoinTest {
 
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
 
     @Before
     @After

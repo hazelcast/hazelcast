@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class ClusterJoinConfigCheckTest {
 
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
 
     private static final int BASE_PORT = 7777;
 

@@ -16,14 +16,14 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.AddressDefinition;
 import com.hazelcast.instance.impl.DefaultAddressPicker.InterfaceDefinition;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -47,9 +47,11 @@ import java.util.Enumeration;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_PUBLIC_ADDRESS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -62,13 +64,12 @@ import static org.junit.Assume.assumeNotNull;
 public class DefaultAddressPickerTest {
 
     private static final String PUBLIC_HOST = "www.hazelcast.org";
-    private static final String HAZELCAST_LOCAL_ADDRESS_PROP = "hazelcast.local.localAddress";
 
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-default-address-picker.xml");
 
     @Rule
-    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(HAZELCAST_LOCAL_ADDRESS_PROP);
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(SERVER_LOCAL_ADDRESS.getName());
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv4Stack = set(PREFER_IPV4_STACK, "false");
     @Rule
@@ -100,13 +101,13 @@ public class DefaultAddressPickerTest {
 
     @Test
     public void testBindAddress_withDefaultPortAndLoopbackAddress() throws Exception {
-        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, loopback.getHostAddress());
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), loopback.getHostAddress());
         testBindAddress(loopback);
     }
 
     @Test
     public void testBindAddress_withCustomPortAndLoopbackAddress() throws Exception {
-        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, loopback.getHostAddress());
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), loopback.getHostAddress());
         int port = 6789;
         config.getNetworkConfig().setPort(port);
         testBindAddress(loopback);
@@ -163,7 +164,7 @@ public class DefaultAddressPickerTest {
         InetAddress address = findAnyNonLoopbackInterface();
         assumeNotNull(address);
 
-        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, getHostAddress(address));
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), getHostAddress(address));
 
         testBindAddress(address);
     }
@@ -179,7 +180,7 @@ public class DefaultAddressPickerTest {
 
     @Test
     public void testBindAddress_withEphemeralPort() throws Exception {
-        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, loopback.getHostAddress());
+        config.setProperty(SERVER_LOCAL_ADDRESS.getName(), loopback.getHostAddress());
         config.getNetworkConfig().setPort(0);
 
         addressPicker = new DefaultAddressPicker(config, logger);
@@ -256,7 +257,7 @@ public class DefaultAddressPickerTest {
     public void testPublicAddress_withSpecifiedHostAndPortViaProperty() throws Exception {
         String host = PUBLIC_HOST;
         int port = 6789;
-        config.setProperty("hazelcast.local.publicAddress", host + ":" + port);
+        config.setProperty(SERVER_PUBLIC_ADDRESS.getName(), host + ":" + port);
 
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();

@@ -37,6 +37,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SERVER_LOCAL_ADDRESS;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class TcpIpJoinTest extends AbstractJoinTest {
@@ -94,7 +96,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Test
     public void test_whenHostAndInterfacesConfigured() throws Exception {
-        System.clearProperty("hazelcast.local.localAddress");
+        System.clearProperty(SERVER_LOCAL_ADDRESS.getName());
 
         final Config config = new Config();
         config.setProperty("hazelcast.socket.bind.any", "false");
