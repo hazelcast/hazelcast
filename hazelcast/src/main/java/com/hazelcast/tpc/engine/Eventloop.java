@@ -43,7 +43,7 @@ import java.util.function.Function;
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.tpc.engine.EventloopState.*;
+import static com.hazelcast.tpc.engine.Eventloop.State.*;
 import static com.hazelcast.tpc.util.Util.epochNanos;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -60,8 +60,8 @@ public abstract class Eventloop {
     private static final EventloopTask SHUTDOWN_TASK = () -> {
     };
 
-    protected final static AtomicReferenceFieldUpdater<Eventloop, EventloopState> STATE
-            = newUpdater(Eventloop.class, EventloopState.class, "state");
+    protected final static AtomicReferenceFieldUpdater<Eventloop, State> STATE
+            = newUpdater(Eventloop.class, State.class, "state");
 
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
@@ -77,7 +77,7 @@ public abstract class Eventloop {
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
 
-    protected volatile EventloopState state = NEW;
+    protected volatile State state = NEW;
 
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
@@ -114,7 +114,7 @@ public abstract class Eventloop {
      *
      * @return the state.
      */
-    public final EventloopState state() {
+    public final State state() {
         return state;
     }
 
@@ -155,7 +155,7 @@ public abstract class Eventloop {
      */
     public final void shutdown() {
         for (; ; ) {
-            EventloopState oldState = state;
+            State oldState = state;
             switch (oldState) {
                 case NEW:
                     if (STATE.compareAndSet(this, oldState, TERMINATED)) {
@@ -510,5 +510,12 @@ public abstract class Eventloop {
             execute(task);
             return promise;
         }
+    }
+
+    public enum State {
+        NEW,
+        RUNNING,
+        SHUTDOWN,
+        TERMINATED
     }
 }

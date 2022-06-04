@@ -25,7 +25,7 @@ import io.netty.util.collection.IntObjectMap;
 
 import java.io.IOException;
 
-import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
+import static com.hazelcast.tpc.engine.Eventloop.State.RUNNING;
 import static io.netty.channel.epoll.Native.EPOLLIN;
 import static io.netty.channel.epoll.Native.epollCtlAdd;
 

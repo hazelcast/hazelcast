@@ -24,7 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
-import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
+import static com.hazelcast.tpc.engine.Eventloop.State.RUNNING;
 import static com.hazelcast.tpc.util.Util.epochNanos;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 

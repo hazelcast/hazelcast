@@ -32,7 +32,7 @@ import io.netty.util.internal.PlatformDependent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.tpc.engine.EventloopState.RUNNING;
+import static com.hazelcast.tpc.engine.Eventloop.State.RUNNING;
 import static com.hazelcast.tpc.util.Util.epochNanos;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_IOSEQ_ASYNC_THRESHOLD;
 import static io.netty.incubator.channel.uring.Native.DEFAULT_RING_SIZE;

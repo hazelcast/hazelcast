@@ -16,7 +16,6 @@
 
 package com.hazelcast.tpc.engine;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfiguration;
 import com.hazelcast.tpc.engine.frame.Frame;
@@ -27,13 +26,15 @@ import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.tpc.engine.Engine.State.RUNNING;
+import static com.hazelcast.tpc.engine.Engine.State.SHUTDOWN;
+import static com.hazelcast.tpc.engine.Engine.State.TERMINATED;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -50,6 +51,7 @@ public final class Engine {
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final MonitorThread monitorThread;
+    private final AtomicReference<State> state = new AtomicReference<>(State.NEW);
 
     public Engine(Configuration configuration) {
         this.eventloopCount = configuration.eventloopCount;
@@ -85,6 +87,17 @@ public final class Engine {
                     throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
             }
         }
+    }
+
+    /**
+     * Returns the Engine State.
+     *
+     * This method is thread-safe.
+     *
+     * @return the engine state.
+     */
+    public State state() {
+        return state.get();
     }
 
     public EventloopType eventloopType() {
@@ -126,28 +139,63 @@ public final class Engine {
     }
 
     public void start() {
-        for (Eventloop eventloop : eventloops) {
-            eventloop.start();
-        }
+        for (; ; ) {
+            State oldState = state.get();
+            if (oldState != RUNNING) {
+                throw new IllegalStateException();
+            }
 
-        monitorThread.start();
+            if (!state.compareAndSet(oldState, RUNNING)) {
+                continue;
+            }
+
+            for (Eventloop eventloop : eventloops) {
+                eventloop.start();
+            }
+
+            monitorThread.start();
+            return;
+        }
     }
 
     public void shutdown() {
-        for (Eventloop eventloop : eventloops) {
-            eventloop.shutdown();
-        }
-
-        try {
-            for (Eventloop eventloop : eventloops) {
-                eventloop.awaitTermination(5, SECONDS);
+        for (; ; ) {
+            State oldState = state.get();
+            switch (oldState) {
+                case NEW:
+                    if(!state.compareAndSet(oldState, TERMINATED)){
+                        continue;
+                    }
+                    break;
+                case RUNNING:
+                    if(!state.compareAndSet(oldState, SHUTDOWN)){
+                        continue;
+                    }
+                    break;
+                case SHUTDOWN:
+                    return;
+                case TERMINATED:
+                    return;
+                default:
+                    throw new IllegalStateException();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
 
-        monitorThread.shutdown();
+            for (Eventloop eventloop : eventloops) {
+                eventloop.shutdown();
+            }
+
+            try {
+                for (Eventloop eventloop : eventloops) {
+                    eventloop.awaitTermination(5, SECONDS);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+
+            monitorThread.shutdown();
+            return;
+        }
     }
 
     /**
@@ -158,10 +206,11 @@ public final class Engine {
         private EventloopType eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
         private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
-        private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {};
+        private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
+        };
 
         public void setEventloopType(EventloopType eventloopType) {
-            this.eventloopType = checkNotNull(eventloopType,"eventloopType can't be null");
+            this.eventloopType = checkNotNull(eventloopType, "eventloopType can't be null");
         }
 
         public void setEventloopConfigUpdater(Consumer<Eventloop.Configuration> eventloopConfigUpdater) {
@@ -175,5 +224,12 @@ public final class Engine {
         public void setMonitorSilent(boolean monitorSilent) {
             this.monitorSilent = monitorSilent;
         }
+    }
+
+    public enum State {
+        NEW,
+        RUNNING,
+        SHUTDOWN,
+        TERMINATED
     }
 }
