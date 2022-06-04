@@ -47,14 +47,14 @@ public final class Promise<E> {
     int refCount = 1;
     PromiseAllocator allocator;
 
-    public Promise(Eventloop eventloop) {
+    Promise(Eventloop eventloop) {
         this.eventloop = checkNotNull(eventloop);
     }
 
     /**
      * Checks if the Promise has been completed.
      *
-     * @return true if it has been completed, false otherwise.
+     * @return <code>true</code> if it has been completed, <code>false</code> otherwise.
      */
     public boolean isDone() {
         return value != EMPTY;
@@ -63,7 +63,7 @@ public final class Promise<E> {
     /**
      * Checks if the Promise has been completed exceptionally.
      *
-     * @return true if completed exceptionally, false otherwise.
+     * @return <code>true</code> if completed exceptionally, <code>false</code> otherwise.
      */
     public boolean isCompletedExceptionally() {
         return value != EMPTY && exceptional;
@@ -73,7 +73,7 @@ public final class Promise<E> {
      * Completes this Promise with the provided exceptional value.
      *
      * @param value the exceptional value.
-     * @throws NullPointerException  if value is null.
+     * @throws NullPointerException  if value is <code>null</code>.
      * @throws IllegalStateException if the Promise is already completed.
      */
     public void completeExceptionally(Throwable value) {

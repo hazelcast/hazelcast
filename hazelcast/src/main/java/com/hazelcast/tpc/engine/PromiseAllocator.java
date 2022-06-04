@@ -37,7 +37,6 @@ final class PromiseAllocator {
         if (index == -1) {
             Promise promise = new Promise(eventloop);
             promise.allocator = this;
-            promise.refCount = 1;
             return promise;
         }
 
