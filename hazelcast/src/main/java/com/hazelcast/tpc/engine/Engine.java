@@ -134,7 +134,7 @@ public final class Engine {
         eventloops[eventloopIdx].execute(frame);
     }
 
-    public void run(int eventloopIdx, EventloopTask task) {
+    public void run(int eventloopIdx, Eventloop.EventloopTask task) {
         eventloops[eventloopIdx].execute(task);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.tpc.engine.epoll;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
@@ -370,7 +369,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventLoopHandler implements EventloopTask {
+    private class EventLoopHandler implements Eventloop.EventloopTask {
         @Override
         public void run() {
             try {

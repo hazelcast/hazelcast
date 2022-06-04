@@ -19,7 +19,6 @@ package com.hazelcast.tpc.engine.nio;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.EventloopTask;
 import com.hazelcast.tpc.engine.frame.Frame;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -347,7 +346,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventLoopHandler implements NioSelectedKeyListener, EventloopTask {
+    private class EventLoopHandler implements NioSelectedKeyListener, Eventloop.EventloopTask {
 
         @Override
         public void run() {

@@ -512,10 +512,21 @@ public abstract class Eventloop {
         }
     }
 
+    /**
+     * The state of the {@link Eventloop}.
+     */
     public enum State {
         NEW,
         RUNNING,
         SHUTDOWN,
         TERMINATED
+    }
+
+    /**
+     * A task that gets executed on the {@link Eventloop}.
+     */
+    public interface EventloopTask {
+
+        void run() throws Exception;
     }
 }
