@@ -54,10 +54,10 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     private int unflushedFramesCapacity = 65536;
-    private final boolean clientSide;
     private NioAsyncReadHandler readHandler;
     // immutable state
-    private SocketChannel socketChannel;
+    private final SocketChannel socketChannel;
+    private final boolean clientSide;
     private NioEventloop eventloop;
     private Eventloop.EventloopThread eventloopThread;
     private SelectionKey key;

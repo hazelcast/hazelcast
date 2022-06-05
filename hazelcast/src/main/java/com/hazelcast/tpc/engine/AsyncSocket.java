@@ -144,9 +144,9 @@ public abstract class AsyncSocket implements Closeable {
      *
      * This method is not thread-safe.
      *
-     * @param eventloop
+     * @param eventloop the Eventloop this AsyncSocket belongs to.
      * @throws NullPointerException  if eventloop is null.
-     * @throws IllegalStateException if the AsyncSocket is already activated.
+     * @throws IllegalStateException if this AsyncSocket is already activated.
      */
     public abstract void activate(Eventloop eventloop);
 
@@ -165,11 +165,11 @@ public abstract class AsyncSocket implements Closeable {
      * Writes a frame to the AsyncSocket without scheduling the AsyncSocket
      * in the eventloop.
      *
-     * This call can be used to buffer a series of request and then call
-     * {@link #flush()} to trigger the actual writting to the socket.
+     * This call can be used to buffer a series of frames and then call
+     * {@link #flush()} to trigger the actual writing to the socket.
      *
-     * There is no guarantee that frame is actually going to be received by the caller if
-     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     * There is no guarantee that frame is actually going to be received by the caller after
+     * the AsyncSocket has accepted the frame. E.g. when the TCP/IP connection is dropped.
      *
      * This method is thread-safe.
      *
