@@ -139,7 +139,6 @@ public class IOUringEventloop extends Eventloop {
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
-
         this.storageScheduler = new StorageScheduler(this, 512);
         super.beforeEventloop();
     }

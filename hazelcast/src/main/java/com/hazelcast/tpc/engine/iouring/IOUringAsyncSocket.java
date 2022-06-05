@@ -55,14 +55,14 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return new IOUringAsyncSocket();
     }
 
-    protected LinuxSocket socket;
+    private final LinuxSocket socket;
     private IOUringEventloop eventloop;
 
     // ======================================================
     // For the reading side of the socket
     // ======================================================
-    protected ByteBuf receiveBuff;
-    protected IOUringSubmissionQueue sq;
+    private ByteBuf receiveBuff;
+    private IOUringSubmissionQueue sq;
 
     // ======================================================
     // for the writing side of the socket.
@@ -337,7 +337,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
-        CompletableFuture<AsyncSocket> future = new CompletableFuture();
+        CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
 
         try {
             //System.out.println(getName() + " connectRequest to address:" + address);
