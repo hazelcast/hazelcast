@@ -108,7 +108,7 @@ public class IOUringEventloop extends Eventloop {
     private final FileDescriptor eventfd = Native.newBlockingEventFd();
     IOUringSubmissionQueue sq;
     private IOUringCompletionQueue cq;
-    private long eventfdReadBuf = PlatformDependent.allocateMemory(8);
+    private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
     // we could use an array.
     final IntObjectMap<CompletionListener> completionListeners = new IntObjectHashMap<>(4096);
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
@@ -116,9 +116,9 @@ public class IOUringEventloop extends Eventloop {
 
     protected StorageScheduler storageScheduler;
 
-    private int ringbufferSize;
-    private int ioseqAsyncThreshold;
-    private int flags;
+    private final int ringbufferSize;
+    private final int ioseqAsyncThreshold;
+    private final int flags;
     private final EventloopHandler eventLoopHandler = new EventloopHandler();
 
     public IOUringEventloop() {
@@ -139,6 +139,7 @@ public class IOUringEventloop extends Eventloop {
         this.sq = ringBuffer.ioUringSubmissionQueue();
         this.cq = ringBuffer.ioUringCompletionQueue();
         this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
+
         this.storageScheduler = new StorageScheduler(this, 512);
         super.beforeEventloop();
     }

@@ -34,7 +34,6 @@ public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
     public FrameAllocator remoteResponseFrameAllocator;
     public Consumer<Frame> responseHandler;
     public OpScheduler opScheduler;
-    private IOUringAsyncSocket asyncSocket;
 
     @Override
     public void onRead(ByteBuf buf) {
@@ -56,7 +55,7 @@ public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);
                 inboundFrame.writeInt(frameFlags);
-                inboundFrame.socket = asyncSocket;
+                inboundFrame.socket = socket;
             }
 
             if (inboundFrame.remaining() > buf.readableBytes()) {

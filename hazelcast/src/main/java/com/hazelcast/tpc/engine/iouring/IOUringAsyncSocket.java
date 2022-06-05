@@ -309,8 +309,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
 
-            // todo: offloading.
-
             //todo: also think about releasing the resources like frame buffers
             // perhaps add a one time close check
 

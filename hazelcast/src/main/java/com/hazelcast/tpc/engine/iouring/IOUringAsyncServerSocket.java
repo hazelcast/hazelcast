@@ -30,6 +30,14 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
+    /**
+     * Opens a new IOUringAsyncServerSocket.
+     *
+     * @param eventloop the IOUringEventloop this IOUringAsyncServerSocket belongs to.
+     * @return the created IOUringAsyncServerSocket
+     * @throws NullPointerException if eventloop is null.
+     * @throws UncheckedIOException if there was a problem opening the socket.
+     */
     public static IOUringAsyncServerSocket open(IOUringEventloop eventloop) {
         return new IOUringAsyncServerSocket(eventloop);
     }
@@ -61,6 +69,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
+    /**
+     * Returns the underlying {@link LinuxSocket}.
+     *
+     * @return the {@link LinuxSocket}.
+     */
     public LinuxSocket serverSocket() {
         return serverSocket;
     }
@@ -71,7 +84,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected SocketAddress getLocalAddress0() throws Exception {
+    protected SocketAddress getLocalAddress0() {
         return serverSocket.localAddress();
     }
 
