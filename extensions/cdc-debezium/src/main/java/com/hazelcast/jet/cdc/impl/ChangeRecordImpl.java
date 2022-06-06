@@ -43,22 +43,6 @@ public class ChangeRecordImpl implements ChangeRecord {
     private final RecordPart newValue;
 
     public ChangeRecordImpl(
-            long sequenceSource,
-            long sequenceValue,
-            Operation operation,
-            @Nonnull String keyJson,
-            @Nullable String oldValueJson,
-            @Nullable String newValueJson
-    ) {
-        this.sequenceSource = sequenceSource;
-        this.sequenceValue = sequenceValue;
-        this.operation = operation;
-        this.keyJson = requireNonNull(keyJson, "keyJson");
-        this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
-        this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
-    }
-
-    public ChangeRecordImpl(
             long timestamp,
             long sequenceSource,
             long sequenceValue,

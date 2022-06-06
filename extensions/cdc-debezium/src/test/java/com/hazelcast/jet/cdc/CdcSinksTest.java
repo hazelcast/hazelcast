@@ -43,6 +43,8 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.cdc.Operation.*;
+
 @Category(QuickTest.class)
 public class CdcSinksTest extends PipelineTestSupport {
 
@@ -51,19 +53,19 @@ public class CdcSinksTest extends PipelineTestSupport {
     private static final String ID = "id";
     private static final String EMAIL = "email";
 
-    private static final ChangeRecord SYNC1 = new ChangeRecordImpl(0, 0,  Operation.SYNC,
+    private static final ChangeRecord SYNC1 = changeRecord(0,  SYNC,
             "{\"" + ID + "\":1001}",
             null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sally.thomas@acme.com\",\"__op\":\"r\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord INSERT2 = new ChangeRecordImpl(0, 1, Operation.INSERT,
+    private static final ChangeRecord INSERT2 = changeRecord(1, INSERT,
             "{\"" + ID + "\":1002}",
             null, "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"c\",\"__ts_ms\":1588927306269,\"__deleted\":\"false\"}");
-    private static final ChangeRecord UPDATE1 = new ChangeRecordImpl(0, 2,  Operation.UPDATE,
+    private static final ChangeRecord UPDATE1 = changeRecord(2,  UPDATE,
             "{\"" + ID + "\":1001}",
             null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sthomas@acme.com\",\"__op\":\"u\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord DELETE2 = new ChangeRecordImpl(0, 3, Operation.DELETE,
+    private static final ChangeRecord DELETE2 = changeRecord(3, DELETE,
             "{\"" + ID + "\":1002}",
             "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"d\",\"__ts_ms\":1588927306269,\"__deleted\":\"true\"}", null);
@@ -209,13 +211,13 @@ public class CdcSinksTest extends PipelineTestSupport {
         SupplierEx<Iterator<? extends ChangeRecord>> supplier = () -> Arrays.asList(
                 SYNC1,
                 UPDATE1,
-                new ChangeRecordImpl(0, 10, Operation.UPDATE, UPDATE1.key().toJson(), null,
+                changeRecord(10, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")),
-                new ChangeRecordImpl(0, 11, Operation.UPDATE, UPDATE1.key().toJson(), null,
+                changeRecord(11, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas3@acme.com")),
-                new ChangeRecordImpl(0, 12, Operation.UPDATE, UPDATE1.key().toJson(), null,
+                changeRecord(12, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
-                new ChangeRecordImpl(0, 13, Operation.UPDATE, UPDATE1.key().toJson(), null,
+                changeRecord(13, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
         ).iterator();
         Util.checkSerializable(supplier, "kaka");
@@ -278,7 +280,7 @@ public class CdcSinksTest extends PipelineTestSupport {
     public void sourceSwitch() {
         p.readFrom(items(() -> Arrays.asList(
                 UPDATE1, INSERT2,
-                new ChangeRecordImpl(1, 0, Operation.UPDATE, UPDATE1.key().toJson(), null,
+                                changeRecord( 0, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")))
                 .iterator()))
                 .writeTo(localSync());
@@ -331,6 +333,11 @@ public class CdcSinksTest extends PipelineTestSupport {
                     }
                     buf.close();
                 }).build();
+    }
+
+    private static ChangeRecord changeRecord(int sequenceValue, Operation operation, String keyJson, String oldValueJson, String newValueJson) {
+        return new ChangeRecordImpl(0, 0, sequenceValue,  operation,
+                keyJson, oldValueJson, newValueJson, "t", "s", "d");
     }
 
 }
