@@ -21,7 +21,6 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
-import com.hazelcast.jet.kafka.impl.TopicsConfig;
 import com.hazelcast.jet.kafka.impl.WriteKafkaP;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;

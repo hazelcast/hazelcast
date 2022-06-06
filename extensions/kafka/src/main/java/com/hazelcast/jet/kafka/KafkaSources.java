@@ -19,7 +19,6 @@ package com.hazelcast.jet.kafka;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.kafka.impl.TopicsConfig;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
@@ -60,6 +59,8 @@ public final class KafkaSources {
 
     /**
      * Convenience for {@link #kafka(Properties, FunctionEx, TopicsConfig)}.
+     *
+     * @since Jet 5.2
      */
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(

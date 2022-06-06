@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.kafka.KafkaProcessors;
+import com.hazelcast.jet.kafka.TopicsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

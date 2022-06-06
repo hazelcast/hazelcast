@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.impl;
-
-import com.hazelcast.jet.kafka.KafkaProcessors;
+package com.hazelcast.jet.kafka;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,6 +32,8 @@ import static java.util.Collections.unmodifiableMap;
  * by the {@linkplain KafkaProcessors#streamKafkaP Kafka processor}.
  */
 public class TopicsConfig implements Serializable {
+
+    private static final long serialVersionUID = 9103238799607267955L;
 
     private final Map<String, TopicConfig> topicConfigs = new HashMap<>();
 
@@ -110,9 +110,14 @@ public class TopicsConfig implements Serializable {
      */
     public static class TopicConfig implements Serializable {
 
+        private static final long serialVersionUID = 1095406385054883556L;
+
         private final String topicName;
         private final Map<Integer, Long> partitionsInitialOffsets = new HashMap<>();
 
+        /**
+         * Creates new topic configuration for given topic name.
+         */
         public TopicConfig(@Nonnull String topicName) {
             checkNotNull(topicName);
             this.topicName = topicName;
