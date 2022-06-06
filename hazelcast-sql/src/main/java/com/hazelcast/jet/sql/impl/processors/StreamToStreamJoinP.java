@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.google.common.collect.Streams;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
@@ -34,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
@@ -89,6 +91,29 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         for (Byte wmKey : postponeTimeMap.keySet()) {
             wmState.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
             lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
+        }
+
+        // no key must be on both sides
+        if (Streams.concat(leftTimeExtractors.keySet().stream(), rightTimeExtractors.keySet().stream()).distinct().count()
+                != leftTimeExtractors.size() + rightTimeExtractors.size()) {
+            throw new IllegalArgumentException("Some watermark key is found on both inputs. Left="
+                    + leftTimeExtractors.keySet() + ", right=" + rightTimeExtractors.keySet());
+        }
+
+        // postponeTimeMap must contain at least one bound for a key on left, involving a key on right, and vice versa
+        boolean[] found = new boolean[2];
+        for (Entry<Byte, Map<Byte, Long>> outerEntry : postponeTimeMap.entrySet()) {
+            for (Byte innerKey : outerEntry.getValue().keySet()) {
+                int innerOrdinal = leftTimeExtractors.containsKey(innerKey) ? 0 : 1;
+                int outerOrdinal = leftTimeExtractors.containsKey(outerEntry.getKey()) ? 0 : 1;
+                // innerOrdinal == outerOrdinal if the time bound is between timestamps on the same input, we ignore those
+                if (innerOrdinal != outerOrdinal) {
+                    found[innerOrdinal] = true;
+                }
+            }
+        }
+        if (!found[0] || !found[1]) {
+            throw new IllegalArgumentException("Not enough time bounds in postponeTimeMap");
         }
     }
 

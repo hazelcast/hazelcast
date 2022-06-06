@@ -52,12 +52,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -67,7 +67,6 @@ import static org.apache.calcite.rel.core.JoinRelType.INNER;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
-    private static final ConstantExpression<?> TRUE_PREDICATE = ConstantExpression.create(true, BOOLEAN);
     private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
             RemainderFunction.create(
                     ColumnExpression.create(0, BIGINT),
@@ -205,7 +204,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .disableProgressAssertion()
+                .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
                         in(0, jetRow(12L, 9L)),
@@ -235,29 +234,29 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 );
     }
 
-    /*
-        Kinda of
-        SELECT * FROM a
-        JOIN b ON b.a BETWEEN a.a AND a.a + 1
-        JOIN c ON (c.c BETWEEN b.a AND b.a + 2) AND (c.d BETWEEN b.a AND b.a + 2)  -- 'c' contains WMs '2' and '3'.
-     */
     @Test
-    public void given_alwaysTrueCondition_when_twoWmKeysOnEachInput_then_successful() {
-        // FROM l
+    public void test_twoWmKeysOnEachInput() {
+        // `l` and `r` both have `time1` and `time2` columns
+        // Join condition:
+        //     r.time1 BETWEEN l.time1 -1 AND l.time1 + 2
+        //     AND r.time2 BETWEEN l.time1 - 3 AND l.time1 + 4
 
         // left ordinal
-        postponeTimeMap.put((byte) 0, emptyMap());
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 2, 1L));
+        postponeTimeMap.put((byte) 0, ImmutableMap.of((byte) 2, 2L, (byte) 3, 4L));
+        postponeTimeMap.put((byte) 1, ImmutableMap.of());
         leftExtractors = new HashMap<>();
         leftExtractors.put((byte) 0, l -> l.getRow().get(0));
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
 
         // right ordinal
-        postponeTimeMap.put((byte) 2, singletonMap((byte) 1, 2L));
-        postponeTimeMap.put((byte) 3, singletonMap((byte) 1, 2L));
+        postponeTimeMap.put((byte) 2, ImmutableMap.of((byte) 0, 1L));
+        postponeTimeMap.put((byte) 3, ImmutableMap.of((byte) 0, 3L));
         rightExtractors = new HashMap<>();
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
+
+        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
+        joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -266,13 +265,11 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 2));
 
-        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
-
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
+                .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
                         in(1, jetRow(12L, 10L)),
@@ -282,27 +279,21 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                         in(1, jetRow(12L, 13L)),
                         out(jetRow(12L, 10L, 12L, 13L)),
                         out(jetRow(12L, 13L, 12L, 13L)),
+                        // leftBuffer: [{12, 10}, {12, 13}]
+                        // rightBuffer: [{12, 10}, {12, 13}]
                         in(0, wm((byte) 0, 15L)),
-                        // <- wm(key=0, t=12). There are still items in buffer.
+                        // wmState: [{0:min, 1:min, 2:13, 3:11]
+                        // leftBuffer: [{12, 10}, {12, 13}]
+                        // rightBuffer: []
                         out(wm((byte) 0, 12L)),
                         in(1, wm((byte) 2, 15L)),
-                        // <- wm(key=2, t=15). Items were clean up, so 15-2=13.
-                        out(wm((byte) 2, 13L)),
+                        // wmState: [{0:14, 1:min, 2:13, 3:11]
+                        // leftBuffer: []
+                        // rightBuffer: []
+                        out(wm((byte) 0, 15L)),
+                        out(wm((byte) 2, 15L)),
                         in(0, wm((byte) 1, 16L)),
-                        in(1, wm((byte) 3, 16L)),
-                        out(wm((byte) 1, 15L)),
-                        out(wm((byte) 3, 14L)),
-                        in(0, jetRow(16L, 17L)),
-                        in(1, jetRow(16L, 17L)),
-                        out(jetRow(16L, 17L, 16L, 17L)),
-                        in(0, wm((byte) 0, 16L)),
-                        in(1, wm((byte) 2, 16L)),
-                        in(0, wm((byte) 1, 17L)),
-                        in(1, wm((byte) 3, 17L)),
-                        out(wm((byte) 0, 16L)),
-                        out(wm((byte) 2, 14L)),
-                        out(wm((byte) 1, 16L)),
-                        out(wm((byte) 3, 15L))
+                        out(wm((byte) 1, 16L))
                 );
     }
 
