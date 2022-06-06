@@ -83,10 +83,10 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  */
 public class DeserializedGenericRecord extends CompactGenericRecord {
 
+    private static final String METHOD_PREFIX_FOR_ERROR_MESSAGES = "get";
+
     private final TreeMap<String, Object> objects;
     private final Schema schema;
-
-    private static final String methodPrefixForErrorMessages = "get";
 
     public DeserializedGenericRecord(Schema schema, TreeMap<String, Object> objects) {
         this.schema = schema;
@@ -222,7 +222,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Boolean", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Boolean", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -240,7 +240,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int8", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int8", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -264,7 +264,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float64", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float64", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -282,7 +282,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float32", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float32", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -300,7 +300,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int32", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int32", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -318,7 +318,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int64", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int64", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -336,7 +336,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int16", methodPrefixForErrorMessages);
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int16", METHOD_PREFIX_FOR_ERROR_MESSAGES);
                 }
                 result[i] = array[i];
             }
@@ -531,7 +531,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         check(fieldName, primitiveFieldKind, nullableFieldKind);
         T t = (T) objects.get(fieldName);
         if (t == null) {
-            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix, methodPrefixForErrorMessages);
+            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix, METHOD_PREFIX_FOR_ERROR_MESSAGES);
         }
         return t;
     }
