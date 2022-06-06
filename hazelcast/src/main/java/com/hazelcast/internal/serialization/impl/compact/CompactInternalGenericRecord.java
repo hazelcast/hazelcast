@@ -98,19 +98,16 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final int variableOffsetsPosition;
     private final CompactStreamSerializer serializer;
     private final boolean schemaIncludedInBinary;
-    private final boolean isCompactReader;
     private final @Nullable
     Class associatedClass;
 
     protected CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
-                                           @Nullable Class associatedClass, boolean schemaIncludedInBinary,
-                                           boolean isCompactReader) {
+                                           @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         this.in = in;
         this.serializer = serializer;
         this.schema = schema;
         this.associatedClass = associatedClass;
         this.schemaIncludedInBinary = schemaIncludedInBinary;
-        this.isCompactReader = isCompactReader;
         try {
             int finalPosition;
             int numberOfVariableLengthFields = schema.getNumberOfVariableSizeFields();
@@ -140,6 +137,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    @Nonnull
+    public String getMethodPrefixForErrorMessages() {
+        return "get";
     }
 
     @Nullable
@@ -358,7 +360,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader, String methodSuffix) {
         T value = getVariableSize(fieldDescriptor, reader);
         if (value == null) {
-            throw exceptionForUnexpectedNullValue(fieldDescriptor.getFieldName(), methodSuffix, isCompactReader);
+            throw exceptionForUnexpectedNullValue(fieldDescriptor.getFieldName(), methodSuffix, getMethodPrefixForErrorMessages());
         }
         return value;
     }
@@ -560,7 +562,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             for (int i = 0; i < itemCount; i++) {
                 int offset = offsetReader.getOffset(in, offsetsPosition, i);
                 if (offset == NULL_ARRAY_LENGTH) {
-                    throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), methodSuffix, isCompactReader);
+                    throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), methodSuffix, getMethodPrefixForErrorMessages());
                 }
             }
             in.position(dataStartPosition - INT_SIZE_IN_BYTES);
