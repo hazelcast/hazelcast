@@ -31,42 +31,71 @@ import static java.util.Collections.unmodifiableMap;
 
 /**
  * Contains the configuration for all Kafka topics that will be consumed
- * by {@linkplain KafkaProcessors#streamKafkaP Kafka processor}.
+ * by the {@linkplain KafkaProcessors#streamKafkaP Kafka processor}.
  */
 public class TopicsConfig implements Serializable {
 
     private final Map<String, TopicConfig> topicConfigs = new HashMap<>();
 
+    /**
+     * Returns the map of {@linkplain TopicConfig topic configurations},
+     * mapped by topic name.
+     */
     public Map<String, TopicConfig> getTopicConfigs() {
         return unmodifiableMap(topicConfigs);
     }
 
+    /**
+     * Returns the set of topic names from {@linkplain TopicConfig topic
+     * configurations}.
+     */
     public Set<String> getTopicNames() {
         return topicConfigs.keySet();
     }
 
+    /**
+     * Returns the {@linkplain TopicConfig topic configuration} for given
+     * topic.
+     */
     @Nullable
     public TopicConfig getTopicConfig(String topicName) {
         return topicConfigs.get(topicName);
     }
 
-    public TopicsConfig putTopicConfig(TopicConfig config) {
+    /**
+     * Adds the {@linkplain TopicConfig topic configuration}. The configuration
+     * is saved under the topic name.
+     */
+    public TopicsConfig addTopicConfig(TopicConfig config) {
         topicConfigs.put(config.topicName, config);
         return this;
     }
 
-    public TopicsConfig putTopic(String topicName) {
-        putTopicConfig(new TopicConfig(topicName));
+    /**
+     * Creates empty {@linkplain TopicConfig topic configuration} and saves it
+     * in the map under the topic name.
+     */
+    public TopicsConfig addTopic(String topicName) {
+        addTopicConfig(new TopicConfig(topicName));
         return this;
     }
 
-    public TopicsConfig putTopics(List<String> topicNames) {
+    /**
+     * Creates new {@linkplain TopicConfig topic configurations} for every
+     * provided topic from the list and saves them in the map.
+     */
+    public TopicsConfig addTopics(List<String> topicNames) {
         for (String topicName : topicNames) {
-            putTopicConfig(new TopicConfig(topicName));
+            addTopicConfig(new TopicConfig(topicName));
         }
         return this;
     }
 
+    /**
+     * Returns initial offset value for given topic and partition combination.
+     * If configuration for specified topic does not exist, or if initial offset is
+     * not defined for given partition then {@code null} value is returned.
+     */
     @Nullable
     public Long getInitialOffsetFor(String topicName, int partition) {
         TopicConfig topicConfig = topicConfigs.get(topicName);
@@ -89,12 +118,36 @@ public class TopicsConfig implements Serializable {
             this.topicName = topicName;
         }
 
+        /**
+         * Returns the name of the topic.
+         */
+        public String getTopicName() {
+            return topicName;
+        }
+
+        /**
+         * Returns partitions initial offsets map.
+         */
+        public Map<Integer, Long> getPartitionsInitialOffsets() {
+            return unmodifiableMap(partitionsInitialOffsets);
+        }
+
+        /**
+         * Returns the initial offset for given partition or {@code null}
+         * if it was not defined.
+         */
         @Nullable
         public Long getPartitionInitialOffset(int partition) {
             return partitionsInitialOffsets.get(partition);
         }
 
-        public TopicConfig putPartitionInitialOffset(int partition, long offset) {
+        /**
+         * Adds the initial offset for given partition to the configuration.
+         *
+         * @param partition the number of partition
+         * @param offset the initial offset for the partition
+         */
+        public TopicConfig addPartitionInitialOffset(int partition, long offset) {
             partitionsInitialOffsets.put(partition, offset);
             return this;
         }

@@ -91,7 +91,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     )  {
-        this(properties, projectionFn, eventTimePolicy, new TopicsConfig().putTopics(topics));
+        this(properties, projectionFn, eventTimePolicy, new TopicsConfig().addTopics(topics));
     }
 
     public StreamKafkaP(

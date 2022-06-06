@@ -171,16 +171,16 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         sleepAtLeastSeconds(3);
 
         TopicsConfig topicsConfig = new TopicsConfig()
-                .putTopicConfig(new TopicConfig(topic1Name)
+                .addTopicConfig(new TopicConfig(topic1Name)
                         // 20 total records will be skipped from topic1
-                        .putPartitionInitialOffset(0, 5L)
-                        .putPartitionInitialOffset(1, 5L)
-                        .putPartitionInitialOffset(2, 5L)
-                        .putPartitionInitialOffset(3, 5L))
-                .putTopicConfig(new TopicConfig(topic2Name)
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(1, 5L)
+                        .addPartitionInitialOffset(2, 5L)
+                        .addPartitionInitialOffset(3, 5L))
+                .addTopicConfig(new TopicConfig(topic2Name)
                         // 10 total records will be skipped from topic2
-                        .putPartitionInitialOffset(0, 5L)
-                        .putPartitionInitialOffset(2, 5L));
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(2, 5L));
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(

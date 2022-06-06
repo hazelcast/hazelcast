@@ -67,7 +67,7 @@ public final class KafkaSources {
             @Nonnull FunctionEx<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull String ... topics
     ) {
-        return kafka(properties, projectionFn, new TopicsConfig().putTopics(Arrays.asList(topics)));
+        return kafka(properties, projectionFn, new TopicsConfig().addTopics(Arrays.asList(topics)));
     }
 
     /**
