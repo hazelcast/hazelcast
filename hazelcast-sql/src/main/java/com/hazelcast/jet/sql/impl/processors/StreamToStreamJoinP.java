@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
@@ -87,11 +86,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.postponeTimeMap = postponeTimeMap;
         this.columnCounts = columnCounts;
 
-        for (Entry<Byte, Map<Byte, Long>> en : postponeTimeMap.entrySet()) {
-            for (Byte innerKey : en.getValue().keySet()) {
-                wmState.put(innerKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
-                lastEmittedWm.put(innerKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
-            }
+        for (Byte wmKey : postponeTimeMap.keySet()) {
+            wmState.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
+            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
         }
     }
 
@@ -150,34 +147,35 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        // if watermark isn't present in watermark state, ignore it.
-        if (!wmState.containsKey(watermark.key())) {
-            return true;
-        }
+        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
-        // 5.1 : update wm state
-        applyToWmState(watermark);
+        if (!postponeTimeMap.get(watermark.key()).isEmpty()) {
+            // 5.1 : update wm state
+            applyToWmState(watermark);
 
-        // 5.2 & 5.3
-        clearExpiredItemsInBuffer(0);
-        clearExpiredItemsInBuffer(1);
+            // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
+            //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
+            // 5.2 & 5.3
+            clearExpiredItemsInBuffer(0);
+            clearExpiredItemsInBuffer(1);
+        }
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
 
         // TODO stale comments
         // 5.5 : from the remaining elements in the buffer, compute
         // the minimum time value in each watermark timestamp column.
-        for (Entry<Byte, Long> en : wmState.entrySet()) {
-            long minimumBufferTime = findMinimumBufferTime(ordinal, en.getKey());
-            long lastReceivedWm = this.lastReceivedWm.getValue(en.getKey());
+        for (Byte wmKey : wmState.keySet()) {
+            long minimumBufferTime = findMinimumBufferTime(wmKey);
+            long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
             long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
             // 5.6 For each WM key, emit a new watermark
             // as the minimum of value computed in step 5
             // and of the last received value for that WM key.
-            if (newWmTime > lastEmittedWm.getValue(en.getKey())) {
-                pendingOutput.add(new Watermark(newWmTime, en.getKey()));
-                lastEmittedWm.put(en.getKey(), newWmTime);
+            if (newWmTime > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(newWmTime, wmKey));
+                lastEmittedWm.put(wmKey, newWmTime);
             }
         }
 
@@ -205,10 +203,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
-    private long findMinimumBufferTime(int ordinal, byte key) {
+    private long findMinimumBufferTime(byte key) {
         ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
+        int ordinal = 0;
         if (extractor == null) {
             extractor = rightTimeExtractors.get(key);
+            ordinal = 1;
         } else {
             assert !rightTimeExtractors.containsKey(key) : "extractor for the same key on both inputs";
         }
@@ -233,7 +233,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         int i = 0;
         for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
             extractors[i] = entry.getValue();
-            limits[i] = wmState.get(entry.getKey());
+            // TODO ignore time fields not in WM state
+            limits[i] = wmState.getOrDefault(entry.getKey(), Long.MIN_VALUE);
             ++i;
         }
 
