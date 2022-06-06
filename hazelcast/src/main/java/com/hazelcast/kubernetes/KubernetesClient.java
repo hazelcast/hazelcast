@@ -66,9 +66,10 @@ class KubernetesClient {
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
 
-    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue) {
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
@@ -81,10 +82,10 @@ class KubernetesClient {
         this.apiProvider =  buildKubernetesApiUrlProvider();
     }
 
-    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue,
-                     KubernetesApiProvider apiProvider) {
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue, KubernetesApiProvider apiProvider) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
