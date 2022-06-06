@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.EventloopType;
 import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.SyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
@@ -184,7 +183,7 @@ public class RequestService {
         logger.info("Starting RequestService");
         engine.start();
 
-        EventloopType eventloopType = engine.eventloopType();
+        Eventloop.Type eventloopType = engine.eventloopType();
         switch (eventloopType) {
             case NIO:
                 startNio();

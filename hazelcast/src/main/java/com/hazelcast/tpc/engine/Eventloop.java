@@ -560,4 +560,21 @@ public abstract class Eventloop {
 
         void schedule(Frame task);
     }
+
+    public enum Type {
+
+        NIO, EPOLL, IOURING;
+
+        public static Type fromString(String s) {
+            if (s.equals("io_uring") || s.equals("iouring")) {
+                return IOURING;
+            } else if (s.equals("nio")) {
+                return NIO;
+            } else if (s.equals("epoll")) {
+                return EPOLL;
+            } else {
+                throw new RuntimeException("Unrecognized eventloop type [" + s + ']');
+            }
+        }
+    }
 }

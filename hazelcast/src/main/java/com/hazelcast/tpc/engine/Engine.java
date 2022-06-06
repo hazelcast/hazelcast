@@ -47,7 +47,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class Engine {
 
     private final boolean monitorSilent;
-    private final EventloopType eventloopType;
+    private final Eventloop.Type eventloopType;
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final MonitorThread monitorThread;
@@ -100,7 +100,7 @@ public final class Engine {
         return state.get();
     }
 
-    public EventloopType eventloopType() {
+    public Eventloop.Type eventloopType() {
         return eventloopType;
     }
 
@@ -203,13 +203,13 @@ public final class Engine {
      */
     public static class Configuration {
         private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        private EventloopType eventloopType = EventloopType.fromString(getProperty("reactor.type", "nio"));
+        private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("reactor.type", "nio"));
         private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
         private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
         };
 
-        public void setEventloopType(EventloopType eventloopType) {
+        public void setEventloopType(Eventloop.Type eventloopType) {
             this.eventloopType = checkNotNull(eventloopType, "eventloopType can't be null");
         }
 
