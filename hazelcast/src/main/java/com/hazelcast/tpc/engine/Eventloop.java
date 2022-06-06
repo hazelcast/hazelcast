@@ -66,7 +66,7 @@ public abstract class Eventloop {
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
 
-    public final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
+    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final MpmcArrayQueue concurrentRunQueue;
 
     public final ConcurrentMap context = new ConcurrentHashMap();
