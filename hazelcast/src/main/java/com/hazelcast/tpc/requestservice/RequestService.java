@@ -28,7 +28,6 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.SyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
@@ -41,7 +40,6 @@ import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.engine.nio.NioAsyncReadHandler;
-import com.hazelcast.table.impl.PipelineImpl;
 import com.hazelcast.table.impl.TableManager;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncServerSocket;
@@ -58,10 +56,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 /**
@@ -332,7 +332,7 @@ public class RequestService {
     }
 
     public void shutdown() {
-        System.out.println("RequestService shutdown");
+        logger.info("RequestService shutdown");
 
         shuttingdown = true;
 
@@ -342,7 +342,14 @@ public class RequestService {
 
         responseHandler.shutdown();
 
-        System.out.println("RequestService terminated");
+        try {
+            engine.awaitTermination(5, SECONDS);
+        } catch (InterruptedException e) {
+            logger.warning("Engine failed to terminate.");
+            Thread.currentThread().interrupt();
+        }
+
+        logger.info("RequestService terminated");
     }
 
 
