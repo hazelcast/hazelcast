@@ -220,7 +220,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Boolean");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Boolean", false);
                 }
                 result[i] = array[i];
             }
@@ -238,7 +238,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int8");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int8", false);
                 }
                 result[i] = array[i];
             }
@@ -262,7 +262,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float64");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float64", false);
                 }
                 result[i] = array[i];
             }
@@ -280,7 +280,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float32");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float32", false);
                 }
                 result[i] = array[i];
             }
@@ -298,7 +298,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int32");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int32", false);
                 }
                 result[i] = array[i];
             }
@@ -316,7 +316,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int64");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int64", false);
                 }
                 result[i] = array[i];
             }
@@ -334,7 +334,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int16");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int16", false);
                 }
                 result[i] = array[i];
             }
@@ -529,7 +529,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         check(fieldName, primitiveFieldKind, nullableFieldKind);
         T t = (T) objects.get(fieldName);
         if (t == null) {
-            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix);
+            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix, false);
         }
         return t;
     }

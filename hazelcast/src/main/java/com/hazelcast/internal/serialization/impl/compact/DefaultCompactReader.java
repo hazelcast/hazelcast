@@ -80,7 +80,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
                                 @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
-        super(serializer, in, schema, associatedClass, schemaIncludedInBinary);
+        super(serializer, in, schema, associatedClass, schemaIncludedInBinary, true);
     }
 
     @Override
