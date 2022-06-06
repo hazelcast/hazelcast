@@ -40,39 +40,39 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-class A {
-    public Integer[] ids;
-    public Integer age;
-
-    public A(Integer age, Integer[] ids) {
-        this.age = age;
-        this.ids = ids;
-    }
-}
-
-class ASerializer implements CompactSerializer<A> {
-    @NotNull
-    @Override
-    public A read(@NotNull CompactReader in) {
-        int age = in.readInt32("age");
-        int[] ids = in.readArrayOfInt32("ids");
-        Integer[] boxedIds = new Integer[ids.length];
-        for (int i = 0; i < ids.length; i++) {
-            boxedIds[i] = ids[i];
-        }
-        return new A(age, boxedIds);
-    }
-
-    @Override
-    public void write(@NotNull CompactWriter out, @NotNull A object) {
-        out.writeNullableInt32("age", object.age);
-        out.writeArrayOfNullableInt32("ids", object.ids);
-    }
-}
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactNullablePrimitiveInteroperabilityTest {
+
+    class A {
+        public Integer[] ids;
+        public Integer age;
+
+        A(Integer age, Integer[] ids) {
+            this.age = age;
+            this.ids = ids;
+        }
+    }
+
+    class ASerializer implements CompactSerializer<A> {
+        @NotNull
+        @Override
+        public A read(@NotNull CompactReader in) {
+            int age = in.readInt32("age");
+            int[] ids = in.readArrayOfInt32("ids");
+            Integer[] boxedIds = new Integer[ids.length];
+            for (int i = 0; i < ids.length; i++) {
+                boxedIds[i] = ids[i];
+            }
+            return new A(age, boxedIds);
+        }
+
+        @Override
+        public void write(@NotNull CompactWriter out, @NotNull A object) {
+            out.writeNullableInt32("age", object.age);
+            out.writeArrayOfNullableInt32("ids", object.ids);
+        }
+    }
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
