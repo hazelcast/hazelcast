@@ -220,27 +220,40 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     }
 
     @Test
-    public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefix() {
+    public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixCompactReader() {
         SerializationService serializationService = createSerializationServiceWithASerializer();
+        SerializationService serializationService2 = createSerializationService();
 
+        // Reading null value with non-nullable reader method
         A a1 = new A(null, new Integer[]{1, 2, 3});
         Data data = serializationService.toData(a1);
+        // Reading compact with serializer case
         errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> serializationService.toObject(data)), "Use readNullable");
 
+        GenericRecord genericRecord = serializationService2.toObject(data);
+        // Reading compact without serializer case
+        errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> genericRecord.getInt32("age")), "Use getNullable");
+
+        // Reading array field with null value
         A a2 = new A(1, new Integer[]{1, null, 3});
         Data data2 = serializationService.toData(a2);
+        // Reading compact with serializer case
         errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> serializationService.toObject(data2)), "Use readArrayOfNullable");
+
+        GenericRecord genericRecord2 = serializationService2.toObject(data2);
+        // Reading compact without serializer case
+        errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> genericRecord2.getArrayOfInt32("ids")), "Use getArrayOfNullable");
     }
 
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixGenericRecord() {
         SerializationService serializationService = createSerializationService();
-
         GenericRecordBuilder builder = compact("genericRecord");
         builder.setNullableInt32("aField", null);
         GenericRecord record = builder.build();
 
         Data data = serializationService.toData(record);
         GenericRecord obj = serializationService.toObject(data);
+        // Read null value with non-nullable reader method
         errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> obj.getInt32("aField")), "Use getNullable");
 
         GenericRecordBuilder builder2 = compact("genericRecord2");
@@ -249,6 +262,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         Data data2 = serializationService.toData(record2);
         GenericRecord obj2 = serializationService.toObject(data2);
+        // Read an array with null value with non-nullable array reader method
         errorMessageIncludes(assertThrows(HazelcastSerializationException.class, () -> obj2.getArrayOfInt32("aField")), "Use getArrayOfNullable");
     }
 
