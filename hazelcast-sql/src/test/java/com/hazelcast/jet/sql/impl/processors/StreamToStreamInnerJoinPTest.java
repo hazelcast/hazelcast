@@ -88,8 +88,10 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 new int[]{0},
                 new int[]{0},
                 null,
-                (Expression<Boolean>) TRUE_PREDICATE
-        );
+                ComparisonPredicate.create(
+                        ColumnExpression.create(0, BIGINT),
+                        ColumnExpression.create(1, BIGINT),
+                        ComparisonMode.EQUALS));
     }
 
     @Test
@@ -97,15 +99,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         // FROM l JOIN r ON l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        joinInfo = new JetJoinInfo(
-                JoinRelType.INNER,
-                new int[]{0},
-                new int[]{0},
-                null,
-                ComparisonPredicate.create(
-                        ColumnExpression.create(0, BIGINT),
-                        ColumnExpression.create(1, BIGINT),
-                        ComparisonMode.EQUALS));
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -136,8 +129,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_alwaysTrueConditionAndSingleWmKeyPerInput_then_eventsRemovedInTime() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 0, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -149,38 +142,32 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .disableProgressAssertion()
                 .disableSnapshots()
-                .inputs(asList(
-                        asList(
-                                jetRow(0L),
-                                wm((byte) 0, 1L),
-                                jetRow(2L),
-                                wm((byte) 0, 3L),
-                                jetRow(4L),
-                                wm((byte) 0, 5L)
-                        ),
-                        asList(
-                                jetRow(0L),
-                                wm((byte) 1, 1L),
-                                jetRow(2L),
-                                wm((byte) 1, 3L),
-                                jetRow(4L),
-                                wm((byte) 1, 5L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                jetRow(0L, 0L),
-                                wm((byte) 0, 1L),
-                                wm((byte) 1, 1L),
-                                jetRow(2L, 2L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 1, 3L),
-                                jetRow(4L, 4L),
-                                wm((byte) 0, 5L),
-                                wm((byte) 1, 5L)
-                        )
+                .expectExactOutput(
+                        in(0, jetRow(0L)),
+                        in(1, jetRow(0L)),
+                        out(jetRow(0L, 0L)),
+                        in(0, wm((byte) 0, 1L)),
+                        out(wm((byte) 0, 0L)),
+                        in(1, wm((byte) 1, 1L)),
+                        out(wm((byte) 1, 1L)),
+                        out(wm((byte) 0, 1L)),
+                        in(0, jetRow(2L)),
+                        in(1, jetRow(2L)),
+                        out(jetRow(2L, 2L)),
+                        in(0, wm((byte) 0, 3L)),
+                        out(wm((byte) 0, 2L)),
+                        in(1, wm((byte) 1, 3L)),
+                        out(wm((byte) 1, 3L)),
+                        out(wm((byte) 0, 3L)),
+                        in(0, jetRow(4L)),
+                        in(1, jetRow(4L)),
+                        out(jetRow(4L, 4L)),
+                        in(0, wm((byte) 0, 5L)),
+                        out(wm((byte) 0, 4L)),
+                        in(1, wm((byte) 1, 5L)),
+                        out(wm((byte) 1, 5L)),
+                        out(wm((byte) 0, 5L))
                 );
     }
 
