@@ -67,7 +67,7 @@ public abstract class Eventloop {
     protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
 
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    public final MpmcArrayQueue concurrentRunQueue;
+    protected final MpmcArrayQueue concurrentRunQueue;
 
     public final ConcurrentMap context = new ConcurrentHashMap();
 
