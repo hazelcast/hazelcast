@@ -477,8 +477,8 @@ public abstract class Eventloop {
             return promiseAllocator.allocate();
         }
 
-        public void execute(Task task) {
-            localRunQueue.offer(task);
+        public boolean execute(Task task) {
+            return localRunQueue.offer(task);
         }
 
         public Promise sleep(long delay, TimeUnit unit) {
