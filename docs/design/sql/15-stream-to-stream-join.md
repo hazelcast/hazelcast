@@ -397,6 +397,39 @@ out: j{l.time=null, r.time=0}
 # rightBuffer remains empty
 ```
 
+**Join conditions involving only one input**
+
+If the join condition contains an AND-joined condition applying only to one
+input, those rows should never be buffered. For example:
+
+```sql
+SELECT *
+FROM l 
+LEFT JOIN r ON
+    l.field>10
+    AND l.time BETWEEN r.time - 1 AND r.time + 1
+```
+
+Here, the `l.field>10` condition applies only to the left input. If we receive a
+row where `l.field == 9`, such row will never join anything. Perhaps Calcite
+will take care of this by pulling up a FilterRel to remove these rows. But if
+we're doing a left join, as in the example above, the output should contain all
+rows from the left input, and for those that have no matching row on right, they
+should be null-padded.
+
+Our processor will work correctly without taking special steps. It will buffer
+those rows, the join condition will be always false for them, and then, when
+that row is removed due to a WM from the buffer, null-padded row will be
+emitted. But we can do better: we can extract those conditions, and if they
+evaluate to false, don't add such row to the buffer, and if outer-joining,
+immediately emit a null-padded row.
+
+It might seem that we can extend this to a time bound between two timestamps on
+the same input. For example `ON l.time1 >= l.time2 + 10`. One can think that if
+we receive a watermark for `l.time2`, we can remove rows with `time1 <
+wm(time2) + 10` from the buffer. But this is wrong, because we don't join two
+left rows. This condition is true or false for each individual left row.
+
 #### Memory management
 
 The processor will maintain upper bound of stored events configured in
