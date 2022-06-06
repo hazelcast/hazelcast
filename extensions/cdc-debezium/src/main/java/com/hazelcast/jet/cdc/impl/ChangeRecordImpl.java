@@ -58,15 +58,32 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
     }
 
+    public ChangeRecordImpl(
+            long timestamp,
+            long sequenceSource,
+            long sequenceValue,
+            Operation operation,
+            @Nonnull String keyJson,
+            @Nullable String oldValueJson,
+            @Nullable String newValueJson,
+            String table,
+            String schema,
+            String database
+    ) {
+        this.timestamp = timestamp;
+        this.sequenceSource = sequenceSource;
+        this.sequenceValue = sequenceValue;
+        this.operation = operation;
+        this.keyJson = requireNonNull(keyJson, "keyJson");
+        this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
+        this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
+        this.table = table;
+        this.schema = schema;
+        this.database = database;
+    }
+
     @Override
     public long timestamp() throws ParsingException {
-        if (timestamp == null) {
-            Long millis = get(value().toMap(), "__ts_ms", Long.class);
-            if (millis == null) {
-                throw new ParsingException("No parsable timestamp field found");
-            }
-            timestamp = millis;
-        }
         return timestamp;
     }
 

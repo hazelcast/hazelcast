@@ -53,24 +53,34 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
+                    out.writeLong(record.timestamp());
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
                     out.writeString(record.operation().code());
                     out.writeUTF(record.getKeyJson());
                     out.writeUTF(record.getOldValueJson());
                     out.writeUTF(record.getNewValueJson());
+                    out.writeString(record.table());
+                    out.writeString(record.schema());
+                    out.writeString(record.database());
                 }
 
                 @Override
                 public ChangeRecordImpl read(ObjectDataInput in) throws IOException {
+                    long timestamp = in.readLong();
                     long sequenceSource = in.readLong();
                     long sequenceValue = in.readLong();
                     Operation operation = Operation.get(in.readString());
                     String keyJson = in.readString();
                     String oldValueJson = in.readString();
                     String newValueJson = in.readString();
-                    return new ChangeRecordImpl(sequenceSource, sequenceValue, operation, keyJson,
-                            oldValueJson, newValueJson);
+                    String table = in.readString();
+                    String schema = in.readString();
+                    String database = in.readString();
+                    return new ChangeRecordImpl(
+                            timestamp, sequenceSource, sequenceValue,
+                            operation, keyJson, oldValueJson, newValueJson,
+                            table, schema, database);
                 }
             };
         }

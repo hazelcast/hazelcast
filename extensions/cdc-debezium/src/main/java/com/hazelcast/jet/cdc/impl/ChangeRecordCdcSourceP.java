@@ -61,11 +61,29 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
         String keyJson = Values.convertToString(record.keySchema(), record.key());
         Struct value = (Struct) record.value();
+        Struct source = (Struct) value.get("source");
 
         Operation operation = Operation.get(value.getString("op"));
         Schema valueSchema = record.valueSchema();
         String oldValueJson = Values.convertToString(valueSchema.field("before").schema(), value.get("before"));
         String newValueJson = Values.convertToString(valueSchema.field("after").schema(), value.get("after"));
-        return new ChangeRecordImpl(sequenceSource, sequenceValue, operation, keyJson, oldValueJson, newValueJson);
+        return new ChangeRecordImpl(
+                value.getInt64("ts_ms"),
+                sequenceSource,
+                sequenceValue,
+                operation,
+                keyJson,
+                oldValueJson,
+                newValueJson,
+                fieldOrNull(source, "table"),
+                fieldOrNull(source, "schema"),
+                fieldOrNull(source, "db")
+        );
+    }
+
+    private static String fieldOrNull(Struct struct, String fieldName) {
+        return struct.schema().field(fieldName) != null
+                ? struct.getString(fieldName)
+                : null;
     }
 }
