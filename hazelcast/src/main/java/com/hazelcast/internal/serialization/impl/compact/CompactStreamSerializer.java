@@ -200,11 +200,12 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
         if (registration == null) {
             //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
-            return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+            return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary,
+                    false);
         }
 
         DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
-                registration.getClazz(), schemaIncludedInBinary);
+                registration.getClazz(), schemaIncludedInBinary, true);
         Object object = registration.getSerializer().read(genericRecord);
         return managedContext != null ? managedContext.initialize(object) : object;
 
@@ -263,7 +264,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+        return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary, false);
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) throws IOException {
