@@ -32,16 +32,16 @@ public final class CompactUtil {
     static HazelcastSerializationException exceptionForUnexpectedNullValue(@Nonnull String fieldName,
                                                                            @Nonnull String methodSuffix) {
         return new HazelcastSerializationException("Error while reading " + fieldName + ". "
-                + "null value can not be read via get" + methodSuffix + " methods. "
-                + "Use getNullable" + methodSuffix + " instead.");
+                + "null value can not be read via read" + methodSuffix + " methods. "
+                + "Use readNullable" + methodSuffix + " instead.");
     }
 
     @Nonnull
     static HazelcastSerializationException exceptionForUnexpectedNullValueInArray(@Nonnull String fieldName,
                                                                                   @Nonnull String methodSuffix) {
         return new HazelcastSerializationException("Error while reading " + fieldName + ". "
-                + "null value can not be read via getArrayOf" + methodSuffix + " methods. "
-                + "Use getArrayOfNullable" + methodSuffix + " instead.");
+                + "null value can not be read via readArrayOf" + methodSuffix + " methods. "
+                + "Use readArrayOfNullable" + methodSuffix + " instead.");
     }
 
 
