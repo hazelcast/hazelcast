@@ -103,7 +103,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     Class associatedClass;
 
     protected CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
-                                           @Nullable Class associatedClass, boolean schemaIncludedInBinary, boolean isCompactReader) {
+                                           @Nullable Class associatedClass, boolean schemaIncludedInBinary,
+                                           boolean isCompactReader) {
         this.in = in;
         this.serializer = serializer;
         this.schema = schema;
