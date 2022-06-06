@@ -369,7 +369,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventLoopHandler implements Eventloop.EventloopTask {
+    private class EventLoopHandler implements Eventloop.Task {
         @Override
         public void run() {
             try {

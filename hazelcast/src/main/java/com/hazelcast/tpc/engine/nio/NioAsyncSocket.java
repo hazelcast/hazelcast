@@ -346,7 +346,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventLoopHandler implements NioSelectedKeyListener, Eventloop.EventloopTask {
+    private class EventLoopHandler implements NioSelectedKeyListener, Eventloop.Task {
 
         @Override
         public void run() {

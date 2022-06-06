@@ -361,7 +361,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventloopHandler implements CompletionListener, Eventloop.EventloopTask {
+    private class EventloopHandler implements CompletionListener, Eventloop.Task {
 
         @Override
         public void run() throws Exception {

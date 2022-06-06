@@ -57,7 +57,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  */
 public abstract class Eventloop {
 
-    private static final EventloopTask SHUTDOWN_TASK = () -> {
+    private static final Task SHUTDOWN_TASK = () -> {
     };
 
     protected final static AtomicReferenceFieldUpdater<Eventloop, State> STATE
@@ -72,7 +72,7 @@ public abstract class Eventloop {
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final Scheduler scheduler;
-    public final CircularQueue<EventloopTask> localRunQueue;
+    public final CircularQueue<Task> localRunQueue;
     protected final boolean spin;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
@@ -275,7 +275,7 @@ public abstract class Eventloop {
      * @param task the task to execute.
      * @throws NullPointerException if task is null.
      */
-    public final void execute(EventloopTask task) {
+    public final void execute(Task task) {
         if (Thread.currentThread() == eventloopThread) {
             localRunQueue.offer(task);
         } else {
@@ -329,7 +329,7 @@ public abstract class Eventloop {
         }
 
         for (; ; ) {
-            EventloopTask task = localRunQueue.poll();
+            Task task = localRunQueue.poll();
             if (task == null) {
                 break;
             }
@@ -347,9 +347,9 @@ public abstract class Eventloop {
             Object task = concurrentRunQueue.poll();
             if (task == null) {
                 break;
-            } else if (task instanceof EventloopTask) {
+            } else if (task instanceof Task) {
                 try {
-                    ((EventloopTask) task).run();
+                    ((Task) task).run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -403,7 +403,7 @@ public abstract class Eventloop {
         }
     }
 
-    protected static final class ScheduledTask implements EventloopTask, Comparable<ScheduledTask> {
+    protected static final class ScheduledTask implements Task, Comparable<ScheduledTask> {
 
         private Promise promise;
         private long deadlineEpochNanos;
@@ -469,7 +469,7 @@ public abstract class Eventloop {
             return promiseAllocator.allocate();
         }
 
-        public void execute(EventloopTask task) {
+        public void execute(Task task) {
             localRunQueue.offer(task);
         }
 
@@ -486,7 +486,7 @@ public abstract class Eventloop {
             Promise promise = newPromise();
 
             //todo: task can be pooled
-            EventloopTask task = new EventloopTask() {
+            Task task = new Task() {
                 Iterator<I> it = input.iterator();
 
                 @Override
@@ -519,7 +519,7 @@ public abstract class Eventloop {
             Promise promise = newPromise();
 
             //todo: task can be pooled
-            EventloopTask task = new EventloopTask() {
+            Task task = new Task() {
                 @Override
                 public void run() {
                     if (loopFunction.apply(Eventloop.this)) {
@@ -547,7 +547,7 @@ public abstract class Eventloop {
     /**
      * A task that gets executed on the {@link Eventloop}.
      */
-    public interface EventloopTask {
+    public interface Task {
 
         void run() throws Exception;
     }
@@ -561,6 +561,9 @@ public abstract class Eventloop {
         void schedule(Frame task);
     }
 
+    /**
+     * The Type of {@link Eventloop}.
+     */
     public enum Type {
 
         NIO, EPOLL, IOURING;

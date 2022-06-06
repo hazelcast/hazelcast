@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public abstract class Actor implements Eventloop.EventloopTask {
+public abstract class Actor implements Eventloop.Task {
 
     public final static int DEFAULT_MAILBOX_CAPACITY = 512;
 
