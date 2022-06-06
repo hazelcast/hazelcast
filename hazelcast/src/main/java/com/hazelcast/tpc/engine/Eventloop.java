@@ -89,6 +89,8 @@ public abstract class Eventloop {
 
     protected final EventloopThread eventloopThread;
 
+    Engine engine;
+
     /**
      * Creates a new {@link Eventloop}.
      *
@@ -104,6 +106,7 @@ public abstract class Eventloop {
         this.eventloopThread = new EventloopThread(config);
         this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
+
 
     /**
      * Returns the {Scheduler} for this {@link Eventloop}.
@@ -179,8 +182,13 @@ public abstract class Eventloop {
             switch (oldState) {
                 case NEW:
                     if (STATE.compareAndSet(this, oldState, TERMINATED)) {
+                        terminationLatch.countDown();
+                        if (engine != null) {
+                            engine.notifyEventloopTerminated();
+                        }
                         return;
                     }
+
                     break;
                 case RUNNING:
                     if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
@@ -273,37 +281,34 @@ public abstract class Eventloop {
      * Executes an EventloopTask on this Eventloop.
      *
      * @param task the task to execute.
+     * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if task is null.
      */
-    public final void execute(Task task) {
+    public final boolean execute(Task task) {
         if (Thread.currentThread() == eventloopThread) {
-            localRunQueue.offer(task);
-        } else {
-            concurrentRunQueue.add(task);
+            return localRunQueue.offer(task);
+        } else if (concurrentRunQueue.offer(task)) {
             wakeup();
+            return true;
+        } else {
+            return false;
         }
-    }
-
-    /**
-     * Executes a collection of frames on this Eventloop.
-     *
-     * @param requests the collection of requests.
-     * @throws NullPointerException if requests is null or an request is null.
-     */
-    public final void execute(Collection<Frame> requests) {
-        concurrentRunQueue.addAll(requests);
-        wakeup();
     }
 
     /**
      * Executes a request on this eventloop.
      *
      * @param request the request to execute.
+     * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if request is null.
      */
-    public final void execute(Frame request) {
-        concurrentRunQueue.add(request);
-        wakeup();
+    public final boolean execute(Frame request) {
+        if (concurrentRunQueue.offer(request)) {
+            wakeup();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected final void runLocalTasks() {
@@ -449,6 +454,9 @@ public abstract class Eventloop {
                 state = TERMINATED;
                 closeResources(resources);
                 terminationLatch.countDown();
+                if (engine != null) {
+                    engine.notifyEventloopTerminated();
+                }
                 System.out.println(getName() + " terminated");
             }
         }

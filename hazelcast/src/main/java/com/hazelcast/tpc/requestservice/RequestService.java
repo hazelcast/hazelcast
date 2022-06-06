@@ -21,6 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
+import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.tpc.engine.AsyncSocket;
@@ -356,7 +357,9 @@ public class RequestService {
         CompletableFuture future = request.future;
         if (address.equals(thisAddress)) {
             // todo: hack with the assignment of a partition to a local cpu.
-            engine.eventloopForHash(partitionIdToChannel(partitionId)).execute(request);
+            int eventloopIndex = HashUtil.hashToIndex(partitionId, engine.eventloopCount());
+            Eventloop eventloop = engine.eventloop(eventloopIndex);
+            eventloop.execute(request);
         } else {
             AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
 
@@ -388,38 +391,6 @@ public class RequestService {
         requests.map.put(callId, request);
         socket.writeAndFlush(request);
         return future;
-    }
-
-    public void invokeOnPartition(PipelineImpl pipeline) {
-        ensureActive();
-
-        List<Frame> requestList = pipeline.getRequests();
-        if (requestList.isEmpty()) {
-            return;
-        }
-
-        int partitionId = pipeline.getPartitionId();
-        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        if (address.equals(thisAddress)) {
-            engine.eventloopForHash(partitionId).execute(requestList);
-        } else {
-            SyncSocket socket = null;//getConnection(address).sockets[partitionIdToChannel[partitionId]];
-            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
-
-            long c = requests.nextCallId(requestList.size());
-
-            int k = 0;
-            for (Frame request : requestList) {
-                request.acquire();
-                long callId = c - k;
-                requests.map.put(callId, request);
-                request.putLong(OFFSET_REQ_CALL_ID, callId);
-                k--;
-            }
-
-            //socket.writeAll(requestList);
-            socket.flush();
-        }
     }
 
     private TcpServerConnection getConnection(Address address) {
@@ -466,7 +437,8 @@ public class RequestService {
     }
 
     public AsyncSocket connect(SocketAddress address, int channelIndex) {
-        Eventloop eventloop = engine.eventloopForHash(channelIndex);
+        int eventloopIndex = HashUtil.hashToIndex(channelIndex, engine.eventloopCount());
+        Eventloop eventloop = engine.eventloop(eventloopIndex);
 
         AsyncSocket socket;
         switch (engine.eventloopType()) {

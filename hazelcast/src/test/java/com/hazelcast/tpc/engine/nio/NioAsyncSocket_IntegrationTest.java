@@ -57,7 +57,7 @@ public class NioAsyncSocket_IntegrationTest {
     public void test() throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
 
-        NioAsyncServerSocket socket = newServer(serverAddress);
+        NioAsyncServerSocket serverSocket = newServer(serverAddress);
 
         CountDownLatch latch = new CountDownLatch(concurrency);
 

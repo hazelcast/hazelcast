@@ -48,7 +48,7 @@ public class NioSyncSocket_IntegrationTest {
 
     @Test
     public void test() {
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 6000);
 
         createServer(serverAddress);
 

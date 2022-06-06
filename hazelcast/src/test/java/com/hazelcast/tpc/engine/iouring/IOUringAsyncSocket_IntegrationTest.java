@@ -57,7 +57,7 @@ public class IOUringAsyncSocket_IntegrationTest {
     public void test() throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5010);
 
-        IOUringAsyncServerSocket socket = newServer(serverAddress);
+        IOUringAsyncServerSocket serverSocket = newServer(serverAddress);
 
         CountDownLatch latch = new CountDownLatch(concurrency);
 

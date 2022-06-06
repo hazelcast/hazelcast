@@ -19,7 +19,6 @@ package com.hazelcast.tpc.engine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfiguration;
-import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfiguration;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
@@ -28,21 +27,20 @@ import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.tpc.engine.Engine.State.NEW;
 import static com.hazelcast.tpc.engine.Engine.State.RUNNING;
 import static com.hazelcast.tpc.engine.Engine.State.SHUTDOWN;
-import static com.hazelcast.tpc.engine.Engine.State.TERMINATED;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.getProperty;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The Engine is effectively an array of eventloops
@@ -57,14 +55,26 @@ public final class Engine {
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final MonitorThread monitorThread;
-    private final AtomicReference<State> state = new AtomicReference<>(State.NEW);
+    private final AtomicReference<State> state = new AtomicReference<>(NEW);
+    final CountDownLatch terminationLatch;
 
+    public Engine() {
+        this(new Configuration());
+    }
+
+    /**
+     * Creates an Engine with the given Configuration.
+     *
+     * @param configuration the Configuration.
+     * @throws NullPointerException when configuration is null.
+     */
     public Engine(Configuration configuration) {
         this.eventloopCount = configuration.eventloopCount;
         this.eventloopType = configuration.eventloopType;
         this.monitorSilent = configuration.monitorSilent;
         this.eventloops = new Eventloop[eventloopCount];
         this.monitorThread = new MonitorThread(eventloops, monitorSilent);
+        this.terminationLatch = new CountDownLatch(eventloopCount);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
             switch (eventloopType) {
@@ -92,6 +102,7 @@ public final class Engine {
                 default:
                     throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
             }
+            eventloops[idx].engine = this;
         }
     }
 
@@ -106,49 +117,55 @@ public final class Engine {
         return state.get();
     }
 
+    /**
+     * Returns the type of Eventloop used by this Engine.
+     *
+     * @return the type of Eventloop.
+     */
     public Eventloop.Type eventloopType() {
         return eventloopType;
     }
 
+    /**
+     * Returns the eventloops.
+     *
+     * @return the {@link Eventloop}s.
+     */
     public Eventloop[] eventloops() {
         return eventloops;
     }
 
+    /**
+     * Returns the number of Eventloop instances in this Engine.
+     *
+     * This method is thread-safe.
+     *
+     * @return the number of eventloop instances.
+     */
     public int eventloopCount() {
         return eventloopCount;
     }
 
-    public void forEach(Consumer<Eventloop> function) {
-        for (Eventloop eventloop : eventloops) {
-            function.accept(eventloop);
-        }
+    /**
+     * Gets the {@link Eventloop} at the given index.
+     *
+     * @param idx the index of the Eventloop.
+     * @return The Eventloop at the given index.
+     */
+    public Eventloop eventloop(int idx) {
+        return eventloops[idx];
     }
 
-    public Eventloop eventloopForHash(int hash) {
-        return eventloops[hashToIndex(hash, eventloops.length)];
-    }
-
-    public Eventloop eventloop(int eventloopIdx) {
-        return eventloops[eventloopIdx];
-    }
-
-    public void run(int eventloopIdx, Collection<Frame> frames) {
-        eventloops[eventloopIdx].execute(frames);
-    }
-
-    public void run(int eventloopIdx, Frame frame) {
-        eventloops[eventloopIdx].execute(frame);
-    }
-
-    public void run(int eventloopIdx, Eventloop.Task task) {
-        eventloops[eventloopIdx].execute(task);
-    }
-
+    /**
+     * Starts the Engine by starting all the {@link Eventloop} instances.
+     *
+     * @throws IllegalStateException if
+     */
     public void start() {
         for (; ; ) {
             State oldState = state.get();
-            if (oldState != RUNNING) {
-                throw new IllegalStateException();
+            if (oldState != NEW) {
+                throw new IllegalStateException("Can't start Engine, it isn't in NEW state.");
             }
 
             if (!state.compareAndSet(oldState, RUNNING)) {
@@ -164,17 +181,22 @@ public final class Engine {
         }
     }
 
+    /**
+     * Shuts down the Engine. If the Engine is already shutdown or terminated, the call is ignored.
+     *
+     * This method is thread-safe.
+     */
     public void shutdown() {
         for (; ; ) {
             State oldState = state.get();
             switch (oldState) {
                 case NEW:
-                    if(!state.compareAndSet(oldState, TERMINATED)){
+                    if (!state.compareAndSet(oldState, SHUTDOWN)) {
                         continue;
                     }
                     break;
                 case RUNNING:
-                    if(!state.compareAndSet(oldState, SHUTDOWN)){
+                    if (!state.compareAndSet(oldState, SHUTDOWN)) {
                         continue;
                     }
                     break;
@@ -186,23 +208,37 @@ public final class Engine {
                     throw new IllegalStateException();
             }
 
+            monitorThread.shutdown();
+
             for (Eventloop eventloop : eventloops) {
                 eventloop.shutdown();
             }
-
-            try {
-                for (Eventloop eventloop : eventloops) {
-                    eventloop.awaitTermination(5, SECONDS);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-
-            monitorThread.shutdown();
-            return;
         }
     }
+
+    /**
+     * Awaits for the termination of the Engine.
+     *
+     * This method is thread-safe.
+     *
+     * @param timeout the timeout
+     * @param unit    the TimeUnit
+     * @return true if the Engine is terminated.
+     * @throws InterruptedException if the calling thread got interrupted while waiting.
+     */
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return terminationLatch.await(timeout, unit);
+    }
+
+    void notifyEventloopTerminated() {
+        synchronized (terminationLatch){
+            if(terminationLatch.getCount()==1){
+                state.set(State.TERMINATED);
+            }
+            terminationLatch.countDown();
+        }
+    }
+
 
     /**
      * Contains the configuration of the {@link Engine}.
@@ -280,9 +316,9 @@ public final class Engine {
                     this.prevMillis = currentMillis;
 
                     for (Eventloop eventloop : eventloops) {
-    //                    for (AsyncSocket socket : eventloop.resources()) {
-    //                        monitor(socket, elapsed);
-    //                    }
+                        //                    for (AsyncSocket socket : eventloop.resources()) {
+                        //                        monitor(socket, elapsed);
+                        //                    }
                     }
 
                     if (!silent) {
@@ -300,17 +336,17 @@ public final class Engine {
             //log(reactor + " request-count:" + reactor.requests.get());
             //log(reactor + " channel-count:" + reactor.channels().size());
 
-    //        long requests = reactor.requests.get();
-    //        LongHolder prevRequests = getPrev(reactor.requests);
-    //        long requestsDelta = requests - prevRequests.value;
+            //        long requests = reactor.requests.get();
+            //        LongHolder prevRequests = getPrev(reactor.requests);
+            //        long requestsDelta = requests - prevRequests.value;
             //log(reactor + " " + thp(requestsDelta, elapsed) + " requests/second");
             //prevRequests.value = requests;
-    //
-    //        log("head-block:" + reactor.reactorQueue.head_block
-    //                + " tail:" + reactor.reactorQueue.tail.get()
-    //                + " dirtyHead:" + reactor.reactorQueue.dirtyHead.get()
-    //                + " cachedTail:" + reactor.reactorQueue.cachedTail);
-    ////
+            //
+            //        log("head-block:" + reactor.reactorQueue.head_block
+            //                + " tail:" + reactor.reactorQueue.tail.get()
+            //                + " dirtyHead:" + reactor.reactorQueue.dirtyHead.get()
+            //                + " cachedTail:" + reactor.reactorQueue.cachedTail);
+            ////
         }
 
         private void log(String s) {

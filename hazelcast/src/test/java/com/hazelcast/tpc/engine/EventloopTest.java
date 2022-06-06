@@ -68,7 +68,7 @@ public abstract class EventloopTest {
         eventloop.shutdown();
 
         eventloop.shutdown();
-        assertTrue(eventloop.awaitTermination(1, SECONDS));
+        assertTrue(eventloop.awaitTermination(2, SECONDS));
         assertEquals(TERMINATED, eventloop.state());
     }
 
@@ -81,7 +81,6 @@ public abstract class EventloopTest {
 
         assertEquals(TERMINATED, eventloop.state());
     }
-
 
     @Test
     public void testLifecycle() throws InterruptedException {

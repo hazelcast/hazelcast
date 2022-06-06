@@ -68,7 +68,7 @@ public final class PipelineImpl implements Pipeline {
 
     @Override
     public void execute() {
-        requestService.invokeOnPartition(this);
+        //requestService.invokeOnPartition(this);
     }
 
     public void await(){
