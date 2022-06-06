@@ -73,7 +73,7 @@ public abstract class Eventloop {
 
     protected final Scheduler scheduler;
     public final CircularQueue<EventloopTask> localRunQueue;
-    protected boolean spin;
+    protected final boolean spin;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
 
@@ -89,6 +89,12 @@ public abstract class Eventloop {
 
     protected final EventloopThread eventloopThread;
 
+    /**
+     * Creates a new {@link Eventloop}.
+     *
+     * @param config the {@link Configuration} uses to create this {@link Eventloop}.
+     * @throws NullPointerException if config is null.
+     */
     public Eventloop(Configuration config) {
         this.spin = config.spin;
         this.scheduler = config.scheduler;
@@ -99,10 +105,24 @@ public abstract class Eventloop {
         this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
 
+    /**
+     * Returns the {Scheduler} for this {@link Eventloop}.
+     *
+     * This method is thread-safe.
+     *
+     * @return the {@link Scheduler}.
+     */
     public Scheduler scheduler() {
         return scheduler;
     }
 
+    /**
+     * Returns the {@link EventloopThread} that runs this {@link Eventloop}.
+     *
+     * This method is thread-safe.
+     *
+     * @return the EventloopThread.
+     */
     public EventloopThread eventloopThread() {
         return eventloopThread;
     }
@@ -188,6 +208,9 @@ public abstract class Eventloop {
         return state == TERMINATED;
     }
 
+    /**
+     * Wakes up the {@link Eventloop} when it is blocked an needs to be woken up.
+     */
     protected abstract void wakeup();
 
     /**
@@ -232,7 +255,6 @@ public abstract class Eventloop {
      */
     public final void deregisterResource(Closeable resource) {
         checkNotNull(resource, "resource can't be null");
-
         resources.remove(resource);
     }
 
@@ -528,5 +550,14 @@ public abstract class Eventloop {
     public interface EventloopTask {
 
         void run() throws Exception;
+    }
+
+    public interface Scheduler {
+
+        void eventloop(Eventloop eventloop);
+
+        boolean tick();
+
+        void schedule(Frame task);
     }
 }

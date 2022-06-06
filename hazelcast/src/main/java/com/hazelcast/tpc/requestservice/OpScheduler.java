@@ -19,7 +19,6 @@ package com.hazelcast.tpc.requestservice;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.Scheduler;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 
@@ -45,7 +44,7 @@ import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
  * requests, but we don't want to slow down the rate of responses or
  * other data.
  */
-public final class OpScheduler implements Scheduler {
+public final class OpScheduler implements Eventloop.Scheduler {
 
     private final SwCounter scheduled = newSwCounter();
     private final SwCounter ticks = newSwCounter();

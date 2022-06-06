@@ -21,7 +21,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 /**
  * A scheduler that doesn't do anything.
  */
-public class NopScheduler implements Scheduler {
+public class NopScheduler implements Eventloop.Scheduler {
 
     @Override
     public void eventloop(Eventloop eventloop) {
