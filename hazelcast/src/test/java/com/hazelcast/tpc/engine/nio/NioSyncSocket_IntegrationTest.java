@@ -58,7 +58,7 @@ public class NioSyncSocket_IntegrationTest {
             System.out.println("at: "+k);
             Frame request = new Frame(128, true);
             request.writeInt(-1);
-            request.writeComplete();
+            request.constructComplete();
             clientSocket.writeAndFlush(request);
 
             Frame response = clientSocket.read();
@@ -81,7 +81,7 @@ public class NioSyncSocket_IntegrationTest {
                 int size = buffer.getInt();
                 Frame frame = responseAllocator.allocate(8);
                 frame.writeInt(-1);
-                frame.writeComplete();
+                frame.constructComplete();
                 return frame;
             }
         });
@@ -108,7 +108,7 @@ public class NioSyncSocket_IntegrationTest {
 
                         Frame frame = responseAllocator.allocate(8);
                         frame.writeInt(-1);
-                        frame.complete();
+                        frame.reconstructComplete();
                         socket.unsafeWriteAndFlush(frame);
                     }
                 }

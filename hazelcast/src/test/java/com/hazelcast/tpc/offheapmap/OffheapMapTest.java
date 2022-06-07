@@ -4,10 +4,7 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.tpc.offheapmap.Bin;
-import com.hazelcast.tpc.offheapmap.Bout;
 import com.hazelcast.tpc.OffheapAllocator;
-import com.hazelcast.tpc.offheapmap.OffheapMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +49,7 @@ public class OffheapMapTest {
                 .writeInt(-1)
                 .writeSizedBytes(keyBytes)
                 .writeSizedBytes(valueBytes)
-                .writeComplete();
+                .constructComplete();
 
         frame.position(INT_SIZE_IN_BYTES);
 
@@ -70,7 +67,7 @@ public class OffheapMapTest {
         Frame frame = new Frame(32)
                 .writeInt(-1)
                 .writeSizedBytes(keyBytes)
-                .writeComplete();
+                .constructComplete();
 
         frame.position(INT_SIZE_IN_BYTES);
 

@@ -257,12 +257,12 @@ public class Frame {
         }
     }
 
-    public Frame complete() {
+    public Frame reconstructComplete() {
         buff.flip();
         return this;
     }
 
-    public Frame writeComplete() {
+    public Frame constructComplete() {
         buff.putInt(OFFSET_SIZE, buff.position());
         buff.flip();
         return this;

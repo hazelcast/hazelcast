@@ -35,7 +35,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.tpc.requestservice.OpCodes.GET;
 import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
 import static com.hazelcast.tpc.requestservice.OpCodes.QUERY;
@@ -85,7 +84,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .newFuture()
                 .writeRequestHeader(partitionId, OpCodes.RANDOM_LOAD)
                 .writeSizedBytes(key)
-                .writeComplete();
+                .constructComplete();
         CompletableFuture<Frame> f = requestService.invokeOnPartition(request, partitionId);
         try {
             Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
@@ -106,7 +105,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                     .newFuture()
                     .writeRequestHeader(partitionId, OpCodes.RANDOM_LOAD)
                     .writeSizedBytes(key)
-                    .writeComplete();
+                    .constructComplete();
             futures[k] = requestService.invokeOnPartition(request, partitionId);
         }
 
@@ -133,7 +132,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeLong(item.key)
                 .writeInt(item.a)
                 .writeInt(item.b)
-                .writeComplete();
+                .constructComplete();
         return requestService.invokeOnPartition(request, partitionId);
     }
 
@@ -181,7 +180,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         Frame request = frameAllocator.allocate(32)
                 .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
-                .writeComplete();
+                .constructComplete();
         return requestService.invokeOnPartition(request, partitionId);
     }
 
@@ -217,7 +216,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .writeRequestHeader(partitionId, SET)
                 .writeSizedBytes(key)
                 .writeSizedBytes(value)
-                .writeComplete();
+                .constructComplete();
         CompletableFuture<Frame> f = requestService.invokeOnPartition(request, partitionId);
         try {
             Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
@@ -234,7 +233,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
             Frame request = frameAllocator.allocate(60)
                     .newFuture()
                     .writeRequestHeader(partitionId, QUERY)
-                    .writeComplete();
+                    .constructComplete();
             futures[partitionId] = requestService.invokeOnPartition(request, partitionId);
         }
 
@@ -255,7 +254,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 .newFuture()
                 .writeRequestHeader(partitionId, GET)
                 .writeSizedBytes(key)
-                .writeComplete();
+                .constructComplete();
         CompletableFuture<Frame> f = requestService.invokeOnPartition(request, partitionId);
         Frame response = null;
         try {

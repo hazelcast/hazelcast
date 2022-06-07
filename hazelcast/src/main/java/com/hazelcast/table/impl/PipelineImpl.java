@@ -23,14 +23,9 @@ import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.table.Pipeline;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 // todo: we don't need a frame for all the requests. We should just add to an existing frame.
@@ -60,7 +55,7 @@ public final class PipelineImpl implements Pipeline {
 
         Frame request = frameAllocator.allocate(32)
                 .writeRequestHeader(partitionId, NOOP)
-                .writeComplete();
+                .constructComplete();
 
 
         //requestService.invokeOnPartition();

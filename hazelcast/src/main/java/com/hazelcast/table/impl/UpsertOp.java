@@ -22,8 +22,6 @@ import com.hazelcast.table.Item;
 
 import java.util.Map;
 
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
-
 public final class UpsertOp extends Op {
 
     public UpsertOp() {
@@ -44,7 +42,7 @@ public final class UpsertOp extends Op {
         map.put(item.key, item);
 
         response.writeResponseHeader(partitionId, callId())
-                .writeComplete();
+                .constructComplete();
 
         return Op.COMPLETED;
     }

@@ -21,8 +21,6 @@ import com.hazelcast.tpc.offheapmap.OffheapMap;
 import com.hazelcast.tpc.requestservice.Op;
 import com.hazelcast.tpc.requestservice.OpCodes;
 
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
-
 public final class SetOp extends Op {
 
     private final Bin key = new Bin();
@@ -49,7 +47,7 @@ public final class SetOp extends Op {
         map.set(key, value);
 
         response.writeResponseHeader(partitionId, callId())
-                .writeComplete();
+                .constructComplete();
 
         return COMPLETED;
     }

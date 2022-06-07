@@ -97,7 +97,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
             Frame response = op.response;
             response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
                     .writeInt(RESPONSE_TYPE_OVERLOAD)
-                    .writeComplete();
+                    .constructComplete();
             sendResponse(op);
         }
     }
@@ -144,7 +144,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
                     op.response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
                             .writeInt(RESPONSE_TYPE_EXCEPTION)
                             .writeString(exception.getMessage())
-                            .writeComplete();
+                            .constructComplete();
                     sendResponse(op);
                     break;
                 default:

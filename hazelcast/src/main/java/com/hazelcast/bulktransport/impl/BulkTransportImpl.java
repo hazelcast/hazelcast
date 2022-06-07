@@ -66,13 +66,13 @@ public class BulkTransportImpl implements BulkTransport {
             Frame request = frameAllocator.allocate()
                     .newFuture()
                     .writeRequestHeader(-1, INIT_BULK_TRANSPORT)
-                    .writeComplete();
+                    .constructComplete();
 
             requestService.invoke(request, channel).thenAccept(o -> {
                 Frame request1 = frameAllocator.allocate()
                         .newFuture()
                         .writeRequestHeader(-1, BULK_TRANSPORT)
-                        .writeComplete();
+                        .constructComplete();
                 CompletableFuture future1 = requestService.invoke(request1, channel);
             });
         }

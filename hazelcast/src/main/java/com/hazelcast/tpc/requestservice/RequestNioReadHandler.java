@@ -64,7 +64,7 @@ public class RequestNioReadHandler extends NioAsyncReadHandler {
                 break;
             }
 
-            inboundFrame.complete();
+            inboundFrame.reconstructComplete();
             //framesRead.inc();
 
             if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {

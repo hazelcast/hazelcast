@@ -3,7 +3,6 @@ package com.hazelcast.tpc.engine.frame;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.tpc.engine.frame.Frame;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,7 +22,7 @@ public class FrameTest {
         Frame frame = new Frame(100)
                 .writeResponseHeader(1, 100)
                 .addFlags(FLAG_OP_RESPONSE_CONTROL)
-                .writeComplete();
+                .constructComplete();
 
         assertTrue(frame.isFlagRaised(FLAG_OP_RESPONSE_CONTROL));
     }
@@ -32,7 +31,7 @@ public class FrameTest {
     public void isFlagRaised_whenNotRaised() {
         Frame frame = new Frame(100)
                 .writeResponseHeader(1, 100)
-                .writeComplete();
+                .constructComplete();
 
         assertFalse(frame.isFlagRaised(FLAG_OP_RESPONSE_CONTROL));
     }

@@ -19,7 +19,6 @@ package com.hazelcast.tpc.requestservice;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.engine.frame.FrameAllocator;
 import io.netty.buffer.ByteBuf;
-import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncReadHandler;
 
 import java.nio.ByteBuffer;
@@ -72,7 +71,7 @@ public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
                 break;
             }
 
-            inboundFrame.complete();
+            inboundFrame.reconstructComplete();
             //framesRead.inc();
 
             if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {

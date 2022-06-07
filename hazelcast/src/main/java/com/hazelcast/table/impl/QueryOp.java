@@ -21,8 +21,6 @@ import com.hazelcast.tpc.offheapmap.OffheapMap;
 import com.hazelcast.tpc.requestservice.Op;
 import com.hazelcast.tpc.requestservice.OpCodes;
 
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
-
 public class QueryOp extends Op {
 
     // Currently, we always execute the same bogus query.
@@ -49,7 +47,7 @@ public class QueryOp extends Op {
 
         response.writeResponseHeader(partitionId, callId())
                 .writeLong(query.result)
-                .writeComplete();
+                .constructComplete();
 
         return COMPLETED;
     }

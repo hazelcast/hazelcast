@@ -48,7 +48,7 @@ public final class RandomLoadOp extends Op {
             return BLOCKED;
         } else {
             response.writeResponseHeader(partitionId, callId())
-                    .writeComplete();
+                    .constructComplete();
 
             return COMPLETED;
         }

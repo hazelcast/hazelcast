@@ -22,8 +22,6 @@ import com.hazelcast.tpc.requestservice.OpCodes;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
-
 public final class NoOp extends Op {
 
     public final static AtomicLong counter = new AtomicLong();
@@ -35,7 +33,7 @@ public final class NoOp extends Op {
     @Override
     public int run() throws Exception {
         response.writeResponseHeader(partitionId, callId())
-                .writeComplete();
+                .constructComplete();
 
         return COMPLETED;
     }

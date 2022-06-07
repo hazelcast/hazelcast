@@ -4,7 +4,6 @@ import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.tpc.offheapmap.Bin;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -25,7 +24,7 @@ public class BinTest {
         Frame frame = new Frame(32)
                 .writeInt(-1)
                 .writeSizedBytes(value)
-                .writeComplete();
+                .constructComplete();
 
         System.out.println(frame.position());
         System.out.println(frame.byteBuffer().limit());

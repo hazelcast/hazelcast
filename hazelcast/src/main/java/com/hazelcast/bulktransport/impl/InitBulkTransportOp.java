@@ -19,7 +19,7 @@ public class InitBulkTransportOp extends Op {
         OffheapMap map = tableManager.getOffheapMap(partitionId, null);
 
         response.writeResponseHeader(partitionId, request.getLong(OFFSET_REQ_CALL_ID));
-        response.writeComplete();
+        response.constructComplete();
 
         return COMPLETED;
     }
