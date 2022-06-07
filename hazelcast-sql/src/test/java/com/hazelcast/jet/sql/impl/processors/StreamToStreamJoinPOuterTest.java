@@ -56,7 +56,7 @@ import static java.util.Collections.singletonMap;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
     private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
             RemainderFunction.create(
                     ColumnExpression.create(1, BIGINT),  // OK for both LEFT and RIGHT JOIN.
@@ -278,12 +278,5 @@ public class StreamToStreamOuterJoinPTest extends SimpleTestInClusterSupport {
                                 wm((byte) 1, 3L)
                         )
                 );
-    }
-
-    static Map<Byte, Long> mapOf(Byte key1, Long value1, Byte key2, Long value2) {
-        Map<Byte, Long> map = new HashMap<>();
-        map.put(key1, value1);
-        map.put(key2, value2);
-        return map;
     }
 }

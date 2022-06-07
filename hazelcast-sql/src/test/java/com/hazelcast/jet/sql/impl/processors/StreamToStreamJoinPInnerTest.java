@@ -65,7 +65,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
