@@ -58,7 +58,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  */
 public abstract class Eventloop {
 
-    private static final Task SHUTDOWN_TASK = () -> {
+    private static final Runnable SHUTDOWN_TASK = () -> {
     };
 
     protected final static AtomicReferenceFieldUpdater<Eventloop, State> STATE
@@ -73,7 +73,7 @@ public abstract class Eventloop {
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final Scheduler scheduler;
-    public final CircularQueue<Task> localRunQueue;
+    public final CircularQueue<Runnable> localRunQueue;
     protected final boolean spin;
     private final Type type;
 
@@ -310,7 +310,7 @@ public abstract class Eventloop {
      * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if task is null.
      */
-    public final boolean execute(Task task) {
+    public final boolean execute(Runnable task) {
         if (Thread.currentThread() == eventloopThread) {
             return localRunQueue.offer(task);
         } else if (concurrentRunQueue.offer(task)) {
@@ -360,7 +360,7 @@ public abstract class Eventloop {
         }
 
         for (; ; ) {
-            Task task = localRunQueue.poll();
+            Runnable task = localRunQueue.poll();
             if (task == null) {
                 break;
             }
@@ -378,9 +378,9 @@ public abstract class Eventloop {
             Object task = concurrentRunQueue.poll();
             if (task == null) {
                 break;
-            } else if (task instanceof Task) {
+            } else if (task instanceof Runnable) {
                 try {
-                    ((Task) task).run();
+                    ((Runnable) task).run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -434,13 +434,13 @@ public abstract class Eventloop {
         }
     }
 
-    protected static final class ScheduledTask implements Task, Comparable<ScheduledTask> {
+    protected static final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
 
         private Promise promise;
         private long deadlineEpochNanos;
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             promise.complete(null);
         }
 
@@ -504,7 +504,7 @@ public abstract class Eventloop {
             return promiseAllocator.allocate();
         }
 
-        public boolean execute(Task task) {
+        public boolean execute(Runnable task) {
             return localRunQueue.offer(task);
         }
 
@@ -521,7 +521,7 @@ public abstract class Eventloop {
             Promise promise = newPromise();
 
             //todo: task can be pooled
-            Task task = new Task() {
+            Runnable task = new Runnable() {
                 Iterator<I> it = input.iterator();
 
                 @Override
@@ -554,7 +554,7 @@ public abstract class Eventloop {
             Promise promise = newPromise();
 
             //todo: task can be pooled
-            Task task = new Task() {
+            Runnable task = new Runnable() {
                 @Override
                 public void run() {
                     if (loopFunction.apply(Eventloop.this)) {
@@ -579,13 +579,6 @@ public abstract class Eventloop {
         TERMINATED
     }
 
-    /**
-     * A task that gets executed on the {@link Eventloop}.
-     */
-    public interface Task {
-
-        void run() throws Exception;
-    }
 
     public interface Scheduler {
 

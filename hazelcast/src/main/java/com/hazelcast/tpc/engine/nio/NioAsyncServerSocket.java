@@ -22,6 +22,7 @@ import com.hazelcast.tpc.engine.Eventloop;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -141,8 +142,13 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     public void accept(Consumer<NioAsyncSocket> consumer) {
         eventloop.execute(() -> {
-            serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
-            System.out.println(eventloopThread.getName() + " ServerSocket listening at " + serverSocketChannel.getLocalAddress());
+            try {
+                serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
+                System.out.println(eventloopThread.getName() + " ServerSocket listening at "
+                        + serverSocketChannel.getLocalAddress());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         });
     }
 

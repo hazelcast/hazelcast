@@ -361,10 +361,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventloopHandler implements CompletionListener, Eventloop.Task {
+    private class EventloopHandler implements CompletionListener, Runnable {
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             if (flushThread.get() == null) {
                 throw new RuntimeException("Channel should be in flushed state");
             }

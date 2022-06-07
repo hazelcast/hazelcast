@@ -318,7 +318,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
         for (int k = 0; k < partitions.length(); k++) {
             if (partitions.get(k)) {
                 int partitionId = k;
-                execute(taskFactory.create(partitionId),partitionId, false);
+                execute(taskFactory.create(partitionId), partitionId, false);
             }
         }
     }
@@ -342,15 +342,19 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
             Eventloop eventloop = engine.eventloop(toPartitionThreadIndex(partitionId));
 
             eventloop.execute(() -> {
-                OperationRunner runner = partitionOperationRunners[partitionId];
-                if (task instanceof Operation) {
-                    runner.run((Operation) task);
-                } else if (task instanceof Packet) {
-                    runner.run((Packet) task);
-                } else if (task instanceof Runnable) {
-                    runner.run((Runnable) task);
-                } else {
-                    throw new RuntimeException("Unhandled task:" + task);
+                try {
+                    OperationRunner runner = partitionOperationRunners[partitionId];
+                    if (task instanceof Operation) {
+                        runner.run((Operation) task);
+                    } else if (task instanceof Packet) {
+                        runner.run((Packet) task);
+                    } else if (task instanceof Runnable) {
+                        runner.run((Runnable) task);
+                    } else {
+                        throw new RuntimeException("Unhandled task:" + task);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             });
         }

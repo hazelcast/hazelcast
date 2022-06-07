@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -241,7 +242,11 @@ public final class NioAsyncSocket extends AsyncSocket {
             receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
 
             if (!clientSide) {
-                key = socketChannel.register(selector, OP_READ, eventLoopHandler);
+                try {
+                    key = socketChannel.register(selector, OP_READ, eventLoopHandler);
+                } catch (ClosedChannelException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
         });
     }
@@ -339,14 +344,18 @@ public final class NioAsyncSocket extends AsyncSocket {
         System.out.println("Connect to address:" + address);
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
         eventloop.execute(() -> {
-            key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
-            connectFuture = future;
-            socketChannel.connect(address);
+            try {
+                key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
+                connectFuture = future;
+                socketChannel.connect(address);
+            }catch (IOException e){
+                throw new UncheckedIOException(e);
+            }
         });
         return future;
     }
 
-    private class EventLoopHandler implements NioSelectedKeyListener, Eventloop.Task {
+    private class EventLoopHandler implements NioSelectedKeyListener, Runnable {
 
         @Override
         public void run() {

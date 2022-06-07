@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static com.hazelcast.tpc.engine.Engine.State.SHUTDOWN;
 import static com.hazelcast.tpc.engine.Engine.State.TERMINATED;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,9 @@ public class EngineTest {
     public void shutdown_whenRunning() throws InterruptedException {
         engine = new Engine();
         engine.start();
-        engine.eventloop(0).execute(() -> Thread.sleep(1000));
+        engine.eventloop(0).execute(() -> {
+            sleepMillis(1000);
+        });
         engine.shutdown();
         assertEquals(SHUTDOWN, engine.state());
         assertTrue(engine.awaitTermination(5, TimeUnit.SECONDS));
@@ -67,7 +70,9 @@ public class EngineTest {
     public void shutdown_whenShutdown() throws InterruptedException {
         engine = new Engine();
         engine.start();
-        engine.eventloop(0).execute(() -> Thread.sleep(1000));
+        engine.eventloop(0).execute(() -> {
+            sleepMillis(1000);
+        });
         engine.shutdown();
 
         engine.shutdown();

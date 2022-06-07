@@ -1,10 +1,12 @@
 package com.hazelcast.tpc.engine;
 
 
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static com.hazelcast.tpc.engine.Eventloop.State.NEW;
 import static com.hazelcast.tpc.engine.Eventloop.State.RUNNING;
 import static com.hazelcast.tpc.engine.Eventloop.State.SHUTDOWN;
@@ -61,7 +63,7 @@ public abstract class EventloopTest {
         CountDownLatch started = new CountDownLatch(1);
         eventloop.execute(() -> {
             started.countDown();
-            Thread.sleep(1000);
+            sleepMillis(1000);
         });
 
         started.await();
@@ -93,7 +95,7 @@ public abstract class EventloopTest {
         CountDownLatch started = new CountDownLatch(1);
         eventloop.execute(() -> {
             started.countDown();
-            Thread.sleep(2000);
+            sleepMillis(2000);
         });
 
         started.countDown();

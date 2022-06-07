@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public abstract class Actor implements Eventloop.Task {
+public abstract class Actor implements Runnable {
 
     public final static int DEFAULT_MAILBOX_CAPACITY = 512;
 
@@ -89,7 +89,7 @@ public abstract class Actor implements Eventloop.Task {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         Object msg = mailbox.poll();
         if (msg != null) {
             try {
