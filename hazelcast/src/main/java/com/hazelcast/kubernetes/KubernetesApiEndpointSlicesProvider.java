@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.hazelcast.kubernetes.KubernetesApiProvider.toJsonArray;
-import static com.hazelcast.kubernetes.KubernetesApiProvider.convertToString;
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
 
@@ -98,8 +97,9 @@ public class KubernetesApiEndpointSlicesProvider
         for (JsonValue endpoint : toJsonArray(jsonValue.asObject().get("endpoints"))) {
             JsonValue ready = endpoint.asObject().get("conditions").asObject().get("ready");
             Map<String, String> additionalProperties = extractAdditionalPropertiesFrom(endpoint);
+            String targetRefName = endpoint.asObject().get("targetRef").asObject().get("name").asString();
             for (JsonValue address : toJsonArray(endpoint.asObject().get("addresses"))) {
-                addresses.add(new Endpoint(new EndpointAddress(address.asString(), endpointPort),
+                addresses.add(new Endpoint(new EndpointAddress(address.asString(), endpointPort, targetRefName),
                         ready.asBoolean(), additionalProperties));
             }
         }
@@ -127,7 +127,7 @@ public class KubernetesApiEndpointSlicesProvider
             }
             for (JsonValue endpoint : toJsonArray(item.asObject().get("endpoints"))) {
                 JsonObject endpointObject = endpoint.asObject();
-                String nodeName = convertToString(endpointObject.get("nodeName"));
+                String nodeName = KubernetesApiProvider.convertToString(endpointObject.get("nodeName"));
 
                 Map<EndpointAddress, String> nodes = extractNodes(endpointObject.get("addresses"), ports, nodeName);
                 for (Map.Entry<EndpointAddress, String> nodeEntry : nodes.entrySet()) {
