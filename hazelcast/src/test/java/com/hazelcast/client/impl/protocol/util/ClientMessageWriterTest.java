@@ -48,7 +48,7 @@ public class ClientMessageWriterTest {
     }
 
     @Test
-    public void testWriteAttemptToInsufficentSpaceRemaining_spaceLeftIsLessThanFrameLengthAndFlags() {
+    public void testWriteAttemptToInsufficientSpaceRemaining_spaceLeftIsLessThanFrameLengthAndFlags() {
         ClientMessage.Frame frame = new ClientMessage.Frame(new byte[100], DEFAULT_FLAGS);
         ClientMessage message = createForDecode(frame);
         ByteBuffer buffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS - 1);
