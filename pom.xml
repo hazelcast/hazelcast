@@ -112,7 +112,7 @@
         <netty.version>4.1.74.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.2</parquet.version>
+        <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <postgresql.version>42.2.25</postgresql.version>
         <prometheus.version>0.14.0</prometheus.version>
