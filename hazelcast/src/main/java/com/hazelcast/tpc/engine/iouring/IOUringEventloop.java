@@ -134,6 +134,11 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
+    protected Unsafe createUnsafe() {
+        return new IOUringUnsafe();
+    }
+
+    @Override
     protected void beforeEventloop() {
         this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncThreshold, flags);
         this.sq = ringBuffer.ioUringSubmissionQueue();
@@ -212,6 +217,9 @@ public class IOUringEventloop extends Eventloop {
                 l.handle(fd, res, flags, op, data);
             }
         }
+    }
+
+    private class IOUringUnsafe extends Unsafe{
     }
 
     /**

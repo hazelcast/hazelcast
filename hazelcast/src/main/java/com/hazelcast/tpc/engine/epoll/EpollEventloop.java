@@ -63,6 +63,11 @@ public final class EpollEventloop extends Eventloop {
     }
 
     @Override
+    protected Unsafe createUnsafe() {
+        return new EpollUnsafe();
+    }
+
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == eventloopThread) {
             return;
@@ -160,6 +165,9 @@ public final class EpollEventloop extends Eventloop {
                 }
             }
         }
+    }
+
+    private class EpollUnsafe extends Unsafe {
     }
 
     /**

@@ -30,7 +30,7 @@ public class LoopMain {
         Eventloop eventloop = new NioEventloop();
         eventloop.start();
 
-        eventloop.execute(() -> eventloop.unsafe.loop(new FunctionEx<>() {
+        eventloop.execute(() -> eventloop.unsafe().loop(new FunctionEx<>() {
             int x = 0;
 
             @Override

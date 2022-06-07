@@ -83,7 +83,7 @@ public abstract class Eventloop {
 
     private final PromiseAllocator promiseAllocator;
 
-    public final Unsafe unsafe = new Unsafe();
+    protected Unsafe unsafe;
 
     protected long earliestDeadlineEpochNanos = -1;
 
@@ -107,6 +107,14 @@ public abstract class Eventloop {
         this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
 
+    /**
+     * Gets the Unsafe instance for this Eventloop.
+     *
+     * @return the Unsafe instance.
+     */
+    public final Unsafe unsafe(){
+        return unsafe;
+    }
 
     /**
      * Returns the {Scheduler} for this {@link Eventloop}.
@@ -140,6 +148,8 @@ public abstract class Eventloop {
     public final State state() {
         return state;
     }
+
+    protected abstract Unsafe createUnsafe();
 
     /**
      * Is called before the {@link #eventLoop()} is called.
@@ -447,6 +457,7 @@ public abstract class Eventloop {
         @Override
         public void executeRun() {
             try {
+                unsafe = createUnsafe();
                 beforeEventloop();
                 eventLoop();
             } catch (Throwable e) {
@@ -467,7 +478,7 @@ public abstract class Eventloop {
     /**
      * Exposes methods that should only be called from within the Eventloop.
      */
-    public final class Unsafe {
+    public abstract class Unsafe {
 
         public <E> Promise<E> newCompletedPromise(E value) {
             Promise<E> promise = promiseAllocator.allocate();

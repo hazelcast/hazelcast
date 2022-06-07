@@ -41,6 +41,11 @@ public final class NioEventloop extends Eventloop {
     }
 
     @Override
+    protected Unsafe createUnsafe() {
+        return new NioUnsafe();
+    }
+
+    @Override
     public void wakeup() {
         if (spin || Thread.currentThread() == eventloopThread) {
             return;
@@ -96,6 +101,10 @@ public final class NioEventloop extends Eventloop {
 
             runLocalTasks();
         } while (state == RUNNING);
+    }
+
+    private class NioUnsafe extends Unsafe {
+
     }
 
     /**
