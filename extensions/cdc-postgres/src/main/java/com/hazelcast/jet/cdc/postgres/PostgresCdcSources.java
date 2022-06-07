@@ -30,6 +30,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.RetryStrategy;
+import io.debezium.connector.postgresql.PostgresConnectorConfig;
+import io.debezium.connector.postgresql.spi.Snapshotter;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -123,7 +125,29 @@ public final class PostgresCdcSources {
             config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
             config.setProperty(ChangeRecordCdcSourceP.DB_SPECIFIC_EXTRA_FIELDS_PROPERTY, "schema");
             config.setProperty("database.server.name", UuidUtil.newUnsecureUuidString());
-            config.setProperty("snapshot.mode", "exported");
+            config.setProperty("snapshot.mode", "initial");
+        }
+
+        /**
+         * Snapshot mode that will be used by the connector.
+         *
+         * If you want to use {@link io.debezium.connector.postgresql.PostgresConnectorConfig.SnapshotMode#CUSTOM},
+         * please use {@link #setCustomSnapshotter(Class)} method instead.
+         */
+        @Nonnull
+        public Builder setSnapshotMode(@Nonnull PostgresSnapshotMode snapshotMode) {
+            config.setProperty("snapshot.mode", snapshotMode.snapshotMode.getValue());
+            return this;
+        }
+
+        /**
+         * Custom snapshotter that will be used by the connector.
+         */
+        @Nonnull
+        public Builder setCustomSnapshotter(@Nonnull Class<? extends Snapshotter> snapshotterClass) {
+            config.setProperty("snapshot.mode", PostgresConnectorConfig.SnapshotMode.CUSTOM);
+            config.setProperty("snapshot.custom.class", snapshotterClass.getName());
+            return this;
         }
 
         /**
@@ -469,5 +493,39 @@ public final class PostgresCdcSources {
                             ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
         }
 
+    }
+
+    public enum PostgresSnapshotMode {
+
+        /**
+         * Always perform a snapshot when starting.
+         */
+        ALWAYS(PostgresConnectorConfig.SnapshotMode.ALWAYS),
+
+        /**
+         * Perform a snapshot only upon initial startup of a connector.
+         */
+        INITIAL(PostgresConnectorConfig.SnapshotMode.INITIAL),
+
+        /**
+         * Never perform a snapshot and only receive logical changes.
+         */
+        NEVER(PostgresConnectorConfig.SnapshotMode.NEVER),
+
+        /**
+         * Perform a snapshot and then stop before attempting to receive any logical changes.
+         */
+        INITIAL_ONLY(PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY),
+
+        /**
+         * Perform an exported snapshot
+         */
+        EXPORTED(PostgresConnectorConfig.SnapshotMode.EXPORTED);
+
+        private final PostgresConnectorConfig.SnapshotMode snapshotMode;
+
+        PostgresSnapshotMode(PostgresConnectorConfig.SnapshotMode snapshotMode) {
+            this.snapshotMode = snapshotMode;
+        }
     }
 }
