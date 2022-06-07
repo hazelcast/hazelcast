@@ -93,7 +93,7 @@ import static java.util.stream.Collectors.toMap;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
- * <p>
+ *
  * The {@code init()} and {@code close()} methods of {@link
  * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
  * the {@link #verifyProcessor} using one of these.
@@ -355,12 +355,14 @@ public final class TestSupport {
      * fails.
      * <p>
      * Additionally, the {@code testEvents} can contain {@linkplain
-     * #processorAssertion(Consumer) processor assertions} that give the test to
-     * assert the internal processor state. For example, the test can assert
-     * that the internal processor buffers contain or don't contain particular
-     * rows, or that the internal watermark is at a certain value. Processor
-     * assertions must not be immediately followed by output items, they must
-     * occur before an input item, or at the end of test events.
+     * #processorAssertion(Consumer) processor assertions} that give the test a
+     * chance to assert the internal processor state. For example, the test can
+     * assert that the internal processor buffers contain or don't contain
+     * particular data, or that the internal watermark is at a certain value
+     * etc. Processor assertions must not be immediately followed by output
+     * items, they must occur before an input item, or at the end of test events
+     * - this is an implementation restriction and might be lifted in the
+     * future; the test will fail in this case.
      * <p>
      * To create `ItemWithOrdinal` instances, use the {@link #in} and {@link
      * #out} static factory methods.
@@ -375,7 +377,13 @@ public final class TestSupport {
      * number of ordinals in that case, this item will be ignored, except for
      * using its ordinal.
      *
-     * @param testEvents the input and expected output items
+     * @param testEvents a sequence of input items, output items and
+     *                   processor assertions
+     * @see #in(Object)
+     * @see #in(int, Object)
+     * @see #out(Object)
+     * @see #out(int, Object)
+     * @see #processorAssertion(Consumer)
      */
     public void expectExactOutput(TestEvent... testEvents) {
         this.testEvents = new ArrayList<>(testEvents.length);
@@ -590,12 +598,12 @@ public final class TestSupport {
         // filter null items from testEvents. They are there only to affect the number of ordinals. See class javadoc.
         testEvents.removeIf(event -> event instanceof ItemWithOrdinal && ((ItemWithOrdinal) event).item == null);
 
-        boolean afterProcessorAssertion = false;
+        boolean isAfterProcessorAssertion = false;
         for (TestEventInt e : testEvents) {
-            if (afterProcessorAssertion && e.isOutput()) {
+            if (isAfterProcessorAssertion && e.isOutput()) {
                 throw new IllegalArgumentException("A processor assertion must not be directly followed by an output item");
             }
-            afterProcessorAssertion = e.isProcessorAssertion();
+            isAfterProcessorAssertion = e.isProcessorAssertion();
         }
 
         try {
@@ -640,7 +648,7 @@ public final class TestSupport {
         accumulatedExpectedOutput.clear();
 
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
-                : "Illegal combination: don't do snapshots, but do restore";
+            : "Illegal combination: don't do snapshots, but do restore";
 
         boolean doSnapshots = testMode.doSnapshots;
         int doRestoreEvery = testMode.restoreInterval;
@@ -756,7 +764,7 @@ public final class TestSupport {
             do {
                 doCall("complete", isCooperative, () -> done[0] = processor[0].complete());
                 boolean madeProgress = done[0] ||
-                        (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
                 if (outbox[0].hasUnfinishedItem()) {
@@ -796,7 +804,7 @@ public final class TestSupport {
         assertOutputFn.accept(testMode, actualOutputs);
     }
 
-    private void assertExpectedOutput(TestMode mode, List<List<?>> expected, List<List<Object>> actual) {
+    private void assertExpectedOutput(TestMode mode, List<List<?>> expected , List<List<Object>> actual) {
         for (int i = 0; i < expected.size(); i++) {
             List<?> expectedOutput = expected.get(i);
             List<?> actualOutput = actual.get(i);
@@ -851,7 +859,7 @@ public final class TestSupport {
         if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
             doCall("tryProcessWatermark", isCooperative, () -> {
-                if (processor[0].tryProcessWatermark(inboxOrdinal, wm)) {
+                if (processor[0].tryProcessWatermark(wm)) {
                     inbox.remove();
                 }
             });
@@ -1066,9 +1074,10 @@ public final class TestSupport {
     }
 
     public interface TestEvent {
-
     }
 
+    // Internal interface with a couple of useful methods. We could move these methods to the
+    // super-interface, but we did it this way because we don't want them to be a public API.
     private interface TestEventInt extends TestEvent {
         boolean isInput();
         boolean isOutput();
@@ -1256,7 +1265,7 @@ public final class TestSupport {
                 return "snapshots enabled, never restoring them, inboxLimit=" + sInboxSize;
             } else {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
-                        + restoreInterval + ", inboxLimit=" + inboxLimit);
+                    + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
         }
     }
