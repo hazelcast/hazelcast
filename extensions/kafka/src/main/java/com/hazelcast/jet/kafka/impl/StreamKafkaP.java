@@ -170,7 +170,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         getLogger().info("New partition(s) assigned: " + newAssignments);
         eventTimeMapper.addPartitions(newAssignments.size());
         consumer.assign(currentAssignment.keySet());
-        if (oldTopicOffsets.length == 0) {
+        if (oldTopicOffsets.length == 0 && !isRestoring) {
             // Attempt to initialize partitions offsets only when processor is starting.
             initializeOffsetsAndSeek(topicName, newAssignments);
         }
