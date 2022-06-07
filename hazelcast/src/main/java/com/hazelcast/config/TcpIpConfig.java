@@ -194,7 +194,7 @@ public class TcpIpConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TcpIpConfig)) {
+        if (o == null || !(o instanceof TcpIpConfig)) {
             return false;
         }
 
@@ -206,7 +206,7 @@ public class TcpIpConfig {
         if (enabled != that.enabled) {
             return false;
         }
-        if (!members.equals(that.members)) {
+        if (members != null ? !members.equals(that.members) : that.members != null) {
             return false;
         }
         return requiredMember != null ? requiredMember.equals(that.requiredMember) : that.requiredMember == null;
@@ -216,7 +216,7 @@ public class TcpIpConfig {
     public final int hashCode() {
         int result = connectionTimeoutSeconds;
         result = 31 * result + (enabled ? 1 : 0);
-        result = 31 * result + members.hashCode();
+        result = 31 * result + (members != null ? members.hashCode() : 0);
         result = 31 * result + (requiredMember != null ? requiredMember.hashCode() : 0);
         return result;
     }
