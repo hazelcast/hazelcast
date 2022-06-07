@@ -160,6 +160,8 @@ public abstract class Eventloop {
 
     /**
      * Starts the eventloop.
+     *
+     * @throws IllegalStateException if the Eventloop isn't in NEW state.
      */
     public void start() {
         if (!STATE.compareAndSet(Eventloop.this, NEW, RUNNING)) {
