@@ -184,8 +184,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                         .addPartitionInitialOffset(2, 5L));
 
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.<Integer, String, String>kafka(
-                        properties(), r -> r.value() + "@" + r.topic(), topicsConfig
+        p.readFrom(KafkaSources.<Integer, String, Tuple2<String, String>>kafka(
+                        properties(), r -> Tuple2.tuple2(r.value(), r.topic()), topicsConfig
                 ))
                 .withoutTimestamps()
                 .writeTo(Sinks.list("sink"));
@@ -193,13 +193,11 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p);
         sleepAtLeastSeconds(3);
 
-        IList<String> list = instance().getList("sink");
+        IList<Tuple2<String, String>> list = instance().getList("sink");
         assertTrueEventually(() -> assertEquals(170, list.size()), 5);
 
         // group retrieved records by topic and check if expected number of records were skipped
         Map<String, List<String>> recordsByTopic = list.stream()
-                .map(entry -> entry.split("@"))
-                .map(entry -> Tuple2.tuple2(entry[0], entry[1]))
                 .collect(groupingBy(Tuple2::f1, mapping(Tuple2::f0, toList())));
 
         assertThat(recordsByTopic.get(topic1Name).size())

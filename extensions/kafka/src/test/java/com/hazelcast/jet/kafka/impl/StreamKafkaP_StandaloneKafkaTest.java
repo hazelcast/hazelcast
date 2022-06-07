@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.kafka.KafkaProcessors;
-import com.hazelcast.jet.kafka.TopicsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +50,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
         kafkaTestSupport.createTopic("topic", 1);
         DAG dag = new DAG();
         dag.newVertex("src", KafkaProcessors.streamKafkaP(getProperties(kafkaTestSupport.getBrokerConnectionString()),
-                FunctionEx.identity(), EventTimePolicy.noEventTime(), new TopicsConfig().addTopic("test")))
+                FunctionEx.identity(), EventTimePolicy.noEventTime(), "topic"))
            .localParallelism(1);
 
         Job job = createHazelcastInstance().getJet().newJob(dag);

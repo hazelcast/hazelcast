@@ -26,6 +26,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Properties;
 
 import static com.hazelcast.jet.kafka.impl.StreamKafkaP.PREFERRED_LOCAL_PARALLELISM;
@@ -39,6 +40,20 @@ import static com.hazelcast.jet.kafka.impl.StreamKafkaP.PREFERRED_LOCAL_PARALLEL
 public final class KafkaProcessors {
 
     private KafkaProcessors() {
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * KafkaSources#kafka(Properties, FunctionEx, String...)}.
+     */
+    public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull String... topics
+    ) {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(Arrays.asList(topics));
+        return streamKafkaP(properties, projectionFn, eventTimePolicy, topicsConfig);
     }
 
     /**

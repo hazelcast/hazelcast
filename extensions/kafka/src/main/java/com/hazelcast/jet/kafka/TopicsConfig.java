@@ -33,7 +33,7 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class TopicsConfig implements Serializable {
 
-    private static final long serialVersionUID = 9103238799607267955L;
+    private static final long serialVersionUID = 1L;
 
     private final Map<String, TopicConfig> topicConfigs = new HashMap<>();
 
@@ -110,7 +110,7 @@ public class TopicsConfig implements Serializable {
      */
     public static class TopicConfig implements Serializable {
 
-        private static final long serialVersionUID = 1095406385054883556L;
+        private static final long serialVersionUID = 1L;
 
         private final String topicName;
         private final Map<Integer, Long> partitionsInitialOffsets = new HashMap<>();
