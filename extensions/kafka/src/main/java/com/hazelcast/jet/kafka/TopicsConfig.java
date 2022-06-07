@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.kafka;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
@@ -33,6 +36,7 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class TopicsConfig implements Serializable {
 
+    private static final ILogger LOGGER = Logger.getLogger(TopicsConfig.class);
     private static final long serialVersionUID = 1L;
 
     private final Map<String, TopicConfig> topicConfigs = new HashMap<>();
@@ -67,7 +71,13 @@ public class TopicsConfig implements Serializable {
      * is saved under the topic name.
      */
     public TopicsConfig addTopicConfig(TopicConfig config) {
-        topicConfigs.put(config.topicName, config);
+        topicConfigs.compute(config.topicName, (k, oldConfig) -> {
+            if (oldConfig != null) {
+                LOGGER.warning("Duplicated topic configs for topic name: '"
+                        + k + "' was found, only the last added config will be kept.");
+            }
+            return config;
+        });
         return this;
     }
 
@@ -103,6 +113,13 @@ public class TopicsConfig implements Serializable {
             return null;
         }
         return topicConfig.getPartitionInitialOffset(partition);
+    }
+
+    @Override
+    public String toString() {
+        return "TopicsConfig{"
+                + "topicConfigs=" + topicConfigs
+                + '}';
     }
 
     /**
@@ -150,11 +167,19 @@ public class TopicsConfig implements Serializable {
          * Adds the initial offset for given partition to the configuration.
          *
          * @param partition the number of partition
-         * @param offset the initial offset for the partition
+         * @param offset    the initial offset for the partition
          */
         public TopicConfig addPartitionInitialOffset(int partition, long offset) {
             partitionsInitialOffsets.put(partition, offset);
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return "TopicConfig{"
+                    + "topicName=" + topicName
+                    + ", partitionsInitialOffsets=" + partitionsInitialOffsets
+                    + '}';
         }
     }
 }
