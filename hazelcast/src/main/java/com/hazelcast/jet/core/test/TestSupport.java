@@ -859,7 +859,7 @@ public final class TestSupport {
         if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
             doCall("tryProcessWatermark", isCooperative, () -> {
-                if (processor[0].tryProcessWatermark(wm)) {
+                if (processor[0].tryProcessWatermark(inboxOrdinal, wm)) {
                     inbox.remove();
                 }
             });

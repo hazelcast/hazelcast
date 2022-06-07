@@ -39,6 +39,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -130,11 +131,35 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
-        if (!processPendingOutput()) {
-            return false;
+        if (!pendingOutput.isEmpty()) {
+            return processPendingOutput();
         }
 
-        // TODO drop late items
+        // drop the event, if it's late
+        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+            long wmValue = lastReceivedWm.getValue(en.getKey());
+            long time = en.getValue().applyAsLong((JetSqlRow) item);
+            if (time < wmValue) {
+                logLateEvent(getLogger(), wmValue, item);
+                return true;
+            }
+        }
+
+        // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
+        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+            long joinTimeLimit = wmState.get(en.getKey());
+            long time = en.getValue().applyAsLong((JetSqlRow) item);
+            if (time < joinTimeLimit) {
+                if (!joinInfo.isInner()) {
+                    JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
+                    if (joinedRow != null && !tryEmit(joinedRow)) {
+                        pendingOutput.add(joinedRow);
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
 
         // having side input, traverse the opposite buffer
         if (currItem == null) {
@@ -253,7 +278,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         // 5.2 : compute new maximum for each output WM in the `wmState`.
-        Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
+        Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = timeExtractors(ordinal);
         ToLongFunctionEx<JetSqlRow>[] extractors = new ToLongFunctionEx[currExtractors.values().size()];
         long[] limits = new long[currExtractors.values().size()];
 
@@ -283,6 +308,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
             return false;
         });
+    }
+
+    private Map<Byte, ToLongFunctionEx<JetSqlRow>> timeExtractors(int ordinal) {
+        return ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
     }
 
     // If current join type is LEFT/RIGHT and a row don't have a matching row on the other side

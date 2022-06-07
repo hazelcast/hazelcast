@@ -258,6 +258,62 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 Tuple2.tuple2(leftColumnCount, rightColumnCount));
     }
 
+    @Test
+    public void test_nonLateItemOutOfLimit() {
+        // Join condition:
+        //     l.time BETWEEN r.time - 1 AND r.time + 1
+        postponeTimeMap.put((byte) 0, ImmutableMap.of((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, ImmutableMap.of((byte) 0, 1L));
+
+        leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
+        rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
+
+        SupplierEx<Processor> supplier = createProcessor(1, 1);
+
+        TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
+                .outputChecker(SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .expectExactOutput(
+                        in(0, wm((byte) 0, 10)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState);
+                        }),
+                        // This item is not late according to the WM for key=1, but is off the join limit according
+                        // to the WM for key=1 and the postponing time
+                        in(1, jetRow(8L)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(0, p.buffer[1].size());
+                        })
+                );
+    }
+
+    @Test
+    public void test_dropLateItems() {
+        // Join condition:
+        //     l.time BETWEEN r.time - 1 AND r.time + 1
+        postponeTimeMap.put((byte) 0, ImmutableMap.of((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, ImmutableMap.of((byte) 0, 1L));
+
+        leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
+        rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
+
+        SupplierEx<Processor> supplier = createProcessor(1, 1);
+
+        TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
+                .outputChecker(SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .expectExactOutput(
+                        in(0, wm((byte) 0, 10)),
+                        in(0, jetRow(8L)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(0, p.buffer[0].size());
+                            assertEquals(0, p.buffer[1].size());
+                        })
+                );
+    }
+
     /**
      * From the postponeTimeMap create the equivalent condition for the join processor.
      *
