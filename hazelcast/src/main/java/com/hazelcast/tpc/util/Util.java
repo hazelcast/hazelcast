@@ -17,9 +17,19 @@
 package com.hazelcast.tpc.util;
 
 import java.time.Instant;
-import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.tpc.engine.AsyncFile.pageSize;
 
 public class Util {
+
+    public static long toPageAlignedAddress(long rawAddress) {
+        if (rawAddress % pageSize() == 0) {
+            return rawAddress;
+        } else {
+            return rawAddress - rawAddress % pageSize() + pageSize();
+        }
+    }
+
 
     /**
      * Gets the number of nanoseconds from the Java epoch of 1970-01-01T00:00:00Z.

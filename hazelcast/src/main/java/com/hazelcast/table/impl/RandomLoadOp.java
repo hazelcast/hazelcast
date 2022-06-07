@@ -16,7 +16,6 @@
 
 package com.hazelcast.table.impl;
 
-import com.hazelcast.tpc.engine.iouring.StorageScheduler;
 import com.hazelcast.tpc.requestservice.Op;
 import com.hazelcast.tpc.requestservice.OpCodes;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
@@ -44,7 +43,7 @@ public final class RandomLoadOp extends Op {
     public int run() throws Exception {
         if (!loaded) {
             IOUringEventloop eventloop = (IOUringEventloop) this.scheduler.getEventloop();
-            eventloop.storageScheduler().scheduleLoad(StorageScheduler.dummyFile, 0, 100, this);
+            //eventloop.storageScheduler().scheduleLoad(StorageScheduler.dummyFile, 0, 100, this);
             return BLOCKED;
         } else {
             response.writeResponseHeader(partitionId, callId())

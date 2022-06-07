@@ -40,10 +40,11 @@ final class PromiseAllocator {
             return promise;
         }
 
-        Promise object = array[index];
+        Promise promise = array[index];
         array[index] = null;
         index--;
-        return object;
+        promise.refCount = 1;
+        return promise;
     }
 
     void free(Promise e) {

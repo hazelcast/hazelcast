@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <E>
  */
-public final class Promise<E> {
+public class Promise<E> {
 
     private final static Object EMPTY = new Object();
 
@@ -44,10 +44,11 @@ public final class Promise<E> {
     private boolean exceptional;
     private final Eventloop eventloop;
     private List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
+    private boolean releaseOnComplete = false;
     int refCount = 1;
     PromiseAllocator allocator;
 
-    Promise(Eventloop eventloop) {
+    protected Promise(Eventloop eventloop) {
         this.eventloop = checkNotNull(eventloop);
     }
 
@@ -69,6 +70,14 @@ public final class Promise<E> {
         return value != EMPTY && exceptional;
     }
 
+    public void releaseOnComplete() {
+        releaseOnComplete = true;
+
+        if (this.value != EMPTY) {
+            release();
+        }
+    }
+
     /**
      * Completes this Promise with the provided exceptional value.
      *
@@ -80,13 +89,13 @@ public final class Promise<E> {
         checkNotNull(value);
 
         if (this.value != EMPTY) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Promise is already completed");
         }
         this.value = value;
         this.exceptional = true;
 
         if (!consumers.isEmpty()) {
-            for (BiConsumer consumer : consumers) {
+            for (BiConsumer<E, Throwable> consumer : consumers) {
                 try {
                     consumer.accept(null, value);
                 } catch (Exception e) {
@@ -94,6 +103,10 @@ public final class Promise<E> {
                 }
             }
             consumers.clear();
+        }
+
+        if (releaseOnComplete) {
+            release();
         }
     }
 
@@ -103,15 +116,15 @@ public final class Promise<E> {
      * @param value the value
      * @throws IllegalStateException if the Promise has already been completed.
      */
-    public void complete(Object value) {
+    public void complete(E value) {
         if (this.value != EMPTY) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Promise is already completed");
         }
         this.value = value;
         this.exceptional = false;
 
         if (!consumers.isEmpty()) {
-            for (BiConsumer consumer : consumers) {
+            for (BiConsumer<E, Throwable> consumer : consumers) {
                 try {
                     consumer.accept(value, null);
                 } catch (Exception e) {
@@ -120,9 +133,13 @@ public final class Promise<E> {
             }
             consumers.clear();
         }
+
+        if (releaseOnComplete) {
+            release();
+        }
     }
 
-    public <T extends Throwable> void then(BiConsumer<E, T> consumer) {
+    public <T extends Throwable> Promise then(BiConsumer<E, T> consumer) {
         checkNotNull(consumer, "consumer can't be null");
 
         if (value == EMPTY) {
@@ -132,6 +149,7 @@ public final class Promise<E> {
         } else {
             consumer.accept((E) value, null);
         }
+        return this;
     }
 
     public void acquire() {
@@ -148,6 +166,7 @@ public final class Promise<E> {
             refCount = 0;
             value = EMPTY;
             consumers.clear();
+            releaseOnComplete = false;
             if (allocator != null) {
                 allocator.free(this);
             }

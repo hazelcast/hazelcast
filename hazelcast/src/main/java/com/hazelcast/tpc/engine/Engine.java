@@ -58,6 +58,9 @@ public final class Engine {
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
     final CountDownLatch terminationLatch;
 
+    /**
+     * Creates an Engine with the default {@link Configuration}.
+     */
     public Engine() {
         this(new Configuration());
     }

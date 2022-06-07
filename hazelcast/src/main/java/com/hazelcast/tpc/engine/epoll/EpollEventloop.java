@@ -16,6 +16,7 @@
 
 package com.hazelcast.tpc.engine.epoll;
 
+import com.hazelcast.tpc.engine.AsyncFile;
 import com.hazelcast.tpc.engine.Eventloop;
 import io.netty.channel.epoll.EpollEventArray;
 import io.netty.channel.epoll.Native;
@@ -168,6 +169,10 @@ public final class EpollEventloop extends Eventloop {
     }
 
     private class EpollUnsafe extends Unsafe {
+        @Override
+        public AsyncFile newAsyncFile(String path) {
+            throw new RuntimeException("Not implemented");
+        }
     }
 
     /**

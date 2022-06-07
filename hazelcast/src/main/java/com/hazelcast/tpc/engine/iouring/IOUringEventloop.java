@@ -16,6 +16,7 @@
 
 package com.hazelcast.tpc.engine.iouring;
 
+import com.hazelcast.tpc.engine.AsyncFile;
 import com.hazelcast.tpc.engine.Eventloop;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -104,21 +105,19 @@ import static io.netty.incubator.channel.uring.Native.IORING_OP_TIMEOUT;
  */
 public class IOUringEventloop extends Eventloop {
 
-    private RingBuffer ringBuffer;
+    public static int IORING_SETUP_IOPOLL = 1;
+    public static int IORING_SETUP_SQPOLL = 2;
+
+    private final RingBuffer ringBuffer;
     private final FileDescriptor eventfd = Native.newBlockingEventFd();
+    private final IOUringConfiguration config;
     IOUringSubmissionQueue sq;
-    private IOUringCompletionQueue cq;
+    private final IOUringCompletionQueue cq;
     private final long eventfdReadBuf = PlatformDependent.allocateMemory(8);
-    // we could use an array.
     final IntObjectMap<CompletionListener> completionListeners = new IntObjectHashMap<>(4096);
     final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
     protected final PooledByteBufAllocator iovArrayBufferAllocator = new PooledByteBufAllocator();
-
-    protected StorageScheduler storageScheduler;
-
-    private final int ringbufferSize;
-    private final int ioseqAsyncThreshold;
-    private final int flags;
+    protected final IORequestScheduler ioRequestScheduler;
     private final EventloopHandler eventLoopHandler = new EventloopHandler();
 
     public IOUringEventloop() {
@@ -127,10 +126,15 @@ public class IOUringEventloop extends Eventloop {
 
     public IOUringEventloop(IOUringConfiguration config) {
         super(config, Type.IOURING);
-        this.ringbufferSize = config.ringbufferSize;
-        this.ioseqAsyncThreshold = config.ioseqAsyncThreshold;
-        this.flags = config.flags;
-        this.storageScheduler = config.storageScheduler;
+        this.config = config;
+        this.ringBuffer = Native.createRingBuffer(
+                config.ringbufferSize,
+                config.ioseqAsyncThreshold,
+                config.flags);
+        this.sq = ringBuffer.ioUringSubmissionQueue();
+        this.cq = ringBuffer.ioUringCompletionQueue();
+        this.completionListeners.put(eventfd.intValue(), (fd, op, res, flags, data) -> sq_addEventRead());
+        this.ioRequestScheduler = config.ioRequestScheduler;
     }
 
     @Override
@@ -140,12 +144,7 @@ public class IOUringEventloop extends Eventloop {
 
     @Override
     protected void beforeEventloop() {
-        this.ringBuffer = Native.createRingBuffer(ringbufferSize, ioseqAsyncThreshold, flags);
-        this.sq = ringBuffer.ioUringSubmissionQueue();
-        this.cq = ringBuffer.ioUringCompletionQueue();
-        this.completionListeners.put(eventfd.intValue(), (fd, op, res, _flags, data) -> sq_addEventRead());
-        this.storageScheduler = new StorageScheduler(this, 512);
-        super.beforeEventloop();
+        ioRequestScheduler.init(this);
     }
 
     @Override
@@ -155,54 +154,62 @@ public class IOUringEventloop extends Eventloop {
         }
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-             Native.eventFdWrite(eventfd.intValue(), 1L);
+            Native.eventFdWrite(eventfd.intValue(), 1L);
         }
     }
 
     @Override
     protected void eventLoop() {
-        sq_addEventRead();
+        if ((config.flags & IORING_SETUP_IOPOLL) != 0) {
+            System.out.println("foo");
+            // see https://kernel.dk/io_uring.pdf 8.2
+            sq_addEventRead();
 
-        boolean moreWork = false;
-        do {
-            if (cq.hasCompletions()) {
+            do {
+                sq.submit(Native.IORING_ENTER_GETEVENTS);
                 cq.process(eventLoopHandler);
-            } else if (spin || moreWork) {
-                sq.submit();
-            } else {
-                wakeupNeeded.set(true);
-                if (concurrentRunQueue.isEmpty()) {
-                    if (earliestDeadlineEpochNanos != -1) {
-                        long timeoutNanos = earliestDeadlineEpochNanos - epochNanos();
-                        if (timeoutNanos > 0) {
-                            sq.addTimeout(timeoutNanos, (short) 0);
-                            sq.submitAndWait();
+                runConcurrentTasks();
+                scheduler.tick();
+                runLocalTasks();
+            } while (state == RUNNING);
+        } else {
+            sq_addEventRead();
+
+            boolean moreWork = false;
+            do {
+                if (cq.hasCompletions()) {
+                    cq.process(eventLoopHandler);
+                } else if (spin || moreWork) {
+                    sq.submit();
+                } else {
+                    wakeupNeeded.set(true);
+                    if (concurrentRunQueue.isEmpty()) {
+                        if (earliestDeadlineEpochNanos != -1) {
+                            long timeoutNanos = earliestDeadlineEpochNanos - epochNanos();
+                            if (timeoutNanos > 0) {
+                                sq.addTimeout(timeoutNanos, (short) 0);
+                                sq.submitAndWait();
+                            } else {
+                                sq.submit();
+                            }
                         } else {
-                            sq.submit();
+                            sq.submitAndWait();
                         }
                     } else {
-                        sq.submitAndWait();
+                        sq.submit();
                     }
-                } else {
-                    sq.submit();
+                    wakeupNeeded.set(false);
                 }
-                wakeupNeeded.set(false);
-            }
 
-            runConcurrentTasks();
-
-            moreWork = scheduler.tick();
-
-            runLocalTasks();
-        } while (state == RUNNING);
+                runConcurrentTasks();
+                moreWork = scheduler.tick();
+                runLocalTasks();
+            } while (state == RUNNING);
+        }
     }
 
     private void sq_addEventRead() {
         sq.addEventFdRead(eventfd.intValue(), eventfdReadBuf, 0, 8, (short) 0);
-    }
-
-    public StorageScheduler storageScheduler() {
-        return storageScheduler;
     }
 
     private class EventloopHandler implements IOUringCompletionQueueCallback {
@@ -219,7 +226,11 @@ public class IOUringEventloop extends Eventloop {
         }
     }
 
-    private class IOUringUnsafe extends Unsafe{
+    protected class IOUringUnsafe extends Unsafe {
+        @Override
+        public AsyncFile newAsyncFile(String path) {
+            return new IOUringAsyncFile(path, IOUringEventloop.this);
+        }
     }
 
     /**
@@ -229,7 +240,7 @@ public class IOUringEventloop extends Eventloop {
         private int flags;
         private int ringbufferSize = DEFAULT_RING_SIZE;
         private int ioseqAsyncThreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
-        private StorageScheduler storageScheduler;
+        private IORequestScheduler ioRequestScheduler = new IORequestScheduler(512, 8192);
 
         public void setFlags(int flags) {
             this.flags = checkNotNegative(flags, "flags can't be negative");
@@ -243,8 +254,8 @@ public class IOUringEventloop extends Eventloop {
             this.ioseqAsyncThreshold = checkPositive("ioseqAsyncThreshold", ioseqAsyncThreshold);
         }
 
-        public void setStorageScheduler(StorageScheduler storageScheduler) {
-            this.storageScheduler = checkNotNull(storageScheduler);
+        public void setIoRequestScheduler(IORequestScheduler ioRequestScheduler) {
+            this.ioRequestScheduler = checkNotNull(ioRequestScheduler);
         }
     }
 }

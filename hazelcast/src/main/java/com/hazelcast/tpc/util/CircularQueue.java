@@ -63,8 +63,17 @@ public final class CircularQueue<E> {
         return tail - head + 1 == capacity;
     }
 
+    /**
+     * Returns the number of free spots
+     *
+     * @return
+     */
     public int remaining() {
         return capacity - size();
+    }
+
+    public int capacity(){
+        return capacity;
     }
 
     public int size() {

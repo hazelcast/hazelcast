@@ -494,6 +494,12 @@ public abstract class Eventloop {
      */
     public abstract class Unsafe {
 
+        public Eventloop eventloop(){
+            return Eventloop.this;
+        }
+
+        public abstract AsyncFile newAsyncFile(String path);
+
         public <E> Promise<E> newCompletedPromise(E value) {
             Promise<E> promise = promiseAllocator.allocate();
             promise.complete(value);
