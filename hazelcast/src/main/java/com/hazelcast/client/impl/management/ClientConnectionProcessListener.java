@@ -39,7 +39,7 @@ final class ListenerAggregate
     }
 
     @Override
-    public void connectionAttemptFailed(Object target) {
+    public void connectionAttemptFailed(Address target) {
         childListeners.forEach(listener -> listener.connectionAttemptFailed(target));
     }
 
@@ -69,6 +69,16 @@ final class ListenerAggregate
     }
 
     @Override
+    public void clusterConnectionFailed(String clusterName) {
+        childListeners.forEach(listener -> listener.clusterConnectionFailed(clusterName));
+    }
+
+    @Override
+    public void clusterConnectionSucceeded(String clusterName) {
+        childListeners.forEach(listener -> listener.clusterConnectionSucceeded(clusterName));
+    }
+
+    @Override
     public ClientConnectionProcessListener withAdditionalListener(ClientConnectionProcessListener listener) {
         childListeners.add(listener);
         return this;
@@ -89,7 +99,7 @@ public interface ClientConnectionProcessListener
     default void attemptingToConnectToAddress(Address address) {
     }
 
-    default void connectionAttemptFailed(Object target) {
+    default void connectionAttemptFailed(Address target) {
     }
 
     default void hostNotFound(String host) {
@@ -109,5 +119,11 @@ public interface ClientConnectionProcessListener
     }
 
     default void clientNotAllowedInCluster() {
+    }
+
+    default void clusterConnectionFailed(String clusterName) {
+    }
+
+    default void clusterConnectionSucceeded(String clusterName) {
     }
 }

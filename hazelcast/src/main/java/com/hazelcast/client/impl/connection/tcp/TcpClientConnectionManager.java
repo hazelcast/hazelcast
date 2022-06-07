@@ -84,7 +84,6 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EventListener;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -101,6 +100,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
@@ -117,6 +117,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -411,6 +412,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         // try the current cluster
         if (doConnectToCandidateCluster(currentContext, false)) {
+            connectionProcessListener.clusterConnectionSucceeded(currentContext.getClusterName());
             return;
         }
 
@@ -455,7 +457,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return false;
     }
 
-    Connection connect(Object target, Function<Object, Connection> getOrConnectFunction) {
+    <A> Connection connect(A target, Function<A, Connection> getOrConnectFunction,
+                           Function<A, Address> addressProvider) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -468,7 +471,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (HazelcastException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             if (e.getCause() instanceof IOException) {
-                connectionProcessListener.connectionAttemptFailed(target);
+                connectionProcessListener.connectionAttemptFailed(addressProvider.apply(target));
             }
             return null;
         } catch (Exception e) {
@@ -498,7 +501,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
                     connectionProcessListener.attemptingToConnectToAddress(member.getAddress());
-                    Connection connection = connect(member, o -> getOrConnectToMember((Member) o, switchingToNextCluster));
+                    Connection connection = connect(member,
+                            o -> getOrConnectToMember(o, switchingToNextCluster),
+                            this::translate);
                     if (connection != null) {
                         return true;
                     }
@@ -511,7 +516,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         continue;
                     }
                     connectionProcessListener.attemptingToConnectToAddress(address);
-                    Connection connection = connect(address, o -> getOrConnectToAddress((Address) o, switchingToNextCluster));
+                    Connection connection = connect(address,
+                            o -> getOrConnectToAddress(o, switchingToNextCluster),
+                            this::translate);
                     if (connection != null) {
                         return true;
                     }
@@ -527,7 +534,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()
                     + " reason: " + e.getMessage());
         }
-
+        connectionProcessListener.clusterConnectionFailed(context.getClusterName());
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
                 + ". The following addresses were tried: " + triedAddresses);
         return false;
@@ -808,7 +815,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public void addConnectionListener(ConnectionListener connectionListener) {
-        connectionListeners.add(connectionListener);
+        connectionListeners.add(requireNonNull(connectionListener, "connectionListener cannot be null"));
     }
 
     @Override

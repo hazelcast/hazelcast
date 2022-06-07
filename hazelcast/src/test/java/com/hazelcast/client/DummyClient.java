@@ -204,7 +204,7 @@ public class DummyClient {
             }
 
             @Override
-            public void connectionAttemptFailed(Object target) {
+            public void connectionAttemptFailed(Address target) {
                 System.out.println("connection failed to " + target);
             }
 
