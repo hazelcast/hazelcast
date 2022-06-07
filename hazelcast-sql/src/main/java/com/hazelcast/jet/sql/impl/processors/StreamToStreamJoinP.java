@@ -57,9 +57,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
 
-    private final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
-    private final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
-    private final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+    // package-visible for tests
+    final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
+    final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+    final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
@@ -68,7 +69,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     // NOTE: we are using LinkedList, because we are expecting:
     //  (1) removals in the middle,
     //  (2) traversing whole list without indexing.
-    private final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
+    // package-visible for tests
+    final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();

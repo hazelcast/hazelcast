@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -53,13 +52,16 @@ import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
+import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
+import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
@@ -83,7 +85,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
         TestSupport.verifyProcessor(adaptSupplier(processorSupplier))
                 .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
@@ -117,9 +118,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+        TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
@@ -128,18 +128,23 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                         out(jetRow(12L, 9L, 9L)),
                         in(0, jetRow(12L, 13L)),
                         out(jetRow(12L, 13L, 9L)),
-                        // TODO actually assert the buffer state
-                        // leftBuffer=[{12, 9}, {12, 13}]
-                        // rightBuffer=[{9}]
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0]);
+                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                        }),
                         in(1, wm((byte) 2, 15L)),
-                        // leftBuffer=[{12, 13}]
-                        // rightBuffer=[{9}]
                         out(wm((byte) 2, 9L)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
+                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                        }),
                         in(0, wm((byte) 1, 12L)),
-                        // leftBuffer=[{12, 13}]
-                        // rightBuffer=[]
                         out(wm((byte) 1, 12L)),
                         out(wm((byte) 2, 15L)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
+                            assertEquals(emptyList(), p.buffer[1]);
+                        }),
                         in(0, wm((byte) 0, 13L)),
                         out(wm((byte) 0, 12L)),
                         in(1, jetRow(16L)),
@@ -175,7 +180,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
@@ -234,7 +238,6 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
