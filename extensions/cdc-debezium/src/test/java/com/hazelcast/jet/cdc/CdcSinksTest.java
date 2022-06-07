@@ -32,18 +32,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.cdc.Operation.*;
+import static com.hazelcast.jet.cdc.Operation.DELETE;
+import static com.hazelcast.jet.cdc.Operation.INSERT;
+import static com.hazelcast.jet.cdc.Operation.SYNC;
+import static com.hazelcast.jet.cdc.Operation.UPDATE;
+import static java.util.Arrays.asList;
 
 @Category(QuickTest.class)
 public class CdcSinksTest extends PipelineTestSupport {
@@ -84,7 +84,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void insertIntoLocalMap() {
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2))
                 .writeTo(localSync());
         execute().join();
 
@@ -100,7 +100,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
@@ -111,7 +111,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void updateLocalMap() {
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, UPDATE1).iterator()))
+        p.readFrom(items(SYNC1, INSERT2, UPDATE1))
                 .writeTo(localSync());
         execute().join();
 
@@ -127,7 +127,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, UPDATE1).iterator()))
+        p.readFrom(items(SYNC1, INSERT2, UPDATE1))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
@@ -138,7 +138,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromLocalMap() {
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, DELETE2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2, DELETE2))
                 .writeTo(localSync());
         execute().join();
 
@@ -154,7 +154,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, DELETE2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2, DELETE2))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
@@ -165,12 +165,12 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromLocalMap_ViaValueProjection() {
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2))
                 .writeTo(localSync());
         execute().join();
 
         p = Pipeline.create();
-        p.readFrom(items(() -> Collections.singletonList(UPDATE1).iterator()))
+        p.readFrom(items(UPDATE1))
                 .writeTo(CdcSinks.map(MAP,
                         r -> (Integer) r.key().toMap().get(ID),
                         r -> null
@@ -189,12 +189,12 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
-        p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
+        p.readFrom(items(SYNC1, INSERT2))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
         p = Pipeline.create();
-        p.readFrom(items(() -> Collections.singletonList(UPDATE1).iterator()))
+        p.readFrom(items(UPDATE1))
                 .writeTo(CdcSinks.remoteMap(MAP, clientConfig,
                         r -> (Integer) r.key().toMap().get(ID),
                         r -> null
@@ -208,7 +208,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void reordering() {
-        SupplierEx<Iterator<? extends ChangeRecord>> supplier = () -> Arrays.asList(
+        ChangeRecord[] records = new ChangeRecord[] {
                 SYNC1,
                 UPDATE1,
                 changeRecord(10, UPDATE, UPDATE1.key().toJson(), null,
@@ -219,9 +219,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
                 changeRecord(13, UPDATE, UPDATE1.key().toJson(), null,
                         UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
-        ).iterator();
-        Util.checkSerializable(supplier, "kaka");
-        p.readFrom(items(supplier))
+        };
+        Util.checkSerializable(records, "kaka");
+        p.readFrom(items(records))
                 .rebalance()
                 .map(r -> r)
                 .writeTo(localSync());
@@ -234,7 +234,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void reordering_syncUpdate() {
-        p.readFrom(items(() -> Arrays.asList(UPDATE1, SYNC1).iterator()))
+        p.readFrom(items(UPDATE1, SYNC1))
                 .writeTo(localSync());
         execute().join();
 
@@ -245,7 +245,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void reordering_insertDelete() {
-        p.readFrom(items(() -> Arrays.asList(DELETE2, INSERT2).iterator()))
+        p.readFrom(items(DELETE2, INSERT2))
                 .writeTo(localSync());
         execute().join();
 
@@ -256,7 +256,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void reordering_differentIds() {
-        p.readFrom(items(() -> Arrays.asList(DELETE2, UPDATE1, INSERT2, SYNC1).iterator()))
+        p.readFrom(items(DELETE2, UPDATE1, INSERT2, SYNC1))
                 .writeTo(localSync());
         execute().join();
 
@@ -267,7 +267,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteWithoutInsertNorUpdate() {
-        p.readFrom(items(() -> Arrays.asList(SYNC1, DELETE2).iterator()))
+        p.readFrom(items(SYNC1, DELETE2))
                 .writeTo(localSync());
         execute().join();
 
@@ -278,12 +278,13 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void sourceSwitch() {
-        p.readFrom(items(() -> Arrays.asList(
-                UPDATE1, INSERT2,
-                                changeRecord( 0, UPDATE, UPDATE1.key().toJson(), null,
-                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")))
-                .iterator()))
-                .writeTo(localSync());
+        String updatedKey = UPDATE1.key().toJson();
+        String updatedJson = UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com");
+        ChangeRecord changedRecord = changeRecord(4, UPDATE, updatedKey, null, updatedJson);
+
+        p.readFrom(items(UPDATE1, INSERT2, changedRecord))
+                .writeTo(localSync())
+                .setLocalParallelism(1);
 
         execute().join();
 
@@ -323,19 +324,25 @@ public class CdcSinksTest extends PipelineTestSupport {
         );
     }
 
-    private static <T> BatchSource<T> items(@Nonnull SupplierEx<Iterator<? extends T>> supplier) {
-        Objects.requireNonNull(supplier, "supplier");
+    @SafeVarargs
+    private static <T> BatchSource<T> items(@Nonnull T... items) {
+        SupplierEx<List<T>> listSupplier = () -> asList(items);
         return SourceBuilder.batch("items", ctx -> null)
                 .<T>fillBufferFn((ignored, buf) -> {
-                    Iterator<? extends T> iterator = supplier.get();
-                    while (iterator.hasNext()) {
-                        buf.add(iterator.next());
+                    List<T> list = listSupplier.get();
+                    for (T item : list) {
+                        buf.add(item);
                     }
                     buf.close();
-                }).build();
+                })
+                .distributed(1)
+                .build();
     }
 
-    private static ChangeRecord changeRecord(int sequenceValue, Operation operation, String keyJson, String oldValueJson, String newValueJson) {
+    private static ChangeRecord changeRecord(
+            int sequenceValue, Operation operation,
+            String keyJson, String oldValueJson, String newValueJson
+    ) {
         return new ChangeRecordImpl(0, 0, sequenceValue,  operation,
                 keyJson, oldValueJson, newValueJson, "t", "s", "d");
     }

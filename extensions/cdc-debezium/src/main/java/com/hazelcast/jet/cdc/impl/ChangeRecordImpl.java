@@ -23,21 +23,23 @@ import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChangeRecordImpl implements ChangeRecord {
+public class ChangeRecordImpl implements ChangeRecord, Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final long sequenceSource;
     private final long sequenceValue;
     private final String keyJson;
 
-    private Long timestamp;
+    private final Long timestamp;
     private final Operation operation;
-    private String database;
-    private String schema;
-    private String table;
+    private final String database;
+    private final String schema;
+    private final String table;
     private RecordPart key;
     private final RecordPart oldValue;
     private final RecordPart newValue;
@@ -79,37 +81,19 @@ public class ChangeRecordImpl implements ChangeRecord {
 
     @Nonnull
     @Override
-    public String database() throws ParsingException {
-        if (database == null) {
-            database = get(value().toMap(), "__db", String.class);
-            if (database == null) {
-                throw new ParsingException("No parsable database name field found");
-            }
-        }
+    public String database() {
         return database;
     }
 
     @Nonnull
     @Override
-    public String schema() throws ParsingException {
-        if (schema == null) {
-            schema = get(value().toMap(), "__schema", String.class);
-            if (schema == null) {
-                throw new ParsingException("No parsable schema name field found");
-            }
-        }
+    public String schema() {
         return schema;
     }
 
     @Nonnull
     @Override
-    public String table() throws ParsingException {
-        if (table == null) {
-            table = get(value().toMap(), "__table", String.class);
-            if (table == null) {
-                throw new ParsingException("No parsable table name field found");
-            }
-        }
+    public String table() {
         return table;
     }
 
