@@ -73,7 +73,9 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
@@ -204,6 +206,116 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 .isEqualTo(80);
         assertThat(recordsByTopic.get(topic2Name).size())
                 .isEqualTo(90);
+    }
+
+    @Test
+    public void when_processingGuaranteeNone_thenContinueFromBeginningAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
+
+        // 100 messages will be produced before the job is restarted and then another batch of 100 will be produced
+        // after the job is restarted (so there will be 200 messages in total)
+        int messageCount = 100;
+
+        // all messages produced before the job is restarted should be read
+        int expectedCountBeforeRestart = 100;
+
+        // for processing guarantee equal to NONE, when the job is restarted, the initial 100 messages will be
+        // read twice, so total expected number of messages should be: 100 + 200 = 300
+        int expectedCountAfterRestart = 300;
+
+        testWithJobRestart(messageCount, topicsConfig, NONE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    @Test
+    public void when_processingGuaranteeNoneWithInitialOffsets_thenContinueFromBeginningAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(1, 5L)
+                        .addPartitionInitialOffset(2, 5L)
+                        .addPartitionInitialOffset(3, 5L)
+                );
+        int messageCount = 100;
+
+        // 20 messages will be skipped, because of initial offsets' configuration
+        int expectedCountBeforeRestart = 80;
+
+        // restarting the job will result in reading the initial messages twice, but the initial offsets' configuration
+        // will be respected, so total expected number of messages should be: 80 + 180 = 260
+        int expectedCountAfterRestart = 260;
+
+        testWithJobRestart(messageCount, topicsConfig, NONE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    @Test
+    public void when_atLeastOnce_thenContinueFromLastReadMessageAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
+        int messageCount = 100;
+        int expectedCountBeforeRestart = 100;
+
+        // for processing guarantee different from NONE, when the job is restarted, consumption should be resumed
+        // from the last successfully consumed message
+        int expectedCountAfterRestart = 200;
+
+        testWithJobRestart(messageCount, topicsConfig, AT_LEAST_ONCE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    @Test
+    public void when_atLeastOnceWithInitialOffsets_thenContinueFromLastReadMessageAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(1, 5L)
+                        .addPartitionInitialOffset(2, 5L)
+                        .addPartitionInitialOffset(3, 5L)
+                );
+        int messageCount = 100;
+
+        // 20 messages will be skipped, because of initial offsets' configuration
+        int expectedCountBeforeRestart = 80;
+
+        // for processing guarantee different from NONE, when the job is restarted, consumption should be resumed
+        // from the last successfully consumed message (i.e. initial offsets' configuration should be ignored while
+        // restoring the job from snapshot)
+        int expectedCountAfterRestart = 180;
+
+        testWithJobRestart(messageCount, topicsConfig, AT_LEAST_ONCE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    private void testWithJobRestart(
+            int messageCount,
+            TopicsConfig topicsConfig,
+            ProcessingGuarantee processingGuarantee,
+            int expectedCountBeforeRestart,
+            int expectedCountAfterRestart
+    ) {
+        for (int i = 0; i < messageCount; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), ConsumerRecord::value, topicsConfig))
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
+
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
+        sleepAtLeastSeconds(3);
+
+        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList("sink").size()), 5);
+
+        job.restart();
+
+        for (int i = messageCount; i < messageCount * 2; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList("sink").size()), 5);
     }
 
     @Test
