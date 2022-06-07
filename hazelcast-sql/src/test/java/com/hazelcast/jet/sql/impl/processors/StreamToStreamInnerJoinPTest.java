@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -24,26 +25,23 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
-import com.hazelcast.sql.impl.expression.math.RemainderFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +56,6 @@ import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -67,36 +64,14 @@ import static org.apache.calcite.rel.core.JoinRelType.INNER;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
-    private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
-            RemainderFunction.create(
-                    ColumnExpression.create(0, BIGINT),
-                    ConstantExpression.create(2, BIGINT),
-                    BIGINT),
-            ConstantExpression.create(0, BIGINT),
-            ComparisonMode.NOT_EQUALS
-    );
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-    private JetJoinInfo joinInfo;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(1, null);
-    }
-
-    @Before
-    public void before() {
-        joinInfo = new JetJoinInfo(
-                INNER,
-                new int[]{0},
-                new int[]{0},
-                null,
-                ComparisonPredicate.create(
-                        ColumnExpression.create(0, BIGINT),
-                        ColumnExpression.create(1, BIGINT),
-                        ComparisonMode.EQUALS));
     }
 
     @Test
@@ -104,15 +79,9 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(1, 1));
-
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
+        TestSupport.verifyProcessor(adaptSupplier(processorSupplier))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -132,53 +101,8 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 );
     }
 
-//    @Test
-//    public void when_equalTimesConditionAndSingleWmKeyPerInput_then_eventsRemovedInTime() {
-//        // l.time=r.time
-//        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
-//        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-//
-//        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-//                joinInfo,
-//                leftExtractors,
-//                rightExtractors,
-//                postponeTimeMap,
-//                Tuple2.tuple2(1, 1));
-//
-//        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-//                .hazelcastInstance(instance())
-//                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-//                .disableSnapshots()
-//                .expectExactOutput(
-//                        in(0, jetRow(0L)),
-//                        in(1, jetRow(0L)),
-//                        out(jetRow(0L, 0L)),
-//                        in(0, wm((byte) 0, 1L)),
-//                        out(wm((byte) 0, 0L)),
-//                        in(1, wm((byte) 1, 1L)),
-//                        out(wm((byte) 1, 1L)),
-//                        out(wm((byte) 0, 1L)),
-//                        in(0, jetRow(2L)),
-//                        in(1, jetRow(2L)),
-//                        out(jetRow(2L, 2L)),
-//                        in(0, wm((byte) 0, 3L)),
-//                        out(wm((byte) 0, 2L)),
-//                        in(1, wm((byte) 1, 3L)),
-//                        out(wm((byte) 1, 3L)),
-//                        out(wm((byte) 0, 3L)),
-//                        in(0, jetRow(4L)),
-//                        in(1, jetRow(4L)),
-//                        out(jetRow(4L, 4L)),
-//                        in(0, wm((byte) 0, 5L)),
-//                        out(wm((byte) 0, 4L)),
-//                        in(1, wm((byte) 1, 5L)),
-//                        out(wm((byte) 1, 5L)),
-//                        out(wm((byte) 0, 5L))
-//                );
-//    }
-
     @Test
-    public void given_alwaysTrueCondition_when_twoWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
+    public void test_twoWmKeysOnLeft() {
         // l.time2 BETWEEN r.time - 1 AND r.time + 4  (l.time1 irrelevant)
         // left ordinal
         postponeTimeMap.put((byte) 0, emptyMap());
@@ -191,15 +115,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
         rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
 
-        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
-
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(2, 1));
+        SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -255,15 +171,7 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
 
-        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
-
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(2, 2));
+        SupplierEx<Processor> supplier = createProcessor(2, 2);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -298,25 +206,24 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_oddNumbersFilter_when_twoWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
-        // left ordinal
-        postponeTimeMap.put((byte) 0, emptyMap());
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 2, 1L));
-        // right ordinal
-        postponeTimeMap.put((byte) 2, singletonMap((byte) 1, 4L));
+    public void test_joinWithAdditionalCondition() {
+        // Join condition:
+        //    r.time BETWEEN l.time - 1 and l.time + 1 AND l.field1 > 10
+        // l's columns (in this order): `time, field1`
 
-        leftExtractors = new HashMap<>();
-        leftExtractors.put((byte) 0, l -> l.getRow().get(0));
-        leftExtractors.put((byte) 1, l -> l.getRow().get(1));
-        rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
+        postponeTimeMap.put((byte) 0, ImmutableMap.of((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, ImmutableMap.of((byte) 0, 1L));
 
-        joinInfo = new JetJoinInfo(
-                INNER,
-                new int[]{0},
-                new int[]{0},
-                null,
-                ODD_PREDICATE
-        );
+        leftExtractors = ImmutableMap.of((byte) 0, l -> l.getRow().get(0));
+        rightExtractors = ImmutableMap.of((byte) 1, r -> r.getRow().get(0));
+
+        Expression<Boolean> condition = AndPredicate.create(
+                createConditionFromPostponeTimeMap(postponeTimeMap, 1, 2),
+                ComparisonPredicate.create(
+                        ColumnExpression.create(1, QueryDataType.INT),
+                        ConstantExpression.create(10, QueryDataType.INT),
+                        ComparisonMode.GREATER_THAN));
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
                 joinInfo,
@@ -329,111 +236,23 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
-                .disableProgressAssertion()
-                .inputs(asList(
-                        asList(
-                                jetRow(11L, 11L),
-                                jetRow(12L, 13L),
-                                wm((byte) 0, 13L),
-                                wm((byte) 1, 13L)
-                        ),
-                        asList(
-                                jetRow(9L),
-                                wm((byte) 2, 15L),
-                                jetRow(16L),
-                                wm((byte) 2, 16)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                jetRow(11L, 11L, 9L),
-                                // MIN = min(15, 15-4) = 11
-                                wm((byte) 2, 11L),
-                                // MIN = 11 (min element)
-                                wm((byte) 0, 11L),
-                                jetRow(11L, 11L, 16L),
-                                // MIN = min(13, 13-1) = 12
-                                wm((byte) 1, 12L),
-                                // MIN = min(16, 16-4) = 12
-                                wm((byte) 2, 12L)
-                        )
-                );
+                .outputChecker(SAME_ITEMS_ANY_ORDER)
+                .expectExactOutput(
+                        in(1, jetRow(3L)),
+                        in(0, jetRow(2L, 2)), // doesn't join, field1 <= 10
+                        in(0, jetRow(2L, 42)), // joins, field1 > 10
+                        out(jetRow(2L, 42, 3L)));
     }
 
-    @Test
-    public void given_oddNumbersFilter_when_threeWmKeysOnLeftAndSingleKeyWmRightInput_then_successful() {
-        // region
-        // left ordinal
-        postponeTimeMap.put((byte) 0, emptyMap());
-        postponeTimeMap.put((byte) 1, emptyMap());
-        postponeTimeMap.put((byte) 2, emptyMap());
-        // right ordinal
-        postponeTimeMap.put((byte) 3, ImmutableMap.of((byte) 1, 2L, (byte) 2, 2L));
-
-        leftExtractors = new HashMap<>();
-        leftExtractors.put((byte) 0, l -> l.getRow().get(0));
-        leftExtractors.put((byte) 1, l -> l.getRow().get(1));
-        leftExtractors.put((byte) 2, l -> l.getRow().get(2));
-        rightExtractors = singletonMap((byte) 3, r -> r.getRow().get(0));
-
-        joinInfo = new JetJoinInfo(
-                INNER,
-                new int[]{0},
-                new int[]{0},
-                null,
-                ODD_PREDICATE
-        );
-
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
+        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
+        return () -> new StreamToStreamJoinP(
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
                 postponeTimeMap,
-                Tuple2.tuple2(3, 1));
-
-        // endregion
-
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(SqlTestSupport::compareRowLists)
-                .disableSnapshots()
-                .disableProgressAssertion()
-                .inputs(asList(
-                        asList(
-                                jetRow(2L, 2L, 2L),
-                                jetRow(3L, 3L, 3L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 1, 3L),
-                                wm((byte) 2, 3L),
-                                jetRow(5L, 5L, 5L)
-                        ),
-                        asList(
-                                jetRow(2L),
-                                wm((byte) 3, 3L),
-                                wm((byte) 3, 3L),
-                                wm((byte) 3, 3L),
-                                wm((byte) 3, 3L),
-                                jetRow(4L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                jetRow(3L, 3L, 3L, 2L),
-                                wm((byte) 3, 1L),
-                                // minimum in buffer -> 1
-                                wm((byte) 0, 2L),
-                                wm((byte) 1, 2L),
-                                // 1 was removed, minimum in buffer -> 3
-                                wm((byte) 2, 2L),
-                                // no wm(t > 3) was produced,
-                                // so (5,5,5,2) is valid here.
-                                jetRow(5L, 5L, 5L, 2L),
-                                // (1,1,1) and (2,2,2) were removed.
-                                jetRow(3L, 3L, 3L, 4L),
-                                jetRow(5L, 5L, 5L, 4L)
-                        )
-                );
+                Tuple2.tuple2(leftColumnCount, rightColumnCount));
     }
 
     /**
@@ -450,16 +269,29 @@ public class StreamToStreamInnerJoinPTest extends SimpleTestInClusterSupport {
      *     0: {}
      *     1: {2:4}
      *     2: {1:1}
+     *
+     * @param wmKeyToColumnIndex Remapping of WM keys to joined column indexes. Contains
+     *                           a sequence of `wmKey1`, `index1`, `wmKey2`, `index2, ... If WM key == index,
+     *                           no entry is needed.
      */
-    private static Expression<Boolean> createConditionFromPostponeTimeMap(Map<Byte, Map<Byte, Long>> postponeTimeMap) {
-        // we assume that the WM key `n` is the column `n` in the joined row
+    private static Expression<Boolean> createConditionFromPostponeTimeMap(
+            Map<Byte, Map<Byte, Long>> postponeTimeMap,
+            int... wmKeyToColumnIndex
+    ) {
+        Map<Byte, Byte> wmKeyToColumnIndexMap = new HashMap<>();
+        for (int i = 0; i < wmKeyToColumnIndex.length; i += 2) {
+            wmKeyToColumnIndexMap.put((byte) wmKeyToColumnIndex[i], (byte) wmKeyToColumnIndex[i + 1]);
+        }
+
         List<Expression<Boolean>> conditions = new ArrayList<>();
         for (Entry<Byte, Map<Byte, Long>> enOuter : postponeTimeMap.entrySet()) {
             for (Entry<Byte, Long> enInner : enOuter.getValue().entrySet()) {
+                int leftColumnIndex = wmKeyToColumnIndexMap.getOrDefault(enOuter.getKey(), enOuter.getKey());
+                int rightColumnIndex = wmKeyToColumnIndexMap.getOrDefault(enInner.getKey(), enInner.getKey());
                 conditions.add(ComparisonPredicate.create(
-                        ColumnExpression.create(enOuter.getKey(), BIGINT),
+                        ColumnExpression.create(leftColumnIndex, BIGINT),
                         MinusFunction.create(
-                                ColumnExpression.create(enInner.getKey(), BIGINT),
+                                ColumnExpression.create(rightColumnIndex, BIGINT),
                                 ConstantExpression.create(enInner.getValue(), BIGINT),
                                 BIGINT),
                         ComparisonMode.GREATER_THAN_OR_EQUAL));
