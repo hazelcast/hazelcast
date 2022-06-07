@@ -122,8 +122,6 @@ class KubernetesClient {
             String urlString = String.format("%s/api/v1/namespaces/%s/pods", kubernetesMaster, namespace);
             return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
         } catch (RestClientException e) {
-            System.out.println("Oh no");
-            e.printStackTrace();
             return handleKnownException(e);
         }
     }
@@ -341,7 +339,6 @@ class KubernetesClient {
 
             return createEndpoints(endpoints, publicIps, publicPorts);
         } catch (Exception e) {
-            e.printStackTrace();
             if (exposeExternallyMode == ExposeExternallyMode.ENABLED) {
                 throw e;
             }
