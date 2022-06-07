@@ -41,7 +41,7 @@ public final class EpollEventloop extends Eventloop {
     }
 
     public EpollEventloop(EpollConfiguration config) {
-        super(config);
+        super(config, Type.EPOLL);
         this.events = new EpollEventArray(4096);
         this.epollFd = Native.newEpollCreate();
         this.eventFd = Native.newEventFd();

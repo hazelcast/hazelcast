@@ -126,7 +126,7 @@ public class IOUringEventloop extends Eventloop {
     }
 
     public IOUringEventloop(IOUringConfiguration config) {
-        super(config);
+        super(config, Type.IOURING);
         this.ringbufferSize = config.ringbufferSize;
         this.ioseqAsyncThreshold = config.ioseqAsyncThreshold;
         this.flags = config.flags;

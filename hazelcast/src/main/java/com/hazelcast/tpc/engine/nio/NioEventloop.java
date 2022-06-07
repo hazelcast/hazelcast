@@ -36,7 +36,7 @@ public final class NioEventloop extends Eventloop {
     }
 
     public NioEventloop(NioConfiguration config) {
-        super(config);
+        super(config, Type.NIO);
         this.selector = SelectorOptimizer.newSelector(logger);
     }
 

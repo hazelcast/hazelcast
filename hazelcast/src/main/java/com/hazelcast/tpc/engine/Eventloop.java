@@ -17,6 +17,7 @@
 package com.hazelcast.tpc.engine;
 
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -74,6 +75,7 @@ public abstract class Eventloop {
     protected final Scheduler scheduler;
     public final CircularQueue<Task> localRunQueue;
     protected final boolean spin;
+    private final Type type;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
 
@@ -97,7 +99,8 @@ public abstract class Eventloop {
      * @param config the {@link Configuration} uses to create this {@link Eventloop}.
      * @throws NullPointerException if config is null.
      */
-    public Eventloop(Configuration config) {
+    public Eventloop(Configuration config, Type type) {
+        this.type = checkNotNull(type);
         this.spin = config.spin;
         this.scheduler = config.scheduler;
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
@@ -105,6 +108,17 @@ public abstract class Eventloop {
         scheduler.eventloop(this);
         this.eventloopThread = new EventloopThread(config);
         this.promiseAllocator = new PromiseAllocator(this, 1024);
+    }
+
+    /**
+     * Returns the {@link Type} of this {@link Eventloop}.
+     *
+     * This method is thread-safe.
+     *
+     * @return the {@link Type} of this {@link Eventloop}. Value will never be null.
+     */
+    public final Type type(){
+        return type;
     }
 
     /**
