@@ -854,15 +854,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean setTtl(Data key, long ttl) {
+    public Object setTtl(Data key, long ttl) {
         long now = getNow();
         Object oldValue = putInternal(key, null, ttl, UNSET, UNSET, now,
                 null, null, null, StaticParams.SET_TTL_PARAMS);
-        return oldValue != null;
+        return oldValue;
     }
 
     @Override
-    public boolean setTtlBackup(Data key, long ttl) {
+    public Object setTtlBackup(Data key, long ttl) {
         long now = getNow();
         Object oldValue = putInternal(key, null, ttl, UNSET, UNSET, now,
                 null, null, null, StaticParams.SET_TTL_BACKUP_PARAMS);
@@ -910,7 +910,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // Get record by checking expiry, if expired, evict record.
         Record record = getRecordOrNull(key, now, staticParams.isBackup());
-        Record record = getRecordOrNull(key, now, backup);
         if (isPendingIO(record)) {
             return record;
         }
@@ -949,11 +948,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // Put new record or update existing one.
         if (record == null) {
-            putNewRecord(key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
+            Record status = putNewRecord(key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
                     transactionId, staticParams.isPutFromLoad() ? LOADED : ADDED,
                     staticParams.isStore(), staticParams.isBackup());
-            Record status = putNewRecord(key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
-                    transactionId, putFromLoad ? LOADED : ADDED, store, backup);
             if (isPendingIO(status)) {
                 return status;
             }
@@ -1098,10 +1095,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
         Object oldValue = putInternal(key, update, UNSET, UNSET, UNSET, now,
                 expect, null, null, StaticParams.REPLACE_IF_SAME_PARAMS);
-        return oldValue;
-                true, true, false, true, true,
-                false, expect, false, true,
-                null, null, true, false);
         return oldValue;
     }
 
