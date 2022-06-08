@@ -319,7 +319,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     // we should to produce input row with null-filled opposite side.
     private JetSqlRow composeRowWithNulls(JetSqlRow row, int ordinal) {
         JetSqlRow joinedRow = null;
-        if (ordinal == 1 && joinInfo.isLeftOuter()) {
+        if (ordinal == 1 && joinInfo.isRightOuter()) {
             // fill LEFT side with nulls
             joinedRow = ExpressionUtil.join(
                     emptyLeftRow,
@@ -327,7 +327,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     ConstantExpression.TRUE,
                     evalContext
             );
-        } else if (ordinal == 0 && joinInfo.isRightOuter()) {
+        } else if (ordinal == 0 && joinInfo.isLeftOuter()) {
             // fill RIGHT side with nulls
             joinedRow = ExpressionUtil.join(
                     row,

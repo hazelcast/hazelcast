@@ -24,20 +24,20 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.math.RemainderFunction;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +48,6 @@ import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -56,29 +55,47 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class StreamToStreamJoinPOuterTest extends JetTestSupport {
-    private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
-            RemainderFunction.create(
-                    ColumnExpression.create(1, BIGINT),  // OK for both LEFT and RIGHT JOIN.
-                    ConstantExpression.create(2, BIGINT),
-                    BIGINT),
-            ConstantExpression.create(0, BIGINT),
-            ComparisonMode.NOT_EQUALS
-    );
 
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
     private JetJoinInfo joinInfo;
 
+    @Parameter
+    public boolean isLeft;
+
+    private byte ordinal0;
+    private byte ordinal1;
+    private JoinRelType joinType;
+
+    @Parameters(name = "isLeft={0}")
+    public static Object[] parameters() {
+        return new Object[]{true, false};
+    }
+
+    @Before
+    public void before() {
+        if (isLeft) {
+            ordinal0 = 0;
+            ordinal1 = 1;
+            joinType = JoinRelType.LEFT;
+        } else {
+            ordinal0 = 1;
+            ordinal1 = 0;
+            joinType = JoinRelType.RIGHT;
+        }
+    }
+
     @Test
-    public void given_leftJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
+    public void test_outerJoinRowsEmittedAfterWatermark() {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
         joinInfo = new JetJoinInfo(
-                JoinRelType.LEFT,
+                joinType,
                 new int[0],
                 new int[0],
                 condition,
@@ -90,7 +107,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 leftExtractors,
                 rightExtractors,
                 postponeTimeMap,
-                Tuple2.tuple2(1, 2));
+                Tuple2.tuple2(1, 1));
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -99,12 +116,12 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                         out(wm((byte) 0, 1L)),
                         in(1, wm((byte) 1, 1L)),
                         out(wm((byte) 1, 1L)),
-                        in(1, jetRow(3L, 3L)),
-                        in(1, jetRow(4L, 4L)),
-                        in(0, wm((byte) 0, 6L)),
-                        out(jetRow(null, 3L, 3L)),
-                        out(jetRow(null, 4L, 4L)),
-                        out(wm((byte) 0, 6L)),
+                        in(ordinal0, jetRow(3L)),
+                        in(ordinal0, jetRow(4L)),
+                        in(ordinal1, wm(ordinal1, 6L)),
+                        out(isLeft ? jetRow(3L, null) : jetRow(null, 3L)),
+                        out(isLeft ? jetRow(4L, null) : jetRow(null, 4L)),
+                        out(wm(ordinal1, 6L)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
@@ -119,7 +136,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 new int[]{0},
                 new int[]{0},
                 null,
-                ODD_PREDICATE
+                null
         );
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
@@ -170,7 +187,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 new int[]{0},
                 new int[]{0},
                 null,
-                ODD_PREDICATE
+                null
         );
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
@@ -216,7 +233,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 new int[]{0},
                 new int[]{0},
                 null,
-                ODD_PREDICATE
+                null
         );
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
