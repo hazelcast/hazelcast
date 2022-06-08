@@ -233,6 +233,7 @@
                                     <include>com.google.guava:failureaccess</include>
                                     <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>org.apiguardian:apiguardian-api</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -293,6 +294,10 @@
                                 <relocation>
                                     <pattern>org.antlr</pattern>
                                     <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apiguardian</pattern>
+                                    <shadedPattern>${relocation.root}.org.apiguardian</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -406,6 +411,12 @@
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>org/slf4j/impl/StaticLoggerBinder.java</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apiguardian:apiguardian-api</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -595,6 +606,11 @@
             <version>${avro.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+            <version>1.1.0</version>
+        </dependency>
 
         <!-- KAFKA -->
         <dependency>
@@ -608,11 +624,6 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apiguardian</groupId>
-            <artifactId>apiguardian-api</artifactId>
-            <version>1.1.0</version>
         </dependency>
 
         <!-- TEST -->
