@@ -435,7 +435,7 @@ class KubernetesClient {
         for (Endpoint endpoint : endpoints) {
             EndpointAddress privateAddress = endpoint.getPrivateAddress();
             EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress),
-                    publicPorts.get(privateAddress));
+                    publicPorts.get(privateAddress), privateAddress.getTargetRefName());
             result.add(new Endpoint(privateAddress, publicAddress, endpoint.isReady(), endpoint.getAdditionalProperties()));
         }
         return result;
@@ -585,6 +585,7 @@ class KubernetesClient {
 
             EndpointAddress address = (EndpointAddress) o;
 
+            //|| !Objects.equals(targetRefName, address.targetRefName)
             if (!Objects.equals(ip, address.ip) || !Objects.equals(targetRefName, address.targetRefName)) {
                 return false;
             }
