@@ -118,6 +118,7 @@
        <vulnerabilityName>CVE-2016-5001</vulnerabilityName>
        <vulnerabilityName>CVE-2017-3161</vulnerabilityName>
        <vulnerabilityName>CVE-2017-3162</vulnerabilityName>
+       <vulnerabilityName>CVE-2022-26612</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
@@ -129,6 +130,7 @@
        <vulnerabilityName>CVE-2016-5001</vulnerabilityName>
        <vulnerabilityName>CVE-2017-3161</vulnerabilityName>
        <vulnerabilityName>CVE-2017-3162</vulnerabilityName>
+       <vulnerabilityName>CVE-2022-26612</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
@@ -224,6 +226,8 @@
        <vulnerabilityName>CVE-2021-3536</vulnerabilityName>
        <vulnerabilityName>CVE-2021-3712</vulnerabilityName>
        <vulnerabilityName>CVE-2022-0778</vulnerabilityName>
+       <vulnerabilityName>CVE-2021-4160</vulnerabilityName>
+       <vulnerabilityName>CVE-2022-1292</vulnerabilityName>
     </suppress>
     <suppress>
        <notes><![CDATA[
