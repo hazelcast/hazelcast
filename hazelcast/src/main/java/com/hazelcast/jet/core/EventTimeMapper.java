@@ -275,7 +275,7 @@ public class EventTimeMapper<T> {
             }
         }
         if (allAreIdle) {
-            traverser.append(WatermarkCoalescer.idleMessage(wmKey));
+            traverser.append(WatermarkCoalescer.createIdleMessage(wmKey));
         }
     }
 

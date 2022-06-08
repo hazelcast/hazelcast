@@ -43,17 +43,10 @@ public abstract class WatermarkCoalescer {
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
-    protected final byte key;
-
     private WatermarkCoalescer() {
-        key = 0;
     }
 
-    private WatermarkCoalescer(byte key) {
-        this.key = key;
-    }
-
-    public static Watermark idleMessage(byte wmKey) {
+    public static Watermark createIdleMessage(byte wmKey) {
         return new Watermark(IDLE_MESSAGE_TIME, wmKey);
     }
 
@@ -79,17 +72,17 @@ public abstract class WatermarkCoalescer {
      * @param queueIndex index of the queue on which the WM was received.
      * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     * watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
+     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
      */
     public abstract long observeWm(int queueIndex, long wmValue);
 
     /**
      * Checks if there is a watermark to emit now based on the passage of
-     * system time or if all input queues are idle and we should forward the
+     * system time or if all input queues are idle, and we should forward the
      * idle marker.
      *
      * @return the watermark value to emit, {@link #IDLE_MESSAGE} or
-     * {@link #NO_NEW_WM} if no watermark should be forwarded
+     *      {@link #NO_NEW_WM} if no watermark should be forwarded
      */
     public abstract long checkWmHistory();
 
@@ -102,10 +95,6 @@ public abstract class WatermarkCoalescer {
      * Returns the highest received watermark from any input.
      */
     public abstract long topObservedWm();
-
-    public byte key() {
-        return key;
-    }
 
     /**
      * Factory method.
@@ -121,23 +110,6 @@ public abstract class WatermarkCoalescer {
                 return new SingleInputImpl();
             default:
                 return new StandardImpl(queueCount);
-        }
-    }
-
-    /**
-     * Factory method.
-     *
-     * @param queueCount number of queues
-     * @param key        watermark key
-     */
-    public static WatermarkCoalescer create(int queueCount, byte key) {
-        switch (queueCount) {
-            case 0:
-                return new ZeroInputImpl();
-            case 1:
-                return new SingleInputImpl(key);
-            default:
-                return new StandardImpl(queueCount, key);
         }
     }
 
@@ -184,13 +156,6 @@ public abstract class WatermarkCoalescer {
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
         private final Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
-
-        SingleInputImpl() {
-        }
-
-        SingleInputImpl(byte key) {
-            super(key);
-        }
 
         @Override
         public long queueDone(int queueIndex) {
@@ -245,13 +210,6 @@ public abstract class WatermarkCoalescer {
         private boolean idleMessagePending;
 
         StandardImpl(int queueCount) {
-            isIdle = new boolean[queueCount];
-            queueWms = new long[queueCount];
-            Arrays.fill(queueWms, Long.MIN_VALUE);
-        }
-
-        StandardImpl(int queueCount, byte key) {
-            super(key);
             isIdle = new boolean[queueCount];
             queueWms = new long[queueCount];
             Arrays.fill(queueWms, Long.MIN_VALUE);

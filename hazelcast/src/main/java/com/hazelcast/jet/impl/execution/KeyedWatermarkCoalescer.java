@@ -29,12 +29,12 @@ public class KeyedWatermarkCoalescer {
 
     KeyedWatermarkCoalescer(byte[] keys, int queueCount) {
         for (byte k : keys) {
-            coalescers.putIfAbsent(k, WatermarkCoalescer.create(queueCount, k));
+            coalescers.putIfAbsent(k, WatermarkCoalescer.create(queueCount));
         }
     }
 
     public void register(byte key, int queueCount) {
-        coalescers.putIfAbsent(key, WatermarkCoalescer.create(queueCount, key));
+        coalescers.putIfAbsent(key, WatermarkCoalescer.create(queueCount));
     }
 
     public Set<Byte> keys() {
