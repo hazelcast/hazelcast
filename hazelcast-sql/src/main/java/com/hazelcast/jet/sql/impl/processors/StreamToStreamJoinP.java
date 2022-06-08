@@ -130,7 +130,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        // drop the event, if it's late
         for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
             long wmValue = lastReceivedWm.getValue(en.getKey());
             long time = en.getValue().applyAsLong((JetSqlRow) item);
@@ -159,7 +158,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // having side input, traverse the opposite buffer
         if (currItem == null) {
             currItem = (JetSqlRow) item;
-            // TODO handle items after limit in wmState - don't add them to the buffer, outer-join them
             buffer[ordinal].add(currItem);
             iterator = buffer[1 - ordinal].iterator();
             if (!joinInfo.isInner()) {
@@ -189,7 +187,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     @Override
-    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
         }

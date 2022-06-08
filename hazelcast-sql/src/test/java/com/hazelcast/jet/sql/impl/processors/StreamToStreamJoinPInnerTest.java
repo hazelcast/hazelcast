@@ -279,6 +279,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 .disableSnapshots()
                 .expectExactOutput(
                         in(0, wm((byte) 0, 10)),
+                        out(wm((byte) 0, 10)),
                         in(0, jetRow(8L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(0, p.buffer[0].size());

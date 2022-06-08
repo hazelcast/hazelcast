@@ -210,10 +210,6 @@ public interface Processor {
      */
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
 
-    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        return tryProcessWatermark(watermark);
-    }
-
     /**
      * This method will be called periodically and only when the current batch
      * of items in the inbox has been exhausted. It can be used to produce

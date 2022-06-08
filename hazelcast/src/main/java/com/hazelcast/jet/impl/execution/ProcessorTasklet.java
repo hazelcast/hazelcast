@@ -310,7 +310,7 @@ public class ProcessorTasklet implements Tasklet {
                 if (pendingWatermark.equals(IDLE_MESSAGE)
                         ? outbox.offer(IDLE_MESSAGE)
                         : doWithClassLoader(context.classLoader(), () ->
-                        processor.tryProcessWatermark(currInstream.ordinal(), pendingWatermark))) {
+                        processor.tryProcessWatermark(pendingWatermark))) {
                     state = NULLARY_PROCESS;
                     pendingWatermark = null;
                 }
