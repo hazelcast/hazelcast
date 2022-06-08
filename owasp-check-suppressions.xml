@@ -245,4 +245,11 @@
        <cve>CVE-2020-9493</cve>
        <cve>CVE-2022-23307</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - google-http-client-gson-.*.jar incorrectly identified as gson.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+        <cpe>cpe:/a:google:gson</cpe>
+    </suppress>
 </suppressions>
