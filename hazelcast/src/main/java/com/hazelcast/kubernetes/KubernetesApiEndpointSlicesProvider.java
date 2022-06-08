@@ -74,13 +74,8 @@ public class KubernetesApiEndpointSlicesProvider
             // Service must point to exactly one endpoint address, otherwise the public IP would be ambiguous.
             if (endpoints.size() == 1) {
                 EndpointAddress address = endpoints.get(0).getPrivateAddress();
-                System.out.println("Does it match?");
-                System.out.println(address.getIp() + ":" + address.getPort() + " " + address.getTargetRefName());
-                System.out.println("With ->");
-                privateAddresses.forEach(p -> System.out.println(p.getIp() + ":" + p.getPort() + " " + p.getTargetRefName()));
                 if (privateAddresses.contains(address)) {
                     // If multiple services match the pod, then match service and pod names
-                    System.out.println(service + " == " + extractTargetRefName(item) + " ?");
                     if (!result.containsKey(address) || service.equals(extractTargetRefName(item))) {
                         result.put(address, service);
                     }
