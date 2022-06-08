@@ -1149,7 +1149,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         @Override
         public void run() {
-            if (!client.getLifecycleService().isRunning()) {
+            if (!client.getLifecycleService().isRunning() || activeConnections.isEmpty()) {
+                // do not attempt to connect members here when the client disconnects from the cluster
+                // since we want this cluster reconnection to be only performed by `doConnectToCluster()`
                 return;
             }
 
