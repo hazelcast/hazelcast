@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
@@ -323,7 +324,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             joinedRow = ExpressionUtil.join(
                     emptyLeftRow,
                     row,
-                    joinInfo.condition(),
+                    ConstantExpression.TRUE,
                     evalContext
             );
         } else if (ordinal == 0 && joinInfo.isRightOuter()) {
@@ -331,7 +332,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             joinedRow = ExpressionUtil.join(
                     row,
                     emptyRightRow,
-                    joinInfo.condition(),
+                    ConstantExpression.TRUE,
                     evalContext
             );
         }

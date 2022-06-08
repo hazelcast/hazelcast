@@ -18,10 +18,9 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -36,8 +35,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,18 +42,22 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.core.test.TestSupport.in;
+import static com.hazelcast.jet.core.test.TestSupport.out;
+import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     private static final Expression<Boolean> ODD_PREDICATE = ComparisonPredicate.create(
             RemainderFunction.create(
                     ColumnExpression.create(1, BIGINT),  // OK for both LEFT and RIGHT JOIN.
@@ -68,29 +69,20 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
 
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
-    private Map<Byte, Map<Byte, Long>> postponeTimeMap;
+    private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
     private JetJoinInfo joinInfo;
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
-
-    @Before
-    public void before() {
-        postponeTimeMap = new HashMap<>();
-    }
 
     @Test
     public void given_leftJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
+        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
         joinInfo = new JetJoinInfo(
                 JoinRelType.LEFT,
-                new int[]{0},
-                new int[]{0},
-                null,
-                ODD_PREDICATE
+                new int[0],
+                new int[0],
+                condition,
+                condition
         );
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
@@ -100,31 +92,21 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(1, 2));
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+        TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
-                .disableProgressAssertion()
-                .inputs(asList(
-                        singletonList(
-                                wm((byte) 0, 1L)
-                        ),
-                        asList(
-                                wm((byte) 1, 1L),
-                                jetRow(3L, 3L),
-                                jetRow(4L, 4L),
-                                jetRow(5L, 5L),
-                                wm((byte) 1, 6L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                wm((byte) 0, 0L),
-                                wm((byte) 1, 0L),
-                                jetRow(null, 3L, 3L),
-                                jetRow(null, 5L, 5L),
-                                wm((byte) 1, 5L)
-                        )
+                .expectExactOutput(
+                        in(0, wm((byte) 0, 1L)),
+                        out(wm((byte) 0, 1L)),
+                        in(1, wm((byte) 1, 1L)),
+                        out(wm((byte) 1, 1L)),
+                        in(1, jetRow(3L, 3L)),
+                        in(1, jetRow(4L, 4L)),
+                        in(0, wm((byte) 0, 6L)),
+                        out(jetRow(null, 3L, 3L)),
+                        out(jetRow(null, 4L, 4L)),
+                        out(wm((byte) 0, 6L)),
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
     }
 
@@ -147,8 +129,7 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 2));
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(supplier)
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -199,8 +180,7 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 1));
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(supplier)
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -246,8 +226,7 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 2));
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(supplier)
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()

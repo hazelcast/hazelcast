@@ -681,17 +681,17 @@ public final class TestSupport {
         // call the process() method
         int ioPosition = 0;
         while (ioPosition < testEvents.size() || !inbox.isEmpty()) {
-            while (ioPosition < testEvents.size() && testEvents.get(ioPosition).isProcessorAssertion()) {
-                @SuppressWarnings("unchecked")
-                ProcessorAssertion<Processor> assertion = (ProcessorAssertion<Processor>) testEvents.get(ioPosition++);
-                assertion.assertion.accept(processor[0]);
-            }
-
-            if (ioPosition == testEvents.size()) {
-                break;
-            }
-
             if (inbox.isEmpty()) {
+                while (ioPosition < testEvents.size() && testEvents.get(ioPosition).isProcessorAssertion()) {
+                    @SuppressWarnings("unchecked")
+                    ProcessorAssertion<Processor> assertion = (ProcessorAssertion<Processor>) testEvents.get(ioPosition++);
+                    assertion.assertion.accept(processor[0]);
+                }
+
+                if (ioPosition == testEvents.size()) {
+                    break;
+                }
+
                 inboxOrdinal = -1;
                 for (int added = 0;
                      ioPosition < testEvents.size()

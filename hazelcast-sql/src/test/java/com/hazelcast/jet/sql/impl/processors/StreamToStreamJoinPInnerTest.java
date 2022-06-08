@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
@@ -65,16 +63,11 @@ import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
 
     @Test
     public void test_equalTimes_singleWmKeyPerInput() {
@@ -83,8 +76,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
-        TestSupport.verifyProcessor(adaptSupplier(processorSupplier))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(processorSupplier)
                 .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
@@ -119,7 +111,6 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
@@ -178,8 +169,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
 
         SupplierEx<Processor> supplier = createProcessor(2, 2);
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
@@ -236,8 +226,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
                 postponeTimeMap,
                 Tuple2.tuple2(2, 1));
 
-        TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
-                .hazelcastInstance(instance())
+        TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
@@ -271,7 +260,6 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
@@ -301,7 +289,6 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
@@ -333,7 +320,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
      *                           a sequence of `wmKey1`, `index1`, `wmKey2`, `index2, ... If WM key == index,
      *                           no entry is needed.
      */
-    private static Expression<Boolean> createConditionFromPostponeTimeMap(
+    static Expression<Boolean> createConditionFromPostponeTimeMap(
             Map<Byte, Map<Byte, Long>> postponeTimeMap,
             int... wmKeyToColumnIndex
     ) {
