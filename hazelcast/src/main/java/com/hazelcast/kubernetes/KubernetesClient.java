@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -584,17 +585,15 @@ class KubernetesClient {
 
             EndpointAddress address = (EndpointAddress) o;
 
-            if (ip != null ? !ip.equals(address.ip) : address.ip != null) {
+            if (!Objects.equals(ip, address.ip) || !Objects.equals(targetRefName, address.targetRefName)) {
                 return false;
             }
-            return port != null ? port.equals(address.port) : address.port == null;
+            return Objects.equals(port, address.port);
         }
 
         @Override
         public int hashCode() {
-            int result = ip != null ? ip.hashCode() : 0;
-            result = 31 * result + (port != null ? port.hashCode() : 0);
-            return result;
+            return Objects.hash(ip, port, targetRefName);
         }
 
         @Override
