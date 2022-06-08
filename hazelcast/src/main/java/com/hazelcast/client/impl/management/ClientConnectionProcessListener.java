@@ -79,6 +79,11 @@ final class ListenerAggregate
     }
 
     @Override
+    public void remoteClosedConnection(Address address) {
+        childListeners.forEach(listener -> listener.remoteClosedConnection(address));
+    }
+
+    @Override
     public ClientConnectionProcessListener withAdditionalListener(ClientConnectionProcessListener listener) {
         childListeners.add(listener);
         return this;
@@ -125,5 +130,8 @@ public interface ClientConnectionProcessListener
     }
 
     default void clusterConnectionSucceeded(String clusterName) {
+    }
+
+    default void remoteClosedConnection(Address address) {
     }
 }

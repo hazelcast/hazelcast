@@ -468,6 +468,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (ClientNotAllowedInClusterException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
+        } catch (TargetDisconnectedException e) {
+            connectionProcessListener.remoteClosedConnection(addressProvider.apply(target));
+            return null;
         } catch (HazelcastException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             if (e.getCause() instanceof IOException) {
