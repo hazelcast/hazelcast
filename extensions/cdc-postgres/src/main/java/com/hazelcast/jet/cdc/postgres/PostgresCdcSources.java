@@ -495,6 +495,9 @@ public final class PostgresCdcSources {
 
     }
 
+    /**
+     * Possible postgres snapshot modes, that does not require additional mandatory parameters to be set.
+     */
     public enum PostgresSnapshotMode {
 
         /**
