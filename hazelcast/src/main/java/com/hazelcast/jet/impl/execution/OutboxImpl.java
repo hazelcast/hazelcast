@@ -157,7 +157,7 @@ public class OutboxImpl implements OutboxInternal {
             unfinishedItemOrdinals = null;
             if (item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) item).timestamp();
-                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
+                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE_TIME) {
                     // We allow equal timestamp here, even though the WMs should be increasing.
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be

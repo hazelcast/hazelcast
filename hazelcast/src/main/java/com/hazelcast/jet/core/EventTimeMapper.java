@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.function.ObjLongBiFunction;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
@@ -30,7 +31,6 @@ import java.util.function.ToLongFunction;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -275,7 +275,7 @@ public class EventTimeMapper<T> {
             }
         }
         if (allAreIdle) {
-            traverser.append(new Watermark(IDLE_MESSAGE.timestamp(), wmKey));
+            traverser.append(WatermarkCoalescer.idleMessage(wmKey));
         }
     }
 

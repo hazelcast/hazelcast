@@ -38,8 +38,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
  */
 public abstract class WatermarkCoalescer {
 
-    public static final long IDLE_TIME = Long.MAX_VALUE;
-    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_TIME);
+    public static final long IDLE_MESSAGE_TIME = Long.MAX_VALUE;
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
@@ -51,6 +51,10 @@ public abstract class WatermarkCoalescer {
 
     private WatermarkCoalescer(byte key) {
         this.key = key;
+    }
+
+    public static Watermark idleMessage(byte wmKey) {
+        return new Watermark(IDLE_MESSAGE_TIME, wmKey);
     }
 
     /**
@@ -206,7 +210,7 @@ public abstract class WatermarkCoalescer {
                 throw new JetException("Watermarks not monotonically increasing on queue: " +
                         "last one=" + queueWm + ", new one=" + wmValue);
             }
-            if (wmValue != IDLE_MESSAGE.timestamp()) {
+            if (wmValue != IDLE_MESSAGE_TIME) {
                 queueWm.set(wmValue);
             }
             return wmValue;
@@ -275,7 +279,7 @@ public abstract class WatermarkCoalescer {
                         "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
             }
 
-            if (wmValue == IDLE_MESSAGE.timestamp()) {
+            if (wmValue == IDLE_MESSAGE_TIME) {
                 isIdle[queueIndex] = true;
             } else {
                 isIdle[queueIndex] = false;
@@ -324,7 +328,7 @@ public abstract class WatermarkCoalescer {
                     return topObservedWmLocal;
                 }
                 return notDoneInputCount != 0
-                        ? IDLE_MESSAGE.timestamp()
+                        ? IDLE_MESSAGE_TIME
                         : NO_NEW_WM;
             }
 
@@ -341,7 +345,7 @@ public abstract class WatermarkCoalescer {
         public long checkWmHistory() {
             if (idleMessagePending) {
                 idleMessagePending = false;
-                return IDLE_MESSAGE.timestamp();
+                return IDLE_MESSAGE_TIME;
             }
             return NO_NEW_WM;
         }

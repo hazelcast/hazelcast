@@ -107,7 +107,8 @@ public final class ConcurrentInboundEdgeStream {
                 @Nonnull ConcurrentConveyor<Object> conveyor,
                 int ordinal,
                 int priority,
-                @Nonnull String debugName) {
+                @Nonnull String debugName
+        ) {
             this.conveyor = conveyor;
             this.ordinal = ordinal;
             this.priority = priority;
@@ -126,9 +127,6 @@ public final class ConcurrentInboundEdgeStream {
         public int priority() {
             return priority;
         }
-
-        @Override
-        public abstract Set<Byte> wmKeys();
 
         @Override
         public boolean isDone() {
@@ -169,7 +167,7 @@ public final class ConcurrentInboundEdgeStream {
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
-        private final KeyedWatermarkCoalsescerMap watermarkCoalescer;
+        private final KeyedWatermarkCoalescer watermarkCoalescer;
         private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
         // Tells whether we are operating in exactly-once or at-least-once mode.
         // In other words, whether a barrier from all queues must be present before
@@ -188,7 +186,7 @@ public final class ConcurrentInboundEdgeStream {
             super(conveyor, ordinal, priority, debugName);
 
             this.waitForAllBarriers = waitForAllBarriers;
-            this.watermarkCoalescer = new KeyedWatermarkCoalsescerMap();
+            this.watermarkCoalescer = new KeyedWatermarkCoalescer();
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 
@@ -203,7 +201,7 @@ public final class ConcurrentInboundEdgeStream {
             super(conveyor, ordinal, priority, debugName);
 
             this.waitForAllBarriers = waitForAllBarriers;
-            this.watermarkCoalescer = new KeyedWatermarkCoalsescerMap(wmKeys, conveyor.queueCount());
+            this.watermarkCoalescer = new KeyedWatermarkCoalescer(wmKeys, conveyor.queueCount());
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 

@@ -21,61 +21,61 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-public class KeyedWatermarkCoalsescerMap {
-    private final Map<Byte, WatermarkCoalescer> watermarkCoalescerMap = new HashMap<>();
+public class KeyedWatermarkCoalescer {
+    private final Map<Byte, WatermarkCoalescer> coalescers = new HashMap<>();
 
-    KeyedWatermarkCoalsescerMap() {
+    KeyedWatermarkCoalescer() {
     }
 
-    KeyedWatermarkCoalsescerMap(byte[] keys, int queueCount) {
+    KeyedWatermarkCoalescer(byte[] keys, int queueCount) {
         for (byte k : keys) {
-            watermarkCoalescerMap.putIfAbsent(k, WatermarkCoalescer.create(queueCount, k));
+            coalescers.putIfAbsent(k, WatermarkCoalescer.create(queueCount, k));
         }
     }
 
     public void register(byte key, int queueCount) {
-        watermarkCoalescerMap.putIfAbsent(key, WatermarkCoalescer.create(queueCount, key));
+        coalescers.putIfAbsent(key, WatermarkCoalescer.create(queueCount, key));
     }
 
     public Set<Byte> keys() {
-        return watermarkCoalescerMap.keySet();
+        return coalescers.keySet();
     }
 
     public Set<Entry<Byte, WatermarkCoalescer>> entries() {
-        return watermarkCoalescerMap.entrySet();
+        return coalescers.entrySet();
     }
 
     public int count() {
-        return watermarkCoalescerMap.size();
+        return coalescers.size();
     }
 
     public long queueDone(byte key, int queueIndex) {
-        return watermarkCoalescerMap.get(key).queueDone(queueIndex);
+        return coalescers.get(key).queueDone(queueIndex);
     }
 
-    public void observeEvent(byte key, int queueIndex) {
-        watermarkCoalescerMap.get(key).observeEvent(queueIndex);
+    private void observeEvent(byte key, int queueIndex) {
+        coalescers.get(key).observeEvent(queueIndex);
     }
 
     public void observeEvent(int queueIndex) {
-        for (Byte key : watermarkCoalescerMap.keySet()) {
+        for (Byte key : coalescers.keySet()) {
             observeEvent(key, queueIndex);
         }
     }
 
     public long observeWm(byte key, int queueIndex, long wmValue) {
-        return watermarkCoalescerMap.get(key).observeWm(queueIndex, wmValue);
+        return coalescers.get(key).observeWm(queueIndex, wmValue);
     }
 
     public long checkWmHistory(byte key) {
-        return watermarkCoalescerMap.get(key).checkWmHistory();
+        return coalescers.get(key).checkWmHistory();
     }
 
     public long coalescedWm(byte key) {
-        return watermarkCoalescerMap.get(key).coalescedWm();
+        return coalescers.get(key).coalescedWm();
     }
 
     public long topObservedWm(byte key) {
-        return watermarkCoalescerMap.get(key).topObservedWm();
+        return coalescers.get(key).topObservedWm();
     }
 }

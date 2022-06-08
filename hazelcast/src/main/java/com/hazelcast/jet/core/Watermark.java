@@ -17,10 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.impl.execution.BroadcastItem;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import java.util.Objects;
 
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
@@ -84,8 +84,10 @@ public final class Watermark implements BroadcastItem {
 
     @Override
     public String toString() {
-        return timestamp == IDLE_MESSAGE.timestamp
-                ? "Watermark{IDLE_MESSAGE}"
-                : "Watermark{ts=" + toLocalTime(timestamp) + ", key = " + key + '}';
+        return timestamp ==
+                WatermarkCoalescer.IDLE_MESSAGE_TIME
+                        ? "Watermark{IDLE_MESSAGE"
+                        : "Watermark{ts=" + toLocalTime(timestamp)
+                + ", key=" + key + "}";
     }
 }

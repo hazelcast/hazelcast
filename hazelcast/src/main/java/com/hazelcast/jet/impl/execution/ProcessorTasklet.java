@@ -87,8 +87,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FI
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PREPARE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_TIME;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -115,7 +114,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<InboundEdgeStream[]> instreamGroupQueue;
-    private final KeyedWatermarkCoalsescerMap watermarkCoalescer;
+    private final KeyedWatermarkCoalescer watermarkCoalescer;
     private final ILogger logger;
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
@@ -173,7 +172,7 @@ public class ProcessorTasklet implements Tasklet {
         this.processor = processor;
 
         this.pendingWatermark = new HashMap<>();
-        this.watermarkCoalescer = new KeyedWatermarkCoalsescerMap();
+        this.watermarkCoalescer = new KeyedWatermarkCoalescer();
 
         this.numActiveOrdinals = instreams.size();
         this.instreams = instreams;
@@ -278,8 +277,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public ProgressState call() {
         assert state != END : "already in terminal state";
         progTracker.reset();
@@ -461,8 +459,8 @@ public class ProcessorTasklet implements Tasklet {
         List<Byte> keysToRemove = new ArrayList<>();
         for (Entry<Byte, Watermark> entry : pendingWatermark.entrySet()) {
             long wm = entry.getValue().timestamp();
-            if (wm == IDLE_TIME
-                    ? outbox.offer(new Watermark(IDLE_TIME, entry.getKey()))
+            if (wm == IDLE_MESSAGE_TIME
+                    ? outbox.offer(new Watermark(IDLE_MESSAGE_TIME, entry.getKey()))
                     : doWithClassLoader(
                     context.classLoader(),
                     () -> processor.tryProcessWatermark(entry.getValue()))) {
@@ -673,7 +671,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private long lastForwardedWmLatency() {
         long wm = outbox.lastForwardedWm();
-        if (wm == IDLE_MESSAGE.timestamp()) {
+        if (wm == IDLE_MESSAGE_TIME) {
             return Long.MIN_VALUE; // idle
         }
         if (wm == Long.MIN_VALUE) {
