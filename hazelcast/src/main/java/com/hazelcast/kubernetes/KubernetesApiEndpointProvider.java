@@ -154,9 +154,10 @@ class KubernetesApiEndpointProvider
         Map<EndpointAddress, String> result = new HashMap<>();
         for (JsonValue address : toJsonArray(addressesJson)) {
             String ip = address.asObject().get("ip").asString();
+            String targetRefName = address.asObject().get("targetRef").asObject().get("name").asString();
             String nodeName = KubernetesApiProvider.convertToString(address.asObject().get("nodeName"));
             for (Integer port : ports) {
-                result.put(new EndpointAddress(ip, port), nodeName);
+                result.put(new EndpointAddress(ip, port, targetRefName), nodeName);
             }
         }
         return result;
