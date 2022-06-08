@@ -93,21 +93,8 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     public void test_outerJoinRowsEmittedAfterWatermark() {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
-        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        joinInfo = new JetJoinInfo(
-                joinType,
-                new int[0],
-                new int[0],
-                condition,
-                condition
-        );
 
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(1, 1));
+        SupplierEx<Processor> supplier = createProcessor(1);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -274,5 +261,16 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                                 wm((byte) 1, 3L)
                         )
                 );
+    }
+
+    private SupplierEx<Processor> createProcessor(int columnCount) {
+        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
+        JetJoinInfo joinInfo = new JetJoinInfo(joinType, new int[0], new int[0], condition, condition);
+        return () -> new StreamToStreamJoinP(
+                joinInfo,
+                leftExtractors,
+                rightExtractors,
+                postponeTimeMap,
+                Tuple2.tuple2(columnCount, columnCount));
     }
 }

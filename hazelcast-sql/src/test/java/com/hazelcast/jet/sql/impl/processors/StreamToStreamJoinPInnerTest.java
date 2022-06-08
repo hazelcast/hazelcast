@@ -236,17 +236,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         out(jetRow(2L, 42, 3L)));
     }
 
-    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
-        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
-        return () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(leftColumnCount, rightColumnCount));
-    }
-
     @Test
     public void test_nonLateItemOutOfLimit() {
         // Join condition:
@@ -345,5 +334,16 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         }
 
         return AndPredicate.create(conditions.toArray(new Expression[0]));
+    }
+
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
+        Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
+        return () -> new StreamToStreamJoinP(
+                joinInfo,
+                leftExtractors,
+                rightExtractors,
+                postponeTimeMap,
+                Tuple2.tuple2(leftColumnCount, rightColumnCount));
     }
 }
