@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -47,9 +46,7 @@ import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
@@ -94,7 +91,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
 
-        SupplierEx<Processor> supplier = createProcessor(1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
@@ -115,53 +112,25 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     }
 
     @Test
-    public void given_leftJoin_when_rowContainsMultipleColumns_then_successful() {
+    public void test_rowContainsMultipleColumns() {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        joinInfo = new JetJoinInfo(
-                JoinRelType.LEFT,
-                new int[]{0},
-                new int[]{0},
-                null,
-                null
-        );
 
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(2, 2));
-
-        TestSupport.verifyProcessor(supplier)
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+        TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
                 .disableSnapshots()
-                .disableProgressAssertion()
-                .inputs(asList(
-                        asList(
-                                jetRow(1L, 1L),
-                                jetRow(2L, 2L),
-                                jetRow(3L, 3L),
-                                wm((byte) 0, 3L)
-                        ),
-                        asList(
-                                jetRow(1L, 1L),
-                                jetRow(2L, 2L),
-                                jetRow(3L, 3L),
-                                wm((byte) 1, 3L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                jetRow(1L, 1L, 1L, 1L),
-                                jetRow(1L, 1L, 2L, 2L),
-                                jetRow(3L, 3L, 1L, 1L),
-                                jetRow(3L, 3L, 2L, 2L),
-                                jetRow(1L, 1L, 3L, 3L),
-                                jetRow(3L, 3L, 3L, 3L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 1, 3L)
-                        )
+                .expectExactOutput(
+                        in(0, wm((byte) 0, 1L)),
+                        out(wm((byte) 0, 1L)),
+                        in(1, wm((byte) 1, 1L)),
+                        out(wm((byte) 1, 1L)),
+                        in(ordinal0, jetRow(3L)),
+                        in(ordinal0, jetRow(4L)),
+                        in(ordinal1, wm(ordinal1, 6L)),
+                        out(isLeft ? jetRow(3L, null, null) : jetRow(null, null, 3L)),
+                        out(isLeft ? jetRow(4L, null, null) : jetRow(null, null, 4L)),
+                        out(wm(ordinal1, 6L)),
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
     }
 
@@ -185,9 +154,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
-                .disableProgressAssertion()
                 .inputs(asList(
                         asList(
                                 wm((byte) 0, 1L),
@@ -231,9 +198,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 Tuple2.tuple2(2, 2));
 
         TestSupport.verifyProcessor(supplier)
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
-                .disableProgressAssertion()
                 .inputs(asList(
                         asList(
                                 jetRow(1L, 1L),
@@ -263,7 +228,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 );
     }
 
-    private SupplierEx<Processor> createProcessor(int columnCount) {
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
         JetJoinInfo joinInfo = new JetJoinInfo(joinType, new int[0], new int[0], condition, condition);
         return () -> new StreamToStreamJoinP(
@@ -271,6 +236,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 leftExtractors,
                 rightExtractors,
                 postponeTimeMap,
-                Tuple2.tuple2(columnCount, columnCount));
+                Tuple2.tuple2(leftColumnCount, rightColumnCount));
     }
 }
