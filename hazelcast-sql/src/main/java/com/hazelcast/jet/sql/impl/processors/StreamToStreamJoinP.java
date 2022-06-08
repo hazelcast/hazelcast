@@ -45,34 +45,28 @@ import static java.lang.Long.MAX_VALUE;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StreamToStreamJoinP extends AbstractProcessor {
-    /**
-     * <p>
-     * JOIN condition should be transformed into such form:
-     * <pre>
-     *  l.time >= r.time - constant1
-     *  r.time >= l.time - constant2
-     * </pre>
-     */
+    // package-visible for tests
+    final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
+    final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+    final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+
+    // NOTE: we are using LinkedList, because we are expecting:
+    //  (1) removals in the middle,
+    //  (2) traversing whole list without index-based access
+    // package-visible for tests
+    final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
+
     private final JetJoinInfo joinInfo;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
 
-    // package-visible for tests
-    final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
-    final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
-    final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    // NOTE: we are using LinkedList, because we are expecting:
-    //  (1) removals in the middle,
-    //  (2) traversing whole list without indexing.
-    // package-visible for tests
-    final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
     private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
