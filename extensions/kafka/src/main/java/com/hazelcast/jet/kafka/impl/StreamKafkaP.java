@@ -173,8 +173,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         if (oldTopicOffsets.length == 0 && !isRestoring) {
             // Attempt to initialize partitions offsets only when processor is starting.
             initializeOffsetsAndSeek(topicName, newAssignments);
-        }
-        if (oldTopicOffsets.length > 0 && !isRestoring) {
+        } else if (oldTopicOffsets.length > 0 && !isRestoring) {
             // For partitions detected later during the runtime we seek to their
             // beginning. It can happen that a partition is added, and some messages
             // are added to it before we start consuming from it. If we started at the
