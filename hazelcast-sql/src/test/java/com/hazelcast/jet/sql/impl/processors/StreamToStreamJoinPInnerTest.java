@@ -228,7 +228,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(1, jetRow(3L)),
                         in(0, jetRow(2L, 2)), // doesn't join, field1 <= 10
@@ -249,19 +248,17 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
                         in(0, wm((byte) 0, 10)),
-                        processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState);
-                        }),
+                        out(wm((byte) 0, 10)),
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState)),
                         // This item is not late according to the WM for key=1, but is off the join limit according
-                        // to the WM for key=1 and the postponing time
+                        // to the WM for key=0, minus the postponing time
                         in(1, jetRow(8L)),
-                        processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(0, p.buffer[1].size());
-                        })
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
     }
 

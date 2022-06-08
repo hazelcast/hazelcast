@@ -395,7 +395,11 @@ public final class TestSupport {
                 .filter(TestEventInt::isOutput)
                 .mapToInt(event -> ((ItemWithOrdinal) event).ordinal())
                 .max()
-                .orElse(-1) + 1;
+                .orElse(0) + 1;
+        // In case there's no output event in the events, we still have to have 1 output bucket. Otherwise,
+        // all the output of the processor will be thrown out, and if the test expects no output, even if there
+        // was some output, the test would not fail.
+        assert outputOrdinalCount > 0;
         outputMustOccurOnTime = true;
         assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
 

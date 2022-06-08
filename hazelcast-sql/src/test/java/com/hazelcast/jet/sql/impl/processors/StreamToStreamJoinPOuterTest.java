@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -46,8 +47,6 @@ import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
@@ -59,7 +58,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-    private JetJoinInfo joinInfo;
 
     @Parameter
     public boolean isLeft;
@@ -135,96 +133,27 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     }
 
     @Test
-    public void given_rightJoin_when_oppositeBufferIsEmpty_then_fillNulls() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 1L));
-        joinInfo = new JetJoinInfo(
-                JoinRelType.RIGHT,
-                new int[]{0},
-                new int[]{0},
-                null,
-                null
-        );
+    public void test_nonLateItemOutOfLimit() {
+        // Join condition:
+        //     l.time BETWEEN r.time - 1 AND r.time + 1
+        postponeTimeMap.put((byte) 0, ImmutableMap.of((byte) 1, 1L));
+        postponeTimeMap.put((byte) 1, ImmutableMap.of((byte) 0, 1L));
 
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(2, 1));
+        SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
-                .inputs(asList(
-                        asList(
-                                wm((byte) 0, 1L),
-                                jetRow(3L, 3L),
-                                jetRow(4L, 4L),
-                                jetRow(5L, 5L),
-                                wm((byte) 0, 6L)
-                        ),
-                        singletonList(
-                                wm((byte) 1, 1L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                wm((byte) 0, 0L),
-                                wm((byte) 1, 0L),
-                                jetRow(3L, 3L, null),
-                                jetRow(5L, 5L, null),
-                                wm((byte) 0, 5L)
-                        )
-                );
-    }
-
-    @Test
-    public void given_rightJoin_when_rowContainsMultipleColumns_then_successful() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        joinInfo = new JetJoinInfo(
-                JoinRelType.RIGHT,
-                new int[]{0},
-                new int[]{0},
-                null,
-                null
-        );
-
-        SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                Tuple2.tuple2(2, 2));
-
-        TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
-                .inputs(asList(
-                        asList(
-                                jetRow(1L, 1L),
-                                jetRow(2L, 2L),
-                                jetRow(3L, 3L),
-                                wm((byte) 0, 3L)
-                        ),
-                        asList(
-                                jetRow(1L, 1L),
-                                jetRow(2L, 2L),
-                                jetRow(3L, 3L),
-                                wm((byte) 1, 3L)
-                        )
-                ))
-                .expectOutput(
-                        asList(
-                                // NOTE: first row contains NULL since test processor process left input first
-                                jetRow(1L, 1L, 1L, 1L),
-                                jetRow(1L, 1L, 2L, 2L),
-                                jetRow(3L, 3L, 1L, 1L),
-                                jetRow(3L, 3L, 2L, 2L),
-                                jetRow(1L, 1L, 3L, 3L),
-                                jetRow(3L, 3L, 3L, 3L),
-                                wm((byte) 0, 3L),
-                                wm((byte) 1, 3L)
-                        )
+                .expectExactOutput(
+                        in(ordinal1, wm(ordinal1, 10)),
+                        out(wm(ordinal1, 10)),
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(ImmutableMap.of(ordinal0, 9L, ordinal1, Long.MIN_VALUE + 1), p.wmState)),
+                        // This item is not late according to the WM for key=1, but is off the join limit according
+                        // to the WM for key=0, minus the postponing time
+                        in(ordinal0, jetRow(8L)),
+                        out(isLeft ? jetRow(8L, null) : jetRow(null, 8L)),
+                        processorAssertion((StreamToStreamJoinP p) ->
+                                assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
     }
 
