@@ -180,7 +180,8 @@ public class TestUtil {
         JAVA("cjv"),
         NODEJS("cnjs"),
         PYTHON("cpy"),
-        GO("cgo");
+        GO("cgo"),
+        CLC("ccl");
 
         private final String prefix;
 

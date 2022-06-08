@@ -848,6 +848,24 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
+
+    @Override
+    @Test
+    public void testMapExpiryConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"expiry\">"
+                + "    <time-to-live-seconds>2147483647</time-to-live-seconds>"
+                + "    <max-idle-seconds>2147483647</max-idle-seconds>    "
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("expiry");
+
+        assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
+        assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
     @Override
     @Test
     public void readRingbuffer() {
@@ -3058,14 +3076,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testAllowOverrideDefaultSerializers() {
         String xml = HAZELCAST_START_TAG
-          + "  <serialization>\n"
-          + "      <allow-override-default-serializers>true</allow-override-default-serializers>\n"
-          + "  </serialization>\n"
-          + HAZELCAST_END_TAG;
+                + "  <serialization>\n"
+                + "      <allow-override-default-serializers>true</allow-override-default-serializers>\n"
+                + "  </serialization>\n"
+                + HAZELCAST_END_TAG;
 
         final Config config = new InMemoryXmlConfig(xml);
         final boolean isAllowOverrideDefaultSerializers
-          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+                = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
         assertTrue(isAllowOverrideDefaultSerializers);
     }
 
@@ -3965,7 +3983,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         PersistentMemoryConfig pmemConfig = xmlConfig.getNativeMemoryConfig()
                 .getPersistentMemoryConfig();
         List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig
-                                                                          .getDirectoryConfigs();
+                .getDirectoryConfigs();
         assertFalse(pmemConfig.isEnabled());
         assertEquals(MOUNTED, pmemConfig.getMode());
         assertEquals(2, directoryConfigs.size());
@@ -4322,10 +4340,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testSqlConfig() {
         String xml = HAZELCAST_START_TAG
-            + "<sql>\n"
-            + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
-            + "</sql>"
-            + HAZELCAST_END_TAG;
+                + "<sql>\n"
+                + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
+                + "</sql>"
+                + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());

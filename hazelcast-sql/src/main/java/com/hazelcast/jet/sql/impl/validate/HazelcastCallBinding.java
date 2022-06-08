@@ -76,6 +76,7 @@ public class HazelcastCallBinding extends SqlCallBinding {
         return validator.newValidationError(call, error);
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static String getOperandTypes(
             SqlValidator validator,
             SqlCall call,
@@ -88,21 +89,21 @@ public class HazelcastCallBinding extends SqlCallBinding {
 
             String typeName;
 
-            if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
-                typeName = validator.getUnknownType().toString();
-            } else if (calciteType.getSqlTypeName() == SqlTypeName.ROW
-                    || calciteType.getSqlTypeName() == SqlTypeName.COLUMN_LIST) {
-                typeName = calciteType.getSqlTypeName().toString();
-            } else if (calciteType.getSqlTypeName() == SqlTypeName.SYMBOL) {
-                typeName = "SYMBOL";
-            } else if (calciteType.getSqlTypeName() == SqlTypeName.CURSOR) {
-                typeName = "CURSOR";
+            SqlTypeName sqlTypeName = calciteType.getSqlTypeName();
+            if (sqlTypeName == SqlTypeName.NULL
+                    || sqlTypeName == SqlTypeName.UNKNOWN
+                    || sqlTypeName == SqlTypeName.ROW
+                    || sqlTypeName == SqlTypeName.COLUMN_LIST
+                    || sqlTypeName == SqlTypeName.SYMBOL
+                    || sqlTypeName == SqlTypeName.CURSOR
+            ) {
+                typeName = sqlTypeName.toString();
             } else {
                 QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(calciteType);
                 if (hazelcastType.getTypeFamily().getPublicType() != null) {
                     typeName = hazelcastType.getTypeFamily().getPublicType().toString();
                 } else {
-                    typeName = calciteType.getSqlTypeName().toString();
+                    typeName = sqlTypeName.toString();
                 }
             }
 
