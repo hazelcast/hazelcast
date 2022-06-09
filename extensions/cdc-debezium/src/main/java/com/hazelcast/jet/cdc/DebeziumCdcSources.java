@@ -34,6 +34,8 @@ import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
+
 /**
  * Contains factory methods for creating Change Data Capture (CDC) sources.
  * <p>
@@ -121,7 +123,9 @@ public final class DebeziumCdcSources {
     @Nonnull
     public static Builder<Entry<String, String>> debeziumJson(
             @Nonnull String name,
-            @Nonnull Class<? extends SourceConnector> connectorClass) {
+            @Nonnull Class<?> connectorClass) {
+        checkState(SourceConnector.class.isAssignableFrom(connectorClass), "connector class must be a subclass" +
+                " of SourceConnector");
         return new Builder<>(name, connectorClass.getName(),
                 (properties, eventTimePolicy) -> new JsonCdcSourceP(properties, eventTimePolicy));
     }

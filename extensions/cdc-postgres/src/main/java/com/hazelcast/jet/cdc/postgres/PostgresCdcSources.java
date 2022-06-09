@@ -37,6 +37,8 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
+
 /**
  * Contains factory methods for creating change data capture sources
  * based on PostgreSQL databases.
@@ -136,7 +138,14 @@ public final class PostgresCdcSources {
          */
         @Nonnull
         public Builder setSnapshotMode(@Nonnull PostgresSnapshotMode snapshotMode) {
-            config.setProperty("snapshot.mode", snapshotMode.snapshotMode.getValue());
+            PostgresConnectorConfig.SnapshotMode debeziumMode = null;
+            switch (snapshotMode) {
+                case ALWAYS: debeziumMode = PostgresConnectorConfig.SnapshotMode.ALWAYS; break;
+                case INITIAL: debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL; break;
+                case INITIAL_ONLY: debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY; break;
+                case NEVER: debeziumMode = PostgresConnectorConfig.SnapshotMode.NEVER; break;
+            }
+            config.setProperty("snapshot.mode", debeziumMode.getValue());
             return this;
         }
 
@@ -144,8 +153,10 @@ public final class PostgresCdcSources {
          * Custom snapshotter that will be used by the connector.
          */
         @Nonnull
-        public Builder setCustomSnapshotter(@Nonnull Class<? extends Snapshotter> snapshotterClass) {
-            config.setProperty("snapshot.mode", PostgresConnectorConfig.SnapshotMode.CUSTOM);
+        public Builder setCustomSnapshotter(@Nonnull Class<?> snapshotterClass) {
+            checkState(Snapshotter.class.isAssignableFrom(snapshotterClass), "snapshotterClass must be " +
+                    "a subclass of Snapshotter");
+            config.setProperty("snapshot.mode", PostgresConnectorConfig.SnapshotMode.CUSTOM.getValue());
             config.setProperty("snapshot.custom.class", snapshotterClass.getName());
             return this;
         }
@@ -503,32 +514,21 @@ public final class PostgresCdcSources {
         /**
          * Always perform a snapshot when starting.
          */
-        ALWAYS(PostgresConnectorConfig.SnapshotMode.ALWAYS),
+        ALWAYS,
 
         /**
          * Perform a snapshot only upon initial startup of a connector.
          */
-        INITIAL(PostgresConnectorConfig.SnapshotMode.INITIAL),
+        INITIAL,
 
         /**
          * Never perform a snapshot and only receive logical changes.
          */
-        NEVER(PostgresConnectorConfig.SnapshotMode.NEVER),
+        NEVER,
 
         /**
          * Perform a snapshot and then stop before attempting to receive any logical changes.
          */
-        INITIAL_ONLY(PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY),
-
-        /**
-         * Perform an exported snapshot
-         */
-        EXPORTED(PostgresConnectorConfig.SnapshotMode.EXPORTED);
-
-        private final PostgresConnectorConfig.SnapshotMode snapshotMode;
-
-        PostgresSnapshotMode(PostgresConnectorConfig.SnapshotMode snapshotMode) {
-            this.snapshotMode = snapshotMode;
-        }
+        INITIAL_ONLY;
     }
 }
