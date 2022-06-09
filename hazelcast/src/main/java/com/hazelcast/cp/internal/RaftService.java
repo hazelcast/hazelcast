@@ -190,6 +190,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private final boolean cpSubsystemEnabled;
     private final UnsafeModePartitionState[] unsafeModeStates;
     private final Map<CPGroupAvailabilityEventKey, Long> recentAvailabilityEvents = new ConcurrentHashMap<>();
+    private int cpMemberPriority;
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -200,6 +201,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         this.cpSubsystemEnabled = config.getCPMemberCount() > 0;
         this.invocationManager = new RaftInvocationManager(nodeEngine, this);
         this.metadataGroupManager = new MetadataRaftGroupManager(this.nodeEngine, this, config);
+        this.cpMemberPriority = config.getCPMemberPriority();
 
         if (cpSubsystemEnabled) {
             this.unsafeModeStates = null;
@@ -1212,10 +1214,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         Collection<CPGroupId> groupIds = new ArrayList<>();
         RaftEndpoint localEndpoint = getLocalCPEndpoint();
         for (RaftNode raftNode : nodes.values()) {
-            if (CPGroup.METADATA_CP_GROUP_NAME.equals(raftNode.getGroupId().getName())) {
-                // Ignore metadata group
-                continue;
-            }
             RaftEndpoint leader = raftNode.getLeader();
             if (leader != null && leader.equals(localEndpoint)) {
                 groupIds.add(raftNode.getGroupId());
@@ -1434,6 +1432,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
         throw new IllegalArgumentException("Unhandled event: " + e);
+    }
+
+    public int getCPMemberPriority() {
+        return cpMemberPriority;
     }
 
     private class InitializeRaftNodeTask implements Runnable {
