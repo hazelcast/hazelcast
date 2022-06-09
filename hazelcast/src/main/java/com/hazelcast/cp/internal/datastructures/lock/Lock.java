@@ -191,21 +191,23 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
     private Collection<LockInvocationKey> setNewLockOwner() {
         Collection<LockInvocationKey> newOwnerWaitKeys;
         Iterator<WaitKeyContainer<LockInvocationKey>> iter = waitKeyContainersIterator();
-        if (iter.hasNext()) {
-            WaitKeyContainer<LockInvocationKey> container = iter.next();
-            LockInvocationKey newOwner = container.key();
-            newOwnerWaitKeys = container.keyAndRetries();
+        synchronized (waitKeys) {
+            if (iter.hasNext()) {
+                WaitKeyContainer<LockInvocationKey> container = iter.next();
+                LockInvocationKey newOwner = container.key();
+                newOwnerWaitKeys = container.keyAndRetries();
 
-            iter.remove();
-            owner = newOwner;
-            lockCount = 1;
-            ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
-        } else {
-            owner = null;
-            newOwnerWaitKeys = Collections.emptyList();
+                iter.remove();
+                owner = newOwner;
+                lockCount = 1;
+                ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
+            } else {
+                owner = null;
+                newOwnerWaitKeys = Collections.emptyList();
+            }
+
+            return newOwnerWaitKeys;
         }
-
-        return newOwnerWaitKeys;
     }
 
     LockOwnershipState lockOwnershipState() {
@@ -252,7 +254,8 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
      */
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.emptyList();
+        LockInvocationKey ownerCopy = owner;
+        return ownerCopy != null ? Collections.singleton(ownerCopy.sessionId()) : Collections.emptyList();
     }
 
     @Override
