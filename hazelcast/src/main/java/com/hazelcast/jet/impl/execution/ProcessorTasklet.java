@@ -295,10 +295,12 @@ public class ProcessorTasklet implements Tasklet {
     private void stateMachineStep() {
         switch (state) {
             case PROCESS_WATERMARKS:
-                if (processKeyedWatermarks()) {
-                    state = NULLARY_PROCESS;
-                    stateMachineStep();
+                for (Watermark wm; (wm = pendingWatermarks.peek()) != null && tryProcessWatermark(wm); ) {
+                    pendingWatermarks.remove();
                 }
+
+                state = NULLARY_PROCESS;
+                stateMachineStep();
                 break;
 
             case NULLARY_PROCESS:
@@ -433,23 +435,14 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private boolean processKeyedWatermarks() {
-        for (Watermark wm; (wm = pendingWatermarks.peek()) != null; ) {
-            Watermark finalWm = wm;
-            if (wm.timestamp() == IDLE_MESSAGE_TIME
-                    ? outbox.offer(wm)
-                    : doWithClassLoader(
-                            context.classLoader(),
-                            () -> processor.tryProcessWatermark(finalWm))
-            ) {
-                pendingWatermarks.remove();
-            } else {
-                // not done yet
-                return false;
-            }
+    private boolean tryProcessWatermark(Watermark wm) {
+        // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
+        if (wm.timestamp() == IDLE_MESSAGE_TIME) {
+            return outbox.offer(wm);
+        } else {
+            return doWithClassLoader(context.classLoader(),
+                    () -> processor.tryProcessWatermark(wm));
         }
-
-        return true;
     }
 
     private void processInbox() {
