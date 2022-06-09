@@ -585,7 +585,6 @@ class KubernetesClient {
 
             EndpointAddress address = (EndpointAddress) o;
 
-            //|| !Objects.equals(targetRefName, address.targetRefName)
             if (!Objects.equals(ip, address.ip) || !Objects.equals(targetRefName, address.targetRefName)) {
                 return false;
             }
