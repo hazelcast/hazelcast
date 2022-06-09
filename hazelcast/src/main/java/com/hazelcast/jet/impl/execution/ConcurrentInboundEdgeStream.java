@@ -61,9 +61,9 @@ public final class ConcurrentInboundEdgeStream {
 
     /**
      * @param waitForAllBarriers If {@code true}, a queue that had a barrier won't
-     *                           be drained until the same barrier is received from all other
-     *                           queues. This will enforce exactly-once vs. at-least-once, if it
-     *                           is {@code false}.
+     *          be drained until the same barrier is received from all other
+     *          queues. This will enforce exactly-once vs. at-least-once, if it
+     *          is {@code false}.
      */
     public static InboundEdgeStream create(
             @Nonnull ConcurrentConveyor<Object> conveyor,
@@ -75,22 +75,6 @@ public final class ConcurrentInboundEdgeStream {
     ) {
         if (comparator == null) {
             return new RoundRobinDrain(conveyor, ordinal, priority, debugName, waitForAllBarriers);
-        } else {
-            return new OrderedDrain(conveyor, ordinal, priority, debugName, comparator);
-        }
-    }
-
-    public static InboundEdgeStream create(
-            @Nonnull ConcurrentConveyor<Object> conveyor,
-            int ordinal,
-            int priority,
-            boolean waitForAllBarriers,
-            @Nonnull String debugName,
-            @Nullable byte[] wmKeys,
-            @Nullable ComparatorEx<?> comparator
-    ) {
-        if (comparator == null) {
-            return new RoundRobinDrain(conveyor, ordinal, priority, debugName, waitForAllBarriers, wmKeys);
         } else {
             return new OrderedDrain(conveyor, ordinal, priority, debugName, comparator);
         }
@@ -143,11 +127,6 @@ public final class ConcurrentInboundEdgeStream {
             return conveyorSum(QueuedPipe::capacity);
         }
 
-        @Override
-        public int queues() {
-            return conveyor.queueCount();
-        }
-
         private int conveyorSum(ToIntFunction<QueuedPipe<Object>> toIntF) {
             int sum = 0;
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
@@ -162,8 +141,8 @@ public final class ConcurrentInboundEdgeStream {
 
     /**
      * This implementation performs a single {@code drainTo} operation on all
-     * the input queues and forwards the data to the destination, while
-     * handling watermarks & barriers.
+     * the input queues and forwards the data to the destination, while handling
+     * watermarks & barriers.
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
@@ -186,22 +165,7 @@ public final class ConcurrentInboundEdgeStream {
             super(conveyor, ordinal, priority, debugName);
 
             this.waitForAllBarriers = waitForAllBarriers;
-            this.watermarkCoalescer = new KeyedWatermarkCoalescer();
-            receivedBarriers = new BitSet(conveyor.queueCount());
-        }
-
-        RoundRobinDrain(
-                @Nonnull ConcurrentConveyor<Object> conveyor,
-                int ordinal,
-                int priority,
-                @Nonnull String debugName,
-                boolean waitForAllBarriers,
-                byte[] wmKeys
-        ) {
-            super(conveyor, ordinal, priority, debugName);
-
-            this.waitForAllBarriers = waitForAllBarriers;
-            this.watermarkCoalescer = new KeyedWatermarkCoalescer(wmKeys, conveyor.queueCount());
+            this.watermarkCoalescer = new KeyedWatermarkCoalescer(conveyor.queueCount());
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 
@@ -210,8 +174,7 @@ public final class ConcurrentInboundEdgeStream {
             return watermarkCoalescer.keys();
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
             tracker.reset();
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
@@ -240,10 +203,8 @@ public final class ConcurrentInboundEdgeStream {
                     if (done) {
                         return conveyor.liveQueueCount() == 0 ? DONE : MADE_PROGRESS;
                     }
-
                 } else if (itemDetector.item instanceof Watermark) {
                     Watermark watermark = (Watermark) itemDetector.item;
-                    watermarkCoalescer.register(watermark.key(), conveyor.queueCount());
                     boolean forwarded = maybeEmitWm(
                             watermarkCoalescer.observeWm(watermark.key(), queueIndex, watermark.timestamp()),
                             watermark.key(),
@@ -282,7 +243,9 @@ public final class ConcurrentInboundEdgeStream {
             // try to emit all WMs based on history
             boolean returnProgress = true;
             for (Entry<Byte, WatermarkCoalescer> entry : watermarkCoalescer.entries()) {
-                returnProgress &= maybeEmitWm(entry.getValue().checkWmHistory(), entry.getKey(), dest);
+                if (entry.getValue().idleMessagePending()) {
+                    returnProgress &= maybeEmitWm(WatermarkCoalescer.IDLE_MESSAGE_TIME, entry.getKey(), dest);
+                }
             }
 
             if (returnProgress) {

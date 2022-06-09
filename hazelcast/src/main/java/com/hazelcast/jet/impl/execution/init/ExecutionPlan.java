@@ -203,7 +203,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
-            // TODO: Support keyed watermarks for Pipeline API.
             if (!isLightJob) {
                 // Note that we create the snapshot queues for all non-light jobs, even if they don't have
                 // processing guarantee enabled, because in EE one can request a snapshot also for
@@ -495,7 +494,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Each edge is represented by an array of conveyors between the producers and consumers.
      * There are as many conveyors as there are consumers.
      * Each conveyor has one queue per producer.
-     * <p>
+     *
      * For a distributed edge, there is one additional producer per member represented
      * by the ReceiverTasklet.
      */

@@ -41,6 +41,8 @@ public interface InboundEdgeStream {
 
     /**
      * Returns watermark keys observed in the represented edge.
+     *
+     * TODO do we need this?
      */
     Set<Byte> wmKeys();
 
@@ -64,11 +66,6 @@ public interface InboundEdgeStream {
      * Returns the total number of items in input queues.
      */
     int sizes();
-
-    /**
-     * Returns the total number of available input queues.
-     */
-    int queues();
 
     /**
      * Returns the top WM observed on any of the input queues for the specified

@@ -118,11 +118,6 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public int queues() {
-        return 1;
-    }
-
-    @Override
     public long topObservedWm(byte key) {
         return 0;
     }

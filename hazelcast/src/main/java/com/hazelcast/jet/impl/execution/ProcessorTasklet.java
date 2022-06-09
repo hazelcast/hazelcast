@@ -132,7 +132,7 @@ public class ProcessorTasklet implements Tasklet {
     private long pendingSnapshotId2;
 
     private SnapshotBarrier currentBarrier;
-    private final Map<Byte, Watermark> pendingWatermark;
+    private final Map<Byte, Watermark> pendingWatermark = new HashMap<>();
 
     // Tells whether we are operating in exactly-once or at-least-once mode.
     // In other words, whether a barrier from all inputs must be present before
@@ -170,10 +170,6 @@ public class ProcessorTasklet implements Tasklet {
         this.executionService = executionService;
         this.serializationService = serializationService;
         this.processor = processor;
-
-        this.pendingWatermark = new HashMap<>();
-        this.watermarkCoalescer = new KeyedWatermarkCoalescer();
-
         this.numActiveOrdinals = instreams.size();
         this.instreams = instreams;
         this.instreamGroupQueue = createInstreamGroupQueue(instreams);
@@ -195,16 +191,13 @@ public class ProcessorTasklet implements Tasklet {
         state = processingState();
         pendingSnapshotId1 = pendingSnapshotId2 = ssContext.activeSnapshotIdPhase1() + 1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
+        watermarkCoalescer = new KeyedWatermarkCoalescer(instreams.size());
     }
 
     private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
         Int2ObjectHashMap<MutableInteger> priorityCounters = new Int2ObjectHashMap<>();
         for (InboundEdgeStream instream : instreams) {
             priorityCounters.computeIfAbsent(instream.priority(), priority -> new MutableInteger()).getAndInc();
-            // also register known watermark keys for that instream.
-            for (byte wmKeys : instream.wmKeys()) {
-                watermarkCoalescer.register(wmKeys, instreams.size());
-            }
         }
 
         Map<Integer, FixedCapacityArrayList<InboundEdgeStream>> priorityToStreams = new TreeMap<>();
@@ -307,9 +300,8 @@ public class ProcessorTasklet implements Tasklet {
             case COLLECT_KEYED_WATERMARKS:
                 for (byte key : watermarkCoalescer.keys()) {
                     if (!pendingWatermark.containsKey(key)) {
-                        long wm = watermarkCoalescer.checkWmHistory(key);
-                        if (wm != NO_NEW_WM) {
-                            pendingWatermark.put(key, new Watermark(wm, key));
+                        if (watermarkCoalescer.idleMessagePending(key)) {
+                            pendingWatermark.put(key, new Watermark(IDLE_MESSAGE_TIME, key));
                         }
                     }
                 }
@@ -582,7 +574,6 @@ public class ProcessorTasklet implements Tasklet {
             Object lastItem = inbox.queue().peekLast();
             if (lastItem instanceof Watermark) {
                 Watermark newWm = ((Watermark) inbox.queue().removeLast());
-                watermarkCoalescer.register(newWm.key(), instreams.size());
                 long wm = watermarkCoalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp());
                 if (wm != NO_NEW_WM) {
                     pendingWatermark.put(newWm.key(), new Watermark(wm, newWm.key()));

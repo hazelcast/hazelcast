@@ -77,14 +77,10 @@ public abstract class WatermarkCoalescer {
     public abstract long observeWm(int queueIndex, long wmValue);
 
     /**
-     * Checks if there is a watermark to emit now based on the passage of
-     * system time or if all input queues are idle, and we should forward the
-     * idle marker.
-     *
-     * @return the watermark value to emit, {@link #IDLE_MESSAGE} or
-     *      {@link #NO_NEW_WM} if no watermark should be forwarded
+     * Return {@code true}, if the idle message should be forwarded. The
+     * status is reset after this method is called.
      */
-    public abstract long checkWmHistory();
+    public abstract boolean idleMessagePending();
 
     /**
      * Returns the last emitted watermark.
@@ -134,8 +130,8 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory() {
-            return NO_NEW_WM;
+        public boolean idleMessagePending() {
+            return false;
         }
 
         @Override
@@ -182,8 +178,8 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory() {
-            return NO_NEW_WM;
+        public boolean idleMessagePending() {
+            return false;
         }
 
         @Override
@@ -300,12 +296,12 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory() {
-            if (idleMessagePending) {
+        public boolean idleMessagePending() {
+            try {
+                return idleMessagePending;
+            } finally {
                 idleMessagePending = false;
-                return IDLE_MESSAGE_TIME;
             }
-            return NO_NEW_WM;
         }
 
         @Override

@@ -22,19 +22,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class KeyedWatermarkCoalescer {
+    private final int queueCount;
     private final Map<Byte, WatermarkCoalescer> coalescers = new HashMap<>();
 
-    KeyedWatermarkCoalescer() {
+    KeyedWatermarkCoalescer(int queueCount) {
+        this.queueCount = queueCount;
     }
 
-    KeyedWatermarkCoalescer(byte[] keys, int queueCount) {
-        for (byte k : keys) {
-            coalescers.putIfAbsent(k, WatermarkCoalescer.create(queueCount));
-        }
-    }
-
-    public void register(byte key, int queueCount) {
-        coalescers.putIfAbsent(key, WatermarkCoalescer.create(queueCount));
+    private WatermarkCoalescer coalescer(byte key) {
+        return coalescers.computeIfAbsent(key, x -> WatermarkCoalescer.create(queueCount));
     }
 
     public Set<Byte> keys() {
@@ -45,37 +41,29 @@ public class KeyedWatermarkCoalescer {
         return coalescers.entrySet();
     }
 
-    public int count() {
-        return coalescers.size();
-    }
-
     public long queueDone(byte key, int queueIndex) {
-        return coalescers.get(key).queueDone(queueIndex);
-    }
-
-    private void observeEvent(byte key, int queueIndex) {
-        coalescers.get(key).observeEvent(queueIndex);
+        return coalescer(key).queueDone(queueIndex);
     }
 
     public void observeEvent(int queueIndex) {
-        for (Byte key : coalescers.keySet()) {
-            observeEvent(key, queueIndex);
+        for (WatermarkCoalescer c : coalescers.values()) {
+            c.observeEvent(queueIndex);
         }
     }
 
     public long observeWm(byte key, int queueIndex, long wmValue) {
-        return coalescers.get(key).observeWm(queueIndex, wmValue);
+        return coalescer(key).observeWm(queueIndex, wmValue);
     }
 
-    public long checkWmHistory(byte key) {
-        return coalescers.get(key).checkWmHistory();
+    public boolean idleMessagePending(byte key) {
+        return coalescer(key).idleMessagePending();
     }
 
     public long coalescedWm(byte key) {
-        return coalescers.get(key).coalescedWm();
+        return coalescer(key).coalescedWm();
     }
 
     public long topObservedWm(byte key) {
-        return coalescers.get(key).topObservedWm();
+        return coalescer(key).topObservedWm();
     }
 }
