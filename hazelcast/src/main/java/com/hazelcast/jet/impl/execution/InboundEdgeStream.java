@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -38,13 +37,6 @@ public interface InboundEdgeStream {
      * Returns the represented edge's priority
      */
     int priority();
-
-    /**
-     * Returns watermark keys observed in the represented edge.
-     *
-     * TODO do we need this?
-     */
-    Set<Byte> wmKeys();
 
     /**
      * Passes the items from the queues to the predicate while it returns {@code true}.

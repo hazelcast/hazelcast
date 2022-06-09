@@ -103,11 +103,6 @@ public class MockInboundStream implements InboundEdgeStream {
         return priority;
     }
 
-    @Override
-    public Set<Byte> wmKeys() {
-        return keys;
-    }
-
     public Deque<Object> remainingItems() {
         return mockData;
     }

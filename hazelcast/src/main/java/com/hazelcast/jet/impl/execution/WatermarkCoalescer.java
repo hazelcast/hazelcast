@@ -26,9 +26,12 @@ import java.util.Arrays;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
- * Implements {@link Watermark} coalescing. Tracks WMs on input queues and
- * decides when to forward the WM. The watermark should be forwarded when
- * it has been received from all input streams (ignoring idle streams).
+ * Implements {@link Watermark} coalescing for a single watermark key. For
+ * handling multiple WM keys, see {@link KeyedWatermarkCoalescer}.
+ * <p>
+ * The class tracks WMs on input queues and decides when to forward the WM. The
+ * watermark should be forwarded when it has been received from all input
+ * streams (ignoring idle streams).
  * <p>
  * The class also handles idle messages from inputs (coming in the form of a
  * watermark equal to {@link #IDLE_MESSAGE}). When such a message is received,
@@ -77,8 +80,9 @@ public abstract class WatermarkCoalescer {
     public abstract long observeWm(int queueIndex, long wmValue);
 
     /**
-     * Return {@code true}, if the idle message should be forwarded. The
-     * status is reset after this method is called.
+     * Return {@code true}, if the idle message should be forwarded. The status
+     * is reset after this method is called. It can return {@code true} at most
+     * once after a {@link #queueDone(int)} call, never after any other method.
      */
     public abstract boolean idleMessagePending();
 

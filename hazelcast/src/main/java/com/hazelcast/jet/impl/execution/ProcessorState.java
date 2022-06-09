@@ -25,15 +25,10 @@ import com.hazelcast.jet.core.Processor;
 enum ProcessorState {
 
     /**
-     * Collect keyed watermarks to proceed to the next {@link ProcessorState#PROCESS_KEYED_WATERMARKS} stage.
-     */
-    COLLECT_KEYED_WATERMARKS,
-
-    /**
      * Making calls to {@link Processor#tryProcessWatermark} until it returns
      * {@code true}.
      */
-    PROCESS_KEYED_WATERMARKS,
+    PROCESS_WATERMARKS,
 
     /**
      * Making calls to the zero-argument {@link Processor#tryProcess()} method
