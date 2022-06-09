@@ -22,7 +22,6 @@ import com.hazelcast.jet.json.JsonUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;

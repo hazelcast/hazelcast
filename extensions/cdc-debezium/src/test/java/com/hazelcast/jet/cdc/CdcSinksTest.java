@@ -212,13 +212,13 @@ public class CdcSinksTest extends PipelineTestSupport {
         SupplierEx[] records = {
                 SYNC1,
                 UPDATE1,
-                ()->changeRecord(10, UPDATE, UPDATE1.get().key().toJson(), null,
+                () -> changeRecord(10, UPDATE, UPDATE1.get().key().toJson(), null,
                         UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")),
-                ()->changeRecord(11, UPDATE, UPDATE1.get().key().toJson(), null,
+                () -> changeRecord(11, UPDATE, UPDATE1.get().key().toJson(), null,
                         UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas3@acme.com")),
-                ()->changeRecord(12, UPDATE, UPDATE1.get().key().toJson(), null,
+                () -> changeRecord(12, UPDATE, UPDATE1.get().key().toJson(), null,
                         UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
-                ()->changeRecord(13, UPDATE, UPDATE1.get().key().toJson(), null,
+                () -> changeRecord(13, UPDATE, UPDATE1.get().key().toJson(), null,
                         UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
         };
         p.readFrom(items(records))
@@ -341,7 +341,8 @@ public class CdcSinksTest extends PipelineTestSupport {
             String keyJson, String oldValueJson, String newValueJson
     ) {
         return new ChangeRecordImpl(0, 0, sequenceValue,  operation,
-                keyJson, oldValueJson == null ? null : () -> oldValueJson, newValueJson == null ? null : () -> newValueJson,
+                keyJson,
+                oldValueJson == null ? null : () -> oldValueJson, newValueJson == null ? null : () -> newValueJson,
                 "t", "s", "d");
     }
 

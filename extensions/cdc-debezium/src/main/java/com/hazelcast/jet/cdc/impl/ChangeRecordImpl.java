@@ -23,7 +23,6 @@ import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
