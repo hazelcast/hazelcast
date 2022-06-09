@@ -40,7 +40,7 @@ public class PropertyRules {
         return this;
     }
 
-    public PropertyRules inclusive(String one, String other) {
+    public PropertyRules    inclusive(String one, String other) {
         includes.put(one, other);
         return this;
     }
@@ -60,7 +60,7 @@ public class PropertyRules {
         }
 
         for (Map.Entry<String, String> entry : includes.entrySet()) {
-            if (properties.contains(entry.getKey()) && !properties.contains(entry.getValue())) {
+            if (properties.containsKey(entry.getKey()) && !properties.containsKey(entry.getValue())) {
                 errors.add(entry.getKey() + " requires " + entry.getValue() + " to be set too");
             }
         }
