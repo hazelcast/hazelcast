@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.Operation;
+import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -58,8 +59,10 @@ public class CdcSerializerHooks {
                     out.writeLong(record.sequenceValue());
                     out.writeString(record.operation().code());
                     out.writeUTF(record.getKeyJson());
-                    out.writeUTF(record.getOldValueJson());
-                    out.writeUTF(record.getNewValueJson());
+                    RecordPart oldValue = record.oldValue();
+                    out.writeUTF(oldValue == null ? null : oldValue.toJson());
+                    RecordPart newValue = record.newValue();
+                    out.writeUTF(newValue == null ? null : newValue.toJson());
                     out.writeString(record.table());
                     out.writeString(record.schema());
                     out.writeString(record.database());

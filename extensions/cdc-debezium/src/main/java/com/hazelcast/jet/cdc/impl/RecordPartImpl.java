@@ -25,24 +25,33 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 class RecordPartImpl implements RecordPart, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final String json;
+    private String json;
+
+    private final transient Supplier<String> jsonSupplier;
 
     private Map<String, Object> content;
 
+    RecordPartImpl(@Nonnull Supplier<String> json) {
+        this.jsonSupplier = requireNonNull(json);
+    }
     RecordPartImpl(@Nonnull String json) {
-        this.json = Objects.requireNonNull(json);
+        this.json = requireNonNull(json);
+        this.jsonSupplier = null;
     }
 
     @Override
     @Nonnull
     public <T> T toObject(@Nonnull Class<T> clazz) throws ParsingException {
-        Objects.requireNonNull(clazz, "class");
+        requireNonNull(clazz, "class");
         try {
-            T t = JsonUtil.beanFrom(json, clazz);
+            T t = JsonUtil.beanFrom(toJson(), clazz);
             if (t == null) {
                 throw new ParsingException(String.format("Mapping %s as %s didn't yield a result", json, clazz.getName()));
             }
@@ -57,7 +66,7 @@ class RecordPartImpl implements RecordPart, Serializable {
     public Map<String, Object> toMap() throws ParsingException {
         if (content == null) {
             try {
-                content = JsonUtil.mapFrom(json);
+                content = JsonUtil.mapFrom(toJson());
                 if (content == null) {
                     throw new ParsingException(String.format("Parsing %s didn't yield a result", json));
                 }
@@ -71,7 +80,10 @@ class RecordPartImpl implements RecordPart, Serializable {
     @Override
     @Nonnull
     public String toJson() {
-        return json;
+        if (json == null && jsonSupplier != null) {
+            json = jsonSupplier.get();
+        }
+        return requireNonNull(json, "RecordPart.json must not be null");
     }
 
     @Override

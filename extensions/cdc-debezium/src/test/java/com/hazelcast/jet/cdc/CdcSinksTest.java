@@ -344,7 +344,7 @@ public class CdcSinksTest extends PipelineTestSupport {
             String keyJson, String oldValueJson, String newValueJson
     ) {
         return new ChangeRecordImpl(0, 0, sequenceValue,  operation,
-                keyJson, oldValueJson, newValueJson, "t", "s", "d");
+                keyJson, () -> oldValueJson, () -> newValueJson, "t", "s", "d");
     }
 
 }

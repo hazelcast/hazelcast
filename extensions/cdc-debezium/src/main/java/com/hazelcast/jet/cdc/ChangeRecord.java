@@ -67,9 +67,6 @@ public interface ChangeRecord {
      * be easy to identify them because they have a separate {@code SYNC}
      * operation instead of {@code INSERT}, however some databases emit {@code
      * INSERT} events in both cases (a notable example is MySQL).
-     *
-     * @throws ParsingException if the timestamp field isn't present or
-     *                          is unparseable
      */
     long timestamp() throws ParsingException;
 
@@ -100,8 +97,6 @@ public interface ChangeRecord {
      * @return {@link Operation#UNSPECIFIED} if this {@code ChangeRecord}
      * doesn't have an operation field, otherwise the appropriate {@link
      * Operation} that matches the CDC record's operation field
-     * @throws ParsingException if there is an operation field, but its
-     *                          value is not among the handled ones.
      */
     @Nonnull
     Operation operation() throws ParsingException;
@@ -110,8 +105,6 @@ public interface ChangeRecord {
      * Returns the name of the database containing the record's table.
      *
      * @return name of the source database for the current record
-     * @throws ParsingException if the database name field isn't present
-     *                          or is unparseable
      */
     @Nonnull
     String database() throws ParsingException;
@@ -122,8 +115,6 @@ public interface ChangeRecord {
      * MySQL).
      *
      * @return name of the source schema for the current record
-     * @throws ParsingException if the schema name field isn't present
-     *                          or is unparseable
      */
     @Nonnull
     String schema() throws ParsingException, UnsupportedOperationException;
@@ -132,8 +123,6 @@ public interface ChangeRecord {
      * Returns the name of the table this record is part of.
      *
      * @return name of the source table for the current record
-     * @throws ParsingException if the table name field isn't present or
-     *                          is unparseable
      */
     @Nonnull
     String table() throws ParsingException;
@@ -160,44 +149,21 @@ public interface ChangeRecord {
     /**
      * Returns the new value of the record. For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value
      * describes the database record as it looks AFTER the event, so the latest image, for <em>delete</em> it returns null.
+     *
+     * @since 5.2
      */
     @Nullable
-    default RecordPart newValue() {
-        try {
-            switch (operation()) {
-                case SYNC:
-                case INSERT:
-                case UPDATE: return value();
-                default: return null;
-            }
-        } catch (ParsingException e) {
-            throw rethrow(e);
-        }
-    }
+    RecordPart newValue();
 
     /**
      * Returns the new value of the record. For <em>update</em> and <em>delete</em> operations the value
      * describes the database record as it looks <strong>before</strong> the event,
      * for <em>sync</em> and <em>insert</em> it returns null.
+     *
+     * @since 5.2
      */
     @Nullable
-    default RecordPart oldValue() {
-        try {
-            return operation() == Operation.DELETE ? value() : null;
-        } catch (ParsingException e) {
-            throw rethrow(e);
-        }
-    }
-
-    /**
-     * Returns {@link #newValue()} as JSON.
-     */
-    String getNewValueJson();
-
-    /**
-     * Returns {@link #oldValue()} as JSON.
-     */
-    String getOldValueJson();
+    RecordPart oldValue();
 
     /**
      * Returns the raw JSON string from the CDC event underlying this {@code

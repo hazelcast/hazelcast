@@ -24,7 +24,7 @@ import com.hazelcast.jet.cdc.RecordPart;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,8 +50,32 @@ public class ChangeRecordImpl implements ChangeRecord, Serializable {
             long sequenceValue,
             Operation operation,
             @Nonnull String keyJson,
-            @Nullable String oldValueJson,
-            @Nullable String newValueJson,
+            Supplier<String> oldValueJsonSupplier,
+            Supplier<String> newValueJsonSupplier,
+            String table,
+            String schema,
+            String database
+    ) {
+        this.timestamp = timestamp;
+        this.sequenceSource = sequenceSource;
+        this.sequenceValue = sequenceValue;
+        this.operation = operation;
+        this.keyJson = requireNonNull(keyJson, "keyJson");
+        this.oldValue = oldValueJsonSupplier == null ? null : new RecordPartImpl(oldValueJsonSupplier);
+        this.newValue = newValueJsonSupplier == null ? null : new RecordPartImpl(newValueJsonSupplier);
+        this.table = table;
+        this.schema = schema;
+        this.database = database;
+    }
+
+    ChangeRecordImpl(
+            long timestamp,
+            long sequenceSource,
+            long sequenceValue,
+            Operation operation,
+            @Nonnull String keyJson,
+            String oldValueJson,
+            String newValueJson,
             String table,
             String schema,
             String database
@@ -101,7 +125,7 @@ public class ChangeRecordImpl implements ChangeRecord, Serializable {
     @Nonnull
     public RecordPart key() {
         if (key == null) {
-            key = new RecordPartImpl(keyJson);
+            key = new RecordPartImpl(() -> keyJson);
         }
         return key;
     }
@@ -118,29 +142,21 @@ public class ChangeRecordImpl implements ChangeRecord, Serializable {
         }
     }
     @Override
-    @Nonnull
+    @Nullable
     public RecordPart newValue() {
         return newValue;
     }
     @Override
-    @Nonnull
+    @Nullable
     public RecordPart oldValue() {
         return oldValue;
-    }
-    @Override
-    public String getNewValueJson() {
-        return newValue == null ? null : newValue.toJson();
-    }
-    @Override
-    public String getOldValueJson() {
-        return oldValue == null ? null : oldValue.toJson();
     }
 
     @Override
     @Nonnull
     public String toJson() {
         return String.format("key:{%s}, value:{%s}", keyJson,
-                operation == Operation.DELETE ? getOldValueJson() : getNewValueJson());
+                operation == Operation.DELETE ? oldValue().toJson() : newValue().toJson());
     }
 
     @Override
@@ -157,28 +173,9 @@ public class ChangeRecordImpl implements ChangeRecord, Serializable {
         return keyJson;
     }
 
-    public String getValueJson() {
-        switch (operation) {
-            case SYNC:
-            case INSERT:
-            case UPDATE: return getNewValueJson();
-            case DELETE: return getOldValueJson();
-            default: throw new IllegalArgumentException("cannot call .getValueJson() for operation " + operation);
-        }
-    }
-
     @Override
     public String toString() {
         return toJson();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T get(Map<String, Object> map, String key, Class<T> clazz) {
-        Object obj = map.get(key);
-        if (clazz.isInstance(obj)) {
-            return (T) obj;
-        }
-        return null;
     }
 
     @Override

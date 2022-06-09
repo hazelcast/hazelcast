@@ -27,6 +27,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -65,8 +66,11 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
 
         Operation operation = Operation.get(value.getString("op"));
         Schema valueSchema = record.valueSchema();
-        String oldValueJson = Values.convertToString(valueSchema.field("before").schema(), value.get("before"));
-        String newValueJson = Values.convertToString(valueSchema.field("after").schema(), value.get("after"));
+
+        Object before = value.get("before");
+        Object after = value.get("after");
+        Supplier<String> oldValueJson = before == null ? null : () -> Values.convertToString(valueSchema.field("before").schema(), before);
+        Supplier<String> newValueJson = after == null ? null : () -> Values.convertToString(valueSchema.field("after").schema(), after);
         return new ChangeRecordImpl(
                 value.getInt64("ts_ms"),
                 sequenceSource,
