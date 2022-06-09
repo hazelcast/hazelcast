@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.hadoop.file;
 
-import com.fasterxml.jackson.dataformat.csv.CsvMappingException;
+import com.fasterxml.jackson.dataformat.csv.CsvReadException;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
@@ -127,6 +127,6 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
                                                     .glob("file-invalid.csv")
                                                     .format(FileFormat.csv(User.class));
 
-        assertJobFailed(source, CsvMappingException.class, "Too many entries");
+        assertJobFailed(source, CsvReadException.class, "Too many entries");
     }
 }
