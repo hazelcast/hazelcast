@@ -131,18 +131,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+            // drop the event, if it's late
             long wmValue = lastReceivedWm.getValue(en.getKey());
             long time = en.getValue().applyAsLong((JetSqlRow) item);
             if (time < wmValue) {
                 logLateEvent(getLogger(), wmValue, item);
                 return true;
             }
-        }
 
-        // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
-        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+            // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
             long joinTimeLimit = wmState.get(en.getKey());
-            long time = en.getValue().applyAsLong((JetSqlRow) item);
             if (time < joinTimeLimit) {
                 if (!joinInfo.isInner()) {
                     JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
