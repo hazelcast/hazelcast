@@ -642,7 +642,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             oldValue = loadValueOf(key);
             if (oldValue == null) {
-                return false;
+                return null;
             }
         } else {
             oldValue = record.getValue();
@@ -662,9 +662,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 updateStatsOnRemove(now);
             }
-            removed = true;
+            return record;
         }
-        return removed;
+        return null;
     }
 
     @Override

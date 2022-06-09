@@ -38,7 +38,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     @Override
     protected void runInternal() {
         result = recordStore.remove(dataKey, getCallerProvenance());
-        if (!isPendingIO(result)) {
+        if (isPendingIO(result)) {
             return;
         }
         result = mapServiceContext.toData(result);
