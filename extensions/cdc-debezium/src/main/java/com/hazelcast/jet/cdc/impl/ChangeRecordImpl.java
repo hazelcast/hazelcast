@@ -28,8 +28,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChangeRecordImpl implements ChangeRecord, Serializable {
-    private static final long serialVersionUID = 1L;
+public class ChangeRecordImpl implements ChangeRecord {
 
     private final long sequenceSource;
     private final long sequenceValue;

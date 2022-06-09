@@ -69,8 +69,12 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
 
         Object before = value.get("before");
         Object after = value.get("after");
-        Supplier<String> oldValueJson = before == null ? null : () -> Values.convertToString(valueSchema.field("before").schema(), before);
-        Supplier<String> newValueJson = after == null ? null : () -> Values.convertToString(valueSchema.field("after").schema(), after);
+        Supplier<String> oldValueJson = before == null
+                ? null
+                : () -> Values.convertToString(valueSchema.field("before").schema(), before);
+        Supplier<String> newValueJson = after == null
+                ? null
+                : () -> Values.convertToString(valueSchema.field("after").schema(), after);
         return new ChangeRecordImpl(
                 value.getInt64("ts_ms"),
                 sequenceSource,

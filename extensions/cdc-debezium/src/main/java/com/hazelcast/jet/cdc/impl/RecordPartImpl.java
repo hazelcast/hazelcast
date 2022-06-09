@@ -29,8 +29,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-class RecordPartImpl implements RecordPart, Serializable {
-    private static final long serialVersionUID = 1L;
+class RecordPartImpl implements RecordPart {
 
     private String json;
 

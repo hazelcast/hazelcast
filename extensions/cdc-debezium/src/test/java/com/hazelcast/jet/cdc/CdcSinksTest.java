@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.cdc.impl.ChangeRecordImpl;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.cdc.Operation.DELETE;
@@ -53,19 +53,19 @@ public class CdcSinksTest extends PipelineTestSupport {
     private static final String ID = "id";
     private static final String EMAIL = "email";
 
-    private static final ChangeRecord SYNC1 = changeRecord(0,  SYNC,
+    private static final SupplierEx<ChangeRecord> SYNC1 = () -> changeRecord(0,  SYNC,
             "{\"" + ID + "\":1001}",
             null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sally.thomas@acme.com\",\"__op\":\"r\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord INSERT2 = changeRecord(1, INSERT,
+    private static final SupplierEx<ChangeRecord> INSERT2 = () -> changeRecord(1, INSERT,
             "{\"" + ID + "\":1002}",
             null, "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"c\",\"__ts_ms\":1588927306269,\"__deleted\":\"false\"}");
-    private static final ChangeRecord UPDATE1 = changeRecord(2,  UPDATE,
+    private static final SupplierEx<ChangeRecord> UPDATE1 = () -> changeRecord(2,  UPDATE,
             "{\"" + ID + "\":1001}",
             null, "{\"" + ID + "\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\",\"" + EMAIL + "\":" +
                     "\"sthomas@acme.com\",\"__op\":\"u\",\"__ts_ms\":1588927306264,\"__deleted\":\"false\"}");
-    private static final ChangeRecord DELETE2 = changeRecord(3, DELETE,
+    private static final SupplierEx<ChangeRecord> DELETE2 = () -> changeRecord(3, DELETE,
             "{\"" + ID + "\":1002}",
             "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"d\",\"__ts_ms\":1588927306269,\"__deleted\":\"true\"}", null);
@@ -207,20 +207,20 @@ public class CdcSinksTest extends PipelineTestSupport {
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void reordering() {
-        ChangeRecord[] records = new ChangeRecord[] {
+        SupplierEx[] records = {
                 SYNC1,
                 UPDATE1,
-                changeRecord(10, UPDATE, UPDATE1.key().toJson(), null,
-                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")),
-                changeRecord(11, UPDATE, UPDATE1.key().toJson(), null,
-                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas3@acme.com")),
-                changeRecord(12, UPDATE, UPDATE1.key().toJson(), null,
-                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
-                changeRecord(13, UPDATE, UPDATE1.key().toJson(), null,
-                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
+                ()->changeRecord(10, UPDATE, UPDATE1.get().key().toJson(), null,
+                        UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")),
+                ()->changeRecord(11, UPDATE, UPDATE1.get().key().toJson(), null,
+                        UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas3@acme.com")),
+                ()->changeRecord(12, UPDATE, UPDATE1.get().key().toJson(), null,
+                        UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas4@acme.com")),
+                ()->changeRecord(13, UPDATE, UPDATE1.get().key().toJson(), null,
+                        UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas5@acme.com"))
         };
-        Util.checkSerializable(records, "kaka");
         p.readFrom(items(records))
                 .rebalance()
                 .map(r -> r)
@@ -278,9 +278,9 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void sourceSwitch() {
-        String updatedKey = UPDATE1.key().toJson();
-        String updatedJson = UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com");
-        ChangeRecord changedRecord = changeRecord(4, UPDATE, updatedKey, null, updatedJson);
+        String updatedKey = UPDATE1.get().key().toJson();
+        String updatedJson = UPDATE1.get().value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com");
+        SupplierEx<ChangeRecord> changedRecord = () -> changeRecord(4, UPDATE, updatedKey, null, updatedJson);
 
         p.readFrom(items(UPDATE1, INSERT2, changedRecord))
                 .writeTo(localSync())
@@ -325,14 +325,11 @@ public class CdcSinksTest extends PipelineTestSupport {
     }
 
     @SafeVarargs
-    private static <T> BatchSource<T> items(@Nonnull T... items) {
-        SupplierEx<List<T>> listSupplier = () -> asList(items);
+    private static <T> BatchSource<T> items(@Nonnull SupplierEx<T>... items) {
+        final SupplierEx<List<Supplier<T>>> listSupplier = () -> asList(items);
         return SourceBuilder.batch("items", ctx -> null)
                 .<T>fillBufferFn((ignored, buf) -> {
-                    List<T> list = listSupplier.get();
-                    for (T item : list) {
-                        buf.add(item);
-                    }
+                    listSupplier.get().forEach(item -> buf.add(item.get()));
                     buf.close();
                 })
                 .distributed(1)
@@ -344,7 +341,8 @@ public class CdcSinksTest extends PipelineTestSupport {
             String keyJson, String oldValueJson, String newValueJson
     ) {
         return new ChangeRecordImpl(0, 0, sequenceValue,  operation,
-                keyJson, () -> oldValueJson, () -> newValueJson, "t", "s", "d");
+                keyJson, oldValueJson == null ? null : () -> oldValueJson, newValueJson == null ? null : () -> newValueJson,
+                "t", "s", "d");
     }
 
 }

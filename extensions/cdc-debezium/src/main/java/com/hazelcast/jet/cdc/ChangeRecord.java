@@ -21,8 +21,6 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-
 /**
  * Information pertaining to a single data change event (insert, delete or
  * update), affecting a single database record.
