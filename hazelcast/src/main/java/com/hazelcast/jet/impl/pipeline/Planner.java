@@ -154,7 +154,7 @@ public class Planner {
             @Nonnull Map<Transform, List<Transform>> adjacencyMap
     ) {
         ArrayList<Transform> chain = new ArrayList<>();
-        for (; ; ) {
+        for (;;) {
             if (!(transform instanceof MapTransform || transform instanceof FlatMapTransform)) {
                 break;
             }
@@ -188,9 +188,9 @@ public class Planner {
                 if (inputMapFn != null) {
                     flatMapFn = flatMapFn == null
                             ? (Object t) -> {
-                        Object mappedValue = inputMapFn.apply(t);
-                        return mappedValue != null ? function.apply(mappedValue) : Traversers.empty();
-                    }
+                                Object mappedValue = inputMapFn.apply(t);
+                                return mappedValue != null ? function.apply(mappedValue) : Traversers.empty();
+                            }
                             : flatMapFn.andThen(r -> r.map(inputMapFn).flatMap(function));
                 } else {
                     flatMapFn = flatMapFn == null

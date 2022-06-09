@@ -23,9 +23,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -36,8 +34,7 @@ import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 
 public class MockInboundStream implements InboundEdgeStream {
     private int ordinal;
-    private int priority;
-    private Set<Byte> keys;
+    private final int priority;
     private final Deque<Object> mockData;
     private final int chunkSize;
 
@@ -47,16 +44,6 @@ public class MockInboundStream implements InboundEdgeStream {
         this.priority = priority;
         this.chunkSize = chunkSize;
         this.mockData = new ArrayDeque<>(mockData);
-
-        this.keys = new HashSet<>();
-        this.keys.add((byte) 0);
-    }
-
-    MockInboundStream(int priority, List<?> mockData, int chunkSize, Set<Byte> keys) {
-        this.priority = priority;
-        this.chunkSize = chunkSize;
-        this.mockData = new ArrayDeque<>(mockData);
-        this.keys = keys;
     }
 
     void push(Object... items) {
@@ -67,8 +54,7 @@ public class MockInboundStream implements InboundEdgeStream {
         this.ordinal = ordinal;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
@@ -113,6 +99,11 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
+    public int capacities() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
     public long topObservedWm(byte key) {
         return 0;
     }
@@ -120,10 +111,5 @@ public class MockInboundStream implements InboundEdgeStream {
     @Override
     public long coalescedWm(byte key) {
         return 0;
-    }
-
-    @Override
-    public int capacities() {
-        return Integer.MAX_VALUE;
     }
 }

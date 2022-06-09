@@ -586,8 +586,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll())
-                .map(CircularListCursor::new)
-                .orElse(null);
+                       .map(CircularListCursor::new)
+                       .orElse(null);
     }
 
     @Override
@@ -614,8 +614,8 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     /**
-     * If there are no inbound ordinals left, we will go to COMPLETE state
-     * otherwise to COLLECT_KEYED_WATERMARKS.
+     * If there are no inbound ordinals left, we will go to COMPLETE state,
+     * otherwise to PROCESS_WATERMARKS.
      */
     private ProcessorState processingState() {
         return instreamCursor == null ? COMPLETE : PROCESS_WATERMARKS;
@@ -660,8 +660,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
@@ -681,7 +681,7 @@ public class ProcessorTasklet implements Tasklet {
             MetricDescriptor descriptorWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, ordinal);
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
-
+        // TODO finish these metrics
 //        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
 //        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());

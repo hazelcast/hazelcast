@@ -64,11 +64,6 @@ public class ConcurrentInboundEdgeStreamTest {
     }
 
     @Test
-    public void test() {
-
-    }
-
-    @Test
     public void when_twoEmittersOneDoneFirst_then_madeProgress() {
         add(q1, 1, 2, DONE_ITEM);
         add(q2, 6);

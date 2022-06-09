@@ -55,10 +55,6 @@ public class KeyedWatermarkCoalescer {
         });
     }
 
-//    public Set<Entry<Byte, WatermarkCoalescer>> entries() {
-//        return coalescers.entrySet();
-//    }
-
     public List<Watermark> queueDone(int queueIndex) {
         doneQueues.add(queueIndex);
         List<Watermark> result = new ArrayList<>();
