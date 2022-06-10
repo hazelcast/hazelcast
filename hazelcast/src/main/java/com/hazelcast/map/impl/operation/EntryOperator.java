@@ -269,8 +269,7 @@ public final class EntryOperator {
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
             if (mapOperation.isPostProcessing(recordStore)) {
-                assert !recordStore.supportPendingIO();
-                Record record = recordStore.getRecord(dataKey);
+                Record record = recordStore.getRecord(dataKey, true);
                 newValue = record == null ? null : record.getValue();
                 entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
             }
