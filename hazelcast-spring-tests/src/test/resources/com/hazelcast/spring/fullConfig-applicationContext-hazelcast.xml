@@ -177,7 +177,7 @@
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
 
-                <hz:ssl enabled="false" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+                <hz:ssl enabled="false">
                     <hz:properties>
                         <hz:property name="protocol">TLS</hz:property>
                         <hz:property name="mutualAuthentication">REQUIRED</hz:property>
@@ -193,8 +193,12 @@
                                        implementation="dummySocketInterceptor"/>
                 <!--
                 The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
+                <hz:symmetric-encryption enabled="false"
+                                         algorithm="PBEWithMD5AndDES"
+                                         salt="thesalt"
+                                         password="thepass"
+                                         iteration-count="19"/>
                  -->
-                <hz:symmetric-encryption enabled="false"/>
                 <hz:reuse-address>true</hz:reuse-address>
                 <hz:member-address-provider enabled="false" class-name="com.hazelcast.spring.DummyMemberAddressProvider">
                     <hz:properties>

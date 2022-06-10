@@ -256,18 +256,17 @@ hazelcast-client:
 
     ssl:
       enabled: false
-      factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
         protocol: TLS
 
         trustStore: /opt/hazelcast-client.truststore
         trustStorePassword: secret.123456
-        trustStoreType: JKS
+        trustStoreType: PKCS12
 
         # Following properties are only needed when the mutual authentication is used.
         keyStore: /opt/hazelcast-client.keystore
         keyStorePassword: keystorePassword123
-        keyStoreType: JKS
+        keyStoreType: PKCS12
 
     auto-detection:
       enabled: false
