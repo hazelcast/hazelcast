@@ -122,13 +122,13 @@ public final class Promise<E> {
         }
     }
 
-    public void then(BiConsumer<E, Throwable> consumer) {
+    public <T extends Throwable> void then(BiConsumer<E, T> consumer) {
         checkNotNull(consumer, "consumer can't be null");
 
         if (value == EMPTY) {
-            consumers.add(consumer);
+            consumers.add((BiConsumer<E, Throwable>) consumer);
         } else if (exceptional) {
-            consumer.accept(null, (Throwable) value);
+            consumer.accept(null, (T) value);
         } else {
             consumer.accept((E) value, null);
         }
