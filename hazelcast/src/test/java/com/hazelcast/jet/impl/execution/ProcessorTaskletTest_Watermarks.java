@@ -162,6 +162,25 @@ public class ProcessorTaskletTest_Watermarks {
         assertEquals(asList("wm(100)-0", wm(100), "wm(101)-0", wm(101)), outstream1.getBuffer());
     }
 
+    @Test
+    public void when_multipleKeyedWms_then_processed() {
+        // Given
+        byte key0 = 0;
+        byte key1 = 1;
+        MockInboundStream instream1 = new MockInboundStream(0, singletonList(wm(100, key0)), 1000);
+        MockInboundStream instream2 = new MockInboundStream(1, singletonList(wm(100, key1)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.addAll(asList(instream1, instream2));
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+
+        // When
+        callUntil(tasklet);
+
+        // Then
+        assertEquals(asList("wm(100)-0", wm(100, key0), "wm(100)-0", wm(101, key1)), outstream1.getBuffer());
+    }
+
     // #### IDLE_MESSAGE related tests ####
 
     @Test

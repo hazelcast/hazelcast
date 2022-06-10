@@ -300,8 +300,10 @@ public class ProcessorTasklet implements Tasklet {
                     pendingWatermarks.remove();
                 }
 
-                state = pendingWatermarks.isEmpty() ? NULLARY_PROCESS : PROCESS_WATERMARKS;
-                stateMachineStep();
+                if (pendingWatermarks.isEmpty()) {
+                    state = NULLARY_PROCESS;
+                    stateMachineStep();
+                }
                 break;
 
             case NULLARY_PROCESS:
