@@ -24,7 +24,6 @@ import com.hazelcast.internal.nio.ConnectionListenable;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.EventListener;
 import java.util.UUID;
 
 /**
