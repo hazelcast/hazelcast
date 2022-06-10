@@ -45,6 +45,10 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     default void init(@Nonnull Context context) throws Exception {
     }
 
+    default boolean initIsCooperative() {
+        return true;
+    }
+
     /**
      * Called after {@link #init(Context)} to retrieve instances of
      * {@link Processor} that will be used during the execution of the Jet job.

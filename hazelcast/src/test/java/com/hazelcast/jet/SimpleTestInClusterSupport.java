@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -94,7 +95,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
                 jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {
-            ditchJob(job, instances());
+            if (!job.isLightJob()) {
+                ditchJob(job, instances());
+            }
         }
         // cancel all light jobs by cancelling their executions
         for (HazelcastInstance inst : instances) {

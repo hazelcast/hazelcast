@@ -51,6 +51,7 @@ import org.junit.ClassRule;
 import org.junit.rules.Timeout;
 
 import javax.annotation.Nonnull;
+import javax.annotation.processing.Completion;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,6 +72,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -420,7 +423,14 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 } catch (JobNotFoundException e) {
                     SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
                     return;
-                } catch (Exception ignored) {
+                } catch (CompletionException e) {
+                    if (e.getCause() instanceof JobNotFoundException) {
+                        SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
+                        return;
+                    }
+                    throw rethrow(e.getCause());
+                }
+                catch (Exception ignored) {
                     // This can be CancellationException or any other job failure. We don't care,
                     // we're supposed to rid the cluster of the job and that's what we have.
                 }

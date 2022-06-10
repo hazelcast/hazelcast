@@ -50,10 +50,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
@@ -64,15 +61,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.NotSerializableException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -119,7 +109,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Parameters(name = "useLightJob={0}")
     public static Object[] parameters() {
-        return new Object[]{true, false};
+        return new Object[] { false, true };
     }
 
     @BeforeClass
@@ -700,6 +690,128 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 .hasRootCauseInstanceOf(MemberLeftException.class);
     }
 
+    @Ignore("not sure PMS should also be offloaded")
+    @Test
+    public void when_pmsInitBlocks_then_otherJobsNotBlocked() throws ExecutionException, InterruptedException {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT)));
+
+        List<Future<Void>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 16;
+        for (int i = 0; i < numJobs; i++) {
+            Job job = newJob(dagBlocking);
+            submitFutures.add(job.getFuture());
+        }
+
+        // Then
+        // JetService.getJobs()
+        if (useLightJob) {
+            assertEquals(0, instance().getJet().getJobs().size());
+        } else {
+            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
+        }
+        // newJob()
+        instance().getJet().newJob(dagNormal).join();
+        // newLightJob()
+        instance().getJet().newLightJob(dagNormal).join();
+        // generic API operation - generic API threads should not be starved
+        for (Object m : instance().getMap("m").values()) {
+            System.out.println(m);
+        }
+
+        for (int i = 0; i < submitFutures.size(); i++) {
+            MockPS.unblock();
+        }
+        for (Future<Void> f : submitFutures) {
+            f.get();
+        }
+    }
+
+    @Test
+    public void when_psInitBlocks_then_otherJobsNotBlocked() throws Exception {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT).initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT)));
+
+        List<Future<Job>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 3;
+        for (int i = 0; i < numJobs; i++) {
+            submitFutures.add(spawn(() -> newJob(dagBlocking)));
+        }
+
+        // Then
+        // JetService.getJobs()
+        if (useLightJob) {
+            assertTrueEventually(() -> assertEquals(0, instance().getJet().getJobs().size()), 5);
+        } else {
+            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
+        }
+        // newJob()
+        instance().getJet().newJob(dagNormal).join();
+        // newLightJob()
+        instance().getJet().newLightJob(dagNormal).join();
+        // generic API operation - generic API threads should not be starved
+        for (Object m : instance().getMap("m").values()) {
+            System.out.println(m);
+        }
+
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT * parallelism; i++) {
+            MockP.unblock();
+        }
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
+        }
+    }
+
+    @Test
+    public void when_processorInitBlocks_then_otherJobsNotBlocked() throws Exception {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                () -> new MockP().initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                MockP::new));
+
+        List<Future<Job>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 16;
+        for (int i = 0; i < numJobs; i++) {
+            submitFutures.add(spawn(() -> newJob(dagBlocking)));
+        }
+
+        // Then
+        // JetService.getJobs()
+        if (useLightJob) {
+            assertEquals(0, instance().getJet().getJobs().size());
+        } else {
+            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
+        }
+        // newJob()
+        instance().getJet().newJob(dagNormal).join();
+        // newLightJob()
+        instance().getJet().newLightJob(dagNormal).join();
+        // generic API operation - generic API threads should not be starved
+        for (Object m : instance().getMap("m").values()) {
+            System.out.println(m);
+        }
+
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT * parallelism; i++) {
+            MockP.unblock();
+        }
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
+        }
+    }
+
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
         @Nonnull @Override
         public Collection<? extends Processor> get(int count) {
@@ -755,14 +867,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private void assertPmsClosedWithoutError() {
-        assertTrue("initCalled", MockPMS.initCalled.get());
-        assertTrue("closeCalled", MockPMS.closeCalled.get());
+        assertTrue("initCalled", MockPMS.initCount.get() > 0);
+        assertTrue("closeCalled", MockPMS.closeCount.get() > 0);
         assertNull("receivedCloseError", MockPMS.receivedCloseError.get());
     }
 
     private void assertPmsClosedWithError() {
-        assertTrue("init not called", MockPMS.initCalled.get());
-        assertTrue("close not called", MockPMS.closeCalled.get());
+        assertTrue("init not called", MockPMS.initCount.get() > 0);
+        assertTrue("close not called", MockPMS.closeCount.get() > 0);
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 MOCK_ERROR,
                 new CancellationException(),

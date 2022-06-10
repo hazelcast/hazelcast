@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -60,18 +60,21 @@ public final class TestProcessors {
      * test that uses them.
      */
     public static void reset(int totalParallelism) {
-        MockPMS.initCalled.set(false);
-        MockPMS.closeCalled.set(false);
+        MockPMS.initCount.set(0);
+        MockPMS.closeCount.set(0);
         MockPMS.receivedCloseError.set(null);
+        MockPMS.blockingSemaphore.drainPermits();
 
         MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
         MockPS.receivedCloseErrors.clear();
+        MockPS.blockingSemaphore.drainPermits();
 
         MockP.initCount.set(0);
         MockP.closeCount.set(0);
         MockP.saveToSnapshotCalled = false;
         MockP.onSnapshotCompletedCalled = false;
+        MockP.blockingSemaphore.drainPermits();
 
         NoOutputSourceP.proceedLatch = new CountDownLatch(1);
         NoOutputSourceP.executionStarted = new CountDownLatch(totalParallelism);
@@ -150,13 +153,16 @@ public final class TestProcessors {
 
     public static class MockPMS implements ProcessorMetaSupplier {
 
-        static AtomicBoolean initCalled = new AtomicBoolean();
-        static AtomicBoolean closeCalled = new AtomicBoolean();
+        static AtomicInteger initCount = new AtomicInteger();
+        static AtomicInteger closeCount = new AtomicInteger();
         static AtomicReference<Throwable> receivedCloseError = new AtomicReference<>();
+        static Semaphore blockingSemaphore = new Semaphore(0);
 
         private Throwable initError;
         private Throwable getError;
         private Throwable closeError;
+        private boolean initBlocks;
+
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
         public MockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
@@ -178,13 +184,24 @@ public final class TestProcessors {
             return this;
         }
 
+        public MockPMS initBlocks() {
+            this.initBlocks = true;
+            return this;
+        }
+
+        public static void unblock() {
+            blockingSemaphore.release();
+        }
+
         @Override
-        public void init(@Nonnull Context context) {
-            assertTrue("PMS.init() already called once",
-                    initCalled.compareAndSet(false, true)
-            );
+        public void init(@Nonnull Context context) throws InterruptedException {
+            initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
+            }
+
+            if (initBlocks) {
+                blockingSemaphore.acquire();
             }
         }
 
@@ -198,12 +215,15 @@ public final class TestProcessors {
 
         @Override
         public void close(Throwable error) {
+            closeCount.incrementAndGet();
+
             assertEquals("all PS that have been init should have been closed at this point",
                     MockPS.initCount.get(), MockPS.closeCount.get());
-            assertTrue("Close called without calling init()", initCalled.get());
-            assertTrue("PMS.close() already called once",
-                    closeCalled.compareAndSet(false, true)
-            );
+            assertTrue("Close called more times than init was called. Init count: "
+                    + initCount.get() + " close count: " + closeCount, initCount.get() >= closeCount.get());
+            assertTrue("Close called " + closeCount.get() + " times, but init called "
+                    + initCount.get() + " times!", closeCount.get() <= initCount.get());
+
             assertTrue("PMS.close() already called once",
                     receivedCloseError.compareAndSet(null, error)
             );
@@ -219,10 +239,13 @@ public final class TestProcessors {
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
+        static Semaphore blockingSemaphore = new Semaphore(0);
 
         private Throwable initError;
         private Throwable getError;
         private Throwable closeError;
+
+        private boolean initBlocks;
 
         private final SupplierEx<Processor> supplier;
         private final int nodeCount;
@@ -249,13 +272,31 @@ public final class TestProcessors {
             return this;
         }
 
+        public MockPS initBlocks() {
+            this.initBlocks = true;
+            return this;
+        }
+
+        public static void unblock() {
+            blockingSemaphore.release();
+        }
+
         @Override
-        public void init(@Nonnull Context context) {
+        public boolean initIsCooperative() {
+            return !initBlocks;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws InterruptedException {
             initCalled = true;
             initCount.incrementAndGet();
 
             if (initError != null) {
                 throw sneakyThrow(initError);
+            }
+
+            if (initBlocks) {
+                blockingSemaphore.acquire();
             }
         }
 
@@ -292,6 +333,7 @@ public final class TestProcessors {
         static AtomicInteger closeCount = new AtomicInteger();
         static volatile boolean onSnapshotCompletedCalled;
         static volatile boolean saveToSnapshotCalled;
+        static Semaphore blockingSemaphore = new Semaphore(0);
 
         private Throwable initError;
         private Throwable processError;
@@ -299,6 +341,8 @@ public final class TestProcessors {
         private Throwable closeError;
         private Throwable onSnapshotCompleteError;
         private Throwable saveToSnapshotError;
+        private boolean initBlocks;
+
         private boolean isCooperative;
         private boolean streaming;
 
@@ -337,6 +381,20 @@ public final class TestProcessors {
             return this;
         }
 
+        public MockP initBlocks() {
+            this.initBlocks = true;
+            return this;
+        }
+
+        public static void unblock() {
+            blockingSemaphore.release();
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return !this.initBlocks;
+        }
+
         public MockP nonCooperative() {
             isCooperative = false;
             return this;
@@ -348,10 +406,14 @@ public final class TestProcessors {
         }
 
         @Override
-        protected void init(@Nonnull Context context) {
+        protected void init(@Nonnull Context context) throws InterruptedException {
             initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
+            }
+
+            if (initBlocks) {
+                blockingSemaphore.acquire();
             }
         }
 
@@ -479,7 +541,7 @@ public final class TestProcessors {
         public boolean saveToSnapshot() {
             if (traverser == null) {
                 traverser = traverseStream(IntStream.range(0, ITEMS_TO_SAVE)
-                                                    .mapToObj(i -> entry(broadcastKey(i), i)))
+                        .mapToObj(i -> entry(broadcastKey(i), i)))
                         .onFirstNull(() -> traverser = null);
             }
             return emitFromTraverserToSnapshot(traverser);

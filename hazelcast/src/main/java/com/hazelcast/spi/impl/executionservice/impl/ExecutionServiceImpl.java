@@ -72,6 +72,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final int QUEUE_MULTIPLIER = 100000;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final int OFFLOADABLE_QUEUE_CAPACITY = 100000;
+    private static final int JOB_OFFLOADABLE_QUEUE_CAPACITY = 100000;
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -136,6 +137,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
         register(ASYNC_EXECUTOR, coreSize, ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
+        register(JOB_OFFLOADABLE_EXECUTOR, coreSize, JOB_OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
 
         // register CompletableFuture task

@@ -708,6 +708,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             try {
                 ctx.getExecutionFuture().join();
             } catch (Throwable ignored) {
+                System.out.println(ignored.getMessage());
             }
         }
     }

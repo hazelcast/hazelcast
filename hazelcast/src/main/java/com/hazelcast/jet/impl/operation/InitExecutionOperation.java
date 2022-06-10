@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -30,6 +31,8 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -40,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 
 /**
  * Operation sent from master to members to initialize execution of a job.
@@ -75,7 +79,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     @Override
-    protected CompletableFuture<?> doRun() {
+    public CallStatus call() {
         ILogger logger = getLogger();
         if (!getNodeEngine().getLocalMember().getVersion().asVersion().equals(coordinatorVersion)) {
             // Operations are sent to targets by Address. It can happen that the coordinator finds members
@@ -90,15 +94,58 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
-        if (isLightJob) {
-            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
-                    coordinatorMemberListVersion, participants, plan);
+        InitExecutionOffload initExecutionAction = new InitExecutionOffload(service, plan);
+        boolean isCooperative = plan.getVertices().stream()
+                .allMatch(v -> {
+                    ProcessorSupplier supplier = v.processorSupplier();
+                    if (!supplier.initIsCooperative()) return false;
+                    return supplier.get(1).iterator().next().initIsCooperative(); // todo: better detection?
+                });
+
+        if (isCooperative) {
+            initExecutionAction.initExecution(); // invoke directly on this thread
+            return CallStatus.RESPONSE;
         } else {
-            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
-                    coordinatorMemberListVersion, participants, plan);
-            return CompletableFuture.completedFuture(null);
+            return initExecutionAction; // off-load
         }
     }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    private class InitExecutionOffload extends Offload {
+
+        private final JetServiceBackend service;
+        private final ExecutionPlan plan;
+
+        public InitExecutionOffload(JetServiceBackend service, ExecutionPlan plan) {
+            super(InitExecutionOperation.this);
+            this.service = service;
+            this.plan = plan;
+        }
+
+        @Override
+        public void start() {
+            service.getNodeEngine().getExecutionService().execute(JOB_OFFLOADABLE_EXECUTOR, this::initExecution);
+        }
+
+        void initExecution() {
+            Address callerAddress = super.offloadedOperation().getCallerAddress();
+            if (isLightJob) {
+                service.getJobExecutionService().runLightJob(jobId(), executionId, callerAddress,
+                        coordinatorMemberListVersion, participants, plan);
+            } else {
+                service.getJobExecutionService().initExecution(jobId(), executionId, callerAddress,
+                        coordinatorMemberListVersion, participants, plan);
+            }
+            sendResponse(null);
+        }
+    }
+
+    @Override
+    protected CompletableFuture<?> doRun() throws Exception { return null;}
 
     @Override
     public int getClassId() {
