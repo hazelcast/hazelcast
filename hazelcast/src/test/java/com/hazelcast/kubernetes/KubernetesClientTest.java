@@ -24,12 +24,12 @@ import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +62,9 @@ public class KubernetesClientTest {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
 
     private KubernetesClient kubernetesClient;
 
@@ -759,8 +762,8 @@ public class KubernetesClientTest {
     @Test
     public void apiAccessWithTokenRefresh() throws IOException {
         // Token is read from the file, first token value is value-1
-        Path file = Files.createTempFile("token", null);
-        Files.write(file, "value-1".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
+        File file = testFolder.newFile("token");
+        Files.write(file.toPath(), "value-1".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
 
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-1"))
@@ -780,7 +783,7 @@ public class KubernetesClientTest {
         assertFalse(client.isKnownExceptionAlreadyLogged());
 
         // Token is rotated
-        Files.write(file, "value-2".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
+        Files.write(file.toPath(), "value-2".getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
 
         // Api server will not accept token with old value
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
@@ -798,11 +801,6 @@ public class KubernetesClientTest {
 
         client.endpoints();
         assertFalse(client.isKnownExceptionAlreadyLogged());
-        try {
-            Files.delete(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private static String podsListResponse() {
