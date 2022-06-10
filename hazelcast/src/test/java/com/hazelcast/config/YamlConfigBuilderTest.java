@@ -3156,7 +3156,7 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  dynamic-configuration:\n"
-                + "    persistence-enabled: " +  persistenceEnabled + "\n"
+                + "    persistence-enabled: " + persistenceEnabled + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    backup-count: " + backupCount + "\n";
 
@@ -3170,7 +3170,7 @@ public class YamlConfigBuilderTest
         yaml = ""
                 + "hazelcast:\n"
                 + "  dynamic-configuration:\n"
-                + "    persistence-enabled: " +  persistenceEnabled + "\n";
+                + "    persistence-enabled: " + persistenceEnabled + "\n";
 
         config = new InMemoryYamlConfig(yaml);
         dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
@@ -4407,5 +4407,21 @@ public class YamlConfigBuilderTest
         Config config = buildConfig(yaml);
 
         assertFalse(config.getIntegrityCheckerConfig().isEnabled());
+    }
+
+    @Override
+    public void testMapExpiryConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    expiry:\n"
+                + "      time-to-live-seconds: 2147483647\n"
+                + "      max-idle-seconds: 2147483647\n";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("expiry");
+
+        assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
+        assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
     }
 }

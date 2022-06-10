@@ -129,9 +129,10 @@ public class LocalAddressRegistry {
                 }
             }
             linkedAddresses.getAllAddresses().forEach(address -> {
-                if (addressToUuid.containsKey(address)) {
+                UUID oldMemberUuid = addressToUuid.get(address);
+                if (oldMemberUuid != null && !oldMemberUuid.equals(instanceUuid)) {
                     logger.warning("Address: " + address + " is previously registered with the member uuid: "
-                            + addressToUuid.get(address) + " to our addressToMemberUuid map, now registered with"
+                            + oldMemberUuid + " to our addressToMemberUuid map, now registered with"
                             + "/overridden by a new member uuid: " + instanceUuid + ". In the case, the overridden"
                             + " member uuid belongs to an old member that is recently restarted, this override is"
                             + " expected and it does not create any harm as it will delete the entry of old stale"

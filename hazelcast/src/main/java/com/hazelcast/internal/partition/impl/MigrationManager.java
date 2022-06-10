@@ -631,12 +631,12 @@ public class MigrationManager {
 
     void onShutdownRequest(Member member) {
         if (!partitionStateManager.isInitialized()) {
-            sendShutdownResponseOperation(member.getAddress());
+            sendShutdownResponseOperation(member);
             return;
         }
         ClusterState clusterState = node.getClusterService().getClusterState();
         if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
-            sendShutdownResponseOperation(member.getAddress());
+            sendShutdownResponseOperation(member);
             return;
         }
         if (shutdownRequestedMembers.add(member)) {
@@ -749,12 +749,12 @@ public class MigrationManager {
     /**
      * Sends a {@link ShutdownResponseOperation} to the {@code address} or takes a shortcut if shutdown is local.
      */
-    private void sendShutdownResponseOperation(Address address) {
-        if (node.getThisAddress().equals(address)) {
+    private void sendShutdownResponseOperation(Member member) {
+        if (node.getThisAddress().equals(member.getAddress())) {
             assert !node.isRunning() : "Node state: " + node.getState();
             partitionService.onShutdownResponse();
         } else {
-            nodeEngine.getOperationService().send(new ShutdownResponseOperation(), address);
+            nodeEngine.getOperationService().send(new ShutdownResponseOperation(member.getUuid()), member.getAddress());
         }
     }
 
@@ -1962,13 +1962,13 @@ public class MigrationManager {
                 if (shutdownRequestCount > 0) {
                     if (shutdownRequestCount == nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR)) {
                         for (Member member : shutdownRequestedMembers) {
-                            sendShutdownResponseOperation(member.getAddress());
+                            sendShutdownResponseOperation(member);
                         }
                     } else {
                         boolean present = false;
                         for (Member member : shutdownRequestedMembers) {
                             if (partitionStateManager.isAbsentInPartitionTable(member)) {
-                                sendShutdownResponseOperation(member.getAddress());
+                                sendShutdownResponseOperation(member);
                             } else {
                                 logger.warning(member + " requested to shutdown but still in partition table");
                                 present = true;

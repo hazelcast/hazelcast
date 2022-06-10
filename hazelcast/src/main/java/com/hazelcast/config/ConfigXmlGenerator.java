@@ -1398,6 +1398,12 @@ public class ConfigXmlGenerator {
             for (int i = 0; i < length; i++) {
                 char ch = s.charAt(i);
                 switch (ch) {
+                    case '\n':
+                        appendTo.append("&#10;");
+                        break;
+                    case '\r':
+                        appendTo.append("&#13;");
+                        break;
                     case '"':
                         appendTo.append("&quot;");
                         break;
