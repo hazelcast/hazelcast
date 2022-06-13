@@ -429,6 +429,7 @@
                     <format>ALL</format>
                     <skipProvidedScope>true</skipProvidedScope>
                     <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                    <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
                 </configuration>
             </plugin>
             <plugin>
