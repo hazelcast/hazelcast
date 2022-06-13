@@ -160,40 +160,46 @@ public class ExecutionContext implements DynamicMetricsProvider {
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
                 .thenApply(r -> {
-                    int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
-                    snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
-                            numPrioritySsTasklets);
-                    Map<SenderReceiverKey, ReceiverTasklet> receiverMapTmp = new HashMap<>();
-                    for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
-                        for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
-                            for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
-                                SenderReceiverKey key =
-                                        new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
-                                // the queue might already exist, if some data were received for it, or it will be created now
-                                Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, CREATE_RECEIVER_QUEUE_FN);
-                                ReceiverTasklet receiverTasklet = addressEntry.getValue();
-                                receiverTasklet.initIncomingQueue(queue);
-                                receiverMapTmp.put(
-                                        new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
-                                        receiverTasklet);
-                            }
-                        }
-                    }
-                    this.receiverMap = unmodifiableMap(receiverMapTmp);
-
-                    Map<SenderReceiverKey, SenderTasklet> senderMapTmp = new HashMap<>();
-                    for (Entry<Integer, Map<Integer, Map<Address, SenderTasklet>>> e1 : plan.getSenderMap().entrySet()) {
-                        for (Entry<Integer, Map<Address, SenderTasklet>> e2 : e1.getValue().entrySet()) {
-                            for (Entry<Address, SenderTasklet> e3 : e2.getValue().entrySet()) {
-                                senderMapTmp.put(new SenderReceiverKey(e1.getKey(), e2.getKey(), e3.getKey()), e3.getValue());
-                            }
-                        }
-                    }
-                    this.senderMap = unmodifiableMap(senderMapTmp);
-
-                    tasklets = plan.getTasklets();
+                    initWithPlan(plan);
                     return null;
                 });
+    }
+
+    private void initWithPlan(@Nonnull ExecutionPlan plan) {
+        int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0
+                ? plan.getHigherPriorityVertexCount()
+                : 0;
+        snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
+                numPrioritySsTasklets);
+        Map<SenderReceiverKey, ReceiverTasklet> receiverMapTmp = new HashMap<>();
+        for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
+            for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
+                for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
+                    SenderReceiverKey key =
+                            new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
+                    // the queue might already exist, if some data were received for it, or it will be created now
+                    Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, CREATE_RECEIVER_QUEUE_FN);
+                    ReceiverTasklet receiverTasklet = addressEntry.getValue();
+                    receiverTasklet.initIncomingQueue(queue);
+                    receiverMapTmp.put(
+                            new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
+                            receiverTasklet);
+                }
+            }
+        }
+        this.receiverMap = unmodifiableMap(receiverMapTmp);
+
+        Map<SenderReceiverKey, SenderTasklet> senderMapTmp = new HashMap<>();
+        for (Entry<Integer, Map<Integer, Map<Address, SenderTasklet>>> e1 : plan.getSenderMap().entrySet()) {
+            for (Entry<Integer, Map<Address, SenderTasklet>> e2 : e1.getValue().entrySet()) {
+                for (Entry<Address, SenderTasklet> e3 : e2.getValue().entrySet()) {
+                    senderMapTmp.put(new SenderReceiverKey(e1.getKey(), e2.getKey(), e3.getKey()), e3.getValue());
+                }
+            }
+        }
+        this.senderMap = unmodifiableMap(senderMapTmp);
+
+        tasklets = plan.getTasklets();
     }
 
     /**

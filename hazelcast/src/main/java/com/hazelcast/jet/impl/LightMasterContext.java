@@ -123,8 +123,9 @@ public class LightMasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            CompletableFuture<Map<MemberInfo, ExecutionPlan>> planFuture = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
-            executionPlanMapTmp = planFuture.get();
+            executionPlanMapTmp =
+                    createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject)
+                    .get();
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);

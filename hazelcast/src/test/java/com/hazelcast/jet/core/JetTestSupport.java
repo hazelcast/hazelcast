@@ -51,7 +51,6 @@ import org.junit.ClassRule;
 import org.junit.rules.Timeout;
 
 import javax.annotation.Nonnull;
-import javax.annotation.processing.Completion;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -429,8 +428,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                         return;
                     }
                     throw rethrow(e.getCause());
-                }
-                catch (Exception ignored) {
+                } catch (Exception ignored) {
                     // This can be CancellationException or any other job failure. We don't care,
                     // we're supposed to rid the cluster of the job and that's what we have.
                 }

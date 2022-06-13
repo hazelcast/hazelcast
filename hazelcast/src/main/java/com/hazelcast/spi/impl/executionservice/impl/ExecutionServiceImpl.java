@@ -131,13 +131,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 createThreadPoolName(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
 
-        int coreSize = Math.max(RuntimeAvailableProcessors.get(), 2);
-        // default executors
-        register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
-        register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
-        register(ASYNC_EXECUTOR, coreSize, ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-        register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
-        register(JOB_OFFLOADABLE_EXECUTOR, coreSize, JOB_OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+        registerExecutors();
         this.globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
 
         // register CompletableFuture task
@@ -147,6 +141,16 @@ public final class ExecutionServiceImpl implements ExecutionService {
         // register in metricsRegistry
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(new MetricsProvider(executors, durableExecutors,
                 scheduleDurableExecutors));
+    }
+
+    private void registerExecutors() {
+        int coreSize = Math.max(RuntimeAvailableProcessors.get(), 2);
+        // default executors
+        register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
+        register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
+        register(ASYNC_EXECUTOR, coreSize, ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+        register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
+        register(JOB_OFFLOADABLE_EXECUTOR, coreSize, JOB_OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CONCRETE);
     }
 
     // only used in tests
