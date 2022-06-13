@@ -49,11 +49,6 @@ public class DefaultAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses() {
-        return null;
-    }
-
-    @Override
     public Addresses loadAddresses(ClientConnectionProcessListener listener) {
         List<String> configuredAddresses = networkConfig.getAddresses();
 

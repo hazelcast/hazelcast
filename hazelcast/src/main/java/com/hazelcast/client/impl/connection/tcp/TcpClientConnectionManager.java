@@ -1009,17 +1009,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
-                connectionProcessListener.authenticationSuccess();
+                connectionProcessListener.authenticationSuccess(connection.getRemoteAddress());
                 break;
             case CREDENTIALS_FAILED:
                 AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
                         + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured "
                         + "in the cluster or the credentials set in the Client security config could not be authenticated");
                 connection.close("Failed to authenticate connection", authException);
-                connectionProcessListener.credentialsFailed();
+                connectionProcessListener.credentialsFailed(connection.getRemoteAddress());
                 throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
-                connectionProcessListener.clientNotAllowedInCluster();
+                connectionProcessListener.clientNotAllowedInCluster(connection.getRemoteAddress());
                 ClientNotAllowedInClusterException notAllowedException =
                         new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
                 connection.close("Failed to authenticate connection", notAllowedException);

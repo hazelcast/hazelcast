@@ -54,18 +54,18 @@ final class ListenerAggregate
     }
 
     @Override
-    public void authenticationSuccess() {
-        childListeners.forEach(ClientConnectionProcessListener::authenticationSuccess);
+    public void authenticationSuccess(Address address) {
+        childListeners.forEach(listener -> listener.authenticationSuccess(address));
     }
 
     @Override
-    public void credentialsFailed() {
-        childListeners.forEach(ClientConnectionProcessListener::credentialsFailed);
+    public void credentialsFailed(Address address) {
+        childListeners.forEach(listener -> listener.credentialsFailed(address));
     }
 
     @Override
-    public void clientNotAllowedInCluster() {
-        childListeners.forEach(ClientConnectionProcessListener::clientNotAllowedInCluster);
+    public void clientNotAllowedInCluster(Address address) {
+        childListeners.forEach(listener -> listener.clientNotAllowedInCluster(address));
     }
 
     @Override
@@ -116,9 +116,9 @@ public interface ClientConnectionProcessListener
      * {@link #connectionAttemptFailed(Address)} event.
      * <p>
      * If the connection is established but the client runs into an authentication failure, then this will be indicated by a
-     * subsequent {@link #clientNotAllowedInCluster()} or a {@link #credentialsFailed()} event.
+     * subsequent {@link #clientNotAllowedInCluster(Address)} or a {@link #credentialsFailed(Address)} event.
      * <p>
-     * If the authentication succeeds then a {@link #authenticationSuccess()} event will be fired, followed by an
+     * If the authentication succeeds then a {@link #authenticationSuccess(Address)} event will be fired, followed by an
      * {@link #clusterConnectionSucceeded(String)}.
      *
      * @param address
@@ -161,16 +161,16 @@ public interface ClientConnectionProcessListener
     }
 
     /**
-     * Triggered when a clients receiv
+     * Triggered when the client received acknowledgement of successful authentication from a member.
      */
-    default void authenticationSuccess() {
+    default void authenticationSuccess(Address remoteAddress) {
     }
 
     /**
      * Triggered after an {@link #attemptingToConnectToAddress(Address)} event if the member doesn't accept the credentials
      * presented by the client.
      */
-    default void credentialsFailed() {
+    default void credentialsFailed(Address remoteAddress) {
     }
 
     /**
@@ -178,7 +178,7 @@ public interface ClientConnectionProcessListener
      * rule
      * (see {@link <a href="https://docs.hazelcast.com/management-center/latest/clusters/client-filtering">Client Filtering</a>}).
      */
-    default void clientNotAllowedInCluster() {
+    default void clientNotAllowedInCluster(Address remoteAddress) {
     }
 
     /**

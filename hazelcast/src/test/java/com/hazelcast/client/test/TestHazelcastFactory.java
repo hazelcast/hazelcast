@@ -146,11 +146,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         return new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListener listener) {
                 Addresses possibleAddresses = new Addresses();
                 for (Address address : getKnownAddresses()) {
                     Addresses addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                            address.getHost(), 1, ClientConnectionProcessListener.NOOP);
+                            address.getHost(), 1, listener);
                     possibleAddresses.addAll(addresses);
                 }
                 return possibleAddresses;

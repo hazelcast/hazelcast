@@ -224,7 +224,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         CountDownLatch testFinished = new CountDownLatch(1);
         AddressProvider addressProvider = new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListener listener) {
                 if (waitFlag.get()) {
                     try {
                         testFinished.await();
@@ -232,7 +232,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                         e.printStackTrace();
                     }
                 }
-                return AddressHelper.getSocketAddresses("127.0.0.1", ClientConnectionProcessListener.NOOP);
+                return AddressHelper.getSocketAddresses("127.0.0.1", listener);
             }
 
             @Override

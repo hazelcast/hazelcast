@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -38,14 +39,10 @@ public class RemoteAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses()
+    public Addresses loadAddresses(ClientConnectionProcessListener listener)
             throws Exception {
-        return null;
-    }
-
-    @Override
-    public Addresses loadAddresses(ClientConnectionProcessListener listener) throws Exception {
         privateToPublic = getAddresses.call();
+        listener.possibleAddressesCollected(new ArrayList<>(privateToPublic.keySet()));
         return new Addresses(privateToPublic.keySet());
     }
 

@@ -30,14 +30,8 @@ public interface AddressProvider {
     /**
      * @return The possible member addresses to connect to.
      * @throws Exception when a remote service can not provide addressee
-     * @deprecated use {@link #loadAddresses(ClientConnectionProcessListener)} instead
      */
-    @Deprecated
-    Addresses loadAddresses() throws Exception;
-
-    default Addresses loadAddresses(ClientConnectionProcessListener listener) throws Exception {
-        return loadAddresses();
-    }
+    Addresses loadAddresses(ClientConnectionProcessListener listener) throws Exception;
 
     /**
      * Translates the given address to another address specific to
