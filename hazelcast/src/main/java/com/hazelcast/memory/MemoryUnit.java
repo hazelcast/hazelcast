@@ -148,9 +148,8 @@ public enum MemoryUnit {
     static final int M = 1 << (POWER * 2);
     static final int G = 1 << (POWER * 3);
 
-    private final int id;
-
     private static final MemoryUnit[] VALUES = values();
+    private final int id;
 
     MemoryUnit(int id) {
         this.id = id;
