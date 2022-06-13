@@ -24,28 +24,36 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("85d83c6f517d26d50457ba81856240bf")
-public final class MemoryTierConfigCodec {
+@Generated("6643e23425e849a538df71f9f946ea77")
+public final class CapacityCodec {
+    private static final int VALUE_FIELD_OFFSET = 0;
+    private static final int UNIT_FIELD_OFFSET = VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = UNIT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MemoryTierConfigCodec() {
+    private CapacityCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.config.MemoryTierConfig memoryTierConfig) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.memory.Capacity capacity) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        CapacityCodec.encode(clientMessage, memoryTierConfig.getCapacity());
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        encodeLong(initialFrame.content, VALUE_FIELD_OFFSET, capacity.getValue());
+        encodeInt(initialFrame.content, UNIT_FIELD_OFFSET, capacity.getUnit());
+        clientMessage.add(initialFrame);
 
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.MemoryTierConfig decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.memory.Capacity decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
-        com.hazelcast.memory.Capacity capacity = CapacityCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        long value = decodeLong(initialFrame.content, VALUE_FIELD_OFFSET);
+        int unit = decodeInt(initialFrame.content, UNIT_FIELD_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createMemoryTierConfig(capacity);
+        return CustomTypeFactory.createCapacity(value, unit);
     }
 }
