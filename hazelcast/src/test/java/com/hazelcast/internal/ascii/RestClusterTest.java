@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -87,17 +86,6 @@ public class RestClusterTest {
         Config config = createConfig();
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        return config;
-    }
-
-    protected Config createAdvancedNetworkConfigWithRestEnabled() {
-        Config config = createConfig();
-        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        advancedNetworkConfig.setEnabled(true);
-        advancedNetworkConfig.getJoin().getTcpIpConfig().setEnabled(true);
-        RestServerEndpointConfig restEndpointCfg = new RestServerEndpointConfig();
-        restEndpointCfg.enableAllGroups();
-        config.getAdvancedNetworkConfig().setRestEndpointConfig(restEndpointCfg);
         return config;
     }
 
@@ -414,8 +402,14 @@ public class RestClusterTest {
     public void testGetTcpIpMemberList() throws Exception {
         Config config = createConfigWithRestEnabled();
         List<String> members = Arrays.asList("localhost:5701", "localhost:5702", "localhost:5703", "localhost:5704");
-        config.getNetworkConfig().getJoin().getTcpIpConfig()
-                .setMembers(members);
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig()
+                    .setMembers(members);
+        } else {
+            config.getNetworkConfig().getJoin().getTcpIpConfig()
+                    .setMembers(members);
+        }
+
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         ConnectionResponse resp = communicator.getTcpIpMemberList();
@@ -440,42 +434,13 @@ public class RestClusterTest {
         assertContainsAll(((JsonArray) Json.parse(resp.response).asObject().get("member-list"))
                         .values().stream().map(JsonValue::asString).collect(Collectors.toList()),
                 expectedMembers);
-        assertContainsAll(instance.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
-                expectedMembers);
-    }
-
-    @Test
-    public void testGetTcpIpMemberListWithAdvancedNetwork() throws Exception {
-        Config config = createAdvancedNetworkConfigWithRestEnabled();
-        List<String> members = Arrays.asList("localhost:5701", "localhost:5702", "localhost:5703", "localhost:5704");
-        config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig()
-                .setMembers(members);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        ConnectionResponse resp = communicator.getTcpIpMemberList();
-        assertSuccessJson(resp);
-        assertContainsAll(((JsonArray) Json.parse(resp.response).asObject().get("member-list"))
-                        .values().stream().map(JsonValue::asString).collect(Collectors.toList()),
-                members);
-    }
-
-    @Test
-    public void testUpdateTcpIpMemberListWithAdvancedNetwork() throws Exception {
-        Config config = createAdvancedNetworkConfigWithRestEnabled();
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        List<String> expectedMembers = Arrays.asList("localhost:8001", "localhost:9001", "localhost:10001");
-        ConnectionResponse resp = communicator.updateTcpIpMemberList(
-                config.getClusterName(),
-                getPassword(),
-                "localhost:8001, localhost:9001, localhost:10001");
-
-        assertSuccessJson(resp);
-        assertContainsAll(((JsonArray) Json.parse(resp.response).asObject().get("member-list"))
-                        .values().stream().map(JsonValue::asString).collect(Collectors.toList()),
-                expectedMembers);
-        assertContainsAll(instance.getConfig().getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
-                expectedMembers);
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            assertContainsAll(instance.getConfig().getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
+                    expectedMembers);
+        } else {
+            assertContainsAll(instance.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
+                    expectedMembers);
+        }
     }
 
     @Test
