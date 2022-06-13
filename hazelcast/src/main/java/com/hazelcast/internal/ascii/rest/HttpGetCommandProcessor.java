@@ -18,6 +18,8 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -40,6 +42,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 
@@ -98,6 +101,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 sendResponse = false;
             } else if (uri.startsWith(URI_LOG_LEVEL)) {
                 handleLogLevel(command);
+            } else if (uri.startsWith(URI_TCP_IP_MEMBER_LIST)) {
+                handleTcpIpMemberList(command);
             } else {
                 command.send404();
             }
@@ -416,4 +421,24 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         prepareResponse(command, new JsonObject().add("logLevel", level == null ? null : level.getName()));
     }
 
+    private void handleTcpIpMemberList(HttpGetCommand command) {
+        Config config = getNode().getConfig();
+        TcpIpConfig tcpIpConfig;
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
+        } else {
+            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        }
+        if (tcpIpConfig.isEnabled()) {
+            List<String> members = tcpIpConfig.getMembers();
+            JsonArray membersArray = new JsonArray();
+            members.forEach(membersArray::add);
+            prepareResponse(command, new JsonObject()
+                    .add("status", "success")
+                    .add("member-list", membersArray));
+        } else {
+            prepareResponse(HttpStatusCode.SC_400, command, new JsonObject().add("message",
+                    "TCP-IP join mechanism is not enabled in the cluster."));
+        }
+    }
 }

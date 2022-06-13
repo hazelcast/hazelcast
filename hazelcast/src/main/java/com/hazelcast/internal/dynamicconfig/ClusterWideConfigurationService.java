@@ -40,6 +40,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -532,6 +533,14 @@ public class ClusterWideConfigurationService implements
             return null;
         }
         return new Merger(nodeEngine, allConfigurations);
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        invokeOnStableClusterSerial(
+                nodeEngine,
+                () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
+        ).join();
     }
 
     public static class Merger implements Runnable {

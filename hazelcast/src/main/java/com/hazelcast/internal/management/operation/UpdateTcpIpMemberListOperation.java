@@ -60,7 +60,7 @@ public class UpdateTcpIpMemberListOperation extends AbstractManagementOperation 
                     = getNodeEngine().getService(ClusterWideConfigurationService.SERVICE_NAME);
             configurationService.persist(activeNetworkConfig);
         } else {
-            throw new IllegalStateException("TCP-IP join config is not enabled");
+            throw new IllegalStateException("TCP-IP join mechanism is not enabled in the cluster.");
         }
     }
 

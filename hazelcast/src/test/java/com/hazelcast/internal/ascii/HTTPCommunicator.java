@@ -117,6 +117,7 @@ public class HTTPCommunicator {
     // Config
     public static final String URI_CONFIG_RELOAD = "config/reload";
     public static final String URI_CONFIG_UPDATE = "config/update";
+    public static final String URI_TCP_IP_MEMBER_LIST = "config/tcp-ip/member-list";
 
     private final String address;
     private final boolean sslEnabled;
@@ -437,6 +438,18 @@ public class HTTPCommunicator {
             throws IOException {
         String url = getUrl(URI_CP_GROUPS_URL + "/" + cpGroupName + URI_CP_SESSIONS_SUFFIX + "/" + sessionId + URI_REMOVE_SUFFIX);
         return doPost(url, clusterName, clusterPassword);
+    }
+
+
+    public ConnectionResponse getTcpIpMemberList() throws IOException {
+        String url = getUrl(URI_TCP_IP_MEMBER_LIST);
+        return doGet(url);
+    }
+
+    public ConnectionResponse updateTcpIpMemberList(String clusterName, String clusterPassword, String memberListText)
+            throws IOException {
+        String url = getUrl(URI_TCP_IP_MEMBER_LIST);
+        return doPost(url, clusterName, clusterPassword, memberListText);
     }
 
     public static class ConnectionResponse {

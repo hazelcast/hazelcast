@@ -33,10 +33,13 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * about all members in the cluster and won't rely on these well known members anymore.
  */
 public class TcpIpConfig {
+    /**
+     * A pattern for splitting member texts defined in tcp-ip configuration by
+     * comma(,) semicolon(;) space( ).
+     */
+    public static final Pattern MEMBER_TEXT_SPLIT_PATTERN = Pattern.compile("[,; ]+");
 
     private static final int CONNECTION_TIMEOUT_SEC = 5;
-    // split member texts defined in tcp-ip configuration by comma(,) semicolon(;) space( ).
-    private static final Pattern MEMBER_TEXT_SPLIT_PATTERN = Pattern.compile("[,; ]+");
     private final List<String> members = new CopyOnWriteArrayList<>();
 
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT_SEC;
