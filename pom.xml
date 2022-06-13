@@ -84,6 +84,7 @@
         <maven.failsafe.plugin.version>2.22.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
+        <owasp.dependency-check.version>6.1.5</owasp.dependency-check.version>
 
         <log4j.version>1.2.17</log4j.version>
 
@@ -340,6 +341,17 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${owasp.dependency-check.version}</version>
+                <configuration>
+                    <format>ALL</format>
+                    <skipProvidedScope>true</skipProvidedScope>
+                    <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                    <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
+                </configuration>
             </plugin>
         </plugins>
     </build>
