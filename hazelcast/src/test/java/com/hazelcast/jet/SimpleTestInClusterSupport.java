@@ -95,9 +95,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
                 jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {
-            if (!job.isLightJob()) {
-                ditchJob(job, instances());
-            }
+            ditchJob(job, instances());
         }
         // cancel all light jobs by cancelling their executions
         for (HazelcastInstance inst : instances) {

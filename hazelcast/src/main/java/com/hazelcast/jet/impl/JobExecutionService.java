@@ -277,28 +277,26 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
         }
 
-        try {
-            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-            // We don't create the CL for light jobs.
-            assert jobClassloaderService.getClassLoader(jobId) == null;
-            doWithClassLoader(
-                    jobCl,
-                    () -> execCtx.initialize(coordinator, addresses, plan)
-            );
-        } catch (Throwable e) {
-            completeExecution(execCtx, new CancellationException());
-            throw e;
-        }
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+        // We don't create the CL for light jobs.
+        assert jobClassloaderService.getClassLoader(jobId) == null;
 
-        // initial log entry with all of jobId, jobName, executionId
-        if (logger.isFineEnabled()) {
-            logger.fine("Execution plan for light job ID=" + idToString(jobId)
-                    + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                    + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
-        }
-
-        return beginExecution0(execCtx, false);
+        return doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan))
+                .whenComplete((r, e) -> {
+                    if (e != null) {
+                        completeExecution(execCtx, new CancellationException());
+                    }
+                })
+                .whenComplete((r, e) -> {
+                    // initial log entry with all of jobId, jobName, executionId
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Execution plan for light job ID=" + idToString(jobId)
+                                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                                + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
+                    }
+                })
+                .thenCompose(r -> beginExecution0(execCtx, false));
     }
 
     /**
@@ -316,27 +314,24 @@ public class JobExecutionService implements DynamicMetricsProvider {
      *     init execution is retried.
      * </li></ul>
      */
-    public void initExecution(
+    public CompletableFuture<?> initExecution(
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
         ExecutionContext execCtx = addExecutionContext(
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
-        try {
-            jobClassloaderService.prepareProcessorClassLoaders(jobId);
-            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
-        } finally {
-            jobClassloaderService.clearProcessorClassLoaders();
-        }
-
-
-        // initial log entry with all of jobId, jobName, executionId
-        logger.info("Execution plan for jobId=" + idToString(jobId)
-                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                + ", executionId=" + idToString(executionId) + " initialized");
+        jobClassloaderService.prepareProcessorClassLoaders(jobId);
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+        return doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan))
+                .whenComplete((r, e) -> {
+                    // initial log entry with all of jobId, jobName, executionId
+                    logger.info("Execution plan for jobId=" + idToString(jobId)
+                            + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                            + ", executionId=" + idToString(executionId) + " initialized");
+                })
+                .whenComplete((r, e) -> jobClassloaderService.clearProcessorClassLoaders());
     }
 
     private void addExecutionContextJobId(long jobId, long executionId, Address coordinator) {

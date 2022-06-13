@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
@@ -71,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -89,6 +92,7 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toMap;
 
@@ -163,110 +167,114 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Creates tasklets, inboxes/outboxes and connects these to make them ready
      * for a later StartExecutionOperation.
      */
-    public void initialize(NodeEngineImpl nodeEngine,
-                           long jobId,
-                           long executionId,
-                           @Nonnull SnapshotContext snapshotContext,
-                           ConcurrentHashMap<String, File> tempDirectories,
-                           InternalSerializationService jobSerializationService) {
+    public CompletableFuture<?> initialize(NodeEngineImpl nodeEngine,
+                                        long jobId,
+                                        long executionId,
+                                        @Nonnull SnapshotContext snapshotContext,
+                                        ConcurrentHashMap<String, File> tempDirectories,
+                                        InternalSerializationService jobSerializationService) {
         this.nodeEngine = nodeEngine;
         this.jobClassLoaderService =
                 ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobClassLoaderService();
         this.executionId = executionId;
-        initProcSuppliers(jobId, tempDirectories, jobSerializationService);
-        initDag(jobSerializationService);
 
-        this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
-        Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
-        for (Address destAddr : remoteMembers.get()) {
-            Connection conn = getMemberConnection(nodeEngine, destAddr);
-            if (conn == null) {
-                throw new TopologyChangedException("no connection to job participant: " + destAddr);
+        CompletableFuture<?> procSuppliersInitFuture = initProcSuppliers(jobId, tempDirectories, jobSerializationService);
+
+        return procSuppliersInitFuture.whenComplete((r, e) -> {
+            initDag(jobSerializationService);
+
+            this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
+            Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
+            for (Address destAddr : remoteMembers.get()) {
+                Connection conn = getMemberConnection(nodeEngine, destAddr);
+                if (conn == null) {
+                    throw new TopologyChangedException("no connection to job participant: " + destAddr);
+                }
+                memberConnections.put(destAddr, conn);
             }
-            memberConnections.put(destAddr, conn);
-        }
-        dagNodeUtil = new DagNodeUtil(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
-        createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
+            dagNodeUtil = new DagNodeUtil(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
+            createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
-        for (VertexDef vertex : vertices) {
-            if (!dagNodeUtil.vertexExists(vertex)) {
-                continue;
-            }
+            for (VertexDef vertex : vertices) {
+                if (!dagNodeUtil.vertexExists(vertex)) {
+                    continue;
+                }
 
-            ClassLoader processorClassLoader = isLightJob ? null :
-                    jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
-            Collection<? extends Processor> processors = doWithClassLoader(
-                    processorClassLoader,
-                    () -> createProcessors(vertex, vertex.localParallelism())
-            );
-            String jobPrefix = prefix(jobConfig.getName(), jobId, vertex.name());
-
-            // create StoreSnapshotTasklet and the queues to it
-            ConcurrentConveyor<Object> ssConveyor = null;
-            if (!isLightJob) {
-                // Note that we create the snapshot queues for all non-light jobs, even if they don't have
-                // processing guarantee enabled, because in EE one can request a snapshot also for
-                // non-snapshotted jobs.
-                @SuppressWarnings("unchecked")
-                QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
-                Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
-                ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
-                ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
-                StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
-                        ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
-                        new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
-                                jobSerializationService),
-                        storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
-                tasklets.add(ssTasklet);
-            }
-
-            int localProcessorIdx = 0;
-            for (Processor processor : processors) {
-                int globalProcessorIndex = memberIndex * vertex.localParallelism() + localProcessorIdx;
-                String processorPrefix = prefix(jobConfig.getName(), jobId, vertex.name(), globalProcessorIndex);
-                ILogger logger = prefixedLogger(nodeEngine.getLogger(processor.getClass()), processorPrefix);
-                ProcCtx context = new ProcCtx(
-                        nodeEngine,
-                        jobId,
-                        executionId,
-                        getJobConfig(),
-                        logger,
-                        vertex.name(),
-                        localProcessorIdx,
-                        globalProcessorIndex,
-                        isLightJob,
-                        partitionAssignment,
-                        vertex.localParallelism(),
-                        memberIndex,
-                        memberCount,
-                        tempDirectories,
-                        jobSerializationService,
-                        subject,
-                        processorClassLoader
+                ClassLoader processorClassLoader = isLightJob ? null :
+                        jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
+                Collection<? extends Processor> processors = doWithClassLoader(
+                        processorClassLoader,
+                        () -> createProcessors(vertex, vertex.localParallelism())
                 );
+                String jobPrefix = prefix(jobConfig.getName(), jobId, vertex.name());
 
-                List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
-                        vertex, localProcessorIdx);
-                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
-                        vertex, localProcessorIdx, jobPrefix, globalProcessorIndex);
+                // create StoreSnapshotTasklet and the queues to it
+                ConcurrentConveyor<Object> ssConveyor = null;
+                if (!isLightJob) {
+                    // Note that we create the snapshot queues for all non-light jobs, even if they don't have
+                    // processing guarantee enabled, because in EE one can request a snapshot also for
+                    // non-snapshotted jobs.
+                    @SuppressWarnings("unchecked")
+                    QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
+                    Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
+                    ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
+                    ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
+                    StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
+                            ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
+                            new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
+                                    jobSerializationService),
+                            storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
+                    tasklets.add(ssTasklet);
+                }
 
-                OutboundCollector snapshotCollector = ssConveyor == null ? null :
-                        new ConveyorCollector(ssConveyor, localProcessorIdx, null);
+                int localProcessorIdx = 0;
+                for (Processor processor : processors) {
+                    int globalProcessorIndex = memberIndex * vertex.localParallelism() + localProcessorIdx;
+                    String processorPrefix = prefix(jobConfig.getName(), jobId, vertex.name(), globalProcessorIndex);
+                    ILogger logger = prefixedLogger(nodeEngine.getLogger(processor.getClass()), processorPrefix);
+                    ProcCtx context = new ProcCtx(
+                            nodeEngine,
+                            jobId,
+                            executionId,
+                            getJobConfig(),
+                            logger,
+                            vertex.name(),
+                            localProcessorIdx,
+                            globalProcessorIndex,
+                            isLightJob,
+                            partitionAssignment,
+                            vertex.localParallelism(),
+                            memberIndex,
+                            memberCount,
+                            tempDirectories,
+                            jobSerializationService,
+                            subject,
+                            processorClassLoader
+                    );
 
-                // vertices which are only used for snapshot restore will not be marked as "source=true" in metrics
-                // also do not consider snapshot restore edges for determining source tag
-                boolean isSource = vertex.inboundEdges().stream().allMatch(EdgeDef::isSnapshotRestoreEdge)
-                        && !vertex.isSnapshotVertex();
+                    List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
+                            vertex, localProcessorIdx);
+                    List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
+                            vertex, localProcessorIdx, jobPrefix, globalProcessorIndex);
 
-                ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
-                        nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
-                        jobSerializationService, processor, inboundStreams, outboundStreams, snapshotContext,
-                        snapshotCollector, isSource);
-                tasklets.add(processorTasklet);
-                this.processors.add(processor);
-                localProcessorIdx++;
+                    OutboundCollector snapshotCollector = ssConveyor == null ? null :
+                            new ConveyorCollector(ssConveyor, localProcessorIdx, null);
+
+                    // vertices which are only used for snapshot restore will not be marked as "source=true" in metrics
+                    // also do not consider snapshot restore edges for determining source tag
+                    boolean isSource = vertex.inboundEdges().stream().allMatch(EdgeDef::isSnapshotRestoreEdge)
+                            && !vertex.isSnapshotVertex();
+
+                    ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
+                            nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
+                            jobSerializationService, processor, inboundStreams, outboundStreams, snapshotContext,
+                            snapshotCollector, isSource);
+                    tasklets.add(processorTasklet);
+                    this.processors.add(processor);
+                    localProcessorIdx++;
+                }
             }
-        }
+        });
     }
 
     /**
@@ -419,35 +427,50 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // End implementation of IdentifiedDataSerializable
 
-    private void initProcSuppliers(long jobId,
-                                   ConcurrentHashMap<String, File> tempDirectories,
-                                   InternalSerializationService jobSerializationService) {
+    @SuppressWarnings("rawtypes")
+    private CompletableFuture<?> initProcSuppliers(long jobId,
+                                                   ConcurrentHashMap<String, File> tempDirectories,
+                                                   InternalSerializationService jobSerializationService) {
+        CompletableFuture[] futures = new CompletableFuture[vertices.size()];
+        int index = 0;
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
                     jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
-            String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
-            ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
-            doWithClassLoader(processorClassLoader, () ->
-                    supplier.init(new ProcSupplierCtx(
-                            nodeEngine,
-                            jobId,
-                            executionId,
-                            jobConfig,
-                            logger,
-                            vertex.name(),
-                            vertex.localParallelism(),
-                            vertex.localParallelism() * memberCount,
-                            memberIndex,
-                            memberCount,
-                            isLightJob,
-                            partitionAssignment,
-                            tempDirectories,
-                            jobSerializationService,
-                            subject,
-                            processorClassLoader
-                    )));
+
+            boolean isCooperativeInit = supplier.initIsCooperative();
+            RunnableEx action = () -> {
+                String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
+                ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
+                doWithClassLoader(processorClassLoader, () ->
+                        supplier.init(new ProcSupplierCtx(
+                                nodeEngine,
+                                jobId,
+                                executionId,
+                                jobConfig,
+                                logger,
+                                vertex.name(),
+                                vertex.localParallelism(),
+                                vertex.localParallelism() * memberCount,
+                                memberIndex,
+                                memberCount,
+                                isLightJob,
+                                partitionAssignment,
+                                tempDirectories,
+                                jobSerializationService,
+                                subject,
+                                processorClassLoader
+                        )));
+            };
+            if (isCooperativeInit) {
+                action.run();
+                futures[index++] = CompletableFuture.completedFuture(null);
+            } else {
+                ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+                futures[index++] = CompletableFuture.runAsync(action, executor);
+            }
         }
+        return CompletableFuture.allOf(futures);
     }
 
     private void initDag(InternalSerializationService jobSerializationService) {
