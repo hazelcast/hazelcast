@@ -38,21 +38,27 @@ means there are two independent sets of watermarks, differentiated by a key.
 
 ### Description of current behavior
 
-A WM with value `M` means that any event with value less than `M` can be
-considered _late_ and be ignored. It's very important in stream processing as it
+A WM instance with value `M` means that any event with value less than `M` can
+be considered _late_ and ignored. It's very important in stream processing as it
 allows the processors to reason about possible future events and to remove data
 from state.
 
-So-called _WM coalescing_ happens when there are two inputs that are
-merged into one stream - the minimum of WMs received from each input is
-forwarded.
+We say that a stream is at WM value N when the value of the last received WM is
+N. Since each new WM instance is required to have a higher value, the WM value
+for the stream is ever-increasing.
+
+So-called _WM coalescing_ happens when there are two inputs that are merged into
+one stream - the lowest current WM value of all the merged streams is forwarded.
 
 #### Example
 
-We show only WM items on the streams, as the events are irrelevant to
-coalescing. `in: wm(N, M)` denotes an input WM from input `N` with a value of
-`M`. `out: wm(M)` denotes an output WM. All output WMs go to all output streams,
-therefore we don't specify the output number in the example.
+We show only WM instances on the streams, as the events (the payload) are
+irrelevant to coalescing. `in: wm(N, M)` denotes an input WM instance from input
+`N` with a value of `M`. `out: wm(M)` denotes an output WM; that is a WM
+instance that is forwarded to the output stream. There's only one output stream
+from stream merging, therefore we don't specify the output number in the example
+- we're not talking about a Jet processor here, but about stream merging within
+the Jet engine.
 
 ```
 in: wm(0, 10)
@@ -82,7 +88,7 @@ it's not really a WM, we just piggyback on the WM broadcast mechanism.
 Any processor can generate watermarks based on any logic. The processor can:
 - generate new WMs
 - forward WMs from input
-- drop all WMs from input
+- drop WMs from input
 - anything else
 
 These are the typical rules:
@@ -105,15 +111,16 @@ But WMs must follow certain rules:
    require a strict monotonicity, because it's a waste of resources to emit a WM
    with the same value twice. Violation will cause a job failure.
 
-2. **No overtaking** (conventional rule): an input item that is not late, should
-   not be late on the processor output
+2. **No overtaking** (conventional rule): an input item that is not late on
+   input, should not be late on the processor output
 
 3. **No unnecessary latency** (conventional rule): The processor should emit
    the WM as soon as it knows that no item that would be late will follow.
 
 Only the 1st rule is a requirement. The other are conventions and the processors
-can break them. `AbstractProcessor` implements them for simple processors that
-forward WMs immediately.
+can break them, but there's currently no such processor in Jet.
+`AbstractProcessor` implements the case for simple processors that forward WMs
+immediately.
 
 ### Extending the behavior for multiple keys
 
@@ -124,24 +131,41 @@ different key are handled independently.
 
 #### Processor API
 
-Currently the `Processor` has this method:
+Currently, the `Processor` has this method:
 
 ```java
 boolean tryProcessWatermark(@Nonnull Watermark watermark);
 ```
 
-No change is needed as the argument includes the key. No change is needed in
-`AbstractProcessor`, this class directly emits each received WM. It's sufficient
-also for the join processor, as it can tell apart watermarks from different
-inputs by looking at the key.
+No change in the API is needed as the argument includes the key. However, the
+API is not backwards-compatible - the processor now might need to look at the
+`watermark`'s key. If it doesn't, it can observe a newer WM instance with
+`key=1`, and later an older WM instance with `key=2`, which amounts to
+non-monotonic sequence, if the key is ignored. No change is needed in
+`AbstractProcessor` - this class directly emits each received WM and won't
+suffer from this change.
 
-Even though the method signature didn't change, it's not fully b-w compatible. A
-processor that didn't simply forward every received WM will now need to take the
-key into account, otherwise it could observe non-monotonic WMs and fail.
+However, the API isn't sufficient for a join processor, which receives different
+WMs from the left and right input. For example, if a stream of `orders` and
+`deliveries` are joined, each input will have a different WM key so that the
+processor is able to track the progress for each stream independently. However,
+the above method receives the watermark only after the same WM key is received
+from both inputs, so in this case it will never receive any watermark instance.
+To address this, we'll add a new method:
+
+```java
+boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark);
+```
+
+This method will receive watermarks coalesced from multiple upstream processor
+instances contributing to the input edge `ordinal`, but multiple input edges are
+not coalesced and are received immediately.
+
+The processor can choose, which method to override, depending on its needs.
 
 #### Coalescing of WMs with different keys
 
-Such WMs are coalesced completely independently. A wm with key=K is coalesced
+Such WMs are coalesced completely independently. A wm with `key=K` is coalesced
 with wm with the same key from other inputs independently, as if it was two
 separate streams.
 
@@ -183,7 +207,7 @@ inherent order, we need to use the reception order.
 #### Changes to sliding window processor
 
 This processor forwards the input watermarks, but before doing so, it emits
-windows for which the all events were received.
+windows for which all the events were received.
 
 The processor receives a list of timestamp functions, one for each input ordinal.
 It extracts the timestamp from the events using these functions, and uses them
@@ -218,27 +242,3 @@ so this will be a lot of extra work. This is the reason why we will not
 implement this. It's very rare to group by a watermarked column. The sliding
 window processor will drop all input watermarks, the output will have watermarks
 only on the window bounds.
-
-
-
-
-A stream item typically carries many values. A watermark is tied to one
-particular field. It makes sense to have multiple WMs, tied to different fields.
-
-Watermark instances with a different key is coalesced independently. Processors
-delaying the watermark must be modified to ensure that the rules are not broken
-for any watermark.
-
-As an example we'll discuss a processor that emits the input items without a
-change, but after a delay.
-
-```
-in: event(t1=100, t2=110)
-# event stored in buffer for later emission
-in: wm(key=t1, v=102)
-# watermark instance cannot be forwarded before the event from the buffer is
-# forwarded. But we can forward an older instance, because the processor can
-# emit only what's in the buffer, or what it can further receive.
-out: wm(key=t1, v=100)
-in: 
-```
