@@ -22,6 +22,10 @@
 # at https://docs.hazelcast.com/
 
 hazelcast-client:
+  # The name of the cluster. All members of a single cluster must have the
+  # same cluster name configured and a client connecting to this cluster
+  # must use it as well.
+  cluster-name: dev
   network:
     # List of addresses for the client to try to connect to. All members of
     # a Hazelcast cluster accept client connections.

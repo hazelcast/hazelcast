@@ -33,6 +33,12 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd">
 
+    <!--
+    The name of the cluster. All members of a single cluster must have the same cluster name
+    configured and a client connecting to this cluster must use it as well.
+    -->
+    <cluster-name>dev</cluster-name>
+
     <network>
         <cluster-members>
             <!--
