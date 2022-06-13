@@ -139,7 +139,13 @@ public final class ExecutionPlanBuilder {
                 futures[index++] = CompletableFuture.runAsync(action, initOffloadExecutor);
             }
         }
-        return CompletableFuture.allOf(futures).thenCompose(r -> completedFuture(plans));
+        return CompletableFuture.allOf(futures)
+                .thenCompose(r -> {
+                    for (ExecutionPlan plan : plans.values()) {
+                        plan.sortAccordingTo(vertexIdMap);
+                    }
+                    return completedFuture(plans);
+                });
     }
 
     private static Map<String, Integer> assignVertexIds(DAG dag) {

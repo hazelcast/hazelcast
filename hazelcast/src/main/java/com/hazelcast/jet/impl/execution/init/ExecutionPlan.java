@@ -67,8 +67,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,6 +79,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -94,6 +97,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -180,7 +184,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
         CompletableFuture<?> procSuppliersInitFuture = initProcSuppliers(jobId, tempDirectories, jobSerializationService);
 
-        return procSuppliersInitFuture.whenComplete((r, e) -> {
+        return procSuppliersInitFuture.thenApply(r -> {
             initDag(jobSerializationService);
 
             this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
@@ -274,6 +278,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     localProcessorIdx++;
                 }
             }
+            return ExecutionPlan.this;
         });
     }
 
@@ -840,5 +845,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public List<VertexDef> getVertices() {
         return unmodifiableList(vertices);
+    }
+
+    public void sortAccordingTo(Map<String, Integer> vertexIdMap) {
+        int index = 0;
+        Map<Integer, Integer> vertexIdToPriority = new LinkedHashMap<>(vertexIdMap.size());
+        for (Integer id : vertexIdMap.values()) {
+            vertexIdToPriority.put(id, index++);
+        }
+        vertices = vertices.stream()
+                .sorted(Comparator.comparingInt(v -> vertexIdToPriority.get(v.vertexId())))
+                .collect(toList());
     }
 }
