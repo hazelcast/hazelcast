@@ -90,6 +90,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
@@ -194,53 +195,69 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
+
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            executionStartTime = System.currentTimeMillis();
-            try {
-                JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-                jobExecRec.markExecuted();
-                Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
-                if (dagAndClassloader == null) {
-                    return;
-                }
-                DAG dag = dagAndClassloader.f0();
-                assert dag != null;
-                ClassLoader classLoader = dagAndClassloader.f1();
-                // must call this before rewriteDagWithSnapshotRestore()
-                String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-                long snapshotId = jobExecRec.snapshotId();
-                String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                String mapName =
-                        snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                : null;
-                if (mapName != null) {
-                    rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-                } else {
-                    logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-                }
-                MembersView membersView = Util.getMembersView(mc.nodeEngine());
-                logger.info("Start executing " + mc.jobIdString()
-                        + ", execution graph in DOT format:\n" + dotRepresentation
-                        + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                logger.fine("Building execution plan for " + mc.jobIdString());
-                Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
-                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                false, mc.jobRecord().getSubject())));
+                    executionStartTime = System.currentTimeMillis();
+                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                    jobExecRec.markExecuted();
+                    Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
+                    if (dagAndClassloader == null) {
+                        return null;
+                    }
+                    DAG dag = dagAndClassloader.f0();
+                    assert dag != null;
+                    ClassLoader classLoader = dagAndClassloader.f1();
+                    // must call this before rewriteDagWithSnapshotRestore()
+                    String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                    long snapshotId = jobExecRec.snapshotId();
+                    String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                    String mapName =
+                            snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                    : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                    : null;
+                    if (mapName != null) {
+                        rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                    } else {
+                        logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                    }
+                    MembersView membersView = Util.getMembersView(mc.nodeEngine());
+                    logger.info("Start executing " + mc.jobIdString()
+                            + ", execution graph in DOT format:\n" + dotRepresentation
+                            + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                    logger.fine("Building execution plan for " + mc.jobIdString());
+                    return tuple4(membersView, jobExecRec, classLoader, dag);
+                })
+                .thenCompose(tuple -> {
+                    MembersView membersView = tuple.f0();
+                    JobExecutionRecord jobExecRec = tuple.f1();
+                    ClassLoader classLoader = tuple.f2();
+                    DAG dag = tuple.f3();
+                    return Util.doWithClassLoader(classLoader, () ->
+                            createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                                    dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
+                                    false, mc.jobRecord().getSubject()))
+                            .thenApply(executionPlan -> tuple2(executionPlan, membersView));
+                })
+                .thenAccept(tuple -> initExecution(tuple.f1(), tuple.f0()))
+                .whenComplete((r, e) -> {
+                    if (e != null) {
+                        finalizeJob(e);
+                    }
+                })
+                .join()
+        ;
+    }
 
-                logger.fine("Built execution plans for " + mc.jobIdString());
-                Set<MemberInfo> participants = mc.executionPlanMap().keySet();
-                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
-                Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
-                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
-                mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
-            } catch (Throwable e) {
-                finalizeJob(e);
-            }
-        });
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+        mc.setExecutionPlanMap(executionPlanMap);
+        logger.fine("Built execution plans for " + mc.jobIdString());
+        Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+        Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        Function<ExecutionPlan, Operation> operationCtor = plan ->
+                new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                        participants, mc.nodeEngine().getSerializationService().toData(plan), false);
+        mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 
     @Nullable

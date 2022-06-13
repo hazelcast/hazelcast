@@ -122,6 +122,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
+     * True if the {@linkplain #init(Context)} method won't block.
+     */
+    default boolean initIsCooperative() {
+        return false;
+    }
+
+    /**
      * Called to create a mapping from member {@link Address} to the
      * {@link ProcessorSupplier} that will be sent to that member. Jet calls
      * this method with a list of all cluster members' addresses and the

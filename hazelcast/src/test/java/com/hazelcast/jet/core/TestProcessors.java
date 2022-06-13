@@ -194,6 +194,11 @@ public final class TestProcessors {
         }
 
         @Override
+        public boolean initIsCooperative() {
+            return !initBlocks;
+        }
+
+        @Override
         public void init(@Nonnull Context context) throws InterruptedException {
             initCount.incrementAndGet();
             if (initError != null) {

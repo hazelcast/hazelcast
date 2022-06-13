@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
@@ -41,6 +42,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -49,6 +52,8 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
@@ -57,7 +62,7 @@ public final class ExecutionPlanBuilder {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
+    public static CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
             NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
@@ -77,6 +82,9 @@ public final class ExecutionPlanBuilder {
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
 
+        ExecutorService initOffloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+        CompletableFuture[] futures = new CompletableFuture[vertexIdMap.entrySet().size()];
+        int index = 0;
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
             assert vertex != null;
@@ -95,35 +103,43 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
-            JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
-            ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
-            try {
-                doWithClassLoader(processorClassLoader, () ->
-                        metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
-                                jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
-                                isLightJob, partitionsByAddress, subject, processorClassLoader)));
-            } catch (Exception e) {
-                throw sneakyThrow(e);
-            }
-
-            Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =
-                    doWithClassLoader(processorClassLoader, () -> metaSupplier.get(addresses));
-            for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
-                final ProcessorSupplier processorSupplier =
-                        doWithClassLoader(processorClassLoader, () -> procSupplierFn.apply(e.getKey().getAddress()));
-                if (!isLightJob) {
-                    // We avoid the check for light jobs - the user will get the error anyway, but maybe with less information.
-                    // And we can recommend the user to use normal job to have more checks.
-                    checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
+            RunnableEx action = () -> {
+                JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+                JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
+                ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
+                try {
+                    doWithClassLoader(processorClassLoader, () ->
+                            metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
+                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                                    isLightJob, partitionsByAddress, subject, processorClassLoader)));
+                } catch (Exception e) {
+                    throw sneakyThrow(e);
                 }
-                final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
-                vertexDef.addInboundEdges(inbound);
-                vertexDef.addOutboundEdges(outbound);
-                e.getValue().addVertex(vertexDef);
+
+                Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =
+                        doWithClassLoader(processorClassLoader, () -> metaSupplier.get(addresses));
+                for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
+                    final ProcessorSupplier processorSupplier =
+                            doWithClassLoader(processorClassLoader, () -> procSupplierFn.apply(e.getKey().getAddress()));
+                    if (!isLightJob) {
+                        // We avoid the check for light jobs - the user will get the error anyway, but maybe with less information.
+                        // And we can recommend the user to use normal job to have more checks.
+                        checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
+                    }
+                    final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
+                    vertexDef.addInboundEdges(inbound);
+                    vertexDef.addOutboundEdges(outbound);
+                    e.getValue().addVertex(vertexDef);
+                }
+            };
+            if (metaSupplier.initIsCooperative()) {
+                action.run();
+                futures[index++] = completedFuture(null);
+            } else {
+                futures[index++] = CompletableFuture.runAsync(action, initOffloadExecutor);
             }
         }
-        return plans;
+        return CompletableFuture.allOf(futures).thenCompose(r -> completedFuture(plans));
     }
 
     private static Map<String, Integer> assignVertexIds(DAG dag) {

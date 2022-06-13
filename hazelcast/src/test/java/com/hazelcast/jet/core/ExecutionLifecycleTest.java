@@ -438,7 +438,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
+    public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() throws ExecutionException, InterruptedException {
         // not applicable to light jobs - we hack around with ExecutionContext
         assumeFalse(useLightJob);
 
@@ -458,7 +458,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView.getMembers(), dag,
-                        jobId, executionId, jobConfig, NO_SNAPSHOT, false, null);
+                        jobId, executionId, jobConfig, NO_SNAPSHOT, false, null).get();
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
 
         jetServiceBackend.getJobClassLoaderService().getOrCreateClassLoader(jobConfig, jobId, COORDINATOR);
@@ -708,13 +708,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dagNormal = new DAG().vertex(new Vertex("test",
                 new MockPS(MockP::new, MEMBER_COUNT)));
 
-        List<Future<Void>> submitFutures = new ArrayList<>();
+        List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 16;
+        int numJobs = 2;
         for (int i = 0; i < numJobs; i++) {
-            Job job = newJob(dagBlocking);
-            submitFutures.add(job.getFuture());
+            submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
 
         // Then
@@ -725,19 +724,19 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
         }
         // newJob()
-        instance().getJet().newJob(dagNormal).join();
+//        instance().getJet().newJob(dagNormal).join();
         // newLightJob()
-        instance().getJet().newLightJob(dagNormal).join();
+//        instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
         for (Object m : instance().getMap("m").values()) {
             System.out.println(m);
         }
 
         for (int i = 0; i < submitFutures.size(); i++) {
-            MockPS.unblock();
+            MockPMS.unblock();
         }
-        for (Future<Void> f : submitFutures) {
-            f.get();
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
         }
     }
 
@@ -765,9 +764,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
         }
         // newJob()
-//        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newJob(dagNormal).join();
         // newLightJob()
-//        instance().getJet().newLightJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
         for (Object m : instance().getMap("m").values()) {
             System.out.println(m);

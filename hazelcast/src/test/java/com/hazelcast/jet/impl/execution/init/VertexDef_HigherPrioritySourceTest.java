@@ -43,11 +43,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
@@ -130,8 +132,12 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
 
     private void assertHigherPriorityVertices(Vertex... vertices) {
         JobConfig jobConfig = new JobConfig();
-        Map<MemberInfo, ExecutionPlan> executionPlans =
-                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, jobConfig, 0, false, null);
+        Map<MemberInfo, ExecutionPlan> executionPlans;
+        try {
+            executionPlans = createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, jobConfig, 0, false, null).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw rethrow(e);
+        }
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
 
