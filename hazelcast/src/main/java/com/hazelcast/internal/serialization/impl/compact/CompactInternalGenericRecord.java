@@ -140,7 +140,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Nonnull
-    public String getMethodPrefixForErrorMessages() {
+    protected String getMethodPrefixForErrorMessages() {
         return "get";
     }
 
