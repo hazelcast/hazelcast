@@ -71,11 +71,16 @@ public class SqlClientService implements SqlService {
      * because they cause a significant distortion.
      */
     private final boolean skipUpdateStatistics;
+    private final long invocationTimeoutNano;
+    private final long retryPauseMillis;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
         this.skipUpdateStatistics = skipUpdateStatistics();
+        long invocationTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
+        this.invocationTimeoutNano = TimeUnit.MILLISECONDS.toNanos(invocationTimeoutMillis);
+        this.retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
     }
 
     @Nonnull
@@ -123,18 +128,11 @@ public class SqlClientService implements SqlService {
 
     @SuppressWarnings("BusyWait")
     SqlResubmissionResult resubmitIfNeeded(SqlClientResult res, RuntimeException error) {
-        if (!(error instanceof HazelcastSqlException)) {
-            return null;
-        }
-
-        if (!shouldResubmitByConfigMode(res)) {
+        if (!(error instanceof HazelcastSqlException) || !shouldResubmit(res)) {
             return null;
         }
 
         long resubmissionStartTime = System.nanoTime();
-        long invocationTimeoutNano = TimeUnit.MILLISECONDS.toNanos(
-                client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS));
-        long retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
         int invokeCount = 0;
 
         ClientConnection connection = getQueryConnection();
@@ -152,6 +150,7 @@ public class SqlClientService implements SqlService {
                 try {
                     Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     return null;
                 }
             }
@@ -160,7 +159,7 @@ public class SqlClientService implements SqlService {
         return null;
     }
 
-    private boolean shouldResubmitByConfigMode(SqlClientResult res) {
+    private boolean shouldResubmit(SqlClientResult res) {
         SqlResubmissionContext resubmissionContext = res.getResubmissionContext();
         ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlResubmissionMode();
         switch (resubmissionMode) {

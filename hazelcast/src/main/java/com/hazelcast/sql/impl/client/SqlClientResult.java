@@ -30,8 +30,10 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -40,10 +42,16 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  */
 public class SqlClientResult implements SqlResult {
     private final SqlClientService service;
-    private Connection connection;
+    private final Connection connection;
     private final QueryId queryId;
     private final int cursorBufferSize;
     private final SqlResubmissionContext resubmissionContext;
+
+    /**
+     * The connection that was created during resubmission.
+     */
+    @GuardedBy("mux")
+    private Connection resubmissionConnection;
 
     /**
      * Mutex to synchronize access between operations.
@@ -68,7 +76,7 @@ public class SqlClientResult implements SqlResult {
     /**
      * Whether any SqlRow was returned from an iterator.
      */
-    private boolean returnedAnyResult;
+    private final AtomicBoolean returnedAnyResult = new AtomicBoolean();
 
     /**
      * Fetch descriptor. Available when the fetch operation is in progress.
@@ -117,9 +125,9 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    private void onExecuteRetryResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
+    private void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
         this.fetch = null;
-        this.connection = connection;
+        this.resubmissionConnection = connection;
 
         if (rowMetadata != null) {
             ClientIterator iterator = state.iterator;
@@ -212,7 +220,7 @@ public class SqlClientResult implements SqlResult {
                 onFetchFinished(null, QueryException.cancelledByUser());
 
                 // Send the close request.
-                service.close(connection, queryId);
+                service.close(resubmissionConnection != null ? resubmissionConnection : connection, queryId);
             } finally {
                 // Set the closed flag to avoid multiple close requests.
                 closed = true;
@@ -242,7 +250,8 @@ public class SqlClientResult implements SqlResult {
             } else {
                 // Initiate the fetch.
                 fetch = new SqlFetchResult();
-                service.fetchAsync(connection, queryId, cursorBufferSize, this);
+                service.fetchAsync(resubmissionConnection != null ? resubmissionConnection : connection, queryId,
+                        cursorBufferSize, this);
             }
 
             // Await the response.
@@ -267,7 +276,7 @@ public class SqlClientResult implements SqlResult {
                 if (resubmissionResult == null) {
                     throw wrap(fetch.getError());
                 }
-                onExecuteRetryResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
+                onResubmissionResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
                         resubmissionResult.getUpdateCount(), resubmissionResult.getConnection());
                 return fetch(timeoutNanos);
             } else {
@@ -395,7 +404,7 @@ public class SqlClientResult implements SqlResult {
 
             JetSqlRow row = getCurrentRow();
             currentPosition++;
-            returnedAnyResult = true;
+            returnedAnyResult.set(true);
             return new SqlRowImpl(rowMetadata, row);
         }
 
@@ -427,6 +436,6 @@ public class SqlClientResult implements SqlResult {
     }
 
     boolean isReturnedAnyResult() {
-        return returnedAnyResult;
+        return returnedAnyResult.get();
     }
 }

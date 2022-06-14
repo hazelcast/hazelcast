@@ -2,118 +2,217 @@ package com.hazelcast.jet.sql.impl.misc;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertTrue;
+
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTest extends SqlTestSupport {
-    @BeforeClass
-    public static void setUpClass() {
-        initializeWithClient(3, null, new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.RETRY_ALL));
+    private static final int INITIAL_CLUSTER_SIZE = 1;
+    private static final int MAP_SIZE = 10_000;
+    private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
+    private static final String MAP_NAME = randomName();
+
+    @Parameterized.Parameter
+    public ClusterFailure clusterFailure;
+
+    @Parameterized.Parameters(name = "clusterFailure:{0}")
+    public static Collection<Object[]> parameters() {
+        List<Object[]> res = new ArrayList<>();
+        res.add(new Object[]{new NodeReplacementClusterFailure()});
+        res.add(new Object[]{new NetworkProblemClusterFailure()});
+        res.add(new Object[]{new NodeTerminationClusterFailure()});
+        return res;
     }
 
     @Test
-    public void test_strange() {
-        HazelcastInstance client = client();
+    public void when_allowsDuplicates() {
+        clusterFailure.initialize();
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.RETRY_SELECTS_ALLOW_DUPLICATES));
 
-        String mapName = randomName();
-        IMap<Long, UUID> map = client.getMap(mapName);
-        for (int i = 0; i < 100_000; i++) {
-            map.put((long) i, UUID.randomUUID());
-        }
-        createMapping(mapName, Long.class, UUID.class);
-        logger.info("Map created");
-
-        for (int i = 0; i < 5; i++) {
-            factory().newHazelcastInstance(smallInstanceConfig());
-            assertClusterSizeEventually(4 + i, client);
-            client.getSql().execute("select * from " + mapName);
-        }
-    }
-
-    @Test
-    public void test_simple() {
-        HazelcastInstance instance = instances()[1];
-        HazelcastInstance client = client();
-
-        assertClusterSizeEventually(3, instance);
-
-        String mapName = randomName();
-        IMap<Long, UUID> map = client.getMap(mapName);
-        for (int i = 0; i < 1_000_000; i++) {
-            map.put((long) i, UUID.randomUUID());
-        }
-
-        logger.info("Map created");
-
-        SqlResult rows = client.getSql().execute("select * from table(generate_stream(1))");
-        new Thread(() -> {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
+        int count = 0;
+        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
+        statement.setCursorBufferSize(1);
+        SqlResult rows = client.getSql().execute(statement);
+        for (SqlRow row : rows) {
+            consume(row);
+            if (count == 0) {
+                clusterFailure.fail();
             }
-            instance.getLifecycleService().terminate();
-        }).start();
+            count++;
+        }
+        assertTrue(MAP_SIZE < count);
 
-        try {
+        clusterFailure.cleanUp();
+    }
+
+    @Test
+    public void when_notAllowsDuplicates() {
+        clusterFailure.initialize();
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.RETRY_SELECTS));
+
+        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
+        statement.setCursorBufferSize(1);
+        SqlResult rows = client.getSql().execute(statement);
+
+        assertThrows(HazelcastSqlException.class, () -> {
+            boolean firstRow = true;
             for (SqlRow row : rows) {
-                System.out.println("Jest");
+                consume(row);
+                if (firstRow) {
+                    clusterFailure.fail();
+                    firstRow = false;
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
+
+        clusterFailure.cleanUp();
     }
 
     @Test
-    public void test_stress() {
-        HazelcastInstance instance = instances()[1];
-        HazelcastInstance client = client();
+    public void when_noResubmissionAllowed() {
+        clusterFailure.initialize();
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.NEVER));
 
-        assertClusterSizeEventually(3, instance);
-
-        String mapName = randomName();
-        IMap<Long, UUID> map = client.getMap(mapName);
-        for (int i = 0; i < 100_000; i++) {
-            map.put((long) i, UUID.randomUUID());
-        }
-        createMapping(mapName, Long.class, UUID.class);
-        logger.info("Map created");
-
-        new Thread(() -> {
-            while (!Thread.interrupted()) {
-                try {
-                    logger.info("Creating new instance");
-                    HazelcastInstance tempInstance = factory().newHazelcastInstance(smallInstanceConfig());
-                    assertClusterSizeEventually(4, tempInstance);
-                    Thread.sleep(2000);
-                    logger.info("Terminating instance");
-//                    tempInstance.getLifecycleService().terminate();
-                } catch (Exception e) {
-                }
+        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
+        statement.setCursorBufferSize(1);
+        SqlResult rows = client.getSql().execute(statement);
+        clusterFailure.fail();
+        assertThrows(HazelcastSqlException.class, () -> {
+            for (SqlRow row : rows) {
+                consume(row);
             }
-        }).start();
+        });
+        clusterFailure.cleanUp();
+    }
 
-        try {
-            while (!Thread.interrupted()) {
-                int count = 0;
-                SqlResult rows = client.getSql().execute("select * from " + mapName);
-                for (SqlRow row : rows) {
-                    count++;
-                }
-                System.out.println(count);
+    private void waitForSqlCatalog(HazelcastInstance newInstance) {
+        logger.info("Waiting for SQL catalog replication");
+        assertTrueEventually(() -> {
+            assertTrue(newInstance.getReplicatedMap("__sql.catalog").size() > 0);
+        });
+        logger.info("SQL catalog replicated");
+    }
+
+    private static Object blackhole;
+
+    private static void consume(Object o) {
+        blackhole = o;
+    }
+
+    private static class NetworkProblemClusterFailure extends SingleFailingInstanceClusterFailure {
+        @Override
+        public void fail() {
+            for (HazelcastInstance hazelcastInstance : hazelcastInstances) {
+                closeConnectionBetween(hazelcastInstance, failingInstance);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
         }
+
+        @Override
+        public void cleanUp() {
+            super.cleanUp();
+            failingInstance.shutdown();
+        }
+    }
+
+    private static class NodeReplacementClusterFailure extends SingleFailingInstanceClusterFailure {
+        private HazelcastInstance replacementInstance;
+
+        @Override
+        public void fail() {
+            failingInstance.getLifecycleService().terminate();
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
+            replacementInstance = factory.newHazelcastInstance(SMALL_INSTANCE_CONFIG);
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE + 1, hazelcastInstances[0]);
+        }
+
+        @Override
+        public void cleanUp() {
+            super.cleanUp();
+            replacementInstance.shutdown();
+        }
+    }
+
+    private static class NodeTerminationClusterFailure extends SingleFailingInstanceClusterFailure {
+        @Override
+        public void fail() {
+            failingInstance.getLifecycleService().terminate();
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
+        }
+    }
+
+    private static abstract class SingleFailingInstanceClusterFailure implements ClusterFailure {
+        protected HazelcastInstance[] hazelcastInstances;
+        protected HazelcastInstance failingInstance;
+        protected TestHazelcastFactory factory = new TestHazelcastFactory();
+        protected HazelcastInstance client;
+
+        @Override
+        public void initialize() {
+            System.out.println("INITIALIZE");
+            hazelcastInstances = factory.newInstances(SMALL_INSTANCE_CONFIG, INITIAL_CLUSTER_SIZE);
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
+            failingInstance = factory.newHazelcastInstance(SMALL_INSTANCE_CONFIG);
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE + 1, hazelcastInstances[0]);
+            waitAllForSafeState(hazelcastInstances);
+            waitAllForSafeState(failingInstance);
+            createMap(hazelcastInstances[0]);
+            client = null;
+        }
+
+        @Override
+        public HazelcastInstance createClient(ClientConfig clientConfig) {
+            client = factory.newHazelcastClient(clientConfig);
+            return client;
+        }
+
+        @Override
+        public void cleanUp() {
+            Arrays.stream(hazelcastInstances).forEach(HazelcastInstance::shutdown);
+            client.shutdown();
+        }
+
+        private void createMap(HazelcastInstance instance) {
+            IMap<Long, UUID> map = instance.getMap(MAP_NAME);
+            for (int i = 0; i < MAP_SIZE; i++) {
+                map.put((long) i, UUID.randomUUID());
+            }
+            createMapping(instance, MAP_NAME, Long.class, UUID.class);
+        }
+    }
+
+    private interface ClusterFailure {
+        void initialize();
+
+        void fail();
+
+        void cleanUp();
+
+        HazelcastInstance createClient(ClientConfig clientConfig);
     }
 }
