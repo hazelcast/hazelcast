@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
@@ -48,7 +49,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
+import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -56,6 +60,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Client-side implementation of SQL service.
  */
 public class SqlClientService implements SqlService {
+    private static final int MAX_FAST_INVOCATION_COUNT = 5;
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -101,7 +106,8 @@ public class SqlClientService implements SqlService {
                 this,
                 connection,
                 id,
-                statement.getCursorBufferSize()
+                statement.getCursorBufferSize(),
+                new SqlResubmissionContext(requestMessage, statement)
         );
 
         try {
@@ -115,14 +121,80 @@ public class SqlClientService implements SqlService {
         }
     }
 
+    @SuppressWarnings("BusyWait")
+    SqlResubmissionResult resubmitIfNeeded(SqlClientResult res, RuntimeException error) {
+        if (!(error instanceof HazelcastSqlException)) {
+            return null;
+        }
+
+        if (!shouldResubmitByConfigMode(res)) {
+            return null;
+        }
+
+        long resubmissionStartTime = System.nanoTime();
+        long invocationTimeoutNano = TimeUnit.MILLISECONDS.toNanos(
+                client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS));
+        long retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+        int invokeCount = 0;
+
+        ClientConnection connection = getQueryConnection();
+        do {
+            logger.info("Resubmitting query");
+            try {
+                ClientMessage message = invoke(res.getResubmissionContext().getRequestMessage(), connection);
+                return createResubmissionResult(res, message, connection);
+            } catch (Exception ignored) {
+                logger.info("Exception while resubmission, ignoring");
+            }
+
+            if (invokeCount++ >= MAX_FAST_INVOCATION_COUNT) {
+                long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+                try {
+                    Thread.sleep(delayMillis);
+                } catch (InterruptedException e) {
+                    return null;
+                }
+            }
+        } while (System.nanoTime() - resubmissionStartTime <= invocationTimeoutNano);
+
+        return null;
+    }
+
+    private boolean shouldResubmitByConfigMode(SqlClientResult res) {
+        SqlResubmissionContext resubmissionContext = res.getResubmissionContext();
+        ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlResubmissionMode();
+        switch (resubmissionMode) {
+            case NEVER:
+                return false;
+            case RETRY_SELECTS:
+                return resubmissionContext.isSelectQuery() && !res.isReturnedAnyResult();
+            case RETRY_SELECTS_ALLOW_DUPLICATES:
+                return resubmissionContext.isSelectQuery();
+            case RETRY_ALL:
+                return true;
+        }
+        throw new IllegalStateException("Unknown resubmission mode: " + resubmissionMode);
+    }
+
     private boolean skipUpdateStatistics() {
         String connectionType = client.getConnectionManager().getConnectionType();
         return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
+    private SqlResubmissionResult createResubmissionResult(SqlClientResult res, ClientMessage message, Connection connection) {
+        SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
+        SqlError sqlError = response.error;
+        if (sqlError != null) {
+            return new SqlResubmissionResult(sqlError);
+        } else {
+            SqlRowMetadata rowMetadata = response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null;
+            return new SqlResubmissionResult(connection, rowMetadata, response.rowPage, response.updateCount);
+        }
+    }
+
     private void handleExecuteResponse(
-        SqlClientResult res,
-        ClientMessage message
+            SqlClientResult res,
+            ClientMessage message
     ) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
@@ -178,7 +250,7 @@ public class SqlClientService implements SqlService {
      * Close remote query cursor.
      *
      * @param connection Connection.
-     * @param queryId Query ID.
+     * @param queryId    Query ID.
      */
     void close(Connection connection, QueryId queryId) {
         try {
@@ -221,7 +293,7 @@ public class SqlClientService implements SqlService {
             return getSerializationService().toData(parameter);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
+                    QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
             );
         }
     }
@@ -263,8 +335,8 @@ public class SqlClientService implements SqlService {
     private RuntimeException rethrow(Throwable cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
-                QueryException.memberConnection(connection.getRemoteAddress()),
-                getClientId()
+                    QueryException.memberConnection(connection.getRemoteAddress()),
+                    getClientId()
             );
         }
 
@@ -282,7 +354,7 @@ public class SqlClientService implements SqlService {
 
     /**
      * Gets a SQL Mapping suggestion for the given IMap name.
-     *
+     * <p>
      * Used by Management Center.
      */
     @Nonnull

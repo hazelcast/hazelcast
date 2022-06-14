@@ -68,6 +68,7 @@ public final class ClientProperty {
      * - Member throws an exception.
      * - Connection between the client and member is closed.
      * - Client's heartbeat requests are timed out.
+     * - SQL query resubmission timed out.
      * Time passed since invocation started is compared with this property.
      * If the time is already passed, then the exception is delegated to the user. If not, the invocation is retried.
      * Note that, if invocation gets no exception and it is a long running one, then it will not get any exception,

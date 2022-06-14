@@ -39,41 +39,62 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
  */
 public class SqlClientResult implements SqlResult {
-
     private final SqlClientService service;
-    private final Connection connection;
+    private Connection connection;
     private final QueryId queryId;
     private final int cursorBufferSize;
+    private final SqlResubmissionContext resubmissionContext;
 
-    /** Mutex to synchronize access between operations. */
+    /**
+     * Mutex to synchronize access between operations.
+     */
     private final Object mux = new Object();
 
-    /** The current result state. */
+    /**
+     * The current result state.
+     */
     private State state;
 
-    /** Whether the iterator has already been requested. When {@code true}, future calls to iterator() will throw an error. */
+    /**
+     * Whether the iterator has already been requested. When {@code true}, future calls to iterator() will throw an error.
+     */
     private boolean iteratorRequested;
 
-    /** Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server. */
+    /**
+     * Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server.
+     */
     private boolean closed;
 
-    /** Fetch descriptor. Available when the fetch operation is in progress. */
+    /**
+     * Whether any SqlRow was returned from an iterator.
+     */
+    private boolean returnedAnyResult;
+
+    /**
+     * Fetch descriptor. Available when the fetch operation is in progress.
+     */
     private SqlFetchResult fetch;
 
-    public SqlClientResult(SqlClientService service, Connection connection, QueryId queryId, int cursorBufferSize) {
+    public SqlClientResult(
+            SqlClientService service,
+            Connection connection,
+            QueryId queryId,
+            int cursorBufferSize,
+            SqlResubmissionContext resubmissionContext) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.cursorBufferSize = cursorBufferSize;
+        this.resubmissionContext = resubmissionContext;
     }
 
     /**
      * Invoked when the {@code execute} operation completes normally.
      */
     public void onExecuteResponse(
-        SqlRowMetadata rowMetadata,
-        SqlPage rowPage,
-        long updateCount
+            SqlRowMetadata rowMetadata,
+            SqlPage rowPage,
+            long updateCount
     ) {
         synchronized (mux) {
             if (closed) {
@@ -93,6 +114,20 @@ public class SqlClientResult implements SqlResult {
             }
 
             mux.notifyAll();
+        }
+    }
+
+    private void onExecuteRetryResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
+        this.fetch = null;
+        this.connection = connection;
+
+        if (rowMetadata != null) {
+            ClientIterator iterator = state.iterator;
+            iterator.onNextPage(rowPage);
+            state = new State(iterator, -1, null);
+        } else {
+            state = new State(null, updateCount, null);
+            markClosed();
         }
     }
 
@@ -228,7 +263,13 @@ public class SqlClientResult implements SqlResult {
             }
 
             if (fetch.getError() != null) {
-                throw wrap(fetch.getError());
+                SqlResubmissionResult resubmissionResult = service.resubmitIfNeeded(this, fetch.getError());
+                if (resubmissionResult == null) {
+                    throw wrap(fetch.getError());
+                }
+                onExecuteRetryResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
+                        resubmissionResult.getUpdateCount(), resubmissionResult.getConnection());
+                return fetch(timeoutNanos);
             } else {
                 SqlPage page = fetch.getPage();
                 assert page != null;
@@ -354,6 +395,7 @@ public class SqlClientResult implements SqlResult {
 
             JetSqlRow row = getCurrentRow();
             currentPosition++;
+            returnedAnyResult = true;
             return new SqlRowImpl(rowMetadata, row);
         }
 
@@ -378,5 +420,13 @@ public class SqlClientResult implements SqlResult {
 
             return new JetSqlRow(service.getSerializationService(), values);
         }
+    }
+
+    SqlResubmissionContext getResubmissionContext() {
+        return resubmissionContext;
+    }
+
+    boolean isReturnedAnyResult() {
+        return returnedAnyResult;
     }
 }
