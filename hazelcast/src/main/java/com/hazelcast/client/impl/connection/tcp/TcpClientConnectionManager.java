@@ -468,6 +468,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
         } catch (TargetDisconnectedException e) {
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             connectionProcessListener.remoteClosedConnection(addressProvider.apply(target));
             return null;
         } catch (HazelcastException e) {
