@@ -77,6 +77,10 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         TestUtil.DummyConnection goConnection = goClient.connectTo(node);
         goConnection.close();
 
+        TestUtil.DummyClient clClient = clientFactory.newClient(ConnectionType.CL_CLIENT, "1.0.0");
+        TestUtil.DummyConnection clConnection = clClient.connectTo(node);
+        clConnection.close();
+
         TestUtil.DummyClient pythonClient = clientFactory.newClient(ConnectionType.PYTHON_CLIENT, "4.3");
         TestUtil.DummyConnection pythonConnection = pythonClient.connectTo(node);
         pythonConnection.close();
@@ -100,6 +104,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         Map<String, String> parameters = getParameters(node);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 2, 2, 0, "4.1", "4.2");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 1, 1, 0, "4.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 1, 1, 0, "1.0.0");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.3");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 1, 1, 0, 100, "4.0");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 1, 1, 0, 100, "4.0.1");
@@ -115,6 +120,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         parameters = getParameters(node);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 1, 0, "4.0");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 1, 0, "4.0.1");
@@ -155,6 +161,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         Map<String, String> parameters = getParameters(node);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 1, 1, 0, "4.1");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
@@ -163,6 +170,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         parameters = getParameters(node1);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 1, 1, 0, "4.2");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
@@ -177,6 +185,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         parameters = getParameters(node);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
@@ -185,6 +194,7 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         parameters = getParameters(node1);
         assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CLC, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
         assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
