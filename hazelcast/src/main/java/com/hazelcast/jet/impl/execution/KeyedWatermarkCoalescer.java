@@ -45,6 +45,10 @@ public class KeyedWatermarkCoalescer {
         this.queueCount = queueCount;
     }
 
+    public Set<Byte> keys() {
+        return coalescers.keySet();
+    }
+
     private WatermarkCoalescer coalescer(byte key) {
         return coalescers.computeIfAbsent(key, x -> {
             WatermarkCoalescer wc = WatermarkCoalescer.create(queueCount);

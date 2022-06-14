@@ -62,11 +62,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.core.metrics.MetricNames.COALESCED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM_LATENCY;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_BATCHES;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.TOP_OBSERVED_WM;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.CLOSE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
@@ -323,6 +325,7 @@ public class ProcessorTasklet implements Tasklet {
 
                 if (pendingGlobalWatermarks.isEmpty()) {
                     state = NULLARY_PROCESS;
+                    outbox.reset();
                     stateMachineStep();
                 }
                 break;
@@ -543,7 +546,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private void fillInbox() {
         assert inbox.isEmpty() : "inbox is not empty";
-        assert pendingGlobalWatermarks.isEmpty() : "No pending watermarks are expected, but was " + pendingGlobalWatermarks.size();
+        assert pendingGlobalWatermarks.isEmpty() :
+                "No pending watermarks are expected, but was " + pendingGlobalWatermarks.size();
 
         // We need to collect metrics before draining the queues into Inbox,
         // otherwise they would appear empty even for slow processors
@@ -707,11 +711,15 @@ public class ProcessorTasklet implements Tasklet {
             MetricDescriptor descriptorWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, ordinal);
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
-        // TODO finish these metrics
-//        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
-//        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
+
         mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
+
+        for (Byte key : coalescer.keys()) {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescer.topObservedWm(key));
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescer.coalescedWm(key));
+        }
 
         mContext.collect(descriptor, this);
 
