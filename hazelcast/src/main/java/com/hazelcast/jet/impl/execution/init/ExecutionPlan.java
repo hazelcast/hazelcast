@@ -67,10 +67,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,6 +94,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -846,14 +845,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return unmodifiableList(vertices);
     }
 
-    public void sortAccordingTo(Map<String, Integer> vertexIdMap) {
-        int index = 0;
-        Map<Integer, Integer> vertexIdToPriority = new LinkedHashMap<>(vertexIdMap.size());
-        for (Integer id : vertexIdMap.values()) {
-            vertexIdToPriority.put(id, index++);
-        }
+    public void sortVerticesAccordingTo(ExecutionPlanBuilder.VertexData vertexData) {
         vertices = vertices.stream()
-                .sorted(Comparator.comparingInt(v -> vertexIdToPriority.get(v.vertexId())))
+                .sorted(comparingInt(v -> vertexData.positionById(v.vertexId())))
                 .collect(toList());
     }
 }
