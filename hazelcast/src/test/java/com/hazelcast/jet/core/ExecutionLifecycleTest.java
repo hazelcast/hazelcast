@@ -730,7 +730,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
 //         generic API operation - generic API threads should not be starved
-        instance().getMap("m").forEach(s -> {});
+        instance().getMap("m").forEach(s -> { });
 
         for (int i = 0; i < submitFutures.size(); i++) {
             MockPMS.unblock();
@@ -768,7 +768,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
-        instance().getMap("m").forEach(s -> {});
+        instance().getMap("m").forEach(s -> { });
 
         for (int i = 0; i < submitFutures.size() * MEMBER_COUNT; i++) {
             MockPS.unblock();
@@ -806,7 +806,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
-        instance().getMap("m").forEach(s -> {});
+        instance().getMap("m").forEach(s -> { });
 
         for (int i = 0; i < submitFutures.size() * MEMBER_COUNT * parallelism; i++) {
             MockP.unblock();

@@ -395,11 +395,6 @@ public final class TestProcessors {
             blockingSemaphore.release();
         }
 
-        @Override
-        public boolean initIsCooperative() {
-            return !this.initBlocks;
-        }
-
         public MockP nonCooperative() {
             isCooperative = false;
             return this;
