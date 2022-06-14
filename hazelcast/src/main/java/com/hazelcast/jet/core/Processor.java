@@ -159,10 +159,6 @@ public interface Processor {
     default void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
     }
 
-    default boolean initIsCooperative() {
-        return true;
-    }
-
     /**
      * Called with a batch of items retrieved from an inbound edge's stream. The
      * items are in the inbox and this method may process zero or more of them,

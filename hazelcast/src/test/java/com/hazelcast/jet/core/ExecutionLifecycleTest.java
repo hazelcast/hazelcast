@@ -720,20 +720,17 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
 
         // Then
-        // JetService.getJobs()
         if (useLightJob) {
             assertEquals(0, instance().getJet().getJobs().size());
         } else {
             assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
         }
         // newJob()
-//        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newJob(dagNormal).join();
         // newLightJob()
-//        instance().getJet().newLightJob(dagNormal).join();
-        // generic API operation - generic API threads should not be starved
-        for (Object m : instance().getMap("m").values()) {
-            System.out.println(m);
-        }
+        instance().getJet().newLightJob(dagNormal).join();
+//         generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> {});
 
         for (int i = 0; i < submitFutures.size(); i++) {
             MockPMS.unblock();
@@ -771,9 +768,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
-        for (Object m : instance().getMap("m").values()) {
-            System.out.println(m);
-        }
+        instance().getMap("m").forEach(s -> {});
 
         for (int i = 0; i < submitFutures.size() * MEMBER_COUNT; i++) {
             MockPS.unblock();
@@ -794,7 +789,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 16;
+        int numJobs = 3;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -811,9 +806,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
-        for (Object m : instance().getMap("m").values()) {
-            System.out.println(m);
-        }
+        instance().getMap("m").forEach(s -> {});
 
         for (int i = 0; i < submitFutures.size() * MEMBER_COUNT * parallelism; i++) {
             MockP.unblock();
