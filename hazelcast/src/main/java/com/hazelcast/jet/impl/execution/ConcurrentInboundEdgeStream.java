@@ -195,17 +195,14 @@ public final class ConcurrentInboundEdgeStream {
                 } else if (itemDetector.item instanceof Watermark) {
                     Watermark watermark = (Watermark) itemDetector.item;
                     for (Watermark wm : coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp())) {
-                        boolean forwarded = maybeEmitWm(wm, dest);
+                        dest.accept(wm);
                         if (logger.isFinestEnabled()) {
                             logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
                                     + " with key = " + watermark.key()
-                                    + (forwarded ? ", forwarded=" : ", not forwarded")
                                     + ", coalescedWm=" + toLocalTime(coalescedWm(watermark.key()))
                                     + ", topObservedWm=" + toLocalTime(topObservedWm(watermark.key())));
                         }
-                        if (forwarded) {
-                            return MADE_PROGRESS;
-                        }
+                        return MADE_PROGRESS;
                     }
                 } else if (itemDetector.item instanceof SnapshotBarrier) {
                     observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
