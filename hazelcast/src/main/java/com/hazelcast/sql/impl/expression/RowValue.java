@@ -25,8 +25,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class RowValue implements Serializable, IdentifiedDataSerializable {
+    // TODO: extend to support field names? DataType spec suggests its warranted e.g.: ROW(id BIGINT, ROW(name VARCHAR))
     private List<Object> values;
 
     public RowValue() {
@@ -70,5 +72,27 @@ public class RowValue implements Serializable, IdentifiedDataSerializable {
     @Override
     public int getClassId() {
         return SqlDataSerializerHook.ROW_VALUE;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final RowValue rowValue = (RowValue) o;
+        return Objects.equals(values, rowValue.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(values);
+    }
+
+    @Override
+    public String toString() {
+        return "RowValue{" + values + '}';
     }
 }

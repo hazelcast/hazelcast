@@ -71,6 +71,7 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     private Object extract(Object res) throws Exception {
         Object value = res;
         for (String component : path) {
+            // TODO: method and field accessors
             final Field field = value.getClass().getDeclaredField(component);
             boolean accessible = field.isAccessible();
             field.setAccessible(true);

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,6 +41,7 @@ import java.util.GregorianCalendar;
 import java.util.Objects;
 
 import static java.time.ZoneOffset.UTC;
+import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class BasicNestedFieldsTest extends SqlJsonTestSupport {
@@ -404,6 +406,19 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
                 rows(2, "office1", "office2"));
     }
 
+    @Test
+    public void test_basicToRow() {
+        initDefault();
+
+        assertRowsAnyOrder("SELECT TO_ROW(this) FROM test", rows(1, new RowValue(
+                asList(
+                        1L, "user1", new RowValue(asList(2L, "organization1", new RowValue(asList(
+                                3L, "office1"
+                        ))))
+                )
+        )));
+    }
+
     private User initDefault() {
         createType("UserType", User.class);
         createType("OfficeType", Office.class);
@@ -424,7 +439,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         return user;
     }
 
-    private void execute(String sql, Object ...args) {
+    private void execute(String sql, Object... args) {
         instance().getSql().execute(sql, args);
     }
 
@@ -432,7 +447,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         public String name;
         public B b;
 
-        public A() { }
+        public A() {
+        }
 
         public A(final String name) {
             this.name = name;
@@ -443,7 +459,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         public String name;
         public C c;
 
-        public B() { }
+        public B() {
+        }
 
         public B(final String name) {
             this.name = name;
@@ -454,7 +471,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         public String name;
         public A a;
 
-        public C() { }
+        public C() {
+        }
 
         public C(final String name) {
             this.name = name;
@@ -466,7 +484,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         public String name;
         public SelfRef other;
 
-        public SelfRef() { }
+        public SelfRef() {
+        }
 
         public SelfRef(final Long id, final String name) {
             this.id = id;
@@ -479,7 +498,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         private String name;
         private Organization organization;
 
-        public User() { }
+        public User() {
+        }
 
         public User(final Long id, final String name, final Organization organization) {
             this.id = id;
@@ -545,7 +565,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         private String name;
         private Office office;
 
-        public Organization() { }
+        public Organization() {
+        }
 
         public Organization(final Long id, final String name, final Office office) {
             this.id = id;
@@ -615,7 +636,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         private Long id;
         private String name;
 
-        public Office() { }
+        public Office() {
+        }
 
         public Office(final Long id, final String name) {
             this.id = id;
@@ -673,7 +695,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         private String name;
         private NestedPOJO child;
 
-        public RegularPOJO() { }
+        public RegularPOJO() {
+        }
 
         public RegularPOJO(final String name, final NestedPOJO child) {
             this.name = name;
@@ -768,7 +791,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         private String name;
         private AllTypesValue child;
 
-        public AllTypesParent() { }
+        public AllTypesParent() {
+        }
 
         public AllTypesParent(final String name, final AllTypesValue child) {
             this.name = name;

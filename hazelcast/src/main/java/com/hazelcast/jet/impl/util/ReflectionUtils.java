@@ -107,10 +107,9 @@ public final class ReflectionUtils {
      * containing class type (a builder-style setter) and take one argument of
      * {@code propertyType}.
      *
-     * @param clazz The containing class
+     * @param clazz        The containing class
      * @param propertyName Name of the property
      * @param propertyType The propertyType of the property
-     *
      * @return The found setter or null if one matching the criteria doesn't exist
      */
     @Nullable
@@ -146,7 +145,38 @@ public final class ReflectionUtils {
 
     @Nullable
     public static Method findPropertySetter(@Nonnull Class<?> clazz, @Nonnull String propertyName) {
-        String setterName = "set" + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+        final Method setter = findPropertyAccessor(clazz, propertyName, "set");
+        if (setter == null) {
+            return null;
+        }
+
+        Class<?> returnType = setter.getReturnType();
+        if (returnType != void.class && returnType != Void.class && returnType != clazz) {
+            return null;
+        }
+        return setter;
+    }
+
+    public static Method findPropertyGetter(@Nonnull Class<?> clazz, @Nonnull String propertyName) {
+        final Method getter = findPropertyAccessor(clazz, propertyName, "get");
+        if (getter == null) {
+            return null;
+        }
+
+        Class<?> returnType = getter.getReturnType();
+        if (returnType == void.class || returnType == Void.class) {
+            return null;
+        }
+
+        return getter;
+    }
+
+    private static Method findPropertyAccessor(
+            @Nonnull Class<?> clazz,
+            @Nonnull String propertyName,
+            @Nonnull String prefix
+    ) {
+        String setterName = prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         Method method = stream(clazz.getMethods()).filter(m -> m.getName().equals(setterName))
                 .findAny()
                 .orElse(null);
@@ -159,11 +189,6 @@ public final class ReflectionUtils {
             return null;
         }
 
-        Class<?> returnType = method.getReturnType();
-        if (returnType != void.class && returnType != Void.class && returnType != clazz) {
-            return null;
-        }
-
         return method;
     }
 
@@ -171,7 +196,7 @@ public final class ReflectionUtils {
      * Return a {@link Field} object for the given {@code fieldName}. The field
      * must be public and non-static.
      *
-     * @param clazz The containing class
+     * @param clazz     The containing class
      * @param fieldName The field
      * @return The field object or null, if not found or doesn't match the criteria.
      */
@@ -205,10 +230,10 @@ public final class ReflectionUtils {
             return concat(
                     stream(classes),
                     scanResult.getAllClasses()
-                              .stream()
-                              .filter(classInfo -> classNames.contains(classInfo.getName()))
-                              .flatMap(classInfo -> classInfo.getInnerClasses().stream())
-                              .map(ClassInfo::loadClass)
+                            .stream()
+                            .filter(classInfo -> classNames.contains(classInfo.getName()))
+                            .flatMap(classInfo -> classInfo.getInnerClasses().stream())
+                            .map(ClassInfo::loadClass)
             ).collect(toList());
         }
     }
