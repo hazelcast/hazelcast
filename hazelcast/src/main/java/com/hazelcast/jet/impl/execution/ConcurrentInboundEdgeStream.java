@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
@@ -166,7 +167,7 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Nonnull @Override
-        public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
+        public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
             tracker.reset();
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
                 final QueuedPipe<Object> q = conveyor.queue(queueIndex);
@@ -219,8 +220,7 @@ public final class ConcurrentInboundEdgeStream {
                 // if we have received the current snapshot from all active queues, forward it
                 if (itemDetector.item != null && receivedBarriers.cardinality() == liveQueueCount) {
                     assert currentBarrier != null : "currentBarrier == null";
-                    boolean res = dest.test(currentBarrier);
-                    assert res : "test result expected to be true";
+                    dest.accept(currentBarrier);
                     currentBarrier = null;
                     receivedBarriers.clear();
                     return MADE_PROGRESS;
@@ -237,7 +237,7 @@ public final class ConcurrentInboundEdgeStream {
          * Drains the supplied queue into a {@code dest} collection, up to the next
          * {@link Watermark} or {@link SnapshotBarrier}. Also updates the {@code tracker} with new status.
          */
-        private ProgressState drainQueue(Pipe<Object> queue, Predicate<Object> dest) {
+        private ProgressState drainQueue(Pipe<Object> queue, Consumer<Object> dest) {
             itemDetector.reset(dest);
 
             int drainedCount = queue.drain(itemDetector);
@@ -262,10 +262,9 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers.set(queueIndex);
         }
 
-        private boolean maybeEmitWm(Watermark wm, Predicate<Object> dest) {
+        private boolean maybeEmitWm(Watermark wm, Consumer<Object> dest) {
             if (wm.timestamp() != NO_NEW_WM) {
-                boolean res = dest.test(wm);
-                assert res : "test result expected to be true";
+                dest.accept(wm);
                 return true;
             }
             return false;
@@ -287,10 +286,10 @@ public final class ConcurrentInboundEdgeStream {
          * When encountering either of them it prevents draining more items.
          */
         private static final class ItemDetector implements Predicate<Object> {
-            Predicate<Object> dest;
+            Consumer<Object> dest;
             BroadcastItem item;
 
-            void reset(Predicate<Object> newDest) {
+            void reset(Consumer<Object> newDest) {
                 dest = newDest;
                 item = null;
             }
@@ -302,7 +301,8 @@ public final class ConcurrentInboundEdgeStream {
                     item = (BroadcastItem) o;
                     return false;
                 }
-                return dest.test(o);
+                dest.accept(o);
+                return true;
             }
         }
     }
@@ -341,7 +341,7 @@ public final class ConcurrentInboundEdgeStream {
         }
 
         @Nonnull @Override
-        public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
+        public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
             tracker.reset();
             tracker.notDone();
 
@@ -386,8 +386,7 @@ public final class ConcurrentInboundEdgeStream {
                 assert lastItem == null || comparator.compare(lastItem, minItem) <= 0 :
                         "Disorder on a monotonicOrder edge";
                 lastItem = minItem;
-                boolean consumeResult = dest.test(lastItem);
-                assert consumeResult : "consumeResult is false";
+                dest.accept(lastItem);
             }
         }
 

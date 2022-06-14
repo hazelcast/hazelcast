@@ -60,7 +60,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.core.metrics.MetricNames.COALESCED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
@@ -160,7 +160,7 @@ public class ProcessorTasklet implements Tasklet {
     @Probe(name = MetricNames.QUEUES_CAPACITY)
     private final Counter queuesCapacity = SwCounter.newSwCounter();
 
-    private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
+    private final Consumer<Object> addToInboxFunction = inbox.queue()::add;
     private Future<?> closeFuture;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")

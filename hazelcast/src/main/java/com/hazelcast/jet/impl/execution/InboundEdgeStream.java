@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 /**
  * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal. In the
@@ -42,7 +42,7 @@ public interface InboundEdgeStream {
      * Passes the items from the queues to the predicate while it returns {@code true}.
      */
     @Nonnull
-    ProgressState drainTo(@Nonnull Predicate<Object> dest);
+    ProgressState drainTo(@Nonnull Consumer<Object> dest);
 
     /**
      * Returns true after all the input queues are done.

@@ -24,7 +24,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -55,7 +55,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Nonnull @Override
-    public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
+    public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
@@ -67,7 +67,9 @@ public class MockInboundStream implements InboundEdgeStream {
             if (item == DONE_ITEM) {
                 done = true;
                 break;
-            } else if (!dest.test(item) || item instanceof SnapshotBarrier || item instanceof Watermark) {
+            }
+            dest.accept(item);
+            if (item instanceof SnapshotBarrier || item instanceof Watermark) {
                 break;
             }
         }
