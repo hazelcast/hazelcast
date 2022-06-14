@@ -146,7 +146,7 @@ public interface ChangeRecord {
 
     /**
      * Returns the new value of the record. For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value
-     * describes the database record as it looks AFTER the event, so the latest image, for <em>delete</em> it returns null.
+     * describes the database record as it looks AFTER the event, so the latest state, for <em>delete</em> it returns null.
      *
      * @since 5.2
      */
