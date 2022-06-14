@@ -6540,6 +6540,8 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
         assertFalse(parameters.isPerEntryStatsEnabledExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
+        assertFalse(parameters.isTieredStoreConfigExists);
     }
 
     @Test
