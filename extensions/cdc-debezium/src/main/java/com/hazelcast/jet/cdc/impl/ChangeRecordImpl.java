@@ -23,6 +23,7 @@ import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -134,8 +135,8 @@ public class ChangeRecordImpl implements ChangeRecord {
         switch (operation) {
             case SYNC:
             case INSERT:
-            case UPDATE: return newValue();
-            case DELETE: return oldValue();
+            case UPDATE: return requireNonNull(newValue(), "newValue missing for operation " + operation);
+            case DELETE: return requireNonNull(oldValue(), "oldValue missing for operation DELETE");
             default: throw new IllegalArgumentException("cannot call .value() for operation " + operation);
         }
     }
@@ -153,8 +154,7 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Override
     @Nonnull
     public String toJson() {
-        return String.format("key:{%s}, value:{%s}", keyJson,
-                operation == Operation.DELETE ? oldValue().toJson() : newValue().toJson());
+        return String.format("key:{%s}, value:{%s}", keyJson, value().toJson());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         return this.sequenceSource == that.sequenceSource &&
                 this.sequenceValue == that.sequenceValue &&
                 this.keyJson.equals(that.keyJson) &&
-                this.oldValue.equals(that.oldValue) &&
-                this.newValue.equals(that.newValue);
+                Objects.equals(this.oldValue, that.oldValue) &&
+                Objects.equals(this.newValue, that.newValue);
     }
 }

@@ -154,9 +154,8 @@ public interface ChangeRecord {
     RecordPart newValue();
 
     /**
-     * Returns the new value of the record. For <em>update</em> and <em>delete</em> operations the value
-     * describes the database record as it looks <strong>before</strong> the event,
-     * for <em>sync</em> and <em>insert</em> it returns null.
+     * Returns the old value of the record. For <em>update</em> and <em>delete</em> operations the value
+     * describes the database record as it looks BEFORE the event, for <em>sync</em> and <em>insert</em> it returns null.
      *
      * @since 5.2
      */

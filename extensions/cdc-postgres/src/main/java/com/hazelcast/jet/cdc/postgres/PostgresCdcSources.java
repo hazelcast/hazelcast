@@ -140,11 +140,20 @@ public final class PostgresCdcSources {
         public Builder setSnapshotMode(@Nonnull PostgresSnapshotMode snapshotMode) {
             PostgresConnectorConfig.SnapshotMode debeziumMode;
             switch (snapshotMode) {
-                case ALWAYS: debeziumMode = PostgresConnectorConfig.SnapshotMode.ALWAYS; break;
-                case INITIAL: debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL; break;
-                case INITIAL_ONLY: debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY; break;
-                case NEVER: debeziumMode = PostgresConnectorConfig.SnapshotMode.NEVER; break;
-                default: throw new IllegalArgumentException("unsupported snapshot mode " + snapshotMode);
+                case ALWAYS:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.ALWAYS;
+                    break;
+                case INITIAL:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL;
+                    break;
+                case INITIAL_ONLY:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY;
+                    break;
+                case NEVER:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.NEVER;
+                    break;
+                default:
+                    throw new IllegalArgumentException("unsupported snapshot mode " + snapshotMode);
             }
             config.setProperty("snapshot.mode", debeziumMode.getValue());
             return this;
