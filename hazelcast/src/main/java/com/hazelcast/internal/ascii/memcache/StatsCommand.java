@@ -21,7 +21,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class StatsCommand extends AbstractTextCommand {
@@ -100,7 +100,7 @@ public class StatsCommand extends AbstractTextCommand {
         if (response == null) {
             response = ByteBuffer.allocate(0);
         }
-        copyToHeapBuffer(response, dst);
+        copyFromHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 
