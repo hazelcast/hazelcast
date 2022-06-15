@@ -18,7 +18,9 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.internal.nio.IOUtil;
+
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -57,15 +59,11 @@ public class SetCommand extends AbstractTextCommand {
         return false;
     }
 
-    void copy(ByteBuffer cb) {
-        if (cb.isDirect()) {
-            int n = Math.min(cb.remaining(), bbValue.remaining());
-            if (n > 0) {
-                cb.get(bbValue.array(), bbValue.position(), n);
-                bbValue.position(bbValue.position() + n);
-            }
+    void copy(ByteBuffer src) {
+        if (src.isDirect()) {
+            copyToHeapBuffer(src, bbValue);
         } else {
-            IOUtil.copyToHeapBuffer(cb, bbValue);
+            copyFromHeapBuffer(src, bbValue);
         }
     }
 
