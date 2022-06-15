@@ -388,7 +388,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return jobConfig;
     }
 
-    void addVertex(VertexDef vertex) {
+    synchronized void addVertex(VertexDef vertex) {
         vertices.add(vertex);
     }
 
