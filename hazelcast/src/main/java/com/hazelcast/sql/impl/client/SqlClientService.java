@@ -41,7 +41,6 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.SqlErrorCode;
 
 import javax.annotation.Nonnull;
 import java.security.AccessControlException;
@@ -55,6 +54,9 @@ import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PA
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.sql.impl.SqlErrorCode.CONNECTION_PROBLEM;
+import static com.hazelcast.sql.impl.SqlErrorCode.PARTITION_DISTRIBUTION;
+import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
 
 /**
  * Client-side implementation of SQL service.
@@ -121,14 +123,21 @@ public class SqlClientService implements SqlService {
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
-            res.onExecuteError(error);
-            throw error;
+            SqlResubmissionResult resubmissionResult = resubmitIfNeeded(res, error);
+            if (resubmissionResult == null) {
+                res.onExecuteError(error);
+                throw error;
+            }
+            handleExecuteResubmittedResponse(res, resubmissionResult);
+            return res;
         }
     }
 
     @SuppressWarnings("BusyWait")
     SqlResubmissionResult resubmitIfNeeded(SqlClientResult res, RuntimeException error) {
-        if (!(error instanceof HazelcastSqlException) || !shouldResubmit(res)) {
+        logger.info("Resubmitting query? " + error);
+
+        if (!(error instanceof HazelcastSqlException) || !shouldResubmit((HazelcastSqlException) error) || !shouldResubmit(res)) {
             return null;
         }
 
@@ -136,11 +145,15 @@ public class SqlClientService implements SqlService {
         int invokeCount = 0;
 
         ClientConnection connection = getQueryConnection();
+        SqlResubmissionResult resubmissionResult = null;
         do {
             logger.info("Resubmitting query");
             try {
                 ClientMessage message = invoke(res.getResubmissionContext().getRequestMessage(), connection);
-                return createResubmissionResult(res, message, connection);
+                resubmissionResult = createResubmissionResult(res, message, connection);
+                if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
+                    return resubmissionResult;
+                }
             } catch (Exception ignored) {
                 logger.info("Exception while resubmission, ignoring");
             }
@@ -151,12 +164,24 @@ public class SqlClientService implements SqlService {
                     Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    return null;
+                    return resubmissionResult;
                 }
             }
         } while (System.nanoTime() - resubmissionStartTime <= invocationTimeoutNano);
 
-        return null;
+        return resubmissionResult;
+    }
+
+    private boolean shouldResubmit(HazelcastSqlException error) {
+        return shouldResubmit(error.getCode());
+    }
+
+    private boolean shouldResubmit(SqlError error) {
+        return shouldResubmit(error.getCode());
+    }
+
+    private boolean shouldResubmit(int errorCode) {
+        return errorCode == CONNECTION_PROBLEM || errorCode == PARTITION_DISTRIBUTION || errorCode == TOPOLOGY_CHANGE;
     }
 
     private boolean shouldResubmit(SqlClientResult res) {
@@ -191,10 +216,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private void handleExecuteResponse(
-            SqlClientResult res,
-            ClientMessage message
-    ) {
+    private void handleExecuteResponse(SqlClientResult res, ClientMessage message) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -211,6 +233,22 @@ public class SqlClientService implements SqlService {
                     response.rowPage,
                     response.updateCount
             );
+        }
+    }
+
+    private void handleExecuteResubmittedResponse(SqlClientResult res, SqlResubmissionResult resubmissionResult) {
+        if (resubmissionResult.getSqlError() != null) {
+            SqlError sqlError = resubmissionResult.getSqlError();
+            throw new HazelcastSqlException(
+                    sqlError.getOriginatingMemberId(),
+                    sqlError.getCode(),
+                    sqlError.getMessage(),
+                    null,
+                    sqlError.getSuggestion()
+            );
+        } else {
+            res.onResubmissionResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
+                    resubmissionResult.getUpdateCount(), resubmissionResult.getConnection());
         }
     }
 
@@ -267,7 +305,7 @@ public class SqlClientService implements SqlService {
             ClientConnection connection = client.getConnectionManager().getConnectionForSql();
 
             if (connection == null) {
-                throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+                throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
             }
 
             return connection;

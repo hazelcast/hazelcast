@@ -14,100 +14,137 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTest extends SqlTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final int MAP_SIZE = 10_000;
+    private static final int COMMON_MAP_SIZE = 10_000;
+    private static final int SLOW_MAP_SIZE = 10;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
-    private static final String MAP_NAME = randomName();
+    private static final String COMMON_MAP_NAME = randomName();
+    private static final String SLOW_MAP_NAME = randomName();
 
-    @Parameterized.Parameter
+    @Parameterized.Parameter(0)
     public ClusterFailure clusterFailure;
 
-    @Parameterized.Parameters(name = "clusterFailure:{0}")
+    @Parameterized.Parameter(1)
+    public ClientSqlResubmissionMode resubmissionMode;
+
+    @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
-        res.add(new Object[]{new NodeReplacementClusterFailure()});
-        res.add(new Object[]{new NodeShutdownClusterFailure()});
-        res.add(new Object[]{new NetworkProblemClusterFailure()});
-        res.add(new Object[]{new NodeTerminationClusterFailure()});
+        List<SingleFailingInstanceClusterFailure> failures = Arrays.asList(
+//                new NodeReplacementClusterFailure(),
+                new NodeShutdownClusterFailure(),
+//                new NetworkProblemClusterFailure(),
+                new NodeTerminationClusterFailure());
+//        {
+//            ClientSqlResubmissionMode mode = ClientSqlResubmissionMode.RETRY_SELECTS;
+        for (ClientSqlResubmissionMode mode : ClientSqlResubmissionMode.values()) {
+            for (SingleFailingInstanceClusterFailure failure : failures) {
+                res.add(new Object[]{failure, mode});
+            }
+        }
         return res;
     }
 
     @Test
-    public void when_allowsDuplicates() {
+    public void when_failingAfterSomeDataIsFetched() {
         clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.RETRY_SELECTS_ALLOW_DUPLICATES));
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
 
-        int count = 0;
-        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
+        SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
         statement.setCursorBufferSize(1);
         SqlResult rows = client.getSql().execute(statement);
+
+        try {
+            if (shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
+                assertThrows(HazelcastSqlException.class, () -> {
+                    countWithFailureInTheMiddle(rows);
+                });
+            } else {
+                int count = countWithFailureInTheMiddle(rows);
+                logger.info("Count: " + count);
+                assertTrue(COMMON_MAP_SIZE < count);
+            }
+        } finally {
+            clusterFailure.cleanUp();
+        }
+    }
+
+    private int countWithFailureInTheMiddle(SqlResult rows) {
+        int count = 0;
         for (SqlRow row : rows) {
-            if (count == MAP_SIZE / 2) {
+            if (count == COMMON_MAP_SIZE / 2) {
                 logger.info("Half of the map is fetched, time to fail");
                 clusterFailure.fail();
             }
             count++;
         }
-        logger.info("Count: " + count);
-        assertTrue(MAP_SIZE < count);
-
-        clusterFailure.cleanUp();
+        return count;
     }
 
     @Test
-    public void when_notAllowsDuplicates() {
+    public void when_failingBeforeAnyDataIsFetched() throws InterruptedException {
         clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.RETRY_SELECTS));
-
-        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
-        statement.setCursorBufferSize(1);
-        SqlResult rows = client.getSql().execute(statement);
-
-        assertThrows(HazelcastSqlException.class, () -> {
-            boolean firstRow = true;
-            for (SqlRow row : rows) {
-                if (firstRow) {
-                    clusterFailure.fail();
-                    firstRow = false;
-                }
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
+        SqlStatement statement = new SqlStatement("select field from " + SLOW_MAP_NAME);
+        statement.setCursorBufferSize(SLOW_MAP_SIZE);
+        Thread failingThread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
             }
+            clusterFailure.fail();
         });
-
-        clusterFailure.cleanUp();
+        failingThread.start();
+        try {
+            if (shouldFailBeforeAnyDataIsFetched(resubmissionMode)) {
+                assertThrows(HazelcastSqlException.class, () -> client.getSql().execute(statement));
+            } else {
+                assertEquals(SLOW_MAP_SIZE, count(client.getSql().execute(statement)));
+            }
+        } finally {
+            failingThread.join();
+            clusterFailure.cleanUp();
+        }
     }
 
-    @Test
-    public void when_noResubmissionAllowed() {
-        clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(ClientSqlResubmissionMode.NEVER));
+    private int count(SqlResult rows) {
+        int count = 0;
+        for (SqlRow row : rows) {
+            count++;
+        }
+        return count;
+    }
 
-        SqlStatement statement = new SqlStatement("select * from " + MAP_NAME);
-        statement.setCursorBufferSize(1);
-        SqlResult rows = client.getSql().execute(statement);
-        clusterFailure.fail();
-        assertThrows(HazelcastSqlException.class, () -> {
-            for (SqlRow row : rows) {
-            }
-        });
-        clusterFailure.cleanUp();
+    private boolean shouldFailBeforeAnyDataIsFetched(ClientSqlResubmissionMode mode) {
+        return mode == ClientSqlResubmissionMode.NEVER;
+    }
+
+    private boolean shouldFailAfterSomeDataIsFetched(ClientSqlResubmissionMode mode) {
+        return mode == ClientSqlResubmissionMode.NEVER || mode == ClientSqlResubmissionMode.RETRY_SELECTS;
     }
 
     private static class NetworkProblemClusterFailure extends SingleFailingInstanceClusterFailure {
@@ -122,7 +159,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
         @Override
         public void cleanUp() {
             super.cleanUp();
-            failingInstance.shutdown();
+            failingInstance.getLifecycleService().terminate();
         }
     }
 
@@ -140,7 +177,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
         @Override
         public void cleanUp() {
             super.cleanUp();
-            replacementInstance.shutdown();
+            replacementInstance.getLifecycleService().terminate();
         }
     }
 
@@ -174,7 +211,8 @@ public class SqlResubmissionTest extends SqlTestSupport {
             assertClusterSizeEventually(INITIAL_CLUSTER_SIZE + 1, hazelcastInstances[0]);
             waitAllForSafeState(hazelcastInstances);
             waitAllForSafeState(failingInstance);
-            createMap(hazelcastInstances[0]);
+            createMap(hazelcastInstances[0], COMMON_MAP_NAME, COMMON_MAP_SIZE, UUID::randomUUID, UUID.class);
+//            createMap(failingInstance, SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowDeserObject::new, SlowDeserObject.class);
             client = null;
         }
 
@@ -186,16 +224,21 @@ public class SqlResubmissionTest extends SqlTestSupport {
 
         @Override
         public void cleanUp() {
-            Arrays.stream(hazelcastInstances).forEach(HazelcastInstance::shutdown);
-            client.shutdown();
+            Arrays.stream(hazelcastInstances).forEach(instance -> instance.getLifecycleService().terminate());
+            client.getLifecycleService().terminate();
         }
 
-        private void createMap(HazelcastInstance instance) {
-            IMap<Long, UUID> map = instance.getMap(MAP_NAME);
-            for (int i = 0; i < MAP_SIZE; i++) {
-                map.put((long) i, UUID.randomUUID());
+        private <T> void createMap(HazelcastInstance instance, String name, int size, Supplier<T> objectCreator, Class<T> tClass) {
+            IMap<Long, T> map = instance.getMap(name);
+            for (int i = 0; i < size; i++) {
+                map.put((long) i, objectCreator.get());
             }
-            createMapping(instance, MAP_NAME, Long.class, UUID.class);
+            createMapping(instance, name, Long.class, tClass);
+        }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName();
         }
     }
 
@@ -207,5 +250,21 @@ public class SqlResubmissionTest extends SqlTestSupport {
         void cleanUp();
 
         HazelcastInstance createClient(ClientConfig clientConfig);
+    }
+
+    public static class SlowDeserObject implements Serializable {
+        public int field = 0;
+
+        private void readObject(ObjectInputStream ib) throws ClassNotFoundException, IOException {
+            ib.defaultReadObject();
+            try {
+                Thread.sleep(2_000);
+            } catch (InterruptedException e) {
+            }
+        }
+
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            out.defaultWriteObject();
+        }
     }
 }

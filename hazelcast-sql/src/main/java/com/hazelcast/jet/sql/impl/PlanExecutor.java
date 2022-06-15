@@ -20,6 +20,8 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -55,6 +57,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
@@ -483,8 +486,16 @@ public class PlanExecutor {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
+            if (t instanceof TargetNotMemberException ||
+                    t instanceof HazelcastInstanceNotActiveException ||
+                    t instanceof MemberLeftException) {
+                return SqlErrorCode.TOPOLOGY_CHANGE;
+            }
             t = t.getCause();
         }
+
+        System.err.println("TOPOLOGY: " + t.getClass().getName());
+
         return SqlErrorCode.GENERIC;
     }
 

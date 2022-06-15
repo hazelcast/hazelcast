@@ -125,19 +125,20 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    private void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
+    public void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
         synchronized (mux) {
             this.fetch = null;
             this.resubmissionConnection = connection;
 
             if (rowMetadata != null) {
-                ClientIterator iterator =  state.iterator;
+                ClientIterator iterator = state == null ? new ClientIterator(rowMetadata) : state.iterator;
                 iterator.onNextPage(rowPage);
                 state = new State(iterator, -1, null);
             } else {
                 state = new State(null, updateCount, null);
                 markClosed();
             }
+            mux.notifyAll();
         }
     }
 
