@@ -94,8 +94,6 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.unmodifiableList;
-import static java.util.Comparator.comparingInt;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -154,7 +152,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     ExecutionPlan(Map<Address, int[]> partitionAssignment, JobConfig jobConfig, long lastSnapshotId,
-                  int memberIndex, int memberCount, boolean isLightJob, Subject subject) {
+                  int memberIndex, int memberCount, boolean isLightJob, Subject subject, int expectedVerticesCount) {
         this.partitionAssignment = partitionAssignment;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
@@ -162,6 +160,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.memberCount = memberCount;
         this.isLightJob = isLightJob;
         this.subject = subject;
+        this.vertices = new ArrayList<>(expectedVerticesCount);
+        for (int i = 0; i < expectedVerticesCount; i++) {
+            vertices.add(null); // placeholder to be replaced with for set()
+        }
     }
 
     /**
@@ -293,7 +295,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * - If {@link ProcessorTasklet} for V2 is on remote member, on current member we have to create {@link SenderTasklet}
      *   that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
      *   is done through the concurrent conveyors.
-     * To make it even more clear that's what are our possibilities (http://viz-js.com/):
+     * To make it even more clear that's what are our possibilities (<a href="http://viz-js.com/">http://viz-js.com</a>):
      *
      * digraph Local {
      *     subgraph cluster_0 {
@@ -388,8 +390,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return jobConfig;
     }
 
-    synchronized void addVertex(VertexDef vertex) {
-        vertices.add(vertex);
+    synchronized void addVertex(int position, VertexDef vertex) {
+        vertices.set(position, vertex);
     }
 
     // Implementation of IdentifiedDataSerializable
@@ -843,11 +845,5 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public List<VertexDef> getVertices() {
         return unmodifiableList(vertices);
-    }
-
-    public void sortVerticesAccordingTo(ExecutionPlanBuilder.VertexData vertexData) {
-        vertices = vertices.stream()
-                .sorted(comparingInt(v -> vertexData.positionById(v.vertexId())))
-                .collect(toList());
     }
 }

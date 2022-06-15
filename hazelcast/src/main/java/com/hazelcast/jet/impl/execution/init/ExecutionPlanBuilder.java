@@ -34,10 +34,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.VertexData.assignVertexIds;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -62,11 +63,12 @@ public final class ExecutionPlanBuilder {
     private ExecutionPlanBuilder() {
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
+    @SuppressWarnings({"checkstyle:ParameterNumber", "rawtypes"})
     public static CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
             NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
+        final VerticesIdAndOrder verticesIdAndOrder = VerticesIdAndOrder.assignVertexIds(dag);
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
         final Map<Address, int[]> partitionsByAddress =
@@ -79,19 +81,16 @@ public final class ExecutionPlanBuilder {
         int memberIndex = 0;
         for (MemberInfo member : partitionsByMember.keySet()) {
             plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
-                    clusterSize, isLightJob, subject));
+                    clusterSize, isLightJob, subject, verticesIdAndOrder.count()));
         }
-        final VertexData vertexData = assignVertexIds(dag);
 
         ExecutorService initOffloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
-        CompletableFuture[] futures = new CompletableFuture[vertexData.vertexIdMap.entrySet().size()];
-        int index = 0;
-        for (Entry<String, Integer> entry : vertexData.vertexIdMap.entrySet()) {
-            final Vertex vertex = dag.getVertex(entry.getKey());
-            int currentIndex = index++;
+        CompletableFuture[] futures = new CompletableFuture[verticesIdAndOrder.count()];
+        for (VertexIdPos entry : verticesIdAndOrder) {
+            final Vertex vertex = dag.getVertex(entry.vertexName);
             assert vertex != null;
             final ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
-            final int vertexId = entry.getValue();
+            final int vertexId = entry.vertexId;
             // The local parallelism determination here is effective only
             // in jobs submitted as DAG. Otherwise, in jobs submitted as
             // pipeline, we are already doing this determination while
@@ -99,9 +98,9 @@ public final class ExecutionPlanBuilder {
             final int localParallelism = vertex.determineLocalParallelism(defaultParallelism);
             final int totalParallelism = localParallelism * clusterSize;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,
-                    e -> vertexData.idByName(e.getSourceName()), isJobDistributed);
+                    e -> verticesIdAndOrder.idByName(e.getSourceName()), isJobDistributed);
             final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
-                    e -> vertexData.idByName(e.getDestName()), isJobDistributed);
+                    e -> verticesIdAndOrder.idByName(e.getDestName()), isJobDistributed);
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
@@ -131,23 +130,18 @@ public final class ExecutionPlanBuilder {
                     final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                     vertexDef.addInboundEdges(inbound);
                     vertexDef.addOutboundEdges(outbound);
-                    e.getValue().addVertex(vertexDef);
+                    e.getValue().addVertex(entry.requiredPosition, vertexDef);
                 }
             };
             if (metaSupplier.initIsCooperative()) {
                 action.run();
-                futures[currentIndex] = completedFuture(null);
+                futures[entry.requiredPosition] = completedFuture(null);
             } else {
-                futures[currentIndex] = CompletableFuture.runAsync(action, initOffloadExecutor);
+                futures[entry.requiredPosition] = CompletableFuture.runAsync(action, initOffloadExecutor);
             }
         }
         return CompletableFuture.allOf(futures)
-                .thenCompose(r -> {
-                    for (ExecutionPlan plan : plans.values()) {
-                        plan.sortVerticesAccordingTo(vertexData);
-                    }
-                    return completedFuture(plans);
-                });
+                .thenCompose(r -> completedFuture(plans));
     }
 
     /**
@@ -156,32 +150,58 @@ public final class ExecutionPlanBuilder {
      * - name
      * - position
      */
-    static final class VertexData {
+    private static final class VerticesIdAndOrder implements Iterable<VertexIdPos> {
         private final LinkedHashMap<String, Integer> vertexIdMap;
-        private final HashMap<Integer, Integer> vertexPosByName;
+        private final HashMap<Integer, Integer> vertexPosById;
 
-        private VertexData(LinkedHashMap<String, Integer> vertexIdMap) {
+        private VerticesIdAndOrder(LinkedHashMap<String, Integer> vertexIdMap) {
             this.vertexIdMap = vertexIdMap;
             int index = 0;
-            vertexPosByName = new LinkedHashMap<>(vertexIdMap.size());
+            vertexPosById = new LinkedHashMap<>(vertexIdMap.size());
             for (Integer vertexId : vertexIdMap.values()) {
-                vertexPosByName.put(vertexId, index++);
+                vertexPosById.put(vertexId, index++);
             }
         }
 
-        Integer idByName(String vertexName) {
+        private Integer idByName(String vertexName) {
             return vertexIdMap.get(vertexName);
         }
 
-        int positionById(int vertexId) {
-            return vertexPosByName.get(vertexId);
-        }
-
-        static VertexData assignVertexIds(DAG dag) {
+        private static VerticesIdAndOrder assignVertexIds(DAG dag) {
             LinkedHashMap<String, Integer> vertexIdMap = new LinkedHashMap<>();
             final int[] vertexId = {0};
             dag.forEach(v -> vertexIdMap.put(v.getName(), vertexId[0]++));
-            return new VertexData(vertexIdMap);
+            return new VerticesIdAndOrder(vertexIdMap);
+        }
+
+        private int count() {
+            return vertexIdMap.size();
+        }
+
+        @Nonnull
+        @Override
+        public Iterator<VertexIdPos> iterator() {
+            return vertexIdMap.entrySet().stream()
+                    .map(e -> new VertexIdPos(e.getValue(), e.getKey(), vertexPosById.get(e.getValue())))
+                    .iterator();
+        }
+    }
+
+    private static class VertexIdPos {
+        private final int vertexId;
+        private final String vertexName;
+
+        /**
+         * Position on vertices list that vertex with this id/name should occupy.
+         * {@link ExecutionPlan#getVertices()} order matters, it must be the same as DAG iteration order,
+         * otherwise some functions in further processing won't give good results.
+         */
+        private final int requiredPosition;
+
+        private VertexIdPos(int vertexId, String vertexName, int position) {
+            this.vertexId = vertexId;
+            this.vertexName = vertexName;
+            this.requiredPosition = position;
         }
     }
 

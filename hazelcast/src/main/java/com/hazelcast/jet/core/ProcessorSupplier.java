@@ -45,8 +45,13 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     default void init(@Nonnull Context context) throws Exception {
     }
 
+    /**
+     * Returns true if the {@link #init} method is cooperative, meaning it doesn't block.
+     *
+     * @since 5.2
+     */
     default boolean initIsCooperative() {
-        return true;
+        return false;
     }
 
     /**
