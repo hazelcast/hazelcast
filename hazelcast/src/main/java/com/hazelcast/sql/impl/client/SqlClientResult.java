@@ -126,16 +126,18 @@ public class SqlClientResult implements SqlResult {
     }
 
     private void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
-        this.fetch = null;
-        this.resubmissionConnection = connection;
+        synchronized (mux) {
+            this.fetch = null;
+            this.resubmissionConnection = connection;
 
-        if (rowMetadata != null) {
-            ClientIterator iterator = state.iterator;
-            iterator.onNextPage(rowPage);
-            state = new State(iterator, -1, null);
-        } else {
-            state = new State(null, updateCount, null);
-            markClosed();
+            if (rowMetadata != null) {
+                ClientIterator iterator =  state.iterator;
+                iterator.onNextPage(rowPage);
+                state = new State(iterator, -1, null);
+            } else {
+                state = new State(null, updateCount, null);
+                markClosed();
+            }
         }
     }
 

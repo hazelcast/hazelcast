@@ -44,6 +44,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
         res.add(new Object[]{new NodeReplacementClusterFailure()});
+        res.add(new Object[]{new NodeShutdownClusterFailure()});
         res.add(new Object[]{new NetworkProblemClusterFailure()});
         res.add(new Object[]{new NodeTerminationClusterFailure()});
         return res;
@@ -59,12 +60,13 @@ public class SqlResubmissionTest extends SqlTestSupport {
         statement.setCursorBufferSize(1);
         SqlResult rows = client.getSql().execute(statement);
         for (SqlRow row : rows) {
-            consume(row);
-            if (count == 0) {
+            if (count == MAP_SIZE / 2) {
+                logger.info("Half of the map is fetched, time to fail");
                 clusterFailure.fail();
             }
             count++;
         }
+        logger.info("Count: " + count);
         assertTrue(MAP_SIZE < count);
 
         clusterFailure.cleanUp();
@@ -82,7 +84,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
         assertThrows(HazelcastSqlException.class, () -> {
             boolean firstRow = true;
             for (SqlRow row : rows) {
-                consume(row);
                 if (firstRow) {
                     clusterFailure.fail();
                     firstRow = false;
@@ -104,24 +105,9 @@ public class SqlResubmissionTest extends SqlTestSupport {
         clusterFailure.fail();
         assertThrows(HazelcastSqlException.class, () -> {
             for (SqlRow row : rows) {
-                consume(row);
             }
         });
         clusterFailure.cleanUp();
-    }
-
-    private void waitForSqlCatalog(HazelcastInstance newInstance) {
-        logger.info("Waiting for SQL catalog replication");
-        assertTrueEventually(() -> {
-            assertTrue(newInstance.getReplicatedMap("__sql.catalog").size() > 0);
-        });
-        logger.info("SQL catalog replicated");
-    }
-
-    private static Object blackhole;
-
-    private static void consume(Object o) {
-        blackhole = o;
     }
 
     private static class NetworkProblemClusterFailure extends SingleFailingInstanceClusterFailure {
@@ -166,6 +152,14 @@ public class SqlResubmissionTest extends SqlTestSupport {
         }
     }
 
+    private static class NodeShutdownClusterFailure extends SingleFailingInstanceClusterFailure {
+        @Override
+        public void fail() {
+            failingInstance.shutdown();
+            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
+        }
+    }
+
     private static abstract class SingleFailingInstanceClusterFailure implements ClusterFailure {
         protected HazelcastInstance[] hazelcastInstances;
         protected HazelcastInstance failingInstance;
@@ -174,7 +168,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
 
         @Override
         public void initialize() {
-            System.out.println("INITIALIZE");
             hazelcastInstances = factory.newInstances(SMALL_INSTANCE_CONFIG, INITIAL_CLUSTER_SIZE);
             assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
             failingInstance = factory.newHazelcastInstance(SMALL_INSTANCE_CONFIG);
