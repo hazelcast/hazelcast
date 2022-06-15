@@ -161,17 +161,18 @@ public class IOUringEventloop extends Eventloop {
     @Override
     protected void eventLoop() {
         if ((config.flags & IORING_SETUP_IOPOLL) != 0) {
-            System.out.println("foo");
-            // see https://kernel.dk/io_uring.pdf 8.2
-            sq_addEventRead();
+            throw new UnsupportedOperationException();
 
-            do {
-                sq.submit(Native.IORING_ENTER_GETEVENTS);
-                cq.process(eventLoopHandler);
-                runConcurrentTasks();
-                scheduler.tick();
-                runLocalTasks();
-            } while (state == RUNNING);
+//            // see https://kernel.dk/io_uring.pdf 8.2
+//            sq_addEventRead();
+//
+//            do {
+//                sq.submit(Native.IORING_ENTER_GETEVENTS);
+//                cq.process(eventLoopHandler);
+//                runConcurrentTasks();
+//                scheduler.tick();
+//                runLocalTasks();
+//            } while (state == RUNNING);
         } else {
             sq_addEventRead();
 
@@ -240,7 +241,7 @@ public class IOUringEventloop extends Eventloop {
         private int flags;
         private int ringbufferSize = DEFAULT_RING_SIZE;
         private int ioseqAsyncThreshold = DEFAULT_IOSEQ_ASYNC_THRESHOLD;
-        private IORequestScheduler ioRequestScheduler = new IORequestScheduler(512, 8192);
+        private IORequestScheduler ioRequestScheduler = new IORequestScheduler(512);
 
         public void setFlags(int flags) {
             this.flags = checkNotNegative(flags, "flags can't be negative");

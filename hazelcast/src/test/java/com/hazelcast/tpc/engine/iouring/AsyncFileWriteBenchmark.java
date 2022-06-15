@@ -21,7 +21,7 @@ import static com.hazelcast.tpc.util.Util.toPageAlignedAddress;
 
 public class AsyncFileWriteBenchmark {
 
-    public static long operationsPerThread = 100 * 1000 * 1000;
+    public static long operationsPerThread = 1 * 1000 * 1000;
     public static int concurrencyPerThread = 64;
     public static int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_WRONLY;
     public static int blockSize = 4096;
@@ -59,10 +59,14 @@ public class AsyncFileWriteBenchmark {
             buffer.putChar('a');
         }
 
+        IORequestScheduler requestScheduler = new IORequestScheduler(512);
+        requestScheduler.registerStorageDevice("/mnt/testdrive1", 100, 512);
+
         IOUringConfiguration configuration = new IOUringConfiguration();
         //configuration.setFlags(IORING_SETUP_IOPOLL);
         configuration.setThreadAffinity(threadAffinity);
         configuration.setSpin(true);
+        configuration.setIoRequestScheduler(requestScheduler);
         IOUringEventloop eventloop = new IOUringEventloop(configuration);
         eventloop.start();
 

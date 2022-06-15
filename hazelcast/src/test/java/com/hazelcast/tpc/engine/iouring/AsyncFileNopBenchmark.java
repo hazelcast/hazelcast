@@ -27,9 +27,13 @@ public class AsyncFileNopBenchmark {
     public static int blockSize = 16384;
 
     public static void main(String[] args) throws Exception {
+        IORequestScheduler requestScheduler = new IORequestScheduler(512);
+        requestScheduler.registerStorageDevice("/mnt/testdrive1", 100, 512);
+
         IOUringConfiguration configuration = new IOUringConfiguration();
         configuration.setThreadAffinity(new ThreadAffinity("1"));
         configuration.setSpin(true);
+        configuration.setIoRequestScheduler(requestScheduler);
         IOUringEventloop eventloop = new IOUringEventloop(configuration);
         eventloop.start();
 

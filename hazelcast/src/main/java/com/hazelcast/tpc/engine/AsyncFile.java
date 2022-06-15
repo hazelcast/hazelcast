@@ -19,8 +19,6 @@ public abstract class AsyncFile {
     public static final int O_DIRECT = 16384;
     public static final int O_SYNC = 1048576;
 
-    protected int fd;
-
     /**
      * Returns the file descriptor.
      *
@@ -28,9 +26,7 @@ public abstract class AsyncFile {
      *
      * @return the file decriptor.
      */
-    public int fd() {
-        return fd;
-    }
+    public abstract int fd();
 
     public abstract Promise nop();
 

@@ -20,35 +20,42 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.tpc.engine.AsyncFile;
 import com.hazelcast.tpc.engine.Promise;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringUnsafe;
-import com.hazelcast.tpc.util.Slots;
 import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.util.SlabAllocator;
 
-import io.netty.channel.unix.Buffer;
 import io.netty.incubator.channel.uring.IOUringSubmissionQueue;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 
+/**
+ * Responsible for scheduling I/O requests.
+ *
+ * If the maxConcurrency isn't reached, the ioRequests will be submitted to the ringbuffer. Otherwise
+ * the can be buffer until maxPending is reached. After that they will get rejected.
+ *
+ * What isn't great is that the maxConcurrency is global. This is fine if you just have a single
+ * storage device; but if you have 2 or more than this can lead to saturation or under utilization.
+ */
 public class IORequestScheduler {
 
     private final SlabAllocator<IoRequest> ioRequestAllocator;
 
     private IOUringEventloop eventloop;
     private IOUringSubmissionQueue sq;
-    private final Int2ObjectHashMap<AsyncFileIoRequests> fileRequests = new Int2ObjectHashMap<>();
-    private final int maxConcurrency;
-    private final CircularQueue<IoRequest> pending;
+    private final Int2ObjectHashMap<AsyncFileIoHandler> fileRequests = new Int2ObjectHashMap<>();
     private IOUringUnsafe unsafe;
-    private int concurrent;
+    private final List<StorageDevice> devs = new ArrayList<>();
 
-    public IORequestScheduler(int maxConcurrency, int maxPending) {
-        this.maxConcurrency = checkPositive("maxConcurrency", maxConcurrency);
+    public IORequestScheduler(int maxPending) {
         this.ioRequestAllocator = new SlabAllocator<>(maxPending, IoRequest::new);
-        this.pending = new CircularQueue<>(maxPending);
     }
 
     public void init(IOUringEventloop eventloop) {
@@ -57,96 +64,161 @@ public class IORequestScheduler {
         this.sq = eventloop.sq;
     }
 
+    public StorageDevice findStorageDevice(String path) {
+        for (StorageDevice dev : devs) {
+            if (path.startsWith(dev.path)) {
+                return dev;
+            }
+        }
+        return null;
+    }
+
+    public void registerStorageDevice(String path, int maxConcurrent, int maxPending) {
+        File file = new File(path);
+        if(!file.exists()){
+            throw new RuntimeException("A storage device ["+path+"] doesn't exit");
+        }
+
+        if(!file.isDirectory()){
+            throw new RuntimeException("A storage device ["+path+"] is not a directory");
+        }
+
+        if (findStorageDevice(path) != null) {
+            throw new RuntimeException("A storage device with path [" + path + "] already exists");
+        }
+
+        checkPositive("maxConcurrent", maxConcurrent);
+
+        StorageDevice dev = new StorageDevice(path, maxConcurrent, maxPending);
+        devs.add(dev);
+    }
+
     // todo: we can do actual registration on the rb.
-    public void register(AsyncFile file) {
+    public void registerAsyncFile(IOUringAsyncFile file) {
         checkNotNull(file);
 
-        System.out.println("register " + file.fd());
+        file.dev = findStorageDevice(file.path());
+        if(file.dev == null){
+            throw new UncheckedIOException(new IOException("Could not find storage device for ["+file.path()+"]"));
+        }else{
+            System.out.println("found: file.dev:"+file.dev.path);
+        }
 
-        AsyncFileIoRequests ioRequests = new AsyncFileIoRequests(file);
+        System.out.println("register " + file.fd());
+        AsyncFileIoHandler ioRequests = new AsyncFileIoHandler(file);
+        file.requests = ioRequests;
+
+
         fileRequests.put(file.fd(), ioRequests);
         eventloop.completionListeners.put(file.fd(), ioRequests);
     }
 
-    private class AsyncFileIoRequests implements CompletionListener {
-        private final Slots<IoRequest> ioSlots = new Slots<>(maxConcurrency);
-        private final AsyncFile file;
-
-        private AsyncFileIoRequests(AsyncFile file) {
-            this.file = file;
-        }
-
-        @Override
-        public void handle(int fd, int res, int flags, byte op, short data) {
-            IoRequest ioRequest = ioSlots.remove(data);
-            if (ioRequest != null) {
-                if (res < 0) {
-                    ioRequest.promise.completeExceptionally(
-                            new IOException(file.path() + " res=" + -res + " for info see: " +
-                                    "https://www.thegeekstuff.com/2010/10/linux-error-codes/"));
-                } else {
-                    ioRequest.promise.complete(true);
-                }
-
-                ioRequest.clear();
-                ioRequestAllocator.free(ioRequest);
+    private void issueNext(StorageDevice dev) {
+        if (dev.concurrent < dev.maxConcurrent) {
+            IoRequest req = dev.pending.poll();
+            if (req != null) {
+                submitToSq(req);
             }
-
-            issueNext();
         }
     }
 
-    private void issueNext() {
-        IoRequest ioRequest = pending.poll();
-        if (ioRequest == null) {
-            concurrent--;
-        } else {
-            submit(ioRequest);
-        }
-    }
-
-    public Promise schedule(byte op, int flags, int rwFlags, int fd, long bufferAddress, int length, long offset) {
-        IoRequest ioRequest = ioRequestAllocator.allocate();
-        ioRequest.op = op;
-        ioRequest.flags = flags;
-        ioRequest.rwFlags = rwFlags;
-        ioRequest.fd = fd;
-        ioRequest.bufferAddress = bufferAddress;
-        ioRequest.length = length;
-        ioRequest.offset = offset;
+    public Promise issue(IOUringAsyncFile file,
+                         byte op,
+                         int flags,
+                         int rwFlags,
+                         long bufferAddress,
+                         int length,
+                         long offset) {
+        IoRequest req = ioRequestAllocator.allocate();
+        req.file = file;
+        req.op = op;
+        req.flags = flags;
+        req.rwFlags = rwFlags;
+        req.bufferAddress = bufferAddress;
+        req.length = length;
+        req.offset = offset;
 
         Promise promise = unsafe.newPromise();
-        ioRequest.promise = promise;
+        req.promise = promise;
 
-        ioRequest.ioRequests = fileRequests.get(ioRequest.fd);
-
-        if (pending.isEmpty()) {
-            submit(ioRequest);
-        } else if (pending.offer(ioRequest)) {
-            issueNext();
-        } else {
+        StorageDevice dev = file.dev;
+        if (dev.concurrent < dev.maxConcurrent) {
+            submitToSq(req);
+        } else if (!dev.pending.offer(req)) {
             promise.completeExceptionally(new IOException("Overload"));
         }
 
         return promise;
     }
 
-    private void submit(IoRequest ioRequest) {
-        short ioRequestId = (short) ioRequest.ioRequests.ioSlots.insert(ioRequest);
+    private void submitToSq(IoRequest req) {
+        short reqId = (short) req.file.requests.ioSlots.insert(req);
 
+        req.file.dev.concurrent++;
+
+        // todo: we are not doing anything with the returned value.
         boolean x = sq.enqueueSqe(
-                ioRequest.op,
-                ioRequest.flags,
-                ioRequest.rwFlags,
-                ioRequest.fd,
-                ioRequest.bufferAddress,
-                ioRequest.length,
-                ioRequest.offset,
-                ioRequestId);
+                req.op,
+                req.flags,
+                req.rwFlags,
+                req.file.fd,
+                req.bufferAddress,
+                req.length,
+                req.offset,
+                reqId);
+    }
+
+    /**
+     * The IORequests for a single file.
+     *
+     * This approach is needed because the way netty has exposed the ringbuffer. Otherwise
+     * it would be better to have IORequests for a single storage device.
+     */
+    class AsyncFileIoHandler implements CompletionListener {
+        private final Slots<IoRequest> ioSlots;
+        private final AsyncFile file;
+
+        private AsyncFileIoHandler(IOUringAsyncFile file) {
+            this.file = file;
+            this.ioSlots = new Slots<>(file.dev.maxConcurrent);
+        }
+
+        @Override
+        public void handle(int fd, int res, int flags, byte op, short data) {
+            IoRequest req = ioSlots.remove(data);
+            if (req == null) {
+                return;
+            }
+            req.file.dev.concurrent--;
+            if (res < 0) {
+                req.promise.completeExceptionally(
+                        new IOException(file.path() + " res=" + -res + " op=" + op + " for info see: " +
+                                "https://www.thegeekstuff.com/2010/10/linux-error-codes/"));
+            } else {
+                req.promise.complete(true);
+            }
+
+            issueNext(req.file.dev);
+            req.clear();
+            ioRequestAllocator.free(req);
+        }
+    }
+
+    static class StorageDevice {
+        private final int maxConcurrent;
+        private final String path;
+        private int concurrent;
+        private final CircularQueue<IoRequest> pending;
+
+        StorageDevice(String path, int maxConcurrent, int maxPending) {
+            this.path = path;
+            this.maxConcurrent = maxConcurrent;
+            this.pending = new CircularQueue<>(maxPending);
+        }
     }
 
     private static class IoRequest {
-        private int fd;
+        private IOUringAsyncFile file;
         private long offset;
         private int length;
         private byte op;
@@ -154,14 +226,13 @@ public class IORequestScheduler {
         private int rwFlags;
         private long bufferAddress;
         private Promise promise;
-        private AsyncFileIoRequests ioRequests;
 
-        void clear() {
+        private void clear() {
             flags = 0;
             rwFlags = 0;
             length = 0;
             promise = null;
-            ioRequests = null;
+            file = null;
         }
     }
 }
