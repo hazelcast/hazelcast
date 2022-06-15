@@ -20,9 +20,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,12 +52,11 @@ public class SqlResubmissionTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
         List<SingleFailingInstanceClusterFailure> failures = Arrays.asList(
-//                new NodeReplacementClusterFailure(),
+                new NodeReplacementClusterFailure(),
                 new NodeShutdownClusterFailure(),
-//                new NetworkProblemClusterFailure(),
-                new NodeTerminationClusterFailure());
-//        {
-//            ClientSqlResubmissionMode mode = ClientSqlResubmissionMode.RETRY_SELECTS;
+                new NetworkProblemClusterFailure(),
+                new NodeTerminationClusterFailure()
+        );
         for (ClientSqlResubmissionMode mode : ClientSqlResubmissionMode.values()) {
             for (SingleFailingInstanceClusterFailure failure : failures) {
                 res.add(new Object[]{failure, mode});
@@ -70,7 +66,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_failingAfterSomeDataIsFetched() {
+    public void when_failingSelectAfterSomeDataIsFetched() {
         clusterFailure.initialize();
         HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
 
@@ -93,6 +89,10 @@ public class SqlResubmissionTest extends SqlTestSupport {
         }
     }
 
+    private boolean shouldFailAfterSomeDataIsFetched(ClientSqlResubmissionMode mode) {
+        return mode == ClientSqlResubmissionMode.NEVER || mode == ClientSqlResubmissionMode.RETRY_SELECTS;
+    }
+
     private int countWithFailureInTheMiddle(SqlResult rows) {
         int count = 0;
         for (SqlRow row : rows) {
@@ -106,7 +106,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_failingBeforeAnyDataIsFetched() throws InterruptedException {
+    public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
         clusterFailure.initialize();
         HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
         SqlStatement statement = new SqlStatement("select field from " + SLOW_MAP_NAME);
@@ -131,6 +131,10 @@ public class SqlResubmissionTest extends SqlTestSupport {
         }
     }
 
+    private boolean shouldFailBeforeAnyDataIsFetched(ClientSqlResubmissionMode mode) {
+        return mode == ClientSqlResubmissionMode.NEVER;
+    }
+
     private int count(SqlResult rows) {
         int count = 0;
         for (SqlRow row : rows) {
@@ -139,12 +143,34 @@ public class SqlResubmissionTest extends SqlTestSupport {
         return count;
     }
 
-    private boolean shouldFailBeforeAnyDataIsFetched(ClientSqlResubmissionMode mode) {
-        return mode == ClientSqlResubmissionMode.NEVER;
+    @Test
+    public void when_failingUpdate() throws InterruptedException {
+        clusterFailure.initialize();
+        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
+        SqlStatement statement = new SqlStatement("update " + SLOW_MAP_NAME + " set field = field + 1");
+
+        Thread failingThread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+            clusterFailure.fail();
+        });
+        failingThread.start();
+        try {
+            if (shouldFailModifyingQuery(resubmissionMode)) {
+                assertThrows(HazelcastSqlException.class, () -> client.getSql().execute(statement));
+            } else {
+                assertEquals(0, client.getSql().execute(statement).updateCount());
+            }
+        } finally {
+            failingThread.join();
+            clusterFailure.cleanUp();
+        }
     }
 
-    private boolean shouldFailAfterSomeDataIsFetched(ClientSqlResubmissionMode mode) {
-        return mode == ClientSqlResubmissionMode.NEVER || mode == ClientSqlResubmissionMode.RETRY_SELECTS;
+    private boolean shouldFailModifyingQuery(ClientSqlResubmissionMode mode) {
+        return mode != ClientSqlResubmissionMode.RETRY_ALL;
     }
 
     private static class NetworkProblemClusterFailure extends SingleFailingInstanceClusterFailure {
@@ -212,7 +238,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
             waitAllForSafeState(hazelcastInstances);
             waitAllForSafeState(failingInstance);
             createMap(hazelcastInstances[0], COMMON_MAP_NAME, COMMON_MAP_SIZE, UUID::randomUUID, UUID.class);
-//            createMap(failingInstance, SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowDeserObject::new, SlowDeserObject.class);
+            createMap(failingInstance, SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowFieldAccessObject::new, SlowFieldAccessObject.class);
             client = null;
         }
 
@@ -252,19 +278,19 @@ public class SqlResubmissionTest extends SqlTestSupport {
         HazelcastInstance createClient(ClientConfig clientConfig);
     }
 
-    public static class SlowDeserObject implements Serializable {
-        public int field = 0;
+    public static class SlowFieldAccessObject implements Serializable {
+        private int field = 0;
 
-        private void readObject(ObjectInputStream ib) throws ClassNotFoundException, IOException {
-            ib.defaultReadObject();
+        public int getField() {
             try {
                 Thread.sleep(2_000);
             } catch (InterruptedException e) {
             }
+            return field;
         }
 
-        private void writeObject(ObjectOutputStream out) throws IOException {
-            out.defaultWriteObject();
+        public void setField(int field) {
+            this.field = field;
         }
     }
 }

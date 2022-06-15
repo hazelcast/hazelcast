@@ -482,19 +482,19 @@ public class PlanExecutor {
     }
 
     private static int findQueryExceptionCode(Throwable t) {
+        Throwable orig = t;
         while (t != null) {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
             if (t instanceof TargetNotMemberException ||
                     t instanceof HazelcastInstanceNotActiveException ||
+                    t instanceof CancellationException ||
                     t instanceof MemberLeftException) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;
             }
             t = t.getCause();
         }
-
-        System.err.println("TOPOLOGY: " + t.getClass().getName());
 
         return SqlErrorCode.GENERIC;
     }

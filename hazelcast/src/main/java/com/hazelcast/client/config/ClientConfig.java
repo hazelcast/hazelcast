@@ -1068,7 +1068,7 @@ public class ClientConfig {
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
-                + "sqlResubmissionMode" + sqlResubmissionMode
+                + ", sqlResubmissionMode=" + sqlResubmissionMode
                 + '}';
     }
 }
