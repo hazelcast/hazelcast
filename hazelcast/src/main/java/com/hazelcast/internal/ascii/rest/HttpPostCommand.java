@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.StringUtil;
@@ -27,6 +26,8 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -80,17 +81,17 @@ public class HttpPostCommand extends HttpCommand {
         return complete;
     }
 
-    private boolean doActualRead(ByteBuffer cb) {
-        setReadyToReadData(cb);
+    private boolean doActualRead(ByteBuffer src) {
+        setReadyToReadData(src);
         if (!readyToReadData) {
             return false;
         }
         if (!isSpaceForData()) {
             if (chunked) {
-                if (data != null && cb.hasRemaining()) {
-                    readCRLFOrPositionChunkSize(cb);
+                if (data != null && src.hasRemaining()) {
+                    readCRLFOrPositionChunkSize(src);
                 }
-                if (readChunkSize(cb)) {
+                if (readChunkSize(src)) {
                     return true;
                 }
             } else {
@@ -98,7 +99,11 @@ public class HttpPostCommand extends HttpCommand {
             }
         }
         if (data != null) {
-            IOUtil.copyToHeapBuffer(cb, data);
+            if (src.isDirect()) {
+                copyToHeapBuffer(src, data);
+            } else {
+                copyFromHeapBuffer(src, data);
+            }
         }
         return !chunked && !isSpaceForData();
     }
@@ -107,11 +112,11 @@ public class HttpPostCommand extends HttpCommand {
         return data != null && data.hasRemaining();
     }
 
-    private void setReadyToReadData(ByteBuffer cb) {
-        while (!readyToReadData && cb.hasRemaining()) {
-            byte b = cb.get();
+    private void setReadyToReadData(ByteBuffer src) {
+        while (!readyToReadData && src.hasRemaining()) {
+            byte b = src.get();
             if (b == CARRIAGE_RETURN) {
-                readLF(cb);
+                readLF(src);
                 processLine(StringUtil.lowerCaseInternal(toStringAndClear(lineBuffer)));
                 if (nextLine) {
                     readyToReadData = true;
@@ -141,19 +146,19 @@ public class HttpPostCommand extends HttpCommand {
         }
     }
 
-    private void readCRLFOrPositionChunkSize(ByteBuffer cb) {
-        byte b = cb.get();
+    private void readCRLFOrPositionChunkSize(ByteBuffer src) {
+        byte b = src.get();
         if (b == CARRIAGE_RETURN) {
-            readLF(cb);
+            readLF(src);
         } else {
-            cb.position(cb.position() - 1);
+            src.position(src.position() - 1);
         }
     }
 
-    private void readLF(ByteBuffer cb) {
-        assert cb.hasRemaining() : "'\\n' must follow '\\r'";
+    private void readLF(ByteBuffer src) {
+        assert src.hasRemaining() : "'\\n' must follow '\\r'";
 
-        byte b = cb.get();
+        byte b = src.get();
         if (b != LINE_FEED) {
             throw new IllegalStateException("'\\n' must follow '\\r', but got '" + (char) b + "'");
         }
@@ -173,12 +178,12 @@ public class HttpPostCommand extends HttpCommand {
         return result;
     }
 
-    private boolean readChunkSize(ByteBuffer cb) {
+    private boolean readChunkSize(ByteBuffer src) {
         boolean hasLine = false;
-        while (cb.hasRemaining()) {
-            byte b = cb.get();
+        while (src.hasRemaining()) {
+            byte b = src.get();
             if (b == CARRIAGE_RETURN) {
-                readLF(cb);
+                readLF(src);
                 hasLine = true;
                 break;
             }

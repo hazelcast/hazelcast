@@ -26,7 +26,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.SERVER_ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
@@ -68,7 +68,7 @@ public class ErrorCommand extends AbstractTextCommand {
 
     @Override
     public boolean writeTo(ByteBuffer dst) {
-        copyToHeapBuffer(response, dst);
+        copyFromHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

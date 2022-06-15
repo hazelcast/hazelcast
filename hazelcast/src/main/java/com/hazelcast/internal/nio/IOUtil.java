@@ -321,24 +321,27 @@ public final class IOUtil {
         };
     }
 
+    public static int copyFromHeapBuffer(ByteBuffer src, ByteBuffer dst) {
+        if (src == null) {
+            return 0;
+        }
+
+        int n = Math.min(src.remaining(), dst.remaining());
+        int srcPosition = src.position();
+        dst.put(src.array(), srcPosition, n);
+        upcast(src).position(srcPosition + n);
+        return n;
+    }
+
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
+
         int n = Math.min(src.remaining(), dst.remaining());
-        if (n > 0) {
-            if (n < 16) {
-                for (int i = 0; i < n; i++) {
-                    dst.put(src.get());
-                }
-            } else {
-                int srcPosition = src.position();
-                int destPosition = dst.position();
-                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
-                src.position(srcPosition + n);
-                dst.position(destPosition + n);
-            }
-        }
+        int dstPosition = dst.position();
+        src.get(dst.array(), dstPosition, n);
+        dst.position(dstPosition + n);
         return n;
     }
 
