@@ -23,9 +23,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
@@ -37,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -49,19 +53,33 @@ import java.util.ConcurrentModificationException;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemcachedTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean useDirectBuffer;
+
+    @Parameterized.Parameters(name = "useDirectBuffer:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
+    }
 
     protected HazelcastInstance instance;
     protected MemcachedClient client;
 
     protected Config createConfig() {
         Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.SOCKET_BUFFER_DIRECT.getName(), Boolean.toString(useDirectBuffer));
         config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
