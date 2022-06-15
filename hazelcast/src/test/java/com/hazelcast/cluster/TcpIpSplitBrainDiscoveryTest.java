@@ -20,10 +20,13 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -36,11 +39,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.CONFIG_UPDATE;
+import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.MEMBER_LIST_UPDATE;
+import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.WITH_OPERATION;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -48,15 +55,23 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 @Category(NightlyTest.class)
 public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "advancedNetwork:{0}")
+    @Parameterized.Parameters(name = "advancedNetwork:{0}, updateType:{1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {true}, {false},
+                {true, CONFIG_UPDATE},
+                {true, MEMBER_LIST_UPDATE},
+                {true, WITH_OPERATION},
+                {false, CONFIG_UPDATE},
+                {false, MEMBER_LIST_UPDATE},
+                {false, WITH_OPERATION}
         });
     }
 
     @Parameterized.Parameter
-    public boolean advancedNetwork;
+    public static boolean advancedNetwork;
+
+    @Parameterized.Parameter(1)
+    public static UpdateType updateType;
 
     List<HazelcastInstance> instances = new ArrayList<>();
 
@@ -68,39 +83,42 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSplitBrainRecoveryFromInitialSplit() {
-
-        instances.add(Hazelcast.newHazelcastInstance(createConfig(advancedNetwork, 5801, 5901)));
-        instances.add(Hazelcast.newHazelcastInstance(createConfig(advancedNetwork, 5901, 5801)));
+    public void testSplitBrainRecoveryFromInitialSplit() throws IOException {
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5801, 5901)));
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5901, 5801)));
         assertClusterSizeEventually(2, Arrays.asList(instances.get(0), instances.get(1)), 10);
 
 
-        instances.add(Hazelcast.newHazelcastInstance(createConfig(advancedNetwork, 6001, 6101)));
-        instances.add(Hazelcast.newHazelcastInstance(createConfig(advancedNetwork, 6101, 6001)));
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6001, 6101)));
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6101, 6001)));
         assertClusterSizeEventually(2, Arrays.asList(instances.get(2), instances.get(3)), 10);
-
-        List<String> newMembers = Arrays.asList("localhost:" + 5801, "localhost:" + 5901, "localhost:" + 6001, "localhost:" + 6101);
-        invokeOnStableClusterSerial(
-                Accessors.getNodeEngineImpl(instances.get(3)),
-                () -> new UpdateTcpIpMemberListOperation(newMembers), 5
-        ).join();
+        updateMemberList();
         assertClusterSizeEventually(4, instances, 10);
     }
 
-    protected static Config createConfig(boolean advancedNetwork, int port, int... otherMembersPorts) {
+    protected static Config createConfigWithRestEnabled(int port, int... otherMembersPorts) {
         Config config = new Config()
                 .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
                 .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
         JoinConfig joinConfig;
+        boolean restEnabled = updateType != WITH_OPERATION;
         if (!advancedNetwork) {
             NetworkConfig networkConfig = config.getNetworkConfig();
+            if (restEnabled) {
+                RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
+                config.getNetworkConfig().setRestApiConfig(restApiConfig);
+            }
             networkConfig.setPortAutoIncrement(false).setPort(port);
             joinConfig = networkConfig.getJoin();
         } else {
             AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
             advancedNetworkConfig.setEnabled(true);
+            if (restEnabled) {
+                advancedNetworkConfig.setRestEndpointConfig(new RestServerEndpointConfig().enableAllGroups());
+            }
             ServerSocketEndpointConfig serverSocketEndpointConfig = new ServerSocketEndpointConfig();
             serverSocketEndpointConfig.setPort(port).setPortAutoIncrement(false);
+
             advancedNetworkConfig.setMemberEndpointConfig(serverSocketEndpointConfig);
             joinConfig = advancedNetworkConfig.getJoin();
         }
@@ -111,5 +129,30 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
             tcpIpConfig.addMember("localhost:" + otherPort);
         }
         return config;
+    }
+
+    protected void updateMemberList() throws IOException {
+        HTTPCommunicator communicator;
+        switch (updateType) {
+            case MEMBER_LIST_UPDATE:
+                communicator = new HTTPCommunicator(instances.get(3));
+                communicator.updateTcpIpMemberList(
+                        instances.get(0).getConfig().getClusterName(),
+                        "",
+                        "localhost:5801, localhost:5901, localhost:6001, localhost:6101");
+                break;
+            case WITH_OPERATION:
+                invokeOnStableClusterSerial(
+                        Accessors.getNodeEngineImpl(instances.get(3)),
+                        () -> new UpdateTcpIpMemberListOperation(
+                                Arrays.asList("localhost:" + 5801, "localhost:" + 5901, "localhost:" + 6001, "localhost:" + 6101)),
+                        5
+                ).join();
+                break;
+        }
+    }
+
+    protected enum UpdateType {
+        CONFIG_UPDATE, MEMBER_LIST_UPDATE, WITH_OPERATION
     }
 }
