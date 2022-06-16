@@ -23,7 +23,7 @@ public final class IOUringAsyncFile extends AsyncFile {
     private final IORequestScheduler ioRequestScheduler;
     private final Eventloop.Unsafe unsafe;
     private final String path;
-    IORequestScheduler.AsyncFileIoHandler requests;
+    IORequestScheduler.AsyncFileIoHandler fileIoHandler;
     StorageDevice dev;
     int fd;
 

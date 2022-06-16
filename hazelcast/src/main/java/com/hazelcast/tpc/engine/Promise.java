@@ -94,15 +94,14 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = true;
 
-        if (!consumers.isEmpty()) {
-            for (BiConsumer<E, Throwable> consumer : consumers) {
-                try {
-                    consumer.accept(null, value);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        int count = consumers.size();
+        for (int k = 0; k < count; k++) {
+            BiConsumer<E, Throwable> consumer = consumers.get(k);
+            try {
+                consumer.accept(null, value);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            consumers.clear();
         }
 
         if (releaseOnComplete) {
@@ -123,15 +122,14 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = false;
 
-        if (!consumers.isEmpty()) {
-            for (BiConsumer<E, Throwable> consumer : consumers) {
-                try {
-                    consumer.accept(value, null);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        int count = consumers.size();
+        for (int k = 0; k < count; k++) {
+            BiConsumer<E, Throwable> consumer = consumers.get(k);
+            try {
+                consumer.accept(value, null);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            consumers.clear();
         }
 
         if (releaseOnComplete) {

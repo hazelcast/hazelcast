@@ -21,14 +21,13 @@ import static com.hazelcast.tpc.util.Util.toPageAlignedAddress;
 
 public class AsyncFileNopBenchmark {
 
-    public static long operations = 100000000;
-    public static int concurrency = 100;
-    public static int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_WRONLY;
-    public static int blockSize = 16384;
+    public static final long operations = 200000000L;
+    public static final int concurrency = 100;
+    public static final int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_WRONLY;
 
     public static void main(String[] args) throws Exception {
-        IORequestScheduler requestScheduler = new IORequestScheduler(512);
-        requestScheduler.registerStorageDevice("/mnt/testdrive1", 100, 512);
+        IORequestScheduler requestScheduler = new IORequestScheduler(16384);
+        requestScheduler.registerStorageDevice("/mnt/testdrive1", 100, 16384);
 
         IOUringConfiguration configuration = new IOUringConfiguration();
         configuration.setThreadAffinity(new ThreadAffinity("1"));
