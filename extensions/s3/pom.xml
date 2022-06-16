@@ -79,7 +79,7 @@
         <dependency>
             <groupId>com.adobe.testing</groupId>
             <artifactId>s3mock</artifactId>
-            <version>2.4.7</version>
+            <version>2.4.13</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
