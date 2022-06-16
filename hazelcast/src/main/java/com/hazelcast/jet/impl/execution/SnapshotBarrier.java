@@ -22,7 +22,7 @@ import java.util.Objects;
  * Special item interleaved with other items on queue to signal a start of a
  * snapshot.
  */
-public final class SnapshotBarrier implements BroadcastItem {
+public final class SnapshotBarrier implements InternalBroadcastItem {
     private final long snapshotId;
     private final boolean isTerminal;
 

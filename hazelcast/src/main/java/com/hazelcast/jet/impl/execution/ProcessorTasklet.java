@@ -142,7 +142,7 @@ public class ProcessorTasklet implements Tasklet {
      * particular edge, passed to the {@link Processor#tryProcessWatermark(int,
      * Watermark)} method (the one with the ordinal).
      */
-    private Watermark pendingEdgeWatermark;
+    private final Deque<Watermark> pendingEdgeWatermark = new ArrayDeque<>();
 
     // Tells whether we are operating in exactly-once or at-least-once mode.
     // In other words, whether a barrier from all inputs must be present before
@@ -309,11 +309,9 @@ public class ProcessorTasklet implements Tasklet {
     private void stateMachineStep() {
         switch (state) {
             case PROCESS_WATERMARKS:
-                if (pendingEdgeWatermark != null) {
-                    if (doWithClassLoader(context.classLoader(),
-                            () -> processor.tryProcessWatermark(currInstream.ordinal(), pendingEdgeWatermark))
-                    ) {
-                        pendingEdgeWatermark = null;
+                while (!pendingEdgeWatermark.isEmpty()) {
+                    if (tryProcessWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
+                        pendingEdgeWatermark.remove();
                     } else {
                         break;
                     }
@@ -471,6 +469,10 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
+    private boolean tryProcessWatermark(int ordinal, Watermark wm) {
+        return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(ordinal, wm));
+    }
+
     private void processInbox() {
         if (ssContext.activeSnapshotIdPhase2() == pendingSnapshotId2) {
             state = SNAPSHOT_COMMIT_FINISH__PROCESS;
@@ -571,22 +573,28 @@ public class ProcessorTasklet implements Tasklet {
                 instreamCursor.advance();
                 continue;
             }
+
             result = currInstream.drainTo(addToInboxFunction);
             progTracker.madeProgress(result.isMadeProgress());
 
-            // check if the last drained item is special
-            Object lastItem = inbox.queue().peekLast();
-            if (lastItem instanceof Watermark) {
-                Watermark newWm = ((Watermark) inbox.queue().removeLast());
-                if (newWm.timestamp() != IDLE_MESSAGE_TIME) {
-                    pendingEdgeWatermark = newWm;
+            // check if the drained item is special
+            Object item = inbox.queue().peekLast();
+            if (inbox.queue().size() == 1) {
+                if (item instanceof Watermark) {
+                    Watermark newWm = ((Watermark) inbox.queue().removeLast());
+                    if (newWm.timestamp() != IDLE_MESSAGE_TIME) {
+                        pendingEdgeWatermark.add(newWm);
+                    }
+                    pendingGlobalWatermarks.addAll(
+                            coalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp()));
+
+                } else if (item instanceof SnapshotBarrier) {
+                    SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
+                    observeBarrier(currInstream.ordinal(), barrier);
                 }
-                pendingGlobalWatermarks.addAll(
-                        coalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp()));
-            } else if (lastItem instanceof SnapshotBarrier) {
-                SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
-                observeBarrier(currInstream.ordinal(), barrier);
-            } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
+            }
+
+            if (item != null && !(item instanceof BroadcastItem)) {
                 coalescer.observeEvent(currInstream.ordinal());
             }
 
@@ -594,8 +602,7 @@ public class ProcessorTasklet implements Tasklet {
                 receivedBarriers.clear(currInstream.ordinal());
                 // Note that there can be a WM received from upstream and the result can be done after single drain.
                 // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
-                pendingGlobalWatermarks.addAll(
-                        coalescer.queueDone(currInstream.ordinal()));
+                pendingGlobalWatermarks.addAll(coalescer.queueDone(currInstream.ordinal()));
                 instreamCursor.remove();
                 numActiveOrdinals--;
             }
@@ -690,8 +697,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");

@@ -33,7 +33,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
@@ -41,6 +43,7 @@ import java.util.function.ToIntFunction;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
+import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
@@ -75,6 +78,12 @@ public final class ConcurrentInboundEdgeStream {
         } else {
             return new OrderedDrain(conveyor, ordinal, priority, debugName, comparator);
         }
+    }
+
+    private enum ItemDrainMode {
+        NORMAL_ITEM,
+        BROADCAST_ITEM,
+        NO_ITEM;
     }
 
     private abstract static class InboundEdgeStreamBase implements InboundEdgeStream {
@@ -143,6 +152,7 @@ public final class ConcurrentInboundEdgeStream {
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
+        private final Map<Integer, InternalBroadcastItem> pendingBroadcastItems = new HashMap<>();
         private final KeyedWatermarkCoalescer coalescers;
         private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
         // Tells whether we are operating in exactly-once or at-least-once mode.
@@ -166,11 +176,20 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
             tracker.reset();
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
                 final QueuedPipe<Object> q = conveyor.queue(queueIndex);
+
+                // TODO: performance degradation?
+                if (pendingBroadcastItems.containsKey(queueIndex)) {
+                    processSpecialItem(dest, pendingBroadcastItems.get(queueIndex), queueIndex);
+                    pendingBroadcastItems.remove(queueIndex);
+                    tracker.madeProgress();
+                }
+
                 if (q == null) {
                     continue;
                 }
@@ -186,27 +205,30 @@ public final class ConcurrentInboundEdgeStream {
                 if (itemDetector.item == DONE_ITEM) {
                     conveyor.removeQueue(queueIndex);
                     receivedBarriers.clear(queueIndex);
-                    for (Watermark wm : coalescers.queueDone(queueIndex)) {
+                    List<Watermark> finalWatermarks = coalescers.queueDone(queueIndex);
+                    for (Watermark wm : finalWatermarks) {
                         if (maybeEmitWm(wm, dest)) {
                             tracker.madeProgress();
                         }
                     }
-
-                } else if (itemDetector.item instanceof Watermark) {
-                    Watermark watermark = (Watermark) itemDetector.item;
-                    for (Watermark wm : coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp())) {
-                        dest.accept(wm);
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
-                                    + " with key = " + watermark.key()
-                                    + ", coalescedWm=" + toLocalTime(coalescedWm(watermark.key()))
-                                    + ", topObservedWm=" + toLocalTime(topObservedWm(watermark.key())));
-                        }
-                        return MADE_PROGRESS;
+                    if (conveyor.liveQueueCount() == 0) {
+                        return DONE;
                     }
-                } else if (itemDetector.item instanceof SnapshotBarrier) {
-                    observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
-                } else if (result.isMadeProgress()) {
+                }
+
+                if (itemDetector.mode == ItemDrainMode.BROADCAST_ITEM) {
+                    processSpecialItem(dest, itemDetector.item, queueIndex);
+                }
+
+                // if last element of bulk was a special item,
+                // we need to process it separately
+                if (itemDetector.specialItemWasDrained) {
+                    pendingBroadcastItems.putIfAbsent(queueIndex, itemDetector.item);
+                    itemDetector.reset();
+                    return MADE_PROGRESS;
+                }
+
+                if (result.isMadeProgress()) {
                     coalescers.observeEvent(queueIndex);
                 }
 
@@ -228,6 +250,26 @@ public final class ConcurrentInboundEdgeStream {
                 tracker.notDone();
             }
             return tracker.toProgressState();
+        }
+
+        private void processSpecialItem(Consumer<Object> dest, InternalBroadcastItem item, int queueIndex) {
+            if (item instanceof Watermark) {
+                Watermark watermark = (Watermark) item;
+                List<Watermark> wms = coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp());
+                for (Watermark wm : wms) {
+                    dest.accept(wm);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
+                                + " with key = " + watermark.key()
+                                + ", coalescedWm=" + toLocalTime(coalescedWm(watermark.key()))
+                                + ", topObservedWm=" + toLocalTime(topObservedWm(watermark.key())));
+                    }
+                }
+
+            } else if (item instanceof SnapshotBarrier) {
+                observeBarrier(queueIndex, (SnapshotBarrier) item);
+            }
+            tracker.madeProgress();
         }
 
         /**
@@ -284,22 +326,50 @@ public final class ConcurrentInboundEdgeStream {
          */
         private static final class ItemDetector implements Predicate<Object> {
             Consumer<Object> dest;
-            BroadcastItem item;
+            InternalBroadcastItem item;
+            ItemDrainMode mode = ItemDrainMode.NO_ITEM;
+            boolean specialItemWasDrained;
+
+            void reset() {
+                item = null;
+                mode = ItemDrainMode.NO_ITEM;
+                specialItemWasDrained = false;
+            }
 
             void reset(Consumer<Object> newDest) {
                 dest = newDest;
                 item = null;
+                mode = ItemDrainMode.NO_ITEM;
             }
 
             @Override
             public boolean test(Object o) {
-                if (o instanceof Watermark || o instanceof SnapshotBarrier || o == DONE_ITEM) {
-                    assert item == null : "Received multiple special items without a call to reset(): " + item;
-                    item = (BroadcastItem) o;
+                if (mode == ItemDrainMode.NO_ITEM) {
+                    setupMode(o);
+                    if (mode == ItemDrainMode.BROADCAST_ITEM) {
+                        item = (InternalBroadcastItem) o;
+                        return false;
+                    }
+                }
+
+                assert mode == ItemDrainMode.NORMAL_ITEM;
+                if (o instanceof InternalBroadcastItem) {
+                    item = (InternalBroadcastItem) o;
+                    if (o instanceof Watermark || o instanceof SnapshotBarrier) {
+                        specialItemWasDrained = true;
+                    }
                     return false;
                 }
                 dest.accept(o);
                 return true;
+            }
+
+            private void setupMode(Object o) {
+                if (o instanceof Watermark || o instanceof SnapshotBarrier) {
+                    mode = ItemDrainMode.BROADCAST_ITEM;
+                } else {
+                    mode = ItemDrainMode.NORMAL_ITEM;
+                }
             }
         }
     }
@@ -350,7 +420,7 @@ public final class ConcurrentInboundEdgeStream {
             }
 
             outer:
-            for (;;) {
+            for (; ; ) {
                 // find the current minimum item at the tail of queues
                 Object minItem = null;
                 for (int i = 0; i < drainedItems.size(); i++) {

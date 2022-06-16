@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
@@ -37,6 +36,7 @@ public class MockInboundStream implements InboundEdgeStream {
     private final int priority;
     private final Deque<Object> mockData;
     private final int chunkSize;
+    private InternalBroadcastItem pendingItem = null;
 
     private boolean done;
 
@@ -59,6 +59,13 @@ public class MockInboundStream implements InboundEdgeStream {
         if (done) {
             return WAS_ALREADY_DONE;
         }
+
+        if (pendingItem != null) {
+            dest.accept(pendingItem);
+            pendingItem = null;
+            return MADE_PROGRESS;
+        }
+
         if (mockData.isEmpty()) {
             return NO_PROGRESS;
         }
@@ -68,9 +75,11 @@ public class MockInboundStream implements InboundEdgeStream {
                 done = true;
                 break;
             }
-            dest.accept(item);
-            if (item instanceof SnapshotBarrier || item instanceof Watermark) {
+            if (item instanceof InternalBroadcastItem) {
+                pendingItem = (InternalBroadcastItem) item;
                 break;
+            } else {
+                dest.accept(item);
             }
         }
         return done ? DONE : MADE_PROGRESS;

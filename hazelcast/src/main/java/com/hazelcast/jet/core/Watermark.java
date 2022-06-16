@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.impl.execution.BroadcastItem;
+import com.hazelcast.jet.impl.execution.InternalBroadcastItem;
 import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import java.util.Objects;
@@ -35,7 +35,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  *
  * @since Jet 3.0
  */
-public final class Watermark implements BroadcastItem {
+public final class Watermark implements InternalBroadcastItem {
 
     private final long timestamp;
     private final byte key;

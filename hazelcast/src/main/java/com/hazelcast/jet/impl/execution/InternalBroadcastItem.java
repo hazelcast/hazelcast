@@ -16,14 +16,10 @@
 
 package com.hazelcast.jet.impl.execution;
 
-public final class DoneItem implements InternalBroadcastItem {
+import com.hazelcast.jet.core.Watermark;
 
-    public static final DoneItem DONE_ITEM = new DoneItem();
-
-    private DoneItem() { }
-
-    @Override
-    public String toString() {
-        return "DONE_ITEM";
-    }
+/**
+ * Marker interface for {@link Watermark}s, {@link SnapshotBarrier}s, and {@link DoneItem}
+ */
+public interface InternalBroadcastItem extends BroadcastItem {
 }
