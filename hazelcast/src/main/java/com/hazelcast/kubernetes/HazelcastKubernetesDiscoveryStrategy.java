@@ -58,7 +58,7 @@ final class HazelcastKubernetesDiscoveryStrategy
     }
 
     private static KubernetesClient buildKubernetesClient(KubernetesConfig config) {
-        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getKubernetesApiToken(),
+        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
                 config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(), config.getServicePerPodLabelValue());
     }

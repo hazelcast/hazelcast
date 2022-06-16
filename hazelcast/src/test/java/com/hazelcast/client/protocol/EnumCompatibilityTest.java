@@ -40,6 +40,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -473,6 +474,17 @@ public class EnumCompatibilityTest {
         mappings.put(IterationType.VALUE, (byte) 1);
         mappings.put(IterationType.ENTRY, (byte) 2);
         verifyCompatibility(IterationType.values(), IterationType::getId, mappings);
+    }
+
+    @Test
+    public void testMemoryUnit() {
+        // Used in CapacityCodec
+        Map<MemoryUnit, Integer> mappings = new HashMap<>();
+        mappings.put(MemoryUnit.BYTES, 0);
+        mappings.put(MemoryUnit.KILOBYTES, 1);
+        mappings.put(MemoryUnit.MEGABYTES, 2);
+        mappings.put(MemoryUnit.GIGABYTES, 3);
+        verifyCompatibility(MemoryUnit.values(), MemoryUnit::getId, mappings);
     }
 
     private <T, V> void verifyCompatibility(T[] values, Function<T, V> toId, Map<T, V> mappings) {

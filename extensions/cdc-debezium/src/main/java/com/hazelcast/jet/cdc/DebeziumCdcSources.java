@@ -89,18 +89,18 @@ public final class DebeziumCdcSources {
      */
     public static final class Builder<T> {
 
-        private final BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn;
+        private final BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> createProcessorFn;
         private final DebeziumConfig config;
 
         private Builder(
                 @Nonnull String name,
                 @Nonnull String connectorClass,
-                @Nonnull BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn
+                @Nonnull BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> createProcessorFn
         ) {
             config = new DebeziumConfig(name, connectorClass);
             config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, ConstantSequenceExtractor.class.getName());
 
-            this.processorFn = processorFn;
+            this.createProcessorFn = createProcessorFn;
         }
 
         /**
@@ -118,15 +118,15 @@ public final class DebeziumCdcSources {
         @Nonnull
         public StreamSource<T> build() {
             Properties properties = config.toProperties();
-            BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn =
-                    this.processorFn;
+            BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> createProcessorFn =
+                    this.createProcessorFn;
 
             return Sources.streamFromProcessorWithWatermarks(
                     properties.getProperty(CdcSourceP.NAME_PROPERTY),
                     true,
                     eventTimePolicy -> {
                         ProcessorSupplier supplier = ProcessorSupplier.of(
-                                () -> processorFn.apply(properties, eventTimePolicy));
+                                () -> createProcessorFn.apply(properties, eventTimePolicy));
                         return ProcessorMetaSupplier.forceTotalParallelismOne(supplier);
                     });
         }
