@@ -28,11 +28,13 @@ import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -56,7 +58,7 @@ class KubernetesClient {
     private final String caCertificate;
     private final int retries;
     private final KubernetesApiProvider apiProvider;
-    private ExposeExternallyMode exposeExternallyMode;
+    private final ExposeExternallyMode exposeExternallyMode;
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
@@ -79,7 +81,7 @@ class KubernetesClient {
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
-        this.apiProvider =  buildKubernetesApiUrlProvider();
+        this.apiProvider = buildKubernetesApiUrlProvider();
     }
 
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
@@ -218,11 +220,12 @@ class KubernetesClient {
         List<Endpoint> addresses = new ArrayList<>();
 
         for (JsonValue item : toJsonArray(podsListJson.get("items"))) {
+            String podName = item.asObject().get("metadata").asObject().get("name").asString();
             JsonObject status = item.asObject().get("status").asObject();
             String ip = toString(status.get("podIP"));
             if (ip != null) {
                 Integer port = extractContainerPort(item);
-                addresses.add(new Endpoint(new EndpointAddress(ip, port), isReady(status)));
+                addresses.add(new Endpoint(new EndpointAddress(ip, port, podName), isReady(status)));
             }
         }
         return addresses;
@@ -309,7 +312,7 @@ class KubernetesClient {
 
             List<EndpointAddress> privateAddresses = privateAddresses(endpoints);
             Map<EndpointAddress, String> services = apiProvider.extractServices(endpointsJson, privateAddresses);
-            Map<EndpointAddress, String> nodes = apiProvider.extractNodes(endpointsJson, privateAddresses);
+            Map<EndpointAddress, String> nodeAddresses = apiProvider.extractNodes(endpointsJson, privateAddresses);
 
             Map<EndpointAddress, String> publicIps = new HashMap<>();
             Map<EndpointAddress, Integer> publicPorts = new HashMap<>();
@@ -328,7 +331,7 @@ class KubernetesClient {
                 } catch (Exception e) {
                     // Load Balancer public IP cannot be found, try using NodePort.
                     Integer nodePort = extractNodePort(serviceJson);
-                    String node = nodes.get(privateAddress);
+                    String node = extractNodeName(serviceEntry.getKey(), nodeAddresses);
                     String nodePublicAddress;
                     if (cachedNodePublicIps.containsKey(node)) {
                         nodePublicAddress = cachedNodePublicIps.get(node);
@@ -357,6 +360,17 @@ class KubernetesClient {
             }
             return endpoints;
         }
+    }
+
+    @Nullable
+    private String extractNodeName(EndpointAddress endpointAddress, Map<EndpointAddress, String> nodes) {
+        String nodeName = nodes.get(endpointAddress);
+        if (nodeName == null) {
+            JsonObject podJson = callGet(String.format("%s/api/v1/namespaces/%s/pods/%s",
+                    kubernetesMaster, namespace, endpointAddress.getTargetRefName()));
+            return podJson.get("spec").asObject().get("nodeName").asString();
+        }
+        return nodeName;
     }
 
     private static List<EndpointAddress> privateAddresses(List<Endpoint> endpoints) {
@@ -427,7 +441,7 @@ class KubernetesClient {
         for (Endpoint endpoint : endpoints) {
             EndpointAddress privateAddress = endpoint.getPrivateAddress();
             EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress),
-                    publicPorts.get(privateAddress));
+                    publicPorts.get(privateAddress), privateAddress.getTargetRefName());
             result.add(new Endpoint(privateAddress, publicAddress, endpoint.isReady(), endpoint.getAdditionalProperties()));
         }
         return result;
@@ -542,9 +556,17 @@ class KubernetesClient {
         private final String ip;
         private final Integer port;
 
+        private String targetRefName;
+
         EndpointAddress(String ip, Integer port) {
             this.ip = ip;
             this.port = port;
+        }
+
+        EndpointAddress(String ip, Integer port, String targetRefName) {
+            this.ip = ip;
+            this.port = port;
+            this.targetRefName = targetRefName;
         }
 
         String getIp() {
@@ -553,6 +575,10 @@ class KubernetesClient {
 
         Integer getPort() {
             return port;
+        }
+
+        String getTargetRefName() {
+            return targetRefName;
         }
 
         @Override
@@ -566,17 +592,15 @@ class KubernetesClient {
 
             EndpointAddress address = (EndpointAddress) o;
 
-            if (ip != null ? !ip.equals(address.ip) : address.ip != null) {
+            if (!Objects.equals(ip, address.ip) || !Objects.equals(targetRefName, address.targetRefName)) {
                 return false;
             }
-            return port != null ? port.equals(address.port) : address.port == null;
+            return Objects.equals(port, address.port);
         }
 
         @Override
         public int hashCode() {
-            int result = ip != null ? ip.hashCode() : 0;
-            result = 31 * result + (port != null ? port.hashCode() : 0);
-            return result;
+            return Objects.hash(ip, port, targetRefName);
         }
 
         @Override
