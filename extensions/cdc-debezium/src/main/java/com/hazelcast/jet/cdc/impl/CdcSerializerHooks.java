@@ -29,10 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Hazelcast serializer hooks for data objects involved in processing
  * change data capture streams.
  */
+@SuppressWarnings("NullableProblems")
 public class CdcSerializerHooks {
 
     public static final class ChangeRecordImplHook implements SerializerHook<ChangeRecordImpl> {
@@ -54,16 +57,16 @@ public class CdcSerializerHooks {
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
-                    out.writeUTF(record.getKeyJson());
-                    out.writeUTF(record.getValueJson());
+                    out.writeString(record.getKeyJson());
+                    out.writeString(record.getValueJson());
                 }
 
                 @Override
                 public ChangeRecordImpl read(ObjectDataInput in) throws IOException {
                     long sequenceSource = in.readLong();
                     long sequenceValue = in.readLong();
-                    String keyJson = in.readUTF();
-                    String valueJson = in.readUTF();
+                    String keyJson = requireNonNull(in.readString(), "keyJson cannot be null");
+                    String valueJson = requireNonNull(in.readString(), "valueJson cannot be null");
                     return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
                 }
             };
@@ -91,12 +94,12 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, RecordPartImpl part) throws IOException {
-                    out.writeUTF(part.toJson());
+                    out.writeString(part.toJson());
                 }
 
                 @Override
                 public RecordPartImpl read(ObjectDataInput in) throws IOException {
-                    String json = in.readUTF();
+                    String json = requireNonNull(in.readString(), "RecordPart.json must not be null");
                     return new RecordPartImpl(json);
                 }
             };

@@ -39,10 +39,11 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.3")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.3.Final")
             .asCompatibleSubstituteFor("mysql");
 
     @Rule
+    @SuppressWarnings("resource")
     public MySQLContainer<?> mysql = namedTestContainer(
             new MySQLContainer<>(DOCKER_IMAGE)
                     .withUsername("mysqluser")

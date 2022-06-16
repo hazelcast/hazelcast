@@ -48,33 +48,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
+@SuppressWarnings("SqlNoDataSourceInspection")
 @Category({NightlyTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
-
     private static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("debezium/example-mysql:1.3").asCompatibleSubstituteFor("mysql");
-
+            DockerImageName.parse("debezium/example-mysql:1.9.3.Final").asCompatibleSubstituteFor("mysql");
     private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:1.3").asCompatibleSubstituteFor("postgres");
-
+            DockerImageName.parse("debezium/example-postgres:1.7").asCompatibleSubstituteFor("postgres");
     @Test
     public void mysql() throws Exception {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
 
-        MySQLContainer<?> container = mySqlContainer();
-
-        try {
+        try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
             // given
             List<String> expectedRecords = Arrays.asList(
-                    "1001/0:INSERT:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
-                    "1002/0:INSERT:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
-                    "1003/0:INSERT:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
-                    "1004/0:INSERT:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
+                    "1001/0:SYNC:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                    "1002/0:SYNC:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                    "1003/0:SYNC:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                    "1004/0:SYNC:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
                     "1004/1:UPDATE:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}",
                     "1005/0:INSERT:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}",
                     "1005/1:DELETE:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}"
@@ -124,8 +120,6 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
             }
-        } finally {
-            container.stop();
         }
     }
 
@@ -151,9 +145,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
 
-        MySQLContainer<?> container = mySqlContainer();
-
-        try {
+        try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
             // given
@@ -161,35 +153,39 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     "\\{\"id\":1001}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\"," +
                                 "\"email\":\"sally.thomas@acme.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
-                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
-                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":[0-9]*,\"snapshot\":\"true\",\"db\":\"inventory\",\"sequence\":null," +
+                            "\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":157,\"row\":0," +
                                 "\"thread\":null,\"query\":null}," +
-                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                            "\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1002}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\"," +
                                 "\"email\":\"gbailey@foobar.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
-                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
-                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":[0-§9]*,\"snapshot\":\"true\",\"db\":\"inventory\",\"sequence\":null," +
+                            "\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":157,\"row\":0," +
                                 "\"thread\":null,\"query\":null}," +
-                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                            "\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1003}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1003,\"first_name\":\"Edward\",\"last_name\":\"Walker\"," +
                                 "\"email\":\"ed@walker.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
-                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
-                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":[0-9]*,\"snapshot\":\"true\",\"db\":\"inventory\",\"sequence\":null," +
+                            "\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":157,\"row\":0," +
                                 "\"thread\":null,\"query\":null}," +
-                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                            "\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1004}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1004,\"first_name\":\"Anne\",\"last_name\":\"Kretchmar\"," +
                                 "\"email\":\"annek@noanswer.org\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
-                                "\"ts_ms\":0,\"snapshot\":\"last\",\"db\":\"inventory\",\"table\":\"customers\"," +
-                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                            "\"ts_ms\":[0-9]*,\"snapshot\":\"last\",\"db\":\"inventory\",\"sequence\":null," +
+                            "\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":157,\"row\":0," +
                                 "\"thread\":null,\"query\":null}," +
-                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}"
+                            "\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}"
             );
 
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("mysql",
@@ -221,11 +217,10 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
             }
-        } finally {
-            container.stop();
         }
     }
 
+    @SuppressWarnings("resource")
     private MySQLContainer<?> mySqlContainer() {
         return namedTestContainer(
                 new MySQLContainer<>(MYSQL_IMAGE)
@@ -236,9 +231,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void postgres() throws Exception {
-        PostgreSQLContainer<?> container = postgresContainer();
-
-        try {
+        try (PostgreSQLContainer<?> container = postgresContainer()) {
             container.start();
 
             // given
@@ -306,16 +299,12 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
             }
-        } finally {
-            container.stop();
         }
     }
 
     @Test
     public void postgres_simpleJson() {
-        PostgreSQLContainer<?> container = postgresContainer();
-
-        try {
+       try (PostgreSQLContainer<?> container = postgresContainer()) {
             container.start();
 
             // given
@@ -323,29 +312,33 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     "\\{\"id\":1001}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\"," +
                                 "\"email\":\"sally.thomas@acme.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"postgresql\"," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"postgresql\"," +
                                 "\"name\":\"dbserver1\",\"ts_ms\":[0-9]*,\"snapshot\":\"true\",\"db\":\"postgres\"," +
+                            "\"sequence\":\"\\[.*]\"," +
                                 "\"schema\":\"inventory\",\"table\":\"customers\",\"txId\":[0-9]*,\"lsn\":[0-9]*," +
                                 "\"xmin\":null},\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1002}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\"," +
                                 "\"email\":\"gbailey@foobar.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"postgresql\"," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"postgresql\"," +
                                 "\"name\":\"dbserver1\",\"ts_ms\":[0-9]*,\"snapshot\":\"true\",\"db\":\"postgres\"," +
+                            "\"sequence\":\"\\[.*]\"," +
                                 "\"schema\":\"inventory\",\"table\":\"customers\",\"txId\":[0-9]*,\"lsn\":[0-9]*," +
                                 "\"xmin\":null},\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1003}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1003,\"first_name\":\"Edward\",\"last_name\":\"Walker\"," +
                                 "\"email\":\"ed@walker.com\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"postgresql\"," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"postgresql\"," +
                                 "\"name\":\"dbserver1\",\"ts_ms\":[0-9]*,\"snapshot\":\"true\",\"db\":\"postgres\"," +
+                            "\"sequence\":\"\\[.*]\"," +
                                 "\"schema\":\"inventory\",\"table\":\"customers\",\"txId\":[0-9]*,\"lsn\":[0-9]*," +
                                 "\"xmin\":null},\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}",
                     "\\{\"id\":1004}:\\{\"before\":null," +
                             "\"after\":\\{\"id\":1004,\"first_name\":\"Anne\",\"last_name\":\"Kretchmar\"," +
                                 "\"email\":\"annek@noanswer.org\"}," +
-                            "\"source\":\\{\"version\":\"1.2.5.Final\",\"connector\":\"postgresql\"," +
+                            "\"source\":\\{\"version\":\"[\\w\\d\\.]*\",\"connector\":\"postgresql\"," +
                                 "\"name\":\"dbserver1\",\"ts_ms\":[0-9]*,\"snapshot\":\"last\",\"db\":\"postgres\"," +
+                            "\"sequence\":\"\\[.*]\"," +
                                 "\"schema\":\"inventory\",\"table\":\"customers\",\"txId\":[0-9]*,\"lsn\":[0-9]*," +
                                 "\"xmin\":null},\"op\":\"r\",\"ts_ms\":[0-9]*,\"transaction\":null}"
             );
@@ -377,11 +370,10 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
             }
-        } finally {
-            container.stop();
         }
     }
 
+    @SuppressWarnings("resource")
     private PostgreSQLContainer<?> postgresContainer() {
         return namedTestContainer(
                 new PostgreSQLContainer<>(POSTGRES_IMAGE)
