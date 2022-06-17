@@ -198,8 +198,9 @@ public class SqlClientService implements SqlService {
                 return resubmissionContext.isSelectQuery();
             case RETRY_ALL:
                 return true;
+            default:
+                throw new IllegalStateException("Unknown resubmission mode: " + resubmissionMode);
         }
-        throw new IllegalStateException("Unknown resubmission mode: " + resubmissionMode);
     }
 
     private boolean skipUpdateStatistics() {

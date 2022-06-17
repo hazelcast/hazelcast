@@ -1,8 +1,23 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.misc;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -11,10 +26,12 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.test.ClusterFailureTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTest extends SqlTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final int SLOW_ACCESS_TIME_MILLIS = 100;
+    private static final int SLOW_ACCESS_TIME_MILLIS = 500;
     private static final int COMMON_MAP_SIZE = 10_000;
     private static final int SLOW_MAP_SIZE = 10;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
@@ -44,35 +61,43 @@ public class SqlResubmissionTest extends SqlTestSupport {
     private static final String SLOW_MAP_NAME = randomName();
 
     @Parameterized.Parameter(0)
-    public ClusterFailure clusterFailure;
+    public ClusterFailureTestSupport.SingleFailingInstanceClusterFailure clusterFailure;
 
     @Parameterized.Parameter(1)
     public ClientSqlResubmissionMode resubmissionMode;
 
+    private HazelcastInstance client;
+
     @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
-        List<SingleFailingInstanceClusterFailure> failures = Arrays.asList(
-                new NodeReplacementClusterFailure(),
-                new NodeShutdownClusterFailure(),
-                new NetworkProblemClusterFailure(),
-                new NodeTerminationClusterFailure()
+        List<ClusterFailureTestSupport.SingleFailingInstanceClusterFailure> failures = Arrays.asList(
+                new ClusterFailureTestSupport.NodeReplacementClusterFailure(),
+                new ClusterFailureTestSupport.NodeShutdownClusterFailure(),
+                new ClusterFailureTestSupport.NetworkProblemClusterFailure(),
+                new ClusterFailureTestSupport.NodeTerminationClusterFailure()
         );
         for (ClientSqlResubmissionMode mode : ClientSqlResubmissionMode.values()) {
-            for (SingleFailingInstanceClusterFailure failure : failures) {
+            for (ClusterFailureTestSupport.SingleFailingInstanceClusterFailure failure : failures) {
                 res.add(new Object[]{failure, mode});
             }
         }
         return res;
     }
 
-    @Test
-    public void when_failingSelectAfterSomeDataIsFetched() {
-        clusterFailure.initialize();
+    @Before
+    public void initFailure() {
+        clusterFailure.initialize(INITIAL_CLUSTER_SIZE, SMALL_INSTANCE_CONFIG);
+        createMap(clusterFailure.getNotFailingInstance(), COMMON_MAP_NAME, COMMON_MAP_SIZE, UUID::randomUUID, UUID.class);
+        createMap(clusterFailure.getFailingInstance(), SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowFieldAccessObject::new,
+                SlowFieldAccessObject.class);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
-        HazelcastInstance client = clusterFailure.createClient(clientConfig);
+        client = clusterFailure.createClient(clientConfig);
+    }
 
+    @Test
+    public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
         statement.setCursorBufferSize(1);
         SqlResult rows = client.getSql().execute(statement);
@@ -110,10 +135,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
 
     @Test
     public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
-        clusterFailure.initialize();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
-        HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("select field from " + SLOW_MAP_NAME);
         statement.setCursorBufferSize(SLOW_MAP_SIZE);
         Thread failingThread = new Thread(() -> {
@@ -150,10 +171,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
 
     @Test
     public void when_failingUpdate() throws InterruptedException {
-        clusterFailure.initialize();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
-        HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("update " + SLOW_MAP_NAME + " set field = field + 1");
 
         Thread failingThread = new Thread(() -> {
@@ -180,109 +197,18 @@ public class SqlResubmissionTest extends SqlTestSupport {
         return mode != ClientSqlResubmissionMode.RETRY_ALL;
     }
 
-    private static class NetworkProblemClusterFailure extends SingleFailingInstanceClusterFailure {
-        @Override
-        public void fail() {
-            for (HazelcastInstance hazelcastInstance : hazelcastInstances) {
-                closeConnectionBetween(hazelcastInstance, failingInstance);
-            }
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
+    private <T> void createMap(
+            HazelcastInstance instance,
+            String name,
+            int size,
+            Supplier<T> objectCreator,
+            Class<T> tClass
+    ) {
+        IMap<Integer, T> map = instance.getMap(name);
+        for (int i = 0; i < size; i++) {
+            map.put((int) i, objectCreator.get());
         }
-
-        @Override
-        public void cleanUp() {
-            super.cleanUp();
-            failingInstance.getLifecycleService().terminate();
-        }
-    }
-
-    private static class NodeReplacementClusterFailure extends SingleFailingInstanceClusterFailure {
-        private HazelcastInstance replacementInstance;
-
-        @Override
-        public void fail() {
-            failingInstance.getLifecycleService().terminate();
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
-            replacementInstance = factory.newHazelcastInstance(SMALL_INSTANCE_CONFIG);
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE + 1, hazelcastInstances[0]);
-        }
-
-        @Override
-        public void cleanUp() {
-            super.cleanUp();
-            replacementInstance.getLifecycleService().terminate();
-        }
-    }
-
-    private static class NodeTerminationClusterFailure extends SingleFailingInstanceClusterFailure {
-        @Override
-        public void fail() {
-            failingInstance.getLifecycleService().terminate();
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
-        }
-    }
-
-    private static class NodeShutdownClusterFailure extends SingleFailingInstanceClusterFailure {
-        @Override
-        public void fail() {
-            failingInstance.shutdown();
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
-        }
-    }
-
-    private static abstract class SingleFailingInstanceClusterFailure implements ClusterFailure {
-        protected HazelcastInstance[] hazelcastInstances;
-        protected HazelcastInstance failingInstance;
-        protected TestHazelcastFactory factory = new TestHazelcastFactory();
-        protected HazelcastInstance client;
-
-        @Override
-        public void initialize() {
-            hazelcastInstances = factory.newInstances(SMALL_INSTANCE_CONFIG, INITIAL_CLUSTER_SIZE);
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE, hazelcastInstances[0]);
-            failingInstance = factory.newHazelcastInstance(SMALL_INSTANCE_CONFIG);
-            assertClusterSizeEventually(INITIAL_CLUSTER_SIZE + 1, hazelcastInstances[0]);
-            waitAllForSafeState(hazelcastInstances);
-            waitAllForSafeState(failingInstance);
-            createMap(hazelcastInstances[0], COMMON_MAP_NAME, COMMON_MAP_SIZE, UUID::randomUUID, UUID.class);
-            createMap(failingInstance, SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowFieldAccessObject::new, SlowFieldAccessObject.class);
-            client = null;
-        }
-
-        @Override
-        public HazelcastInstance createClient(ClientConfig clientConfig) {
-            client = factory.newHazelcastClient(clientConfig);
-            return client;
-        }
-
-        @Override
-        public void cleanUp() {
-            Arrays.stream(hazelcastInstances).forEach(instance -> instance.getLifecycleService().terminate());
-            client.getLifecycleService().terminate();
-        }
-
-        private <T> void createMap(HazelcastInstance instance, String name, int size, Supplier<T> objectCreator, Class<T> tClass) {
-            IMap<Long, T> map = instance.getMap(name);
-            for (int i = 0; i < size; i++) {
-                map.put((long) i, objectCreator.get());
-            }
-            createMapping(instance, name, Long.class, tClass);
-        }
-
-        @Override
-        public String toString() {
-            return this.getClass().getSimpleName();
-        }
-    }
-
-    private interface ClusterFailure {
-        void initialize();
-
-        void fail();
-
-        void cleanUp();
-
-        HazelcastInstance createClient(ClientConfig clientConfig);
+        createMapping(instance, name, Integer.class, tClass);
     }
 
     public static class SlowFieldAccessObject implements Serializable {

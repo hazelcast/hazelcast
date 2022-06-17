@@ -16,9 +16,34 @@
 
 package com.hazelcast.client.config;
 
+/**
+ * The configuration when to retry query that fails with reasons:
+ * <ul>
+ *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#CONNECTION_PROBLEM}</li>
+ *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#PARTITION_DISTRIBUTION}</li>
+ *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#TOPOLOGY_CHANGE}</li>
+ * </ul>
+ */
 public enum ClientSqlResubmissionMode {
+    /**
+     * If a query fails, the failure is immediately forwarded to the caller.
+     */
     NEVER,
+    /**
+     * The query will be retried if:
+     * <ul>
+     *   <li>no rows were received yet</li>
+     *   <li>the SQL text starts with `SELECT` (case-insensitive, ignoring white space)</li>
+     * </ul>
+     */
     RETRY_SELECTS,
+    /**
+     * The query will be retried if the SQL text starts with `SELECT` (case-insensitive, ignoring white space). If some rows
+     * were received they are going to be duplicated.
+     */
     RETRY_SELECTS_ALLOW_DUPLICATES,
+    /**
+     * All queries will be retried after a failure.
+     */
     RETRY_ALL
 }
