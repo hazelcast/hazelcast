@@ -61,7 +61,6 @@ import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -207,7 +206,7 @@ public final class TestSupport {
 
     private final ProcessorMetaSupplier metaSupplier;
     private ProcessorSupplier supplier;
-    private List<TestEventInt> testEvents = emptyList();
+    private List<TestEventInt> testEvents = new ArrayList<>();
     private boolean assertProgress = true;
     private boolean doSnapshots = true;
     private boolean logInputOutput = true;
