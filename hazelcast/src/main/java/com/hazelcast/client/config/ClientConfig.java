@@ -985,11 +985,19 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the configuration for SQL client.
+     * @since 5.2
+     */
     @Nonnull
     public ClientSqlConfig getSqlConfig() {
         return sqlConfig;
     }
 
+    /**
+     * Sets the configuration for SQL client.
+     * @since 5.2
+     */
     @Nonnull
     public ClientConfig setSqlConfig(ClientSqlConfig sqlConfig) {
         Preconditions.checkNotNull(sqlConfig, "sqlConfig");

@@ -23,10 +23,15 @@ import java.util.Objects;
 
 /**
  * Contains the SQL configuration for the client.
+ * @since 5.2
  */
 public class ClientSqlConfig {
     private ClientSqlResubmissionMode resubmissionMode = ClientSqlResubmissionMode.NEVER;
 
+    /**
+     * Sets the resubmission mode for failing SQL queries. See {@link ClientSqlResubmissionMode}.
+     * @since 5.2
+     */
     @Nonnull
     public ClientSqlConfig setSqlResubmissionMode(ClientSqlResubmissionMode resubmissionMode) {
         Preconditions.checkNotNull(resubmissionMode, "resubmissionMode");
@@ -34,6 +39,10 @@ public class ClientSqlConfig {
         return this;
     }
 
+    /**
+     * Returns the resubmission mode for failing SQL queries. See {@link ClientSqlResubmissionMode}.
+     * @since 5.2
+     */
     public ClientSqlResubmissionMode getResubmissionMode() {
         return resubmissionMode;
     }
