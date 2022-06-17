@@ -73,16 +73,16 @@ public class SqlClientService implements SqlService {
      * because they cause a significant distortion.
      */
     private final boolean skipUpdateStatistics;
-    private final long invocationTimeoutNano;
-    private final long retryPauseMillis;
+    private final long resubmissionTimeoutNano;
+    private final long resubmissionRetryPauseMillis;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
         this.skipUpdateStatistics = skipUpdateStatistics();
         long invocationTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
-        this.invocationTimeoutNano = TimeUnit.MILLISECONDS.toNanos(invocationTimeoutMillis);
-        this.retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+        this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(invocationTimeoutMillis);
+        this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
     }
 
     @Nonnull
@@ -123,7 +123,7 @@ public class SqlClientService implements SqlService {
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
-            SqlResubmissionResult resubmissionResult = resubmitIfNeeded(res, error);
+            SqlResubmissionResult resubmissionResult = resubmitIfPossible(res, error);
             if (resubmissionResult == null) {
                 res.onExecuteError(error);
                 throw error;
@@ -134,32 +134,34 @@ public class SqlClientService implements SqlService {
     }
 
     @SuppressWarnings("BusyWait")
-    SqlResubmissionResult resubmitIfNeeded(SqlClientResult res, RuntimeException error) {
-        logger.info("Resubmitting query? " + error);
-
-        if (!(error instanceof HazelcastSqlException) || !shouldResubmit((HazelcastSqlException) error) || !shouldResubmit(res)) {
+    SqlResubmissionResult resubmitIfPossible(SqlClientResult result, RuntimeException error) {
+        if (!shouldResubmit(error) || !shouldResubmit(result)) {
             return null;
         }
 
         long resubmissionStartTime = System.nanoTime();
         int invokeCount = 0;
 
-        ClientConnection connection = getQueryConnection();
         SqlResubmissionResult resubmissionResult = null;
         do {
-            logger.info("Resubmitting query");
+            logger.info("Resubmitting query: " + result.getQueryId());
+            ClientConnection connection = null;
             try {
-                ClientMessage message = invoke(res.getResubmissionContext().getRequestMessage(), connection);
-                resubmissionResult = createResubmissionResult(res, message, connection);
+                connection = getQueryConnection();
+                ClientMessage message = invoke(result.getResubmissionContext().getSqlExecuteMessage(), connection);
+                resubmissionResult = createResubmissionResult(message, connection);
                 if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
                     return resubmissionResult;
                 }
-            } catch (Exception ignored) {
-                logger.info("Exception while resubmission, ignoring");
+            } catch (Exception e) {
+                RuntimeException rethrown = connection == null ? (RuntimeException) e : rethrow(e, connection);
+                if (!shouldResubmit(rethrown)) {
+                    throw rethrown;
+                }
             }
 
             if (invokeCount++ >= MAX_FAST_INVOCATION_COUNT) {
-                long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+                long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), resubmissionRetryPauseMillis);
                 try {
                     Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
@@ -167,13 +169,13 @@ public class SqlClientService implements SqlService {
                     return resubmissionResult;
                 }
             }
-        } while (System.nanoTime() - resubmissionStartTime <= invocationTimeoutNano);
+        } while (System.nanoTime() - resubmissionStartTime <= resubmissionTimeoutNano);
 
         return resubmissionResult;
     }
 
-    private boolean shouldResubmit(HazelcastSqlException error) {
-        return shouldResubmit(error.getCode());
+    private boolean shouldResubmit(Exception error) {
+        return (error instanceof HazelcastSqlException) && (shouldResubmit(((HazelcastSqlException) error).getCode()));
     }
 
     private boolean shouldResubmit(SqlError error) {
@@ -184,14 +186,14 @@ public class SqlClientService implements SqlService {
         return errorCode == CONNECTION_PROBLEM || errorCode == PARTITION_DISTRIBUTION || errorCode == TOPOLOGY_CHANGE;
     }
 
-    private boolean shouldResubmit(SqlClientResult res) {
-        SqlResubmissionContext resubmissionContext = res.getResubmissionContext();
+    private boolean shouldResubmit(SqlClientResult result) {
+        SqlResubmissionContext resubmissionContext = result.getResubmissionContext();
         ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlResubmissionMode();
         switch (resubmissionMode) {
             case NEVER:
                 return false;
             case RETRY_SELECTS:
-                return resubmissionContext.isSelectQuery() && !res.isReturnedAnyResult();
+                return resubmissionContext.isSelectQuery() && !result.isReturnedAnyResult();
             case RETRY_SELECTS_ALLOW_DUPLICATES:
                 return resubmissionContext.isSelectQuery();
             case RETRY_ALL:
@@ -205,7 +207,7 @@ public class SqlClientService implements SqlService {
         return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
-    private SqlResubmissionResult createResubmissionResult(SqlClientResult res, ClientMessage message, Connection connection) {
+    private SqlResubmissionResult createResubmissionResult(ClientMessage message, Connection connection) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {

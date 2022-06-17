@@ -17,11 +17,9 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -63,14 +61,12 @@ public final class QueryUtils {
             return (HazelcastSqlException) e;
         }
 
-        Throwable maybeTopologyException = e;
-        while (maybeTopologyException != null) {
-            if (maybeTopologyException instanceof HazelcastInstanceNotActiveException ||
-                    maybeTopologyException instanceof TargetNotMemberException ||
-                    maybeTopologyException instanceof MemberLeftException) {
+        Throwable copy = e;
+        while (copy != null) {
+            if (ExceptionUtil.isTopologyException(copy)) {
                 return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);
             }
-            maybeTopologyException = maybeTopologyException.getCause();
+            copy = copy.getCause();
         }
 
         if (e instanceof QueryException) {

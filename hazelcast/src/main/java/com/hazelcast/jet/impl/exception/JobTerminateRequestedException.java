@@ -32,6 +32,11 @@ public class JobTerminateRequestedException extends JetException {
         this.mode = mode;
     }
 
+    public JobTerminateRequestedException(@Nonnull TerminationMode mode, Throwable cause) {
+        super(mode.name(), cause);
+        this.mode = mode;
+    }
+
     @Nonnull
     public TerminationMode mode() {
         return mode;

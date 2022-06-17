@@ -4,21 +4,20 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.sql.SqlStatement;
 
 class SqlResubmissionContext {
-    private final ClientMessage requestMessage;
+    private final ClientMessage sqlExecuteMessage;
     private final boolean selectQuery;
 
-    SqlResubmissionContext(ClientMessage requestMessage, SqlStatement statement) {
-        this.requestMessage = requestMessage;
+    SqlResubmissionContext(ClientMessage sqlExecuteMessage, SqlStatement statement) {
+        this.sqlExecuteMessage = sqlExecuteMessage;
         this.selectQuery = isSelectQuery(statement);
     }
 
     private boolean isSelectQuery(SqlStatement sqlStatement) {
-        // TODO make it faster
         return sqlStatement.getSql().trim().toLowerCase().startsWith("select");
     }
 
-    ClientMessage getRequestMessage() {
-        return requestMessage;
+    ClientMessage getSqlExecuteMessage() {
+        return sqlExecuteMessage;
     }
 
     boolean isSelectQuery() {

@@ -285,7 +285,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Terminates the local execution of tasklets. Returns false, if the
      * execution wasn't yet begun.
      */
-    public boolean terminateExecution(@Nullable TerminationMode mode) {
+    public boolean terminateExecution(@Nullable TerminationMode mode, Throwable cause) {
         assert mode == null || !mode.isWithTerminalSnapshot()
                 : "terminating with a mode that should do a terminal snapshot";
 
@@ -293,7 +293,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             if (mode == null) {
                 cancellationFuture.cancel(true);
             } else {
-                cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
+                cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode, cause));
             }
             if (executionFuture == null) {
                 // if cancelled before execution started, then assign the already completed future.

@@ -127,6 +127,11 @@ public class SqlClientResult implements SqlResult {
 
     public void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
         synchronized (mux) {
+            if (closed) {
+                // The result is already closed, ignore the response.
+                return;
+            }
+
             this.fetch = null;
             this.resubmissionConnection = connection;
 
@@ -275,7 +280,7 @@ public class SqlClientResult implements SqlResult {
             }
 
             if (fetch.getError() != null) {
-                SqlResubmissionResult resubmissionResult = service.resubmitIfNeeded(this, fetch.getError());
+                SqlResubmissionResult resubmissionResult = service.resubmitIfPossible(this, fetch.getError());
                 if (resubmissionResult == null) {
                     throw wrap(fetch.getError());
                 }
@@ -440,5 +445,9 @@ public class SqlClientResult implements SqlResult {
 
     boolean isReturnedAnyResult() {
         return returnedAnyResult.get();
+    }
+
+    QueryId getQueryId() {
+        return queryId;
     }
 }
