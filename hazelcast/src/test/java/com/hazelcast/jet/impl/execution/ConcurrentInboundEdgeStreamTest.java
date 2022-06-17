@@ -116,8 +116,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, wm(3));
         add(q2, wm(3));
-        drainAndAssert(MADE_PROGRESS, wm(2));
-        drainAndAssert(MADE_PROGRESS, wm(3));
+        drainAndAssert(MADE_PROGRESS, wm(2), wm(3));
     }
 
     @Test

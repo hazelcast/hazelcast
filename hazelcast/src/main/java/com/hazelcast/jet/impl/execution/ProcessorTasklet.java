@@ -313,7 +313,7 @@ public class ProcessorTasklet implements Tasklet {
                     if (tryProcessWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
                         pendingEdgeWatermark.remove();
                     } else {
-                        break;
+                        stateMachineStep();
                     }
                 }
 
@@ -578,22 +578,21 @@ public class ProcessorTasklet implements Tasklet {
             progTracker.madeProgress(result.isMadeProgress());
 
             // check if the drained item is special
-            Object item = inbox.queue().peekLast();
-            if (inbox.queue().size() == 1) {
-                if (item instanceof Watermark) {
-                    Watermark newWm = ((Watermark) inbox.queue().removeLast());
-                    if (newWm.timestamp() != IDLE_MESSAGE_TIME) {
-                        pendingEdgeWatermark.add(newWm);
-                    }
-                    pendingGlobalWatermarks.addAll(
-                            coalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp()));
-
-                } else if (item instanceof SnapshotBarrier) {
-                    SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
-                    observeBarrier(currInstream.ordinal(), barrier);
+            Object specialItem = inbox.queue().peekFirst();
+            if (specialItem instanceof Watermark) {
+                Watermark newWm = ((Watermark) inbox.queue().removeFirst());
+                if (newWm.timestamp() != IDLE_MESSAGE_TIME) {
+                    pendingEdgeWatermark.add(newWm);
                 }
+                pendingGlobalWatermarks.addAll(
+                        coalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp()));
+
+            } else if (specialItem instanceof SnapshotBarrier) {
+                SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeFirst();
+                observeBarrier(currInstream.ordinal(), barrier);
             }
 
+            Object item = inbox.queue().peekLast();
             if (item != null && !(item instanceof BroadcastItem)) {
                 coalescer.observeEvent(currInstream.ordinal());
             }
