@@ -291,9 +291,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         synchronized (executionLock) {
             if (mode == null) {
-                cancellationFuture.cancel(true);
+                cancellationFuture.completeExceptionally(cause);
             } else {
-                cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode, cause));
+                cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }
             if (executionFuture == null) {
                 // if cancelled before execution started, then assign the already completed future.

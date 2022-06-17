@@ -254,7 +254,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
              .forEach(exeCtx -> {
                  LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
                          exeCtx.jobNameAndExecutionId(), address);
-                 terminateExecution0(exeCtx, TerminationMode.CANCEL_FORCEFUL, new MemberLeftException(member));
+                 terminateExecution0(exeCtx, null, new MemberLeftException(member));
              });
     }
 
