@@ -380,6 +380,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientClusterViewListenerService.start();
 
             configuredListeners.stream().filter(ClientConnectionProcessListener.class::isInstance)
+                    // private API for Management Center (cluster connection diagnostics)
                     .map(ClientConnectionProcessListener.class::cast)
                     .forEach(connectionManager::addClientConnectionProcessListener);
             connectionManager.start();

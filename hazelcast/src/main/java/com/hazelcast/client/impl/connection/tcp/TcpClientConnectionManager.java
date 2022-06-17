@@ -474,7 +474,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (HazelcastException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             if (e.getCause() instanceof IOException) {
-                connectionProcessListener.connectionAttemptFailed(addressProvider.apply(target));
+                try {
+                    connectionProcessListener.connectionAttemptFailed(addressProvider.apply(target));
+                } catch (Exception e2) {
+                    logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
+                            + target, e2);
+                }
             }
             return null;
         } catch (Exception e) {
