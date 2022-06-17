@@ -10,7 +10,7 @@ class SqlResubmissionResult {
     private final SqlPage rowPage;
     private final long updateCount;
 
-    public SqlResubmissionResult(SqlError sqlError) {
+    SqlResubmissionResult(SqlError sqlError) {
         this.sqlError = sqlError;
         this.connection = null;
         this.rowMetadata = null;
@@ -18,7 +18,7 @@ class SqlResubmissionResult {
         this.updateCount = 0;
     }
 
-    public SqlResubmissionResult(Connection connection, SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount) {
+    SqlResubmissionResult(Connection connection, SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount) {
         this.connection = connection;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
@@ -26,23 +26,23 @@ class SqlResubmissionResult {
         this.sqlError = null;
     }
 
-    public Connection getConnection() {
+    Connection getConnection() {
         return connection;
     }
 
-    public SqlError getSqlError() {
+    SqlError getSqlError() {
         return sqlError;
     }
 
-    public SqlRowMetadata getRowMetadata() {
+    SqlRowMetadata getRowMetadata() {
         return rowMetadata;
     }
 
-    public SqlPage getRowPage() {
+    SqlPage getRowPage() {
         return rowPage;
     }
 
-    public long getUpdateCount() {
+    long getUpdateCount() {
         return updateCount;
     }
 }

@@ -47,40 +47,26 @@ public class SqlClientResult implements SqlResult {
     private final int cursorBufferSize;
     private final SqlResubmissionContext resubmissionContext;
 
-    /**
-     * The connection that was created during resubmission.
-     */
+    /** The connection that was created during resubmission. */
     @GuardedBy("mux")
     private Connection resubmissionConnection;
 
-    /**
-     * Mutex to synchronize access between operations.
-     */
+    /** Mutex to synchronize access between operations. */
     private final Object mux = new Object();
 
-    /**
-     * The current result state.
-     */
+    /** The current result state. */
     private State state;
 
-    /**
-     * Whether the iterator has already been requested. When {@code true}, future calls to iterator() will throw an error.
-     */
+    /** Whether the iterator has already been requested. When {@code true}, future calls to iterator() will throw an error. */
     private boolean iteratorRequested;
 
-    /**
-     * Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server.
-     */
+    /** Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server. */
     private boolean closed;
 
-    /**
-     * Whether any SqlRow was returned from an iterator.
-     */
+    /** Whether any SqlRow was returned from an iterator. */
     private final AtomicBoolean returnedAnyResult = new AtomicBoolean();
 
-    /**
-     * Fetch descriptor. Available when the fetch operation is in progress.
-     */
+    /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
     public SqlClientResult(
@@ -100,9 +86,9 @@ public class SqlClientResult implements SqlResult {
      * Invoked when the {@code execute} operation completes normally.
      */
     public void onExecuteResponse(
-            SqlRowMetadata rowMetadata,
-            SqlPage rowPage,
-            long updateCount
+        SqlRowMetadata rowMetadata,
+        SqlPage rowPage,
+        long updateCount
     ) {
         synchronized (mux) {
             if (closed) {

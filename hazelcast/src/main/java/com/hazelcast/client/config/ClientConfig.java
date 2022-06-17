@@ -117,8 +117,7 @@ public class ClientConfig {
     private final ConcurrentMap<String, Object> userContext;
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
-
-    private ClientSqlResubmissionMode sqlResubmissionMode = ClientSqlResubmissionMode.NEVER;
+    private ClientSqlConfig sqlConfig = new ClientSqlConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -987,14 +986,14 @@ public class ClientConfig {
     }
 
     @Nonnull
-    public ClientSqlResubmissionMode getSqlResubmissionMode() {
-        return sqlResubmissionMode;
+    public ClientSqlConfig getSqlConfig() {
+        return sqlConfig;
     }
 
     @Nonnull
-    public ClientConfig setSqlResubmissionMode(ClientSqlResubmissionMode sqlResubmissionMode) {
-        Preconditions.checkNotNull(sqlResubmissionMode, "sqlResubmissionMode");
-        this.sqlResubmissionMode = sqlResubmissionMode;
+    public ClientConfig setSqlConfig(ClientSqlConfig sqlConfig) {
+        Preconditions.checkNotNull(sqlConfig, "sqlConfig");
+        this.sqlConfig = sqlConfig;
         return this;
     }
 
@@ -1004,7 +1003,7 @@ public class ClientConfig {
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlResubmissionMode);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig);
     }
 
     @Override
@@ -1040,7 +1039,7 @@ public class ClientConfig {
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
                 && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
-                && Objects.equals(sqlResubmissionMode, other.sqlResubmissionMode);
+                && Objects.equals(sqlConfig, other.sqlConfig);
     }
 
     @Override
@@ -1068,7 +1067,7 @@ public class ClientConfig {
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
-                + ", sqlResubmissionMode=" + sqlResubmissionMode
+                + ", sqlConfig=" + sqlConfig
                 + '}';
     }
 }

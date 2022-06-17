@@ -36,6 +36,7 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTest extends SqlTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
+    private static final int SLOW_ACCESS_TIME_MILLIS = 100;
     private static final int COMMON_MAP_SIZE = 10_000;
     private static final int SLOW_MAP_SIZE = 10;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
@@ -68,7 +69,9 @@ public class SqlResubmissionTest extends SqlTestSupport {
     @Test
     public void when_failingSelectAfterSomeDataIsFetched() {
         clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+        HazelcastInstance client = clusterFailure.createClient(clientConfig);
 
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
         statement.setCursorBufferSize(1);
@@ -108,12 +111,14 @@ public class SqlResubmissionTest extends SqlTestSupport {
     @Test
     public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
         clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+        HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("select field from " + SLOW_MAP_NAME);
         statement.setCursorBufferSize(SLOW_MAP_SIZE);
         Thread failingThread = new Thread(() -> {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(SLOW_ACCESS_TIME_MILLIS / 2);
             } catch (InterruptedException e) {
             }
             clusterFailure.fail();
@@ -146,12 +151,14 @@ public class SqlResubmissionTest extends SqlTestSupport {
     @Test
     public void when_failingUpdate() throws InterruptedException {
         clusterFailure.initialize();
-        HazelcastInstance client = clusterFailure.createClient(new ClientConfig().setSqlResubmissionMode(resubmissionMode));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+        HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("update " + SLOW_MAP_NAME + " set field = field + 1");
 
         Thread failingThread = new Thread(() -> {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(SLOW_ACCESS_TIME_MILLIS / 2);
             } catch (InterruptedException e) {
             }
             clusterFailure.fail();
@@ -283,7 +290,7 @@ public class SqlResubmissionTest extends SqlTestSupport {
 
         public int getField() {
             try {
-                Thread.sleep(2_000);
+                Thread.sleep(SLOW_ACCESS_TIME_MILLIS);
             } catch (InterruptedException e) {
             }
             return field;

@@ -188,7 +188,7 @@ public class SqlClientService implements SqlService {
 
     private boolean shouldResubmit(SqlClientResult result) {
         SqlResubmissionContext resubmissionContext = result.getResubmissionContext();
-        ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlResubmissionMode();
+        ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlConfig().getResubmissionMode();
         switch (resubmissionMode) {
             case NEVER:
                 return false;
