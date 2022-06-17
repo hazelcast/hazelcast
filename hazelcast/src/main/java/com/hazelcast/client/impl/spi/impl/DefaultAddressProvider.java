@@ -61,9 +61,9 @@ public class DefaultAddressProvider implements AddressProvider {
         for (String address : configuredAddresses) {
             Addresses socketAddresses = AddressHelper.getSocketAddresses(address, listener);
             addresses.addAll(socketAddresses);
-            allAddresses.addAll(addresses.primary());
-            allAddresses.addAll(addresses.secondary());
         }
+        allAddresses.addAll(addresses.primary());
+        allAddresses.addAll(addresses.secondary());
         listener.possibleAddressesCollected(allAddresses);
         return addresses;
     }
