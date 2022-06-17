@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final int INITIAL_FAILURE_SIZE = 8;
+    private static final int INITIAL_FAILURE_SIZE = 20;
     private static final Config INSTANCE_CONFIG = smallInstanceConfig()
             .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "111");
 
@@ -62,7 +62,7 @@ public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
         });
         failingThread.start();
         try {
-                assertThrows(HazelcastSqlException.class, () -> client.getSql().execute(statement));
+            assertThrows(HazelcastSqlException.class, () -> client.getSql().execute(statement));
         } finally {
             failingThread.join();
             clusterFailure.cleanUp();
