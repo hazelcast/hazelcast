@@ -49,6 +49,7 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionSingleFailureTest extends SqlResubmissionTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
+    private static final int SLOW_MAP_SIZE = 10;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
 
     @Parameterized.Parameter(0)

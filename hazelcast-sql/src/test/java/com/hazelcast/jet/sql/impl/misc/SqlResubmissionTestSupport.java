@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 
 public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
     protected static final int SLOW_ACCESS_TIME_MILLIS = 500;
-    protected static final int SLOW_MAP_SIZE = 100;
     protected static final String SLOW_MAP_NAME = randomName();
     protected static final int COMMON_MAP_SIZE = 10_000;
     protected static final String COMMON_MAP_NAME = randomName();
@@ -52,7 +51,7 @@ public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
     ) {
         IMap<Integer, T> map = instance.getMap(name);
         for (int i = 0; i < size; i++) {
-            map.put((int) i, objectCreator.get());
+            map.put(i, objectCreator.get());
         }
         createMapping(instance, name, Integer.class, tClass);
     }

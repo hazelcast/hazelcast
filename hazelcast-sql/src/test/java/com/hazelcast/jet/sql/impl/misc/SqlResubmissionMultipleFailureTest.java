@@ -45,6 +45,8 @@ import static org.junit.Assert.assertEquals;
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionMultipleFailureTest extends SqlResubmissionTestSupport {
+    private static final int SLOW_MAP_SIZE = 100;
+
     private static final int INITIAL_CLUSTER_SIZE = 1;
     private static final int INITIAL_FAILURE_SIZE = 20;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig()
