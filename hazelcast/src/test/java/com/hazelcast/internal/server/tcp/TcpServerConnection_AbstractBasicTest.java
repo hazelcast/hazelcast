@@ -201,9 +201,9 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         //don't mock if you don't need to
         TcpServerConnectionManager cm = connAB.getConnectionManager();
         Channel channel = connAB.getChannel();
-        TcpServerConnection conn1 = new TcpServerConnection(cm , mockedListener, 0, channel, true);
+        TcpServerConnection conn1 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
         TcpServerConnection conn2 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
-        TcpServerConnection conn3 = new TcpServerConnection(cm , mockedListener, 0, channel, false);
+        TcpServerConnection conn3 = new TcpServerConnection(cm, mockedListener, 0, channel, false);
         assertEquals(conn1, conn2);
         assertNotEquals(conn1, conn3);
         conn1.setRemoteAddress(addressA);
