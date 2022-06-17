@@ -16,11 +16,13 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -45,7 +47,8 @@ public class SqlClientResult implements SqlResult {
     private final Connection connection;
     private final QueryId queryId;
     private final int cursorBufferSize;
-    private final SqlResubmissionContext resubmissionContext;
+    private final ClientMessage sqlExecuteMessage;
+    private final boolean selectQuery;
 
     /** The connection that was created during resubmission. */
     @GuardedBy("mux")
@@ -74,12 +77,14 @@ public class SqlClientResult implements SqlResult {
             Connection connection,
             QueryId queryId,
             int cursorBufferSize,
-            SqlResubmissionContext resubmissionContext) {
+            ClientMessage sqlExecuteMessage,
+            SqlStatement statement) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.cursorBufferSize = cursorBufferSize;
-        this.resubmissionContext = resubmissionContext;
+        this.sqlExecuteMessage = sqlExecuteMessage;
+        this.selectQuery = statement.getSql().trim().toLowerCase().startsWith("select");
     }
 
     /**
@@ -425,8 +430,12 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    SqlResubmissionContext getResubmissionContext() {
-        return resubmissionContext;
+    ClientMessage getSqlExecuteMessage() {
+        return sqlExecuteMessage;
+    }
+
+    boolean isSelectQuery() {
+        return selectQuery;
     }
 
     boolean isReturnedAnyResult() {

@@ -114,7 +114,8 @@ public class SqlClientService implements SqlService {
                 connection,
                 id,
                 statement.getCursorBufferSize(),
-                new SqlResubmissionContext(requestMessage, statement)
+                requestMessage,
+                statement
         );
 
         try {
@@ -148,7 +149,7 @@ public class SqlClientService implements SqlService {
             ClientConnection connection = null;
             try {
                 connection = getQueryConnection();
-                ClientMessage message = invoke(result.getResubmissionContext().getSqlExecuteMessage(), connection);
+                ClientMessage message = invoke(result.getSqlExecuteMessage(), connection);
                 resubmissionResult = createResubmissionResult(message, connection);
                 if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
                     return resubmissionResult;
@@ -189,15 +190,14 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean shouldResubmit(SqlClientResult result) {
-        SqlResubmissionContext resubmissionContext = result.getResubmissionContext();
         ClientSqlResubmissionMode resubmissionMode = client.getClientConfig().getSqlConfig().getResubmissionMode();
         switch (resubmissionMode) {
             case NEVER:
                 return false;
             case RETRY_SELECTS:
-                return resubmissionContext.isSelectQuery() && !result.isReturnedAnyResult();
+                return result.isSelectQuery() && !result.isReturnedAnyResult();
             case RETRY_SELECTS_ALLOW_DUPLICATES:
-                return resubmissionContext.isSelectQuery();
+                return result.isSelectQuery();
             case RETRY_ALL:
                 return true;
             default:
