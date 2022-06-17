@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -43,6 +46,9 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
     private static final int MARGIN_OF_ERROR_MS = 3000;
 
     private List<Packet> packetsB;
+
+    @Mock
+    private ConnectionLifecycleListener<TcpIpConnection> mockedListener;
 
     @Before
     public void setup() throws Exception {
@@ -235,5 +241,19 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
         assertNotEquals(connAB, connAC);
         assertNotEquals(connAC, connAB);
         assertNotEquals(connAB, "foo");
+
+        // don't mock if you don't need to
+        TcpIpEndpointManager em = connAB.getEndpointManager();
+        Channel channel = connAB.getChannel();
+        TcpIpConnection conn1 = new TcpIpConnection(em, mockedListener, 0, channel);
+        TcpIpConnection conn2 = new TcpIpConnection(em, mockedListener, 0, channel);
+        assertEquals(conn1, conn2);
+        conn1.setEndPoint(addressA);
+        assertNotEquals(conn1, conn2);
+        conn2.setEndPoint(addressB);
+        assertNotEquals(conn1, conn2);
+        conn2.setEndPoint(addressA);
+        assertEquals(conn1, conn2);
     }
+
 }

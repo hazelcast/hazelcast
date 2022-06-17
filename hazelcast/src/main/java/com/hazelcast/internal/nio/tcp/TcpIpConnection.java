@@ -193,20 +193,24 @@ public class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpIpConnection)) {
-            return false;
-        }
-        TcpIpConnection that = (TcpIpConnection) o;
-        return connectionId == that.getConnectionId();
+    public int hashCode() {
+        return Objects.hash(channel.isClientMode(), connectionId, endPoint);
     }
 
     @Override
-    public int hashCode() {
-        return connectionId;
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TcpIpConnection other = (TcpIpConnection) obj;
+        return channel.isClientMode() == other.channel.isClientMode() && connectionId == other.connectionId
+                && Objects.equals(endPoint, other.endPoint);
     }
 
     @Override
