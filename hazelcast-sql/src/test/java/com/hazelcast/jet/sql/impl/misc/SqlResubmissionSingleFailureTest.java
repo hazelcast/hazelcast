@@ -20,8 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -37,13 +35,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,14 +47,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class SqlResubmissionTest extends SqlTestSupport {
+public class SqlResubmissionSingleFailureTest extends SqlResubmissionTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final int SLOW_ACCESS_TIME_MILLIS = 500;
-    private static final int COMMON_MAP_SIZE = 10_000;
-    private static final int SLOW_MAP_SIZE = 10;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
-    private static final String COMMON_MAP_NAME = randomName();
-    private static final String SLOW_MAP_NAME = randomName();
 
     @Parameterized.Parameter(0)
     public ClusterFailureTestSupport.SingleFailingInstanceClusterFailure clusterFailure;
@@ -117,10 +108,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
         }
     }
 
-    private boolean shouldFailAfterSomeDataIsFetched(ClientSqlResubmissionMode mode) {
-        return mode == ClientSqlResubmissionMode.NEVER || mode == ClientSqlResubmissionMode.RETRY_SELECTS;
-    }
-
     private int countWithFailureInTheMiddle(SqlResult rows) {
         int count = 0;
         for (SqlRow row : rows) {
@@ -157,10 +144,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
         }
     }
 
-    private boolean shouldFailBeforeAnyDataIsFetched(ClientSqlResubmissionMode mode) {
-        return mode == ClientSqlResubmissionMode.NEVER;
-    }
-
     private int count(SqlResult rows) {
         int count = 0;
         for (SqlRow row : rows) {
@@ -190,40 +173,6 @@ public class SqlResubmissionTest extends SqlTestSupport {
         } finally {
             failingThread.join();
             clusterFailure.cleanUp();
-        }
-    }
-
-    private boolean shouldFailModifyingQuery(ClientSqlResubmissionMode mode) {
-        return mode != ClientSqlResubmissionMode.RETRY_ALL;
-    }
-
-    private <T> void createMap(
-            HazelcastInstance instance,
-            String name,
-            int size,
-            Supplier<T> objectCreator,
-            Class<T> tClass
-    ) {
-        IMap<Integer, T> map = instance.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map.put((int) i, objectCreator.get());
-        }
-        createMapping(instance, name, Integer.class, tClass);
-    }
-
-    public static class SlowFieldAccessObject implements Serializable {
-        private int field = 0;
-
-        public int getField() {
-            try {
-                Thread.sleep(SLOW_ACCESS_TIME_MILLIS);
-            } catch (InterruptedException e) {
-            }
-            return field;
-        }
-
-        public void setField(int field) {
-            this.field = field;
         }
     }
 }

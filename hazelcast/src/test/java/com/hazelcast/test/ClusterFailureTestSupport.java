@@ -27,55 +27,42 @@ public final class ClusterFailureTestSupport {
     private ClusterFailureTestSupport() {
     }
 
-    private interface ClusterFailure {
-        void initialize(int initialClusterSize, Config config);
-
-        void fail();
-
-        void cleanUp();
-
-        HazelcastInstance createClient(ClientConfig clientConfig);
-
-    }
-
-    public abstract static class SingleFailingInstanceClusterFailure implements ClusterFailure {
+    public abstract static class SingleFailingInstanceClusterFailure {
         protected HazelcastInstance[] hazelcastInstances;
         protected HazelcastInstance failingInstance;
         protected TestHazelcastFactory factory = new TestHazelcastFactory();
         protected HazelcastInstance client;
-        protected int initialClusterSize;
+        protected int initialClusterMembersCount;
         protected Config config;
 
-        @Override
-        public void initialize(int initialClusterSize, Config config) {
-            this.initialClusterSize = initialClusterSize;
+        public void initialize(int initialClusterMembersCount, Config config) {
+            this.initialClusterMembersCount = initialClusterMembersCount;
             this.config = config;
 
-            hazelcastInstances = factory.newInstances(config, initialClusterSize);
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize, hazelcastInstances[0]);
+            hazelcastInstances = factory.newInstances(config, initialClusterMembersCount);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
             failingInstance = factory.newHazelcastInstance(config);
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize + 1, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount + 1, hazelcastInstances[0]);
             HazelcastTestSupport.waitAllForSafeState(hazelcastInstances);
             HazelcastTestSupport.waitAllForSafeState(failingInstance);
             client = null;
         }
 
-        @Override
         public HazelcastInstance createClient(ClientConfig clientConfig) {
             client = factory.newHazelcastClient(clientConfig);
             return client;
         }
 
-        @Override
         public void cleanUp() {
             Arrays.stream(hazelcastInstances).forEach(instance -> instance.getLifecycleService().terminate());
             client.getLifecycleService().terminate();
         }
 
-        @Override
         public String toString() {
             return this.getClass().getSimpleName();
         }
+
+        public abstract void fail();
 
         public HazelcastInstance getFailingInstance() {
             return failingInstance;
@@ -92,7 +79,7 @@ public final class ClusterFailureTestSupport {
             for (HazelcastInstance hazelcastInstance : hazelcastInstances) {
                 HazelcastTestSupport.closeConnectionBetween(hazelcastInstance, failingInstance);
             }
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
         }
 
         @Override
@@ -108,9 +95,9 @@ public final class ClusterFailureTestSupport {
         @Override
         public void fail() {
             failingInstance.getLifecycleService().terminate();
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
             replacementInstance = factory.newHazelcastInstance(config);
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize + 1, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount + 1, hazelcastInstances[0]);
         }
 
         @Override
@@ -124,7 +111,7 @@ public final class ClusterFailureTestSupport {
         @Override
         public void fail() {
             failingInstance.getLifecycleService().terminate();
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
         }
     }
 
@@ -132,7 +119,66 @@ public final class ClusterFailureTestSupport {
         @Override
         public void fail() {
             failingInstance.shutdown();
-            HazelcastTestSupport.assertClusterSizeEventually(initialClusterSize, hazelcastInstances[0]);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
+        }
+    }
+
+    public abstract static class MultipleFailingInstanceClusterFailure {
+        protected HazelcastInstance[] hazelcastInstances;
+        protected HazelcastInstance[] failingInstances;
+        protected TestHazelcastFactory factory = new TestHazelcastFactory();
+        protected HazelcastInstance client;
+        protected int initialClusterMembersCount;
+        protected int currentSize;
+        protected int lastLivingFailingInstanceIndex;
+        protected Config config;
+
+        public void initialize(int initialClusterMembersCount, int initialFailingMembersCount, Config config) {
+            this.initialClusterMembersCount = initialClusterMembersCount;
+            this.config = config;
+
+            hazelcastInstances = factory.newInstances(config, initialClusterMembersCount);
+            HazelcastTestSupport.assertClusterSizeEventually(initialClusterMembersCount, hazelcastInstances[0]);
+            failingInstances = factory.newInstances(config, initialFailingMembersCount);
+            currentSize = initialClusterMembersCount + initialFailingMembersCount;
+            lastLivingFailingInstanceIndex = initialFailingMembersCount - 1;
+            HazelcastTestSupport.assertClusterSizeEventually(currentSize, hazelcastInstances[0]);
+            HazelcastTestSupport.waitAllForSafeState(hazelcastInstances);
+            HazelcastTestSupport.waitAllForSafeState(failingInstances);
+            client = null;
+        }
+
+        public HazelcastInstance createClient(ClientConfig clientConfig) {
+            client = factory.newHazelcastClient(clientConfig);
+            return client;
+        }
+
+        public void cleanUp() {
+            Arrays.stream(hazelcastInstances).forEach(instance -> instance.getLifecycleService().terminate());
+            client.getLifecycleService().terminate();
+        }
+
+        public String toString() {
+            return this.getClass().getSimpleName();
+        }
+
+        public abstract void fail();
+
+        public HazelcastInstance getFailingInstance() {
+            return failingInstances[0];
+        }
+
+        public HazelcastInstance getNotFailingInstance() {
+            return hazelcastInstances[0];
+        }
+    }
+
+    public static class NodeShutdownClusterMultipleFailure extends MultipleFailingInstanceClusterFailure {
+        @Override
+        public void fail() {
+            failingInstances[lastLivingFailingInstanceIndex--].shutdown();
+            currentSize--;
+            HazelcastTestSupport.assertClusterSizeEventually(currentSize, hazelcastInstances[0]);
         }
     }
 }

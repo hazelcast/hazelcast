@@ -80,8 +80,8 @@ public class SqlClientService implements SqlService {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
         this.skipUpdateStatistics = skipUpdateStatistics();
-        long invocationTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
-        this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(invocationTimeoutMillis);
+        long resubmissionTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
+        this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
     }
 
@@ -170,6 +170,8 @@ public class SqlClientService implements SqlService {
                 }
             }
         } while (System.nanoTime() - resubmissionStartTime <= resubmissionTimeoutNano);
+
+        logger.info("Resubmitting query timed out");
 
         return resubmissionResult;
     }
