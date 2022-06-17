@@ -74,6 +74,9 @@ public abstract class BasePutOperation
 
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
         ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
+        if (recordStore.supportPendingIO()) {
+            return new TSPutBackupOperation(name, dataKey, record, dataValue, metadata);
+        }
         return new PutBackupOperation(name, dataKey, record, dataValue, metadata);
     }
 

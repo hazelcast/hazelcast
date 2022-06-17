@@ -123,6 +123,7 @@ import com.hazelcast.map.impl.operation.SetTtlBackupOperation;
 import com.hazelcast.map.impl.operation.SetTtlOperation;
 import com.hazelcast.map.impl.operation.SetWithExpiryOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
+import com.hazelcast.map.impl.operation.TSPutBackupOperation;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
@@ -325,7 +326,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 157;
     public static final int MAP_CHUNK = 158;
 
-    private static final int LEN = MAP_CHUNK + 1;
+    public static final int TS_PUT_BACKUP = 159;
+
+    private static final int LEN = TS_PUT_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -340,6 +343,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[GET] = arg -> new GetOperation();
         constructors[REMOVE] = arg -> new RemoveOperation();
         constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
+        constructors[TS_PUT_BACKUP] = arg -> new TSPutBackupOperation();
         constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
         constructors[EVICT_BACKUP] = arg -> new EvictBackupOperation();
         constructors[CREATE_ACCUMULATOR_INFO] = arg -> new AccumulatorInfo();

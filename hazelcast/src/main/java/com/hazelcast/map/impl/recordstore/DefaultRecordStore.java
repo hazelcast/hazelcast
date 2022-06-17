@@ -260,10 +260,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                      boolean putTransient, CallerProvenance provenance,
                                      UUID transactionId) {
         long now = getNow();
-        putInternal(key, value, ttl, maxIdle, expiryTime, now,
+        Object status = putInternal(key, value, ttl, maxIdle, expiryTime, now,
                 null, null, null, PUT_BACKUP_PARAMS);
+        if (isPendingIO(status)) {
+            return (Record) status;
+        }
 
-        Record record = getRecord(key);
+        Record record = getRecord(key, true);
+        assert !isPendingIO(record);
 
         if (persistenceEnabledFor(provenance)) {
             if (putTransient) {
