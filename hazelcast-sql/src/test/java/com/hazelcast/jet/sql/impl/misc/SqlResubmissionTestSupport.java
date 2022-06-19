@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
-
 import java.io.Serializable;
 import java.util.function.Supplier;
 
@@ -64,6 +63,25 @@ public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
                 Thread.sleep(SLOW_ACCESS_TIME_MILLIS);
             } catch (InterruptedException e) {
             }
+            return field;
+        }
+
+        public void setField(int field) {
+            this.field = field;
+        }
+    }
+
+    public static class IntHolder implements Serializable {
+        private int field = 0;
+
+        public IntHolder() {
+        }
+
+        public IntHolder(int field) {
+            this.field = field;
+        }
+
+        public int getField() {
             return field;
         }
 
