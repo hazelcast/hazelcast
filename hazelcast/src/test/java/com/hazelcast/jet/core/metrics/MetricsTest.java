@@ -477,6 +477,7 @@ public class MetricsTest extends JetTestSupport {
     private Job runPipeline(DAG dag) {
         Job job = instance.getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         job.join();
+        // comment
         return job;
     }
 
