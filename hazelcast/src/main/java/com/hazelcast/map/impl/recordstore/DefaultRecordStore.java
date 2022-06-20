@@ -550,8 +550,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void removeBackup(Data key, CallerProvenance provenance) {
-        removeBackupInternal(key, provenance, null);
+    public Record removeBackup(Data key, CallerProvenance provenance) {
+        return removeBackupInternal(key, provenance, null);
     }
 
     @Override
@@ -559,16 +559,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         removeBackupInternal(key, provenance, transactionId);
     }
 
-    private void removeBackupInternal(Data key, CallerProvenance provenance, UUID transactionId) {
+    private Record removeBackupInternal(Data key, CallerProvenance provenance, UUID transactionId) {
         long now = getNow();
 
-        // TODO handle offloading
         Record record = getRecordOrNull(key, now, true);
         if (record == null) {
-            return;
+            return null;
         }
+
+        if (isPendingIO(record)) {
+            return record;
+        }
+
+        // There are no indexes on replica and, therefore, therefore, there is no need
+        // to handle pending status
         mutationObserver.onRemoveRecord(key, record);
         removeKeyFromExpirySystem(key);
+        // TODO handle offloading IO?
         storage.removeRecord(key, record);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now, transactionId);

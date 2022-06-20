@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,7 +39,7 @@ import static java.lang.String.format;
 
 public final class TSPutBackupOperation extends PutBackupOperation implements BlockingOperation, Notifier {
 
-    private Record status;
+    private transient Record status;
     private long threadId;
 
     private UUID ownerUuid;
@@ -60,7 +61,7 @@ public final class TSPutBackupOperation extends PutBackupOperation implements Bl
         final long finalCallId = getCallId();
 
         if (!recordStore.isLockedBy(dataKey, ownerUuid, finalThreadId)) {
-            lock(dataKey, ownerUuid, finalThreadId, finalCallId);
+            lock(recordStore, dataKey, ownerUuid, finalThreadId, finalCallId);
         }
 
         Record currentRecord = recordStore.putBackup(dataKey, record,
@@ -72,7 +73,7 @@ public final class TSPutBackupOperation extends PutBackupOperation implements Bl
         }
         Records.copyMetadataFrom(record, currentRecord);
 
-        unlock(dataKey, ownerUuid, finalThreadId, finalCallId);
+        unlock(recordStore, dataKey, ownerUuid, finalThreadId, finalCallId);
     }
 
     @Override
@@ -90,20 +91,22 @@ public final class TSPutBackupOperation extends PutBackupOperation implements Bl
         return MapDataSerializerHook.TS_PUT_BACKUP;
     }
 
-    private void lock(Data finalDataKey, UUID finalCaller, long finalThreadId, long finalCallId) {
+    static void lock(RecordStore recordStore, Data finalDataKey,
+                     UUID finalCaller, long finalThreadId, long finalCallId) {
         boolean locked = recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
         if (!locked) {
             // should not happen since it's a lock-awaiting operation and we are on a partition-thread, but just to make sure
             throw new IllegalStateException(
-                format("Could not obtain a lock by the caller=%s and threadId=%d", finalCaller, threadId));
+                format("Could not obtain a lock by the caller=%s and threadId=%d", finalCaller, finalThreadId));
         }
     }
 
-    private void unlock(Data finalDataKey, UUID finalCaller, long finalThreadId, long finalCallId) {
+    static void unlock(RecordStore recordStore, Data finalDataKey,
+                UUID finalCaller, long finalThreadId, long finalCallId) {
         boolean unlocked = recordStore.unlock(finalDataKey, finalCaller, finalThreadId, finalCallId);
         if (!unlocked) {
             throw new IllegalStateException(
-                format("Could not unlock by the caller=%s and threadId=%d", finalCaller, threadId));
+                format("Could not unlock by the caller=%s and threadId=%d", finalCaller, finalThreadId));
         }
     }
 

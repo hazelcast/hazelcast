@@ -149,7 +149,7 @@ public interface RecordStore<R extends Record> {
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.
      */
-    void removeBackup(Data dataKey, CallerProvenance provenance);
+    Record removeBackup(Data dataKey, CallerProvenance provenance);
 
     void removeBackupTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
 

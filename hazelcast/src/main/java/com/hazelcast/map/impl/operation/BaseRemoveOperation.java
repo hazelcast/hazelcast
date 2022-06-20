@@ -54,6 +54,9 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     public Operation getBackupOperation() {
+        if (recordStore.supportPendingIO()) {
+            return new TSRemoveBackupOperation(name, dataKey, disableWanReplicationEvent());
+        }
         return new RemoveBackupOperation(name, dataKey, disableWanReplicationEvent());
     }
 

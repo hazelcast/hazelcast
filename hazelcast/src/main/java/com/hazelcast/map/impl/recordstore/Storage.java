@@ -64,7 +64,11 @@ public interface Storage<K, R> {
      */
     R getIfSameKey(K key);
 
-    R removeRecord(Data dataKey, @Nonnull R record);
+    default R removeRecord(Data dataKey, @Nonnull R record) {
+        return removeRecord(dataKey, record, null);
+    }
+
+    R removeRecord(Data dataKey, @Nonnull R record, boolean noPendingIO);
 
     boolean containsKey(K key);
 
