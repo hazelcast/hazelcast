@@ -124,10 +124,10 @@ import static java.util.stream.Collectors.toMap;
  */
 public class MasterJobContext {
 
-    private static final ExecutorService START_JOB_MERGE_EXECUTOR = Executors.newSingleThreadExecutor();
-
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
+
+    private static final ExecutorService START_JOB_MERGE_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
@@ -231,7 +231,9 @@ public class MasterJobContext {
                     return dag;
                 })
                 .thenComposeAsync(dag -> {
-                    if (dag == null) return completedFuture(null);
+                    if (dag == null) {
+                        return completedFuture(null);
+                    }
                     MembersView membersView = Util.getMembersView(mc.nodeEngine());
                     JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
 

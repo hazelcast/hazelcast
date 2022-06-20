@@ -68,6 +68,7 @@ public final class ExceptionUtil {
      * Returns true if the exception is one of a kind upon which the job
      * restarts rather than fails.
      */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
         return isTopologyException(t)
                 || t instanceof RestartableException
