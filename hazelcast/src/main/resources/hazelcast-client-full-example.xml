@@ -187,21 +187,18 @@
                 </properties>
             </socket-interceptor>
         * <ssl>:
-            Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-            Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-            your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-            By default, it is disabled. The following is an example:
+            Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast Enterprise.
+            The default configuration usually uses JSSE engine available in Java.
+            Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
             <ssl enabled="true">
                 <factory-class-name>
-                    com.hazelcast.nio.ssl.BasicSSLContextFactory
+                    com.hazelcast.nio.ssl.OpenSSLEngineFactory
                 </factory-class-name>
                 <properties>
-                    <property name="keyStore">keyStore</property>
-                    <property name="keyStorePassword">keyStorePassword</property>
-                    <property name="keyManagerAlgorithm">SunX509</property>
-                    <property name="trustManagerAlgorithm">SunX509</property>
-                    <property name="protocol">TLS</property>
-                    <property name="mutualAuthentication">REQUIRED</property>
+                    <property name="protocol">TLSv1.2</property>
+                    <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                    <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                    <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
                 </properties>
             </ssl>
         * <aws>:
@@ -291,18 +288,17 @@
         </socket-interceptor>
 
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
                 <property name="protocol">TLS</property>
 
                 <property name="trustStore">/opt/hazelcast-client.truststore</property>
                 <property name="trustStorePassword">secret.123456</property>
-                <property name="trustStoreType">JKS</property>
+                <property name="trustStoreType">PKCS12</property>
 
                 <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
                 <property name="keyStorePassword">keystorePassword123</property>
-                <property name="keyStoreType">JKS</property>
+                <property name="keyStoreType">PKCS12</property>
             </properties>
         </ssl>
         <auto-detection enabled="false"/>

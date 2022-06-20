@@ -108,6 +108,8 @@ public class AddMapConfigMessageTask
         }
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setMetadataPolicy(MetadataPolicy.getById(parameters.metadataPolicy));
+        config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
+        config.setTieredStoreConfig(parameters.tieredStoreConfig);
         return config;
     }
 
