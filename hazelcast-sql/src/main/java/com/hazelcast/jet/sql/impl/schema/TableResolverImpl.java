@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
@@ -77,19 +78,23 @@ public class TableResolverImpl implements TableResolver {
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
         // we skip events originating from local member to avoid double processing
-        this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
-            }
+        nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
+                this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
+                    @Override
+                    public void entryUpdated(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
 
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
+                    @Override
+                    public void entryRemoved(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
+                });
             }
         });
     }
