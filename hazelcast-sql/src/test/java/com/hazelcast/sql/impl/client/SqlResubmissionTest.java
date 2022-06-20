@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.misc;
-
-import static org.junit.Assert.assertTrue;
+package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
@@ -26,27 +24,29 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.client.SqlClientResult;
 import com.hazelcast.test.ClusterFailureTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
+
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
+public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
     private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
 
@@ -57,6 +57,10 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
     public ClientSqlResubmissionMode resubmissionMode;
 
     private HazelcastInstance client;
+
+    private volatile Step step;
+    private volatile boolean finish;
+    private volatile long lastExecutionTime;
 
     @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
     public static Collection<Object[]> parameters() {
@@ -75,37 +79,6 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
         return res;
     }
 
-    private volatile Step step = Step.BEFORE_EXECUTE;
-    private volatile boolean finish = false;
-    private volatile long lastExecutionTime = 0;
-
-    private Runnable cyclicFailure = () -> {
-        boolean failureNeeded = true;
-
-        while (!finish) {
-            Step localStep = step;
-            switch (localStep) {
-                case BEFORE_FAIL:
-                    try {
-                        Thread.sleep(lastExecutionTime / 2);
-                    } catch (InterruptedException e) {
-                    }
-                    step = Step.BEFORE_RECOVER;
-                    failureNeeded = false;
-                    clusterFailure.fail();
-                    break;
-                case BEFORE_RECOVER:
-                    failureNeeded = true;
-                    clusterFailure.recover();
-                    step = Step.BEFORE_EXECUTE;
-                    break;
-            }
-        }
-        if (failureNeeded) {
-            clusterFailure.fail();
-        }
-    };
-
     @Before
     public void initFailure() {
         clusterFailure.initialize(INITIAL_CLUSTER_SIZE, SMALL_INSTANCE_CONFIG);
@@ -113,6 +86,7 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
                 IntHolder.class);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+
         client = clusterFailure.createClient(clientConfig);
         step = Step.BEFORE_EXECUTE;
         finish = false;
@@ -122,11 +96,21 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
     @Test
     public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
+        testStatement(statement, this::shouldFailBeforeAnyDataIsFetched);
+    }
 
+    @Test
+    public void when_failingUpdate() throws InterruptedException {
+        SqlStatement statement = new SqlStatement("update " + COMMON_MAP_NAME + " set field = 1");
+        testStatement(statement, this::shouldFailModifyingQuery);
+    }
+
+    private void testStatement(SqlStatement statement, Function<ClientSqlResubmissionMode, Boolean> shouldFailFunction)
+            throws InterruptedException {
         Thread failingThread = new Thread(cyclicFailure);
         failingThread.start();
         try {
-            if (shouldFailBeforeAnyDataIsFetched(resubmissionMode)) {
+            if (shouldFailFunction.apply(resubmissionMode)) {
                 assertThrows(HazelcastSqlException.class, () -> {
                     executeInLoop(statement, result -> false);
                 });
@@ -166,6 +150,33 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
         }
     }
 
+    private final Runnable cyclicFailure = () -> {
+        boolean failureNeeded = true;
+
+        while (!finish) {
+            Step localStep = step;
+            switch (localStep) {
+                case BEFORE_FAIL:
+                    try {
+                        Thread.sleep(lastExecutionTime / 2);
+                    } catch (InterruptedException e) {
+                    }
+                    step = Step.BEFORE_RECOVER;
+                    failureNeeded = false;
+                    clusterFailure.fail();
+                    break;
+                case BEFORE_RECOVER:
+                    failureNeeded = true;
+                    clusterFailure.recover();
+                    step = Step.BEFORE_EXECUTE;
+                    break;
+            }
+        }
+        if (failureNeeded) {
+            clusterFailure.fail();
+        }
+    };
+
     @Test
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
@@ -179,7 +190,6 @@ public class SqlResubmissionStressTest extends SqlResubmissionTestSupport {
                 });
             } else {
                 int count = countWithFailureInTheMiddle(rows);
-                logger.info("Count: " + count);
                 assertTrue(COMMON_MAP_SIZE < count);
             }
         } finally {

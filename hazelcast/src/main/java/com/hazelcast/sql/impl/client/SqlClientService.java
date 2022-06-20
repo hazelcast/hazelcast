@@ -151,10 +151,16 @@ public class SqlClientService implements SqlService {
                 connection = getQueryConnection();
                 ClientMessage message = invoke(result.getSqlExecuteMessage(), connection);
                 resubmissionResult = createResubmissionResult(message, connection);
+                if (resubmissionResult.getSqlError() == null) {
+                    logger.info("Resubmitting query: " + result.getQueryId() + " ended without error");
+                } else {
+                    logger.info("Resubmitting query: " + result.getQueryId() + " ended with error");
+                }
                 if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
                     return resubmissionResult;
                 }
             } catch (Exception e) {
+                logger.info("Resubmitting query: " + result.getQueryId() + " ended with exception");
                 RuntimeException rethrown = connection == null ? (RuntimeException) e : rethrow(e, connection);
                 if (!shouldResubmit(rethrown)) {
                     throw rethrown;

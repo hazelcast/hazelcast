@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.misc;
+package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+
 import java.io.Serializable;
 import java.util.function.Supplier;
 

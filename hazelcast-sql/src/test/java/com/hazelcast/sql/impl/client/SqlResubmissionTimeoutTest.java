@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.misc;
+package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
@@ -34,7 +34,7 @@ public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
     private static final int SLOW_MAP_SIZE = 100;
 
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final int INITIAL_FAILURE_SIZE = 20;
+    private static final int INITIAL_FAILURE_SIZE = 4;
     private static final Config INSTANCE_CONFIG = smallInstanceConfig()
             .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "111");
 
@@ -47,8 +47,9 @@ public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
         clusterFailure.initialize(INITIAL_CLUSTER_SIZE, INITIAL_FAILURE_SIZE, INSTANCE_CONFIG);
         createMap(clusterFailure.getFailingInstance(), SLOW_MAP_NAME, SLOW_MAP_SIZE, SlowFieldAccessObject::new,
                 SlowFieldAccessObject.class);
+        createMap(clusterFailure.getFailingInstance(), COMMON_MAP_NAME, COMMON_MAP_SIZE, IntHolder::new, IntHolder.class);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty("hazelcast.client.invocation.timeout.seconds", "5");
+        clientConfig.setProperty("hazelcast.client.invocation.timeout.seconds", "1");
         clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
         HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("update " + SLOW_MAP_NAME + " set field = field + 1");

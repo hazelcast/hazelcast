@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.client;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -32,11 +30,14 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
@@ -445,7 +446,7 @@ public class SqlClientResult implements SqlResult {
         return queryId;
     }
 
-    public boolean wasResubmission() {
+    boolean wasResubmission() {
         synchronized (mux) {
             return resubmissionConnection != null;
         }
