@@ -89,6 +89,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("TUMBLE")
                     || field.getName().equals("HOP")
                     || field.getName().equals("DOT")
+                    || field.getName().equals("TO_ROW")
             ) {
                 continue;
             }
