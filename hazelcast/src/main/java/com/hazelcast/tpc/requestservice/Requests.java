@@ -1,0 +1,92 @@
+package com.hazelcast.tpc.requestservice;
+
+import com.hazelcast.tpc.engine.frame.Frame;
+import org.jctools.util.PaddedAtomicLong;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static java.lang.System.currentTimeMillis;
+
+/**
+ * Idea:
+ * Instead of using a ConcurrentHashMap where we are going to get litter when an
+ * request is inserted and when a request is removed, use an array of slots. In this
+ * array you can write with a volatile write.
+ *
+ * Then there is a second array containing the available positions. This array has a
+ * head and a tail. Items are removed from the head and added to the tail. A cas is
+ * needed for each of these operations.
+ *
+ * This will resolve the litter problem. Also there is less contention on the counter;
+ * although not that much of an issue unless many calls on single partition.
+ *
+ * The problem is when requests are lost. Then the slots won't be reclaimed.
+ */
+class Requests {
+
+    final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
+    final PaddedAtomicLong started = new PaddedAtomicLong();
+    final PaddedAtomicLong completed = new PaddedAtomicLong();
+    private final int concurrentRequestLimit;
+    private final long nextCallIdTimeoutMs;
+
+    public Requests(int concurrentRequestLimit, long nextCallIdTimeoutMs) {
+        this.concurrentRequestLimit = concurrentRequestLimit;
+        this.nextCallIdTimeoutMs = nextCallIdTimeoutMs;
+    }
+
+    void complete() {
+        if (concurrentRequestLimit > -1) {
+            completed.incrementAndGet();
+        }
+    }
+
+    long nextCallId() {
+        if (concurrentRequestLimit == -1) {
+            return started.incrementAndGet();
+        } else {
+            long endTime = currentTimeMillis() + nextCallIdTimeoutMs;
+            do {
+                if (completed.get() + concurrentRequestLimit > started.get()) {
+                    return started.incrementAndGet();
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
+                    }
+                }
+            } while (currentTimeMillis() < endTime);
+
+            throw new RuntimeException("Member is overloaded with requests");
+        }
+    }
+
+    long nextCallId(int count) {
+        if (concurrentRequestLimit == -1) {
+            return started.addAndGet(count);
+        } else {
+            long endTime = currentTimeMillis() + nextCallIdTimeoutMs;
+            do {
+                if (completed.get() + concurrentRequestLimit > started.get() + count) {
+                    return started.addAndGet(count);
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
+                    }
+                }
+            } while (currentTimeMillis() < endTime);
+
+            throw new RuntimeException("Member is overloaded with requests");
+        }
+    }
+
+    void shutdown() {
+        for (Frame request : map.values()) {
+            request.future.completeExceptionally(new RuntimeException("Shutting down"));
+        }
+    }
+}

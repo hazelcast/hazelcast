@@ -46,7 +46,7 @@ public final class SetOp extends Op {
 
         map.set(key, value);
 
-        response.writeResponseHeader(partitionId, callId())
+        response.writeResponseHeader(partitionId, callId)
                 .constructComplete();
 
         return COMPLETED;

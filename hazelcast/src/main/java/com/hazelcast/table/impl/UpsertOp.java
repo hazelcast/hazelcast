@@ -41,7 +41,7 @@ public final class UpsertOp extends Op {
         item.b = request.readInt();
         map.put(item.key, item);
 
-        response.writeResponseHeader(partitionId, callId())
+        response.writeResponseHeader(partitionId, callId)
                 .constructComplete();
 
         return Op.COMPLETED;

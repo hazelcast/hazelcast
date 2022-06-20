@@ -53,10 +53,8 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
@@ -110,11 +108,12 @@ public class RequestService {
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
-    private int[] partitionIdToChannel;
+    int[] partitionIdToSocket;
     private final RequestRegistry requestRegistry;
     private Engine engine;
     private int concurrentRequestLimit;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
+    private PartitionActorRef[] partitionActorRefs;
 
     public RequestService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -131,8 +130,13 @@ public class RequestService {
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
         this.socketCount = Integer.parseInt(java.lang.System.getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
 
+        this.partitionActorRefs = new PartitionActorRef[271];
+
         this.requestRegistry = new RequestRegistry(concurrentRequestLimit);
-        this.responseHandler = new ResponseHandler(responseThreadCount, responseThreadSpin, requestRegistry);
+        this.responseHandler = new ResponseHandler(responseThreadCount,
+                responseThreadSpin,
+                requestRegistry,
+                partitionActorRefs);
         this.thisAddress = nodeEngine.getThisAddress();
         this.engine = newEngine();
 
@@ -141,9 +145,9 @@ public class RequestService {
         //hack
         managers.tableManager = new TableManager(271);
 
-        this.partitionIdToChannel = new int[271];
+        this.partitionIdToSocket = new int[271];
         for (int k = 0; k < 271; k++) {
-            partitionIdToChannel[k] = hashToIndex(k, socketCount);
+            partitionIdToSocket[k] = hashToIndex(k, socketCount);
         }
     }
 
@@ -200,6 +204,16 @@ public class RequestService {
         }
 
         responseHandler.start();
+
+        for (int partitionId = 0; partitionId < partitionActorRefs.length; partitionId++) {
+            partitionActorRefs[partitionId] = new PartitionActorRef(
+                    partitionId,
+                    nodeEngine.getPartitionService(),
+                    engine,
+                    this,
+                    thisAddress,
+                    new Requests(concurrentRequestLimit, requestTimeoutMs));
+        }
     }
 
     private void startNio() {
@@ -239,6 +253,10 @@ public class RequestService {
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    public PartitionActorRef[] partitionActorRefs() {
+        return partitionActorRefs;
     }
 
     private void startIOUring() {
@@ -321,10 +339,6 @@ public class RequestService {
         return (address.getPort() - 5701) * 100 + 11000 + socketId % engine.eventloopCount();
     }
 
-    public int partitionIdToChannel(int partitionId) {
-        return hashToIndex(partitionId, socketCount);
-    }
-
     private void ensureActive() {
         if (shuttingdown) {
             throw new RuntimeException("Can't make invocation, frontend shutting down");
@@ -352,38 +366,6 @@ public class RequestService {
         logger.info("RequestService terminated");
     }
 
-
-    public CompletableFuture invokeOnPartition(Frame request, int partitionId) {
-        ensureActive();
-
-        if (partitionId < 0) {
-            throw new RuntimeException("Negative partition id not supported:" + partitionId);
-        }
-
-        Address address = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        CompletableFuture future = request.future;
-        if (address.equals(thisAddress)) {
-            // todo: hack with the assignment of a partition to a local cpu.
-            int eventloopIndex = HashUtil.hashToIndex(partitionId, engine.eventloopCount());
-            Eventloop eventloop = engine.eventloop(eventloopIndex);
-            eventloop.execute(request);
-        } else {
-            AsyncSocket socket = getConnection(address).sockets[partitionIdToChannel[partitionId]];
-
-            // we need to acquire the frame because storage will release it once written
-            // and we need to keep the frame around for the response.
-            request.acquire();
-            RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
-            long callId = requests.nextCallId();
-            request.putLong(OFFSET_REQ_CALL_ID, callId);
-            //System.out.println("request.refCount:"+request.refCount());
-            requests.map.put(callId, request);
-            socket.writeAndFlush(request);
-        }
-
-        return future;
-    }
-
     public CompletableFuture invoke(Frame request, AsyncSocket socket) {
         ensureActive();
 
@@ -391,7 +373,7 @@ public class RequestService {
         // we need to acquire the frame because storage will release it once written
         // and we need to keep the frame around for the response.
         request.acquire();
-        RequestRegistry.Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
+        Requests requests = requestRegistry.getRequestsOrCreate(socket.remoteAddress());
         long callId = requests.nextCallId();
         request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
@@ -400,7 +382,7 @@ public class RequestService {
         return future;
     }
 
-    private TcpServerConnection getConnection(Address address) {
+    TcpServerConnection getConnection(Address address) {
         if (connectionManager == null) {
             connectionManager = nodeEngine.getNode().getServer().getConnectionManager(EndpointQualifier.MEMBER);
         }

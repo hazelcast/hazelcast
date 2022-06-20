@@ -17,6 +17,7 @@
 package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.tpc.engine.actor.Actor;
 import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.frame.Frame;
@@ -56,6 +57,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
     private final FrameAllocator remoteResponseFrameAllocator;
     private final OpAllocator opAllocator;
     private Eventloop eventloop;
+    private Actor[] partitionActors;
 
     public OpScheduler(int capacity,
                        int batchSize,
@@ -81,6 +83,19 @@ public final class OpScheduler implements Eventloop.Scheduler {
     @Override
     public void schedule(Frame request) {
         Op op = opAllocator.allocate(request);
+//        if (op.partitionId >= 0) {
+//            Actor partitionActor = partitionActors[op.partitionId];
+//            if (partitionActor == null) {
+//                partitionActor = new PartitionActor();
+//                partitionActors[op.partitionId] = partitionActor;
+//            }
+//            partitionActor.handle().send(op);
+//        } else {
+//
+//        }
+
+        op.partitionId =request.getInt(OFFSET_PARTITION_ID);
+        op.callId = request.getLong(OFFSET_REQ_CALL_ID);
         op.response = request.future != null
                 ? remoteResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD)
                 : localResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD);
@@ -95,7 +110,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
             runSingle();
         } else {
             Frame response = op.response;
-            response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
+            response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
                     .writeInt(RESPONSE_TYPE_OVERLOAD)
                     .constructComplete();
             sendResponse(op);
@@ -141,7 +156,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
                 case EXCEPTION:
                     exceptions.inc();
                     op.response.clear();
-                    op.response.writeResponseHeader(op.partitionId(), op.callId(), FLAG_OP_RESPONSE_CONTROL)
+                    op.response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
                             .writeInt(RESPONSE_TYPE_EXCEPTION)
                             .writeString(exception.getMessage())
                             .constructComplete();

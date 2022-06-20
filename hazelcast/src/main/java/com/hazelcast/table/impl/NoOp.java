@@ -32,7 +32,7 @@ public final class NoOp extends Op {
 
     @Override
     public int run() throws Exception {
-        response.writeResponseHeader(partitionId, callId())
+        response.writeResponseHeader(partitionId, callId)
                 .constructComplete();
 
         return COMPLETED;

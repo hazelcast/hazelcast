@@ -44,7 +44,7 @@ public final class GetOp extends Op {
 
         key.init(request);
 
-        response.writeResponseHeader(partitionId, callId());
+        response.writeResponseHeader(partitionId, callId);
         value.init(response);
         map.get(key, value);
         response.constructComplete();

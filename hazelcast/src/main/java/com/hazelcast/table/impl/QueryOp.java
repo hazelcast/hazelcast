@@ -45,7 +45,7 @@ public class QueryOp extends Op {
 
         map.execute(query);
 
-        response.writeResponseHeader(partitionId, callId())
+        response.writeResponseHeader(partitionId, callId)
                 .writeLong(query.result)
                 .constructComplete();
 

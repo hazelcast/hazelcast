@@ -30,6 +30,7 @@ public abstract class Op {
     public final static int EXCEPTION = 2;
 
     public int partitionId;
+    public long callId;
     public Managers managers;
     public int opcode;
     public StringBuffer name = new StringBuffer();
@@ -40,14 +41,6 @@ public abstract class Op {
 
     public Op(int opcode) {
         this.opcode = opcode;
-    }
-
-    public int partitionId() {
-        return request.getInt(OFFSET_PARTITION_ID);
-    }
-
-    public long callId() {
-        return request.getLong(OFFSET_REQ_CALL_ID);
     }
 
     public void readName() throws EOFException {

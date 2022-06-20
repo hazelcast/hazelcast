@@ -21,7 +21,7 @@ package com.hazelcast.tpc.engine.actor;
  *
  * All communication with the actor is done using its reference.
  */
-public interface ActorRef {
+public abstract class ActorRef<M> {
 
     /**
      * Sends the message to the actor.
@@ -29,5 +29,5 @@ public interface ActorRef {
      * @param message the message
      * @throws NullPointerException when message is null.
      */
-    void send(Object message);
+   public abstract void send(M message);
 }

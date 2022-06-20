@@ -18,7 +18,7 @@ package com.hazelcast.tpc.engine.actor;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public final class LocalActorRef implements ActorRef {
+public final class LocalActorRef extends ActorRef {
 
     private final Actor actor;
 

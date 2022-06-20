@@ -35,14 +35,17 @@ class ResponseHandler implements Consumer<Frame> {
     private final int threadCount;
     private final boolean spin;
     private final RequestRegistry requestRegistry;
+    private final PartitionActorRef[] partitionActorRefs;
 
     ResponseHandler(int threadCount,
                     boolean spin,
-                    RequestRegistry requestRegistry) {
+                    RequestRegistry requestRegistry,
+                    PartitionActorRef[] partitionActorRefs) {
         this.spin = spin;
         this.threadCount = threadCount;
         this.threads = new ResponseThread[threadCount];
         this.requestRegistry = requestRegistry;
+        this.partitionActorRefs = partitionActorRefs;
         for (int k = 0; k < threadCount; k++) {
             this.threads[k] = new ResponseThread(k);
         }
@@ -77,19 +80,26 @@ class ResponseHandler implements Consumer<Frame> {
     }
 
     private void process(Frame response) {
-        RequestRegistry.Requests requests = requestRegistry.get(response.socket.remoteAddress());
-        if (requests == null) {
-            System.out.println("Dropping response " + response + ", requests not found");
-            response.release();
-            return;
+        int partitionId = response.getInt(Frame.OFFSET_PARTITION_ID);
+
+        Requests requests;
+        if (partitionId >= 0) {
+            requests = partitionActorRefs[partitionId].requests();
+        } else {
+            requests = requestRegistry.get(response.socket.remoteAddress());
+            if (requests == null) {
+                System.out.println("Dropping response " + response + ", requests not found");
+                response.release();
+                return;
+            }
         }
 
         long callId = response.getLong(OFFSET_RES_CALL_ID);
-        //System.out.println("response with callId:"+callId +" frame: "+response);
 
         Frame request = requests.map.remove(callId);
         if (request == null) {
-            System.out.println("Dropping response " + response + ", invocation with id " + callId + " not found");
+            System.out.println("Dropping response " + response + ", invocation with id " + callId
+                    + ", partitionId: " + partitionId + " not found");
             return;
         }
 
