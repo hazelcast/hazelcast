@@ -16,18 +16,18 @@
 
 package com.hazelcast.tpc.engine.actor;
 
-/**
- * A handle to some {@link Actor}.
- *
- * All communication with the actor is done using its handle.
- */
-public interface ActorHandle {
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-    /**
-     * Sends the message to the actor.
-     *
-     * @param message the message
-     * @throws NullPointerException when message is null.
-     */
-    void send(Object message);
+public final class LocalActorRef implements ActorRef {
+
+    private final Actor actor;
+
+    public LocalActorRef(Actor actor) {
+        this.actor = checkNotNull(actor);
+    }
+
+    @Override
+    public void send(Object message) {
+        this.actor.send(message);
+    }
 }

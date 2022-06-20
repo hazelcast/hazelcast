@@ -18,7 +18,7 @@ package com.hazelcast.tpc;
 
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.actor.Actor;
-import com.hazelcast.tpc.engine.actor.LocalActorHandle;
+import com.hazelcast.tpc.engine.actor.LocalActorRef;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
 
 import java.util.concurrent.CountDownLatch;
@@ -55,7 +55,7 @@ public class ActorBenchmark {
     }
 
     static class CountdownActor extends Actor {
-        public LocalActorHandle that;
+        public LocalActorRef that;
         public CountDownLatch latch;
 
         @Override

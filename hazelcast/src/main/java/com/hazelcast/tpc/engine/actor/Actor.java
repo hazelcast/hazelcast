@@ -30,7 +30,7 @@ public abstract class Actor implements Runnable {
     private final MpscArrayQueue mailbox;
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private Eventloop eventloop;
-    private final LocalActorHandle handle = new LocalActorHandle(this);
+    private final LocalActorRef handle = new LocalActorRef(this);
 
     public Actor() {
         this(DEFAULT_MAILBOX_CAPACITY);
@@ -45,7 +45,7 @@ public abstract class Actor implements Runnable {
      *
      * @return the handle of the actor.
      */
-    public LocalActorHandle handle() {
+    public LocalActorRef handle() {
         return handle;
     }
 

@@ -60,10 +60,10 @@ public class ActorTest {
                 executed.countDown();
             }
         };
-        ActorHandle handle = actor.handle();
+        ActorRef ref = actor.handle();
         actor.activate(eventloop);
         String msg = "Message";
-        handle.send(msg);
+        ref.send(msg);
         assertOpenEventually(executed);
         assertEquals(msg, msgRef.get());
     }
