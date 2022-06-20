@@ -41,7 +41,6 @@ public class SqlCatalogInitTest extends SqlTestSupport {
     public void test() {
         HazelcastInstance instance = factory().newHazelcastInstance(CONFIG);
         assertClusterSizeEventually(3, instance);
-        waitAllForSafeState(instance);
         try {
             SqlResult result = instance.getSql().execute("select * from " + MAP_NAME);
             assertFalse(result.iterator().hasNext());
