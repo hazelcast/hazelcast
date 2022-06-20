@@ -76,50 +76,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         }
     }
 
-    @Override
-    public void randomLoad(byte[] key) {
-        int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
-
-        Frame request = frameAllocator.allocate(60)
-                .newFuture()
-                .writeRequestHeader(partitionId, OpCodes.RANDOM_LOAD)
-                .writeSizedBytes(key)
-                .constructComplete();
-        CompletableFuture<Frame> f = requestService.invokeOnPartition(request, partitionId);
-        try {
-            Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
-            frame.release();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void concurrentRandomLoad(byte[] key, int concurrency) {
-        int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
-
-        CompletableFuture[] futures = new CompletableFuture[concurrency];
-
-        for (int k = 0; k < concurrency; k++) {
-            Frame request = frameAllocator.allocate(60)
-                    .newFuture()
-                    .writeRequestHeader(partitionId, OpCodes.RANDOM_LOAD)
-                    .writeSizedBytes(key)
-                    .constructComplete();
-            futures[k] = requestService.invokeOnPartition(request, partitionId);
-        }
-
-        for (CompletableFuture<Frame> f : futures) {
-            try {
-                Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
-                frame.release();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
 
     private CompletableFuture asyncUpsert(V v) {
         Item item = (Item) v;
