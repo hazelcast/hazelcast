@@ -235,9 +235,7 @@ public final class ConcurrentInboundEdgeStream {
                     pendingBroadcastItems.putIfAbsent(queueIndex, itemDetector.item);
                     itemDetector.reset();
                     return MADE_PROGRESS;
-                }
-
-                if (result.isMadeProgress()) {
+                } else if (result.isMadeProgress()) {
                     coalescers.observeEvent(queueIndex);
                 }
 

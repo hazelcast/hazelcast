@@ -153,6 +153,7 @@ public class ConcurrentInboundEdgeStreamTest {
         add(q1, 1, barrier(0));
         add(q2, DONE_ITEM);
         drainAndAssert(MADE_PROGRESS, 1);
+        drainAndAssert(MADE_PROGRESS); // DONE_ITEM for Q2.
         drainAndAssert(MADE_PROGRESS, barrier(0));
 
         add(q1, DONE_ITEM);
