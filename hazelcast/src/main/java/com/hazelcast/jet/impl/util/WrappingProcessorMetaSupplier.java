@@ -58,6 +58,11 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
+    public boolean initIsCooperative() {
+        return wrapped.initIsCooperative();
+    }
+
+    @Override
     public void init(@Nonnull Context context) throws Exception {
         wrapped.init(context);
     }

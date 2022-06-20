@@ -56,6 +56,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,6 +70,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -90,7 +93,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
@@ -121,6 +123,8 @@ import static java.util.stream.Collectors.toMap;
  * termination.
  */
 public class MasterJobContext {
+
+    private static final ExecutorService START_JOB_MERGE_EXECUTOR = Executors.newSingleThreadExecutor();
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
@@ -207,7 +211,6 @@ public class MasterJobContext {
                     }
                     DAG dag = dagAndClassloader.f0();
                     assert dag != null;
-                    ClassLoader classLoader = dagAndClassloader.f1();
                     // must call this before rewriteDagWithSnapshotRestore()
                     String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
                     long snapshotId = jobExecRec.snapshotId();
@@ -221,32 +224,46 @@ public class MasterJobContext {
                     } else {
                         logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
                     }
-                    MembersView membersView = Util.getMembersView(mc.nodeEngine());
                     logger.info("Start executing " + mc.jobIdString()
                             + ", execution graph in DOT format:\n" + dotRepresentation
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                     logger.fine("Building execution plan for " + mc.jobIdString());
-                    return tuple4(membersView, jobExecRec, classLoader, dag);
+                    return dag;
                 })
-                .thenCompose(tuple -> {
-                    MembersView membersView = tuple.f0();
-                    JobExecutionRecord jobExecRec = tuple.f1();
-                    ClassLoader classLoader = tuple.f2();
-                    DAG dag = tuple.f3();
+                .thenComposeAsync(dag -> {
+                    if (dag == null) return completedFuture(null);
+                    MembersView membersView = Util.getMembersView(mc.nodeEngine());
+                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+
+                    ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
+                            .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
                     return Util.doWithClassLoader(classLoader, () ->
                             createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
                                     dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
                                     false, mc.jobRecord().getSubject()))
-                            .thenApply(executionPlan -> tuple2(executionPlan, membersView));
-                })
-                .thenAccept(tuple -> initExecution(tuple.f1(), tuple.f0()))
+                            .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
+                }, START_JOB_MERGE_EXECUTOR)
+                .thenAcceptAsync(tuple -> {
+                    if (tuple != null) {
+                        initExecution(tuple.membersView, tuple.plans);
+                    }
+                }, START_JOB_MERGE_EXECUTOR)
                 .whenComplete((r, e) -> {
                     if (e != null) {
                         finalizeJob(e);
                     }
                 })
-                .join()
-        ;
+                .join();
+    }
+
+    private static final class StartJobInitExecutionParams implements Serializable {
+        final Map<MemberInfo, ExecutionPlan> plans;
+        final MembersView membersView;
+
+        private StartJobInitExecutionParams(Map<MemberInfo, ExecutionPlan> plans, MembersView membersView) {
+            this.plans = plans;
+            this.membersView = membersView;
+        }
     }
 
     private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
