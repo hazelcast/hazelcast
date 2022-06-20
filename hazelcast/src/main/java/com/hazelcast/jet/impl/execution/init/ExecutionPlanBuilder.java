@@ -187,7 +187,7 @@ public final class ExecutionPlanBuilder {
         }
     }
 
-    private static class VertexIdPos {
+    private static final class VertexIdPos {
         private final int vertexId;
         private final String vertexName;
 
