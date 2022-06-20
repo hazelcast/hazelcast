@@ -56,6 +56,11 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     }
 
     @Override
+    public boolean initIsCooperative() {
+        return wrapped.initIsCooperative();
+    }
+
+    @Override
     public void close(Throwable error) throws Exception {
         wrapped.close(error);
     }

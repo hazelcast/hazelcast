@@ -56,7 +56,6 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -258,7 +257,7 @@ public class MasterJobContext {
                 .join();
     }
 
-    private static final class StartJobInitExecutionParams implements Serializable {
+    private static final class StartJobInitExecutionParams {
         final Map<MemberInfo, ExecutionPlan> plans;
         final MembersView membersView;
 
