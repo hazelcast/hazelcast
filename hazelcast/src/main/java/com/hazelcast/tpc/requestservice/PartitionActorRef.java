@@ -62,10 +62,6 @@ public final class PartitionActorRef extends ActorRef<Frame> {
         this.socketIndex = requestService.partitionIdToSocket[partitionId];
     }
 
-    Requests requests() {
-        return requests;
-    }
-
     public CompletableFuture<Frame> submit(Frame request) {
         CompletableFuture<Frame> future = request.future;
 
