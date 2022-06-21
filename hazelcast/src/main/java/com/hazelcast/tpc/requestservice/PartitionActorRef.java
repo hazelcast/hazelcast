@@ -64,7 +64,6 @@ public final class PartitionActorRef extends ActorRef<Frame> {
 
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            // todo: hack with the assignment of a partition to a local cpu.
             eventloop.execute(request);
         } else {
             // todo: this should in theory not be needed. We could use the last
