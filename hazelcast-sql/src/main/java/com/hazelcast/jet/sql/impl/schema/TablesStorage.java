@@ -38,7 +38,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -53,7 +52,6 @@ public class TablesStorage {
 
     private final NodeEngine nodeEngine;
     private final ILogger logger;
-    private final AtomicBoolean configured = new AtomicBoolean();
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -127,9 +125,6 @@ public class TablesStorage {
     }
 
     private ReplicatedMap<String, Object> storage() {
-        if (configured.compareAndSet(false, true)) {
-            nodeEngine.getHazelcastInstance().getConfig().getReplicatedMapConfig(CATALOG_MAP_NAME).setAsyncFillup(false);
-        }
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
