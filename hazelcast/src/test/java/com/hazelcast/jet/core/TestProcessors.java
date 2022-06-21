@@ -63,18 +63,18 @@ public final class TestProcessors {
         MockPMS.initCount.set(0);
         MockPMS.closeCount.set(0);
         MockPMS.receivedCloseError.set(null);
-        MockPMS.blockingSemaphore.drainPermits();
+        MockPMS.blockingSemaphore = new Semaphore(0, true);
 
         MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
         MockPS.receivedCloseErrors.clear();
-        MockPS.blockingSemaphore.drainPermits();
+        MockPS.blockingSemaphore = new Semaphore(0, true);
 
         MockP.initCount.set(0);
         MockP.closeCount.set(0);
         MockP.saveToSnapshotCalled = false;
         MockP.onSnapshotCompletedCalled = false;
-        MockP.blockingSemaphore.drainPermits();
+        MockP.blockingSemaphore = new Semaphore(0, true);
 
         NoOutputSourceP.proceedLatch = new CountDownLatch(1);
         NoOutputSourceP.executionStarted = new CountDownLatch(totalParallelism);
@@ -156,12 +156,12 @@ public final class TestProcessors {
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
         static AtomicReference<Throwable> receivedCloseError = new AtomicReference<>();
-        static Semaphore blockingSemaphore = new Semaphore(0);
+        static Semaphore blockingSemaphore = new Semaphore(0, true);
 
         private Throwable initError;
         private Throwable getError;
         private Throwable closeError;
-        private boolean initBlocks;
+        private volatile boolean initBlocks;
 
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
@@ -244,13 +244,13 @@ public final class TestProcessors {
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
-        static Semaphore blockingSemaphore = new Semaphore(0);
+        static Semaphore blockingSemaphore = new Semaphore(0, true);
 
         private Throwable initError;
         private Throwable getError;
         private Throwable closeError;
 
-        private boolean initBlocks;
+        private volatile boolean initBlocks;
 
         private final SupplierEx<Processor> supplier;
         private final int nodeCount;
@@ -338,7 +338,7 @@ public final class TestProcessors {
         static AtomicInteger closeCount = new AtomicInteger();
         static volatile boolean onSnapshotCompletedCalled;
         static volatile boolean saveToSnapshotCalled;
-        static Semaphore blockingSemaphore = new Semaphore(0);
+        static Semaphore blockingSemaphore = new Semaphore(0, true);
 
         private Throwable initError;
         private Throwable processError;

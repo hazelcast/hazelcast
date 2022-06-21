@@ -716,23 +716,17 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // When
         int numJobs = 2;
         for (int i = 0; i < numJobs; i++) {
-            submitFutures.add(spawn(() -> newJob(dagBlocking)));
+            String name = "pmsInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
         }
 
         // Then
-        if (useLightJob) {
-            assertEquals(0, instance().getJet().getJobs().size());
-        } else {
-            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
-        }
-        // newJob()
         instance().getJet().newJob(dagNormal).join();
-        // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
 //         generic API operation - generic API threads should not be starved
         instance().getMap("m").forEach(s -> { });
 
-        for (int i = 0; i < submitFutures.size(); i++) {
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT; i++) {
             MockPMS.unblock();
         }
         for (Future<Job> f : submitFutures) {
@@ -753,19 +747,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // When
         int numJobs = 3;
         for (int i = 0; i < numJobs; i++) {
-            submitFutures.add(spawn(() -> newJob(dagBlocking)));
+            String name = "psInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
         }
 
         // Then
-        // JetService.getJobs()
-        if (useLightJob) {
-            assertTrueEventually(() -> assertEquals(0, instance().getJet().getJobs().size()), 5);
-        } else {
-            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
-        }
-        // newJob()
         instance().getJet().newJob(dagNormal).join();
-        // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
         instance().getMap("m").forEach(s -> { });
@@ -791,19 +778,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // When
         int numJobs = 3;
         for (int i = 0; i < numJobs; i++) {
-            submitFutures.add(spawn(() -> newJob(dagBlocking)));
+            String name = "processorInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
         }
 
         // Then
-        // JetService.getJobs()
-        if (useLightJob) {
-            assertEquals(0, instance().getJet().getJobs().size());
-        } else {
-            assertTrueEventually(() -> assertEquals(numJobs, instance().getJet().getJobs().size()), 5);
-        }
-        // newJob()
         instance().getJet().newJob(dagNormal).join();
-        // newLightJob()
         instance().getJet().newLightJob(dagNormal).join();
         // generic API operation - generic API threads should not be starved
         instance().getMap("m").forEach(s -> { });
@@ -836,6 +816,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private Job newJob(DAG dag) {
         return newJob(instance(), dag, null);
+    }
+    private Job newJob(String name, DAG dag) {
+        JobConfig config = new JobConfig().setStoreMetricsAfterJobCompletion(false).setName(name);
+        return newJob(instance(), dag, useLightJob ? null : config);
     }
 
     private Job newJob(HazelcastInstance instance, DAG dag, JobConfig config) {
