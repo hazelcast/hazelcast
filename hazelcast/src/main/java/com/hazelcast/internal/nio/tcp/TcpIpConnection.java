@@ -194,7 +194,7 @@ public class TcpIpConnection implements Connection {
 
     @Override
     public int hashCode() {
-        return Objects.hash(channel.isClientMode(), connectionId, endPoint);
+        return Objects.hash(channel.isClientMode(), connectionId);
     }
 
     @Override
