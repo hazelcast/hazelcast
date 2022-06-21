@@ -713,7 +713,11 @@ abstract class MapProxySupport<K, V>
                 // the later one doesn't support PartitionAwareOperationFactory, which we need to use
                 // to speed up the removal operation using global indexes
                 // (see PartitionWideEntryWithPredicateOperationFactory.createFactoryOnRunner).
-                operationService.invokeOnPartitions(SERVICE_NAME, operation, partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys()));
+                operationService.invokeOnPartitions(
+                        SERVICE_NAME,
+                        operation,
+                        partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys())
+                );
             } else {
                 OperationFactory operation = operationProvider
                         .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR, predicate);
@@ -1311,7 +1315,11 @@ abstract class MapProxySupport<K, V>
 
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, partitionPredicate.getTarget());
-                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys()));
+                results = operationService.invokeOnPartitions(
+                        SERVICE_NAME,
+                        operation,
+                        partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys())
+                );
             } else {
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, predicate);
