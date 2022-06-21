@@ -46,7 +46,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -80,7 +79,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -290,15 +288,12 @@ public class PlanExecutor {
                 rows = catalog.getViewNames().stream();
                 break;
             case JOBS:
-                assert plan.getShowTarget() == ShowStatementTarget.JOBS;
                 NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-                rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
-                        .map(record -> record.getConfig().getName())
-                        .filter(Objects::nonNull);
+                rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
                 break;
             default:
-                throw new AssertionError("Unsupported SHOW statement target.");
+                throw new AssertionError("Unsupported SHOW statement target");
         }
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
