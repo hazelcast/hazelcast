@@ -75,7 +75,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     @Override
-    public CompletableFuture<?> doRun() {
+    protected CompletableFuture<?> doRun() {
         ILogger logger = getLogger();
         if (!getNodeEngine().getLocalMember().getVersion().asVersion().equals(coordinatorVersion)) {
             // Operations are sent to targets by Address. It can happen that the coordinator finds members

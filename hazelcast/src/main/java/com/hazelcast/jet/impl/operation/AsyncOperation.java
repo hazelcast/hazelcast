@@ -48,7 +48,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
     }
 
     @Override
-    public void run() {
+    public final void run() {
         CompletableFuture<?> future;
         try {
             future = doRun();
@@ -68,11 +68,11 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
     }
 
     @Override
-    public Object getResponse() {
+    public final Object getResponse() {
         throw new UnsupportedOperationException();
     }
 
-    protected void doSendResponse(Object value) {
+    private void doSendResponse(Object value) {
         try {
             final JetServiceBackend service = getJetServiceBackend();
             service.getLiveOperationRegistry().deregister(this);
