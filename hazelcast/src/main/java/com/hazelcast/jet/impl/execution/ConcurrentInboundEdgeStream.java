@@ -33,19 +33,14 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
-import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
-import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * This non-instantiable class contains implementations of {@link
@@ -78,12 +73,6 @@ public final class ConcurrentInboundEdgeStream {
         } else {
             return new OrderedDrain(conveyor, ordinal, priority, debugName, comparator);
         }
-    }
-
-    private enum ItemDrainMode {
-        NORMAL_ITEM,
-        BROADCAST_ITEM,
-        NO_ITEM;
     }
 
     private abstract static class InboundEdgeStreamBase implements InboundEdgeStream {
@@ -152,7 +141,6 @@ public final class ConcurrentInboundEdgeStream {
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
-        private final Map<Integer, InternalBroadcastItem> pendingBroadcastItems = new HashMap<>();
         private final KeyedWatermarkCoalescer coalescers;
         private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
         // Tells whether we are operating in exactly-once or at-least-once mode.
@@ -161,6 +149,7 @@ public final class ConcurrentInboundEdgeStream {
         // Once a terminal snapshot barrier is reached, this is always true.
         private boolean waitForAllBarriers;
         private SnapshotBarrier currentBarrier;  // next snapshot barrier to emit
+        private final List<SpecialBroadcastItem> specialItemsStash = new ArrayList<>();
 
         RoundRobinDrain(
                 @Nonnull ConcurrentConveyor<Object> conveyor,
@@ -176,25 +165,21 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers = new BitSet(conveyor.queueCount());
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
+            if (!specialItemsStash.isEmpty()) {
+                specialItemsStash.forEach(dest);
+                specialItemsStash.clear();
+                return MADE_PROGRESS;
+            }
+
             tracker.reset();
+            itemDetector.normalItemObserved = false;
+            // We iterate all the queues and add the items to the destination. In each queue we stop at any
+            // special item, process those and add the result to specialItemStash, that is added to the destination
+            // in the next call to this method (or in this call, if no normal item was added).
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
                 final QueuedPipe<Object> q = conveyor.queue(queueIndex);
-
-                if (pendingBroadcastItems.containsKey(queueIndex)) {
-                    InternalBroadcastItem item = pendingBroadcastItems.get(queueIndex);
-                    if (item instanceof Watermark) {
-                        Watermark watermark = (Watermark) item;
-                        processWatermarkItem(dest, watermark, queueIndex);
-                    } else if (item instanceof SnapshotBarrier) {
-                        observeBarrier(queueIndex, (SnapshotBarrier) item);
-                    }
-                    pendingBroadcastItems.remove(queueIndex);
-                    return MADE_PROGRESS;
-                }
-
                 if (q == null) {
                     continue;
                 }
@@ -207,70 +192,45 @@ public final class ConcurrentInboundEdgeStream {
                 ProgressState result = drainQueue(q, dest);
                 tracker.mergeWith(result);
 
-                if (itemDetector.item == DONE_ITEM) {
-                    conveyor.removeQueue(queueIndex);
-                    receivedBarriers.clear(queueIndex);
-                    List<Watermark> finalWatermarks = coalescers.queueDone(queueIndex);
-                    for (Watermark wm : finalWatermarks) {
-                        if (maybeEmitWm(wm, dest)) {
-                            tracker.madeProgress();
-                        }
-                    }
-                    if (conveyor.liveQueueCount() == 0) {
-                        return DONE;
-                    }
-                }
-
-                if (itemDetector.mode == ItemDrainMode.BROADCAST_ITEM) {
-                    if (itemDetector.item instanceof Watermark) {
+                if (itemDetector.item != null) {
+                    if (itemDetector.item == DONE_ITEM) {
+                        conveyor.removeQueue(queueIndex);
+                        receivedBarriers.clear(queueIndex);
+                        specialItemsStash.addAll(coalescers.queueDone(queueIndex));
+                    } else if (itemDetector.item instanceof Watermark) {
                         Watermark watermark = (Watermark) itemDetector.item;
-                        processWatermarkItem(dest, watermark, queueIndex);
+                        specialItemsStash.addAll(coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp()));
                     } else if (itemDetector.item instanceof SnapshotBarrier) {
                         observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
+                        tracker.madeProgress();
                     }
-                    tracker.madeProgress();
-                } else if (itemDetector.specialItemWasDrained) {
-                    // if last element of bulk was a special item,
-                    // we need to process it separately
-                    pendingBroadcastItems.putIfAbsent(queueIndex, itemDetector.item);
-                    itemDetector.reset();
-                    return MADE_PROGRESS;
                 } else if (result.isMadeProgress()) {
                     coalescers.observeEvent(queueIndex);
                 }
 
                 int liveQueueCount = conveyor.liveQueueCount();
-                if (liveQueueCount == 0) {
-                    return tracker.toProgressState();
-                }
                 // if we have received the current snapshot from all active queues, forward it
-                if (itemDetector.item != null && receivedBarriers.cardinality() == liveQueueCount) {
+                if (liveQueueCount > 0 && itemDetector.item != null && receivedBarriers.cardinality() == liveQueueCount) {
                     assert currentBarrier != null : "currentBarrier == null";
-                    dest.accept(currentBarrier);
+                    specialItemsStash.add(currentBarrier);
                     currentBarrier = null;
                     receivedBarriers.clear();
-                    return MADE_PROGRESS;
                 }
             }
 
             if (conveyor.liveQueueCount() > 0) {
                 tracker.notDone();
             }
+            if (!itemDetector.normalItemObserved) {
+                specialItemsStash.forEach(dest);
+                specialItemsStash.clear();
+            }
             return tracker.toProgressState();
         }
 
-        private void processWatermarkItem(Consumer<Object> dest, Watermark watermark, int queueIndex) {
-            List<Watermark> wms = coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp());
-            for (Watermark wm : wms) {
-                dest.accept(wm);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
-                            + " with key = " + watermark.key()
-                            + ", coalescedWm=" + toLocalTime(coalescedWm(watermark.key()))
-                            + ", topObservedWm=" + toLocalTime(topObservedWm(watermark.key())));
-                }
-            }
-            itemDetector.reset();
+        @Override
+        public boolean isDone() {
+            return super.isDone() && specialItemsStash.isEmpty();
         }
 
         /**
@@ -302,14 +262,6 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers.set(queueIndex);
         }
 
-        private boolean maybeEmitWm(Watermark wm, Consumer<Object> dest) {
-            if (wm.timestamp() != NO_NEW_WM) {
-                dest.accept(wm);
-                return true;
-            }
-            return false;
-        }
-
         @Override
         public long topObservedWm(byte key) {
             return coalescers.topObservedWm(key);
@@ -327,50 +279,23 @@ public final class ConcurrentInboundEdgeStream {
          */
         private static final class ItemDetector implements Predicate<Object> {
             Consumer<Object> dest;
-            InternalBroadcastItem item;
-            ItemDrainMode mode = ItemDrainMode.NO_ITEM;
-            boolean specialItemWasDrained;
-
-            void reset() {
-                item = null;
-                mode = ItemDrainMode.NO_ITEM;
-                specialItemWasDrained = false;
-            }
+            SpecialBroadcastItem item;
+            boolean normalItemObserved;
 
             void reset(Consumer<Object> newDest) {
                 dest = newDest;
                 item = null;
-                mode = ItemDrainMode.NO_ITEM;
-                specialItemWasDrained = false;
             }
 
             @Override
             public boolean test(Object o) {
-                if (mode == ItemDrainMode.NO_ITEM) {
-                    setupMode(o);
-                    if (mode == ItemDrainMode.BROADCAST_ITEM) {
-                        item = (InternalBroadcastItem) o;
-                        return false;
-                    }
-                }
-
-                assert mode == ItemDrainMode.NORMAL_ITEM;
-                if (o instanceof InternalBroadcastItem) {
-                    item = (InternalBroadcastItem) o;
-                    if (o instanceof Watermark || o instanceof SnapshotBarrier) {
-                        specialItemWasDrained = true;
-                    }
+                if (o instanceof SpecialBroadcastItem) {
+                    item = (SpecialBroadcastItem) o;
                     return false;
-                }
-                dest.accept(o);
-                return true;
-            }
-
-            private void setupMode(Object o) {
-                if (o instanceof Watermark || o instanceof SnapshotBarrier) {
-                    mode = ItemDrainMode.BROADCAST_ITEM;
                 } else {
-                    mode = ItemDrainMode.NORMAL_ITEM;
+                    normalItemObserved = true;
+                    dest.accept(o);
+                    return true;
                 }
             }
         }
@@ -379,7 +304,7 @@ public final class ConcurrentInboundEdgeStream {
     /**
      * This implementation asserts that the inputs are ordered according to the
      * supplied {@code Comparator} and merges them into one output stream while
-     * preserving the order. Currently doesn't handle watermarks or barriers.
+     * preserving the order. Currently, doesn't handle watermarks or barriers.
      */
     private static final class OrderedDrain extends InboundEdgeStreamBase {
         private final Comparator<Object> comparator;

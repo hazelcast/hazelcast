@@ -39,7 +39,9 @@ public interface InboundEdgeStream {
     int priority();
 
     /**
-     * Passes the items from the queues to the predicate while it returns {@code true}.
+     * Passes the items from the queues to the consumer. Ensures that there
+     * never is a combination of special and non-special items added. A special
+     * item is an instance of {@link SpecialBroadcastItem}.
      */
     @Nonnull
     ProgressState drainTo(@Nonnull Consumer<Object> dest);

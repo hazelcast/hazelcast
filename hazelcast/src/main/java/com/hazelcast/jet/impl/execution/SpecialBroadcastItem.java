@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.core.Watermark;
 
 /**
- * Marker interface for {@link Watermark}s, {@link SnapshotBarrier}s, and {@link DoneItem}
+ * Marker interface for {@link Watermark}s, {@link SnapshotBarrier}s, and {@link
+ * DoneItem}, i.e. the types of broadcast items at which the draining in {@link
+ * ConcurrentInboundEdgeStream} stops.
  */
-public interface InternalBroadcastItem extends BroadcastItem {
+public interface SpecialBroadcastItem extends BroadcastItem {
 }

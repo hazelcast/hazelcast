@@ -310,14 +310,14 @@ public class ProcessorTasklet implements Tasklet {
         switch (state) {
             case PROCESS_WATERMARKS:
                 while (!pendingEdgeWatermark.isEmpty()) {
-                    if (tryProcessWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
+                    if (tryProcessGlobalWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
                         pendingEdgeWatermark.remove();
                     } else {
                         stateMachineStep();
                     }
                 }
 
-                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null && tryProcessWatermark(wm); ) {
+                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null && tryProcessEdgeWatermark(wm); ) {
                     pendingGlobalWatermarks.remove();
                 }
 
@@ -460,7 +460,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private boolean tryProcessWatermark(Watermark wm) {
+    private boolean tryProcessEdgeWatermark(Watermark wm) {
         // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
         if (wm.timestamp() == IDLE_MESSAGE_TIME) {
             return outbox.offer(wm);
@@ -469,7 +469,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private boolean tryProcessWatermark(int ordinal, Watermark wm) {
+    private boolean tryProcessGlobalWatermark(int ordinal, Watermark wm) {
         return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(ordinal, wm));
     }
 
@@ -575,25 +575,32 @@ public class ProcessorTasklet implements Tasklet {
             }
 
             result = currInstream.drainTo(addToInboxFunction);
+            assert inbox.queue().stream().allMatch(i -> i instanceof SpecialBroadcastItem)
+                    || inbox.queue().stream().noneMatch(i -> i instanceof SpecialBroadcastItem)
+                    : "special and non-special items in the inbox: " + inbox.queue();
             progTracker.madeProgress(result.isMadeProgress());
 
-            // check if the drained item is special
-            Object specialItem = inbox.queue().peekFirst();
-            if (specialItem instanceof Watermark) {
-                Watermark newWm = ((Watermark) inbox.queue().removeFirst());
-                if (newWm.timestamp() != IDLE_MESSAGE_TIME) {
-                    pendingEdgeWatermark.add(newWm);
+            // handle special items
+            while (inbox.queue().peek() instanceof SpecialBroadcastItem) {
+                Object item = inbox.queue().poll();
+                if (item instanceof Watermark) {
+                    Watermark wm = ((Watermark) item);
+                    if (wm.timestamp() != IDLE_MESSAGE_TIME) {
+                        pendingEdgeWatermark.add(wm);
+                    }
+                    pendingGlobalWatermarks.addAll(
+                            coalescer.observeWm(wm.key(), currInstream.ordinal(), wm.timestamp()));
+                } else if (item instanceof SnapshotBarrier) {
+                    observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
+                } else {
+                    assert false : "should never get here";
                 }
-                pendingGlobalWatermarks.addAll(
-                        coalescer.observeWm(newWm.key(), currInstream.ordinal(), newWm.timestamp()));
-
-            } else if (specialItem instanceof SnapshotBarrier) {
-                SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeFirst();
-                observeBarrier(currInstream.ordinal(), barrier);
             }
 
-            Object item = inbox.queue().peekLast();
-            if (item != null && !(item instanceof BroadcastItem)) {
+            if (!inbox.queue().isEmpty()) {
+                // based on the contract of InboundEdgeStream.drainTo(), if there were any special items
+                // in the inbox, there must be no normal items there, and vice versa.
+                assert pendingEdgeWatermark.isEmpty() && pendingGlobalWatermarks.isEmpty();
                 coalescer.observeEvent(currInstream.ordinal());
             }
 

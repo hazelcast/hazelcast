@@ -36,7 +36,7 @@ public class MockInboundStream implements InboundEdgeStream {
     private final int priority;
     private final Deque<Object> mockData;
     private final int chunkSize;
-    private InternalBroadcastItem pendingItem = null;
+    private SpecialBroadcastItem pendingItem = null;
 
     private boolean done;
 
@@ -75,13 +75,13 @@ public class MockInboundStream implements InboundEdgeStream {
                 done = true;
                 break;
             }
-            if (item instanceof InternalBroadcastItem) {
+            if (item instanceof SpecialBroadcastItem) {
                 if (i == 0) {
                     // if we meet special item first, just forward it and stop draining iteration.
                     dest.accept(item);
                 } else {
                     // here, if we meet special item after normal items, stop draining iteration without skipping.
-                    pendingItem = (InternalBroadcastItem) item;
+                    pendingItem = (SpecialBroadcastItem) item;
                 }
                 break;
             } else {

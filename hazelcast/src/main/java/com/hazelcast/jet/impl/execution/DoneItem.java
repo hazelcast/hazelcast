@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-public final class DoneItem implements InternalBroadcastItem {
+public final class DoneItem implements SpecialBroadcastItem {
 
     public static final DoneItem DONE_ITEM = new DoneItem();
 
