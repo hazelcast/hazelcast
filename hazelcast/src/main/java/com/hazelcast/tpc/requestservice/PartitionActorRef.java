@@ -44,7 +44,6 @@ public final class PartitionActorRef extends ActorRef<Frame> {
     private final Requests requests;
     private final RequestService requestService;
     private final Eventloop eventloop;
-    private final int socketIndex;
 
     public PartitionActorRef(int partitionId,
                              InternalPartitionService partitionService,
@@ -57,9 +56,7 @@ public final class PartitionActorRef extends ActorRef<Frame> {
         this.thisAddress = thisAddress;
         this.requests = requests;
         this.requestService = requestService;
-        int eventloopIndex = hashToIndex(partitionId, engine.eventloopCount());
-        this.eventloop = engine.eventloop(eventloopIndex);
-        this.socketIndex = requestService.partitionIdToSocket[partitionId];
+        this.eventloop = engine.eventloop(hashToIndex(partitionId, engine.eventloopCount()));
     }
 
     public CompletableFuture<Frame> submit(Frame request) {
@@ -74,7 +71,7 @@ public final class PartitionActorRef extends ActorRef<Frame> {
             // address and only in case of a redirect, we update.
             TcpServerConnection connection = requestService.getConnection(address);
 
-            AsyncSocket socket = connection.sockets[socketIndex];
+            AsyncSocket socket = connection.sockets[hashToIndex(partitionId, connection.sockets.length)];
 
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.

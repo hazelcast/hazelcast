@@ -105,7 +105,6 @@ public class RequestService {
     private volatile ServerConnectionManager connectionManager;
     public volatile boolean shuttingdown = false;
     public final Managers managers;
-    int[] partitionIdToSocket;
     private final RequestRegistry requestRegistry;
     private Engine engine;
     private final int concurrentRequestLimit;
@@ -139,12 +138,7 @@ public class RequestService {
         this.socketConfig = new SocketConfig();
         this.managers = new Managers();
         //hack
-        managers.tableManager = new TableManager(271);
-
-        this.partitionIdToSocket = new int[271];
-        for (int k = 0; k < 271; k++) {
-            partitionIdToSocket[k] = hashToIndex(k, socketCount);
-        }
+        managers.tableManager = new TableManager(partitionActorRefs.length);
     }
 
     public Engine getEngine() {
@@ -208,7 +202,7 @@ public class RequestService {
                     engine,
                     this,
                     thisAddress,
-                    new Requests(concurrentRequestLimit, requestTimeoutMs));
+                    requestRegistry.getByPartitionId(partitionId));
         }
     }
 
