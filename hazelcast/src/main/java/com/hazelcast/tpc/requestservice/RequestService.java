@@ -97,11 +97,8 @@ public class RequestService {
     private final int socketCount;
     private final SocketConfig socketConfig;
     private final boolean poolRequests;
-    private final boolean poolLocalResponses;
     private final boolean poolRemoteResponses;
     private final boolean writeThrough;
-    private final int responseThreadCount;
-    private final boolean responseThreadSpin;
     private final int requestTimeoutMs;
     private final boolean regularSchedule;
     private final ResponseHandler responseHandler;
@@ -111,7 +108,7 @@ public class RequestService {
     int[] partitionIdToSocket;
     private final RequestRegistry requestRegistry;
     private Engine engine;
-    private int concurrentRequestLimit;
+    private final int concurrentRequestLimit;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private PartitionActorRef[] partitionActorRefs;
 
@@ -119,12 +116,12 @@ public class RequestService {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(RequestService.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.responseThreadCount = Integer.parseInt(java.lang.System.getProperty("reactor.responsethread.count", "1"));
-        this.responseThreadSpin = Boolean.parseBoolean(java.lang.System.getProperty("reactor.responsethread.spin", "false"));
+        int responseThreadCount = Integer.parseInt(System.getProperty("reactor.responsethread.count", "1"));
+        boolean responseThreadSpin = Boolean.parseBoolean(System.getProperty("reactor.responsethread.spin", "false"));
         this.writeThrough = Boolean.parseBoolean(java.lang.System.getProperty("reactor.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(java.lang.System.getProperty("reactor.regular-schedule", "true"));
         this.poolRequests = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-requests", "true"));
-        this.poolLocalResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-local-responses", "true"));
+        boolean poolLocalResponses = Boolean.parseBoolean(System.getProperty("reactor.pool-local-responses", "true"));
         this.poolRemoteResponses = Boolean.parseBoolean(java.lang.System.getProperty("reactor.pool-remote-responses", "false"));
         this.concurrentRequestLimit = Integer.parseInt(java.lang.System.getProperty("reactor.concurrent-request-limit", "-1"));
         this.requestTimeoutMs = Integer.parseInt(java.lang.System.getProperty("reactor.request.timeoutMs", "23000"));
@@ -132,11 +129,10 @@ public class RequestService {
 
         this.partitionActorRefs = new PartitionActorRef[271];
 
-        this.requestRegistry = new RequestRegistry(concurrentRequestLimit);
+        this.requestRegistry = new RequestRegistry(concurrentRequestLimit, partitionActorRefs.length);
         this.responseHandler = new ResponseHandler(responseThreadCount,
                 responseThreadSpin,
-                requestRegistry,
-                partitionActorRefs);
+                requestRegistry);
         this.thisAddress = nodeEngine.getThisAddress();
         this.engine = newEngine();
 

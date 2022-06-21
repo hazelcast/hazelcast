@@ -35,19 +35,16 @@ class ResponseHandler implements Consumer<Frame> {
     private final int threadCount;
     private final boolean spin;
     private final RequestRegistry requestRegistry;
-    private final PartitionActorRef[] partitionActorRefs;
 
     ResponseHandler(int threadCount,
                     boolean spin,
-                    RequestRegistry requestRegistry,
-                    PartitionActorRef[] partitionActorRefs) {
+                    RequestRegistry requestRegistry) {
         this.spin = spin;
         this.threadCount = threadCount;
         this.threads = new ResponseThread[threadCount];
         this.requestRegistry = requestRegistry;
-        this.partitionActorRefs = partitionActorRefs;
         for (int k = 0; k < threadCount; k++) {
-            this.threads[k] = new ResponseThread(k);
+            threads[k] = new ResponseThread(k);
         }
     }
 
@@ -84,9 +81,9 @@ class ResponseHandler implements Consumer<Frame> {
 
         Requests requests;
         if (partitionId >= 0) {
-            requests = partitionActorRefs[partitionId].requests();
+            requests = requestRegistry.getByPartitionId(partitionId);
         } else {
-            requests = requestRegistry.get(response.socket.remoteAddress());
+            requests = requestRegistry.getByAddress(response.socket.remoteAddress());
             if (requests == null) {
                 System.out.println("Dropping response " + response + ", requests not found");
                 response.release();

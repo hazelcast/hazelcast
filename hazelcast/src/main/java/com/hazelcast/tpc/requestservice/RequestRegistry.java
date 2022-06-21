@@ -26,9 +26,14 @@ class RequestRegistry {
     private final int concurrentRequestLimit;
     private final long nextCallIdTimeoutMs = TimeUnit.SECONDS.toMillis(10);
     private final ConcurrentMap<SocketAddress, Requests> requestsPerSocket = new ConcurrentHashMap<>();
+    private final Requests[] requestsPerPartitions;
 
-    public RequestRegistry(int concurrentRequestLimit) {
+    public RequestRegistry(int concurrentRequestLimit, int partitions) {
         this.concurrentRequestLimit = concurrentRequestLimit;
+        this.requestsPerPartitions = new Requests[partitions];
+        for (int partitionId = 0; partitionId < partitions; partitionId++) {
+            requestsPerPartitions[partitionId] = new Requests(concurrentRequestLimit, nextCallIdTimeoutMs);
+        }
     }
 
     void shutdown() {
@@ -37,7 +42,11 @@ class RequestRegistry {
         }
     }
 
-    Requests get(SocketAddress address) {
+    Requests getByPartitionId(int partitionId) {
+        return requestsPerPartitions[partitionId];
+    }
+
+    Requests getByAddress(SocketAddress address) {
         return requestsPerSocket.get(address);
     }
 
