@@ -207,7 +207,7 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public int hashCode() {
-        return Objects.hash(channel.isClientMode(), connectionId, remoteAddress);
+        return Objects.hash(channel.isClientMode(), connectionId);
     }
 
     @Override
