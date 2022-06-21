@@ -24,7 +24,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
@@ -34,6 +36,8 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -129,7 +133,59 @@ public class AddMapConfigMessageTaskTest {
                 null,
                 null,
                 mapConfig.getMetadataPolicy().getId(),
-                mapConfig.isPerEntryStatsEnabled()
+                mapConfig.isPerEntryStatsEnabled(),
+                mapConfig.getDataPersistenceConfig(),
+                mapConfig.getTieredStoreConfig()
+        );
+        AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
+        addMapConfigMessageTask.run();
+        MapConfig transmittedMapConfig = (MapConfig) addMapConfigMessageTask.getConfig();
+        assertEquals(mapConfig, transmittedMapConfig);
+    }
+
+    @Test
+    public void testDataPersistenceAndTieredStoreConfigTransmittedCorrectly() {
+        MapConfig mapConfig = new MapConfig("my-map");
+        DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
+        dataPersistenceConfig.setEnabled(true);
+        dataPersistenceConfig.setFsync(true);
+        mapConfig.setDataPersistenceConfig(dataPersistenceConfig);
+        TieredStoreConfig tieredStoreConfig = mapConfig.getTieredStoreConfig();
+        tieredStoreConfig.setEnabled(true);
+        tieredStoreConfig.getMemoryTierConfig().setCapacity(Capacity.of(1L, MemoryUnit.GIGABYTES));
+        tieredStoreConfig.getDiskTierConfig().setEnabled(true).setDeviceName("null-device");
+
+        ClientMessage addMapConfigClientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(
+                mapConfig.getName(),
+                mapConfig.getBackupCount(),
+                mapConfig.getAsyncBackupCount(),
+                mapConfig.getTimeToLiveSeconds(),
+                mapConfig.getMaxIdleSeconds(),
+                null,
+                mapConfig.isReadBackupData(),
+                mapConfig.getCacheDeserializedValues().name(),
+                mapConfig.getMergePolicyConfig().getPolicy(),
+                mapConfig.getMergePolicyConfig().getBatchSize(),
+                mapConfig.getInMemoryFormat().name(),
+                null,
+                null,
+                mapConfig.isStatisticsEnabled(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                mapConfig.getMetadataPolicy().getId(),
+                mapConfig.isPerEntryStatsEnabled(),
+                mapConfig.getDataPersistenceConfig(),
+                mapConfig.getTieredStoreConfig()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
