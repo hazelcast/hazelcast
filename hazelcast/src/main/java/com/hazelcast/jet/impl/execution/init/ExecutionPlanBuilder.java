@@ -48,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -114,7 +115,7 @@ public final class ExecutionPlanBuilder {
                                     jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
                                     isLightJob, partitionsByAddress, subject, processorClassLoader)));
                 } catch (Exception e) {
-                    throw sneakyThrow(e);
+                    throw sneakyThrow(peel(e));
                 }
 
                 Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =

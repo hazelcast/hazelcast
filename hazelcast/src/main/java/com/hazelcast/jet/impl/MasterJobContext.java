@@ -251,7 +251,7 @@ public class MasterJobContext {
                 }, START_JOB_MERGE_EXECUTOR)
                 .whenComplete((r, e) -> {
                     if (e != null) {
-                        finalizeJob(e);
+                        finalizeJob(peel(e));
                     }
                 })
                 .join();
