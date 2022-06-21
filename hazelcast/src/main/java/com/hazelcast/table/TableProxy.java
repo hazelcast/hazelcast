@@ -134,7 +134,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     private CompletableFuture<Frame> asyncNoop() {
-        int partitionId = ThreadLocalRandom.current().nextInt(271);
+        int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
         Frame request = frameAllocator.allocate(32)
                 .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
