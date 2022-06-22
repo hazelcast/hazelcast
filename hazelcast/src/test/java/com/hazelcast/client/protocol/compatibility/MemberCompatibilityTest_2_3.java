@@ -6738,6 +6738,7 @@ public class MemberCompatibilityTest_2_3 {
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertTrue(parameters.isMerkleTreeConfigExists);
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test

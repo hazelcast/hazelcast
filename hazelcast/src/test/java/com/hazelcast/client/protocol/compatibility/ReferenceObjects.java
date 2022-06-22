@@ -881,7 +881,8 @@ public class ReferenceObjects {
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
-            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig);
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig, true,
+            aDataPersistenceConfig);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
             ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
