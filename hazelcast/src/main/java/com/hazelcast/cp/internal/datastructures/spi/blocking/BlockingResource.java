@@ -174,8 +174,8 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(groupId);
-            out.writeString(name);
+        out.writeObject(groupId);
+        out.writeString(name);
         synchronized (waitKeys) {
             out.writeInt(waitKeys.size());
             for (Entry<Object, WaitKeyContainer<W>> e : waitKeys.entrySet()) {
