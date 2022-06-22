@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
+import java.util.List;
+
 /**
  * Provides initial addresses for client to find and connect to a node &
  * Translates given address if necessary when connecting a service
@@ -28,6 +30,10 @@ import com.hazelcast.cluster.Member;
 public interface AddressProvider {
 
     /**
+     * @param listener the listener's {@link ClientConnectionProcessListener#possibleAddressesCollected(List)} method will be
+     *                 invoked once the possible member addresses are all collected by the implementation. Prior to that, during
+     *                 address collection, the {@link ClientConnectionProcessListener#hostNotFound(String)} method can be invoked,
+     *                 eg. in cases when the address provider tries to access an address that doesn't exist.
      * @return The possible member addresses to connect to.
      * @throws Exception when a remote service can not provide addressee
      */
