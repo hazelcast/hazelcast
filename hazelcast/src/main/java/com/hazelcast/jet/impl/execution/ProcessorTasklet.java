@@ -310,14 +310,14 @@ public class ProcessorTasklet implements Tasklet {
         switch (state) {
             case PROCESS_WATERMARKS:
                 while (!pendingEdgeWatermark.isEmpty()) {
-                    if (tryProcessGlobalWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
+                    if (tryProcessEdgeWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
                         pendingEdgeWatermark.remove();
                     } else {
                         stateMachineStep();
                     }
                 }
 
-                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null && tryProcessEdgeWatermark(wm); ) {
+                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null && tryProcessGlobalWatermark(wm); ) {
                     pendingGlobalWatermarks.remove();
                 }
 
@@ -460,7 +460,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private boolean tryProcessEdgeWatermark(Watermark wm) {
+    private boolean tryProcessGlobalWatermark(Watermark wm) {
         // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
         if (wm.timestamp() == IDLE_MESSAGE_TIME) {
             return outbox.offer(wm);
@@ -469,7 +469,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private boolean tryProcessGlobalWatermark(int ordinal, Watermark wm) {
+    private boolean tryProcessEdgeWatermark(int ordinal, Watermark wm) {
         return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(ordinal, wm));
     }
 
