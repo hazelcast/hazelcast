@@ -313,19 +313,20 @@ public class ProcessorTasklet implements Tasklet {
                     if (tryProcessEdgeWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
                         pendingEdgeWatermark.remove();
                     } else {
-                        stateMachineStep();
+                        return;
                     }
                 }
 
-                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null && tryProcessGlobalWatermark(wm); ) {
+                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null; ) {
+                    if (!tryProcessGlobalWatermark(wm)) {
+                        return;
+                    }
+                    // see the comment at outbox.reset() above
                     pendingGlobalWatermarks.remove();
                 }
 
-                if (pendingGlobalWatermarks.isEmpty()) {
-                    state = NULLARY_PROCESS;
-                    outbox.reset();
-                    stateMachineStep();
-                }
+                state = NULLARY_PROCESS;
+                stateMachineStep();
                 break;
 
             case NULLARY_PROCESS:
@@ -333,7 +334,6 @@ public class ProcessorTasklet implements Tasklet {
                 if (currInstream == null || isSnapshotInbox() ||
                         doWithClassLoader(context.classLoader(), () -> processor.tryProcess())) {
                     state = PROCESS_INBOX;
-                    outbox.reset();
                     stateMachineStep(); // recursion
                 }
                 break;

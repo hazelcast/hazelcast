@@ -290,6 +290,50 @@ public class ProcessorTaskletTest_Watermarks {
         assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
     }
 
+    @Test
+    public void when_tryProcessEdgeWmReturnsFalse_then_notCalledAgain() {
+        MockInboundStream instream = new MockInboundStream(0, singletonList(wm(100)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.add(instream);
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+        processor.processEdgeWatermarkCallCountdown = 2;
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("ord=0,key=0,time=100,seq=2"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("ord=0,key=0,time=100,seq=1"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
+    }
+
+    @Test
+    public void when_tryProcessGlobalWmReturnsFalse_then_notCalledAgain() {
+        MockInboundStream instream = new MockInboundStream(0, singletonList(wm(100)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.add(instream);
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+        processor.processGlobalWatermarkCallCountdown = 2;
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=2"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("key=0,time=100,seq=1"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("key=0,time=100,seq=0"), outstream1.getBuffer());
+    }
+
     private ProcessorTasklet createTasklet() {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);

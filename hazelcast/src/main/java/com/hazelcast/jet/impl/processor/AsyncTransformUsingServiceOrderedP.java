@@ -95,7 +95,7 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        if (isQueueFull() && !tryFlushQueue()) {
+        if (!makeRoomInQueue()) {
             return false;
         }
         @SuppressWarnings("unchecked")
@@ -107,15 +107,24 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
         return true;
     }
 
+    /**
+     * If the queue is full, try to flush some items. Return true, if there's
+     * some space in the queue after this call.
+     */
+    protected boolean makeRoomInQueue() {
+        if (isQueueFull()) {
+            tryFlushQueue();
+            return !isQueueFull();
+        }
+        return true;
+    }
+
     boolean isQueueFull() {
         return queue.size() - queuedWmCount == maxConcurrentOps;
     }
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        if (!emitFromTraverser(watermarkTraverser)) {
-            return false;
-        }
         if (queue.peekLast() instanceof Watermark && watermark.key() == ((Watermark) queue.peekLast()).key()) {
             // conflate the previous wm with the current one
             queue.removeLast();
