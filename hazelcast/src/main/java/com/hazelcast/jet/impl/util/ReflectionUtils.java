@@ -25,6 +25,7 @@ import io.github.classgraph.ScanResult;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -158,7 +159,7 @@ public final class ReflectionUtils {
     }
 
     public static Method findPropertyGetter(@Nonnull Class<?> clazz, @Nonnull String propertyName) {
-        final Method getter = findPropertyAccessor(clazz, propertyName, "get");
+        Method getter = findPropertyAccessor(clazz, propertyName, "get", "is");
         if (getter == null) {
             return null;
         }
@@ -174,10 +175,13 @@ public final class ReflectionUtils {
     private static Method findPropertyAccessor(
             @Nonnull Class<?> clazz,
             @Nonnull String propertyName,
-            @Nonnull String prefix
+            @Nonnull String ...prefixes
     ) {
-        String setterName = prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        Method method = stream(clazz.getMethods()).filter(m -> m.getName().equals(setterName))
+        final Set<String> accessorNames = stream(prefixes)
+                .map(prefix -> prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1))
+                .collect(toSet());
+        Method method = stream(clazz.getMethods())
+                .filter(m -> accessorNames.contains(m.getName()))
                 .findAny()
                 .orElse(null);
 
@@ -265,6 +269,30 @@ public final class ReflectionUtils {
 
     public static String toClassResourceId(String name) {
         return toPath(name) + ".class";
+    }
+
+    public static Object getFieldValue(String fieldName, Object obj) {
+        final Method getter = findPropertyGetter(obj.getClass(), fieldName);
+        if (getter != null) {
+            try {
+                return getter.invoke(obj);
+            } catch (IllegalAccessException | InvocationTargetException ignored) { }
+        }
+
+        final Field field = findPropertyField(obj.getClass(), fieldName);
+        if (field == null) {
+            return null;
+        }
+
+        final boolean accessible = field.isAccessible();
+        field.setAccessible(true);
+        try {
+            return field.get(obj);
+        } catch (IllegalAccessException ignored) {
+            return null;
+        } finally {
+            field.setAccessible(accessible);
+        }
     }
 
     public static final class Resources {

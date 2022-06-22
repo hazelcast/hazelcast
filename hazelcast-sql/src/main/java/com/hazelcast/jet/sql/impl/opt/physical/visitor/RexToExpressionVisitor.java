@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -39,7 +38,6 @@ import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -117,21 +115,12 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     @Override
     public Expression<?> visitFieldAccess(RexFieldAccess fieldAccess) {
-        final List<String> path = new ArrayList<>();
-        RexNode ref = fieldAccess;
-        while (ref instanceof RexFieldAccess) {
-            final String componentName = ((RexFieldAccess) ref).getField().getName();
-            path.add(0, componentName);
-            ref = ((RexFieldAccess) ref).getReferenceExpr();
-        }
-
-        if (!(ref instanceof RexInputRef)) {
-            throw new UnsupportedOperationException();
-        }
-
-        final QueryDataType fieldType = HazelcastTypeUtils.toHazelcastType(fieldAccess.getType());
-
-        return FieldAccessExpression.create(((RexInputRef) ref).getIndex(), fieldType, path);
+        final Expression<?> referenceExpression = fieldAccess.getReferenceExpr().accept(this);
+        return FieldAccessExpression.create(
+                HazelcastTypeUtils.toHazelcastType(fieldAccess.getType()),
+                fieldAccess.getField().getName(),
+                referenceExpression
+        );
     }
 
     @Override

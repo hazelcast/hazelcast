@@ -26,9 +26,6 @@ import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +66,7 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
 
         final List<Object> fieldValues = new ArrayList<>();
         for (final QueryDataType.QueryDataTypeField field : dataType.getFields()) {
-            final Object fieldValue = getFieldValue(field.getName(), obj);
+            final Object fieldValue = ReflectionUtils.getFieldValue(field.getName(), obj);
             if (!field.getDataType().isCustomType() || fieldValue == null) {
                 fieldValues.add(fieldValue);
                 continue;
@@ -79,30 +76,6 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
             }
         }
         return new RowValue(fieldValues);
-    }
-
-    private Object getFieldValue(String fieldName, Object obj) {
-        final Method getter = ReflectionUtils.findPropertyGetter(obj.getClass(), fieldName);
-        if (getter != null) {
-            try {
-                return getter.invoke(obj);
-            } catch (IllegalAccessException | InvocationTargetException ignored) { }
-        }
-
-        final Field field = ReflectionUtils.findPropertyField(obj.getClass(), fieldName);
-        if (field == null) {
-            return null;
-        }
-
-        final boolean accessible = field.isAccessible();
-        field.setAccessible(true);
-        try {
-            return field.get(obj);
-        } catch (IllegalAccessException ignored) {
-            return null;
-        } finally {
-            field.setAccessible(accessible);
-        }
     }
 
     @Override

@@ -134,7 +134,33 @@ public final class HazelcastTypeUtils {
 
     private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
         final HazelcastObjectType hazelcastObjectType = extractHzObjectType(relDataType);
-        return new QueryDataType(hazelcastObjectType.getTypeName());
+
+        final Map<String, QueryDataType> typeMap = new HashMap<>();
+        traverseHzObjectType(hazelcastObjectType, typeMap);
+
+        return typeMap.get(hazelcastObjectType.getTypeName());
+    }
+
+    private static void traverseHzObjectType(final HazelcastObjectType source, Map<String, QueryDataType> discovered) {
+        if (discovered.containsKey(source.getTypeName())) {
+            return;
+        }
+        final QueryDataType current = new QueryDataType(source.getTypeName());
+        discovered.put(current.getTypeName(), current);
+
+        for (final RelDataTypeField field : source.getFieldList()) {
+            final QueryDataType fieldType;
+            if (field.getType() instanceof HazelcastObjectType || field.getType() instanceof HazelcastObjectTypeReference) {
+                final HazelcastObjectType fieldRelDataType = extractHzObjectType(field.getType());
+                if (!discovered.containsKey(fieldRelDataType.getTypeName())) {
+                    traverseHzObjectType(fieldRelDataType, discovered);
+                }
+                fieldType = discovered.get(fieldRelDataType.getTypeName());
+            } else {
+                fieldType = HazelcastTypeUtils.toHazelcastType(field.getType());
+            }
+            current.getFields().add(field.getIndex(), new QueryDataType.QueryDataTypeField(field.getName(), fieldType));
+        }
     }
 
     public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {

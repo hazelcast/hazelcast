@@ -16,72 +16,55 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.List;
 
 public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
-    private int index;
     private QueryDataType type;
-    private List<String> path;
+    private String name;
+    private Expression<?> ref;
 
     public FieldAccessExpression() { }
 
-    private FieldAccessExpression(final int index, final QueryDataType type, final List<String> path) {
-        this.index = index;
+    private FieldAccessExpression(
+            final QueryDataType type,
+            final String name,
+            final Expression<?> ref
+    ) {
         this.type = type;
-        this.path = path;
+        this.name = name;
+        this.ref = ref;
     }
 
-    public static FieldAccessExpression<?> create(final int index, final QueryDataType type, final List<String> path) {
-        return new FieldAccessExpression<>(index, type, path);
+    public static FieldAccessExpression<?> create(
+            final QueryDataType type,
+            final String name,
+            final Expression<?> ref
+    ) {
+        return new FieldAccessExpression<>(type, name, ref);
     }
 
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
-        Object res = row.get(index);
+        Object res = ref.eval(row, context);
         if (isPrimitive(res.getClass())) {
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
-        if (res instanceof LazyTarget) {
-            LazyTarget lazyTarget = (LazyTarget) res;
-            res = lazyTarget.getDeserialized() != null
-                    ? lazyTarget.getDeserialized()
-                    : lazyTarget.deserialize(context.getSerializationService());
-        }
-
         try {
-            return (T) extract(res);
+            return (T) ReflectionUtils.getFieldValue(name, res);
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
         }
-    }
-
-    private Object extract(Object res) throws Exception {
-        Object value = res;
-        for (String component : path) {
-            // TODO: method and field accessors
-            final Field field = value.getClass().getDeclaredField(component);
-            boolean accessible = field.isAccessible();
-            field.setAccessible(true);
-
-            value = field.get(value);
-
-            field.setAccessible(accessible);
-        }
-
-        return value;
     }
 
     private boolean isPrimitive(Class<?> clazz) {
@@ -100,16 +83,16 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
 
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
-        out.writeInt(index);
         out.writeObject(type);
-        out.writeObject(path);
+        out.writeString(name);
+        out.writeObject(ref);
     }
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
-        index = in.readInt();
         type = in.readObject();
-        path = in.readObject();
+        name = in.readString();
+        ref = in.readObject();
     }
 
     @Override
