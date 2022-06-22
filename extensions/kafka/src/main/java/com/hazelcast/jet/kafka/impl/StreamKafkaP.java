@@ -189,7 +189,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         for (TopicPartition newAssignment : newAssignments) {
             int partition = newAssignment.partition();
             Long initialOffset = topicsConfig.getInitialOffsetFor(topicName, partition);
-            if (initialOffset == null || initialOffset <= 0) {
+            if (initialOffset == null || initialOffset < 0) {
                 continue;
             }
             long[] topicOffsets = offsets.get(topicName);
