@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
-import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -100,11 +99,7 @@ public class HttpPostCommand extends HttpCommand {
             }
         }
         if (data != null) {
-            if (src.isDirect()) {
-                copyToHeapBuffer(src, data);
-            } else {
-                copyFromHeapBuffer(src, data);
-            }
+            copyToHeapBuffer(src, data);
         }
         return !chunked && !isSpaceForData();
     }
