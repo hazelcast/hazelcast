@@ -680,6 +680,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testIntegrityCheckerConfig();
 
+    @Test
+    public abstract void testExternalDataStoreConfigs();
+
     protected abstract Config buildAuditlogConfig();
 
     /** Build a config with overlapping wildcard configs map* & mapBackup2* */
