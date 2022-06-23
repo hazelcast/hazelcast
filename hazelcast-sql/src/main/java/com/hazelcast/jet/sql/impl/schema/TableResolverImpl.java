@@ -41,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -64,6 +63,9 @@ public class TableResolverImpl implements TableResolver {
     private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
+
+    private volatile int lastMappingsSize;
+    private int lastViewsSize;
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
@@ -183,25 +185,30 @@ public class TableResolverImpl implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Object> objects = tableStorage.allObjects();
-        List<Table> tables = new ArrayList<>(objects.size() + 3);
+        List<Table> tables = new ArrayList<>(objects.size() + 4);
+
+        int lastMappingsSize = this.lastMappingsSize;
+        int lastViewsSize = this.lastViewsSize;
+
+        // Trying to avoid list growing.
+        List<Mapping> mappings = lastMappingsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastMappingsSize);
+        List<View> views = lastViewsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastViewsSize);
+
         for (Object o : objects) {
             if (o instanceof Mapping) {
                 tables.add(toTable((Mapping) o));
+                mappings.add((Mapping) o);
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
+                views.add((View) o);
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }
         }
 
-        Collection<Mapping> mappings = objects.stream()
-                .filter(o -> o instanceof Mapping)
-                .map(m -> (Mapping) m)
-                .collect(Collectors.toList());
-        Collection<View> views = objects.stream()
-                .filter(o -> o instanceof View)
-                .map(v -> (View) v)
-                .collect(Collectors.toList());
+        this.lastViewsSize = views.size();
+        this.lastMappingsSize = mappings.size();
+
         tables.add(new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
