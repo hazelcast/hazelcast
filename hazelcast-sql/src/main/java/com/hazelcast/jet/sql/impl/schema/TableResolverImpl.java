@@ -36,11 +36,13 @@ import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -57,6 +59,13 @@ public class TableResolverImpl implements TableResolver {
 
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
+    );
+
+    private static final List<BiFunction<List<Mapping>, List<View>, Table>> ADDITIONAL_TABLE_PRODUCERS = Arrays.asList(
+            (m, v) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
+            (m, v) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v)
     );
 
     private final NodeEngine nodeEngine;
@@ -183,10 +192,9 @@ public class TableResolverImpl implements TableResolver {
 
     @Nonnull
     @Override
-    @SuppressWarnings("checkstyle:MagicNumber")
     public List<Table> getTables() {
         Collection<Object> objects = tableStorage.allObjects();
-        List<Table> tables = new ArrayList<>(objects.size() + 4);
+        List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
 
         int lastMappingsSize = this.lastMappingsSize;
         int lastViewsSize = this.lastViewsSize;
@@ -207,13 +215,13 @@ public class TableResolverImpl implements TableResolver {
             }
         }
 
+        ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> {
+            tables.add(producer.apply(mappings, views));
+        });
+
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();
 
-        tables.add(new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));
         return tables;
     }
 
