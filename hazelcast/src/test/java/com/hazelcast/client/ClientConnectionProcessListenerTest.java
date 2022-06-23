@@ -26,7 +26,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,14 +33,11 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Arrays.asList;
-import static java.util.Collections.list;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeastOnce;
@@ -51,7 +47,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class ClientConnectionListenerTest
+public class ClientConnectionProcessListenerTest
         extends HazelcastTestSupport {
 
     private static class ExceptionThrowingListener
