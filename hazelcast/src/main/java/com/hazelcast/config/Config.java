@@ -217,6 +217,9 @@ public class Config {
     // @since 5.1
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
+    // @since 5.2
+    private final Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
+
     public Config() {
     }
 
@@ -3093,6 +3096,42 @@ public class Config {
     }
 
     /**
+     * Returns the map of external data store configurations, mapped by config name.
+     *
+     * @since 5.2
+     */
+    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+        return externalDataStoreConfigs;
+    }
+
+    /**
+     * Sets the map of external data store configurations, mapped by config name.
+     *
+     * @since 5.2
+     */
+    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+        this.externalDataStoreConfigs.clear();
+        this.externalDataStoreConfigs.putAll(externalDataStoreConfigs);
+        for (Entry<String, ExternalDataStoreConfig> entry : externalDataStoreConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the external data store configuration, mapped by config name.
+     *
+     * @param name data store name
+     * @return external data store configuration or {@code null} if absent
+     *
+     * @since 5.2
+     */
+    @Nullable
+    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
+        return externalDataStoreConfigs.get(name);
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3155,6 +3194,7 @@ public class Config {
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
+                + ", externalDataStoreConfigs=" + externalDataStoreConfigs
                 + '}';
     }
 }
