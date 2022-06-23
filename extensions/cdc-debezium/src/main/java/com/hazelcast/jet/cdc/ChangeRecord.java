@@ -66,7 +66,7 @@ public interface ChangeRecord {
      * operation instead of {@code INSERT}, however some databases emit {@code
      * INSERT} events in both cases (a notable example is MySQL).
      */
-    long timestamp() throws ParsingException;
+    long timestamp();
 
     /**
      * Specifies the numeric value part of the record's source sequence. As long
@@ -97,7 +97,7 @@ public interface ChangeRecord {
      * Operation} that matches the CDC record's operation field
      */
     @Nonnull
-    Operation operation() throws ParsingException;
+    Operation operation();
 
     /**
      * Returns the name of the database containing the record's table.
@@ -105,7 +105,7 @@ public interface ChangeRecord {
      * @return name of the source database for the current record
      */
     @Nonnull
-    String database() throws ParsingException;
+    String database();
 
     /**
      * Returns the name of the schema containing the record's table.
@@ -115,7 +115,7 @@ public interface ChangeRecord {
      * @return name of the source schema for the current record
      */
     @Nonnull
-    String schema() throws ParsingException, UnsupportedOperationException;
+    String schema() throws UnsupportedOperationException;
 
     /**
      * Returns the name of the table this record is part of.
@@ -123,7 +123,7 @@ public interface ChangeRecord {
      * @return name of the source table for the current record
      */
     @Nonnull
-    String table() throws ParsingException;
+    String table();
 
     /**
      * Returns the key part of the CDC event. It identifies the affected record.

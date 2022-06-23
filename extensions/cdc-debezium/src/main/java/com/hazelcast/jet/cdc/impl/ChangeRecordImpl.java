@@ -18,7 +18,6 @@ package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.Operation;
-import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
@@ -92,13 +91,13 @@ public class ChangeRecordImpl implements ChangeRecord {
     }
 
     @Override
-    public long timestamp() throws ParsingException {
+    public long timestamp() {
         return timestamp;
     }
 
     @Override
     @Nonnull
-    public Operation operation() throws ParsingException {
+    public Operation operation() {
         return operation;
     }
 
