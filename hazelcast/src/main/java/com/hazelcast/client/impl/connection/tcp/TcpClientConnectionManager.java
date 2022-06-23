@@ -505,7 +505,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    connectionProcessListener.attemptingToConnectToAddress(member.getAddress());
+                    connectionProcessListener.attemptingToConnectToAddress(translate(member.getAddress()));
                     Connection connection = connect(member,
                             o -> getOrConnectToMember(o, switchingToNextCluster),
                             this::translate);
@@ -520,7 +520,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-                    connectionProcessListener.attemptingToConnectToAddress(address);
+                    connectionProcessListener.attemptingToConnectToAddress(translate(address));
                     Connection connection = connect(address,
                             o -> getOrConnectToAddress(o, switchingToNextCluster),
                             this::translate);

@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -37,7 +36,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -191,16 +189,16 @@ public class ClientConnectionProcessListenerTest
                 try {
                     while (true) {
                         Socket clientSocket = server.accept();
+                        Thread.sleep(500);
                         OutputStream os = clientSocket.getOutputStream();
                         os.write("junk response".getBytes(StandardCharsets.UTF_8));
                         os.flush();
                         os.close();
                     }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             });
-
 
             ClientConfig clientConfig = newClientConfig()
                     .setNetworkConfig(new ClientNetworkConfig().addAddress("localhost:5701"))
@@ -214,7 +212,9 @@ public class ClientConnectionProcessListenerTest
             verify(listener).clusterConnectionFailed(getTestMethodName());
             verifyNoMoreInteractions(listener);
         } finally {
-            server.close();
+            do {
+                server.close();
+            } while (!server.isClosed());
         }
     }
 
