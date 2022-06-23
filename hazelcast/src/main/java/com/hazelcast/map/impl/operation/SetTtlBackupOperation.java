@@ -44,7 +44,7 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     protected void runInternal() {
-        recordStore.setTtl(dataKey, ttl, true);
+        recordStore.setTtlBackup(dataKey, ttl);
     }
 
     @Override

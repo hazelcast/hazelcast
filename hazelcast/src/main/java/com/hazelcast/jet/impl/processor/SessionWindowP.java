@@ -77,6 +77,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @param <R> type of the finished result
  */
 public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
+    // TODO deal with the WM key??
     private static final Watermark COMPLETING_WM = new Watermark(Long.MAX_VALUE);
 
     // exposed for testing, to check for memory leaks
@@ -184,6 +185,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        keyedWatermarkCheck(wm);
         currentWatermark = wm.timestamp();
         assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
                 : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()

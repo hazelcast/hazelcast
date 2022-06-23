@@ -60,7 +60,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * source processor.
  *
  * @param <T> event type
- *
  * @since Jet 3.0
  */
 public final class EventTimePolicy<T> implements Serializable {
@@ -91,6 +90,7 @@ public final class EventTimePolicy<T> implements Serializable {
     private final long watermarkThrottlingFrameSize;
     private final long watermarkThrottlingFrameOffset;
     private final long idleTimeoutMillis;
+    private byte wmKey;
 
     private EventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,
@@ -98,7 +98,8 @@ public final class EventTimePolicy<T> implements Serializable {
             @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
-            long idleTimeoutMillis
+            long idleTimeoutMillis,
+            byte wmKey
     ) {
         checkNotNegative(watermarkThrottlingFrameSize, "watermarkThrottlingFrameSize must be >= 0");
         checkNotNegative(watermarkThrottlingFrameOffset, "watermarkThrottlingFrameOffset must be >= 0");
@@ -111,6 +112,7 @@ public final class EventTimePolicy<T> implements Serializable {
         this.idleTimeoutMillis = idleTimeoutMillis;
         this.watermarkThrottlingFrameSize = watermarkThrottlingFrameSize;
         this.watermarkThrottlingFrameOffset = watermarkThrottlingFrameOffset;
+        this.wmKey = wmKey;
     }
 
     /**
@@ -135,14 +137,15 @@ public final class EventTimePolicy<T> implements Serializable {
             @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
-            long idleTimeoutMillis
+            long idleTimeoutMillis,
+            byte wmKey
     ) {
         checkSerializable(timestampFn, "timestampFn");
-        checkSerializable(timestampFn, "wrapFn");
+        checkSerializable(wrapFn, "wrapFn");
         checkSerializable(newWmPolicyFn, "newWmPolicyFn");
 
         return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize,
-                watermarkThrottlingFrameOffset, idleTimeoutMillis);
+                watermarkThrottlingFrameOffset, idleTimeoutMillis, wmKey);
     }
 
     /**
@@ -168,7 +171,7 @@ public final class EventTimePolicy<T> implements Serializable {
             long idleTimeoutMillis
     ) {
         return eventTimePolicy(timestampFn, noWrapping(), newWmPolicyFn, watermarkThrottlingFrameSize,
-                watermarkThrottlingFrameOffset, idleTimeoutMillis);
+                watermarkThrottlingFrameOffset, idleTimeoutMillis, (byte) 0);
     }
 
     /**
@@ -178,7 +181,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * your job will keep accumulating the data without producing any output.
      */
     public static <T> EventTimePolicy<T> noEventTime() {
-        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, 0, 0, 0);
+        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, 0, 0, 0, (byte) 0);
     }
 
     @SuppressWarnings("unchecked")
@@ -252,5 +255,9 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public long idleTimeoutMillis() {
         return idleTimeoutMillis;
+    }
+
+    public byte wmKey() {
+        return wmKey;
     }
 }

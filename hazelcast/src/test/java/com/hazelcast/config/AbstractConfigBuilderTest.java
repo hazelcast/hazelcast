@@ -675,6 +675,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public abstract void testMapExpiryConfig();
+
+    @Test
     public abstract void testIntegrityCheckerConfig();
 
     protected abstract Config buildAuditlogConfig();

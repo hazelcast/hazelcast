@@ -631,7 +631,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         private final Object[] values;
 
-        private Row(SqlRow row) {
+        public Row(SqlRow row) {
             values = new Object[row.getMetadata().getColumnCount()];
             for (int i = 0; i < values.length; i++) {
                 values[i] = row.getObject(i);

@@ -118,7 +118,7 @@ public interface OutboundCollector {
 
         RoundRobin(OutboundCollector[] collectors) {
             super(collectors);
-            this.cursor = new CircularListCursor<>(Arrays.asList(collectors));
+            this.cursor = new CircularListCursor<>(collectors);
         }
 
         @Override

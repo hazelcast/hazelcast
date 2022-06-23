@@ -579,12 +579,20 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
+    /**
+     * Throws {@link UnsupportedOperationException} if watermark has non-zero key.
+     */
+    protected void keyedWatermarkCheck(Watermark watermark) {
+        if (watermark.key() != 0) {
+            String klassName = this.getClass().getName();
+            throw new UnsupportedOperationException("Keyed watermarks is not supported yet for " + klassName);
+        }
+    }
 
     // The processN methods contain repeated looping code in order to give an
     // easier job to the JIT compiler to optimize each case independently, and
     // to ensure that ordinal is dispatched on just once per process(ordinal,
     // inbox) call.
-
 
     private void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess0(item); ) {
