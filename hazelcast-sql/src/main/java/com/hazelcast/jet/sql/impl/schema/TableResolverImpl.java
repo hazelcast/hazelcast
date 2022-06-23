@@ -183,6 +183,7 @@ public class TableResolverImpl implements TableResolver {
 
     @Nonnull
     @Override
+    @SuppressWarnings("checkstyle:MagicNumber")
     public List<Table> getTables() {
         Collection<Object> objects = tableStorage.allObjects();
         List<Table> tables = new ArrayList<>(objects.size() + 4);
