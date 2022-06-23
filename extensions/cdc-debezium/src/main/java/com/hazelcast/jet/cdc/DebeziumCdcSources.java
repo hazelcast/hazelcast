@@ -81,7 +81,9 @@ public final class DebeziumCdcSources {
     @Nonnull
     public static Builder<ChangeRecord> debezium(
             @Nonnull String name,
-            @Nonnull Class<? extends SourceConnector> connectorClass) {
+            @Nonnull Class<?> connectorClass) {
+        checkState(SourceConnector.class.isAssignableFrom(connectorClass), "connector class must be a subclass" +
+                " of SourceConnector");
         return new Builder<>(name, connectorClass.getName(),
                 (properties, eventTimePolicy) -> new ChangeRecordCdcSourceP(properties, eventTimePolicy));
     }
