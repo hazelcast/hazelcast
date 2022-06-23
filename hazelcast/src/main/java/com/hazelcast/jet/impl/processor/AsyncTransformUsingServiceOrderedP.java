@@ -51,12 +51,11 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <R> emitted item type
  */
 public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
-
-    private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<IR>> callAsyncFn;
-    private final BiFunctionEx<? super T, ? super IR, ? extends Traverser<? extends R>> mapResultFn;
+    protected final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<IR>> callAsyncFn;
+    protected final BiFunctionEx<? super T, ? super IR, ? extends Traverser<? extends R>> mapResultFn;
 
     // The queue holds both watermarks and output items
-    private ArrayDeque<Object> queue;
+    protected ArrayDeque<Object> queue;
     // The number of watermarks in the queue
     private int queuedWmCount;
 
