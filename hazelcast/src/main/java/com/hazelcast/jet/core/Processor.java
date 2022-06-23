@@ -242,10 +242,6 @@ public interface Processor {
      */
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
 
-    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        return tryProcessWatermark(watermark);
-    }
-
     /**
      * Tries to process the supplied watermark. The value is always greater than
      * in a previous call with watermark with the same key. The watermark is

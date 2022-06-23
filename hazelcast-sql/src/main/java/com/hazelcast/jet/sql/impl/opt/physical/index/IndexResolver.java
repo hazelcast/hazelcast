@@ -457,14 +457,14 @@ public final class IndexResolver {
         switch (kind) {
             case IS_TRUE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.TRUE), singletonList(false)
                 ));
 
                 break;
 
             case IS_FALSE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.FALSE), singletonList(false)
                 ));
 
                 break;
@@ -472,7 +472,7 @@ public final class IndexResolver {
             case IS_NOT_TRUE:
                 filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                                singletonList(ConstantExpression.FALSE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
@@ -486,7 +486,7 @@ public final class IndexResolver {
 
                 filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                                singletonList(ConstantExpression.TRUE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
