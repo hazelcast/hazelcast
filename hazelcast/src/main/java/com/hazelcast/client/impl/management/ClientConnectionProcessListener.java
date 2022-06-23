@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.management;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.logging.ILogger;
 
 import java.util.EventListener;
 import java.util.List;

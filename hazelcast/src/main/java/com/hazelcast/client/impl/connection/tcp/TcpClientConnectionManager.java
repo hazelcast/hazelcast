@@ -825,7 +825,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public void addClientConnectionProcessListener(ClientConnectionProcessListener listener) {
-        connectionProcessListener = connectionProcessListener.withAdditionalListener(listener);
+        ExceptionCatchingConnectionProcessListener wrapper = new ExceptionCatchingConnectionProcessListener(listener, logger);
+        connectionProcessListener = connectionProcessListener.withAdditionalListener(wrapper);
     }
 
     public Credentials getCurrentCredentials() {
@@ -1012,7 +1013,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
-                connectionProcessListener.authenticationSuccess(connection.getRemoteAddress());
+                connectionProcessListener.authenticationSuccess(connection.getInitAddress());
                 break;
             case CREDENTIALS_FAILED:
                 AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
