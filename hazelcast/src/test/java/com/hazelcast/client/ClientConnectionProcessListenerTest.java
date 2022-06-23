@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,7 +35,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Arrays.asList;
@@ -170,6 +178,43 @@ public class ClientConnectionProcessListenerTest
             verify(listener, atLeastOnce()).connectionAttemptFailed(addr);
             verify(listener).clusterConnectionFailed(clusterName);
             verifyNoMoreInteractions(listener);
+        }
+    }
+
+    @Test
+    public void remoteClosesConnection()
+            throws Exception {
+        ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
+        ServerSocket server = new ServerSocket(5701);
+        try {
+            ForkJoinPool.commonPool().execute(() -> {
+                try {
+                    while (true) {
+                        Socket clientSocket = server.accept();
+                        OutputStream os = clientSocket.getOutputStream();
+                        os.write("junk response".getBytes(StandardCharsets.UTF_8));
+                        os.flush();
+                        os.close();
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+
+
+            ClientConfig clientConfig = newClientConfig()
+                    .setNetworkConfig(new ClientNetworkConfig().addAddress("localhost:5701"))
+                    .addListenerConfig(new ListenerConfig().setImplementation(listener));
+            HazelcastClient.newHazelcastClient(clientConfig);
+            fail("unexpectedly successful client startup");
+        } catch (IllegalStateException e) {
+            verify(listener, atLeastOnce()).possibleAddressesCollected(singletonList(new Address("localhost", 5701)));
+            verify(listener, atLeastOnce()).attemptingToConnectToAddress(new Address("localhost", 5701));
+            verify(listener, atLeastOnce()).remoteClosedConnection(new Address("localhost", 5701));
+            verify(listener).clusterConnectionFailed(getTestMethodName());
+            verifyNoMoreInteractions(listener);
+        } finally {
+            server.close();
         }
     }
 
