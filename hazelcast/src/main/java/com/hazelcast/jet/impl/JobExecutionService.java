@@ -702,7 +702,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
         for (ExecutionContext ctx : executionContexts.values()) {
             try {
                 ctx.getExecutionFuture().join();
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
     }
 
