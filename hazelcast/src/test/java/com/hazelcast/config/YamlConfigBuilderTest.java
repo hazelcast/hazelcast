@@ -81,6 +81,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -4411,7 +4412,34 @@ public class YamlConfigBuilderTest
 
     @Override
     public void testExternalDataStoreConfigs() {
-        throw new RuntimeException("implement me!");
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  external-data-store:\n"
+                + "    mysql-database:\n"
+                + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
+                + "      properties:\n"
+                + "        jdbc.url: jdbc:mysql://dummy:3306\n"
+                + "        some.property: dummy-value\n"
+                + "      shared: true\n"
+                + "    other-database:\n"
+                + "      class-name: com.hazelcast.datastore.OtherDataStore\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+
+        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = config.getExternalDataStoreConfigs();
+
+        assertThat(externalDataStoreConfigs).hasSize(2);
+        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
+        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
+        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
+        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
+        assertThat(mysqlDataStoreConfig.getProperties().getProperty("jdbc.url")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperties().getProperty("some.property")).isEqualTo("dummy-value");
+
+        assertThat(externalDataStoreConfigs).containsKey("other-database");
+        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
+        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
     }
 
     @Override

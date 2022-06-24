@@ -3767,3 +3767,15 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
+  #      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+  #
+  #      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+  #      used by map stores and jdbc sinks and sources.
+  external-data-store:
+    mysql-database:
+      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      properties:
+        jdbc.url: jdbc:mysql://dummy:3306
+      shared: false
+    other-database:
+      class-name: com.hazelcast.datastore.OtherDataStore

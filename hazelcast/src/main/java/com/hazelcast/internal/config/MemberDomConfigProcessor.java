@@ -381,7 +381,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
         } else if (matches(EXTERNAL_DATA_STORE.getName(), nodeName)) {
-            handleExternalDataStore(node);
+            handleExternalDataStores(node);
         } else {
             return true;
         }
@@ -3422,9 +3422,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
-    private void handleExternalDataStore(Node node) {
+    protected void handleExternalDataStores(Node node) {
         String name = getAttribute(node, "name");
-        ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.getByNameOrNew(config.getExternalDataStoreConfigs(), name, ExternalDataStoreConfig.class);
+        ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.getByNameOrNew(config.getExternalDataStoreConfigs(),
+                name, ExternalDataStoreConfig.class);
+        handleExternalDataStore(node, externalDataStoreConfig);
+    }
+
+    protected void handleExternalDataStore(Node node, ExternalDataStoreConfig externalDataStoreConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("class-name", childName)) {
