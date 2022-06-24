@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
 
 /**
@@ -71,10 +70,8 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
         // put the inbox items into a list and pass to the superclass as a single item
         List<T> batch = new ArrayList<>(Math.min(inbox.size(), maxBatchSize));
         inbox.drainTo(batch, maxBatchSize);
-        CompletableFuture<Traverser<R>> future = callAsyncFn.apply(service, batch);
-        if (future != null) {
-            queue.add(tuple2(batch, future));
-        }
+        boolean res = super.tryProcessInt(batch);
+        assert res;
     }
 
     /**
