@@ -28,7 +28,8 @@ jobs:
       actions: read
       contents: read
       security-events: write
-
+    env:
+      MODULES_TO_KEEP: "hazelcast hazelcast-sql hazelcast-spring"
     strategy:
       fail-fast: false
       matrix:
@@ -73,6 +74,10 @@ jobs:
     - name: Custom Java build
       run: |
         ./mvnw -B -V -e clean package -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true -Dmaven.test.skip -Dattribution.skip -Danimal.sniffer.skip=true -Dmaven.source.skip=true
+        for MODULE in $MODULES_TO_KEEP; do
+          mv $MODULE/target $MODULE/target-keep
+        done;
+        ./mvnw -B -V -e clean
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
