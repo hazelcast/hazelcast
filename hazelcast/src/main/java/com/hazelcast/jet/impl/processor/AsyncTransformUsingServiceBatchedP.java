@@ -65,7 +65,7 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        if (!makeRoomInQueue() || inbox.isEmpty()) {
+        if (!makeRoomInQueue()) {
             return;
         }
         // put the inbox items into a list and pass to the superclass as a single item
