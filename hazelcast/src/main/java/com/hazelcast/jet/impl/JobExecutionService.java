@@ -288,7 +288,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         completeExecution(execCtx, new CancellationException());
                     }
                 })
-                .whenComplete((r, e) -> {
+                .thenAccept(r -> {
                     // initial log entry with all of jobId, jobName, executionId
                     if (logger.isFineEnabled()) {
                         logger.fine("Execution plan for light job ID=" + idToString(jobId)
@@ -325,7 +325,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
         ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
         return doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan))
-                .whenComplete((r, e) -> {
+                .thenAccept(r -> {
                     // initial log entry with all of jobId, jobName, executionId
                     logger.info("Execution plan for jobId=" + idToString(jobId)
                             + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
@@ -702,9 +702,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         for (ExecutionContext ctx : executionContexts.values()) {
             try {
                 ctx.getExecutionFuture().join();
-            } catch (Throwable ignored) {
-                System.out.println(ignored.getMessage());
-            }
+            } catch (Throwable ignored) {}
         }
     }
 
