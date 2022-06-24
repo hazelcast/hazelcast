@@ -262,16 +262,6 @@ public final class ConcurrentInboundEdgeStream {
             receivedBarriers.set(queueIndex);
         }
 
-        @Override
-        public long topObservedWm(byte key) {
-            return coalescers.topObservedWm(key);
-        }
-
-        @Override
-        public long coalescedWm(byte key) {
-            return coalescers.coalescedWm(key);
-        }
-
         /**
          * Drains a concurrent conveyor's queue while watching for {@link Watermark}s
          * and {@link SnapshotBarrier}s.
@@ -347,7 +337,7 @@ public final class ConcurrentInboundEdgeStream {
             }
 
             outer:
-            for (; ; ) {
+            for (;;) {
                 // find the current minimum item at the tail of queues
                 Object minItem = null;
                 for (int i = 0; i < drainedItems.size(); i++) {
@@ -382,16 +372,6 @@ public final class ConcurrentInboundEdgeStream {
                 lastItem = minItem;
                 dest.accept(lastItem);
             }
-        }
-
-        @Override
-        public long topObservedWm(byte key) {
-            return Long.MIN_VALUE;
-        }
-
-        @Override
-        public long coalescedWm(byte key) {
-            return Long.MIN_VALUE;
         }
 
         @Override

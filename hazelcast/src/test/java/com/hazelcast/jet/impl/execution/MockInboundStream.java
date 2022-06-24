@@ -119,14 +119,4 @@ public class MockInboundStream implements InboundEdgeStream {
     public int capacities() {
         return Integer.MAX_VALUE;
     }
-
-    @Override
-    public long topObservedWm(byte key) {
-        return 0;
-    }
-
-    @Override
-    public long coalescedWm(byte key) {
-        return 0;
-    }
 }

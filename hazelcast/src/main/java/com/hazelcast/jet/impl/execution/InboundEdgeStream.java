@@ -60,16 +60,4 @@ public interface InboundEdgeStream {
      * Returns the total number of items in input queues.
      */
     int sizes();
-
-    /**
-     * Returns the top WM observed on any of the input queues for the specified
-     * watermark key.
-     */
-    long topObservedWm(byte key);
-
-    /**
-     * Returns the last coalesced WM that was forwarded from the edge for the
-     * specified watermark key.
-     */
-    long coalescedWm(byte key);
 }

@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.function.ObjLongBiFunction;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -244,11 +245,11 @@ public final class EventTimePolicy<T> implements Serializable {
 
     /**
      * Returns the amount of time allowed to pass without receiving any events
-     * from a partition before marking it as "idle". When the partition
-     * becomes idle, the processor emits an {@link
-     * com.hazelcast.jet.impl.execution.WatermarkCoalescer#IDLE_MESSAGE} to its
-     * output edges. This signals Jet that the watermark can advance as
-     * if the partition didn't exist.
+     * from a partition before marking it as "idle". When the partition becomes
+     * idle, the processor emits a watermark with {@link
+     * WatermarkCoalescer#IDLE_MESSAGE_TIME} value to its output edges. This
+     * signals to Jet that the watermark can advance as if the partition didn't
+     * exist.
      * <p>
      * If you supply a zero or negative value, partitions will never be marked
      * as idle.

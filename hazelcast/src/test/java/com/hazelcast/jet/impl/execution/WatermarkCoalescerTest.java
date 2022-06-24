@@ -25,7 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static com.hazelcast.jet.core.JetTestSupport.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

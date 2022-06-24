@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
@@ -50,13 +51,13 @@ class CoreSerializerHooks {
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, Watermark object) throws IOException {
+                public void write(@Nonnull ObjectDataOutput out, @Nonnull Watermark object) throws IOException {
                     out.writeLong(object.timestamp());
                     out.writeByte(object.key());
                 }
 
-                @Override
-                public Watermark read(ObjectDataInput in) throws IOException {
+                @Nonnull @Override
+                public Watermark read(@Nonnull ObjectDataInput in) throws IOException {
                     return new Watermark(in.readLong(), in.readByte());
                 }
             };

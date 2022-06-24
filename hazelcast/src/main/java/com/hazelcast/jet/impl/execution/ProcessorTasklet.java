@@ -112,7 +112,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<InboundEdgeStream[]> instreamGroupQueue;
-    private final KeyedWatermarkCoalescer coalescer;
+    private final KeyedWatermarkCoalescer coalescers;
     private final ILogger logger;
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
@@ -202,7 +202,7 @@ public class ProcessorTasklet implements Tasklet {
         pendingSnapshotId1 = pendingSnapshotId2 = ssContext.activeSnapshotIdPhase1() + 1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
-        coalescer = new KeyedWatermarkCoalescer(instreams.size());
+        coalescers = new KeyedWatermarkCoalescer(instreams.size());
     }
 
     private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
@@ -310,15 +310,14 @@ public class ProcessorTasklet implements Tasklet {
         switch (state) {
             case PROCESS_WATERMARKS:
                 while (!pendingEdgeWatermark.isEmpty()) {
-                    if (tryProcessEdgeWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
-                        pendingEdgeWatermark.remove();
-                    } else {
+                    if (!tryProcessEdgeWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
                         return;
                     }
+                    pendingEdgeWatermark.remove();
                 }
 
-                for (Watermark wm; (wm = pendingGlobalWatermarks.peek()) != null; ) {
-                    if (!tryProcessGlobalWatermark(wm)) {
+                while (!pendingGlobalWatermarks.isEmpty()) {
+                    if (!tryProcessGlobalWatermark(pendingGlobalWatermarks.peek())) {
                         return;
                     }
                     // see the comment at outbox.reset() above
@@ -470,6 +469,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private boolean tryProcessEdgeWatermark(int ordinal, Watermark wm) {
+        assert wm.timestamp() != IDLE_MESSAGE_TIME;
         return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(ordinal, wm));
     }
 
@@ -548,8 +548,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private void fillInbox() {
         assert inbox.isEmpty() : "inbox is not empty";
-        assert pendingGlobalWatermarks.isEmpty() :
-                "No pending watermarks are expected, but was " + pendingGlobalWatermarks.size();
+        assert pendingGlobalWatermarks.isEmpty() && pendingEdgeWatermark.isEmpty()
+                : "No pending watermarks are expected here";
 
         // We need to collect metrics before draining the queues into Inbox,
         // otherwise they would appear empty even for slow processors
@@ -573,11 +573,10 @@ public class ProcessorTasklet implements Tasklet {
                 instreamCursor.advance();
                 continue;
             }
-
             result = currInstream.drainTo(addToInboxFunction);
             assert inbox.queue().stream().allMatch(i -> i instanceof SpecialBroadcastItem)
                     || inbox.queue().stream().noneMatch(i -> i instanceof SpecialBroadcastItem)
-                    : "special and non-special items in the inbox: " + inbox.queue();
+                    : "mix of special and non-special items in the inbox: " + inbox.queue();
             progTracker.madeProgress(result.isMadeProgress());
 
             // handle special items
@@ -589,7 +588,7 @@ public class ProcessorTasklet implements Tasklet {
                         pendingEdgeWatermark.add(wm);
                     }
                     pendingGlobalWatermarks.addAll(
-                            coalescer.observeWm(wm.key(), currInstream.ordinal(), wm.timestamp()));
+                            coalescers.observeWm(wm.key(), currInstream.ordinal(), wm.timestamp()));
                 } else if (item instanceof SnapshotBarrier) {
                     observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
                 } else {
@@ -601,14 +600,12 @@ public class ProcessorTasklet implements Tasklet {
                 // based on the contract of InboundEdgeStream.drainTo(), if there were any special items
                 // in the inbox, there must be no normal items there, and vice versa.
                 assert pendingEdgeWatermark.isEmpty() && pendingGlobalWatermarks.isEmpty();
-                coalescer.observeEvent(currInstream.ordinal());
+                coalescers.observeEvent(currInstream.ordinal());
             }
 
             if (result.isDone()) {
                 receivedBarriers.clear(currInstream.ordinal());
-                // Note that there can be a WM received from upstream and the result can be done after single drain.
-                // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
-                pendingGlobalWatermarks.addAll(coalescer.queueDone(currInstream.ordinal()));
+                pendingGlobalWatermarks.addAll(coalescers.queueDone(currInstream.ordinal()));
                 instreamCursor.remove();
                 numActiveOrdinals--;
             }
@@ -703,8 +700,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
@@ -725,14 +722,14 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
+        for (Byte key : coalescers.keys()) {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+        }
+
         mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
-
-        for (Byte key : coalescer.keys()) {
-            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
-            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescer.topObservedWm(key));
-            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescer.coalescedWm(key));
-        }
 
         mContext.collect(descriptor, this);
 
