@@ -64,7 +64,7 @@ public final class PartitionActorRef extends ActorRef<Frame> {
 
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-            eventloop.execute(request);
+             eventloop.execute(request);
         } else {
             // todo: this should in theory not be needed. We could use the last
             // address and only in case of a redirect, we update.
@@ -78,7 +78,6 @@ public final class PartitionActorRef extends ActorRef<Frame> {
             long callId = requests.nextCallId();
 
             request.putLong(OFFSET_REQ_CALL_ID, callId);
-            //System.out.println("request.refCount:"+request.refCount());
             requests.map.put(callId, request);
 
             //todo: deal with return value.
