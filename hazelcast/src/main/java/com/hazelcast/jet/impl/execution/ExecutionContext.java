@@ -137,7 +137,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
     }
 
-    public CompletableFuture<?> initialize(
+    public CompletableFuture<Void> initialize(
             @Nonnull Address coordinator,
             @Nonnull Set<Address> participants,
             @Nonnull ExecutionPlan plan

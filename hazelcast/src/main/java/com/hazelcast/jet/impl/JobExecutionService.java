@@ -314,7 +314,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
      *     init execution is retried.
      * </li></ul>
      */
-    public CompletableFuture<?> initExecution(
+    public CompletableFuture<Void> initExecution(
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
