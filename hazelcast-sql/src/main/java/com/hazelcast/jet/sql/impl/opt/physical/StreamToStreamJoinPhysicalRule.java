@@ -171,6 +171,26 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         rightBoundMap.put(rlRelation, visitor.rightBound.f2());
         postponeMap.put(rrRelation, rightBoundMap);
 
+        Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
+        Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
+
+        // calculate field indices mapping from input rows to joint row field indices
+        for (int i = 0; i < join.getRowType().getFieldList().size(); ++i) {
+            RelDataTypeField field = join.getRowType().getFieldList().get(i);
+            for (int j = 0; j < left.getRowType().getFieldList().size(); ++j) {
+                RelDataTypeField leftField = left.getRowType().getFieldList().get(j);
+                if (fieldsAreEqual(field, leftField)) {
+                    leftInputToJointRowMapping.put(j, i);
+                }
+            }
+            for (int j = 0; j < right.getRowType().getFieldList().size(); ++j) {
+                RelDataTypeField rightField = right.getRowType().getFieldList().get(j);
+                if (fieldsAreEqual(field, rightField)) {
+                    rightInputToJointRowMapping.put(j, i);
+                }
+            }
+        }
+
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
                         join.getCluster(),
@@ -181,6 +201,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         join.getJoinType(),
                         leftFields,
                         rightFields,
+                        leftInputToJointRowMapping,
+                        rightInputToJointRowMapping,
                         postponeMap
                 )
         );
@@ -408,5 +430,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
             return tuple2(joinRel.getRowType().getFieldList().get(inputRef.getIndex()), literalValue);
         }
+    }
+
+    private boolean fieldsAreEqual(RelDataTypeField a, RelDataTypeField b) {
+        return a.getType().equals(b.getType()) && a.getName().equals(b.getName());
     }
 }

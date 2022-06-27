@@ -683,6 +683,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     int wmColIndex = scan.watermarkedColumnIndex();
                     if (wmColIndex >= 0) {
                         RelDataTypeField field = scan.getRowType().getFieldList().get(wmColIndex);
+                        scan.setWatermarkDef(counter[0]);
                         watermarkedFields.put(new RelField(field.getName(), field.getType()), counter[0]++);
                     }
                 }

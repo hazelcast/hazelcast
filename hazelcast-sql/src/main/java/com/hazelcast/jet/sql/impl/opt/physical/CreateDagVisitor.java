@@ -178,7 +178,8 @@ public class CreateDagVisitor {
                 table,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
-                rel.eventTimePolicyProvider()
+                rel.eventTimePolicyProvider(),
+                rel.getWatermarkDef()
         );
     }
 
@@ -442,12 +443,14 @@ public class CreateDagVisitor {
 
         // map watermarked timestamps extractors to enumerated wm keys
         for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
-            RelField field = new RelField(fieldList.get(e.getKey()).getName(), fieldList.get(e.getKey()).getType());
+            Integer fieldIndex = rel.leftInputToJointRowMapping().get(e.getKey());
+            RelField field = new RelField(fieldList.get(fieldIndex).getName(), fieldList.get(fieldIndex).getType());
             leftExtractors.put(watermarkedInputFields.get(field), e.getValue());
         }
 
         for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
-            RelField field = new RelField(fieldList.get(e.getKey()).getName(), fieldList.get(e.getKey()).getType());
+            Integer fieldIndex = rel.rightInputToJointRowMapping().get(e.getKey());
+            RelField field = new RelField(fieldList.get(fieldIndex).getName(), fieldList.get(fieldIndex).getType());
             rightExtractors.put(watermarkedInputFields.get(field), e.getValue());
         }
 

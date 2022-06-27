@@ -20,6 +20,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.OptUtils.RelField;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -42,6 +43,8 @@ import java.util.Map;
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields leftWatermarkedFields;
     private final WatermarkedFields rightWatermarkedFields;
+    private final Map<Integer, Integer> leftInputToJointRowMapping;
+    private final Map<Integer, Integer> rightInputToJointRowMapping;
     // Same postponeTimeMap as required by TDD, but with rel field defined
     // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
     private final Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap;
@@ -56,12 +59,17 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             JoinRelType joinType,
             WatermarkedFields leftWatermarkedFields,
             WatermarkedFields rightWatermarkedFields,
-            Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap
+            Map<Integer, Integer> leftInputToJointRowMapping,
+            Map<Integer, Integer> rightInputToJointRowMapping,
+            Map<RelField, Map<RelField, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
 
         this.leftWatermarkedFields = leftWatermarkedFields;
         this.rightWatermarkedFields = rightWatermarkedFields;
+
+        this.leftInputToJointRowMapping = leftInputToJointRowMapping;
+        this.rightInputToJointRowMapping = rightInputToJointRowMapping;
 
         this.postponeTimeMap = postponeTimeMap;
     }
@@ -118,6 +126,14 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return postponeTimeMap;
     }
 
+    public Map<Integer, Integer> leftInputToJointRowMapping() {
+        return leftInputToJointRowMapping;
+    }
+
+    public Map<Integer, Integer> rightInputToJointRowMapping() {
+        return rightInputToJointRowMapping;
+    }
+
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onStreamToStreamJoin(this);
@@ -141,7 +157,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 joinType,
                 leftWatermarkedFields,
                 rightWatermarkedFields,
-                postponeTimeMap
+                leftInputToJointRowMapping, rightInputToJointRowMapping, postponeTimeMap
         );
     }
 }

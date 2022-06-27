@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
@@ -47,11 +47,13 @@ import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTI
 
 public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
+    private byte watermarkDef = -1;
+
     FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
 
     ) {
@@ -136,4 +138,13 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
                 watermarkedColumnIndex());
     }
+
+    public byte getWatermarkDef() {
+        return watermarkDef;
+    }
+
+    public void setWatermarkDef(byte watermarkDef) {
+        this.watermarkDef = watermarkDef;
+    }
+
 }
