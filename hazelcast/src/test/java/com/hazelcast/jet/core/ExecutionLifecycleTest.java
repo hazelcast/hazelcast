@@ -64,7 +64,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.NotSerializableException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -75,7 +74,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;

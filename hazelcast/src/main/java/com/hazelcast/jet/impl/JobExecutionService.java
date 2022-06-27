@@ -74,6 +74,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -620,7 +621,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
                 Operation op = new CheckLightJobsOperation(executionIds);
                 InvocationFuture<long[]> future = nodeEngine.getOperationService()
-                                                            .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
+                                                            .createInvocationBuilder(SERVICE_NAME, op, en.getKey())
                                                             .invoke();
                 future.whenComplete((r, t) -> {
                     if (t instanceof TargetNotMemberException) {
