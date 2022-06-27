@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 
@@ -45,8 +46,6 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
 
     private static final long serialVersionUID = 1L;
     private static final Random RANDOM = new Random();
-
-    private Object partitionKey;
     private Set<? extends Object> partitionKeys;
     private Predicate<K, V> target;
 
@@ -86,8 +85,8 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
      */
     @Override
     public Object getPartitionKey() {
-        if (partitionKey != null) {
-            return partitionKey;
+        if (partitionKeys.size() == 1) {
+            return getSinglePartitionKey();
         }
         // Empty collections are rejected by the object constructor and serializer so this should be safe
         return partitionKeys.stream()
@@ -124,7 +123,7 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (out.getVersion().isLessThan(Versions.V5_2)) {
-            out.writeObject(partitionKey);
+            out.writeObject(getSinglePartitionKey());
         } else {
             out.writeObject(partitionKeys);
         }
@@ -134,10 +133,8 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         if (in.getVersion().isLessThan(Versions.V5_2)) {
-            this.partitionKey = in.readObject();
-            this.partitionKeys = Collections.singleton(this.partitionKey);
+            this.partitionKeys = Collections.singleton(in.readObject());
         } else {
-            this.partitionKey = null;
             this.partitionKeys = in.readObject();
         }
         this.target = in.readObject();
@@ -159,13 +156,9 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         PartitionPredicateImpl<?, ?> that = (PartitionPredicateImpl<?, ?>) o;
-
-        if (partitionKeys != null ? !partitionKeys.equals(that.partitionKeys) : that.partitionKeys != null) {
-            return false;
-        }
-        return target != null ? target.equals(that.target) : that.target == null;
+        return Objects.equals(partitionKeys, that.partitionKeys) &&
+               Objects.equals(target, that.target);
     }
 
     @Override
@@ -173,5 +166,12 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
         int result = partitionKeys != null ? partitionKeys.hashCode() : 0;
         result = 31 * result + (target != null ? target.hashCode() : 0);
         return result;
+    }
+
+    private Object getSinglePartitionKey() {
+        for (Object key : partitionKeys) {
+            return key;
+        }
+        throw new RuntimeException("Unreachable branch. PartitionPredicateImpl constructor should check and throw if partitionKeys is empty");
     }
 }
