@@ -1,4 +1,4 @@
-# Keyed WM support
+# Keyed watermark support
 
 |||
 |---|---|
@@ -41,14 +41,15 @@ means there are two independent sets of watermarks, differentiated by a key.
 A WM instance with value `M` means that any event with value less than `M` can
 be considered _late_ and ignored. It's very important in stream processing as it
 allows the processors to reason about possible future events and to remove data
-from state.
+from the state.
 
-We say that a stream is at WM value N when the value of the last received WM is
-N. Since each new WM instance is required to have a higher value, the WM value
-for the stream is ever-increasing.
+We say that a stream is at WM value N when the value of the last received WM
+instance is N. Since each new WM instance is required to have a higher value,
+the WM value for the stream is ever-increasing.
 
 So-called _WM coalescing_ happens when there are two inputs that are merged into
-one stream - the lowest current WM value of all the merged streams is forwarded.
+one stream - the lowest current WM value of all the merged streams is used for
+the merged stream.
 
 #### Example
 
