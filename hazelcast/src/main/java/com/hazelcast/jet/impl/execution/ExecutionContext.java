@@ -165,10 +165,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
-                   .thenApply(r -> {
-                       initWithPlan(plan);
-                       return null;
-                   });
+                .thenAccept(r -> initWithPlan(plan));
     }
 
     private void initWithPlan(@Nonnull ExecutionPlan plan) {

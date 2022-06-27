@@ -171,12 +171,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Creates tasklets, inboxes/outboxes and connects these to make them ready
      * for a later StartExecutionOperation.
      */
-    public CompletableFuture<?> initialize(NodeEngineImpl nodeEngine,
-                                        long jobId,
-                                        long executionId,
-                                        @Nonnull SnapshotContext snapshotContext,
-                                        ConcurrentHashMap<String, File> tempDirectories,
-                                        InternalSerializationService jobSerializationService) {
+    public CompletableFuture<?> initialize(
+            NodeEngineImpl nodeEngine,
+            long jobId,
+            long executionId,
+            @Nonnull SnapshotContext snapshotContext,
+            ConcurrentHashMap<String, File> tempDirectories,
+            InternalSerializationService jobSerializationService
+    ) {
         this.nodeEngine = nodeEngine;
         this.jobClassLoaderService =
                 ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobClassLoaderService();
@@ -184,7 +186,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
         CompletableFuture<?> procSuppliersInitFuture = initProcSuppliers(jobId, tempDirectories, jobSerializationService);
 
-        return procSuppliersInitFuture.thenApply(r -> {
+        return procSuppliersInitFuture.thenAccept(r -> {
             initDag(jobSerializationService);
 
             this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
@@ -278,7 +280,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     localProcessorIdx++;
                 }
             }
-            return ExecutionPlan.this;
         });
     }
 
@@ -390,7 +391,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return jobConfig;
     }
 
-    synchronized void addVertex(int position, VertexDef vertex) {
+    synchronized void setVertex(int position, VertexDef vertex) {
         vertices.set(position, vertex);
     }
 
@@ -433,9 +434,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     // End implementation of IdentifiedDataSerializable
 
     @SuppressWarnings("rawtypes")
-    private CompletableFuture<?> initProcSuppliers(long jobId,
-                                                   ConcurrentHashMap<String, File> tempDirectories,
-                                                   InternalSerializationService jobSerializationService) {
+    private CompletableFuture<?> initProcSuppliers(
+            long jobId,
+            ConcurrentHashMap<String, File> tempDirectories,
+            InternalSerializationService jobSerializationService
+    ) {
         CompletableFuture[] futures = new CompletableFuture[vertices.size()];
         int index = 0;
         for (VertexDef vertex : vertices) {
