@@ -91,7 +91,7 @@ public final class EventTimePolicy<T> implements Serializable {
     private final long watermarkThrottlingFrameSize;
     private final long watermarkThrottlingFrameOffset;
     private final long idleTimeoutMillis;
-    private byte wmKey;
+    private final byte wmKey;
 
     private EventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,
@@ -131,6 +131,35 @@ public final class EventTimePolicy<T> implements Serializable {
      *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
      * @param idleTimeoutMillis the timeout after which a partition will be
      *      marked as <em>idle</em>. Use 0 to disable the feature.
+     */
+    public static <T> EventTimePolicy<T> eventTimePolicy(
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull ObjLongBiFunction<? super T, ?> wrapFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
+            long idleTimeoutMillis
+    ) {
+        return eventTimePolicy(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize, watermarkThrottlingFrameOffset,
+                idleTimeoutMillis, (byte) 0);
+    }
+
+    /**
+     * Creates and returns a new event time policy. To get a policy that
+     * results in no timestamping, call {@link #noEventTime()}.
+     *
+     * @param timestampFn function that extracts the timestamp from the event;
+     *      if null, Jet will use the source's native timestamp
+     * @param wrapFn function that transforms the received item and its
+     *      timestamp into the emitted item
+     * @param newWmPolicyFn factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize the frame length to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param watermarkThrottlingFrameOffset the frame offset to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis the timeout after which a partition will be
+     *      marked as <em>idle</em>. Use 0 to disable the feature.
+     * @param wmKey The key of the emitted watermarks
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable ToLongFunctionEx<? super T> timestampFn,

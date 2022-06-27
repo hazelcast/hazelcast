@@ -203,8 +203,11 @@ public final class ConcurrentInboundEdgeStream {
                     } else if (itemDetector.item instanceof SnapshotBarrier) {
                         observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
                         tracker.madeProgress();
+                    } else {
+                        assert false : "should never get here";
                     }
-                } else if (result.isMadeProgress()) {
+                }
+                if (itemDetector.normalItemObserved) {
                     coalescers.observeEvent(queueIndex);
                 }
 

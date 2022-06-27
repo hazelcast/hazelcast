@@ -320,7 +320,6 @@ public class ProcessorTasklet implements Tasklet {
                     if (!tryProcessGlobalWatermark(pendingGlobalWatermarks.peek())) {
                         return;
                     }
-                    // see the comment at outbox.reset() above
                     pendingGlobalWatermarks.remove();
                 }
 
@@ -592,7 +591,7 @@ public class ProcessorTasklet implements Tasklet {
                 } else if (item instanceof SnapshotBarrier) {
                     observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
                 } else {
-                    assert false : "should never get here";
+                    assert false : "Unexpected item in inbox: " + item;
                 }
             }
 
