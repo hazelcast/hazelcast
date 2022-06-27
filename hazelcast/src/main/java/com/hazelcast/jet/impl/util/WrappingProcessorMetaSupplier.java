@@ -74,6 +74,11 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
+    }
+
+    @Override
     public void close(Throwable error) throws Exception {
         wrapped.close(error);
     }

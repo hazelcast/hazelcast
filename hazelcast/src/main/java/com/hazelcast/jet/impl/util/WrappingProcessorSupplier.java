@@ -33,8 +33,8 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
 
     private static final long serialVersionUID = 1L;
 
-    private ProcessorSupplier wrapped;
-    private FunctionEx<Processor, Processor> wrapperSupplier;
+    private final ProcessorSupplier wrapped;
+    private final FunctionEx<Processor, Processor> wrapperSupplier;
 
     public WrappingProcessorSupplier(ProcessorSupplier wrapped,
                                      FunctionEx<Processor, Processor> wrapperSupplier
@@ -58,6 +58,11 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     @Override
     public boolean initIsCooperative() {
         return wrapped.initIsCooperative();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
     }
 
     @Override
