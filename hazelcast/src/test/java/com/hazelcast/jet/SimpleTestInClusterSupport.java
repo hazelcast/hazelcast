@@ -29,8 +29,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Rule;
-import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -49,9 +47,6 @@ import static java.util.stream.Collectors.joining;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class SimpleTestInClusterSupport extends JetTestSupport {
-
-    @Rule
-    public Timeout globalTimeout = new Timeout(10, TimeUnit.SECONDS);
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 
