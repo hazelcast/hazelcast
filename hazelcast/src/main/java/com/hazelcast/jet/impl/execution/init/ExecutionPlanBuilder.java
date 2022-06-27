@@ -131,7 +131,7 @@ public final class ExecutionPlanBuilder {
                     final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                     vertexDef.addInboundEdges(inbound);
                     vertexDef.addOutboundEdges(outbound);
-                    e.getValue().addVertex(entry.requiredPosition, vertexDef);
+                    e.getValue().setVertex(entry.requiredPosition, vertexDef);
                 }
             };
             if (metaSupplier.initIsCooperative()) {
