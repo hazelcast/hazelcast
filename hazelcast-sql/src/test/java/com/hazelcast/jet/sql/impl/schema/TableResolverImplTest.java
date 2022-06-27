@@ -84,8 +84,8 @@ public class TableResolverImplTest {
     public void before() {
         MockitoAnnotations.openMocks(this);
 
-        when(nodeEngine.getHazelcastInstance()).then(invocationOnMock -> hazelcastInstance);
-        when(hazelcastInstance.getLifecycleService()).then(invocationOnMock -> lifecycleService);
+        when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
+        when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
         catalog = new TableResolverImpl(nodeEngine, tableStorage, connectorCache);
         catalog.registerListener(listener);
     }
