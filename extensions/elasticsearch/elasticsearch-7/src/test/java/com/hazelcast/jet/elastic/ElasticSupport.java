@@ -18,8 +18,6 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.impl.util.Util;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -63,8 +61,10 @@ public final class ElasticSupport {
     }
 
     public static SupplierEx<RestClientBuilder> elasticClientSupplier() {
-        String address = elastic.get().getHttpHostAddress();
-        return () -> RestClient.builder(HttpHost.create(address));
+        ElasticsearchContainer container = elastic.get();
+        String containerHost = container.getHost();
+        Integer port = container.getMappedPort(PORT);
+        return () -> client(containerHost, port);
     }
 
     public static SupplierEx<RestClientBuilder> secureElasticClientSupplier() {
