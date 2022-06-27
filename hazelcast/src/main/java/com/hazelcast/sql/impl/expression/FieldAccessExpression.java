@@ -61,7 +61,7 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
         }
 
         try {
-            return (T) ReflectionUtils.getFieldValue(name, res);
+            return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
         }

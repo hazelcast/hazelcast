@@ -71,12 +71,17 @@ public class TypesStorage extends TablesStorage {
     private void fixTypeReferences(final Type addedType) {
         // TODO: type system consistency.
         for (final Type type : getAllTypes()) {
+            boolean changed = false;
             for (final Type.TypeField field : type.getFields()) {
                 if (field.getQueryDataType() == null && !field.getClassName().isEmpty()) {
                     if (addedType.getJavaClassName().equals(field.getClassName())) {
                         field.setQueryDataType(addedType.getQueryDataType());
+                        changed = true;
                     }
                 }
+            }
+            if (changed) {
+                put(type.getName(), type);
             }
         }
     }

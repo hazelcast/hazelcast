@@ -34,10 +34,8 @@ public class HazelcastToRowFunction extends HazelcastFunction {
         super(
                 "TO_ROW",
                 SqlKind.OTHER_FUNCTION,
-                opBinding -> {
-                    // TODO: construct Row Type without cycles?
-                    return opBinding.getTypeFactory().createStructType(Collections.emptyList());
-                },
+                // Empty ROW type because its fields are not meant to be queried after conversion
+                opBinding -> opBinding.getTypeFactory().createStructType(Collections.emptyList()),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),
                 SqlFunctionCategory.SYSTEM
         );

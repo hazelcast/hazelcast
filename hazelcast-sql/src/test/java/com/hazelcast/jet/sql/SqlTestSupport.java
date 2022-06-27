@@ -376,7 +376,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static void createType(String name, Class<?> clazz) {
-        instance().getSql().execute(format("CREATE TYPE \"%s\" OPTIONS ('typeJavaClass'='%s')", name, clazz.getName()));
+        createType(instance(), name, clazz);
+    }
+
+    public static void createType(HazelcastInstance instance, String name, Class<?> clazz) {
+        instance.getSql().execute(format("CREATE TYPE \"%s\" OPTIONS ('typeJavaClass'='%s')", name, clazz.getName()));
     }
 
     /**
