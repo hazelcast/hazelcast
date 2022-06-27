@@ -279,9 +279,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-        // We don't create the CL for light jobs.
-        assert jobClassloaderService.getClassLoader(jobId) == null;
 
         return execCtx.initialize(coordinator, addresses, plan)
                 .whenComplete((r, e) -> {

@@ -146,8 +146,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public CompletableFuture<Void> initialize(
             @Nonnull Address coordinator,
             @Nonnull Set<Address> participants,
-            @Nonnull ExecutionPlan plan
-    ) {
+            @Nonnull ExecutionPlan plan) {
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -164,8 +163,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
-        return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
-                .thenAccept(r -> initWithPlan(plan));
+        return  plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
+                .thenAccept(ignored -> initWithPlan(plan));
     }
 
     private void initWithPlan(@Nonnull ExecutionPlan plan) {
@@ -276,9 +275,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     try {
                         ClassLoader processorCl = isLightJob ?
                                 null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
-                        doWithClassLoader(processorCl, () -> {
-                            processorSupplier.close(error);
-                        });
+                        doWithClassLoader(processorCl, () ->  processorSupplier.close(error));
                     } catch (Throwable e) {
                         logger.severe(jobNameAndExecutionId()
                                 + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
