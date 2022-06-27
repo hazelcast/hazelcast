@@ -143,6 +143,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
+     * If true, then {@link #close(Throwable)} should be cooperative, meaning it shouldn't block (e.g. by doing IO).
+     */
+    default boolean closeIsCooperative() {
+        return true;
+    }
+
+    /**
      * Called on coordinator member after execution has finished on all
      * members, successfully or not. This method will be called after {@link
      * ProcessorSupplier#close(Throwable)} has been called on all

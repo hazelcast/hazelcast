@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
@@ -111,6 +113,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -668,15 +671,18 @@ public class MasterJobContext {
 
     void finalizeJob(@Nullable Throwable failure) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            final Runnable nonSynchronizedAction;
             mc.lock();
+            JobStatus status = mc.jobStatus();
+            if (status == COMPLETED || status == FAILED) {
+                logIgnoredCompletion(failure, status);
+            }
+            mc.unlock();
+          })
+          .thenComposeAsync(r -> completeVertices(failure))
+          .thenAccept(ignored -> {
+            final Runnable nonSynchronizedAction;
             try {
-                JobStatus status = mc.jobStatus();
-                if (status == COMPLETED || status == FAILED) {
-                    logIgnoredCompletion(failure, status);
-                    return;
-                }
-                completeVertices(failure);
+                mc.lock();
                 mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
@@ -734,7 +740,7 @@ public class MasterJobContext {
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        });
+        }).join();
     }
 
     /**
@@ -808,25 +814,39 @@ public class MasterJobContext {
         }
     }
 
-    private void completeVertices(@Nullable Throwable failure) {
+    private CompletableFuture<Void> completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
+            ExecutorService offloadExecutor =
+                    mc.nodeEngine().getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+            List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
             JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
             doWithClassLoader(jobCl, () -> {
                 for (Vertex v : vertices) {
-                    try {
-                        ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
-                        doWithClassLoader(
-                                processorCl,
-                                () -> v.getMetaSupplier().close(failure)
-                        );
-                    } catch (Throwable e) {
-                        logger.severe(mc.jobIdString()
-                                      + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                    ProcessorMetaSupplier processorMetaSupplier = v.getMetaSupplier();
+                    RunnableEx closeAction = () -> {
+                        try {
+                            ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
+                            doWithClassLoader(
+                                    processorCl,
+                                    () -> processorMetaSupplier.close(failure)
+                            );
+                        } catch (Throwable e) {
+                            logger.severe(mc.jobIdString()
+                                    + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                        }
+                    };
+                    if (processorMetaSupplier.closeIsCooperative()) {
+                        closeAction.run();
+                        futures.add(completedFuture(null));
+                    } else {
+                        futures.add(CompletableFuture.runAsync(closeAction, offloadExecutor));
                     }
                 }
             });
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
+        return completedFuture(null);
     }
 
     void resumeJob(Supplier<Long> executionIdSupplier) {

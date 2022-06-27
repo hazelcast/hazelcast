@@ -64,6 +64,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.NotSerializableException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -92,6 +94,7 @@ import static java.lang.String.format;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -701,6 +704,133 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 .hasRootCauseInstanceOf(MemberLeftException.class);
     }
 
+    @Test
+    public void when_pmsInitBlocks_then_otherJobsNotBlocked() throws ExecutionException, InterruptedException {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT)));
+
+        List<Future<Job>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 2;
+        for (int i = 0; i < numJobs; i++) {
+            String name = "pmsInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
+        }
+
+        // Then
+        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
+//         generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> { });
+
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT; i++) {
+            MockPMS.unblock();
+        }
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
+        }
+    }
+
+    @Test(timeout = 2000L)
+    public void when_pmsCloseBlocks_then_otherJobsNotBlocked() throws ExecutionException, InterruptedException {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).closeBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
+
+        List<Future<?>> submitFutures = new ArrayList<>();
+
+        // When
+        // important: let it me more than JobCoordinationService.COORDINATOR_THREADS_POOL_SIZE
+        int numJobs = 5;
+        for (int i = 0; i < numJobs; i++) {
+            String name = "pmsCloseBlocking_" + i + "-" + useLightJob;
+            submitFutures.add(newJob(name, dagBlocking).getFuture());
+        }
+
+        // Then
+        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
+//         generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> { });
+
+        assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(2), 4);
+        int blockCount = submitFutures.size() * MEMBER_COUNT;
+        for (int i = 0; i < blockCount; i++) {
+            MockPMS.unblock();
+        }
+        for (Future<?> f : submitFutures) {
+            f.get();
+        }
+        assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(numJobs + 2), 4);
+    }
+
+    @Test
+    public void when_psInitBlocks_then_otherJobsNotBlocked() throws Exception {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT).initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPS(MockP::new, MEMBER_COUNT)));
+
+        List<Future<Job>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 3;
+        for (int i = 0; i < numJobs; i++) {
+            String name = "psInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
+        }
+
+        // Then
+        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
+        // generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> { });
+
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
+        }
+    }
+
+    @Test
+    public void when_processorInitBlocks_then_otherJobsNotBlocked() throws Exception {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                () -> new MockP().initBlocks()));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                MockP::new));
+
+        List<Future<Job>> submitFutures = new ArrayList<>();
+
+        // When
+        int numJobs = 3;
+        for (int i = 0; i < numJobs; i++) {
+            String name = "processorInitBlocking_" + i;
+            submitFutures.add(spawn(() -> newJob(name, dagBlocking)));
+        }
+
+        // Then
+        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
+        // generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> { });
+
+        for (int i = 0; i < submitFutures.size() * MEMBER_COUNT * parallelism; i++) {
+            MockP.unblock();
+        }
+        for (Future<Job> f : submitFutures) {
+            f.get().join();
+        }
+    }
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
         @Nonnull @Override
@@ -901,3 +1031,4 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 }
+

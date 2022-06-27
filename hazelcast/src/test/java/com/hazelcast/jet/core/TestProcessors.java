@@ -162,6 +162,7 @@ public final class TestProcessors {
         private Throwable getError;
         private Throwable closeError;
         private volatile boolean initBlocks;
+        private volatile boolean closeBlocks;
 
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
@@ -186,6 +187,10 @@ public final class TestProcessors {
 
         public MockPMS initBlocks() {
             this.initBlocks = true;
+            return this;
+        }
+        public MockPMS closeBlocks() {
+            this.closeBlocks = true;
             return this;
         }
 
@@ -219,7 +224,15 @@ public final class TestProcessors {
         }
 
         @Override
-        public void close(Throwable error) {
+        public boolean closeIsCooperative() {
+            return !closeBlocks;
+        }
+
+        @Override
+        public void close(Throwable error) throws InterruptedException {
+            if (closeBlocks) {
+                blockingSemaphore.acquire();
+            }
             closeCount.incrementAndGet();
 
             assertEquals("all PS that have been init should have been closed at this point",
@@ -251,6 +264,7 @@ public final class TestProcessors {
         private Throwable closeError;
 
         private volatile boolean initBlocks;
+        private volatile boolean closeBlocks;
 
         private final SupplierEx<Processor> supplier;
         private final int nodeCount;
@@ -279,6 +293,11 @@ public final class TestProcessors {
 
         public MockPS initBlocks() {
             this.initBlocks = true;
+            return this;
+        }
+
+        public MockPS closeBlocks() {
+            this.closeBlocks = true;
             return this;
         }
 
@@ -314,7 +333,10 @@ public final class TestProcessors {
         }
 
         @Override
-        public void close(Throwable error) {
+        public void close(Throwable error) throws InterruptedException {
+            if (closeBlocks) {
+                blockingSemaphore.acquire();
+            }
             if (error != null) {
                 receivedCloseErrors.add(error);
             }
