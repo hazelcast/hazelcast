@@ -35,10 +35,11 @@ import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields leftWatermarkedFields;
@@ -98,7 +99,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
             // TODO: enhance conversion ?
-            leftTimeExtractors.put(i, row -> Timestamp.from(Instant.from(row.getRow().get(i))).getTime());
+            leftTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
 
         return leftTimeExtractors;
@@ -112,7 +113,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
             // TODO: enhance conversion ?
-            rightTimeExtractors.put(i, row -> Timestamp.from(Instant.from(row.getRow().get(i))).getTime());
+            rightTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
         return rightTimeExtractors;
     }
