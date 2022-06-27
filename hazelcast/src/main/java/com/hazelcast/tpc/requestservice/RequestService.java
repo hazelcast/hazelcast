@@ -152,7 +152,7 @@ public class RequestService {
     @NotNull
     private Engine newEngine() {
         Engine.Configuration configuration = new Engine.Configuration();
-        configuration.setThreadFactory(PartitionAwareEventloopThread::new);
+        configuration.setThreadFactory(TPCEventloopThread::new);
         configuration.setEventloopConfigUpdater(eventloopConfiguration -> {
             FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
             FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);

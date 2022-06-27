@@ -17,17 +17,17 @@
 package com.hazelcast.tpc.engine;
 
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -78,6 +78,7 @@ public abstract class Eventloop {
     public final CircularQueue<Runnable> localRunQueue;
     protected final boolean spin;
     private final Type type;
+    private final BitSet allowedCpus;
 
     PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
 
@@ -108,15 +109,12 @@ public abstract class Eventloop {
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.eventloop(this);
-        this.eventloopThread = config.threadFactory.newThread(new EventloopTask());
-
+        this.eventloopThread = config.threadFactory.newThread(new EventloopThreadTask());
         if (config.threadName != null) {
             eventloopThread.setName(config.threadName);
         }
-        if (config.threadAffinity != null) {
-            ((HazelcastManagedThread) eventloopThread).setThreadAffinity(config.threadAffinity);
-        }
 
+        this.allowedCpus = config.threadAffinity == null ? null : config.threadAffinity.nextAllowedCpus();
         this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
 
@@ -470,12 +468,23 @@ public abstract class Eventloop {
     }
 
     /**
-     * The {@link Thread} that executes the {@link Eventloop}.
+     * The {@link Runnable} executed by the eventloop {@link Thread}.
      */
-    public final class EventloopTask implements Runnable {
+    private final class EventloopThreadTask implements Runnable {
 
         @Override
         public void run() {
+            if (allowedCpus != null) {
+                ThreadAffinityHelper.setAffinity(allowedCpus);
+                BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+                if (!actualCpus.equals(allowedCpus)) {
+                    logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
+                            + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
+                } else {
+                    logger.info(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
+                }
+            }
+
             try {
                 unsafe = createUnsafe();
                 beforeEventloop();
