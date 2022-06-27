@@ -97,7 +97,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
-    private final PartitionOperationThread[] partitionThreads;
+    private final PartitionOperationThreadImpl[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue
@@ -150,8 +150,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, String hzName,
-                                                            NodeExtension nodeExtension, ClassLoader configClassLoader) {
+    private PartitionOperationThreadImpl[] initPartitionThreads(HazelcastProperties properties, String hzName,
+                                                                NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadAffinity.isEnabled()) {
@@ -159,7 +159,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
-        PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
+        PartitionOperationThreadImpl[] threads = new PartitionOperationThreadImpl[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
@@ -167,7 +167,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
-            PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
+            PartitionOperationThreadImpl partitionThread = new PartitionOperationThreadImpl(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);
             partitionThread.setThreadAffinity(threadAffinity);
             threads[threadId] = partitionThread;
@@ -289,7 +289,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Probe(name = OPERATION_METRIC_EXECUTOR_QUEUE_SIZE, level = MANDATORY)
     public int getQueueSize() {
         int size = 0;
-        for (PartitionOperationThread partitionThread : partitionThreads) {
+        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
             size += partitionThread.queue.normalSize();
         }
         size += genericQueue.normalSize();
@@ -300,7 +300,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Probe(name = OPERATION_METRIC_EXECUTOR_PRIORITY_QUEUE_SIZE, level = MANDATORY)
     public int getPriorityQueueSize() {
         int size = 0;
-        for (PartitionOperationThread partitionThread : partitionThreads) {
+        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
             size += partitionThread.queue.prioritySize();
         }
         size += genericQueue.prioritySize();
@@ -361,7 +361,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         checkNotNull(taskFactory, "taskFactory can't be null");
         checkNotNull(partitions, "partitions can't be null");
 
-        for (PartitionOperationThread partitionThread : partitionThreads) {
+        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
             TaskBatch batch = new TaskBatch(taskFactory, partitions, partitionThread.threadId, partitionThreads.length);
             partitionThread.queue.add(batch, false);
         }
@@ -459,11 +459,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // we are only allowed to execute partition aware actions on an OperationThread
-        if (currentThread.getClass() != PartitionOperationThread.class) {
+        if (currentThread.getClass() != PartitionOperationThreadImpl.class) {
             return false;
         }
 
-        PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+        PartitionOperationThreadImpl partitionThread = (PartitionOperationThreadImpl) currentThread;
 
         // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
         // to execute operations for this particular partitionId
@@ -492,11 +492,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
-        if (currentThread.getClass() != PartitionOperationThread.class) {
+        if (currentThread.getClass() != PartitionOperationThreadImpl.class) {
             return true;
         }
 
-        PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+        PartitionOperationThreadImpl partitionThread = (PartitionOperationThreadImpl) currentThread;
         OperationRunner runner = partitionThread.currentRunner;
         if (runner != null) {
             // non null runner means it's a nested call

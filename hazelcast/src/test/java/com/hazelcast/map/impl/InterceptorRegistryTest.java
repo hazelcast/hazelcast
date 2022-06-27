@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueueImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueue;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThreadImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -72,7 +73,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testRegister_fromPartitionOperationThread() throws Exception {
         OperationQueue queue = new OperationQueueImpl();
-        PartitionOperationThread thread = getPartitionOperationThread(queue);
+        PartitionOperationThreadImpl thread = getPartitionOperationThread(queue);
         thread.start();
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -115,7 +116,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testDeregister_fromPartitionOperationThread() throws Exception {
         OperationQueue queue = new OperationQueueImpl();
-        PartitionOperationThread thread = getPartitionOperationThread(queue);
+        PartitionOperationThreadImpl thread = getPartitionOperationThread(queue);
         thread.start();
 
         registry.register(interceptor.id, interceptor);
@@ -192,13 +193,13 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
         assertFalse(id2InterceptorMap.containsValue(interceptor));
     }
 
-    private PartitionOperationThread getPartitionOperationThread(OperationQueue queue) {
+    private PartitionOperationThreadImpl getPartitionOperationThread(OperationQueue queue) {
         NodeExtension nodeExtension = mock(NodeExtension.class);
 
         OperationRunner operationRunner = mock(OperationRunner.class);
         OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
 
-        return new PartitionOperationThread("threadName", 0, queue, LOGGER, nodeExtension,
+        return new PartitionOperationThreadImpl("threadName", 0, queue, LOGGER, nodeExtension,
                 operationRunners, getClass().getClassLoader());
     }
 

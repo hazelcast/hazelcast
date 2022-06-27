@@ -39,7 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 // add padding around Nio channel
 public final class EpollAsyncSocket extends AsyncSocket {
 
-    private Eventloop.EventloopThread eventloopThread;
+    private Thread eventloopThread;
 
     public static EpollAsyncSocket open() {
         return new EpollAsyncSocket();

@@ -49,7 +49,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     private final boolean clientSide;
-    private Eventloop.EventloopThread eventloopThread;
+    private Thread eventloopThread;
 
     public static IOUringAsyncSocket open() {
         return new IOUringAsyncSocket();

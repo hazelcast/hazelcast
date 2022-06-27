@@ -18,6 +18,7 @@ package com.hazelcast.tpc.engine;
 
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop.EpollConfiguration;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncSocket;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfiguration;
@@ -26,10 +27,12 @@ import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -85,6 +88,7 @@ public final class Engine {
                     NioConfiguration nioConfiguration = new NioConfiguration();
                     nioConfiguration.setThreadAffinity(configuration.threadAffinity);
                     nioConfiguration.setThreadName("eventloop-" + idx);
+                    nioConfiguration.setThreadFactory(configuration.threadFactory);
                     configuration.eventloopConfigUpdater.accept(nioConfiguration);
                     eventloops[idx] = new NioEventloop(nioConfiguration);
                     break;
@@ -92,6 +96,7 @@ public final class Engine {
                     EpollConfiguration epollConfiguration = new EpollConfiguration();
                     epollConfiguration.setThreadAffinity(configuration.threadAffinity);
                     epollConfiguration.setThreadName("eventloop-" + idx);
+                    epollConfiguration.setThreadFactory(configuration.threadFactory);
                     configuration.eventloopConfigUpdater.accept(epollConfiguration);
                     eventloops[idx] = new EpollEventloop(epollConfiguration);
                     break;
@@ -99,6 +104,7 @@ public final class Engine {
                     IOUringConfiguration ioUringConfiguration = new IOUringConfiguration();
                     ioUringConfiguration.setThreadName("eventloop-" + idx);
                     ioUringConfiguration.setThreadAffinity(configuration.threadAffinity);
+                    ioUringConfiguration.setThreadFactory(configuration.threadFactory);
                     configuration.eventloopConfigUpdater.accept(ioUringConfiguration);
                     eventloops[idx] = new IOUringEventloop(ioUringConfiguration);
                     break;
@@ -250,8 +256,17 @@ public final class Engine {
         private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("reactor.type", "nio"));
         private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
         private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
+        private ThreadFactory threadFactory = HazelcastManagedThread::new;
         private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
         };
+
+        public void setThreadAffinity(ThreadAffinity threadAffinity) {
+            this.threadAffinity = threadAffinity;
+        }
+
+        public void setThreadFactory(ThreadFactory threadFactory) {
+            this.threadFactory = checkNotNull(threadFactory,"threadFactory can't be null");
+        }
 
         public void setEventloopType(Eventloop.Type eventloopType) {
             this.eventloopType = checkNotNull(eventloopType, "eventloopType can't be null");

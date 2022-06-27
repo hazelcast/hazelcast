@@ -60,7 +60,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final SocketChannel socketChannel;
     private final boolean clientSide;
     private NioEventloop eventloop;
-    private Eventloop.EventloopThread eventloopThread;
+    private Thread eventloopThread;
     private SelectionKey key;
     private Selector selector;
 

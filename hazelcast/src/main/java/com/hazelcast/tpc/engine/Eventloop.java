@@ -25,6 +25,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.frame.Frame;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -51,9 +53,9 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 
 /**
  * A EventLoop is a thread that is an event loop.
- *
+ * <p>
  * The Eventloop infrastructure is unaware of what is being send. So it isn't aware of requests/responses.
- *
+ * <p>
  * A single eventloop can deal with many server ports.
  */
 public abstract class Eventloop {
@@ -89,7 +91,7 @@ public abstract class Eventloop {
 
     protected long earliestDeadlineEpochNanos = -1;
 
-    protected final EventloopThread eventloopThread;
+    protected final Thread eventloopThread;
 
     Engine engine;
 
@@ -106,18 +108,26 @@ public abstract class Eventloop {
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.eventloop(this);
-        this.eventloopThread = new EventloopThread(config);
+        this.eventloopThread = config.threadFactory.newThread(new EventloopTask());
+
+        if (config.threadName != null) {
+            eventloopThread.setName(config.threadName);
+        }
+        if (config.threadAffinity != null) {
+            ((HazelcastManagedThread) eventloopThread).setThreadAffinity(config.threadAffinity);
+        }
+
         this.promiseAllocator = new PromiseAllocator(this, 1024);
     }
 
     /**
      * Returns the {@link Type} of this {@link Eventloop}.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the {@link Type} of this {@link Eventloop}. Value will never be null.
      */
-    public final Type type(){
+    public final Type type() {
         return type;
     }
 
@@ -126,13 +136,13 @@ public abstract class Eventloop {
      *
      * @return the Unsafe instance.
      */
-    public final Unsafe unsafe(){
+    public final Unsafe unsafe() {
         return unsafe;
     }
 
     /**
      * Returns the {Scheduler} for this {@link Eventloop}.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the {@link Scheduler}.
@@ -142,19 +152,19 @@ public abstract class Eventloop {
     }
 
     /**
-     * Returns the {@link EventloopThread} that runs this {@link Eventloop}.
-     *
+     * Returns the {@link Thread} that runs this {@link Eventloop}.
+     * <p>
      * This method is thread-safe.
      *
      * @return the EventloopThread.
      */
-    public EventloopThread eventloopThread() {
+    public Thread eventloopThread() {
         return eventloopThread;
     }
 
     /**
      * Returns the state of the Eventloop.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the state.
@@ -167,10 +177,10 @@ public abstract class Eventloop {
 
     /**
      * Is called before the {@link #eventLoop()} is called.
-     *
+     * <p>
      * This method can be used to initialize resources.
-     *
-     * Is called from the {@link EventloopThread}.
+     * <p>
+     * Is called from the eventloop thread.
      */
     protected void beforeEventloop() {
     }
@@ -197,9 +207,9 @@ public abstract class Eventloop {
 
     /**
      * Shuts down the Eventloop.
-     *
+     * <p>
      * This call can safely be made no matter the state of the Eventloop.
-     *
+     * <p>
      * This method is thread-safe.
      */
     public final void shutdown() {
@@ -249,12 +259,12 @@ public abstract class Eventloop {
 
     /**
      * Registers a resource on this Eventloop.
-     *
+     * <p>
      * Registered resources are automatically closed when the eventloop closes.
      * Some examples: AsyncSocket and AsyncServerSocket.
-     *
+     * <p>
      * If the Eventloop isn't in the running state, false is returned.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @param resource
@@ -280,9 +290,9 @@ public abstract class Eventloop {
 
     /**
      * Deregisters a resource.
-     *
+     * <p>
      * This method is thread-safe.
-     *
+     * <p>
      * This method can be called no matter the state of the Eventloop.
      *
      * @param resource the resource to deregister.
@@ -294,7 +304,7 @@ public abstract class Eventloop {
 
     /**
      * Gets a collection of all registered resources.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the collection of all registered resources.
@@ -402,6 +412,11 @@ public abstract class Eventloop {
         private int concurrentRunQueueCapacity = 4096;
         private String threadName;
         private ThreadAffinity threadAffinity;
+        private ThreadFactory threadFactory = HazelcastManagedThread::new;
+
+        public void setThreadFactory(ThreadFactory threadFactory) {
+            this.threadFactory = checkNotNull(threadFactory, "threadFactory");
+        }
 
         public void setThreadName(String threadName) {
             this.threadName = threadName;
@@ -457,19 +472,10 @@ public abstract class Eventloop {
     /**
      * The {@link Thread} that executes the {@link Eventloop}.
      */
-    public final class EventloopThread extends HazelcastManagedThread {
-
-        private EventloopThread(Configuration config) {
-            if (config.threadName != null) {
-                setName(config.threadName);
-            }
-            if (config.threadAffinity != null) {
-                setThreadAffinity(config.threadAffinity);
-            }
-        }
+    public final class EventloopTask implements Runnable {
 
         @Override
-        public void executeRun() {
+        public void run() {
             try {
                 unsafe = createUnsafe();
                 beforeEventloop();
@@ -484,7 +490,7 @@ public abstract class Eventloop {
                 if (engine != null) {
                     engine.notifyEventloopTerminated();
                 }
-                System.out.println(getName() + " terminated");
+                System.out.println(Thread.currentThread().getName() + " terminated");
             }
         }
     }
@@ -494,7 +500,7 @@ public abstract class Eventloop {
      */
     public abstract class Unsafe {
 
-        public Eventloop eventloop(){
+        public Eventloop eventloop() {
             return Eventloop.this;
         }
 

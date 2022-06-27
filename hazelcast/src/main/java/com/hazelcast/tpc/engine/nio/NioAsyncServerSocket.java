@@ -39,7 +39,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
     private final NioEventloop eventloop;
-    private final Eventloop.EventloopThread eventloopThread;
+    private final Thread eventloopThread;
 
     public static NioAsyncServerSocket open(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
