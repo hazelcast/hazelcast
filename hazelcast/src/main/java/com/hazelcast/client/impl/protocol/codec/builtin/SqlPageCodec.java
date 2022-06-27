@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.custom.HazelcastJsonValueCodec;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.expression.RowValue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -143,6 +144,10 @@ public final class SqlPageCodec {
                     break;
 
                 case ROW:
+                    ListMultiFrameCodec.encodeContainsNullable(clientMessage, (Iterable<RowValue>) column, HazelcastRowValueCodec::encode);
+
+                    break;
+
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 
@@ -266,6 +271,9 @@ public final class SqlPageCodec {
                     break;
 
                 case ROW:
+                    columns.add(ListMultiFrameCodec.decodeContainsNullable(iterator, HazelcastRowValueCodec::decode));
+
+                    break;
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 

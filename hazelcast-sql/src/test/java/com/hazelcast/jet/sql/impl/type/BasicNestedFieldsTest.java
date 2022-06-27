@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +40,6 @@ import java.util.Objects;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class BasicNestedFieldsTest extends SqlJsonTestSupport {
@@ -408,13 +406,7 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
     public void test_basicToRow() {
         initDefault();
 
-        assertRowsAnyOrder(client(), "SELECT TO_ROW(this) FROM test", rows(1, new RowValue(
-                asList(
-                        1L, "user1", new RowValue(asList(2L, "organization1", new RowValue(asList(
-                                3L, "office1"
-                        ))))
-                )
-        )));
+        assertRowsAnyOrder(client(), "SELECT TO_ROW(this) FROM test", rows(1, "[[1, user1, [[2, organization1, [[3, office1]]]]]]"));
     }
 
     private User initDefault() {

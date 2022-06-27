@@ -93,6 +93,6 @@ public class RowValue implements Serializable, IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "RowValue{" + values + '}';
+        return "[" + values + ']';
     }
 }
