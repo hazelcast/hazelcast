@@ -582,7 +582,7 @@ public final class Predicates {
     }
 
     /**
-     * Creates a new partitions predicate that restricts the execution of the target predicate to a subset of partitions.
+     * Creates a new partition predicate that restricts the execution of the target predicate to a subset of partitions.
      *
      * @param partitionKeys the partition keys
      * @param target       the target {@link Predicate}
@@ -591,8 +591,8 @@ public final class Predicates {
      * @throws NullPointerException     if partitionKeys or target predicate are {@code null}
      * @throws IllegalArgumentException if partitionkeys is an empty set
      */
-    public static <K, V> PartitionPredicate<K, V> partitionsPredicate(Set<? extends Object> partitionKeys,
-                                                                      Predicate<K, V> target) {
+    public static <K, V> PartitionPredicate<K, V> multiPartitionPredicate(Set<? extends Object> partitionKeys,
+                                                                          Predicate<K, V> target) {
         return new PartitionPredicateImpl<>(partitionKeys, target);
     }
 }

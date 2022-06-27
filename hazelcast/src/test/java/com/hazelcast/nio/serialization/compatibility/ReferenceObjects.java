@@ -261,7 +261,7 @@ class ReferenceObjects {
             Predicates.in(aSmallString, aComparable, aComparable),
             Predicates.regex(aSmallString, aSmallString),
             Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aSmallString, aComparable)),
-            Predicates.partitionsPredicate(new HashSet<>(Arrays.asList(aComparable)), Predicates.greaterThan(aSmallString, aComparable)),
+            Predicates.multiPartitionPredicate(new HashSet<>(Arrays.asList(aComparable)), Predicates.greaterThan(aSmallString, aComparable)),
             Predicates.and(Predicates.sql(anSqlString),
                     Predicates.equal(aSmallString, aComparable),
                     Predicates.notEqual(aSmallString, aComparable),

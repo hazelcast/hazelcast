@@ -107,8 +107,8 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
         partitionKeys = new HashSet<>(Arrays.asList(partitionKey1, partitionKey2, partitionKey3));
 
 
-        predicate = Predicates.partitionsPredicate(partitionKeys, Predicates.alwaysTrue());
-        aggPredicate = Predicates.partitionsPredicate(partitionKeys, Predicates.or(Predicates.equal("this", partitionId1), Predicates.equal("this", partitionId2), Predicates.equal("this", partitionId3)));
+        predicate = Predicates.multiPartitionPredicate(partitionKeys, Predicates.alwaysTrue());
+        aggPredicate = Predicates.multiPartitionPredicate(partitionKeys, Predicates.or(Predicates.equal("this", partitionId1), Predicates.equal("this", partitionId2), Predicates.equal("this", partitionId3)));
 
 
     }
@@ -164,7 +164,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnEntries() {
-        PartitionPredicate<String, Integer> lessThan10pp = Predicates.partitionsPredicate(partitionKeys,
+        PartitionPredicate<String, Integer> lessThan10pp = Predicates.multiPartitionPredicate(partitionKeys,
                 Predicates.lessThan("this", 10));
         Map<String, Integer> result = aggMap.executeOnEntries(new EntryNoop<>(), lessThan10pp);
 
@@ -204,7 +204,7 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
         sizeBefore = map.size();
         partitionSizeBefore = map.keySet(predicate).size();
         assertEquals(ITEMS_PER_PARTITION * 2, partitionSizeBefore);
-        map.removeAll(Predicates.partitionsPredicate(partitionKeys, Predicates.equal("this", ITEMS_PER_PARTITION - 1)));
+        map.removeAll(Predicates.multiPartitionPredicate(partitionKeys, Predicates.equal("this", ITEMS_PER_PARTITION - 1)));
         assertEquals(sizeBefore - 2, map.size());
         assertEquals(partitionSizeBefore - 2, map.keySet(predicate).size());
     }
@@ -235,17 +235,17 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void partitionsPredicateWithNullSetThrowsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> Predicates.partitionsPredicate(null, a -> true));
+        assertThrows(NullPointerException.class, () -> Predicates.multiPartitionPredicate(null, a -> true));
     }
 
     @Test
     public void partitionsPredicateWithEmptySetThrowsNullPointerException() {
-        assertThrows(IllegalArgumentException.class, () -> Predicates.partitionsPredicate(Collections.emptySet(), a -> true));
+        assertThrows(IllegalArgumentException.class, () -> Predicates.multiPartitionPredicate(Collections.emptySet(), a -> true));
     }
 
     @Test
     public void partitionsPredicateWithNullPredicateThrowsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> Predicates.partitionsPredicate(Collections.singleton("foo"), null));
+        assertThrows(NullPointerException.class, () -> Predicates.multiPartitionPredicate(Collections.singleton("foo"), null));
     }
 
     private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {

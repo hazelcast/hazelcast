@@ -92,7 +92,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
                 // For a single partition, use the partitionPredicate constructor (to check for backwards compatible performance regression)
                 Predicate<String, Integer> aggPredicate = partitionsToAggregate == 1
                                                                   ? Predicates.partitionPredicate(partitionIds.keySet().stream().findFirst().get(), partitionAwarePredicate)
-                                                                  : Predicates.partitionsPredicate(partitionIds.keySet(), partitionAwarePredicate);
+                                                                  : Predicates.multiPartitionPredicate(partitionIds.keySet(), partitionAwarePredicate);
                 long warmupEndTime = System.currentTimeMillis() + SECONDS.toMillis(10);
                 while (System.currentTimeMillis() < warmupEndTime) {
                     measure(hzMap, aggPredicate);
