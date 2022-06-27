@@ -29,9 +29,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,14 +39,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Collection;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -63,7 +58,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -71,21 +65,9 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests HTTP REST API.
  */
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RestTest {
-
-    @Parameterized.Parameter
-    public boolean useDirectBuffer;
-
-    @Parameterized.Parameters(name = "useDirectBuffer:{0}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {true},
-                {false},
-        });
-    }
 
     private static final String MAP_WITH_TTL = "mapWithTtl";
 
@@ -108,7 +90,6 @@ public class RestTest {
 
     public Config getConfig() {
         Config config = new Config();
-        config.setProperty(ClusterProperty.SOCKET_BUFFER_DIRECT.getName(), Boolean.toString(useDirectBuffer));
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
         config.getMapConfig(MAP_WITH_TTL).setTimeToLiveSeconds(2);
