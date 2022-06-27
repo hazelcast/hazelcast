@@ -142,7 +142,7 @@ public final class ExecutionPlanBuilder {
             }
         }
         return CompletableFuture.allOf(futures)
-                .thenCompose(r -> completedFuture(plans));
+                                .thenCompose(r -> completedFuture(plans));
     }
 
     /**
@@ -183,8 +183,8 @@ public final class ExecutionPlanBuilder {
         @Override
         public Iterator<VertexIdPos> iterator() {
             return vertexIdMap.entrySet().stream()
-                    .map(e -> new VertexIdPos(e.getValue(), e.getKey(), vertexPosById.get(e.getValue())))
-                    .iterator();
+                              .map(e -> new VertexIdPos(e.getValue(), e.getKey(), vertexPosById.get(e.getValue())))
+                              .iterator();
         }
     }
 
@@ -243,7 +243,7 @@ public final class ExecutionPlanBuilder {
                 member = memberList.get(memberIndex++ % memberList.size());
             }
             partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
-                    .add(partitionId);
+                               .add(partitionId);
         }
 
         Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();

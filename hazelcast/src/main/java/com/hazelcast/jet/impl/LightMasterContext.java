@@ -125,7 +125,7 @@ public class LightMasterContext {
         try {
             executionPlanMapTmp =
                     createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject)
-                    .get();
+                            .get();
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);

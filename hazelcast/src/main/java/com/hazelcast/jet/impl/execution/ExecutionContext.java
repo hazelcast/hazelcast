@@ -159,10 +159,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
-                .thenApply(r -> {
-                    initWithPlan(plan);
-                    return null;
-                });
+                   .thenApply(r -> {
+                       initWithPlan(plan);
+                       return null;
+                   });
     }
 
     private void initWithPlan(@Nonnull ExecutionPlan plan) {
@@ -257,7 +257,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
-                              + " encountered an exception in Processor.close(), ignoring it", e);
+                        + " encountered an exception in Processor.close(), ignoring it", e);
             }
         }
 
@@ -271,7 +271,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()
-                                  + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                            + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
                 }
             }
         });

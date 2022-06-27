@@ -541,7 +541,7 @@ public final class TestProcessors {
         public boolean saveToSnapshot() {
             if (traverser == null) {
                 traverser = traverseStream(IntStream.range(0, ITEMS_TO_SAVE)
-                        .mapToObj(i -> entry(broadcastKey(i), i)))
+                                                    .mapToObj(i -> entry(broadcastKey(i), i)))
                         .onFirstNull(() -> traverser = null);
             }
             return emitFromTraverserToSnapshot(traverser);

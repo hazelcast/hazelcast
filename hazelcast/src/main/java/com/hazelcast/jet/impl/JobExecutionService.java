@@ -422,7 +422,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
             assert !masterAddress.equals(thisAddress) : String.format(
                     "Local node: %s is master but InitOperation has coordinator member list version: %s larger than "
-                    + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
+                            + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
                     localMemberListVersion);
 
             nodeEngine.getOperationService().send(new TriggerMemberListPublishOp(), masterAddress);
@@ -548,30 +548,30 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
-                .thenApply(r -> {
-                    RawJobMetrics terminalMetrics;
-                    if (collectMetrics) {
-                        JobMetricsCollector metricsRenderer =
-                                new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
-                        nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                        terminalMetrics = metricsRenderer.getMetrics();
-                    } else {
-                        terminalMetrics = null;
-                    }
-                    return terminalMetrics;
-                })
-                .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
-                    completeExecution(execCtx, peel(e));
+                      .thenApply(r -> {
+                          RawJobMetrics terminalMetrics;
+                          if (collectMetrics) {
+                              JobMetricsCollector metricsRenderer =
+                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
+                              nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                              terminalMetrics = metricsRenderer.getMetrics();
+                          } else {
+                              terminalMetrics = null;
+                          }
+                          return terminalMetrics;
+                      })
+                      .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
+                          completeExecution(execCtx, peel(e));
 
-                    if (e instanceof CancellationException) {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
-                    } else if (e != null) {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
-                                + " completed with failure", e);
-                    } else {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
-                    }
-                }));
+                          if (e instanceof CancellationException) {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                          } else if (e != null) {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
+                                      + " completed with failure", e);
+                          } else {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                          }
+                      }));
     }
 
     @Override
@@ -579,7 +579,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             descriptor.withTag(MetricTags.MODULE, "jet");
             executionContexts.forEach((id, ctx) ->
-                ctx.provideDynamicMetrics(descriptor.copy(), context));
+                    ctx.provideDynamicMetrics(descriptor.copy(), context));
         } catch (Throwable t) {
             logger.warning("Dynamic metric collection failed", t);
             throw t;
@@ -620,8 +620,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
                 Operation op = new CheckLightJobsOperation(executionIds);
                 InvocationFuture<long[]> future = nodeEngine.getOperationService()
-                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
-                        .invoke();
+                                                            .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
+                                                            .invoke();
                 future.whenComplete((r, t) -> {
                     if (t instanceof TargetNotMemberException) {
                         // if the target isn't a member, then all executions are unknown
