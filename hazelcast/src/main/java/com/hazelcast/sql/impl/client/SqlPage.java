@@ -314,6 +314,6 @@ public final class SqlPage {
     }
 
     public static boolean convertToData(SqlColumnType type) {
-        return type == SqlColumnType.OBJECT;
+        return type == SqlColumnType.OBJECT || type == SqlColumnType.ROW;
     }
 }

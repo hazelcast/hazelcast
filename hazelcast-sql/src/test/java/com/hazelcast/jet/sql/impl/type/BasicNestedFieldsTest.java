@@ -22,7 +22,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -404,9 +403,8 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
                 rows(2, "office1", "office2"));
     }
 
-    // TODO: client codec
+    // TODO: cross-platform conversion
     @Test
-    @Ignore
     public void test_basicToRow() {
         initDefault();
 

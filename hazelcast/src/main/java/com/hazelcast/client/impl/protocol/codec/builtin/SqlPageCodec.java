@@ -142,6 +142,7 @@ public final class SqlPageCodec {
 
                     break;
 
+                case ROW:
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 
@@ -264,6 +265,7 @@ public final class SqlPageCodec {
 
                     break;
 
+                case ROW:
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 
