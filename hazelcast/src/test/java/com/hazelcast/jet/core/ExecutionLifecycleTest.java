@@ -733,6 +733,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         for (Future<Job> f : submitFutures) {
             f.get().join();
         }
+        MockPMS.verifyCloseCount();
     }
 
     @Test(timeout = 2000L)
@@ -768,6 +769,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             f.get();
         }
         assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(numJobs + 2), 4);
+        MockPMS.verifyCloseCount();
     }
 
     @Test
@@ -799,6 +801,41 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         for (Future<Job> f : submitFutures) {
             f.get().join();
         }
+    }
+
+    @Test(timeout = 20_000L)
+    public void when_psCloseBlocks_then_otherJobsNotBlocked() throws ExecutionException, InterruptedException {
+        // Given
+        DAG dagBlocking = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).closeBlocks())));
+        DAG dagNormal = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
+
+        List<Future<?>> submitFutures = new ArrayList<>();
+
+        // When
+        // important: let it me more than JobCoordinationService.COORDINATOR_THREADS_POOL_SIZE
+        int numJobs = 5;
+        for (int i = 0; i < numJobs; i++) {
+            String name = "pmsCloseBlocking_" + i + "-" + useLightJob;
+            submitFutures.add(newJob(name, dagBlocking).getFuture());
+        }
+
+        // Then
+        instance().getJet().newJob(dagNormal).join();
+        instance().getJet().newLightJob(dagNormal).join();
+//         generic API operation - generic API threads should not be starved
+        instance().getMap("m").forEach(s -> { });
+
+        assertTrueEventually(() -> assertThat(MockPS.closeCount.get()).isEqualTo(2 * MEMBER_COUNT), 4);
+        int blockCount = submitFutures.size() * MEMBER_COUNT;
+        for (int i = 0; i < blockCount; i++) {
+            MockPS.unblock();
+        }
+        for (Future<?> f : submitFutures) {
+            f.get();
+        }
+        assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(numJobs + 2), 4);
     }
 
     @Test

@@ -65,6 +65,13 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     Collection<? extends Processor> get(int count);
 
     /**
+     * If true, then {@link #close(Throwable)} should not block by e.g. doing IO.
+     */
+    default boolean closeIsCooperative() {
+        return true;
+    }
+
+    /**
      * Called after the execution has finished on this member - successfully or
      * not. The execution might still be running on other members. This method
      * will be called after {@link Processor#close} has been called on all

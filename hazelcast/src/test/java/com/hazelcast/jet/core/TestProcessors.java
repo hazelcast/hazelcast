@@ -47,7 +47,9 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -235,8 +237,6 @@ public final class TestProcessors {
             }
             closeCount.incrementAndGet();
 
-            assertEquals("all PS that have been init should have been closed at this point",
-                    MockPS.initCount.get(), MockPS.closeCount.get());
             assertTrue("Close called more times than init was called. Init count: "
                     + initCount.get() + " close count: " + closeCount, initCount.get() >= closeCount.get());
             assertTrue("Close called " + closeCount.get() + " times, but init called "
@@ -249,6 +249,11 @@ public final class TestProcessors {
             if (closeError != null) {
                 throw sneakyThrow(closeError);
             }
+        }
+
+        static void verifyCloseCount() {
+            assertEquals("all PS that have been init should have been closed at this point",
+                    MockPS.initCount.get(), MockPS.closeCount.get());
         }
     }
 
@@ -333,9 +338,16 @@ public final class TestProcessors {
         }
 
         @Override
+        public boolean closeIsCooperative() {
+            return !closeBlocks;
+        }
+
+        @Override
         public void close(Throwable error) throws InterruptedException {
             if (closeBlocks) {
                 blockingSemaphore.acquire();
+                String withoutPrefix = substringAfter(JOB_OFFLOADABLE_EXECUTOR, "hz:");
+                assertTrue("executed not on offload thread", Thread.currentThread().getName().contains(withoutPrefix));
             }
             if (error != null) {
                 receivedCloseErrors.add(error);

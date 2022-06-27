@@ -51,7 +51,7 @@ import static java.util.stream.Collectors.joining;
 public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @Rule
-    public Timeout globalTimeout = new Timeout(2, TimeUnit.SECONDS);
+    public Timeout globalTimeout = new Timeout(10, TimeUnit.SECONDS);
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 

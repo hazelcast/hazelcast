@@ -77,7 +77,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -507,23 +507,25 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Completes and cleans up execution of the given job
      */
-    public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
+    public CompletableFuture<Void> completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         ExecutionContext removed = executionContexts.remove(executionContext.executionId());
         if (removed != null) {
             if (error != null) {
                 failedJobs.put(executionContext.executionId(), System.nanoTime() + FAILED_EXECUTION_EXPIRY_NS);
             }
             JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
-            try {
-                doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
-            } finally {
-                if (!executionContext.isLightJob()) {
-                    jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
-                }
-                executionCompleted.inc();
-                executionContextJobIds.remove(executionContext.jobId());
-                logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
-            }
+
+            return doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error))
+                    .thenAccept(ignored -> {
+                        if (!executionContext.isLightJob()) {
+                            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+                        }
+                        executionCompleted.inc();
+                        executionContextJobIds.remove(executionContext.jobId());
+                        logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
+                    });
+        } else {
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -549,7 +551,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
-                      .thenApply(r -> {
+                      .handle((r, e) -> {
                           RawJobMetrics terminalMetrics;
                           if (collectMetrics) {
                               JobMetricsCollector metricsRenderer =
@@ -559,11 +561,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           } else {
                               terminalMetrics = null;
                           }
-                          return terminalMetrics;
-                      })
-                      .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
-                          completeExecution(execCtx, peel(e));
-
                           if (e instanceof CancellationException) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
                           } else if (e != null) {
@@ -572,7 +569,15 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           } else {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                           }
-                      }));
+                          return completeExecution(execCtx, peel(e))
+                                  .thenApply(s -> {
+                                      if (e != null) {
+                                          throw rethrow(e);
+                                      }
+                                      return terminalMetrics;
+                                  });
+                      })
+                      .thenCompose(stage -> stage);
     }
 
     @Override

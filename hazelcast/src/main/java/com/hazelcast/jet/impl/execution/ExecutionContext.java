@@ -28,7 +28,9 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.TerminationMode;
@@ -46,6 +48,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -64,8 +68,10 @@ import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TI
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Data pertaining to single job execution on all cluster members. There's one
@@ -245,12 +251,12 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Complete local execution. If local execution was started, it should be
      * called after execution has completed.
      */
-    public void completeExecution(Throwable error) {
+    public CompletableFuture<Void> completeExecution(Throwable error) {
         assert executionFuture == null || executionFuture.isDone()
                 : "If execution was begun, then completeExecution() should not be called before execution is done.";
 
         if (!executionCompleted.compareAndSet(false, true)) {
-            return;
+            return completedFuture(null);
         }
         for (Tasklet tasklet : tasklets) {
             try {
@@ -263,15 +269,29 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         JobClassLoaderService jobClassloaderService = jetServiceBackend.getJobClassLoaderService();
         ClassLoader classLoader = jobClassloaderService.getClassLoader(jobId);
+        List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
+
+        ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
         doWithClassLoader(classLoader, () -> {
             for (VertexDef vertex : vertices) {
-                try {
-                    ClassLoader processorCl = isLightJob ?
-                            null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
-                    doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
-                } catch (Throwable e) {
-                    logger.severe(jobNameAndExecutionId()
-                            + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                ProcessorSupplier processorSupplier = vertex.processorSupplier();
+                RunnableEx closeAction = () -> {
+                    try {
+                        ClassLoader processorCl = isLightJob ?
+                                null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
+                        doWithClassLoader(processorCl, () -> {
+                            processorSupplier.close(error);
+                        });
+                    } catch (Throwable e) {
+                        logger.severe(jobNameAndExecutionId()
+                                + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                    }
+                };
+                if (processorSupplier.closeIsCooperative()) {
+                    closeAction.run();
+                    futures.add(completedFuture(null));
+                } else {
+                    futures.add(CompletableFuture.runAsync(closeAction, offloadExecutor));
                 }
             }
         });
@@ -287,6 +307,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         if (serializationService != null) {
             serializationService.dispose();
         }
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -325,7 +346,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
                 LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 1 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
-                return CompletableFuture.completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
+                return completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
             }
             return snapshotContext.startNewSnapshotPhase1(snapshotId, mapName, flags);
         }
@@ -343,7 +364,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
                 LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 2 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
-                return CompletableFuture.completedFuture(null);
+                return completedFuture(null);
             }
             return snapshotContext.startNewSnapshotPhase2(snapshotId, success);
         }
