@@ -157,8 +157,8 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
             return false;
         }
         PartitionPredicateImpl<?, ?> that = (PartitionPredicateImpl<?, ?>) o;
-        return Objects.equals(partitionKeys, that.partitionKeys) &&
-               Objects.equals(target, that.target);
+        return Objects.equals(partitionKeys, that.partitionKeys)
+               && Objects.equals(target, that.target);
     }
 
     @Override
@@ -172,6 +172,8 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
         for (Object key : partitionKeys) {
             return key;
         }
-        throw new RuntimeException("Unreachable branch. PartitionPredicateImpl constructor should check and throw if partitionKeys is empty");
+        throw new RuntimeException(
+            "Unreachable branch. PartitionPredicateImpl constructor should check and throw if partitionKeys is empty"
+        );
     }
 }
