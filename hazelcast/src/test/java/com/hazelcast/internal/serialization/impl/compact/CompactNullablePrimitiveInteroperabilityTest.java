@@ -228,17 +228,18 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(a1);
         // Reading compact with serializer case
         assertThatThrownBy(() -> serializationService.toObject(data))
-                .hasRootCauseExactlyInstanceOf(HazelcastSerializationException.class)
+                .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageContaining("Use readNullable");
         // Reading array field with null value
         A a2 = new A(1, new Integer[]{1, null, 3});
         Data data2 = serializationService.toData(a2);
         // Reading compact with serializer case
         assertThatThrownBy(() -> serializationService.toObject(data2))
-                .hasRootCauseExactlyInstanceOf(HazelcastSerializationException.class)
+                .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageContaining("Use readArrayOfNullable");
     }
 
+    @Test
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixGenericRecord() {
         SerializationService serializationService = createSerializationService();
         GenericRecordBuilder builder = compact("genericRecord");
@@ -249,7 +250,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecord obj = serializationService.toObject(data);
         // Read null value with non-nullable reader method
         assertThatThrownBy(() -> obj.getInt32("aField"))
-                .hasRootCauseExactlyInstanceOf(HazelcastSerializationException.class)
+                .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageContaining("Use getNullable");
 
         GenericRecordBuilder builder2 = compact("genericRecord2");
@@ -260,7 +261,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecord obj2 = serializationService.toObject(data2);
         // Read an array with null value with non-nullable array reader method
         assertThatThrownBy(() -> obj2.getArrayOfInt32("aField"))
-                .hasRootCauseExactlyInstanceOf(HazelcastSerializationException.class)
+                .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageContaining("Use getArrayOfNullable");
     }
 
