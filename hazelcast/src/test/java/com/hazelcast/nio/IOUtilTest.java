@@ -56,6 +56,7 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.IOUtil.compress;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.copyFile;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.decompress;
 import static com.hazelcast.internal.nio.IOUtil.delete;
@@ -721,6 +722,45 @@ public class IOUtilTest extends HazelcastTestSupport {
         buffer.put((byte) 0xFF);
         compactOrClear(buffer);
         assertEquals("Buffer position invalid", 0, buffer.position());
+    }
+
+    @Test
+    public void testCopyFromHeapBuffer_whenDestinationIsHeapBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyFromHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyFromHeapBuffer_whenDestinationIsDirectBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.allocateDirect(SIZE);
+
+        assertEquals(SIZE, copyFromHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyFromHeapBuffer_whenSourceIsNull() {
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(0, copyFromHeapBuffer(null, dst));
+    }
+
+    @Test
+    public void testCopyToHeapBuffer_whenSourceIsHeapBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyToHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyToHeapBuffer_whenSourceIsDirectBuffer() {
+        ByteBuffer src = ByteBuffer.allocateDirect(SIZE);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyToHeapBuffer(src, dst));
     }
 
     @Test
