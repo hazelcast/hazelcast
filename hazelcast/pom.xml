@@ -619,7 +619,7 @@
         <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
-            <version>1.7.22</version>
+            <version>9.3.6.0</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
