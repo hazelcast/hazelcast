@@ -321,24 +321,51 @@ public final class IOUtil {
         };
     }
 
+    /**
+     * Copies the contents of the {@code src} backed by an on-heap buffer to
+     * {@code dst}. The {@code dst} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
+    public static int copyFromHeapBuffer(ByteBuffer src, ByteBuffer dst) {
+        if (src == null) {
+            return 0;
+        }
+
+        int n = Math.min(src.remaining(), dst.remaining());
+        int srcPosition = src.position();
+        dst.put(src.array(), srcPosition, n);
+        src.position(srcPosition + n);
+        return n;
+    }
+
+    /**
+     * Copies the contents of the {@code src} to {@code dst} backed by an
+     * on-heap buffer. The {@code src} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
+
         int n = Math.min(src.remaining(), dst.remaining());
-        if (n > 0) {
-            if (n < 16) {
-                for (int i = 0; i < n; i++) {
-                    dst.put(src.get());
-                }
-            } else {
-                int srcPosition = src.position();
-                int destPosition = dst.position();
-                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
-                src.position(srcPosition + n);
-                dst.position(destPosition + n);
-            }
-        }
+        int dstPosition = dst.position();
+        src.get(dst.array(), dstPosition, n);
+        dst.position(dstPosition + n);
         return n;
     }
 
