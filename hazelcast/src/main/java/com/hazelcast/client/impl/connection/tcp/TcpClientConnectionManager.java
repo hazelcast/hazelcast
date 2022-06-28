@@ -1201,9 +1201,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             for (Member member : client.getClientClusterService().getMemberList()) {
                 if (clientState == ClientState.SWITCHING_CLUSTER) {
-                    // when switching cluster we only want to open a new connection via `doConnectToCandidateCluster`
+                    // when switching cluster we only want to open a new
+                    // connection via `doConnectToCandidateCluster`
                     return;
                 }
+
+                if (activeConnections.isEmpty()) {
+                    // best-effort check to prevent this task from trying to
+                    // connect to all cluster members when the client is not
+                    // connected to any.
+                    return;
+                }
+
                 UUID uuid = member.getUuid();
                 if (activeConnections.get(uuid) != null) {
                     continue;
