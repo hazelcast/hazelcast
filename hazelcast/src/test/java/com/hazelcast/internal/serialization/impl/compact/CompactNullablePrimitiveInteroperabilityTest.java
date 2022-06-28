@@ -264,10 +264,6 @@ public class CompactNullablePrimitiveInteroperabilityTest {
                 .hasMessageContaining("Use getArrayOfNullable");
     }
 
-    private <T extends Throwable> void assertThatErrorMessageIncludes(T e, String expected) {
-        assertTrue(e.getMessage().contains(expected));
-    }
-
     private void assertReadNullAsPrimitiveThrowsException(GenericRecord record) {
         assertThrows(HazelcastSerializationException.class, () -> record.getBoolean("boolean"));
         assertThrows(HazelcastSerializationException.class, () -> record.getInt8("byte"));
