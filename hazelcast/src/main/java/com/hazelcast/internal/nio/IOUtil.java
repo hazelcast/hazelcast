@@ -385,7 +385,7 @@ public final class IOUtil {
         int n = Math.min(src.remaining(), dst.remaining());
         int srcPosition = src.position();
         dst.put(src.array(), srcPosition, n);
-        upcast(src).position(srcPosition + n);
+        src.position(srcPosition + n);
         return n;
     }
 
