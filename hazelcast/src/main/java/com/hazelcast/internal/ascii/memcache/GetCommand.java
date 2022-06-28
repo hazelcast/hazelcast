@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET;
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 
 public class GetCommand extends AbstractTextCommand {
 
@@ -58,9 +58,9 @@ public class GetCommand extends AbstractTextCommand {
     @Override
     public boolean writeTo(ByteBuffer dst) {
         if (value != null) {
-            copyToHeapBuffer(value, dst);
+            copyFromHeapBuffer(value, dst);
         }
-        copyToHeapBuffer(endMarker, dst);
+        copyFromHeapBuffer(endMarker, dst);
         return !((value != null && value.hasRemaining())
                 || endMarker.hasRemaining());
     }
