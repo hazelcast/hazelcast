@@ -367,7 +367,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
 
         for (int k = 0; k < engine.eventloopCount(); k++) {
             Eventloop eventloop = engine.eventloop(k);
-            eventloop.execute(() -> task.run());
+            eventloop.execute(task);
         }
     }
 
