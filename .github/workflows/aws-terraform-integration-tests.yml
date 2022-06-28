@@ -8,6 +8,9 @@ on:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - '.github/terraform/aws/**'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     defaults:

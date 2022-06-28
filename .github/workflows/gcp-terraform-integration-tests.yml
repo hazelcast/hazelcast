@@ -8,6 +8,9 @@ on:
       - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
       - '.github/terraform/gcp/**'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     defaults:

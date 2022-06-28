@@ -9,6 +9,9 @@ on:
       - '.github/terraform/azure/**'
 
 
+permissions:
+  contents: read
+
 jobs:
   build:
     defaults:
