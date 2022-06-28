@@ -65,6 +65,10 @@ import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationLock.RequestOwner.ON_ENDPOINT_LEFT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationLock.RequestOwner.ON_MEMBER_LEFT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationLock.afterInvocationRegistryLoop;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationLock.canLoopInvocationRegistry;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,6 +88,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
+    private static final long INVOCATION_RESCHEDULE_DELAY_MILLIS = 500;
 
     private final NodeEngineImpl nodeEngine;
     private final InternalSerializationService serializationService;
@@ -366,6 +371,18 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
         @Override
         public void run0() {
+            if (canLoopInvocationRegistry(ON_ENDPOINT_LEFT)) {
+                try {
+                    runInternal();
+                } finally {
+                    afterInvocationRegistryLoop(ON_ENDPOINT_LEFT);
+                }
+            } else {
+                schedule(this, INVOCATION_RESCHEDULE_DELAY_MILLIS);
+            }
+        }
+
+        private void runInternal() {
             heartbeatPerMember.remove(endpoint);
 
             for (Invocation invocation : invocationRegistry) {
@@ -387,6 +404,18 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
         @Override
         public void run0() {
+            if (canLoopInvocationRegistry(ON_MEMBER_LEFT)) {
+                try {
+                    runInternal();
+                } finally {
+                    afterInvocationRegistryLoop(ON_MEMBER_LEFT);
+                }
+            } else {
+                schedule(this, INVOCATION_RESCHEDULE_DELAY_MILLIS);
+            }
+        }
+
+        private void runInternal() {
             heartbeatPerMember.remove(leftMember.getAddress());
 
             for (Invocation invocation : invocationRegistry) {

@@ -158,14 +158,14 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      * Target address can belong to an existing member or to a non-member in some cases (join, wan-replication etc.).
      * If it belongs to an existing member, then {@link #targetMember} field will be set too.
      */
-    private Address targetAddress;
+    private volatile Address targetAddress;
     /**
      * Shows the current target member.
      * <p>
      * If this Invocation is targeting an existing member, then this field will be set.
      * Otherwise it can be null in some cases (join, wan-replication etc.).
      */
-    private Member targetMember;
+    private volatile Member targetMember;
     /**
      * The connection endpoint which operation is sent through to the {@link #targetAddress}.
      * It can be null if invocation is local or there's no established connection to the target yet.
@@ -177,7 +177,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      * Member list version read before operation is invoked on target. This version is used while notifying
      * invocation during a member left event.
      */
-    private int memberListVersion;
+    private volatile int memberListVersion;
 
     private final ServerConnectionManager connectionManager;
 
@@ -196,6 +196,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      * Refer to {@link InvocationBuilder#setDoneCallback(Runnable)} for an explanation
      */
     private final Runnable taskDoneCallback;
+
+    private final InvocationLock invocationLock = new InvocationLock();
 
 
     Invocation(Context context,
@@ -496,7 +498,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             // the consequence would be that the backups are never be made and the effects of the map.put() will never be visible,
             // even though the future returned a value;
             // so if we would complete the future, a response is sent even though its changes never made it into the system
-            resetAndReInvoke();
+            executeOrScheduleRetry(true);
             return false;
         }
         return true;
@@ -538,7 +540,19 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
-            doInvoke(isAsync);
+            if (invocationLock.canEnterDoInvoke()) {
+                try {
+                    doInvoke(isAsync);
+                } finally {
+                    invocationLock.exitDoInvoke();
+                }
+            } else {
+                try {
+                    context.invocationMonitor.schedule(new InvocationRetryTask(false, false), tryPauseMillis);
+                } catch (RejectedExecutionException e) {
+                    completeWhenRetryRejected(e);
+                }
+            }
         } catch (Exception e) {
             handleInvocationException(e);
         }
@@ -701,19 +715,23 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (future.interrupted) {
             complete(INTERRUPTED);
         } else {
-            try {
-                InvocationRetryTask retryTask = new InvocationRetryTask();
-                if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-                    // fast retry for the first few invocations
-                    context.invocationMonitor.execute(retryTask);
-                } else {
-                    // progressive retry delay
-                    long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
-                    context.invocationMonitor.schedule(retryTask, delayMillis);
-                }
-            } catch (RejectedExecutionException e) {
-                completeWhenRetryRejected(e);
+            executeOrScheduleRetry(false);
+        }
+    }
+
+    private void executeOrScheduleRetry(boolean reset) {
+        try {
+            InvocationRetryTask retryTask = new InvocationRetryTask(reset, true);
+            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                // fast retry for the first few invocations
+                context.invocationMonitor.execute(retryTask);
+            } else {
+                // progressive retry delay
+                long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
+                context.invocationMonitor.schedule(retryTask, delayMillis);
             }
+        } catch (RejectedExecutionException e) {
+            completeWhenRetryRejected(e);
         }
     }
 
@@ -722,20 +740,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             logger.finest(e);
         }
         completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
-    }
-
-    private void resetAndReInvoke() {
-        if (!context.invocationRegistry.deregister(this)) {
-            // another thread already did something else with this invocation
-            return;
-        }
-        invokeCount = 0;
-        pendingResponse = VOID;
-        pendingResponseReceivedMillis = -1;
-        backupsAcksExpected = 0;
-        backupsAcksReceived = 0;
-        lastHeartbeatMillis = 0;
-        doInvoke(false);
     }
 
     Address getTargetAddress() {
@@ -770,16 +774,42 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 + '}';
     }
 
-    private class InvocationRetryTask implements Runnable {
+    private final class InvocationRetryTask implements Runnable {
+
+        private final boolean reset;
+        private final boolean registeredInvocation;
+
+        private InvocationRetryTask(boolean reset, boolean registeredInvocation) {
+            this.reset = reset;
+            this.registeredInvocation = registeredInvocation;
+        }
+
+        private InvocationRetryTask(InvocationRetryTask task) {
+            this(task.reset, task.registeredInvocation);
+        }
 
         @Override
         public void run() {
+            if (invocationLock.canEnterDoInvoke()) {
+                try {
+                    run0();
+                } finally {
+                    invocationLock.exitDoInvoke();
+                }
+            } else {
+                reschedule();
+            }
+        }
+
+        public void run0() {
             // When a cluster is being merged into another one then local node is marked as not-joined and invocations are
             // notified with MemberLeftException.
             // We do not want to retry them before the node is joined again because partition table is stale at this point.
             if (!context.clusterService.isJoined() && !isJoinOperation(op) && !(op instanceof AllowedDuringPassiveState)) {
                 if (!engineActive()) {
-                    context.invocationRegistry.deregister(Invocation.this);
+                    if (registeredInvocation) {
+                        context.invocationRegistry.deregister(Invocation.this);
+                    }
                     return;
                 }
 
@@ -787,24 +817,35 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     logger.finest("Node is not joined. Re-scheduling " + this
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
-                try {
-                    context.invocationMonitor.schedule(new InvocationRetryTask(), tryPauseMillis);
-                } catch (RejectedExecutionException e) {
-                    completeWhenRetryRejected(e);
-                }
+                reschedule();
                 return;
             }
 
-            if (!context.invocationRegistry.deregister(Invocation.this)) {
+            if (registeredInvocation && !context.invocationRegistry.deregister(Invocation.this)) {
                 return;
             }
 
             // When retrying, we must reset lastHeartbeat, otherwise InvocationMonitor will see the old value
             // and falsely conclude that nothing has been done about this operation for a long time.
             lastHeartbeatMillis = 0;
+
+            if (reset) {
+                invokeCount = 0;
+                pendingResponse = VOID;
+                pendingResponseReceivedMillis = -1;
+                backupsAcksExpected = 0;
+                backupsAcksReceived = 0;
+            }
             doInvoke(true);
         }
 
+        private void reschedule() {
+            try {
+                context.invocationMonitor.schedule(new InvocationRetryTask(this), tryPauseMillis);
+            } catch (RejectedExecutionException e) {
+                completeWhenRetryRejected(e);
+            }
+        }
     }
 
     enum HeartbeatTimeout {
