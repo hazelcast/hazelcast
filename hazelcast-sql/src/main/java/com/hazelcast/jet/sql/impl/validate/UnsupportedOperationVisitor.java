@@ -163,6 +163,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // Ordering
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
 
+        SUPPORTED_KINDS.add(SqlKind.JSON_ARRAYAGG);
+
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
 
@@ -224,6 +226,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_VALUE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAY);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_ABSENT_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_NULL_ON_NULL);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);

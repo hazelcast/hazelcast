@@ -22,13 +22,8 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
-import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
-import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
-import com.hazelcast.jet.sql.impl.aggregate.MinSqlAggregation;
-import com.hazelcast.jet.sql.impl.aggregate.SqlAggregation;
-import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
-import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.*;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -109,6 +104,12 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(new AggregateAvgSupplier(distinct, avgOperandType));
                     valueProviders.add(new RowGetFn(avgIndex));
+                    break;
+                case JSON_ARRAYAGG:
+                    int arrayAggIndex = aggregateCallArguments.get(0);
+                    QueryDataType arrAggOperandType = operandTypes.get(arrayAggIndex);
+                    aggregationProviders.add(new AggregateArrayAggSupplier(arrAggOperandType));
+                    valueProviders.add(new RowGetFn(arrayAggIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -201,6 +202,43 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         @Override
         public int getClassId() {
             return JetSqlSerializerHook.AGGREGATE_SUM_SUPPLIER;
+        }
+    }
+
+    public static class AggregateArrayAggSupplier implements IdentifiedDataSerializable,
+            SupplierEx<SqlAggregation> {
+        private QueryDataType sumOperandType;
+
+        public AggregateArrayAggSupplier() {
+        }
+
+        public AggregateArrayAggSupplier(QueryDataType sumOperandType) {
+            this.sumOperandType = sumOperandType;
+        }
+
+        @Override
+        public SqlAggregation getEx() throws Exception {
+            return JsonArrayAggAggregation.create();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(sumOperandType);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            sumOperandType = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.AGGREGATE_JSON_ARRAY_AGG_SUPPLIER;
         }
     }
 
