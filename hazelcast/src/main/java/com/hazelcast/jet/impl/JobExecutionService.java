@@ -319,17 +319,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
         ExecutionContext execCtx = addExecutionContext(
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
-        jobClassloaderService.prepareProcessorClassLoaders(jobId);
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
         return execCtx.initialize(coordinator, addresses, plan)
                 .thenAccept(r -> {
                     // initial log entry with all of jobId, jobName, executionId
                     logger.info("Execution plan for jobId=" + idToString(jobId)
                             + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
                             + ", executionId=" + idToString(executionId) + " initialized");
-                })
-                .whenComplete((r, e) -> jobClassloaderService.clearProcessorClassLoaders());
+                });
     }
 
     private void addExecutionContextJobId(long jobId, long executionId, Address coordinator) {
