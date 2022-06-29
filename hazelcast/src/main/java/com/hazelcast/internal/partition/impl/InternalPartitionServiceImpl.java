@@ -396,6 +396,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     // no partitions were assigned to it (member left with graceful shutdown)
                     if (!partitionStateManager.isAbsentInPartitionTable(member)) {
                         partitionStateManager.storeSnapshot(member.getUuid());
+                    } else {
+                        // member is removed due to graceful shutdown
+                        // cleanup any leftover snapshots
+                        partitionStateManager.removeSnapshot(member.getUuid());
                     }
                 }
             }
