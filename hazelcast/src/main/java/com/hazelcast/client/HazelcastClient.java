@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientConfig;
@@ -67,7 +68,7 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 public final class HazelcastClient {
 
     private static final AtomicInteger CLIENT_ID_GEN = new AtomicInteger();
-    private static final ConcurrentHashMap<String, InstanceFuture<HazelcastClientProxy>> CLIENTS = new ConcurrentHashMap<>(5);
+    private static final ConcurrentMap<String, InstanceFuture<HazelcastClientProxy>> CLIENTS = new ConcurrentHashMap<>(5);
 
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
