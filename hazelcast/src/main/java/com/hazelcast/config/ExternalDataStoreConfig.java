@@ -68,7 +68,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
     }
 
     /**
-     * true if an instance of the external data store will be reused. false when on each usage the data store instance
+     * {@code true} if an instance of the external data store will be reused. {@code false} when on each usage the data store instance
      * should be created
      *
      * @return if the data store instance should be reused
@@ -78,7 +78,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
     }
 
     /**
-     * true if an instance of the external data store will be reused. false when on each usage the data store instance
+     * {@code true} if an instance of the external data store will be reused. {@code false} when on each usage the data store instance
      * should be created
      *
      * @param shared if the data store instance should be reused
