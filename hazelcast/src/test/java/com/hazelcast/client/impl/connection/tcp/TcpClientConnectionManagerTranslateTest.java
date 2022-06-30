@@ -76,7 +76,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         // given
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(new TestAddressProvider(true), config);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(config, new TestAddressProvider(true));
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
@@ -91,7 +91,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
     public void testTranslateIsNotUsedOnGettingExistingConnection() {
         // given
         TestAddressProvider provider = new TestAddressProvider(false);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(new ClientConfig(), provider);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
@@ -114,7 +114,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
 
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, null);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
@@ -138,7 +138,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "false");
 
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, null);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
@@ -162,7 +162,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
 
         TestAddressProvider provider = new TestAddressProvider(false);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, provider);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
