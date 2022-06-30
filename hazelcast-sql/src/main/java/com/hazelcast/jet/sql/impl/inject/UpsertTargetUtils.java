@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.type.converter.ToConverter;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -24,7 +25,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -64,6 +64,7 @@ public final class UpsertTargetUtils {
                     : rowValue.getValues().get(i);
             Method setter = ReflectionUtils.findPropertySetter(targetClass, typeField.getName());
 
+            ToConverter toConverter = ToConverters.getToConverter(typeField.getDataType());
             if (setter != null) {
                 if (fieldValue == null && setter.getParameterTypes()[0].isPrimitive()) {
                     throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + setter);
@@ -72,9 +73,7 @@ public final class UpsertTargetUtils {
                     if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                         setter.invoke(result, fieldValue);
                     } else {
-                        setter.invoke(result, ToConverters
-                                .getToConverter(QueryDataTypeUtils.resolveTypeForClass(setter.getParameterTypes()[0]))
-                                .convert(fieldValue));
+                        setter.invoke(result, toConverter.convert(fieldValue));
                     }
                     continue;
                 } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
@@ -94,9 +93,7 @@ public final class UpsertTargetUtils {
                 if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                     field.set(result, fieldValue);
                 } else {
-                    field.set(result, ToConverters
-                            .getToConverter(QueryDataTypeUtils.resolveTypeForClass(field.getClass()))
-                            .convert(fieldValue));
+                    field.set(result, toConverter.convert(fieldValue));
                 }
             } catch (IllegalAccessException e) {
                 throw QueryException.error("Can not set value for field " + typeField.getName(), e);
