@@ -4387,8 +4387,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
         assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperties().getProperty("jdbc.url")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperties().getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(mysqlDataStoreConfig.getProperty("jdbc.url")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
         assertThat(externalDataStoreConfigs).containsKey("other-database");
         ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");

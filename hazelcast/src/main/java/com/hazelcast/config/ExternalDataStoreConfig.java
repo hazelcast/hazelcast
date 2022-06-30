@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -95,6 +96,17 @@ public class ExternalDataStoreConfig implements NamedConfig {
      */
     public Properties getProperties() {
         return properties;
+    }
+
+    /**
+     * Returns single the property
+     *
+     * @param key the property key
+     * @return property value or null if the given key doesn't exist
+     */
+    @Nullable
+    public String getProperty(String key) {
+        return properties.getProperty(key);
     }
 
     /**

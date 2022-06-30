@@ -30,7 +30,7 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
 
     @Override
     public DataSource createDataStore() {
-        String jdbcUrl = config.getProperties().getProperty("jdbc.url");
+        String jdbcUrl = config.getProperty("jdbc.url");
         if (config.isShared()) {
             throw new UnsupportedOperationException("shared flag is not yet supported");
         }
