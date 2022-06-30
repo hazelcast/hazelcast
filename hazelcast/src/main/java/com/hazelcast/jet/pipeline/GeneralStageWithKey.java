@@ -157,7 +157,7 @@ public interface GeneralStageWithKey<T, K> {
      * separate state object. The state object will be included in the state
      * snapshot, so it survives job restarts. For this reason it must be
      * serializable.
-     * If you want to return the state variable from {@code mapFn},
+     * If you want to return the state variable from {@code flatMapStateful},
      * then the return value must be a copy of state variable to avoid
      * situations in which the result of {@code mapFn} is modified
      * after being emitted or where the state is modified by downstream processors.
