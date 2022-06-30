@@ -68,6 +68,10 @@ public interface GeneralStageWithKey<T, K> {
      * can update the object's state. For each grouping key there's a separate
      * state object. The state object will be included in the state snapshot,
      * so it survives job restarts. For this reason it must be serializable.
+     * If you want to return the state variable from {@code mapFn},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
      * <p>
      * This sample takes a stream of pairs {@code (serverId, latency)}
      * representing the latencies of serving individual requests and outputs
@@ -153,6 +157,10 @@ public interface GeneralStageWithKey<T, K> {
      * separate state object. The state object will be included in the state
      * snapshot, so it survives job restarts. For this reason it must be
      * serializable.
+     * If you want to return the state variable from {@code mapFn},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
      * <p>
      * This sample groups a stream of strings by length and inserts punctuation
      * (a special string) after every 10th string in each group:
