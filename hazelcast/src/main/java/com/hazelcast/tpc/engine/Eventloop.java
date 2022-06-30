@@ -617,15 +617,16 @@ public abstract class Eventloop {
 
         NIO, EPOLL, IOURING;
 
-        public static Type fromString(String s) {
-            if (s.equals("io_uring") || s.equals("iouring")) {
+        public static Type fromString(String type) {
+            String typeLowerCase = type.toLowerCase();
+            if (typeLowerCase.equals("io_uring") || typeLowerCase.equals("iouring")) {
                 return IOURING;
-            } else if (s.equals("nio")) {
+            } else if (typeLowerCase.equals("nio")) {
                 return NIO;
-            } else if (s.equals("epoll")) {
+            } else if (typeLowerCase.equals("epoll")) {
                 return EPOLL;
             } else {
-                throw new RuntimeException("Unrecognized eventloop type [" + s + ']');
+                throw new RuntimeException("Unrecognized eventloop type [" + type + ']');
             }
         }
     }
