@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
@@ -72,7 +73,6 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -129,7 +129,6 @@ public class MasterJobContext {
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
 
-    private static final ExecutorService START_JOB_MERGE_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
@@ -203,16 +202,15 @@ public class MasterJobContext {
      */
 
     void tryStartJob(Supplier<Long> executionIdSupplier) {
+        ManagedExecutorService coordinationExecutor = mc.coordinationService().coordinationExecutor();
         mc.coordinationService().submitToCoordinatorThread(() -> {
               executionStartTime = System.currentTimeMillis();
               JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
               jobExecRec.markExecuted();
-              Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
-              if (dagAndClassloader == null) {
+              DAG dag = resolveDag(executionIdSupplier);
+              if (dag == null) {
                   return null;
               }
-              DAG dag = dagAndClassloader.f0();
-              assert dag != null;
               // must call this before rewriteDagWithSnapshotRestore()
               String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
               long snapshotId = jobExecRec.snapshotId();
@@ -240,18 +238,18 @@ public class MasterJobContext {
               JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
 
               ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                          .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
+                                          .getClassLoader(mc.jobId());
               return Util.doWithClassLoader(classLoader, () ->
                                  createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
                                          dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
                                          false, mc.jobRecord().getSubject()))
                          .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
-          }, START_JOB_MERGE_EXECUTOR)
+          }, coordinationExecutor)
           .thenAcceptAsync(tuple -> {
               if (tuple != null) {
                   initExecution(tuple.membersView, tuple.plans);
               }
-          }, START_JOB_MERGE_EXECUTOR)
+          }, coordinationExecutor)
           .whenComplete((r, e) -> {
               if (e != null) {
                   finalizeJob(peel(e));
@@ -282,7 +280,7 @@ public class MasterJobContext {
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
+    private DAG resolveDag(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (isCancelled()) {
@@ -342,7 +340,7 @@ public class MasterJobContext {
             mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
-            return tuple2(dag, classLoader);
+            return dag;
         } finally {
             mc.unlock();
         }

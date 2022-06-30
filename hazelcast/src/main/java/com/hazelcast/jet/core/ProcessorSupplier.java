@@ -68,7 +68,7 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
      * If true, then {@link #close(Throwable)} should not block by e.g. doing IO.
      */
     default boolean closeIsCooperative() {
-        return true;
+        return false;
     }
 
     /**

@@ -207,6 +207,7 @@ public final class TestProcessors {
 
         @Override
         public void init(@Nonnull Context context) throws InterruptedException {
+            System.out.println("MockPMS.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
@@ -232,6 +233,7 @@ public final class TestProcessors {
 
         @Override
         public void close(Throwable error) throws InterruptedException {
+            System.out.println("MockPMS.close called on " + Thread.currentThread().getName());
             if (closeBlocks) {
                 blockingSemaphore.acquire();
             }
@@ -240,7 +242,7 @@ public final class TestProcessors {
             assertTrue("Close called more times than init was called. Init count: "
                     + initCount.get() + " close count: " + closeCount, initCount.get() >= closeCount.get());
             assertTrue("Close called " + closeCount.get() + " times, but init called "
-                    + initCount.get() + " times!", closeCount.get() <= initCount.get());
+                    + initCount.get() + " times!", closeCount.get() >= initCount.get());
 
             assertTrue("PMS.close() already called once",
                     receivedCloseError.compareAndSet(null, error)
@@ -317,6 +319,7 @@ public final class TestProcessors {
 
         @Override
         public void init(@Nonnull Context context) throws InterruptedException {
+            System.out.println("MockPS.init called on " + Thread.currentThread().getName());
             initCalled = true;
             initCount.incrementAndGet();
 
@@ -344,6 +347,7 @@ public final class TestProcessors {
 
         @Override
         public void close(Throwable error) throws InterruptedException {
+            System.out.println("MockPS.close called on " + Thread.currentThread().getName());
             if (closeBlocks) {
                 blockingSemaphore.acquire();
                 String withoutPrefix = substringAfter(JOB_OFFLOADABLE_EXECUTOR, "hz:");
@@ -441,6 +445,7 @@ public final class TestProcessors {
 
         @Override
         protected void init(@Nonnull Context context) throws InterruptedException {
+            System.out.println("MockP.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
@@ -487,6 +492,7 @@ public final class TestProcessors {
 
         @Override
         public void close() {
+            System.out.println("MockP.close called on " + Thread.currentThread().getName());
             closeCount.incrementAndGet();
             if (closeError != null) {
                 throw sneakyThrow(closeError);

@@ -146,7 +146,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * If true, then {@link #close(Throwable)} should be cooperative, meaning it shouldn't block (e.g. by doing IO).
      */
     default boolean closeIsCooperative() {
-        return true;
+        return false;
     }
 
     /**
