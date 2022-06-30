@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains implementation handling external data stores.<br>
+ * <p>This package contains implementation of handling external data stores.<br>
  *
  * @since 5.2
  */
