@@ -6,8 +6,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.frame.Frame;
 
 import java.io.Closeable;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -166,7 +166,7 @@ public abstract class SyncSocket implements Closeable {
      * Connects synchronously to some address.
      *
      * @param address the address to connect to.
-     * @return a {@link CompletableFuture}
+     * @throws UncheckedIOException if the connection could not be established.
      */
     public abstract void connect(SocketAddress address);
 
