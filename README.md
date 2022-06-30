@@ -352,6 +352,8 @@ see used in the comments on your PR:
 * `run-cdc-postgres-tests` - run all tests in the
   `extensions/cdc-postgres` module
 * `run-s3-tests` - run all tests in the `extensions/s3` module
+* *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
+
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK
 8.
