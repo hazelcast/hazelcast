@@ -94,21 +94,21 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     @Test
     public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
-        testStatement(statement, this::shouldFailBeforeAnyDataIsFetched);
+        testStatement(statement, resubmissionMode == ClientSqlResubmissionMode.NEVER);
     }
 
     @Test
     public void when_failingUpdate() throws InterruptedException {
         SqlStatement statement = new SqlStatement("update " + COMMON_MAP_NAME + " set field = 1");
-        testStatement(statement, this::shouldFailModifyingQuery);
+        testStatement(statement, resubmissionMode != ClientSqlResubmissionMode.RETRY_ALL);
     }
 
-    private void testStatement(SqlStatement statement, Predicate<ClientSqlResubmissionMode> shouldFailFunction)
+    private void testStatement(SqlStatement statement, boolean shouldFail)
             throws InterruptedException {
         Thread failingThread = new Thread(cyclicFailure);
         failingThread.start();
         try {
-            if (shouldFailFunction.test(resubmissionMode)) {
+            if (shouldFail) {
                 assertThrows(HazelcastSqlException.class,
                         () -> executeInLoop(statement, result -> false));
                 done = true;
