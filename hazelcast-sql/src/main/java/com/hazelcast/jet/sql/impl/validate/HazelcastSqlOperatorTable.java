@@ -19,7 +19,14 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.pipeline.file.AvroFileFormat;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
 import com.hazelcast.jet.pipeline.file.ParquetFileFormat;
-import com.hazelcast.jet.sql.impl.aggregate.function.*;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastHopTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
@@ -28,7 +35,10 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorO
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.json.*;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonArrayFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonObjectFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonQueryFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastDoubleFunction;
@@ -44,6 +54,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastWithinGroupOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
@@ -238,6 +249,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction JSON_ARRAY = HazelcastJsonArrayFunction.INSTANCE;
     public static final SqlFunction JSON_ARRAYAGG_ABSENT_ON_NULL = HazelcastJsonArrayAggFunction.ABSENT_ON_NULL_INSTANCE;
     public static final SqlFunction JSON_ARRAYAGG_NULL_ON_NULL = HazelcastJsonArrayAggFunction.NULL_ON_NULL_INSTANCE;
+
+    public static final SqlOperator WITHIN_GROUP = HazelcastWithinGroupOperator.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

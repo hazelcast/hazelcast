@@ -22,7 +22,14 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.aggregate.*;
+import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.JsonArrayAggAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.MinSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.SqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.nio.ObjectDataInput;
@@ -107,8 +114,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                     break;
                 case JSON_ARRAYAGG:
                     int arrayAggIndex = aggregateCallArguments.get(0);
-                    QueryDataType arrAggOperandType = operandTypes.get(arrayAggIndex);
-                    aggregationProviders.add(new AggregateArrayAggSupplier(arrAggOperandType));
+                    HazelcastJsonArrayAggFunction agg = (HazelcastJsonArrayAggFunction) aggregateCall.getAggregation();
+                    aggregationProviders.add(new AggregateArrayAggSupplier(agg.isAbsentOnNull()));
                     valueProviders.add(new RowGetFn(arrayAggIndex));
                     break;
                 default:
@@ -207,28 +214,28 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
     public static class AggregateArrayAggSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
-        private QueryDataType sumOperandType;
+        private boolean isAbsentOnNull;
 
         public AggregateArrayAggSupplier() {
         }
 
-        public AggregateArrayAggSupplier(QueryDataType sumOperandType) {
-            this.sumOperandType = sumOperandType;
+        public AggregateArrayAggSupplier(boolean isAbsentOnNull) {
+            this.isAbsentOnNull = isAbsentOnNull;
         }
 
         @Override
         public SqlAggregation getEx() throws Exception {
-            return JsonArrayAggAggregation.create();
+            return JsonArrayAggAggregation.create(isAbsentOnNull);
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(sumOperandType);
+            out.writeBoolean(isAbsentOnNull);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            sumOperandType = in.readObject();
+            isAbsentOnNull = in.readBoolean();
         }
 
         @Override

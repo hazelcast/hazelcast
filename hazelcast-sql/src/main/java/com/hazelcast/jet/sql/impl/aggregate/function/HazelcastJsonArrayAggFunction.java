@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
@@ -13,9 +29,10 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Optionality;
 
 public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
-    // public static final HazelcastJsonArrayAggFunction INSTANCE = new HazelcastJsonArrayAggFunction();
-    public static final HazelcastJsonArrayAggFunction ABSENT_ON_NULL_INSTANCE = new HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause.ABSENT_ON_NULL);
-    public static final HazelcastJsonArrayAggFunction NULL_ON_NULL_INSTANCE = new HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause.NULL_ON_NULL);
+    public static final HazelcastJsonArrayAggFunction ABSENT_ON_NULL_INSTANCE
+            = new HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause.ABSENT_ON_NULL);
+    public static final HazelcastJsonArrayAggFunction NULL_ON_NULL_INSTANCE
+            = new HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause.NULL_ON_NULL);
 
     private SqlJsonConstructorNullClause nullClause;
 
@@ -27,7 +44,7 @@ public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),
                 null,
                 SqlFunctionCategory.SYSTEM,
-                true,
+                false,
                 false,
                 Optionality.OPTIONAL
         );
@@ -43,7 +60,7 @@ public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
         return SqlOperandCountRanges.from(1);
     }
 
-    public SqlJsonConstructorNullClause getNullClause() {
-        return nullClause;
+    public boolean isAbsentOnNull() {
+        return nullClause == SqlJsonConstructorNullClause.ABSENT_ON_NULL;
     }
 }

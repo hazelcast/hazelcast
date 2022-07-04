@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.core.HazelcastJsonValue;
@@ -10,10 +26,17 @@ import java.util.List;
 
 public final class JsonArrayAggAggregation implements SqlAggregation {
     private List<Object> objects = new ArrayList<>();
+    private boolean isAbsentOnNull;
 
+    private JsonArrayAggAggregation() {
+    }
 
-    public static JsonArrayAggAggregation create() {
-        return new JsonArrayAggAggregation();
+    private JsonArrayAggAggregation(boolean isAbsentOnNull) {
+        this.isAbsentOnNull = isAbsentOnNull;
+    }
+
+    public static JsonArrayAggAggregation create(boolean isAbsentOnNull) {
+        return new JsonArrayAggAggregation(isAbsentOnNull);
     }
 
     @Override
@@ -30,19 +53,24 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
     @Override
     public Object collect() {
         StringBuilder sb = new StringBuilder();
+        boolean firstValue = true;
         sb.append("[");
-        if (objects.size() > 0) {
-            sb.append(objects.get(0).toString());
-        }
-        for (int i = 1; i < objects.size(); i++) {
-            Object o = objects.get(i);
-            if (o == null) {
-                sb.append(", ");
-                sb.append("null");
-                continue;
+        for (Object value : objects) {
+            if (value == null) {
+                if (!isAbsentOnNull) {
+                    if (!firstValue) {
+                        sb.append(", ");
+                    }
+                    sb.append("null");
+                    firstValue = false;
+                }
+            } else {
+                if (!firstValue) {
+                    sb.append(", ");
+                }
+                sb.append(value);
+                firstValue = false;
             }
-            sb.append(", ");
-            sb.append(objects.get(i).toString());
         }
         sb.append("]");
 

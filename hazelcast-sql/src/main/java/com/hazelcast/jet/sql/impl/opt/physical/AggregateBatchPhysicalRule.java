@@ -84,6 +84,29 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                 logicalAggregate.getAggCallList()
         );
 
+        if (logicalAggregate.getAggCallList().size() > 0
+                && logicalAggregate.getAggCallList().get(0).getCollation().getFieldCollations().size() > 0) {
+            RelNode rel = new SortPhysicalRel(
+                    physicalInput.getCluster(),
+                    OptUtils.traitPlus(physicalInput.getTraitSet(), logicalAggregate.getAggCallList().get(0).getCollation()),
+                    physicalInput,
+                    logicalAggregate.getAggCallList().get(0).getCollation(),
+                    null,
+                    null,
+                    physicalInput.getRowType(),
+                    true
+            );
+            return new AggregatePhysicalRel(
+                    rel.getCluster(),
+                    rel.getTraitSet(),
+                    rel,
+                    logicalAggregate.getGroupSet(),
+                    logicalAggregate.getGroupSets(),
+                    logicalAggregate.getAggCallList(),
+                    aggrOp
+            );
+        }
+
         if (logicalAggregate.containsDistinctCall()) {
             return new AggregatePhysicalRel(
                     physicalInput.getCluster(),
@@ -120,6 +143,29 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
         );
+
+        if (logicalAggregate.getAggCallList().size() > 0
+                && logicalAggregate.getAggCallList().get(0).getCollation().getFieldCollations().size() > 0) {
+            RelNode rel = new SortPhysicalRel(
+                    physicalInput.getCluster(),
+                    OptUtils.traitPlus(physicalInput.getTraitSet(), logicalAggregate.getAggCallList().get(0).getCollation()),
+                    physicalInput,
+                    logicalAggregate.getAggCallList().get(0).getCollation(),
+                    null,
+                    null,
+                    physicalInput.getRowType(),
+                    true
+            );
+            return new AggregateByKeyPhysicalRel(
+                    rel.getCluster(),
+                    rel.getTraitSet(),
+                    rel,
+                    logicalAggregate.getGroupSet(),
+                    logicalAggregate.getGroupSets(),
+                    logicalAggregate.getAggCallList(),
+                    aggrOp
+            );
+        }
 
         if (logicalAggregate.containsDistinctCall()) {
             return new AggregateByKeyPhysicalRel(
