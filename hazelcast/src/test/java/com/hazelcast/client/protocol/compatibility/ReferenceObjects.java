@@ -80,8 +80,6 @@ import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
-
-import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
@@ -94,6 +92,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
+import javax.transaction.xa.Xid;
 
 public class ReferenceObjects {
 
@@ -899,7 +898,7 @@ public class ReferenceObjects {
 
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
-            anInt, anInt, aByte, aData);
+            anInt, anInt, aByte, aData, null);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
