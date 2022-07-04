@@ -1546,7 +1546,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
-                <version>1.41.4</version>
+                <version>1.42.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
