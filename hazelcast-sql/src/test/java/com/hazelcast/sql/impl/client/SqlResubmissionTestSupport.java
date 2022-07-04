@@ -35,6 +35,15 @@ public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
         return mode == ClientSqlResubmissionMode.NEVER || mode == ClientSqlResubmissionMode.RETRY_SELECTS;
     }
 
+    protected boolean shouldFailBeforeAnyDataIsFetched(ClientSqlResubmissionMode mode) {
+        return mode == ClientSqlResubmissionMode.NEVER;
+    }
+
+    /** Return true, if, in the given mode, the command should fail, if it's not a SELECT query. */
+    protected boolean shouldFailNonSelectQuery(ClientSqlResubmissionMode mode) {
+        return mode != ClientSqlResubmissionMode.RETRY_ALL;
+    }
+
     protected <T> void createMap(
             HazelcastInstance instance,
             String name,

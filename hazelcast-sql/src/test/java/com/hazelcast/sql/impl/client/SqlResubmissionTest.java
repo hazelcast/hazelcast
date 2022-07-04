@@ -27,6 +27,7 @@ import com.hazelcast.test.ClusterFailureTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,13 +99,13 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     @Test
     public void when_failingSelectBeforeAnyDataIsFetched() throws InterruptedException {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
-        testStatement(statement, resubmissionMode == ClientSqlResubmissionMode.NEVER);
+        testStatement(statement, shouldFailBeforeAnyDataIsFetched(resubmissionMode));
     }
 
     @Test
     public void when_failingUpdate() throws InterruptedException {
         SqlStatement statement = new SqlStatement("update " + COMMON_MAP_NAME + " set field = 1");
-        testStatement(statement, resubmissionMode != ClientSqlResubmissionMode.RETRY_ALL);
+        testStatement(statement, shouldFailNonSelectQuery(resubmissionMode));
     }
 
     private void testStatement(SqlStatement statement, boolean shouldFail)
@@ -180,6 +181,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     };
 
     @Test
+    @Repeat(50)
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
         statement.setCursorBufferSize(1);
