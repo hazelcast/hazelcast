@@ -19,9 +19,10 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
@@ -49,10 +50,11 @@ public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
             Supplier<T> objectCreator,
             Class<T> tClass
     ) {
-        IMap<Integer, T> map = instance.getMap(name);
+        Map<Integer, T> map = new HashMap<>();
         for (int i = 0; i < size; i++) {
             map.put(i, objectCreator.get());
         }
+        instance.getMap(name).putAll(map);
         createMapping(instance, name, Integer.class, tClass);
     }
 

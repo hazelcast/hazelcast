@@ -78,7 +78,8 @@ public class SqlClientResult implements SqlResult {
             QueryId queryId,
             int cursorBufferSize,
             ClientMessage sqlExecuteMessage,
-            SqlStatement statement) {
+            SqlStatement statement
+    ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;

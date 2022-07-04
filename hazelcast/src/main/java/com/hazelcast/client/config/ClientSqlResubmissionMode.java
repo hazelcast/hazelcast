@@ -23,12 +23,16 @@ package com.hazelcast.client.config;
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#PARTITION_DISTRIBUTION}</li>
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#TOPOLOGY_CHANGE}</li>
  * </ul>
+ *
+ * @since 5.2
  */
 public enum ClientSqlResubmissionMode {
+
     /**
      * If a query fails, the failure is immediately forwarded to the caller.
      */
     NEVER,
+
     /**
      * The query will be retried if:
      * <ul>
@@ -37,11 +41,13 @@ public enum ClientSqlResubmissionMode {
      * </ul>
      */
     RETRY_SELECTS,
+
     /**
      * The query will be retried if the SQL text starts with `SELECT` (case-insensitive, ignoring white space). If some rows
      * were received they are going to be duplicated.
      */
     RETRY_SELECTS_ALLOW_DUPLICATES,
+
     /**
      * All queries will be retried after a failure.
      */

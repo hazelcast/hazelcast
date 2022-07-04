@@ -986,7 +986,7 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the configuration for SQL client.
+     * Returns the configuration for the SQL feature.
      * @since 5.2
      */
     @Nonnull
@@ -995,7 +995,7 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the configuration for SQL client.
+     * Sets the configuration for the SQL feature.
      * @since 5.2
      */
     @Nonnull

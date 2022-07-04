@@ -480,7 +480,6 @@ public class PlanExecutor {
     }
 
     private static int findQueryExceptionCode(Throwable t) {
-        Throwable orig = t;
         while (t != null) {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();

@@ -23,6 +23,7 @@ import java.util.Objects;
 
 /**
  * Contains the SQL configuration for the client.
+ *
  * @since 5.2
  */
 public class ClientSqlConfig {

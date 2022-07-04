@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -39,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.junit.Assert.assertTrue;
 
@@ -48,9 +47,8 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     private static final int INITIAL_CLUSTER_SIZE = 1;
-    private static final Config SMALL_INSTANCE_CONFIG = smallInstanceConfig();
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public ClusterFailureTestSupport.SingleFailingInstanceClusterFailure clusterFailure;
 
     @Parameterized.Parameter(1)
@@ -58,8 +56,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     private HazelcastInstance client;
 
-    private volatile Step step;
-    private volatile boolean finish;
+    private volatile State state;
+    private volatile boolean done;
     private volatile long lastExecutionTime;
 
     @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
@@ -81,15 +79,15 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     @Before
     public void initFailure() {
-        clusterFailure.initialize(INITIAL_CLUSTER_SIZE, SMALL_INSTANCE_CONFIG);
+        clusterFailure.initialize(INITIAL_CLUSTER_SIZE, smallInstanceConfig());
         createMap(clusterFailure.getNotFailingInstance(), COMMON_MAP_NAME, COMMON_MAP_SIZE, IntHolder::new,
                 IntHolder.class);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
 
         client = clusterFailure.createClient(clientConfig);
-        step = Step.BEFORE_EXECUTE;
-        finish = false;
+        state = State.BEFORE_EXECUTE;
+        done = false;
         lastExecutionTime = 0;
     }
 
@@ -105,21 +103,20 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         testStatement(statement, this::shouldFailModifyingQuery);
     }
 
-    private void testStatement(SqlStatement statement, Function<ClientSqlResubmissionMode, Boolean> shouldFailFunction)
+    private void testStatement(SqlStatement statement, Predicate<ClientSqlResubmissionMode> shouldFailFunction)
             throws InterruptedException {
         Thread failingThread = new Thread(cyclicFailure);
         failingThread.start();
         try {
-            if (shouldFailFunction.apply(resubmissionMode)) {
-                assertThrows(HazelcastSqlException.class, () -> {
-                    executeInLoop(statement, result -> false);
-                });
-                finish = true;
+            if (shouldFailFunction.test(resubmissionMode)) {
+                assertThrows(HazelcastSqlException.class,
+                        () -> executeInLoop(statement, result -> false));
+                done = true;
             } else {
                 try {
                     executeInLoop(statement, result -> ((SqlClientResult) result).wasResubmission());
                 } finally {
-                    finish = true;
+                    done = true;
                 }
             }
         } finally {
@@ -128,16 +125,16 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         }
     }
 
-    private void executeInLoop(SqlStatement statement, Function<SqlResult, Boolean> shouldBreakFunction) {
-        while (!finish) {
-            Step localStep = step;
-            if (localStep == Step.BEFORE_EXECUTE) {
-                step = Step.BEFORE_FAIL;
+    private void executeInLoop(SqlStatement statement, Predicate<SqlResult> shouldBreakFunction) {
+        while (!done) {
+            State localState = state;
+            if (localState == State.BEFORE_EXECUTE) {
+                state = State.BEFORE_FAIL;
                 try {
                     long start = System.nanoTime();
                     SqlResult result = client.getSql().execute(statement);
                     lastExecutionTime = (System.nanoTime() - start) / 1_000_000;
-                    if (shouldBreakFunction.apply(result)) {
+                    if (shouldBreakFunction.test(result)) {
                         break;
                     }
                 } catch (RuntimeException e) {
@@ -153,22 +150,23 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     private final Runnable cyclicFailure = () -> {
         boolean failureNeeded = true;
 
-        while (!finish) {
-            Step localStep = step;
-            switch (localStep) {
+        while (!done) {
+            State localState = state;
+            switch (localState) {
                 case BEFORE_FAIL:
                     try {
                         Thread.sleep(lastExecutionTime / 2);
                     } catch (InterruptedException e) {
+                        // ignored
                     }
-                    step = Step.BEFORE_RECOVER;
+                    state = State.BEFORE_RECOVER;
                     failureNeeded = false;
                     clusterFailure.fail();
                     break;
                 case BEFORE_RECOVER:
                     failureNeeded = true;
                     clusterFailure.recover();
-                    step = Step.BEFORE_EXECUTE;
+                    state = State.BEFORE_EXECUTE;
                     break;
             }
         }
@@ -185,9 +183,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
         try {
             if (shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
-                assertThrows(HazelcastSqlException.class, () -> {
-                    countWithFailureInTheMiddle(rows);
-                });
+                assertThrows(HazelcastSqlException.class,
+                        () -> countWithFailureInTheMiddle(rows));
             } else {
                 int count = countWithFailureInTheMiddle(rows);
                 assertTrue(COMMON_MAP_SIZE < count);
@@ -199,7 +196,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     private int countWithFailureInTheMiddle(SqlResult rows) {
         int count = 0;
-        for (SqlRow row : rows) {
+        for (SqlRow ignored : rows) {
             if (count == COMMON_MAP_SIZE / 2) {
                 clusterFailure.fail();
             }
@@ -208,7 +205,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         return count;
     }
 
-    enum Step {
+    enum State {
         BEFORE_FAIL,
         BEFORE_EXECUTE,
         BEFORE_RECOVER,
