@@ -18,11 +18,11 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +46,9 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     }
 
     /**
-     * Returns true if the {@link #init} method is cooperative, meaning it doesn't block.
+     * Returns {@code true} if the {@link #init(Context)} method of this
+     * instance is cooperative. If it's not, the call to the {@code init()}
+     * method is off-loaded to another thread.
      *
      * @since 5.2
      */
@@ -65,7 +67,11 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     Collection<? extends Processor> get(int count);
 
     /**
-     * If true, then {@link #close(Throwable)} should not block by e.g. doing IO.
+     * Returns {@code true} if the {@link #close(Throwable)} method of this
+     * instance is cooperative. If it's not, the call to the {@code close()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
      */
     default boolean closeIsCooperative() {
         return true;
