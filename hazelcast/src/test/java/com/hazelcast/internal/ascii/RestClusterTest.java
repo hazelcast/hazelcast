@@ -464,7 +464,7 @@ public class RestClusterTest {
             instance = Hazelcast.newHazelcastInstance(config);
             HTTPCommunicator communicator = new HTTPCommunicator(instance);
             ConnectionResponse resp = communicator.getTcpIpMemberList();
-            assertEquals(400, resp.responseCode);
+            assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, resp.responseCode);
             assertJsonContains(resp.response, "message",
                     "TCP-IP join mechanism is not enabled in the cluster.");
         } finally {
