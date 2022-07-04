@@ -104,7 +104,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         return new DeserializedGenericRecordCloner(schema, objects);
     }
 
