@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.connection;
 
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 
 /**
  * Provides initial addresses for client to find and connect to a node &
@@ -40,4 +41,10 @@ public interface AddressProvider {
      * @throws Exception when a remote service can not provide addressee
      */
     Address translate(Address address) throws Exception;
+
+    /*
+     * Implementations of this will handle returning the public address of the member if necessary.
+     * See {@link com.hazelcast.client.impl.spi.impl.DefaultAddressProvider#addressOf(Member)}
+     */
+    Address translate(Member member) throws Exception;
 }

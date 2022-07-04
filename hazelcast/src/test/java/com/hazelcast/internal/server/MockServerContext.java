@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.server;
 
+import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MemcacheProtocolConfig;
@@ -24,8 +26,6 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.auditlog.AuditlogService;
-import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Packet;
@@ -55,10 +55,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.nio.Packet.Type.MEMBER_HANDSHAKE;
+import static com.hazelcast.internal.nio.Packet.Type.SERVER_CONTROL;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
@@ -66,15 +67,15 @@ public class MockServerContext implements ServerContext {
 
     public final ServerSocketChannel serverSocketChannel;
     public final Address thisAddress;
+    public final UUID thisUuid;
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
-    public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
     private final HazelcastProperties properties;
     public volatile Consumer<Packet> packetConsumer;
     private final ILogger logger;
 
-    public MockServerContext(int port) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true);
+    public MockServerContext(int port, UUID memberUuid) throws Exception {
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
         logger = loggingService.getLogger(MockServerContext.class);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
@@ -82,6 +83,7 @@ public class MockServerContext implements ServerContext {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
+        this.thisUuid = memberUuid;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
@@ -115,6 +117,11 @@ public class MockServerContext implements ServerContext {
     @Override
     public Address getThisAddress() {
         return thisAddress;
+    }
+
+    @Override
+    public UUID getThisUuid() {
+        return thisUuid;
     }
 
     @Override
@@ -196,16 +203,16 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public void executeAsync(final Runnable runnable) {
-        new Thread() {
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (Throwable t) {
-                    logger.severe(t);
-                }
+    public Future<Void> submitAsync(final Runnable runnable) {
+        FutureTask<Void> future = new FutureTask<>(() -> {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.severe(t);
             }
-        }.start();
+        }, null);
+        new Thread(() -> future.run()).start();
+        return future;
     }
 
     @Override
@@ -249,13 +256,17 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName,
+                                                                              @Nonnull String topic,
                                                                               @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName,
+                                                      @Nonnull String topic,
+                                                      @Nonnull EventFilter filter,
+                                                      @Nonnull Object listener) {
                 return null;
             }
 
@@ -354,21 +365,18 @@ public class MockServerContext implements ServerContext {
 
     @Override
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, final ServerConnection connection) {
-        return new InboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
-            @Override
-            public void accept(Packet packet) {
-                try {
-                    if (packet.getPacketType() == MEMBER_HANDSHAKE) {
-                        connection.getConnectionManager().accept(packet);
-                    } else {
-                        Consumer<Packet> consumer = packetConsumer;
-                        if (consumer != null) {
-                            consumer.accept(packet);
-                        }
+        return new InboundHandler[]{new PacketDecoder(connection, packet -> {
+            try {
+                if (packet.getPacketType() == SERVER_CONTROL) {
+                    connection.getConnectionManager().accept(packet);
+                } else {
+                    Consumer<Packet> consumer = packetConsumer;
+                    if (consumer != null) {
+                        consumer.accept(packet);
                     }
-                } catch (Exception e) {
-                    logger.severe(e);
                 }
+            } catch (Exception e) {
+                logger.severe(e);
             }
         })};
     }
@@ -393,8 +401,4 @@ public class MockServerContext implements ServerContext {
         return NoOpAuditlogService.INSTANCE;
     }
 
-    @Override
-    public UUID getUuid() {
-        return null;
-    }
 }

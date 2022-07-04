@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+            <hz:properties>
+                <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+                <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+            </hz:properties>
+            <hz:network port="6150" port-auto-increment="true">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
+                </hz:join>
+            </hz:network>
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:client id="client">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:properties>
+            <hz:property name="hazelcast.client.retry.count">13</hz:property>
+        </hz:properties>
+        <hz:network connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+
+        </hz:network>
+    </hz:client>
+
+    <hz:client id="client2">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client3">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+
+        <hz:listeners>
+            <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
+            <hz:listener implementation="dummyMembershipListener"/>
+        </hz:listeners>
+
+        <hz:serialization allow-unsafe="false"
+                          byte-order="BIG_ENDIAN"
+                          check-class-def-errors="false"
+                          enable-compression="false"
+                          enable-shared-object="false"
+                          portable-version="10"
+                          use-native-byte-order="false">
+
+            <hz:data-serializable-factories>
+                <hz:data-serializable-factory factory-id="1"
+                                              class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+            </hz:data-serializable-factories>
+            <hz:portable-factories>
+                <hz:portable-factory factory-id="2"
+                                     class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
+            </hz:portable-factories>
+            <hz:serializers>
+                <hz:serializer type-class="com.hazelcast.internal.serialization.impl.CustomSerializationTest$Foo"
+                               class-name="com.hazelcast.internal.serialization.impl.CustomSerializationTest$FooXmlSerializer"/>
+            </hz:serializers>
+        </hz:serialization>
+
+
+        <hz:proxy-factories>
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>
+        </hz:proxy-factories>
+
+        <hz:load-balancer type="round-robin"/>
+
+        <hz:near-cache name="default"
+                       time-to-live-seconds="1"
+                       max-idle-seconds="70"
+                       invalidate-on-change="true"
+                       serialize-keys="false"
+                       local-update-policy="CACHE_ON_UPDATE">
+            <hz:eviction eviction-policy="LRU" size="4000"/>
+        </hz:near-cache>
+
+        <hz:near-cache name="lfuNearCacheEviction">
+            <hz:eviction eviction-policy="LFU"/>
+        </hz:near-cache>
+        <hz:near-cache name="lruNearCacheEviction">
+            <hz:eviction eviction-policy="LRU"/>
+        </hz:near-cache>
+        <hz:near-cache name="randomNearCacheEviction">
+            <hz:eviction eviction-policy="RANDOM"/>
+        </hz:near-cache>
+        <hz:near-cache name="noneNearCacheEviction">
+            <hz:eviction eviction-policy="NONE"/>
+        </hz:near-cache>
+
+        <hz:near-cache name="preloader">
+            <hz:preloader enabled="true" directory="/tmp/preloader"
+                          store-initial-delay-seconds="23" store-interval-seconds="${preloader.storeIntervalSeconds}"/>
+        </hz:near-cache>
+    </hz:client>
+
+    <hz:client id="client4">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+
+            <hz:aws enabled="false" use-public-ip="true" access-key="sample-access-key" secret-key="sample-secret-key"
+                    region="sample-region" security-group-name="sample-group"
+                    tag-key="sample-tag-key" tag-value="sample-tag-value"/>
+        </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client5">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:connection-strategy>
+            <hz:connection-retry>
+                <hz:cluster-connect-timeout-millis>1000</hz:cluster-connect-timeout-millis>
+            </hz:connection-retry>
+        </hz:connection-strategy>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:security>
+            <hz:realms>
+                <hz:realm name="krb5Initiator">
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="isInitiator">true</hz:property>
+                                    <hz:property name="useTicketCache">false</hz:property>
+                                    <hz:property name="doNotPrompt">true</hz:property>
+                                    <hz:property name="useKeyTab">true</hz:property>
+                                    <hz:property name="storeKey">true</hz:property>
+                                    <hz:property name="principal">jduke@HAZELCAST.COM</hz:property>
+                                    <hz:property name="keyTab">/opt/jduke.keytab</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+            </hz:realms>
+        </hz:security>
+    </hz:client>
+
+    <hz:client id="client6">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:query-caches>
+            <hz:query-cache name="my-query-cache-1" mapName="map-name">
+                <hz:predicate type="sql">__key > 12</hz:predicate>
+                <hz:batch-size>12</hz:batch-size>
+                <hz:buffer-size>33</hz:buffer-size>
+                <hz:coalesce>true</hz:coalesce>
+                <hz:populate>false</hz:populate>
+                <hz:delay-seconds>12</hz:delay-seconds>
+                <hz:entry-listeners>
+                    <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
+                </hz:entry-listeners>
+                <hz:eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="111"/>
+                <hz:in-memory-format>OBJECT</hz:in-memory-format>
+                <hz:include-value>false</hz:include-value>
+                <hz:indexes>
+                    <hz:index type="HASH">
+                        <hz:attributes>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
+                    <hz:index name="sortedIndex">
+                        <hz:attributes>
+                            <hz:attribute>age</hz:attribute>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
+                </hz:indexes>
+            </hz:query-cache>
+        </hz:query-caches>
+
+    </hz:client>
+
+    <hz:client id="client7-empty-serialization-config">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+
+        <hz:serialization></hz:serialization>
+    </hz:client>
+
+    <hz:client id="client8">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
+    </hz:client>
+
+    <hz:client id="client9-user-code-deployment-test">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:user-code-deployment enabled="false">
+            <hz:jarPaths>
+                <hz:jarPath>/User/jar/path/test.jar</hz:jarPath>
+            </hz:jarPaths>
+            <hz:classNames>
+                <hz:className>SampleClassName1</hz:className>
+                <hz:className>SampleClassName2</hz:className>
+            </hz:classNames>
+        </hz:user-code-deployment>
+    </hz:client>
+
+    <hz:client id="client10-flakeIdGenerator">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:flake-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
+    </hz:client>
+
+    <hz:client id="client11-icmp-ping">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:icmp-ping enabled="false">
+                <hz:timeout-milliseconds>2000</hz:timeout-milliseconds>
+                <hz:interval-milliseconds>3000</hz:interval-milliseconds>
+                <hz:ttl>50</hz:ttl>
+                <hz:max-attempts>5</hz:max-attempts>
+                <hz:echo-fail-fast-on-startup>false</hz:echo-fail-fast-on-startup>
+            </hz:icmp-ping>
+        </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client12-hazelcast-cloud">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
+            <hz:hazelcast-cloud enabled="false">
+                <hz:discovery-token>EXAMPLE_TOKEN</hz:discovery-token>
+            </hz:hazelcast-cloud>
+        </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client13-exponential-connection-retry">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:connection-strategy async-start="true" reconnect-mode="ASYNC">
+            <hz:connection-retry>
+                <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
+                <hz:max-backoff-millis>60000</hz:max-backoff-millis>
+                <hz:multiplier>3</hz:multiplier>
+                <hz:cluster-connect-timeout-millis>5000</hz:cluster-connect-timeout-millis>
+                <hz:jitter>0.5</hz:jitter>
+            </hz:connection-retry>
+        </hz:connection-strategy>
+    </hz:client>
+
+    <hz:client id="client14-reliable-topic">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <!--<hz:reliable-topic name="rel-topic" topic-overload-policy="DISCARD_NEWEST" read-batch-size="100"/>-->
+        <hz:reliable-topic name="rel-topic">
+            <hz:topic-overload-policy>DISCARD_NEWEST</hz:topic-overload-policy>
+            <hz:read-batch-size>100</hz:read-batch-size>
+        </hz:reliable-topic>
+    </hz:client>
+
+    <hz:client id="client16-name-and-labels">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:instance-name>clusterName</hz:instance-name>
+        <hz:labels>
+            <hz:label>foo</hz:label>
+        </hz:labels>
+    </hz:client>
+
+    <hz:client id="client17-backupAckToClient">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:backup-ack-to-client-enabled>false</hz:backup-ack-to-client-enabled>
+    </hz:client>
+
+    <hz:client id="client18-metrics">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:metrics enabled="false">
+            <hz:jmx enabled="false"/>
+            <hz:collection-frequency-seconds>42</hz:collection-frequency-seconds>
+        </hz:metrics>
+    </hz:client>
+
+    <hz:client id="client19-instance-tracking">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:instance-tracking enabled="true">
+            <hz:file-name>/dummy/file</hz:file-name>
+            <hz:format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</hz:format-pattern>
+        </hz:instance-tracking>
+    </hz:client>
+
+    <hz:client id="client20-native-memory">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
+                          min-block-size="10"
+                          page-size="20">
+            <hz:size unit="${native.memory.unit}" value="256"/>
+            <hz:persistent-memory enabled="false" mode="${persistent.memory.mode}">
+                <hz:directories>
+                    <hz:directory numa-node="${numa.node.first}">/mnt/pmem0</hz:directory>
+                    <hz:directory numa-node="1">/mnt/pmem1</hz:directory>
+                </hz:directories>
+            </hz:persistent-memory>
+        </hz:native-memory>
+    </hz:client>
+
+    <hz:client id="client21-persistent-memory-system-memory">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+        <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
+                          min-block-size="10"
+                          page-size="20">
+            <hz:size unit="GIGABYTES" value="256"/>
+            <hz:persistent-memory enabled="true" mode="SYSTEM_MEMORY"/>
+        </hz:native-memory>
+    </hz:client>
+
+    <hz:client id="client22-with-overridden-default-serializers">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:serialization allow-override-default-serializers="true"/>
+    </hz:client>
+
+    <hz:client id="client23-with-compact-serialization">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:serialization>
+            <hz:compact-serialization enabled="true">
+                <hz:registered-classes>
+                    <hz:class>
+                        com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                    </hz:class>
+                    <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                        com.hazelcast.spring.serialization.DummyCompactSerializable
+                    </hz:class>
+                </hz:registered-classes>
+            </hz:compact-serialization>
+        </hz:serialization>
+    </hz:client>
+    <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
+        <property name="name" value="spring-cluster"/>
+        <property name="password" value="spring-cluster-pass"/>
+    </bean>
+
+    <hz:map id="map1" instance-ref="client" name="map1"/>
+    <hz:map id="map2" instance-ref="client" name="map2"/>
+    <hz:multiMap id="multiMap" instance-ref="client" name="multiMap"/>
+    <hz:queue id="queue" instance-ref="client" name="queue"/>
+    <hz:topic id="topic" instance-ref="client" name="topic"/>
+    <hz:set id="set" instance-ref="client" name="set"/>
+    <hz:list id="list" instance-ref="client" name="list"/>
+    <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
+    <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="client" name="flakeIdGenerator"/>
+    <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
+    <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
+    <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+    <hz:reliableTopic id="reliableTopic" instance-ref="client" name="reliableTopic"/>
+
+    <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
+    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory">
+        <constructor-arg index="0" value="${cluster.name}-node-client"/>
+        <constructor-arg index="1" value=""/>
+    </bean>
+</beans>

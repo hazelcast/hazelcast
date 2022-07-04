@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
@@ -46,17 +47,32 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     private final InternalSerializationService service;
     private final boolean bigEndian;
+    private final boolean isCompatibility;
 
-    ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
-        this(data, 0, service, byteOrder);
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder) {
+        this(data, 0, service, byteOrder, false);
     }
 
-    ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
+        this(data, 0, service, byteOrder, isCompatibility);
+    }
+
+    ByteArrayObjectDataInput(byte[] data,
+                             int offset,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.pos = offset;
         this.service = service;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        this.isCompatibility = isCompatibility;
     }
 
     @Override
@@ -368,6 +384,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public byte[] readByteArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -382,6 +399,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public boolean[] readBooleanArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -398,6 +416,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public char[] readCharArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -414,6 +433,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public int[] readIntArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -430,6 +450,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public long[] readLongArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -446,6 +467,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public double[] readDoubleArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -462,6 +484,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public float[] readFloatArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -478,6 +501,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public short[] readShortArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -494,7 +518,15 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String[] readUTFArray() throws IOException {
+        return readStringArray();
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -502,7 +534,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         if (len > 0) {
             String[] values = new String[len];
             for (int i = 0; i < len; i++) {
-                values[i] = readUTF();
+                values[i] = readString();
             }
             return values;
         }
@@ -551,29 +583,31 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     @Override
+    @Deprecated
     public final String readUTF() throws IOException {
-        int numberOfBytes = readInt();
-        if (numberOfBytes == NULL_ARRAY_LENGTH) {
-            return null;
-        }
+        return readString();
+    }
 
-        String result = new String(data, pos, numberOfBytes, UTF_8);
-        pos += numberOfBytes;
-        return result;
+    @Nullable
+    @Override
+    public String readString() throws IOException {
+        return isCompatibility ? readUTFInternalCompatibility() : readUTFInternal();
     }
 
     @Override
+    @Nullable
     public final Object readObject() throws EOFException {
         return service.readObject(this);
     }
 
     @Override
-    public <T> T readObject(Class aClass)
-            throws IOException {
+    @Nullable
+    public <T> T readObject(Class aClass) throws IOException {
         return service.readObject(this, aClass);
     }
 
     @Override
+    @Nullable
     public <T> T readDataAsObject() throws IOException {
         // a future optimization would be to skip the construction of the Data object
         Data data = readData();
@@ -581,6 +615,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public final Data readData() throws IOException {
         byte[] bytes = readByteArray();
         return bytes == null ? null : new HeapData(bytes);
@@ -674,6 +709,37 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    private String readUTFInternal() throws EOFException {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+
+        String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
+        pos += numberOfBytes;
+        return result;
+    }
+
+    public final String readUTFInternalCompatibility() throws IOException {
+        int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (charBuffer == null || charCount > charBuffer.length) {
+            charBuffer = new char[charCount];
+        }
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte();
+            if (b < 0) {
+                charBuffer[i] = Bits.readUtf8CharCompatibility(this, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
+        }
+        return new String(charBuffer, 0, charCount);
     }
 
     @Override

@@ -1,0 +1,31 @@
+{
+  "instance": {
+    "hazelcast": {
+      "sql": {
+        "statement-timeout-millis": "100ms",
+        "unknown-prop": false
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Sql",
+    "pointerToViolation": "#/hazelcast/sql",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Sql",
+        "pointerToViolation": "#/hazelcast/sql",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown-prop] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Sql/properties/statement-timeout-millis",
+        "pointerToViolation": "#/hazelcast/sql/statement-timeout-millis",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

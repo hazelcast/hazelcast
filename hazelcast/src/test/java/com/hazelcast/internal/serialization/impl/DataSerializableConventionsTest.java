@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,18 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.hazelcast.internal.locksupport.operations.LocalLockCleanupOperation;
+import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.jet.impl.MasterJobContext;
+import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
@@ -32,6 +37,7 @@ import com.hazelcast.query.impl.predicates.EvaluatePredicate;
 import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -53,6 +59,7 @@ import java.util.TreeSet;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
+import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -65,7 +72,7 @@ import static org.junit.Assert.fail;
  * interface, then verifies that it's either annotated with {@link
  * BinaryInterface}, is excluded from conventions tests by being annotated
  * with {@link SerializableByConvention} or they also implement {@code
- * IdentifiedDataSerializable}. Additionally, tests whether IDS instanced
+ * IdentifiedDataSerializable}. Additionally, tests whether IDS instances
  * obtained from DS factories have the same ID as the one reported by
  * their `getClassId` method and that F_ID/ID combinations are unique.
  */
@@ -73,15 +80,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class})
 public class DataSerializableConventionsTest {
 
+    private static final String JET_PACKAGE = "com.hazelcast.jet";
+
     // subclasses of classes in the white list are not taken into account for
     // conventions tests. Reasons:
     // - they inherit Serializable from a parent class and cannot implement
     // IdentifiedDataSerializable due to unavailability of default constructor.
     // - they purposefully break conventions to fix a known issue
     private final Set<Class> classWhiteList;
+    private final Set<String> packageWhiteList;
 
     public DataSerializableConventionsTest() {
         classWhiteList = Collections.unmodifiableSet(getWhitelistedClasses());
+        packageWhiteList = Collections.unmodifiableSet(getWhitelistedPackageNames());
     }
 
     /**
@@ -109,17 +120,21 @@ public class DataSerializableConventionsTest {
         dataSerializableClasses.removeAll(serializableByConventions);
 
         if (dataSerializableClasses.size() > 0) {
-            SortedSet<String> nonCompliantClassNames = new TreeSet<String>();
+            SortedSet<String> nonCompliantClassNames = new TreeSet<>();
             for (Object o : dataSerializableClasses) {
-                nonCompliantClassNames.add(o.toString());
+                if (!inheritsFromWhiteListedClass((Class) o)) {
+                    nonCompliantClassNames.add(o.toString());
+                }
             }
-            System.out.println("The following classes are DataSerializable while they should be IdentifiedDataSerializable:");
-            // failure - output non-compliant classes to standard output and fail the test
-            for (String s : nonCompliantClassNames) {
-                System.out.println(s);
+            if (!nonCompliantClassNames.isEmpty()) {
+                System.out.println("The following classes are DataSerializable while they should be IdentifiedDataSerializable:");
+                // failure - output non-compliant classes to standard output and fail the test
+                for (String s : nonCompliantClassNames) {
+                    System.out.println(s);
+                }
+                fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
+                        + "annotated and are not IdentifiedDataSerializable.");
             }
-            fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
-                    + "annotated and are not IdentifiedDataSerializable.");
         }
     }
 
@@ -134,6 +149,9 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
 
         serializableClasses.removeAll(allIdDataSerializableClasses);
+
+        // do not check non hazelcast classes & interfaces
+        filterNonHazelcastClasses(serializableClasses);
         // do not check abstract classes & interfaces
         filterNonConcreteClasses(serializableClasses);
 
@@ -188,7 +206,7 @@ public class DataSerializableConventionsTest {
                     int factoryId = instance.getFactoryId();
                     int typeId = instance.getClassId();
                     if (factoryToTypeId.containsEntry(factoryId, typeId)) {
-                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass.toString() + " is already"
+                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass + " is already"
                                 + " registered in another type.");
                     } else {
                         factoryToTypeId.put(factoryId, typeId);
@@ -329,12 +347,24 @@ public class DataSerializableConventionsTest {
     }
 
     private boolean inheritsFromWhiteListedClass(Class klass) {
+        String className = klass.getName();
+
+        for (String packageName : packageWhiteList) {
+            if (className.startsWith(packageName)) {
+                return true;
+            }
+        }
+
         for (Class superclass : classWhiteList) {
             if (superclass.isAssignableFrom(klass)) {
                 return true;
             }
         }
         return false;
+    }
+
+    protected Set<String> getWhitelistedPackageNames() {
+        return Collections.singleton(JET_PACKAGE);
     }
 
     /**
@@ -352,10 +382,18 @@ public class DataSerializableConventionsTest {
         whiteList.add(CompositeRangePredicate.class);
         whiteList.add(CompositeEqualPredicate.class);
         whiteList.add(EvaluatePredicate.class);
+        whiteList.add(Converter.class);
+        whiteList.add(CachedQueryEntry.class);
+        whiteList.add(LocalLockCleanupOperation.class);
+        whiteList.add(FinalizeMigrationOperation.class);
+        whiteList.add(SymbolExpression.class);
+        whiteList.add(MasterJobContext.SnapshotRestoreEdge.class);
         try {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.RangeVisitor$Ranges"));
+            whiteList.add(Class.forName("com.hazelcast.internal.partition.operation.BeforePromotionOperation"));
+            whiteList.add(Class.forName("com.hazelcast.internal.partition.operation.FinalizePromotionOperation"));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

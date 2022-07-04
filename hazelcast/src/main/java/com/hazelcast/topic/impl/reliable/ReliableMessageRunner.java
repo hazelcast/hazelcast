@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,6 @@ public class ReliableMessageRunner<E> extends MessageRunner<E> {
                 serializationService, executor, proxy.runnersMap, logger);
         this.clusterService = clusterService;
         this.proxy = proxy;
-    }
-
-    @Override
-    protected void updateStatistics() {
-        proxy.localTopicStats.incrementReceives();
     }
 
     @Override

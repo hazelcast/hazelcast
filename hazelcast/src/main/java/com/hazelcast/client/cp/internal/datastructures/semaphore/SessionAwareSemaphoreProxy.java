@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         ClientMessage request = SemaphoreInitCodec.encodeRequest(groupId, objectName, permits);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreInitCodec.decodeResponse(response).response;
+        return SemaphoreInitCodec.decodeResponse(response);
     }
 
     @Override
@@ -81,11 +81,11 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
 
     @Override
     public void acquire(int permits) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
 
-        for (;;) {
+        for (; ; ) {
             long sessionId = sessionManager.acquireSession(this.groupId, permits);
             try {
                 ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, sessionId, threadId,
@@ -96,9 +96,12 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
             } catch (WaitKeyCancelledException e) {
-                sessionManager.releaseSession(this.groupId, sessionId);
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
                 throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw e;
             }
         }
     }
@@ -125,7 +128,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
         long start;
-        for (;;) {
+        for (; ; ) {
             start = Clock.currentTimeMillis();
             long sessionId = sessionManager.acquireSession(this.groupId, permits);
             try {
@@ -133,7 +136,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                         invocationUid, permits, timeoutMs);
                 HazelcastClientInstanceImpl client = getClient();
                 ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-                boolean acquired = SemaphoreAcquireCodec.decodeResponse(response).response;
+                boolean acquired = SemaphoreAcquireCodec.decodeResponse(response);
                 if (!acquired) {
                     sessionManager.releaseSession(this.groupId, sessionId, permits);
                 }
@@ -145,8 +148,11 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                     return false;
                 }
             } catch (WaitKeyCancelledException e) {
-                sessionManager.releaseSession(this.groupId, sessionId);
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
                 return false;
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw e;
             }
         }
     }
@@ -184,7 +190,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(groupId, objectName);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreAvailablePermitsCodec.decodeResponse(response).response;
+        return SemaphoreAvailablePermitsCodec.decodeResponse(response);
     }
 
     @Override
@@ -192,16 +198,21 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
 
-        for (;;) {
+        for (; ; ) {
             long sessionId = sessionManager.acquireSession(this.groupId, DRAIN_SESSION_ACQ_COUNT);
             try {
                 ClientMessage request = SemaphoreDrainCodec.encodeRequest(groupId, objectName, sessionId, threadId,
                         invocationUid);
                 HazelcastClientInstanceImpl client = getClient();
                 ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-                return SemaphoreDrainCodec.decodeResponse(response).response;
+                int count = SemaphoreDrainCodec.decodeResponse(response);
+                sessionManager.releaseSession(groupId, sessionId, DRAIN_SESSION_ACQ_COUNT - count);
+                return count;
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, DRAIN_SESSION_ACQ_COUNT);
+                throw e;
             }
         }
     }
@@ -212,25 +223,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         if (reduction == 0) {
             return;
         }
-
-        long sessionId = sessionManager.acquireSession(groupId);
-        if (sessionId == NO_SESSION_ID) {
-            throw newIllegalStateException(null);
-        }
-
-        long threadId = getThreadId();
-        UUID invocationUid = newUnsecureUUID();
-
-        try {
-            ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, sessionId, threadId,
-                    invocationUid, -reduction);
-            new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
-        } catch (SessionExpiredException e) {
-            sessionManager.invalidateSession(this.groupId, sessionId);
-            throw newIllegalStateException(e);
-        } finally {
-            sessionManager.releaseSession(this.groupId, sessionId);
-        }
+        doChangePermits(-reduction);
     }
 
     @Override
@@ -239,29 +232,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         if (increase == 0) {
             return;
         }
-
-        long sessionId = sessionManager.acquireSession(groupId);
-        if (sessionId == NO_SESSION_ID) {
-            throw newIllegalStateException(null);
-        }
-
-        long threadId = getThreadId();
-        UUID invocationUid = newUnsecureUUID();
-
-        try {
-            ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, sessionId, threadId,
-                    invocationUid, increase);
-            new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
-        } catch (SessionExpiredException e) {
-            sessionManager.invalidateSession(this.groupId, sessionId);
-            throw newIllegalStateException(e);
-        } finally {
-            sessionManager.releaseSession(this.groupId, sessionId);
-        }
-    }
-
-    private IllegalStateException newIllegalStateException(SessionExpiredException e) {
-        return new IllegalStateException("No valid session!", e);
+        doChangePermits(increase);
     }
 
     @Override
@@ -277,6 +248,27 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
 
     public CPGroupId getGroupId() {
         return groupId;
+    }
+
+    private void doChangePermits(int delta) {
+        long sessionId = sessionManager.acquireSession(groupId);
+        long threadId = getThreadId();
+        UUID invocationUid = newUnsecureUUID();
+
+        try {
+            ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, sessionId, threadId,
+                    invocationUid, delta);
+            new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
+        } catch (SessionExpiredException e) {
+            sessionManager.invalidateSession(this.groupId, sessionId);
+            throw newIllegalStateException(e);
+        } finally {
+            sessionManager.releaseSession(this.groupId, sessionId);
+        }
+    }
+
+    private IllegalStateException newIllegalStateException(SessionExpiredException e) {
+        return new IllegalStateException("No valid session!", e);
     }
 
 }

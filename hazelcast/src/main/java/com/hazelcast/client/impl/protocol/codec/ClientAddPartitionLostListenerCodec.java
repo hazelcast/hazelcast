@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("c388676eba05333440c7406e0e360a0a")
+@Generated("12687fd08cfc5e474dd67078ded207ae")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -57,16 +57,6 @@ public final class ClientAddPartitionLostListenerCodec {
     private ClientAddPartitionLostListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * if true only node that has the partition sends the request, if false
-         * sends all partition lost events.
-         */
-        public boolean localOnly;
-    }
-
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -79,21 +69,14 @@ public final class ClientAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddPartitionLostListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * if true only node that has the partition sends the request, if false
+     * sends all partition lost events.
+     */
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The listener registration id.
-         */
-        public java.util.UUID response;
+        return decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
@@ -106,12 +89,13 @@ public final class ClientAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddPartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * The listener registration id.
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source) {
@@ -148,7 +132,7 @@ public final class ClientAddPartitionLostListenerCodec {
          * @param partitionId Id of the lost partition.
          * @param lostBackupCount The number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
          * @param source UUID of the node that dispatches the event
-        */
+         */
         public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source);
     }
 }

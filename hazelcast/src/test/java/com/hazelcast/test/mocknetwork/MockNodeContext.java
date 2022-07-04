@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.NodeExtensionFactory;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.Server;
@@ -78,7 +79,7 @@ public class MockNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry) {
+    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry, LocalAddressRegistry addressRegistry) {
         TcpServerContext serverContext = new TcpServerContext(node, node.nodeEngine);
         MockServer mockNetworkingService = new MockServer(serverContext, node, registry);
         return new FirewallingServer(mockNetworkingService, initiallyBlockedAddresses);

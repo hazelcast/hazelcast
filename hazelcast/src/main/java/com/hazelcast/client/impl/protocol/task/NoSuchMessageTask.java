@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     @Override
     protected void processMessage() {
-        String message = "Unrecognized client message received with type: 0x" + Integer.toHexString(parameters.getMessageType());
+        String message = createMessage();
         logger.finest(message);
         throw new UnsupportedOperationException(message);
     }
@@ -73,5 +73,10 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    private String createMessage() {
+        int messageType = parameters.getMessageType();
+        return "Unrecognized client message received with type: 0x" + Integer.toHexString(messageType);
     }
 }

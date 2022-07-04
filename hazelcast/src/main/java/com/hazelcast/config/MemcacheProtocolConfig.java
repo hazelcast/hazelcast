@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.config;
+
+import java.util.Objects;
 
 /**
  * This class allows to enable MEMCACHE text protocol support in Hazelcast.
@@ -43,5 +45,22 @@ public class MemcacheProtocolConfig {
     @Override
     public String toString() {
         return "MemcacheProtocolConfig{enabled=" + enabled + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MemcacheProtocolConfig that = (MemcacheProtocolConfig) o;
+        return enabled == that.enabled;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled);
     }
 }

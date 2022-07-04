@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>5.2-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>hazelcast-3-connector-root</artifactId>
+    <version>5.2-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>hazelcast-3-connector-root</name>
+
+    <properties>
+        <!-- needed for CheckStyle (we need to repeat this here because this module has hazelcast-root as parent) -->
+        <main.basedir>${project.basedir}/../../..</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <modules>
+        <module>hazelcast-3-connector-common</module>
+        <module>hazelcast-3-connector-impl</module>
+        <module>hazelcast-3-connector-interface</module>
+    </modules>
+</project>

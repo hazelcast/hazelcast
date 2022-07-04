@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.UUID;
 
@@ -26,11 +27,11 @@ import static com.hazelcast.internal.management.events.EventMetadata.EventType.W
 public final class WanSyncIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     private final String reason;
 
-    private WanSyncIgnoredEvent(UUID uuid,
-                                String wanReplicationName,
-                                String wanPublisherId,
-                                String mapName,
-                                String reason) {
+    public WanSyncIgnoredEvent(UUID uuid,
+                               String wanReplicationName,
+                               String wanPublisherId,
+                               String mapName,
+                               String reason) {
         super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
     }
@@ -38,7 +39,7 @@ public final class WanSyncIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName,
                                                      String wanPublisherId,
                                                      String mapName) {
-        return new WanSyncIgnoredEvent(null, wanReplicationName, wanPublisherId, mapName,
+        return new WanSyncIgnoredEvent(UuidUtil.newUnsecureUUID(), wanReplicationName, wanPublisherId, mapName,
                 "WAN sync is supported for enterprise clusters only.");
     }
 

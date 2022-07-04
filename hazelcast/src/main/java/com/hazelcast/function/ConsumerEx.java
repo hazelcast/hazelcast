@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
 import java.util.function.Consumer;
@@ -32,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface ConsumerEx<T> extends Consumer<T>, Serializable {
+public interface ConsumerEx<T> extends Consumer<T>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Consumer#accept}

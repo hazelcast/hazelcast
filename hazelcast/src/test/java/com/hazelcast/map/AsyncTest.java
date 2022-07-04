@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -81,6 +82,28 @@ public class AsyncTest extends HazelcastTestSupport {
         Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS).toCompletableFuture();
         String f1Val = f1.get();
         assertNull(f1Val);
+        assertEquals(value1, map.get(key));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get(key));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() throws Exception {
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) instance.getMap(randomString());
+        assertNull(map.putIfAbsentAsync(key, value1).toCompletableFuture().get());
+        assertEquals(value1, map.putIfAbsentAsync(key, value2).toCompletableFuture().get());
+        assertEquals(value1, map.putIfAbsentAsync(key, value2).toCompletableFuture().get());
+    }
+
+    @Test
+    public void testPutIfAbsentAsyncWithTtl() throws Exception {
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) instance.getMap(randomString());
+
+        CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
+
+        assertNull(map.putIfAbsentAsync(key, value1, 3, TimeUnit.SECONDS).toCompletableFuture().get());
         assertEquals(value1, map.get(key));
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));

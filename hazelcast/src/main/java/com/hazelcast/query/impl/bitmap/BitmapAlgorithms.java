@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -331,7 +331,7 @@ final class BitmapAlgorithms {
                 do {
                     // We may overflow here to Long.MIN_VALUE, but we will exit
                     // the loop anyway. In this case, after exiting the loop,
-                    // newGapEnd will be equal to BitSetIterator.END.
+                    // newGapEnd will be equal to AscendingLongIterator.END.
                     newGapStart = newGapEnd + 1;
                     newGapEnd = iterator.advance();
                 } while (newGapEnd == newGapStart);

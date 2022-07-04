@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("c9b5a99f1909eb871fcde7334ab11cfa")
+@Generated("293d7b1f0022f0435e1806fb04388469")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;
@@ -47,15 +47,6 @@ public final class MCMatchMCConfigCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MCMatchMCConfigCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * ETag value of current MC config.
-         */
-        public java.lang.String eTag;
     }
 
     public static ClientMessage encodeRequest(java.lang.String eTag) {
@@ -70,22 +61,14 @@ public final class MCMatchMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCMatchMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * ETag value of current MC config.
+     */
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.eTag = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if ETag values are equal; or false otherwise.
-         */
-        public boolean result;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(boolean result) {
@@ -98,12 +81,12 @@ public final class MCMatchMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCMatchMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * true if ETag values are equal; or false otherwise.
+     */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public final class PartitionStateOperation extends AbstractPartitionOperation im
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
             String message = (success ? "Applied" : "Rejected")
-                    + " new partition state. Version: " + partitionState.getVersion() + ", caller: " + callerAddress;
+                    + " new partition state. Stamp: " + partitionState.getStamp() + ", caller: " + callerAddress;
             logger.fine(message);
         }
     }

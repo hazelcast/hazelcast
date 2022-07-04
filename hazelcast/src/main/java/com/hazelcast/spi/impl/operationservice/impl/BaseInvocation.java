@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -32,6 +33,8 @@ public abstract class BaseInvocation {
 
     private static final AtomicIntegerFieldUpdater<BaseInvocation> BACKUP_ACKS_RECEIVED =
             AtomicIntegerFieldUpdater.newUpdater(BaseInvocation.class, "backupsAcksReceived");
+
+    protected final ILogger logger;
 
     /**
      * Number of backups acks received.
@@ -52,6 +55,10 @@ public abstract class BaseInvocation {
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
      */
     volatile Object pendingResponse = VOID;
+
+    protected BaseInvocation(ILogger logger) {
+        this.logger = logger;
+    }
 
     public void notifyBackupComplete() {
         int newBackupAcksCompleted = BACKUP_ACKS_RECEIVED.incrementAndGet(this);
@@ -95,7 +102,7 @@ public abstract class BaseInvocation {
             this.pendingResponse = response;
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
+                // we are done since not all backups have completed. Therefore we should not notify the future
                 return;
             }
         }
@@ -107,26 +114,26 @@ public abstract class BaseInvocation {
     }
 
     /**
-     * gets called from the Clean resources task
-     *
      * @param timeoutMillis timeout value to wait for backups after  the response received
      * @return true if invocation is completed
      */
     public boolean detectAndHandleBackupTimeout(long timeoutMillis) {
         // if the backups have completed, we are done; this also filters out all non backup-aware operations
         // since the backupsAcksExpected will always be equal to the backupsAcksReceived
-        boolean backupsCompleted = backupsAcksExpected == backupsAcksReceived;
-        long responseReceivedMillis = pendingResponseReceivedMillis;
-
-        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
-        long expirationTime = responseReceivedMillis + timeoutMillis;
-        boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        if (backupsAcksExpected == backupsAcksReceived) {
+            return false;
+        }
 
         // if no response has yet been received, we we are done; we are only going to re-invoke an operation
         // if the response of the primary has been received, but the backups have not replied
-        boolean responseReceived = pendingResponse != VOID;
+        if (pendingResponse == VOID) {
+            return false;
+        }
 
-        if (backupsCompleted || !responseReceived || !timeout) {
+        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
+        long expirationTime = pendingResponseReceivedMillis + timeoutMillis;
+        boolean timeoutReached = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        if (!timeoutReached) {
             return false;
         }
 
@@ -136,6 +143,9 @@ public abstract class BaseInvocation {
         }
 
         if (shouldCompleteWithoutBackups()) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Invocation " + this + " will be completed without backup acks.");
+            }
             // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
             completeWithPendingResponse();
             return true;

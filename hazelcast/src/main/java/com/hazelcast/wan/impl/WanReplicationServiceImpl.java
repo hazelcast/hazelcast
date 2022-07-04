@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,14 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
+import com.hazelcast.internal.management.events.WanAddConfigurationIgnoredEvent;
 import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ManagedService;
@@ -66,7 +67,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class WanReplicationServiceImpl implements WanReplicationService,
-        FragmentedMigrationAwareService, ManagedService {
+        ChunkedMigrationAwareService, ManagedService {
 
     private final Node node;
 
@@ -137,7 +138,8 @@ public class WanReplicationServiceImpl implements WanReplicationService,
         for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
             String publisherId = publisherEntry.getKey();
             WanPublisher publisher = publisherEntry.getValue();
-            node.getSerializationService().getManagedContext().initialize(publisher);
+            ManagedContext managedContext = node.getSerializationService().getManagedContext();
+            publisher = (WanPublisher) managedContext.initialize(publisher);
             publisher.init(wanReplicationConfig, publisherConfigs.get(publisherId));
         }
 
@@ -234,8 +236,7 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     @Override
     public UUID consistencyCheck(String wanReplicationName, String wanPublisherId, String mapName) {
         node.getManagementCenterService().log(
-                new WanConsistencyCheckIgnoredEvent(wanReplicationName, wanPublisherId, mapName,
-                        "Consistency check is supported for enterprise clusters only."));
+                WanConsistencyCheckIgnoredEvent.enterpriseOnly(wanReplicationName, wanPublisherId, mapName));
 
         throw new UnsupportedOperationException("Consistency check is not supported.");
     }
@@ -247,7 +248,7 @@ public class WanReplicationServiceImpl implements WanReplicationService,
 
     @Override
     public AddWanConfigResult addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        node.getManagementCenterService().log(AddWanConfigIgnoredEvent.enterpriseOnly(wanReplicationConfig.getName()));
+        node.getManagementCenterService().log(WanAddConfigurationIgnoredEvent.enterpriseOnly(wanReplicationConfig.getName()));
 
         throw new UnsupportedOperationException("Adding new WAN config is not supported.");
     }
@@ -392,8 +393,9 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
-    public void appendWanReplicationConfig(WanReplicationConfig newConfig) {
+    public boolean appendWanReplicationConfig(WanReplicationConfig newConfig) {
         // not implemented in OS
+        return false;
     }
 
     private WanPublisher getPublisherOrNull(String wanReplicationName,

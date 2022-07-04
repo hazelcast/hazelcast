@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.spi.properties.ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getClusterService;
-import static com.hazelcast.test.Accessors.getEndpointManager;
+import static com.hazelcast.test.Accessors.getConnectionManager;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.clear;
@@ -628,7 +628,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
+        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(getNode(hz1).address);
         hz2.shutdown();
         assertClusterSizeEventually(1, hz1);
 
@@ -647,7 +647,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(true);
+        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(getNode(hz2).address);
         hz3.shutdown();
         hz1.shutdown();
         assertClusterSizeEventually(1, hz2);
@@ -777,9 +777,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, hz1, hz3);
 
-        assertNull(getEndpointManager(hz1).get(target));
+        assertNull(getConnectionManager(hz1).get(target));
 
-        ServerConnectionManager cm3 = getEndpointManager(hz3);
+        ServerConnectionManager cm3 = getConnectionManager(hz3);
         assertTrueEventually(() -> assertNull(cm3.get(target)));
     }
 
@@ -798,10 +798,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         Address target = getAddress(hz3);
 
         ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
-        getEndpointManager(hz1).addConnectionListener(connListener1);
+        getConnectionManager(hz1).addConnectionListener(connListener1);
 
         ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
-        getEndpointManager(hz2).addConnectionListener(connListener2);
+        getConnectionManager(hz2).addConnectionListener(connListener2);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
         // Artificially suspect from hz3

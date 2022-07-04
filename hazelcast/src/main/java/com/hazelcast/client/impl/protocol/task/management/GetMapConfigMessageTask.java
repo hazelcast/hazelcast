@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.instance.impl.Node;
@@ -26,12 +25,16 @@ import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<String> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("map.getConfig");
+
     public GetMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -44,11 +47,11 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     protected Operation prepareOperation() {
-        return new GetMapConfigOperation(parameters.mapName);
+        return new GetMapConfigOperation(parameters);
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MCGetMapConfigCodec.decodeRequest(clientMessage);
     }
 
@@ -72,7 +75,8 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
                 maxSizePolicyId,
                 config.isReadBackupData(),
                 evictionPolicyId,
-                mergePolicy);
+                mergePolicy,
+                config.getIndexConfigs());
     }
 
     @Override
@@ -82,7 +86,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override
@@ -97,7 +101,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.mapName};
+        return new Object[]{parameters};
     }
 
     @Override

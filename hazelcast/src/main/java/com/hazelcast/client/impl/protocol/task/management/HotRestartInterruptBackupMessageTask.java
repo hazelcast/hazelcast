@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,14 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
 public class HotRestartInterruptBackupMessageTask
-        extends AbstractCallableMessageTask<MCInterruptHotRestartBackupCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.interruptBackup");
 
     private final Node node;
 
@@ -42,8 +45,8 @@ public class HotRestartInterruptBackupMessageTask
     }
 
     @Override
-    protected MCInterruptHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCInterruptHotRestartBackupCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override
@@ -58,7 +61,7 @@ public class HotRestartInterruptBackupMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

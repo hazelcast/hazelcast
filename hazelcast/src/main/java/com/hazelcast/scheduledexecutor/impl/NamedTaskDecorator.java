@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,59 +16,39 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.NamedTask;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class NamedTaskDecorator<V>
-        implements Runnable, Callable<V>, NamedTask, IdentifiedDataSerializable {
+public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
+        implements NamedTask, Versioned {
 
     private String name;
-
-    private Object delegate;
 
     NamedTaskDecorator() {
     }
 
     private NamedTaskDecorator(String name, Runnable runnable) {
+        super(runnable);
         this.name = name;
-        this.delegate = runnable;
     }
 
     private NamedTaskDecorator(String name, Callable<V> callable) {
+        super(callable);
         this.name = name;
-        this.delegate = callable;
     }
+
 
     @Override
     public String getName() {
         return name;
     }
 
-    @Override
-    public void run() {
-        ((Runnable) delegate).run();
-    }
-
-    @Override
-    public V call()
-            throws Exception {
-        return ((Callable<V>) delegate).call();
-    }
-
-    public void initializeContext(ManagedContext context) {
-        context.initialize(delegate);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ScheduledExecutorDataSerializerHook.F_ID;
-    }
 
     @Override
     public int getClassId() {
@@ -78,15 +58,25 @@ public class NamedTaskDecorator<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
-        out.writeObject(delegate);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            super.writeData(out);
+            out.writeString(name);
+        } else {
+            out.writeString(name);
+            out.writeObject(delegate);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
-        delegate = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            super.readData(in);
+            name = in.readString();
+        } else {
+            name = in.readString();
+            delegate = in.readObject();
+        }
     }
 
     public static Runnable named(String name, Runnable runnable) {
@@ -96,5 +86,4 @@ public class NamedTaskDecorator<V>
     public static <V> Callable<V> named(String name, Callable<V> callable) {
         return new NamedTaskDecorator<V>(name, callable);
     }
-
 }

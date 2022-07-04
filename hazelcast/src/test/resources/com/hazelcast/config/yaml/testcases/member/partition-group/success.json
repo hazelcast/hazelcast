@@ -1,0 +1,23 @@
+{
+  "instance": {
+    "hazelcast": {
+      "partition-group": {
+        "enabled": true,
+        "group-type": "CUSTOM",
+        "member-group": [
+          [
+            "10.10.0.*",
+            "10.10.3.*",
+            "10.10.5.*"
+          ],
+          [
+            "10.10.10.10-100",
+            "10.10.1.*",
+            "10.10.2.*"
+          ]
+        ]
+      }
+    }
+  },
+  "error": null
+}

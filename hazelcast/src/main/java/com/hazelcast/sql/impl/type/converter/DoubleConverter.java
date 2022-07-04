@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+
 /**
  * Converter for {@link java.lang.Double} type.
  */
@@ -38,32 +41,120 @@ public final class DoubleConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        return (byte) cast(val);
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw infiniteValueError(QueryDataTypeFamily.TINYINT);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw nanValueError(QueryDataTypeFamily.TINYINT);
+        }
+
+        // here the overflow may happen: (byte) casted = (byte) (int) casted
+        byte converted = (byte) val0;
+
+        // casts from double to int are saturating
+        if (converted != (int) val0) {
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
+        }
+
+        return converted;
     }
 
     @Override
     public short asSmallint(Object val) {
-        return (short) cast(val);
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw infiniteValueError(QueryDataTypeFamily.SMALLINT);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw nanValueError(QueryDataTypeFamily.SMALLINT);
+        }
+
+        // here the overflow may happen: (short) casted = (short) (int) casted
+        short converted = (short) val0;
+
+        // casts from double to int are saturating
+        if (converted != (int) val0) {
+            throw numericOverflowError(QueryDataTypeFamily.SMALLINT);
+        }
+
+        return converted;
     }
 
     @Override
     public int asInt(Object val) {
-        return (int) cast(val);
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw infiniteValueError(QueryDataTypeFamily.INTEGER);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw nanValueError(QueryDataTypeFamily.INTEGER);
+        }
+
+        int converted = (int) val0;
+
+        // casts from double to long are saturating
+        if (converted != (long) val0) {
+            throw numericOverflowError(QueryDataTypeFamily.INTEGER);
+        }
+
+        return converted;
     }
 
     @Override
     public long asBigint(Object val) {
-        return (long) cast(val);
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw infiniteValueError(QueryDataTypeFamily.BIGINT);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw nanValueError(QueryDataTypeFamily.BIGINT);
+        }
+
+        double truncated = val0 > 0.0 ? Math.floor(val0) : Math.ceil(val0);
+        // casts from double to long are saturating
+        long converted = (long) truncated;
+
+        if ((double) converted != truncated) {
+            throw numericOverflowError(QueryDataTypeFamily.BIGINT);
+        }
+
+        return converted;
     }
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return BigDecimal.valueOf(cast(val));
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw infiniteValueError(DECIMAL);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw nanValueError(DECIMAL);
+        }
+
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
     }
 
     @Override
     public float asReal(Object val) {
-        return (float) cast(val);
+        double doubleVal = cast(val);
+        float floatVal = (float) cast(val);
+
+        if (Float.isInfinite(floatVal) && !Double.isInfinite(doubleVal)) {
+            throw numericOverflowError(QueryDataTypeFamily.REAL);
+        }
+
+        return floatVal;
     }
 
     @Override
@@ -84,4 +175,5 @@ public final class DoubleConverter extends Converter {
     private double cast(Object val) {
         return (double) val;
     }
+
 }

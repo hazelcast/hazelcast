@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
     private void clearIndexes(IMap<Object, Object> map) {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
-        for (int partitionId : mapServiceContext.getOwnedPartitions()) {
+        for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
             mapContainer.getIndexes(partitionId).destroyIndexes();
         }
     }

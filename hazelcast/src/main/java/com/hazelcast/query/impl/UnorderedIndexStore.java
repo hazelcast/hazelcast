@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,16 +35,17 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 /**
  * Store indexes out of turn.
  */
+@SuppressWarnings("rawtypes")
 public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
-    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>();
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
 
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
     public UnorderedIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+        super(copyOn, true);
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();
@@ -55,7 +59,6 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     Object insertInternal(Comparable value, QueryableEntry record) {
-        markIndexStoreExpirableIfNecessary(record);
         return addFunctor.invoke(value, record);
     }
 
@@ -133,6 +136,71 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
+        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+        return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        if (value == NULL) {
+            return recordsWithNullValue.values().iterator();
+        } else {
+            Map<Data, QueryableEntry> res = recordMap.get(canonicalize(value));
+
+            if (res == null) {
+                return Collections.emptyIterator();
+            }
+
+            return res.values().iterator();
+        }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
         throw new UnsupportedOperationException();
     }
 
@@ -319,7 +387,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
                     oldValue = records.remove(indexKey);
-                    if (records.size() == 0) {
+                    if (records.isEmpty()) {
                         recordMap.remove(value);
                     }
                 } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -316,7 +316,7 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        if (isInactive()) {
+        if (isInactive() || event.getMember().localMember()) {
             return;
         }
         nodeEngine.getExecutionService().execute(SPLIT_BRAIN_PROTECTION_EXECUTOR, new UpdateSplitBrainProtections(event));

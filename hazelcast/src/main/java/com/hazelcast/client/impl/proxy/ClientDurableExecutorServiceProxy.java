@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(),
-                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
+                DurableExecutorRetrieveResultCodec::decodeResponse);
     }
 
     @Override
@@ -96,7 +96,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(),
-                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
+                DurableExecutorRetrieveResultCodec::decodeResponse);
     }
 
     @Override
@@ -202,9 +202,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     public boolean isShutdown() {
         ClientMessage request = DurableExecutorIsShutdownCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        DurableExecutorIsShutdownCodec.ResponseParameters resultParameters =
-                DurableExecutorIsShutdownCodec.decodeResponse(response);
-        return resultParameters.response;
+        return DurableExecutorIsShutdownCodec.decodeResponse(response);
     }
 
     @Override
@@ -221,15 +219,15 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int sequence;
         try {
             ClientMessage response = invokeOnPartition(request, partitionId);
-            sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response).response;
+            sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response);
         } catch (Throwable t) {
-            return completedExceptionally(t, ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR);
+            return completedExceptionally(t, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
         return new ClientDurableExecutorServiceDelegatingFuture<>(future, getSerializationService(),
-                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response,
+                DurableExecutorRetrieveResultCodec::decodeResponse,
                 result, taskId);
     }
 

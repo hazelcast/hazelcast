@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -45,7 +45,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.instance.impl.TestUtil.toData;
+import static com.hazelcast.internal.util.IterableUtil.size;
 import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -53,7 +55,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexesTest {
@@ -68,16 +70,16 @@ public class IndexesTest {
         return asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER}
+                {IndexCopyBehavior.NEVER},
         });
     }
 
     @Test
     public void testAndWithSingleEntry() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -91,16 +93,15 @@ public class IndexesTest {
         EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder predicate =
                 entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
-        Set<QueryableEntry> results = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
-        assertEquals(1, results.size());
+        assertEquals(1, size(indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK)));
     }
 
     @Test
     public void testIndex() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -109,15 +110,14 @@ public class IndexesTest {
 
         for (int i = 0; i < 10; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK));
-            assertEquals(5, results.size());
+            assertEquals(5, size(indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK)));
         }
     }
 
     @Test
     public void testIndex2() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
@@ -136,7 +136,7 @@ public class IndexesTest {
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
-        assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"), SKIP_PARTITIONS_COUNT_CHECK)).size());
+        assertEquals(8, size(indexes.query(new SqlPredicate("name > 'aac'"), SKIP_PARTITIONS_COUNT_CHECK)));
     }
 
     protected Extractors newExtractor() {
@@ -150,15 +150,15 @@ public class IndexesTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -170,15 +170,14 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK);
-
-        assertNull("There should be no result", query);
+        assertNull("There should be no result",
+                indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK));
     }
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"), null);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"));
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
@@ -186,39 +185,37 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK);
-
-        assertEquals(89, query.size());
+        assertEquals(89, size(indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK)));
     }
 
     @Test
     public void testNoDuplicateIndexes() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
         IndexConfig config1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a");
 
-        InternalIndex index = indexes.addOrGetIndex(config1, null);
+        InternalIndex index = indexes.addOrGetIndex(config1);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex(config1, null));
+        assertSame(index, indexes.addOrGetIndex(config1));
 
         IndexConfig config2 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a", "b");
 
-        index = indexes.addOrGetIndex(config2, null);
+        index = indexes.addOrGetIndex(config2);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex(config2, null));
+        assertSame(index, indexes.addOrGetIndex(config2));
     }
 
     @Test
     public void testEvaluateOnlyIndexesMatching() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
-        Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"), null);
+        Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"));
         Index matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertSame(hashIndex, matched);
         matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertNull(matched);
 
-        Index bitmapIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"), null);
+        Index bitmapIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"));
         matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertSame(hashIndex, matched);
         matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);

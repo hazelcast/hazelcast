@@ -1,0 +1,130 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "near-cache": {
+        "my-near-cache": {
+          "time-to-live-seconds": "90",
+          "max-idle-seconds": "100",
+          "invalidate-on-change": "On",
+          "in-memory-format": "RECORD",
+          "serialize-keys": "On",
+          "local-update-policy": "REMOVE",
+          "unknown-prop": null,
+          "eviction": null,
+          "preloader": {
+            "enabled": "On",
+            "directory": null,
+            "store-initial-delay-seconds": "50",
+            "store-interval-seconds": "10",
+            "unknown-prop": null
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientNearCache/additionalProperties",
+    "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientNearCache/additionalProperties",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown-prop] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader",
+            "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-prop] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader/properties/directory",
+            "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader/directory",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader/properties/enabled",
+            "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader/properties/store-initial-delay-seconds",
+            "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader/store-initial-delay-seconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNearCache/additionalProperties/properties/preloader/properties/store-interval-seconds",
+            "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/preloader/store-interval-seconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "5 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Eviction",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/eviction",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/InMemoryFormat",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/in-memory-format",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "RECORD is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/near-cache/properties/invalidate-on-change",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/invalidate-on-change",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/near-cache/properties/local-update-policy",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/local-update-policy",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "REMOVE is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/near-cache/properties/max-idle-seconds",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/max-idle-seconds",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/near-cache/properties/serialize-keys",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/serialize-keys",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/near-cache/properties/time-to-live-seconds",
+        "pointerToViolation": "#/hazelcast-client/near-cache/my-near-cache/time-to-live-seconds",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      }
+    ],
+    "message": "13 schema violations found"
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +53,9 @@ public final class ClassLoaderUtil {
     private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
+
+    private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0],
+            ClassLoaderUtil.class.getClassLoader());
 
     static {
         try {
@@ -209,12 +214,17 @@ public final class ClassLoaderUtil {
     @SuppressWarnings("unchecked")
     private static <T> T newInstance0(ClassLoader classLoader, String className) throws Exception {
         Class klass = classLoader == null ? Class.forName(className) : tryLoadClass(className, classLoader);
+        return newInstance(classLoader, klass);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(ClassLoader classLoader, Class klass) throws Exception {
         final Constructor constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
         if (!shouldBypassCache(klass) && classLoader != null) {
-            CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
+            CONSTRUCTOR_CACHE.put(classLoader, klass.getName(), constructor);
         }
         return (T) constructor.newInstance();
     }
@@ -225,32 +235,34 @@ public final class ClassLoaderUtil {
         if (primitiveClass != null) {
             return primitiveClass;
         }
-        ClassLoader theClassLoader = classLoaderHint;
-        if (theClassLoader == null) {
-            theClassLoader = Thread.currentThread().getContextClassLoader();
-        }
 
-        // first try to load it through the given classloader
-        if (theClassLoader != null) {
+        // Try to load it using the hinted classloader if not null
+        if (classLoaderHint != null) {
             try {
-                return tryLoadClass(className, theClassLoader);
+                return tryLoadClass(className, classLoaderHint);
             } catch (ClassNotFoundException ignore) {
-                // reset selected classloader and try with others
-                theClassLoader = null;
             }
         }
 
-        // if failed and this is a Hazelcast class, try again with our classloader
-        if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
-            theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        // If this is a Hazelcast class, try to load it using our classloader
+        ClassLoader theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        if (theClassLoader != null && belongsToHazelcastPackage(className)) {
+            try {
+                return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
+            } catch (ClassNotFoundException ignore) {
+            }
         }
-        if (theClassLoader == null) {
-            theClassLoader = Thread.currentThread().getContextClassLoader();
+
+        // Try to load it using context class loader if not null
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        if (contextClassLoader != null) {
+            return tryLoadClass(className, contextClassLoader);
         }
-        if (theClassLoader != null) {
-            return tryLoadClass(className, theClassLoader);
-        }
-        return Class.forName(className);
+        return tryLoadClass(className, NULL_FALLBACK_CLASSLOADER);
+    }
+
+    private static boolean belongsToHazelcastPackage(String className) {
+        return className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY);
     }
 
     private static Class<?> tryPrimitiveClass(String className) {
@@ -281,7 +293,9 @@ public final class ClassLoaderUtil {
             }
         }
 
-        if (className.startsWith("[")) {
+        if (classLoader == NULL_FALLBACK_CLASSLOADER) {
+            clazz = Class.forName(className);
+        } else if (className.startsWith("[")) {
             clazz = Class.forName(className, false, classLoader);
         } else {
             clazz = classLoader.loadClass(className);
@@ -435,7 +449,7 @@ public final class ClassLoaderUtil {
          */
         @SuppressWarnings("checkstyle:RedundantModifier")
         public IrresolvableConstructor() {
-            throw new UnsupportedOperationException("Irresolvable constructor should never be instantiated.");
+            throw new UnsupportedOperationException("Irresolvable constructor must never be instantiated.");
         }
     }
 

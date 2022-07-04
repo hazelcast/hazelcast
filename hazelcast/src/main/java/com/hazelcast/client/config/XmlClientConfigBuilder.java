@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,17 @@ import com.hazelcast.client.config.impl.ClientConfigSections;
 import com.hazelcast.client.config.impl.ClientDomConfigProcessor;
 import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.config.AbstractXmlConfigBuilder;
-import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -42,6 +41,7 @@ import java.util.Properties;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
@@ -114,10 +114,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
 
     @Override
     protected Document parse(InputStream inputStream) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        DocumentBuilder builder = dbf.newDocumentBuilder();
+        DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
         try {
             return builder.parse(inputStream);
         } catch (Exception e) {
@@ -172,13 +169,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
             domLevel3 = false;
         }
         process(root);
-        schemaValidation(root.getOwnerDocument());
+        if (shouldValidateTheSchema()) {
+            schemaValidation(root.getOwnerDocument());
+        }
         new ClientDomConfigProcessor(domLevel3, clientConfig).buildConfig(root);
     }
 
     private void checkRootElement(Element root) {
         String rootNodeName = root.getNodeName();
-        if (!ClientConfigSections.HAZELCAST_CLIENT.isEqual(rootNodeName)) {
+        if (!ClientConfigSections.HAZELCAST_CLIENT.getName().equals(rootNodeName)) {
             throw new InvalidConfigurationException("Invalid root element in xml configuration! "
                     + "Expected: <" + ClientConfigSections.HAZELCAST_CLIENT.getName()
                     + ">, Actual: <" + rootNodeName + ">.");

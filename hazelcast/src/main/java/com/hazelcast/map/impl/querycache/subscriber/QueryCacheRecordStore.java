@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,51 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Common contract for implementations which store {@link QueryCacheRecord}.
  */
 public interface QueryCacheRecordStore {
 
-    QueryCacheRecord add(Data keyData, Data valueData);
+    QueryCacheRecord add(Object queryCacheKey, Data valueData);
 
-    QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData);
+    QueryCacheRecord addWithoutEvictionCheck(Object queryCacheKey, Data valueData);
 
-    QueryCacheRecord get(Data keyData);
+    /**
+     * Adds entries from the given {@code entryIterator}. For each entry
+     * that is successfully added, the given {@code postProcessor} is invoked
+     * with the added entry and the old {@link QueryCacheRecord} that was
+     * replaced as arguments. Depending on the query cache's eviction
+     * configuration, it is possible that not all entries from the
+     * iterator will be added to the record store.
+     */
+    void addBatch(Iterator<Map.Entry<Data, Data>> entryIterator,
+                  BiConsumer<Map.Entry<Data, Data>, QueryCacheRecord> postProcessor);
 
-    QueryCacheRecord remove(Data keyData);
+    QueryCacheRecord get(Object queryCacheKey);
 
-    boolean containsKey(Data keyData);
+    QueryCacheRecord remove(Object queryCacheKey);
+
+    boolean containsKey(Object queryCacheKey);
 
     boolean containsValue(Object value);
 
-    Set<Data> keySet();
+    Set keySet();
 
-    Set<Map.Entry<Data, QueryCacheRecord>> entrySet();
+    Set<Map.Entry<Object, QueryCacheRecord>> entrySet();
 
     int clear();
 
     boolean isEmpty();
 
     int size();
+
+    Object toQueryCacheKey(Object key);
 }

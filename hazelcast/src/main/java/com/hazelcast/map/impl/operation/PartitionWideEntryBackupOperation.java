@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
                 outComes.add(operator.getOldValue());
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
+                outComes.add(operator.getEntry().getNewTtl());
             }
         }, true);
 
@@ -85,9 +86,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             Object oldValue = outComes.poll();
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
+            long newTtl = (long) outComes.poll();
 
-            operator.init(dataKey, oldValue, newValue, null, eventType, null)
-                    .doPostOperateOps();
+            operator.init(dataKey, oldValue, newValue, null, eventType,
+                    null, newTtl).doPostOperateOps();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.impl.ClassDefinitionImpl;
-import com.hazelcast.internal.serialization.impl.FieldDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
+import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
@@ -35,7 +39,7 @@ public final class ClassDefinitionBuilder {
     private final int classId;
     private final int version;
     private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<FieldDefinitionImpl>();
-
+    private final Set<String> addedFieldNames = new HashSet<>();
     private int index;
     private boolean done;
 
@@ -66,144 +70,423 @@ public final class ClassDefinitionBuilder {
         this.version = version;
     }
 
-    public ClassDefinitionBuilder addIntField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addIntField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.INT);
     }
 
-    public ClassDefinitionBuilder addLongField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addLongField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.LONG);
     }
 
-    public ClassDefinitionBuilder addUTFField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringField(String)} instead.
+     */
+    @Nonnull
+    @Deprecated
+    public ClassDefinitionBuilder addUTFField(@Nonnull String fieldName) {
+        return addStringField(fieldName);
     }
 
-    public ClassDefinitionBuilder addBooleanField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addStringField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.UTF);
     }
 
-    public ClassDefinitionBuilder addByteField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addBooleanField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.BOOLEAN);
     }
 
-    public ClassDefinitionBuilder addBooleanArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN_ARRAY, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addByteField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.BYTE);
     }
 
-    public ClassDefinitionBuilder addCharField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addBooleanArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
-    public ClassDefinitionBuilder addDoubleField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addCharField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.CHAR);
     }
 
-    public ClassDefinitionBuilder addFloatField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDoubleField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DOUBLE);
     }
 
-    public ClassDefinitionBuilder addShortField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addFloatField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.FLOAT);
     }
 
-    public ClassDefinitionBuilder addByteArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addShortField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.SHORT);
     }
 
-    public ClassDefinitionBuilder addCharArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY, version));
-        return this;
+    /**
+     * Adds a decimal which is arbitrary precision and scale floating-point number to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDecimalField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DECIMAL);
     }
 
-    public ClassDefinitionBuilder addIntArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY, version));
-        return this;
+    /**
+     * Adds a time field consisting of hour, minute, seconds and nanos parts to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimeField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIME);
     }
 
-    public ClassDefinitionBuilder addLongArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY, version));
-        return this;
+    /**
+     * Adds a date field consisting of year, month of the year and day of the month to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDateField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DATE);
     }
 
-    public ClassDefinitionBuilder addDoubleArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY, version));
-        return this;
+    /**
+     * Adds a timestamp field consisting of
+     * year, month of the year, day of the month, hour, minute, seconds, nanos parts to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimestampField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIMESTAMP);
     }
 
-    public ClassDefinitionBuilder addFloatArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY, version));
-        return this;
+    /**
+     * Adds a timestamp with timezone field consisting of
+     * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
+     * to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimestampWithTimezoneField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
 
-    public ClassDefinitionBuilder addShortArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addByteArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.BYTE_ARRAY);
     }
 
-    public ClassDefinitionBuilder addUTFArrayField(String fieldName) {
-        check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF_ARRAY, version));
-        return this;
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addCharArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.CHAR_ARRAY);
     }
 
-    public ClassDefinitionBuilder addPortableField(String fieldName, ClassDefinition def) {
-        check();
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addIntArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.INT_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addLongArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.LONG_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDoubleArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DOUBLE_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addFloatArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.FLOAT_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addShortArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.SHORT_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringArrayField(String)} instead.
+     */
+    @Nonnull
+    @Deprecated
+    public ClassDefinitionBuilder addUTFArrayField(@Nonnull String fieldName) {
+        return addStringArrayField(fieldName);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addStringArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.UTF_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addPortableField(@Nonnull String fieldName, ClassDefinition def) {
         if (def.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
+        check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
         return this;
     }
 
-    public ClassDefinitionBuilder addPortableArrayField(String fieldName, ClassDefinition def) {
-        check();
-        if (def.getClassId() == 0) {
+    /**
+     * @param fieldName       name of the field that will be add to this class definition
+     * @param classDefinition class definition of the nested portable that will be add to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addPortableArrayField(@Nonnull String fieldName, ClassDefinition classDefinition) {
+        if (classDefinition.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY,
+                classDefinition.getFactoryId(), classDefinition.getClassId(), classDefinition.getVersion()));
         return this;
     }
 
-    public ClassDefinitionBuilder addField(FieldDefinitionImpl fieldDefinition) {
-        check();
+    /**
+     * Adds an array of Decimal's to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @see #addDecimalField(String)
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDecimalArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DECIMAL_ARRAY);
+    }
+
+    /**
+     * Adds an array of Time's to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @see #addTimeField(String)
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimeArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIME_ARRAY);
+    }
+
+    /**
+     * Adds an array of Date's to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @see #addDateField(String)
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addDateArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.DATE_ARRAY);
+    }
+
+    /**
+     * Adds an array of Timestamp's to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @see #addTimestampField(String)
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimestampArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIMESTAMP_ARRAY);
+    }
+
+    /**
+     * Adds an array of TimestampWithTimezone's to the class definition
+     *
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @see #addTimestampWithTimezoneField(String)
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addTimestampWithTimezoneArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    }
+
+    private ClassDefinitionBuilder addField(@Nonnull String fieldName, FieldType fieldType) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, fieldType, version));
+        return this;
+    }
+
+    @PrivateApi
+    public void addField(FieldDefinitionImpl fieldDefinition) {
         if (index != fieldDefinition.getIndex()) {
             throw new IllegalArgumentException("Invalid field index");
         }
+        check(fieldDefinition.getName());
         index++;
         fieldDefinitions.add(fieldDefinition);
-        return this;
     }
 
+    /**
+     * @return creates and returns a new ClassDefinition
+     */
+    @Nonnull
     public ClassDefinition build() {
         done = true;
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
@@ -213,7 +496,10 @@ public final class ClassDefinitionBuilder {
         return cd;
     }
 
-    private void check() {
+    private void check(@Nonnull String fieldName) {
+        if (!addedFieldNames.add(fieldName)) {
+            throw new HazelcastSerializationException("Field with field name : " + fieldName + " already exists");
+        }
         if (done) {
             throw new HazelcastSerializationException("ClassDefinition is already built for " + classId);
         }

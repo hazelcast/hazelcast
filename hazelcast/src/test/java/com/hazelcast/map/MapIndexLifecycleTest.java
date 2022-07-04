@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -41,7 +42,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,10 +52,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -75,6 +76,10 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         return smallInstanceConfig();
+    }
+
+    boolean globalIndex() {
+        return true;
     }
 
     @Test
@@ -161,38 +166,24 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private void assertGlobalIndexesAreInitialized(HazelcastInstance instance) {
         MapServiceContext context = getMapServiceContext(instance);
         final MapContainer mapContainer = context.getMapContainer(mapName);
-        if (mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE)) {
+        if (!globalIndex()) {
             return;
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(2, mapContainer.getIndexes().getIndexes().length);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, mapContainer.getIndexes().getIndexes().length));
+
         assertNotNull("There should be a global index for attribute 'author'",
                 mapContainer.getIndexes().getIndex("author"));
         assertNotNull("There should be a global index for attribute 'year'",
                 mapContainer.getIndexes().getIndex("year"));
         final String authorOwned = findAuthorOwnedBy(instance);
         final Integer yearOwned = findYearOwnedBy(instance);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Author index should contain records.",
-                        mapContainer.getIndexes()
-                                .getIndex("author")
-                                .getRecords(authorOwned).size() > 0);
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Author index should contain records.",
+                mapContainer.getIndexes()
+                        .getIndex("author")
+                        .getRecords(authorOwned).size() > 0));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Year index should contain records",
-                        mapContainer.getIndexes().getIndex("year").getRecords(yearOwned).size() > 0);
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Year index should contain records",
+                mapContainer.getIndexes().getIndex("year").getRecords(yearOwned).size() > 0));
     }
 
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
@@ -212,10 +203,15 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer container = context.getPartitionContainer(i);
 
-            ConcurrentMap<String, RecordStore> maps = container.getMaps();
+            Map<String, ?> maps = container.getMaps().entrySet().stream()
+                    .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertTrue("record stores not empty", maps.isEmpty());
 
-            ConcurrentMap<String, Indexes> indexes = container.getIndexes();
+            Map<String, Indexes> indexes = container.getIndexes()
+                    .entrySet().stream()
+                    .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertTrue("indexes not empty", indexes.isEmpty());
         }
     }
@@ -225,7 +221,6 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         int partitionCount = getPartitionCount(instance);
         final AtomicInteger authorRecordsCounter = new AtomicInteger();
         final AtomicInteger yearRecordsCounter = new AtomicInteger();
-        boolean isNativeMemoryFormat = context.getMapContainer(mapName).getMapConfig().getInMemoryFormat().equals(NATIVE);
 
         String authorOwned = findAuthorOwnedBy(instance);
         Integer yearOwned = findYearOwnedBy(instance);
@@ -241,7 +236,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             RecordStore recordStore = maps.get(mapName);
             assertNotNull("record store is null: ", recordStore);
 
-            if (isNativeMemoryFormat) {
+            if (!globalIndex()) {
                 // also assert contents of partition indexes when NATIVE memory format
                 ConcurrentMap<String, Indexes> indexes = container.getIndexes();
                 final Indexes index = indexes.get(mapName);
@@ -255,7 +250,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             }
         }
 
-        if (isNativeMemoryFormat) {
+        if (!globalIndex()) {
             assertTrue("Author index should contain records", authorRecordsCounter.get() > 0);
             assertTrue("Year index should contain records", yearRecordsCounter.get() > 0);
         }

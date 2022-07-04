@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.cluster.Member;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A {@link com.hazelcast.client.LoadBalancer} implementation that relies on using round robin
+ * A {@link LoadBalancer} implementation that relies on using round robin
  * to a next member to send a request to.
  * <p/>
  * Round robin is done based on best effort basis, the order of members for concurrent calls to
@@ -41,7 +42,21 @@ public class RoundRobinLB extends AbstractLoadBalancer {
 
     @Override
     public Member next() {
-        Member[] members = getMembers();
+        return nextInternal(false);
+    }
+
+    @Override
+    public Member nextDataMember() {
+        return nextInternal(true);
+    }
+
+    @Override
+    public boolean canGetNextDataMember() {
+        return true;
+    }
+
+    private Member nextInternal(boolean dataMembers) {
+        Member[] members = dataMembers ? getDataMembers() : getMembers();
         if (members == null || members.length == 0) {
             return null;
         }

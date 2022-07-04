@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class IncrementCommandParser extends TypeAwareCommandParser {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String key;
-        int value;
+        long value;
         boolean noReply = false;
         if (st.hasMoreTokens()) {
             key = st.nextToken();
@@ -45,7 +45,7 @@ public class IncrementCommandParser extends TypeAwareCommandParser {
             return new ErrorCommand(ERROR_CLIENT);
         }
         if (st.hasMoreTokens()) {
-            value = Integer.parseInt(st.nextToken());
+            value = Long.parseUnsignedLong(st.nextToken());
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }

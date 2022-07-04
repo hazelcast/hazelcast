@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+
 /**
  * Converter for {@link java.lang.Integer} type.
  */
@@ -28,7 +30,7 @@ public final class IntegerConverter extends Converter {
     public static final IntegerConverter INSTANCE = new IntegerConverter();
 
     private IntegerConverter() {
-        super(ID_INTEGER, QueryDataTypeFamily.INT);
+        super(ID_INTEGER, QueryDataTypeFamily.INTEGER);
     }
 
     @Override
@@ -38,12 +40,26 @@ public final class IntegerConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        return (byte) cast(val);
+        int casted = cast(val);
+        byte converted = (byte) casted;
+
+        if (converted != casted) {
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
+        }
+
+        return converted;
     }
 
     @Override
     public short asSmallint(Object val) {
-        return (short) cast(val);
+        int casted = cast(val);
+        short converted = (short) casted;
+
+        if (converted != casted) {
+            throw numericOverflowError(QueryDataTypeFamily.SMALLINT);
+        }
+
+        return converted;
     }
 
     @Override
@@ -58,7 +74,7 @@ public final class IntegerConverter extends Converter {
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val));
+        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
     }
 
     @Override
@@ -84,4 +100,5 @@ public final class IntegerConverter extends Converter {
     private int cast(Object val) {
         return (int) val;
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.transaction.xa.Xid;
@@ -39,15 +39,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class XACollectTransactionsMessageTask
-        extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {
+        extends AbstractMultiTargetMessageTask<Void> {
 
     public XACollectTransactionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionCollectTransactionsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionCollectTransactionsCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,10 @@ import java.util.Comparator;
 public final class Comparables {
 
     /**
-     * Provides the same comparision logic as {@link #compare} does, but in a
+     * Provides the same comparison logic as {@link #compare} does, but in a
      * form of a {@link Comparator}.
      */
-    public static final Comparator<Comparable> COMPARATOR = new Comparator<Comparable>() {
-
-        @Override
-        public int compare(Comparable lhs, Comparable rhs) {
-            return Comparables.compare(lhs, rhs);
-        }
-
-    };
+    public static final Comparator<Comparable> COMPARATOR = Comparables::compare;
 
     private Comparables() {
     }

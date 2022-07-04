@@ -1,0 +1,22 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "load-balancer": {
+        "type": "invalid"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/LoadBalancer",
+    "pointerToViolation": "#/hazelcast-client/load-balancer",
+    "causingExceptions": [{
+      "schemaLocation": "#/definitions/LoadBalancer/properties/type",
+      "pointerToViolation": "#/hazelcast-client/load-balancer/type",
+      "causingExceptions": [],
+      "keyword": "enum",
+      "message": "invalid is not a valid enum value"
+    }],
+    "keyword": "allOf",
+    "message": "#: only 1 subschema matches out of 2"
+  }
+}

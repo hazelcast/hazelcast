@@ -1,0 +1,66 @@
+name: aws-tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
+      - '.github/terraform/aws/**'
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'hazelcast'
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        distribution: [ 'adopt' ]
+    steps:
+      # SET UP JDK
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
+
+      - run: java -version
+
+      # BUILD HAZELCAST AWS SNAPSHOT
+      - uses: actions/checkout@v3.0.2
+        with:
+          path: hazelcast
+
+      - name: Build hazelcast jar
+        run: |
+          cd hazelcast
+          mvn clean install -DskipTests -Dcheckstyle.skip
+          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+
+      # INSTALL TERRAFORM
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 1.1.8
+
+      - name: Terraform Init
+        working-directory: hazelcast/.github/terraform/aws
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: hazelcast/.github/terraform/aws
+        run: terraform apply -var="hazelcast_mancenter_version=latest-snapshot" -var="hazelcast_path=~/hazelcast.jar" -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ always() }}
+        working-directory: hazelcast/.github/terraform/aws
+        run: terraform destroy -auto-approve

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all of the elements from this list (optional operation). The list will be empty after this call returns.
  */
-@Generated("23a2b7ff158ce1abeaf0d5a2d7a819c0")
+@Generated("39253c22dfef69ed5f0d305f31983c99")
 public final class ListClearCodec {
     //hex: 0x050900
     public static final int REQUEST_MESSAGE_TYPE = 329984;
@@ -46,15 +46,6 @@ public final class ListClearCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ListClearCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the List
-         */
-        public java.lang.String name;
     }
 
     public static ClientMessage encodeRequest(java.lang.String name) {
@@ -69,17 +60,14 @@ public final class ListClearCodec {
         return clientMessage;
     }
 
-    public static ListClearCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * Name of the List
+     */
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
@@ -90,13 +78,4 @@ public final class ListClearCodec {
 
         return clientMessage;
     }
-
-    public static ListClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

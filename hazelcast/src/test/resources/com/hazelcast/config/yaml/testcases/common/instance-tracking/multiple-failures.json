@@ -1,0 +1,47 @@
+{
+  "instance": {
+    "hazelcast": {
+      "instance-tracking": {
+        "unknown": false,
+        "enabled": "On",
+        "file-name": null,
+        "format-pattern": null
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/InstanceTracking",
+    "pointerToViolation": "#/hazelcast/instance-tracking",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/InstanceTracking",
+        "pointerToViolation": "#/hazelcast/instance-tracking",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/InstanceTracking/properties/format-pattern",
+        "pointerToViolation": "#/hazelcast/instance-tracking/format-pattern",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/InstanceTracking/properties/file-name",
+        "pointerToViolation": "#/hazelcast/instance-tracking/file-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/InstanceTracking/properties/enabled",
+        "pointerToViolation": "#/hazelcast/instance-tracking/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}

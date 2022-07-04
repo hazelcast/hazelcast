@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,12 @@ import static java.util.Collections.unmodifiableList;
 public class MembersUpdateOp extends AbstractClusterOperation {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
+    PartitionRuntimeState partitionRuntimeState;
     /** The updated member info collection. */
     private List<MemberInfo> memberInfos;
     /** The UUID of the receiving member. */
     private UUID targetUuid;
     private boolean returnResponse;
-    private PartitionRuntimeState partitionRuntimeState;
     private int memberListVersion;
 
     public MembersUpdateOp() {

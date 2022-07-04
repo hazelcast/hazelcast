@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
@@ -48,12 +49,13 @@ import java.util.Map;
 import java.util.ConcurrentModificationException;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
+import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemcachedTest extends HazelcastTestSupport {
 
     protected HazelcastInstance instance;
@@ -64,7 +66,7 @@ public class MemcachedTest extends HazelcastTestSupport {
         config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
         return config;
     }
@@ -78,9 +80,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         try {
-            if (client != null) {
-                client.shutdown();
-            }
+            shutdownQuietly(client);
         } catch (ConcurrentModificationException e) {
             // See https://github.com/hazelcast/hazelcast/issues/14204
             // Due to a MemcachedClient bug, we swallow this exception
@@ -247,16 +247,13 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(-1, value);
         assertNull(client.get(key));
 
-        OperationFuture<Boolean> future = client.set(key, 0, 1);
+        OperationFuture<Boolean> future = client.set(key, 0, "1");
         future.get();
 
         value = client.incr(key, 10);
         assertEquals(11, value);
 
-        value = client.incr(key, -5);
-        assertEquals(6, value);
-
-        checkStats(1, 1, 0, 1, 0, 0, 2, 1, 0, 0);
+        checkStats(1, 1, 0, 1, 0, 0, 1, 1, 0, 0);
     }
 
     @Test
@@ -267,16 +264,13 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(-1, value);
         assertNull(client.get(key));
 
-        OperationFuture<Boolean> future = client.set(key, 0, 5);
+        OperationFuture<Boolean> future = client.set(key, 0, "5");
         future.get();
 
         value = client.decr(key, 2);
         assertEquals(3, value);
 
-        value = client.decr(key, -2);
-        assertEquals(5, value);
-
-        checkStats(1, 1, 0, 1, 0, 0, 0, 0, 2, 1);
+        checkStats(1, 1, 0, 1, 0, 0, 0, 0, 1, 1);
     }
 
     @Test

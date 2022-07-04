@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:instance-name>test-instance</hz:instance-name>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
+
+            <hz:properties>
+                <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+                <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+                <hz:property name="hazelcast.partition.count">277</hz:property>
+            </hz:properties>
+            <hz:wan-replication name="testWan">
+                <hz:batch-publisher>
+                    <hz:cluster-name>tokyo</hz:cluster-name>
+                    <hz:publisher-id>tokyoPublisherId</hz:publisher-id>
+                    <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
+                    <hz:queue-capacity>1000</hz:queue-capacity>
+                    <hz:initial-publisher-state>STOPPED</hz:initial-publisher-state>
+                    <hz:batch-size>50</hz:batch-size>
+                    <hz:batch-max-delay-millis>3000</hz:batch-max-delay-millis>
+                    <hz:snapshot-enabled>true</hz:snapshot-enabled>
+                    <hz:response-timeout-millis>5000</hz:response-timeout-millis>
+                    <hz:acknowledge-type>ACK_ON_RECEIPT</hz:acknowledge-type>
+                    <hz:target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</hz:target-endpoints>
+                    <hz:endpoint>wan-tokyo</hz:endpoint>
+                    <hz:aws enabled="false"
+                            access-key="sample-access-key"
+                            secret-key="sample-secret-key"
+                            region="sample-region"
+                            host-header="sample-header"
+                            security-group-name="sample-group"
+                            tag-key="sample-tag-key"
+                            tag-value="sample-tag-value"
+                            iam-role="sample-role"/>
+                    <hz:gcp enabled="false"
+                            zones="us-east1-b,us-east1-c"/>
+                    <hz:azure enabled="false"
+                              instance-metadata-available="false"
+                              client-id="CLIENT_ID"
+                              client-secret="CLIENT_SECRET"
+                              tenant-id="TENANT_ID"
+                              subscription-id="SUB_ID"
+                              resource-group="RESOURCE-GROUP-NAME"
+                              scale-set="SCALE-SET"
+                              tag="TAG-NAME=HZLCAST001"/>
+                    <hz:kubernetes enabled="false"
+                                   namespace="MY-KUBERNETES-NAMESPACE"
+                                   service-name="MY-SERVICE-NAME"
+                                   service-label-name="MY-SERVICE-LABEL-NAME"
+                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                    <hz:eureka enabled="false"
+                               self-registration="true"
+                               namespace="hazelcast"/>
+                    <hz:discovery-strategies>
+                        <hz:node-filter class-name="DummyNodeFilter"/>
+                        <hz:discovery-strategy class-name="DummyDiscoveryStrategy">
+                            <hz:properties>
+                                <hz:property name="key-string">foo</hz:property>
+                                <hz:property name="key-int">123</hz:property>
+                                <hz:property name="key-boolean">true</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
+                            <hz:properties>
+                                <hz:property name="key-string">foo2</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                    </hz:discovery-strategies>
+                </hz:batch-publisher>
+                <hz:batch-publisher>
+                    <hz:cluster-name>ankara</hz:cluster-name>
+                    <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
+                </hz:batch-publisher>
+                <hz:custom-publisher class-name="com.hazelcast.wan.custom.CustomPublisher">
+                    <hz:publisher-id>istanbulPublisherId</hz:publisher-id>
+                    <hz:properties>
+                        <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
+                    </hz:properties>
+                </hz:custom-publisher>
+                <hz:consumer class-name="com.hazelcast.wan.custom.WanConsumer"
+                             persist-wan-replicated-data="true">
+                    <hz:properties>
+                        <hz:property name="custom.prop.consumer">prop.consumer</hz:property>
+                    </hz:properties>
+                </hz:consumer>
+            </hz:wan-replication>
+            <hz:wan-replication name="testWan2">
+                <hz:batch-publisher>
+                    <hz:cluster-name>tokyo</hz:cluster-name>
+                    <hz:sync>
+                        <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
+                    </hz:sync>
+                </hz:batch-publisher>
+                <hz:consumer class-name="WanConsumer" persist-wan-replicated-data="true"/>
+            </hz:wan-replication>
+            <hz:wan-replication name="testWan3">
+                <hz:consumer persist-wan-replicated-data="false"/>
+            </hz:wan-replication>
+            <hz:advanced-network enabled="true">
+                <hz:join>
+                    <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
+                                  multicast-time-to-live="16" multicast-timeout-seconds="8" loopback-mode-enabled="false">
+                        <hz:trusted-interfaces>
+                            <hz:interface>10.10.10.*</hz:interface>
+                        </hz:trusted-interfaces>
+                    </hz:multicast>
+                    <hz:tcp-ip enabled="${boolean.true}">
+                        <hz:required-member>127.0.0.1:5700</hz:required-member>
+                        <!--                         <hz:members>${cluster.members}</hz:members> -->
+                        <hz:interface>127.0.0.1:5700</hz:interface>
+                        <hz:interface>127.0.0.1:5701</hz:interface>
+                    </hz:tcp-ip>
+                    <hz:aws enabled="false"
+                            access-key="sample-access-key"
+                            secret-key="sample-secret-key"
+                            region="sample-region"
+                            host-header="sample-header"
+                            security-group-name="sample-group"
+                            tag-key="sample-tag-key"
+                            tag-value="sample-tag-value"
+                            iam-role="sample-role"/>
+                    <hz:gcp enabled="false"
+                            zones="us-east1-b,us-east1-c"/>
+                    <hz:azure enabled="false"
+                              instance-metadata-available="false"
+                              client-id="CLIENT_ID"
+                              client-secret="CLIENT_SECRET"
+                              tenant-id="TENANT_ID"
+                              subscription-id="SUB_ID"
+                              resource-group="RESOURCE-GROUP-NAME"
+                              scale-set="SCALE-SET"
+                              tag="TAG-NAME=HZLCAST001"/>
+                    <hz:kubernetes enabled="false"
+                                   namespace="MY-KUBERNETES-NAMESPACE"
+                                   service-name="MY-SERVICE-NAME"
+                                   service-label-name="MY-SERVICE-LABEL-NAME"
+                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                    <hz:eureka enabled="false"
+                               self-registration="true"
+                               namespace="hazelcast"/>
+                    <hz:auto-detection enabled="${boolean:false}"/>
+                </hz:join>
+                <hz:member-server-socket-endpoint-config name="member-server-socket"
+                        port="${cluster.port}" port-auto-increment="false" port-count="99">
+                    <hz:outbound-ports>
+                        <hz:ports>35000-35100</hz:ports>
+                        <hz:ports>36000,36100</hz:ports>
+                    </hz:outbound-ports>
+                    <hz:interfaces enabled="true">
+                        <hz:interface>127.0.0.1</hz:interface>
+                    </hz:interfaces>
+                    <hz:reuse-address>true</hz:reuse-address>
+                    <hz:socket-interceptor enabled="true" class-name="com.hazelcast.SocketInterceptor"/>
+                    <hz:ssl enabled="false" factory-class-name="com.hazelcast.SSLContextFactory"/>
+                    <hz:symmetric-encryption enabled="false"/>
+                    <hz:socket-options>
+                        <hz:buffer-direct>true</hz:buffer-direct>
+                        <hz:keep-alive>true</hz:keep-alive>
+                        <hz:tcp-no-delay>false</hz:tcp-no-delay>
+                        <hz:connect-timeout-seconds>932</hz:connect-timeout-seconds>
+                        <hz:linger-seconds>9</hz:linger-seconds>
+                        <hz:receive-buffer-size-kb>96</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>196</hz:send-buffer-size-kb>
+                    </hz:socket-options>
+                </hz:member-server-socket-endpoint-config>
+
+                <hz:wan-endpoint-config name="wan-tokyo">
+                    <hz:interfaces enabled="false">
+                        <hz:interface>10.10.1.*</hz:interface>
+                    </hz:interfaces>
+                    <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
+                            factory-implementation="dummySSLContextFactory"/>
+                    <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
+                                           implementation="dummySocketInterceptor"/>
+                    <hz:symmetric-encryption enabled="true"
+                                             algorithm="PBEWithMD5AndDES"
+                                             salt="thesalt"
+                                             password="thepass"
+                                             iteration-count="19"/>
+                </hz:wan-endpoint-config>
+
+                <hz:client-server-socket-endpoint-config port="9919" port-auto-increment="false" port-count="10">
+                    <hz:reuse-address>true</hz:reuse-address>
+                </hz:client-server-socket-endpoint-config>
+
+                <hz:member-address-provider enabled="false" class-name="com.hazelcast.spring.DummyMemberAddressProvider">
+                    <hz:properties>
+                        <hz:property name="dummy.property">value</hz:property>
+                        <hz:property name="dummy.property.2">value2</hz:property>
+                    </hz:properties>
+                </hz:member-address-provider>
+                <hz:failure-detector>
+                    <hz:icmp enabled="false">
+                        <hz:fail-fast-on-startup>true</hz:fail-fast-on-startup>
+                        <hz:interval-milliseconds>1002</hz:interval-milliseconds>
+                        <hz:max-attempts>2</hz:max-attempts>
+                        <hz:parallel-mode>true</hz:parallel-mode>
+                        <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
+                        <hz:ttl>1</hz:ttl>
+                    </hz:icmp>
+                </hz:failure-detector>
+
+                <hz:rest-server-socket-endpoint-config port="9999" port-auto-increment="true">
+                    <hz:reuse-address>false</hz:reuse-address>
+                    <hz:endpoint-groups>
+                        <hz:endpoint-group name="HEALTH_CHECK" enabled="true"/>
+                        <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
+                        <hz:endpoint-group name="CLUSTER_WRITE" enabled="false"/>
+                    </hz:endpoint-groups>
+                </hz:rest-server-socket-endpoint-config>
+            </hz:advanced-network>
+            <hz:partition-group enabled="true" group-type="CUSTOM">
+                <hz:member-group>
+                    <hz:interface>127.0.0.1</hz:interface>
+                    <hz:interface>127.0.0.2</hz:interface>
+                </hz:member-group>
+                <hz:member-group>
+                    <hz:interface>127.0.0.3</hz:interface>
+                    <hz:interface>127.0.0.4</hz:interface>
+                </hz:member-group>
+            </hz:partition-group>
+
+            <hz:map name="simpleMap"
+                    backup-count="3"
+                    async-backup-count="1"
+                    time-to-live-seconds="1">
+                <hz:eviction size="10" eviction-policy="LRU"/>
+            </hz:map>
+
+            <hz:member-attributes>
+                <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
+            </hz:member-attributes>
+        </hz:config>
+    </hz:hazelcast>
+
+    <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>
+    <bean id="dummySocketInterceptor" class="com.hazelcast.spring.DummySocketInterceptor"/>
+
+</beans>

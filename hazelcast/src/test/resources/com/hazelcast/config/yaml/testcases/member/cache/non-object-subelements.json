@@ -1,0 +1,144 @@
+{
+  "instance": {
+    "hazelcast": {
+      "cache": {
+        "default": {
+          "key-type": "java.lang.Object",
+          "value-type": null,
+          "cache-loader-factory": "java.lang.Object",
+          "cache-writer-factory": "com.example.cache.MyCacheWriterFactory",
+          "expiry-policy-factory": {
+            "class-name": "com.example.cache.MyExpirePolicyFactory",
+            "unknown":  true
+          },
+          "eviction": false,
+          "wan-replication-ref": null,
+          "partition-lost-listeners": -1,
+          "merge-policy": "LatestAccessMergePolicy",
+          "hot-restart": true,
+          "event-journal": false
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Cache/additionalProperties",
+    "pointerToViolation": "#/hazelcast/cache/default",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal",
+        "pointerToViolation": "#/hazelcast/cache/default/event-journal",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory",
+        "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+            "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+                "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [class-name] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+                "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+                "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [timed-expiry-policy-factory] not found"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassNameObj",
+            "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          }
+        ],
+        "keyword": "anyOf",
+        "message": "#: no subschema matched out of the total 2 subschemas"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart",
+        "pointerToViolation": "#/hazelcast/cache/default/hot-restart",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/partition-lost-listeners",
+        "pointerToViolation": "#/hazelcast/cache/default/partition-lost-listeners",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref",
+        "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj",
+        "pointerToViolation": "#/hazelcast/cache/default/cache-loader-factory",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj",
+        "pointerToViolation": "#/hazelcast/cache/default/cache-writer-factory",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj",
+        "pointerToViolation": "#/hazelcast/cache/default/key-type",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj",
+        "pointerToViolation": "#/hazelcast/cache/default/value-type",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/Eviction",
+        "pointerToViolation": "#/hazelcast/cache/default/eviction",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/MergePolicy",
+        "pointerToViolation": "#/hazelcast/cache/default/merge-policy",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      }
+    ],
+    "message": "14 schema violations found"
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.session;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.internal.util.BiTuple;
@@ -37,7 +38,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
 /**
@@ -191,7 +191,9 @@ public abstract class AbstractProxySessionManager {
     private SessionState getOrCreateSession(RaftGroupId groupId) {
         lock.readLock().lock();
         try {
-            checkState(running, "Session manager is already shut down!");
+            if (!running) {
+                throw new HazelcastInstanceNotActiveException("Session manager is already shut down!");
+            }
 
             SessionState session = sessions.get(groupId);
             if (session == null || !session.isValid()) {

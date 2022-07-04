@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
 
     public volatile int backupCount;
 
-    private volatile ILogger logger;
+    protected volatile ILogger logger;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {

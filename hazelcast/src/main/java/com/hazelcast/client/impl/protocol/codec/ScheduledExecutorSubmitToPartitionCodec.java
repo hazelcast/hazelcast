@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("419ec231dacc760eab3cba36c06f6b83")
+@Generated("9e05e762cc9442a8cfa2ab32722dd212")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -45,7 +45,8 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
     private static final int REQUEST_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorSubmitToPartitionCodec() {
@@ -83,9 +84,20 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
          * period between each run in milliseconds
          */
         public long periodInMillis;
+
+        /**
+         * A boolean flag to indicate whether the task should be destroyed automatically after execution.
+         */
+        public boolean autoDisposable;
+
+        /**
+         * True if the autoDisposable is received from the client, false otherwise.
+         * If this is false, autoDisposable has the default value for its type.
+         */
+        public boolean isAutoDisposableExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis, boolean autoDisposable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToPartition");
@@ -95,6 +107,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         encodeByte(initialFrame.content, REQUEST_TYPE_FIELD_OFFSET, type);
         encodeLong(initialFrame.content, REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET, initialDelayInMillis);
         encodeLong(initialFrame.content, REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET, periodInMillis);
+        encodeBoolean(initialFrame.content, REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET, autoDisposable);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
@@ -109,14 +122,16 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         request.type = decodeByte(initialFrame.content, REQUEST_TYPE_FIELD_OFFSET);
         request.initialDelayInMillis = decodeLong(initialFrame.content, REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET);
         request.periodInMillis = decodeLong(initialFrame.content, REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.autoDisposable = decodeBoolean(initialFrame.content, REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET);
+            request.isAutoDisposableExists = true;
+        } else {
+            request.isAutoDisposableExists = false;
+        }
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
         request.task = DataCodec.decode(iterator);
         return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
     }
 
     public static ClientMessage encodeResponse() {
@@ -127,13 +142,4 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
 
         return clientMessage;
     }
-
-    public static ScheduledExecutorSubmitToPartitionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

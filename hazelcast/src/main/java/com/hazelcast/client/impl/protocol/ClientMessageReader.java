@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public final class ClientMessageReader {
 
@@ -34,8 +35,8 @@ public final class ClientMessageReader {
     private int sumUntrustedMessageLength;
     private final int maxMessageLength;
 
-    public ClientMessageReader(int maxMessageLenth) {
-        this.maxMessageLength = maxMessageLenth > 0 ? maxMessageLenth : Integer.MAX_VALUE;
+    public ClientMessageReader(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength > 0 ? maxMessageLength : Integer.MAX_VALUE;
     }
 
     public boolean readFrom(ByteBuffer src, boolean trusted) {
@@ -62,13 +63,15 @@ public final class ClientMessageReader {
     }
 
     private boolean readFrame(ByteBuffer src, boolean trusted) {
-        // init internal buffer
-        int remaining = src.remaining();
-        if (remaining < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
-            // we don't have even the frame length and flags ready
-            return false;
-        }
         if (readOffset == -1) {
+            // Check for the minimum buffer size only if we
+            // haven't read the frame length and flags.
+            int remaining = src.remaining();
+            if (remaining < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+                // we don't have even the frame length and flags ready
+                return false;
+            }
+
             int frameLength = Bits.readIntL(src, src.position());
             if (frameLength < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
                 throw new IllegalArgumentException(format(
@@ -87,9 +90,9 @@ public final class ClientMessageReader {
                 sumUntrustedMessageLength += frameLength;
             }
 
-            src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
+            upcast(src).position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
-            src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
+            upcast(src).position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             byte[] bytes = new byte[size];

@@ -1,0 +1,23 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "near-cache": {
+        "my-near-cache": {
+          "time-to-live-seconds": 90,
+          "max-idle-seconds": 100,
+          "invalidate-on-change": true,
+          "in-memory-format": "OBJECT",
+          "serialize-keys": true,
+          "local-update-policy": "INVALIDATE",
+          "preloader": {
+            "enabled": true,
+            "directory": "directory",
+            "store-initial-delay-seconds": 50,
+            "store-interval-seconds": 10
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

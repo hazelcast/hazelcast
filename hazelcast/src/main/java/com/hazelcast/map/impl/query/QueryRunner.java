@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -84,7 +86,7 @@ public class QueryRunner {
      * @param partitionId the partition which is queried
      * @param pointers    the pointers defining the state of iteration
      * @param fetchSize   the soft limit for the number of items to be queried
-     * @return the queryied entries along with the next {@code tableIndex} to resume querying
+     * @return the queried entries along with the next {@code tableIndex} to resume querying
      */
     public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query,
                                                                int partitionId,
@@ -102,11 +104,29 @@ public class QueryRunner {
         return new ResultSegment(result, entries.getPointers());
     }
 
-    // MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
-    // full query = index query (if possible), then partition-scan query
+
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query) {
+        Result result = runIndexOrPartitionScanQueryOnOwnedPartitions(query, true);
+        assert result != null;
+        return result;
+    }
+
+    /**
+     * MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
+     * full query = index query (if possible), then partition-scan query
+     *
+     * @param query           the query to execute
+     * @param doPartitionScan whether to run full scan ion partitions if the global index run failed.
+     * @return the query result. {@code null} if the {@code doPartitionScan} is set and the execution on the
+     * global index failed.
+     */
+    public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet actualPartitions = query.getPartitionIdSet() != null
+                ? initialPartitions.intersectCopy(query.getPartitionIdSet())
+                : initialPartitions;
+
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
@@ -118,18 +138,32 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+        Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, initialPartitions.size());
+
+        if (entries != null && !initialPartitions.equals(actualPartitions)) {
+            assert indexes.isGlobal();
+            // if the query runs on a subset of partitions, filter the results from a global index
+            entries = IterableUtil.filter(entries,
+                    e -> {
+                        int partitionId = HashUtil.hashToIndex(e.getKeyData().getPartitionHash(), partitionCount);
+                        return actualPartitions.contains(partitionId);
+                    });
+        }
+
+        if (entries == null && !doPartitionScan) {
+            return null;
+        }
 
         Result result;
         if (entries == null) {
-            result = runUsingPartitionScanSafely(query, predicate, initialPartitions, migrationStamp);
+            result = runUsingPartitionScanSafely(query, predicate, actualPartitions, migrationStamp);
             if (result == null) {
                 // full scan didn't work, returning empty result
-                result = populateEmptyResult(query, initialPartitions);
+                result = populateEmptyResult(query, actualPartitions);
             }
         } else {
-            result = populateNonEmptyResult(query, entries, initialPartitions);
+            result = populateNonEmptyResult(query, entries, actualPartitions);
         }
 
         return result;
@@ -154,7 +188,7 @@ public class QueryRunner {
      */
     public Result runIndexQueryOnOwnedPartitions(Query query) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
@@ -166,7 +200,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+        Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, initialPartitions.size());
 
         Result result;
@@ -190,7 +224,7 @@ public class QueryRunner {
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
 
-        Collection<QueryableEntry> entries = null;
+        Iterable<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate, partitions.size());
@@ -217,15 +251,15 @@ public class QueryRunner {
                 .populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
     }
 
-    protected Result populateNonEmptyResult(Query query, Collection<QueryableEntry> entries,
+    protected Result populateNonEmptyResult(Query query, Iterable<QueryableEntry> entries,
                                             PartitionIdSet initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()), entries,
                 initialPartitions);
     }
 
-    protected Collection<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                                   int migrationStamp, int ownedPartitionCount) {
+    protected Iterable<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                                 int migrationStamp, int ownedPartitionCount) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -243,7 +277,7 @@ public class QueryRunner {
             // leverage index on this node in a global way.
             return null;
         }
-        Collection<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
+        Iterable<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
         if (entries == null) {
             return null;
         }
@@ -272,7 +306,7 @@ public class QueryRunner {
 
         // If a migration is in progress or migration ownership changes, this means migrations were executed and we may
         // return stale data, so we should rather return null.
-        // Also make sure there are no long migrations in flight which may have started after starting the query
+        // Also make sure there are no long migrations in progress that may have started after starting the query
         // but not completed yet.
         if (validateMigrationStamp(migrationStamp)) {
             result.completeConstruction(partitions);

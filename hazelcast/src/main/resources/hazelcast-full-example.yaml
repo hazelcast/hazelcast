@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast member.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at https://docs.hazelcast.com/
 
 hazelcast:
 
@@ -92,13 +92,22 @@ hazelcast:
   # * scripting-enabled:
   # Set to true to allow scripting on the member, false to disallow.
   # Default value is false.
-  #
+  # * console-enabled:
+  # Set to true to allow console commands execution on the member, false to disallow
+  # Default value is false.
+  # * data-access-enabled:
+  # Set to true to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow.
+  # Management Center can't access the data if at least one member has the data access disabled.
+  # Default value is true.
+
   # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
   # in your cluster. To use it for more members, you need to have either a Management Center,
   # Hazelcast Enterprise or Hazelcast Enterprise HD license.
   #
   management-center:
     scripting-enabled: false
+    console-enabled: false
+    data-access-enabled: true
   #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
@@ -278,16 +287,16 @@ hazelcast:
   #             To narrow the members in the cloud down to only Hazelcast members, you can set
   #                         this to the one you specified in the EC2 console. It is optional.
   #     * "discovery-strategies":
-  #         Set its "enabled" attribute to true for discovery in various cloud infrastructures.
-  #         You can define multiple discovery strategies using the "discovery-strategy" sub-element and its properties.
+  #         Add additional strategies for discovery in various cloud infrastructures.
+  #         You can define multiple discovery strategies using the "discovery-strategies" sub-element and its properties.
   #         Please refer to
   #         http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
   #         to see the properties you can use.
   #         The following is an example for EC2 cloud.
   #         "discovery-strategies"
-  #            discovery-strategy:
-  #              - enabled: true
-  #                class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #            discovery-strategies:
+  #              - class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #                enabled: true
   #                properties:
   #                  access-key: test-access-key
   #                  secret-key: test-secret-key
@@ -362,12 +371,15 @@ hazelcast:
           #   tag-key: type
           #   tag-value: hz-nodes
           # discovery-strategies:
-          #   - enabled: true
-          #     class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
-          #     properties:
-          #       - provider: google-compute-engine
-          #       - identity: GCE_IDENTITY
-          #       - credential: GCE_CREDENTIAL
+          #   node-filter:
+          #     class: DummyFilterClass
+          #   discovery-strategies:
+          #     - class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
+          #       enabled: true
+          #       properties:
+          #         provider: google-compute-engine
+          #         identity: GCE_IDENTITY
+          #         credential: GCE_CREDENTIAL
       custom-publisher:
         customPublisherId:
           class-name: com.companyName.CustomWanPublisher
@@ -512,10 +524,9 @@ hazelcast:
   # Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
   # to true to be able to use your defined interfaces. You can define multiple interfaces. By default, it is disabled.
   # * "ssl":
-  # Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-  # Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-  # your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-  # By default, it is disabled. The following is an example:
+  # Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+  # Enterprise.
+  # The default configuration uses JSSE engine available in Java.
   # ssl:
   #   enabled: true
   #   factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
@@ -527,8 +538,8 @@ hazelcast:
   #     protocol: TLS
   #     mutualAuthentication: REQUIRED
   # * "socket-interceptor":
-  # Lets you add custom hooks to join and perform connection procedures (like identity checking using
-  # Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+  # Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.).
+  # This feature is available only in Hazelcast Enterprise. To be able to use it, you
   # should first implement the MemberSocketInterceptor (for members joining to a cluster) or
   # SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
   # implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -536,13 +547,10 @@ hazelcast:
   #   enabled: true
   #   class-name: com.hazelcast.examples.MySocketInterceptor
   #   properties:
-  #     kerberos-host: kerb-host-name
-  #     kerberos-config-file: kerb.conf
+  #     property1: value1
+  #     property2: value2
   # * "symmetric-encryption":
-  # Lets you encrypt the entire socket level communication among all Hazelcast members.
-  # This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
-  # properties and the same configuration must be placed to all members. By default, it is disabled.
-  # The following is an example:
+  # The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
   # symmetric-encryption:
   #   enabled: true
   #   algorithm: PBEWithMD5AndDES
@@ -613,6 +621,8 @@ hazelcast:
       - 34500
     reuse-address: false
     join:
+      auto-detection:
+        enabled: false
       multicast:
         enabled: false
         multicast-group: 224.2.2.3
@@ -628,23 +638,41 @@ hazelcast:
         enabled: false
         access-key: my-access-key
         secret-key: my-secret-key
-        iam-role: dummy
         region: us-west-1
         host-header: ec2.amazonaws.com
+        connection-timeout-seconds: 7
+        read-timeout-seconds: 7
+        connection-retries: 4
+        hz-port: 5701-5710
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
+        iam-role: dummy
+        use-public-ip: true
+        # cluster: my-clusters
+        # family: test-family
+        # service-name: test-service
       gcp:
         enabled: false
-        zones: us-east1-b,us-east1-c
+        private-key-path: key-path
+        projects: project-1,project-2
+        region: us-central1
+        zones: us-central1-b,us-central1-c
+        label: key=value
+        hz-port: 5701-5710
+        use-public-ip: true
       azure:
         enabled: false
+        instance-metadata-available: false
         client-id: CLIENT_ID
         client-secret: CLIENT_SECRET
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
-        cluster-id: HZLCAST001
-        group-name: RESOURCE-GROUP-NAME
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5707
+        use-public-ip: true
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -671,25 +699,18 @@ hazelcast:
         - 10.10.1.*
     ssl:
       enabled: false
-      factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
         protocol: TLS
 
         mutualAuthentication: REQUIRED
         keyStore: /opt/hazelcast.keystore
         keyStorePassword: secret.97531
-        keyStoreType: JKS
+        keyStoreType: PKCS12
         trustStore: /opt/hazelcast.truststore
         trustStorePassword: changeit
-        trustStoreType: JKS
+        trustStoreType: PKCS12
     socket-interceptor:
       enabled: false
-    symmetric-encryption:
-      enabled: false
-      algorithm: PBEWithMD5AndDES
-      password: ...
-      salt: ...
-      iteration-count: 7
     member-address-provider:
       enabled: false
       class-name: com.hazelcast.MemberAddressProviderImpl
@@ -720,8 +741,8 @@ hazelcast:
     #   Operations which changes cluster or node state or their configurations.
     # * HEALTH_CHECK - disabled
     #   Group of endpoints for HTTP health checking.
-    # * HOT_RESTART - disabled
-    #   Group of HTTP REST APIs related to Hot Restart feature.
+    # * PERSISTENCE - disabled
+    #   Group of HTTP REST APIs related to Persistence feature.
     # * WAN - disabled
     #   Group of HTTP REST APIs related to WAN Replication feature.
     # * DATA - disabled
@@ -736,11 +757,13 @@ hazelcast:
           enabled: false
         HEALTH_CHECK:
           enabled: false
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: false
         WAN:
           enabled: false
         DATA:
+          enabled: false
+        CP:
           enabled: false
 
     #
@@ -899,8 +922,10 @@ hazelcast:
   #
   # ===== HAZELCAST QUEUE CONFIGURATION =====
   #
-  # Configuration element's name is "queue". It has the optional attribute "name" with which you
-  # can specify the name of your queue. Its default value is "default".
+  # Configuration element's name is "queue".
+  # It has following optional attributes:
+  # * "name"
+  # with which you can specify the name of your queue. Its default value is "default".
   # It has the following elements:
   # * "statistics-enabled":
   # When you enable it, you can retrieve queue statistics. Its default value is true.
@@ -942,6 +967,12 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "priority-comparator-class-name":
+  #     Fully-qualified comparator's class name to be used for the priority queue.
+  #     If nothing is provided, then queue behaves as a FIFO queue.
+  #
+  #     If this value is non-null, then Hazelcast will ignore the queue store
+  #     "memory-limit" configuration value.
   #
   queue:
     default:
@@ -963,6 +994,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
 
   #
   # ===== HAZELCAST MAP CONFIGURATION =====
@@ -980,8 +1012,12 @@ hazelcast:
   #     Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This
   #     option is available only in Hazelcast Enterprise HD.
   # * "statistics-enabled":
-  #     When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
-  #     number of hits, key, value, etc. Its default value is true.
+  #     When you enable it, you can have map level statistics such as last access time to map,
+  #     total number of hits, key, value, etc. Its default value is true.
+  # * "per-entry-stats-enabled":
+  #     Enable/disable per entry statistics. Its default value is false.
+  #     When you enable it, you can retrieve entry level statistics such as hits, creation time,
+  #     last access time, last update time,last stored time.
   # * "metadata-policy"
   # Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
   # create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -1014,7 +1050,7 @@ hazelcast:
   # containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
   # is 0, which means infinite.
   # "eviction":
-  # By default map has no eviction configured. Its <eviction-policy> is NONE.
+  # By default map has no eviction configured. Its "eviction-policy" is NONE.
   # To make it work you have to configure it.
   # Configuration has the following attributes:
   # - size: Maximum size of the map.
@@ -1084,12 +1120,30 @@ hazelcast:
   # 	transfer larger chunks of the data structure in which a possible change
   # 	happened. On the other hand, a shallower tree consumes less memory.
   # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
-  # * "hot-restart":
-  # Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
+  # * "data-persistence":
+  # Used to enable Hazelcast's Data Persistence feature for the map. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
   # sub-element.
   # - "fsync":
   #     Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+  # * "tiered-store":
+  # Used to enable Hazelcast's Tiered-Store feature for the map. It is available only in Hazelcast
+  # Enterprise. Set its "enabled" to true to enable the feature. By default, it is disabled.
+  # It has the following attributes and sub-elements:
+  # - enabled:
+  # 	Specifies whether the tiered-store is enabled.
+  # - "memory-tier":
+  #     Memory-tier of the tiered-store. It has the following sub-element:
+  #     - "capacity":
+  #         Memory tier capacity, i.e., how much main memory should this tier consume at most.
+  #         You can give the size using its "value" attribute and the unit using its "unit" attribute.
+  #         Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 megabytes.
+  # - "disk-tier":
+  #     Defines configuration for the disk tier of the tiered store. It has the following attributes:
+  #     - enabled:
+  #         Specifies whether (local) disk should be used as the second memory tier.
+  #     - device-name:
+  #         Name of the device for a given disk tier. The default is "default-tiered-store-device".
   # * "event-journal":
   # It has the following attributes and sub-elements:
   # - enabled:
@@ -1248,6 +1302,7 @@ hazelcast:
       in-memory-format: BINARY
       metadata-policy: CREATE_ON_UPDATE
       statistics-enabled: true
+      per-entry-stats-enabled: false
       cache-deserialized-values: ALWAYS
       backup-count: 1
       async-backup-count: 0
@@ -1261,9 +1316,18 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       read-backup-data: false
-      hot-restart:
+      data-persistence:
         enabled: false
         fsync: false
+      tiered-store:
+        enabled: false
+        memory-tier:
+          capacity:
+            unit: MEGABYTES
+            value: 1024
+        disk-tier:
+          enabled: true
+          device-name: tiered-store-local-device
       event-journal:
         enabled: false
         capacity: 10000
@@ -1356,6 +1420,9 @@ hazelcast:
       #     Set to true if you want to enable the initial population of your query cache. Its default value is true.
       # * "coalesce":
       #     Set to true if you want to enable the coalescing of your query cache. Its default value is false.
+      # * "serialize-keys":
+      #     Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable
+      #     and need to be cloned via serialization. Default value is false.
       # * "delay-seconds":
       #     Minimum time in seconds that an event waits in the member's buffer. Its default value is 0.
       # * "batch-size":
@@ -1378,6 +1445,7 @@ hazelcast:
           in-memory-format: BINARY
           populate: true
           coalesce: false
+          serialize-keys: false
           delay-seconds: 3
           batch-size: 2
           buffer-size: 32
@@ -1582,8 +1650,23 @@ hazelcast:
   # - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
   # - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
   # - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
-  # * "hot-restart":
-  # Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
+  # * "merkle-tree":
+  # It has the following sub-elements:
+  # - "enabled":
+  # 	Specifies whether the merkle tree is enabled.
+  # - "depth":
+  # 	The depth of the merkle tree.
+  # 	A larger depth means that a data synchronization mechanism will be able
+  # 	to pinpoint a smaller subset of the data structure contents in which a
+  # 	change occurred. This causes the synchronization mechanism to be more
+  # 	efficient. On the other hand, a larger tree depth means the merkle tree
+  # 	will consume more memory.
+  # 	A smaller depth means the data synchronization mechanism will have to
+  # 	transfer larger chunks of the data structure in which a possible change
+  # 	happened. On the other hand, a shallower tree consumes less memory.
+  # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
+  # * "data-persistence":
+  # Used to enable Hazelcast's Data Persistence feature for the cache. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
   # sub-element.
   # - "fsync":
@@ -1629,8 +1712,7 @@ hazelcast:
       expiry-policy-factory:
         class-name: com.example.cache.MyExpirePolicyFactory
       cache-entry-listeners:
-        cache-entry-listener:
-          old-value-required: false
+        - old-value-required: false
           synchronous: false
           cache-entry-listener-factory:
             class-name: com.example.cache.MyEntryListenerFactory
@@ -1655,13 +1737,16 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: LatestAccessMergePolicy
-      hot-restart:
+      data-persistence:
         enabled: false
         fsync: false
       event-journal:
         enabled: false
         capacity: 10000
         time-to-live-seconds: 0
+      merkle-tree:
+        enabled: false
+        depth: 10
       disable-per-entry-invalidation-events: true
 
   #
@@ -1994,6 +2079,8 @@ hazelcast:
   #     Set as true to enable shared object when default Java serialization is used. Its default value is false.
   # * "allow-unsafe":
   #     Set as true to allow the usage of unsafe. Its default value is false.
+  # * "allow-override-default-serializers":
+  #     Set as true to allow override of default serializers. Its default value is false.
   # * "data-serializable-factories":
   #     Lists your class implementations of Hazelcast's DataSerializableFactory. Each factory has the required
   #     "factory-id" attribute that you should give as the ID of your factory.
@@ -2048,6 +2135,13 @@ hazelcast:
         prefix:
           - com.hazelcast.
           - java
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #
@@ -2076,10 +2170,19 @@ hazelcast:
   #     Percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is
   #     used only by the POOLED memory allocator. Its default value is 12.5.
   # - "persistent-memory-directory":
-  #     Specifies the directory where the non-volatile memory (e.g. Intel Optane) is mounted. If this element is not defined,
-  #     the RAM is used as a native memory. This directory will be created automatically if it does not exist.
-  #     To avoid collisions, every member of the cluster will create its own subfolder to work with the non-volatile
-  #     memory.
+  #     Simple configuration option for a single directory where the non-volatile memory (e.g. Intel Optane) is mounted.
+  #     This should be used only on single-socket systems as only one directory can be defined. On multi-socket systems
+  #     use "persistent-memory" instead.
+  #     If neither this or "persistent-memory" elements are defined, the RAM is used as native memory. This directory
+  #     will be created automatically if it does not exist. To avoid collisions, every member of the cluster will create
+  #     its own subfolder to work with the non-volatile memory.
+  # - "persistent-memory":
+  #     Specifies the configuration for the non-volatile memory (e.g. Intel Optane) in the system. Under this configuration
+  #     section multiple directories can be listed with optionally specifying the NUMA node the non-volatile memory mounted
+  #     in the given directory is attached to for NUMA-aware allocations. If neither this or the
+  #     "persistent-memory-directory" elements are defined, the RAM is used as native memory. The directories defined under
+  #     this section will be created automatically if they do not exist. To avoid collisions, every member of the cluster
+  #     will create its own subfolder to work with the non-volatile memory.
   #
   native-memory:
     enabled: true
@@ -2090,7 +2193,17 @@ hazelcast:
     min-block-size: 32
     page-size: 4194304
     metadata-space-percentage: 12.5
-    persistent-memory-directory: /mnt/optane
+    # Simple configuration for single-socket machines with non-volatile memory
+    # persistent-memory-directory: /mnt/optane
+    # Advanced configuration for non-volatile memory
+    persistent-memory:
+      enabled: true
+      mode: MOUNTED
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
   #
   # ===== HAZELCAST SECURITY CONFIGURATION =====
   #
@@ -2122,11 +2235,11 @@ hazelcast:
   #
   #  HAZELCAST SECURITY REALMS
   #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
-  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
+  #  Currently, the realms support configuring "authentication" and/or "identity". Only one type of authentication
   #  configuration and one type of identity configuration is allowed per the realm.
   #  Authentication types:
   #  * jaas
-  #      Defines JAAS authentication - i.e. list of <login-modules> and its optional <properties>
+  #      Defines JAAS authentication - i.e. list of "login-modules" and its optional "properties"
   #  * tls
   #      TLS defines X.509 based authentication (for cases when SSL mutual authentication is configured
   #      in Hazelcast network configuration)
@@ -2138,8 +2251,8 @@ hazelcast:
   #      interface.
   #      This element has a mandatory "class-name" attribute where you should define the factory class implementing
   #      ICredentialsFactory used to create Credentials objects.
-  #      With the <properties> sub-element, you can define properties for the factory class. The properties can be
-  #      defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
+  #      With the "properties" sub-element, you can define properties for the factory class. The properties can be
+  #      defined with the "property "sub-element nested in the "properties". The "property" element has the attribute
   #      "name" used to define the name of the attribute. The value of the property is defined in the body.
   #  * username-password
   #      Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory
@@ -2150,7 +2263,20 @@ hazelcast:
   security:
     enabled: false
     realms:
-      - name: mr
+      - name: simpleRealm
+        authentication:
+          simple:
+            users:
+              - username: test
+                password: 'a1234'
+                roles:
+                  - monitor
+                  - hazelcast
+              - username: dev
+                password: 'secret'
+                roles:
+                  - root
+      - name: jaasRealm
         authentication:
           jaas:
             - class-name: com.hazelcast.examples.MyRequiredLoginModule
@@ -2162,17 +2288,6 @@ hazelcast:
             class-name: com.hazelcast.examples.MyCredentialsFactory
             properties:
               property: value
-      - name: cr
-        authentication:
-          jaas:
-            - class-name: com.hazelcast.examples.MyOptionalLoginModule
-              usage: OPTIONAL
-              properties:
-                property: value
-            - class-name: com.hazelcast.examples.MyRequiredLoginModule
-              usage: REQUIRED
-              properties:
-                property: value
       - name: ldapRealm
         authentication:
           ldap:
@@ -2189,6 +2304,8 @@ hazelcast:
              user-name-attribute: userNameAttribute
              system-user-dn: systemUserDn
              system-user-password: systemUserPassword
+             system-authentication: simple
+             security-realm: realmName
              password-attribute: passwordAttribute
              user-context: userContext
              user-filter: userFilter
@@ -2207,10 +2324,67 @@ hazelcast:
           token:
              encoding: base64
              value: SGF6ZWxjYXN0
+      - name: kerberosRealm
+        authentication:
+          kerberos:
+            skip-role: true
+            relax-flags-check: true
+            use-name-without-realm: true
+            security-realm: krb5Acceptor
+            ldap:
+              url: ldap://127.0.0.1/
+              system-authentication: GSSAPI
+              security-realm: krb5Initiator
+              skip-authentication: true
+              user-filter: "(krb5PrincipalName={login})"
+              role-mapping-attribute: cn
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            security-realm: krb5Initiator
+            service-name-prefix: hz/
+            use-canonical-hostname: true
+            spn: hz/127.0.0.1@HAZELCAST.COM
+      - name: simpleKerberosRealm
+        authentication:
+          kerberos:
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+      - name: krb5Acceptor
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: false
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
     member-authentication:
-      realm: mr
+      realm: jaasRealm
     client-authentication:
-      realm: cr
+      realm: simpleRealm
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -2299,9 +2473,31 @@ hazelcast:
             - all
       user-code-deployment:
         - name: "*"
+          principal: "*"
           actions:
             - all
       pn-counter:
+        - name: "*"
+          actions:
+            - all
+      replicatedmap:
+        - name: "*"
+          actions:
+            - all
+      management:
+        - principal: management
+          endpoints:
+            - 127.0.0.1
+      sql:
+        - name: "*"
+          actions:
+            - create
+            - destroy
+      ring-buffer:
+        - name: "*"
+          actions:
+            - all
+      connector:
         - name: "*"
           actions:
             - all
@@ -2372,37 +2568,39 @@ hazelcast:
   lite-member:
     enabled: true
   #
-  # ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
+  # ===== HAZELCAST PERSISTENCE CONFIGURATION =====
   #
   # This feature is available only in Hazelcast Enterprise HD. Configuration element's name is
-  # "hot-restart-persistence". It has the required attribute "enabled" to specify whether this feature will be enabled
+  # "persistence". It has the required attribute "enabled" to specify whether this feature will be enabled
   # on your cluster. This part is the feature's configuration itself and you define the general specifications for
-  # the feature. However, note that "map" and "cache" have a sub-element called "hot-restart" with which you should
-  # enable its usage on those data structures. Keep in mind that the Hot Restart feature is currently supported for
+  # the feature. However, note that "map" and "cache" have a sub-element called "data-persistence" with which you should
+  # enable its usage on those data structures. Keep in mind that the Persistence feature is currently supported for
   # Hazelcast's map and cache data structures.
   # It has the following sub-elements:
   # * "base-dir":
-  #     Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart.
+  #     Specifies the directory where the Persistence data will be stored. Its default value is persistence.
   #     You can use the default value, or you can specify another folder.
   #     This directory will be created automatically if it does not exist.
   # * "backup-dir":
-  #     Specifies the directory where the Hot backup data will be stored. If this element is not defined, hot backup will
+  #     Specifies the directory where the backup data will be stored. If this element is not defined, persistence backup will
   #     be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data
   #     on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
-  #     contain all hot restart data. This unique directory is created as a subdirectory of the configured `backup-dir`.
+  #     contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`.
   # * "parallelism":
-  #     Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
-  #     each writing in parallel to its own files. During the Hot Restart procedure, this many
+  #     Deprecated. Please leave it to default.
+  #     Level of parallelism in Persistence restart. There will be this many IO threads,
+  #     each writing in parallel to its own files. During the restart procedure, this many
   #     IO threads will be reading the files and this many Rebuilder threads will be rebuilding
-  #     the Hot Restart metadata.
+  #     the Persistence metadata.
   # * "validation-timeout-seconds":
-  #     Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition
+  #     Validation timeout for the Restart process when validating the cluster members expected to join and the partition
   #     table on the whole cluster.
   # * "data-load-timeout-seconds":
-  #     Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data
+  #     Deprecated. Please leave it to default.
+  #     Data load timeout for the Restart process. All members in the cluster should finish restoring their local data
   #     before this timeout period.
   # * "cluster-data-recovery-policy":
-  #     Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are;
+  #     Specifies the data recovery policy that will be respected during the cluster restart. Valid values are;
   #     FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails.
   #     This is the default value.
   #     PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and
@@ -2412,26 +2610,25 @@ hazelcast:
   #     table version and successfully restored their data. All other members will leave the cluster and force start themselves.
   #     If no member restores its data successfully, cluster start fails.
   # * "encryption-at-rest":
-  #     Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
+  #     Specifies the (optional) encryption settings for Persistence. It has the required attribute "enabled"
   #     to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
   #     AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the "secure-store"
   #     sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.
-  #          * <keystore>:
+  #          * "keystore":
   #              Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
   #              PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and
   #              (optionally) a polling interval for checking for changes in the KeyStore.
-  #          * <vault>:
+  #          * "vault":
   #              Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets
   #              engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace,
-  #              the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for
+  #              the (optional) "ssl" configuration for HTTPS support, and an (optional) polling interval for checking for
   #              changes in Vault.
   #
-  hot-restart-persistence:
+  persistence:
     enabled: true
-    base-dir: /mnt/hot-restart
-    backup-dir: /mnt/hot-backup
+    base-dir: /mnt/persistence
+    backup-dir: /mnt/persistence-backup
     validation-timeout-seconds: 120
-    data-load-timeout-seconds: 900
     cluster-data-recovery-policy: PARTIAL_RECOVERY_MOST_COMPLETE
     encryption-at-rest:
       enabled: true
@@ -2462,6 +2659,60 @@ hazelcast:
   #           trustStore: /opt/hazelcast.truststore
   #           trustStorePassword: changeit
   #           trustStoreType: JKS
+
+  # ===== HAZELCAST LOCAL-DEVICE CONFIGURATION =====
+  #
+  # Tiered-Store device configuration. Currently, only local disk is supported as a device.
+  # Multiple devices can be configured, and a map with enabled tiered-store can reference
+  # a given device from its disk-tier.
+  #
+  # It has the following attributes and sub-elements:
+  # - name:
+  #     Name of the device. The default is "default-tiered-store-device".
+  # * "base-dir":
+  #     Specifies the directory where the Tiered-Store data will be stored. Its default value is
+  #     "tiered-store". You can use the default value, or you can specify another folder.
+  #     This directory will be created automatically if it does not exist.
+  # * "capacity":
+  #     Device capacity, i.e., what is the soft upper bound capacity of the device.
+  #     You can give the size using its "value" attribute and the unit using its "unit" attribute.
+  #     Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 gigabytes.
+  # * "block-size":
+  #     Device block/sector size in bytes. The default is 4096. The minimum is 512.
+  # * "read-io-thread-count":
+  #     Read IO thread count. The default is 4.
+  # * "write-io-thread-count":
+  #     Write IO thread count. The default is 4.
+  #
+  local-device:
+    tiered-store-local-device:
+      base-dir: /mnt/tiered-store
+      capacity:
+        unit: GIGABYTES
+        value: 512
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 4
+
+  # ===== HAZELCAST DYNAMIC CONFIGURATION CONFIGURATION =====
+  #
+  # Configuration settings related to dynamic configuration feature.
+  #
+  # It has the following sub-elements:
+  # * "persistence-enabled":
+  #     True if dynamic configuration persistence is enabled.
+  # * "backup-dir":
+  #     Directory for dynamic configuration persistence file backups.
+  #     Each new backup will be created inside this directory.
+  #     Can be an absolute or relative path to the node startup directory.
+  #     If not set, new folder will be created where dynamic configuration file exists.
+  # * "backup-count":
+  #     How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+
+  dynamic-configuration:
+    persistence-enabled: true
+    backup-dir: /mnt/dynamic/backup-dir
+    backup-count: 7
 
   #
   # ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
@@ -2767,8 +3018,8 @@ hazelcast:
   #              protocol: TLS
   #              mutualAuthentication: REQUIRED
   #      * "socket-interceptor":
-  #          Lets you add custom hooks to join and perform connection procedures (like identity checking using
-  #          Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+  #          Lets you add custom hooks to join and perform connection procedures (like a custom authentication
+  #          protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
   #          should first implement the MemberSocketInterceptor (for members joining to a cluster) or
   #          SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
   #          implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -2776,8 +3027,8 @@ hazelcast:
   #            enabled: true
   #            class-name: com.hazelcast.examples.MySocketInterceptor
   #            properties:
-  #              kerberos-host: kerb-host-name
-  #              kerberos-config-file: kerb.conf
+  #              property1: value1
+  #              property2: value2
   #      * "symmetric-encryption":
   #          Lets you encrypt the entire socket level communication among all Hazelcast members.
   #          This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
@@ -2826,8 +3077,8 @@ hazelcast:
   #            Operations which changes cluster or node state or their configurations.
   #          * HEALTH_CHECK - disabled
   #            Group of endpoints for HTTP health checking.
-  #          * HOT_RESTART - disabled
-  #            Group of HTTP REST APIs related to Hot Restart feature.
+  #          * PERSISTENCE - disabled
+  #            Group of HTTP REST APIs related to Persistence feature.
   #          * WAN - disabled
   #            Group of HTTP REST APIs related to WAN Replication feature.
   #          * DATA - disabled
@@ -2850,7 +3101,7 @@ hazelcast:
     join:
       multicast:
         enabled: true
-        loopbackModeEnabled: true
+        loopback-mode-enabled: true
         multicast-group: 1.2.3.4
         multicast-port: 12345
         multicast-timeout-seconds: 5
@@ -2872,27 +3123,41 @@ hazelcast:
         enabled: false
         access-key: my-access-key
         secret-key: my-secret-key
-        iam-role: dummy
-        # optional, default is us-east-1
         region: us-west-1
-        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
         host-header: ec2.amazonaws.com
-        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        connection-timeout-seconds: 7
+        read-timeout-seconds: 7
+        connection-retries: 4
+        hz-port: 5701-5710
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
+        iam-role: dummy
         use-public-ip: true
+        # cluster: my-clusters
+        # family: test-family
+        # service-name: test-service
       gcp:
         enabled: false
-        zones: us-east1-b,us-east1-c
+        private-key-path: key-path
+        projects: project-1,project-2
+        region: us-central1
+        zones: us-central1-b,us-central1-c
+        label: key=value
+        hz-port: 5701-5710
+        use-public-ip: true
       azure:
         enabled: false
+        instance-metadata-available: false
         client-id: CLIENT_ID
         client-secret: CLIENT_SECRET
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
-        cluster-id: HZLCAST001
-        group-name: RESOURCE-GROUP-NAME
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5707
+        use-public-ip: true
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -3278,3 +3543,227 @@ hazelcast:
     jmx:
       enabled: false
     collection-frequency-seconds: 10
+
+  auditlog:
+    enabled: false
+    factory-class-name: com.acme.AuditlogToSyslogFactory
+    properties:
+      host: syslogserver.acme.com
+      port: 514
+      type: tcp
+
+  #
+  # ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
+  #
+  # Configuration element's name is "instance-tracking".
+  #
+  # It has the following sub-elements:
+  #     * "enabled":
+  #         Enables or disables instance tracking.
+  #
+  # * "format-pattern":
+  #     Sets the pattern used to render the contents of the instance tracking file.
+  #     It may contain placeholders for these properties:
+  #     - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+  #     - "version": The instance version.
+  #     - "mode": The instance mode which can be "server", "embedded" or "client".
+  #     - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+  #     measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+  #     - "licensed": If this instance is using a license or not. The value 0 signifies
+  #     that there is no license set and the value 1 signifies that a license is in use.
+  #     - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+  #     process ID on all JVMs and operating systems so please test before use. In case we are unable to
+  #     get the PID, the value will be -1.
+  #     The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }.
+  #     For instance, a placeholder for the "start_timestamp" would be $HZ_INSTANCE_TRACKING{start_timestamp}.
+  #     The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+  #     is ignored and only the known properties are resolved, placeholders for
+  #     any parameters which do not have defined values will be ignored. This also
+  #     means that if there is a missing closing bracket in one of the placeholders,
+  #     the property name will be resolved as anything from the opening bracket
+  #     to the next closing bracket, which might contain additional opening brackets.
+  #     If unset, a JSON formatted output will be used.
+  #
+  # * "file-name":
+  #     Sets the name of the file which will contain the tracking metadata. If left unset
+  #     a file named "Hazelcast.process" will be created in the directory as returned by
+  #     System.getProperty("java.io.tmpdir").
+  #     The filename can contain placeholders that will be resolved in the same way
+  #     as placeholders for the format pattern.
+  #
+  instance-tracking:
+    enabled: false
+    file-name: hazelcast.process
+    format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}
+
+  #
+  # ===== HAZELCAST SQL CONFIGURATION =====
+  #
+  # Configuration element's name is "sql".
+  #
+  # It has the following sub-elements:
+  #     * "statement-timeout-millis":
+  #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
+  #
+  sql:
+    statement-timeout-millis: 0
+
+  #  ===== HAZELCAST JET CONFIGURATION =====
+  #
+  #  Configuration element's name is "jet".
+  #  It has the following attributes:
+  #  - enabled:
+  #    Enables or disables Jet Service.
+  #  - resource-upload-enabled
+  #    Enables or disables resource uploading for Jet jobs.
+  #
+  #  It has the following sub-elements:
+  #  * "cooperative-thread-count":
+  #      Sets the number of threads each cluster member will use to execute Jet
+  #      jobs. This refers only to threads executing `cooperative`
+  #      processors; each `blocking` processor is assigned its own thread.
+  #  * "flow-control-period":
+  #      While executing a Jet job there is the issue of regulating the rate
+  #      at which one member of the cluster sends data to another member. The
+  #      receiver will regularly report to each sender how much more data it
+  #      is allowed to send over a given DAG edge. This method sets the length
+  #      (in milliseconds) of the interval between flow-control ("ack") packets.
+  #  * "backup-count":
+  #      Sets the number of backups that Jet will maintain for the job metadata
+  #      and snapshots. Each backup is on another cluster member; all backup
+  #      write operations must complete before the overall write operation can
+  #      complete. The maximum allowed number of backups is 6 and the default is
+  #      1.
+  #      For example, if you set the backup count to 2, Jet will replicate all
+  #      the job metadata and snapshot data to two other members. If one or two
+  #      members of the cluster fail, Jet can recover the data from the snapshot
+  #      and continue executing the job on the remaining members without loss.
+  #  * "scale-up-delay-millis":
+  #      Sets the delay after which auto-scaled jobs will restart if a new member
+  #      is added to the cluster. The default is 10 seconds. Has no effect on
+  #      jobs with auto scaling disabled.
+  #  * "lossless-restart-enabled":
+  #      Sets whether lossless job restart is enabled for the node. With lossless
+  #      restart you can restart the whole cluster without losing the jobs and
+  #      their state. The feature is implemented on top of the Persistence
+  #      feature of Hazelcast which persists the data to disk. If enabled, you
+  #      have to also enable/configure Persistence.
+  #      Note: the snapshots exported using `Job#exportSnapshot` will also be
+  #      saved to the persistent storage.
+  #      Feature is disabled by default. If you enable this option in open-source,
+  #      the member will fail to start, you need Enterprise to run it and obtain a
+  #      license from Hazelcast.
+  #  * "max-processor-accumulated-records":
+  #      Sets the maximum number of records that can be accumulated by any single
+  #      processor instance.
+  #      Operations like grouping, sorting or joining require certain amount of
+  #      records to be accumulated before they can proceed. You can set this option
+  #      to reduce the probability of OutOfMemoryError.
+  #      This option applies to each processor instance separately, hence the
+  #      effective limit of records accumulated by each cluster member is influenced
+  #      by the vertex's localParallelism and the number of jobs in the cluster.
+  #      Currently, maxProcessorAccumulatedRecords limits:
+  #      1. number of items sorted by the sort operation
+  #      2. number of distinct keys accumulated by aggregation operations
+  #      3. number of entries in each hash-join lookup table
+  #      4. number of entries in stateful transforms
+  #      5. number of distinct items in distinct operation
+  #      Note: the limit does not apply to streaming aggregations.
+  #      The default value is Long.MAX_VALUE.
+  #
+  #  * "edge-defaults"
+  #  A configuration object for a DAG `Edge` that holds fine-tuning parameters
+  #  that influence its performance characteristics.
+  #
+  #    It has the following sub-elements:
+  #    * "queue-size":
+  #        Sets the capacity of processor-to-processor concurrent queues. The value
+  #        is rounded upwards to the next power of 2.
+  #        When data needs to travel between two processors on the same cluster
+  #        member, Jet sends it over a concurrent single-producer, single-consumer
+  #        (SPSC) queue of fixed capacity.
+  #        Since there are several processors executing the logic of each vertex,
+  #        and since the queues are SPSC, there will be
+  #        `senderParallelism * receiverParallelism` queues representing the edge on
+  #        each member. The edge capacity should strike a balance between
+  #        performance and memory usage.
+  #    * "packet-size-limit"
+  #        For a distributed edge, data is sent to a remote member via Hazelcast network
+  #        packets. Each packet is dedicated to the data of a single edge, but may contain
+  #        any number of data items. This setting limits the size of the packet in bytes.
+  #        Packets should be large enough to drown out any fixed overheads, but small enough
+  #        to allow good interleaving with other packets.
+  #        Note that a single item cannot straddle packets, therefore the maximum packet size
+  #        can exceed the value configured here by the size of a single data item.
+  #        This setting has no effect on a non-distributed edge.
+  #    * "receive-window-multiplier"
+  #        Sets the scaling factor used by the adaptive receive window sizing
+  #        function.
+  #        For each distributed edge the receiving member regularly sends
+  #        flow-control ("ack") packets to its sender which prevent it from sending
+  #        too much data and overflowing the buffers. The sender is allowed to send
+  #        the data one `receive window` further than the last acknowledged byte and
+  #        the receive window is sized in proportion to the rate of processing at
+  #        the receiver.
+  #        Ack packets are sent in regular intervals (flow-control-period)
+  #        and the `receive window multiplier` sets the factor of the linear
+  #        relationship between the amount of data processed within one such
+  #        interval and the size of the receive window.
+  #        To put it another way, let us define an `ackworth` as the amount of data
+  #        processed between two consecutive ack packets. The receive window
+  #        multiplier determines the number of ackworths the sender can be ahead of
+  #        the last acked byte.
+  #        This setting has no effect on a non-distributed edge.
+  jet:
+    enabled: true
+    resource-upload-enabled: true
+    # number of threads in the cooperative thread pool
+    cooperative-thread-count: 8
+    # period between flow control packets in milliseconds
+    flow-control-period: 100
+    # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
+    backup-count: 1
+    # the delay after which auto-scaled jobs will restart if a new member is added to the
+    # cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled
+    scale-up-delay-millis: 10000
+    # Sets whether lossless job restart is enabled for the node. With
+    # lossless restart you can restart the whole cluster without losing the
+    # jobs and their state. The feature is implemented on top of the Persistence
+    # feature of Hazelcast which persists the data to disk.
+    lossless-restart-enabled: false
+    # Sets the maximum number of records that can be accumulated by any single
+    # Processor instance.
+    #
+    # Operations like grouping, sorting or joining require certain amount of
+    # records to be accumulated before they can proceed. You can set this option
+    # to reduce the probability of OutOfMemoryError.
+    #
+    # This option applies to each Processor instance separately, hence the
+    # effective limit of records accumulated by each cluster member is influenced
+    # by the vertex's localParallelism and the number of jobs in the cluster.
+    #
+    # Currently, max-processor-accumulated-records limits:
+    #    - number of items sorted by the sort operation
+    #    - number of distinct keys accumulated by aggregation operations
+    #    - number of entries in the hash-join lookup tables
+    #    - number of entries in stateful transforms
+    #    - number of distinct items in distinct operation
+    #
+    # Note: the limit does not apply to streaming aggregations.
+    max-processor-accumulated-records: 1000000000
+    edge-defaults:
+      # capacity of the concurrent SPSC queue between each two processors
+      queue-size: 1024
+      # network packet size limit in bytes, only applies to distributed edges
+      packet-size-limit: 16384
+      # receive window size multiplier, only applies to distributed edges
+      receive-window-multiplier: 3
+  #  ===== HAZELCAST INTEGRITY CHECKER CONFIGURATION =====
+  #
+  # Configuration element's name is "integrity-checker". When you want to enable Integrity Checker,
+  # set this element's "enabled" attribute to true in that member's configuration. Integrity Checker is a
+  # component that verifies that the executable contains all the required META-INF/services files, it is a costly
+  # operation, it can be disabled to improve startup time.
+  # Integrity Checker is disabled by default.
+  integrity-checker:
+    enabled: false

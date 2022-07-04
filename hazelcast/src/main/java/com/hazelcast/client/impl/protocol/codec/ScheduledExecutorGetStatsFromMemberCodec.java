@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("93af741d34421d38a1bf363a81306db3")
+@Generated("169b4b678680864c98306be3b0ad7ee7")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -151,5 +151,4 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
         response.lastRunDurationNanos = decodeLong(initialFrame.content, RESPONSE_LAST_RUN_DURATION_NANOS_FIELD_OFFSET);
         return response;
     }
-
 }

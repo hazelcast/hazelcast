@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -40,6 +42,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.MutableLong;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
@@ -65,6 +68,7 @@ import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.Result;
 import com.hazelcast.map.impl.query.Target;
+import com.hazelcast.map.impl.query.Target.TargetMode;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
@@ -76,6 +80,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -118,14 +123,16 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.toIntSize;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
+import static com.hazelcast.map.impl.MapOperationStatsUpdater.incrementOperationStats;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.query.Predicates.alwaysFalse;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -385,10 +392,11 @@ abstract class MapProxySupport<K, V>
 
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
         try {
-            long startTimeNanos = System.nanoTime();
+            long startTimeNanos = Timer.nanos();
             InvocationFuture<Data> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
+                    .setAsync()
                     .invoke();
 
             if (statisticsEnabled) {
@@ -464,13 +472,13 @@ abstract class MapProxySupport<K, V>
         try {
             Object result;
             if (statisticsEnabled) {
-                long startTimeNanos = System.nanoTime();
+                long startTimeNanos = Timer.nanos();
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
                         .invoke();
                 result = future.get();
-                mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
+                incrementOperationStats(operation, localMapStats, startTimeNanos);
             } else {
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -492,9 +500,28 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         operation.setThreadId(getThreadId());
         try {
-            long startTimeNanos = System.nanoTime();
-            InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
 
+            if (statisticsEnabled) {
+                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
+            }
+            return future;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data value,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(key);
+        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        operation.setThreadId(getThreadId());
+        try {
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
             if (statisticsEnabled) {
                 future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
@@ -515,13 +542,13 @@ abstract class MapProxySupport<K, V>
         try {
             final InvocationFuture<Data> result;
             if (statisticsEnabled) {
-                long startTimeNanos = System.nanoTime();
+                long startTimeNanos = Timer.nanos();
                 result = operationService
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                        .invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
                 result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             } else {
                 result = operationService
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                        .invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
             }
             return result;
         } catch (Throwable t) {
@@ -691,8 +718,8 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
         operation.setThreadId(getThreadId());
         try {
-            long startTimeNanos = System.nanoTime();
-            InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
                 future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
@@ -763,7 +790,7 @@ abstract class MapProxySupport<K, V>
                     retrySet.add(entry.getKey());
                 }
             }
-            if (retrySet.size() > 0) {
+            if (!retrySet.isEmpty()) {
                 results = retryPartitions(retrySet, operationFactory);
                 iterator = results.entrySet().iterator();
                 TimeUnit.SECONDS.sleep(1);
@@ -852,7 +879,7 @@ abstract class MapProxySupport<K, V>
         Map<Integer, Object> responses;
         try {
             OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
-            long startTimeNanos = System.nanoTime();
+            long startTimeNanos = Timer.nanos();
 
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
@@ -862,7 +889,7 @@ abstract class MapProxySupport<K, V>
                     resultingKeyValuePairs.add(entries.getValue(i));
                 }
             }
-            localMapStats.incrementGetLatencyNanos(dataKeys.size(), System.nanoTime() - startTimeNanos);
+            localMapStats.incrementGetLatencyNanos(dataKeys.size(), Timer.nanosElapsed(startTimeNanos));
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -998,7 +1025,13 @@ abstract class MapProxySupport<K, V>
                     resultFuture.completeExceptionally(t);
                 }
                 if (counter.decrementAndGet() == 0) {
-                    finalizePutAll(map);
+                    try {
+                        // don't ignore errors here, see https://github.com/hazelcast/hazelcast-jet/issues/3046
+                        finalizePutAll(map);
+                    } catch (Throwable e) {
+                        resultFuture.completeExceptionally(e);
+                        return;
+                    }
                     if (!resultFuture.isDone()) {
                         resultFuture.complete(null);
                     }
@@ -1056,7 +1089,7 @@ abstract class MapProxySupport<K, V>
         }
 
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries, triggerMapLoader);
-        long startTimeNanos = System.nanoTime();
+        long startTimeNanos = Timer.nanos();
         CompletableFuture<Map<Integer, Object>> future =
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
         InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
@@ -1064,7 +1097,7 @@ abstract class MapProxySupport<K, V>
         future.whenCompleteAsync((response, t) -> {
             putAllVisitSerializedKeys(entries);
             if (t == null) {
-                localMapStats.incrementPutLatencyNanos(finalTotalSize, System.nanoTime() - startTimeNanos);
+                localMapStats.incrementPutLatencyNanos(finalTotalSize, Timer.nanosElapsed(startTimeNanos));
                 resultFuture.complete(null);
             } else {
                 resultFuture.completeExceptionally(t);
@@ -1148,16 +1181,16 @@ abstract class MapProxySupport<K, V>
     }
 
     public UUID addLocalEntryListenerInternal(Object listener) {
-        return mapServiceContext.addLocalEventListener(listener, name);
+        return addLocalEntryListenerInternal(listener, TruePredicate.INSTANCE, null, true);
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
     protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
-        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        EventFilter eventFilter = new EntryEventFilter(key, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
@@ -1165,7 +1198,7 @@ abstract class MapProxySupport<K, V>
                                             Predicate predicate,
                                             @Nullable Data key,
                                             boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
@@ -1296,6 +1329,8 @@ abstract class MapProxySupport<K, V>
     @Override
     public void addIndex(IndexConfig indexConfig) {
         checkNotNull(indexConfig, "Index config cannot be null.");
+        checkFalse(isNativeMemoryAndBitmapIndexingEnabled(indexConfig.getType()),
+                "BITMAP indexes are not supported by NATIVE storage");
 
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 
@@ -1309,11 +1344,13 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    protected boolean isNativeMemoryAndBitmapIndexingEnabled(IndexType indexType) {
+        InMemoryFormat mapStoreConfig = mapConfig.getInMemoryFormat();
+        return mapStoreConfig == InMemoryFormat.NATIVE && indexType == IndexType.BITMAP;
+    }
+
     @Override
     public LocalMapStats getLocalMapStats() {
-        if (!mapConfig.isStatisticsEnabled()) {
-            return EMPTY_LOCAL_MAP_STATS;
-        }
         return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
     }
 
@@ -1350,14 +1387,22 @@ abstract class MapProxySupport<K, V>
     protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
                                                         IterationType iterationType, Target target) {
         QueryEngine queryEngine = getMapQueryEngine();
-        Predicate userPredicate = predicate;
+        final Predicate userPredicate;
 
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
-            userPredicate = partitionPredicate.getTarget();
-            target = createPartitionTarget(partitionId);
+            if (target.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
+                    || target.mode() == TargetMode.PARTITION_OWNER && !target.partitions().contains(partitionId)
+            ) {
+                userPredicate = alwaysFalse();
+            } else {
+                target = createPartitionTarget(new PartitionIdSet(partitionService.getPartitionCount(), partitionId));
+                userPredicate = partitionPredicate.getTarget();
+            }
+        } else {
+            userPredicate = predicate;
         }
         handleHazelcastInstanceAwareParams(userPredicate);
 
@@ -1392,7 +1437,7 @@ abstract class MapProxySupport<K, V>
         @Override
         public void accept(T t, Throwable throwable) {
             if (throwable == null) {
-                mapServiceContext.incrementOperationStats(startTime, localMapStats, name, operation);
+                incrementOperationStats(operation, localMapStats, startTime);
             }
         }
     }

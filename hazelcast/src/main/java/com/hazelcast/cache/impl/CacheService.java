@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class CacheService extends AbstractCacheService {
         return op.isEmpty() ? null : op;
     }
 
-    private boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
+    protected boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
         for (ServiceNamespace namespace : namespaces) {
             assert isKnownServiceNamespace(namespace) : namespace + " is not a CacheService namespace!";
         }

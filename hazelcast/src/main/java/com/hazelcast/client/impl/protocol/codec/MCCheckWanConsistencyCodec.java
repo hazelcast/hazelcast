@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("df92f134b5fc59ac18ffb95729240a31")
+@Generated("11e8058123c8ee9c2c3bff61576e7f56")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;
@@ -93,16 +93,6 @@ public final class MCCheckWanConsistencyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * UUID of the consistency check request or null if consistency
-         * check is ignored because of the configuration
-         */
-        public @Nullable java.util.UUID uuid;
-    }
-
     public static ClientMessage encodeResponse(@Nullable java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -113,12 +103,13 @@ public final class MCCheckWanConsistencyCodec {
         return clientMessage;
     }
 
-    public static MCCheckWanConsistencyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * UUID of the consistency check request or null if consistency
+     * check is ignored because of the configuration
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.uuid = decodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET);
     }
-
 }

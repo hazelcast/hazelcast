@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 public class RemovePartitionLostListenerMessageTask
-        extends AbstractRemoveListenerMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<UUID> {
 
     public RemovePartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -36,16 +36,16 @@ public class RemovePartitionLostListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        return service.removePartitionLostListenerAsync(parameters.registrationId);
+        return service.removePartitionLostListenerAsync(parameters);
     }
 
     @Override
     protected UUID getRegistrationId() {
-        return parameters.registrationId;
+        return parameters;
     }
 
     @Override
-    protected ClientRemovePartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected UUID decodeClientMessage(ClientMessage clientMessage) {
         return ClientRemovePartitionLostListenerCodec.decodeRequest(clientMessage);
     }
 

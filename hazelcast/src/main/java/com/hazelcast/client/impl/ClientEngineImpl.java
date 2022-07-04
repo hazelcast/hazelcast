@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -47,6 +47,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -59,6 +60,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.sql.impl.client.SqlAbstractMessageTask;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -74,6 +76,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -108,12 +112,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
-    private final ClientExceptions clientExceptions;
+    private final ClientExceptionFactory clientExceptionFactory;
     private final ClusterViewListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
+
+    // not final for the testing purposes
+    private ClientEndpointStatisticsManager endpointStatisticsManager;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -124,18 +131,21 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.queryExecutor = newClientQueryExecutor();
         this.blockingExecutor = newBlockingExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
-        this.clientExceptions = initClientExceptionFactory();
+        this.clientExceptionFactory = initClientExceptionFactory();
         this.clusterListenerService = new ClusterViewListenerService(nodeEngine);
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
                 nodeEngine.getExecutionService(), node.getProperties());
         Set<String> trustedInterfaces = node.getConfig().getManagementCenterConfig().getTrustedInterfaces();
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
+        this.endpointStatisticsManager = PhoneHome.isPhoneHomeEnabled(node)
+                ? new ClientEndpointStatisticsManagerImpl() : new NoOpClientEndpointStatisticsManager();
     }
 
-    private ClientExceptions initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
-        return new ClientExceptions(jcacheAvailable);
+    private ClientExceptionFactory initClientExceptionFactory() {
+        ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(configClassLoader);
+        return new ClientExceptionFactory(jcacheAvailable, configClassLoader);
     }
 
     private Executor newClientExecutor() {
@@ -234,7 +244,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     private boolean isQuery(MessageTask messageTask) {
-        return messageTask instanceof AbstractMapQueryMessageTask;
+        return messageTask instanceof AbstractMapQueryMessageTask
+                || messageTask instanceof SqlAbstractMessageTask;
     }
 
     @Override
@@ -278,8 +289,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClientExceptions getClientExceptions() {
-        return clientExceptions;
+    public ClientExceptionFactory getExceptionFactory() {
+        return clientExceptionFactory;
     }
 
     @Override
@@ -293,14 +304,21 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return false;
         }
 
-        endpointManager.registerEndpoint(endpoint);
-
         ServerConnection conn = endpoint.getConnection();
-        if (conn != null) {
-            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
-            //socket address can be null if connection closed before bind
-            if (socketAddress != null) {
-                conn.setRemoteAddress(new Address(socketAddress));
+        InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+        //socket address can be null if connection closed before bind
+        if (socketAddress != null) {
+            conn.setRemoteAddress(new Address(socketAddress));
+        }
+
+        if (endpointManager.registerEndpoint(endpoint)) {
+            // remote address can be null if connection closed before bind.
+            // On such a case, `ClientEngine#connectionRemoved` will not be called for this connection since
+            // we did not register the connection.
+            // Endpoint removal logic(inside `ClientEngine#connectionRemoved`) will not be able to run, instead endpoint
+            // will be cleaned up by ClientHeartbeatMonitor#cleanupEndpointsWithDeadConnections later.
+            if (conn.getRemoteAddress() != null && endpoint.getUuid() != null) {
+                node.getServer().getConnectionManager(CLIENT).register(conn.getRemoteAddress(), endpoint.getUuid(), conn);
             }
         }
 
@@ -345,7 +363,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        node.getConnectionManager(CLIENT).addConnectionListener(connectionListener);
+        node.getServer().getConnectionManager(CLIENT).addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
@@ -420,22 +438,36 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 logger.finest("connectionRemoved: No endpoint for connection:" + connection);
                 return;
             }
-
+            UUID clientUuid = endpoint.getUuid();
+            if (clientUuid != null) {
+                node.getLocalAddressRegistry().tryRemoveRegistration(clientUuid,
+                        endpoint.getConnection().getRemoteAddress());
+            }
             endpointManager.removeEndpoint(endpoint);
         }
     }
 
     @Override
-    public Map<String, Integer> getConnectedClientStats() {
-        Map<UUID, String> clientsMap = getClientsInCluster();
+    public Map<String, Long> getActiveClientsInCluster() {
+        Map<UUID, String> clients = getClientsInCluster();
+        return clients.values()
+                .stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    }
 
-        final Map<String, Integer> resultMap = new HashMap<>();
+    @Override
+    public Map<String, ClientEndpointStatisticsSnapshot> getEndpointStatisticsSnapshots() {
+        return endpointStatisticsManager.getSnapshotsAndReset(endpointManager.getEndpoints());
+    }
 
-        for (String clientType : clientsMap.values()) {
-            Integer count = resultMap.getOrDefault(clientType, 0);
-            resultMap.put(clientType, ++count);
-        }
-        return resultMap;
+    @Override
+    public void onEndpointAuthenticated(ClientEndpoint endpoint) {
+        endpointStatisticsManager.onEndpointAuthenticated(endpoint);
+    }
+
+    @Override
+    public void onEndpointDestroyed(ClientEndpoint endpoint) {
+        endpointStatisticsManager.onEndpointDestroyed(endpoint);
     }
 
     Map<UUID, String> getClientsInCluster() {
@@ -452,10 +484,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 if (endpoints == null) {
                     continue;
                 }
-                //Merge connected clients according to their UUID
-                for (Map.Entry<UUID, String> entry : endpoints.entrySet()) {
-                    clientsMap.put(entry.getKey(), entry.getValue());
-                }
+                // Merge connected clients according to their UUID
+                clientsMap.putAll(endpoints);
             } catch (Exception e) {
                 logger.warning("Cannot get client information from: " + target.toString(), e);
             }
@@ -495,8 +525,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID) {
-        return backupListeners.remove(clientUUID) != null;
+    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+        return backupListeners.remove(clientUUID, backupListener);
     }
 
     public Map<UUID, Consumer<Long>> getBackupListeners() {
@@ -506,5 +536,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     @Override
     public AddressChecker getManagementTasksChecker() {
         return addressChecker;
+    }
+
+    public void setEndpointStatisticsManager(ClientEndpointStatisticsManager endpointStatisticsManager) {
+        // this should only be used in tests
+        this.endpointStatisticsManager = endpointStatisticsManager;
     }
 }

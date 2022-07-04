@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$DoubleAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$MutableReferenceHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LinTrendAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongLongAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongDoubleAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$PickAnyAccHook
+com.hazelcast.jet.core.CoreSerializerHooks$WatermarkHook
+com.hazelcast.jet.core.CoreSerializerHooks$JetEventHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$WindowResultHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$KeyedWindowResultHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple2Hook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple3Hook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple4Hook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple5Hook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$TagHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$ItemsByTagHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedItemHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$SnapshotBarrierHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastEntryHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$DoneItemHook
+com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
+com.hazelcast.jet.impl.metrics.JetMetricsDataSerializerHook
+com.hazelcast.jet.impl.observer.JetObserverDataSerializerHook
+com.hazelcast.jet.json.JsonSerializerHooks$DeferredMapHook

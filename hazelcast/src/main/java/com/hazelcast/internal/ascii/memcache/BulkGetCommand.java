@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class BulkGetCommand extends AbstractTextCommand {
 
@@ -46,7 +47,7 @@ public class BulkGetCommand extends AbstractTextCommand {
 
     @Override
     public boolean writeTo(ByteBuffer dst) {
-        copyToHeapBuffer(byteBuffer, dst);
+        copyFromHeapBuffer(byteBuffer, dst);
         return !byteBuffer.hasRemaining();
     }
 
@@ -61,6 +62,6 @@ public class BulkGetCommand extends AbstractTextCommand {
             byteBuffer.put(bytes);
         }
         byteBuffer.put(TextCommandConstants.END);
-        byteBuffer.flip();
+        upcast(byteBuffer).flip();
     }
 }

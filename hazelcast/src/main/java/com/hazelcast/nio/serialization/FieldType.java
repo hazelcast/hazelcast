@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,11 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static java.lang.Integer.MAX_VALUE;
 
+/**
+ * Field Type for {@link Portable} format to be used with {@link ClassDefinition#getFieldType(String)} API
+ */
 public enum FieldType {
 
-    // SINGLE-VALUE TYPES
     PORTABLE(0, MAX_VALUE),
     BYTE(1, BYTE_SIZE_IN_BYTES),
     BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
@@ -39,8 +41,6 @@ public enum FieldType {
     FLOAT(7, FLOAT_SIZE_IN_BYTES),
     DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
     UTF(9, MAX_VALUE),
-
-    // ARRAY TYPES
     PORTABLE_ARRAY(10, MAX_VALUE),
     BYTE_ARRAY(11, MAX_VALUE),
     BOOLEAN_ARRAY(12, MAX_VALUE),
@@ -50,7 +50,18 @@ public enum FieldType {
     LONG_ARRAY(16, MAX_VALUE),
     FLOAT_ARRAY(17, MAX_VALUE),
     DOUBLE_ARRAY(18, MAX_VALUE),
-    UTF_ARRAY(19, MAX_VALUE);
+    UTF_ARRAY(19, MAX_VALUE),
+
+    DECIMAL(20, MAX_VALUE),
+    DECIMAL_ARRAY(21, MAX_VALUE),
+    TIME(22, BYTE_SIZE_IN_BYTES * 3 + INT_SIZE_IN_BYTES),
+    TIME_ARRAY(23, MAX_VALUE),
+    DATE(24, SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2),
+    DATE_ARRAY(25, MAX_VALUE),
+    TIMESTAMP(26, TIME.getTypeSize() + DATE.getTypeSize()),
+    TIMESTAMP_ARRAY(27, MAX_VALUE),
+    TIMESTAMP_WITH_TIMEZONE(28, TIMESTAMP.getTypeSize() + INT_SIZE_IN_BYTES),
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;
@@ -72,15 +83,22 @@ public enum FieldType {
     }
 
     public boolean isArrayType() {
-        return type >= PORTABLE_ARRAY.type;
+        if (type < DECIMAL.type) {
+            return type >= PORTABLE_ARRAY.type;
+        }
+        return type % 2 != 0;
     }
 
     public FieldType getSingleType() {
-        if (isArrayType()) {
-            // GOTCHA: Wont' work if you add more types!!!
-            return get((byte) (getId() % TYPES_COUNT));
+        byte id = getId();
+        if (type < DECIMAL.type) {
+            return get((byte) (id % TYPES_COUNT));
         }
-        return this;
+        if (id % 2 == 0) {
+            return get(id);
+        } else {
+            return get((byte) (id - 1));
+        }
     }
 
     public boolean hasDefiniteSize() {
@@ -89,12 +107,13 @@ public enum FieldType {
 
     /**
      * @return size of an element of the type represented by this object
-     * @throws IllegalArgumentException if type does not have a definite type. Invoke hasDefiniteSize() to check before.
+     * @throws IllegalArgumentException if the type does not have a definite size.
+     *                                  Invoke {@link #hasDefiniteSize()} to check first.
      */
     public int getTypeSize() throws IllegalArgumentException {
         if (elementSize == MAX_VALUE) {
             // unknown size case
-            throw new IllegalArgumentException("Unsupported type - the size is variable or unknown!");
+            throw new IllegalArgumentException("Unsupported type - the size is variable or unknown");
         }
         return elementSize;
     }

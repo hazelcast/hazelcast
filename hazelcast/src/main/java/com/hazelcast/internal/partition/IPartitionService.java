@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,13 @@ public interface IPartitionService extends CoreService {
 
     UUID addMigrationListener(MigrationListener migrationListener);
 
+    CompletableFuture<UUID> addMigrationListenerAsync(MigrationListener migrationListener);
+
+    UUID addLocalMigrationListener(MigrationListener migrationListener);
+
     boolean removeMigrationListener(UUID registrationId);
+
+    CompletableFuture<Boolean> removeMigrationListenerAsync(UUID registrationId);
 
     UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
@@ -164,7 +170,10 @@ public interface IPartitionService extends CoreService {
      */
     int getMaxAllowedBackupCount();
 
-    int getPartitionStateVersion();
+    /**
+     * Returns stamp of the current partition state.
+     */
+    long getPartitionStateStamp();
 
     /**
      * Checks if there are any cluster-wide migrations.

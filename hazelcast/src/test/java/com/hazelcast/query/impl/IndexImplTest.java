@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
@@ -50,19 +51,25 @@ public class IndexImplTest {
 
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
 
-        index = new IndexImpl(config, mockSerializationService, mockExtractors,
-                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
+        index = new IndexImpl(
+            config,
+            mockSerializationService,
+            mockExtractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY,
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+        );
     }
 
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
-        QueryableEntry entry = createMockQueryableEntry();
-        index.putEntry(entry, null, Index.OperationSource.USER);
+        CachedQueryEntry<?, ?> entry = createMockQueryableEntry();
+        index.putEntry(entry, null, entry, Index.OperationSource.USER);
         verify(entry, never()).getKey();
     }
 
-    private QueryableEntry createMockQueryableEntry() {
-        QueryableEntry entry = mock(QueryableEntry.class);
+    private CachedQueryEntry<?, ?> createMockQueryableEntry() {
+        CachedQueryEntry<?, ?> entry = mock(CachedQueryEntry.class);
         Data keyData = mock(Data.class);
         when(entry.getKeyData()).thenReturn(keyData);
         return entry;

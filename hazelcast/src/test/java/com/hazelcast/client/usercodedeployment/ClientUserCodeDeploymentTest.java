@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -36,7 +38,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import usercodedeployment.CapitalizatingFirstnameExtractor;
+import usercodedeployment.CapitalizingFirstNameExtractor;
+import usercodedeployment.DomainClassWithInnerClass;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.Person;
@@ -52,9 +55,9 @@ import static com.hazelcast.query.Predicates.equal;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -197,12 +200,12 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-        clientUserCodeDeploymentConfig.addClass(CapitalizatingFirstnameExtractor.class);
+        clientUserCodeDeploymentConfig.addClass(CapitalizingFirstNameExtractor.class);
         clientUserCodeDeploymentConfig.addClass(Person.class);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
-        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
+        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizingFirstNameExtractor"));
 
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
@@ -265,6 +268,30 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
          */
         clientUserCodeDeploymentConfig.addJar("ChildParent.jar");
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithMainAndInnerClassesWorksIndependentOfOrder_withInnerFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.InnerClass.class);
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithMainAndInnerClassesWorksIndependentOfOrder_withMainFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.class);
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.InnerClass.class);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         factory.newHazelcastInstance(createNodeConfig());

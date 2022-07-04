@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.internal.util.IterableUtil.asReadOnlyIterator;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
 
 /**
@@ -49,10 +51,11 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
+    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystem expirySystem,
+                SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
-        this.records = new StorageSCHM<>(serializationService);
+        this.records = new StorageSCHM<>(serializationService, expirySystem);
         this.serializationService = serializationService;
     }
 
@@ -65,7 +68,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
-        return records.cachedEntrySet().iterator();
+        return asReadOnlyIterator(records.cachedEntrySet().iterator());
     }
 
     @Override
@@ -81,13 +84,14 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void updateRecordValue(Data key, R record, Object value) {
+    public R updateRecordValue(Data key, R record, Object value) {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
                 ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
+        return record;
     }
 
     @Override
@@ -162,11 +166,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
             entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
         return new MapEntriesWithCursor(entriesData, newPointers);
-    }
-
-    @Override
-    public Record extractRecordFromLazy(EntryView entryView) {
-        return ((LazyEvictableEntryView) entryView).getRecord();
     }
 
     @Override

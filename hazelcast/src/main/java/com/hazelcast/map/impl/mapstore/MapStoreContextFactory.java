@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,27 +76,27 @@ public final class MapStoreContextFactory {
 
         @Override
         public SerializationService getSerializationService() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public ILogger getLogger(Class clazz) {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public String getMapName() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public MapServiceContext getMapServiceContext() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public MapStoreConfig getMapStoreConfig() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override

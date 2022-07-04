@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -66,7 +67,6 @@ import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +85,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientDiscoverySpiTest.class);
@@ -111,6 +111,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void testParsing() {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -146,8 +147,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().setEnabled(false);
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
@@ -202,8 +202,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyFactory factory = new LifecycleDiscoveryStrategyFactory(startLatch, stopLatch, discoveryNodes);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().setEnabled(false);
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
@@ -237,12 +236,14 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     public void testClientCanConnect_afterDiscoveryStrategyThrowsException() {
         Config config = new Config();
         config.getNetworkConfig().setPort(50001);
-        Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        Address address = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
 
         clientConfig.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         DiscoveryConfig discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
-        DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory();
+        DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory(address);
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
@@ -455,6 +456,11 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     private static class FirstCallExceptionThrowingDiscoveryStrategy implements DiscoveryStrategy {
 
         AtomicBoolean firstCall = new AtomicBoolean(true);
+        private final Address address;
+
+        private FirstCallExceptionThrowingDiscoveryStrategy(Address address) {
+            this.address = address;
+        }
 
         @Override
         public void start() {
@@ -465,14 +471,9 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             if (firstCall.compareAndSet(true, false)) {
                 throw new RuntimeException();
             }
-            try {
-                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(1);
-                Address privateAddress = new Address("127.0.0.1", 50001);
-                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress));
-                return discoveryNodes;
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(1);
+            discoveryNodes.add(new SimpleDiscoveryNode(address));
+            return discoveryNodes;
         }
 
         @Override
@@ -492,7 +493,11 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     public static class ExceptionThrowingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        public ExceptionThrowingDiscoveryStrategyFactory() {
+        private final Address address;
+
+        public ExceptionThrowingDiscoveryStrategyFactory(Address address) {
+
+            this.address = address;
         }
 
         @Override
@@ -503,7 +508,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                       Map<String, Comparable> properties) {
-            return new FirstCallExceptionThrowingDiscoveryStrategy();
+            return new FirstCallExceptionThrowingDiscoveryStrategy(address);
         }
 
         @Override

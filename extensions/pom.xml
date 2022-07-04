@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2021 Hazelcast Inc.
+  ~
+  ~ Licensed under the Hazelcast Community License (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://hazelcast.com/hazelcast-community-license
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+
+    <name>hazelcast-jet-extensions</name>
+    <description>Hazelcast Jet Extensions</description>
+
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet-extensions</artifactId>
+
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>5.2-SNAPSHOT</version>
+    </parent>
+
+    <modules>
+        <module>avro</module>
+        <module>cdc-debezium</module>
+        <module>cdc-mysql</module>
+        <module>cdc-postgres</module>
+        <module>csv</module>
+        <module>elasticsearch/elasticsearch-6</module>
+        <module>elasticsearch/elasticsearch-7</module>
+        <module>hadoop</module>
+        <module>hadoop-dist</module>
+        <module>hazelcast-3-connector</module>
+        <module>kafka</module>
+        <module>kinesis</module>
+        <module>s3</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>protoc-supported</id>
+            <activation>
+                <os>
+                    <family>!sunos</family>
+                </os>
+            </activation>
+            <modules>
+                <module>grpc</module>
+                <module>protobuf</module>
+                <module>python</module>
+            </modules>
+        </profile>
+    </profiles>
+
+    <properties>
+        <argLine> <!-- surefire parameters -->
+            -Xmx1G
+            -Xms1G
+            -XX:+AlwaysPreTouch
+            -Dhazelcast.phone.home.enabled=false
+            -Dhazelcast.logging.type=log4j2
+            -Dhazelcast.logging.details.enabled=true
+            -Dhazelcast.test.use.network=false
+            -Djava.net.preferIPv4Stack=true
+            -XX:+HeapDumpOnOutOfMemoryError
+            -XX:HeapDumpPath=${project.build.directory}
+        </argLine>
+
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.basedir}/../..</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+    </properties>
+
+    <licenses>
+        <license>
+            <name>Hazelcast Community License</name>
+            <url>http://hazelcast.com/hazelcast-community-license</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>jar-with-dependencies</id>
+                            <phase>${shade.jar-with-dependencies.phase}</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <createSourcesJar>true</createSourcesJar>
+                        <shadeSourcesContent>true</shadeSourcesContent>
+                        <createDependencyReducedPom>true</createDependencyReducedPom>
+                        <shadedArtifactAttached>true</shadedArtifactAttached>
+                        <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                        <transformers>
+                            <transformer
+                                    implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
+                            <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                            <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                            <transformer
+                                    implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
+                        </transformers>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.hazelcast</groupId>
+                            <artifactId>hazelcast-build-utils</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

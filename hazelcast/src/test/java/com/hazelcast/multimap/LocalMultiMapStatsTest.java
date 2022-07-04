@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,26 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,19 +48,36 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
     private String mapName = "mapName";
+    private String mapNameSet = "mapNameSet";
 
     @Before
     public void setUp() {
-        instance = createHazelcastInstance(getConfig());
+        MultiMapConfig multiMapConfig1 = new MultiMapConfig()
+                .setName(mapName)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        MultiMapConfig multiMapConfig2 = new MultiMapConfig()
+                .setName(mapNameSet)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
+        instance = createHazelcastInstance(getConfig()
+                .addMultiMapConfig(multiMapConfig1)
+                .addMultiMapConfig(multiMapConfig2));
     }
 
     protected LocalMultiMapStats getMultiMapStats() {
-        return instance.getMultiMap(mapName).getLocalMultiMapStats();
+        return getMultiMapStats(mapName);
+    }
+
+    protected LocalMultiMapStats getMultiMapStats(String multiMapName) {
+        return instance.getMultiMap(multiMapName).getLocalMultiMapStats();
     }
 
     protected <K, V> MultiMap<K, V> getMultiMap() {
+        return getMultiMap(mapName);
+    }
+
+    protected <K, V> MultiMap<K, V> getMultiMap(String multiMapName) {
         warmUpPartitions(instance);
-        return instance.getMultiMap(mapName);
+        return instance.getMultiMap(multiMapName);
     }
 
     @Test
@@ -74,8 +99,62 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
             map.get(i);
         }
         LocalMapStats localMapStats = getMultiMapStats();
+
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getHits());
+    }
+
+    private void testPutAllAndHitsGeneratedTemplate(Map<Integer, Collection<? extends Integer>> expectedMultiMap,
+                                                    Consumer<MultiMap<Integer, Integer>> putAllOperation) {
+        MultiMap<Integer, Integer> mmap1 = getMultiMap();
+        MultiMap<Integer, Integer> mmap2 = getMultiMap(mapNameSet);
+        for (int i = 0; i < 100; i++) {
+            expectedMultiMap.put(i, new ArrayList<>(Arrays.asList(1, 1, 1)));
+        }
+
+        putAllOperation.accept(mmap1);
+        putAllOperation.accept(mmap2);
+
+        for (int i = 0; i < 100; i++) {
+            int index = i;
+            assertTrueEventually(() -> assertTrue(mmap1.get(index).size() > 0));
+            assertTrueEventually(() -> assertTrue(mmap2.get(index).size() > 0));
+        }
+        testPutAllAndHitsGeneratedTemplateVerify();
+    }
+
+    protected void testPutAllAndHitsGeneratedTemplateVerify() {
+        LocalMapStats localMapStats1 = getMultiMapStats();
+        LocalMapStats localMapStats2 = getMultiMapStats(mapNameSet);
+
+        assertEquals(300, localMapStats1.getOwnedEntryCount());
+        assertEquals(100, localMapStats1.getPutOperationCount());
+        assertEquals(100, localMapStats1.getHits());
+        assertEquals(100, localMapStats2.getOwnedEntryCount());
+        assertEquals(100, localMapStats2.getPutOperationCount());
+        assertEquals(100, localMapStats2.getHits());
+    }
+
+    @Test
+    public void testPutAllAndHitsGeneratedMap() {
+        Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
+                (o) -> {
+                    o.putAllAsync(expectedMultiMap);
+                }
+        );
+    }
+
+    @Test
+    public void testPutAllAndHitsGeneratedKey() {
+        Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
+                (o) -> {
+                    for (int i = 0; i < 100; ++i) {
+                        o.putAllAsync(i, expectedMultiMap.get(i));
+                    }
+                }
+        );
     }
 
     @Test
@@ -176,7 +255,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_containsKey() {
         MultiMap map = getMultiMap();
 
@@ -189,7 +267,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_entrySet() {
         MultiMap map = getMultiMap();
 
@@ -202,7 +279,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_keySet() {
         MultiMap map = getMultiMap();
 
@@ -227,7 +303,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_values() {
         MultiMap map = getMultiMap();
 
@@ -240,7 +315,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_clear() {
         MultiMap map = getMultiMap();
 
@@ -253,7 +327,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_containsValue() {
         MultiMap map = getMultiMap();
 
@@ -266,7 +339,6 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("GH issue 15307")
     public void testOtherOperationCount_size() {
         MultiMap map = getMultiMap();
 
@@ -298,5 +370,21 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
 
         LocalMapStats stats = getMultiMapStats();
         assertEquals(2, stats.getLockedEntryCount());
+    }
+
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19382")
+    public void testHitCountNotLost_whenKeysAreRemoved() {
+        MultiMap<Integer, Integer> map = getMultiMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        for (int i = 0; i < 50; i++) {
+            map.remove(i);
+        }
+
+        LocalMapStats localMapStats = getMultiMapStats();
+        assertEquals(100, localMapStats.getHits());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -31,7 +32,7 @@ public class QueryEntry extends QueryableEntry {
     public QueryEntry() {
     }
 
-    public QueryEntry(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public QueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         init(serializationService, key, value, extractors);
     }
 
@@ -52,12 +53,12 @@ public class QueryEntry extends QueryableEntry {
      * </code>
      * </pre>
      */
-    public void init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        this.serializationService = serializationService;
+        this.serializationService = (InternalSerializationService) serializationService;
 
         this.key = key;
         this.value = value;
@@ -70,18 +71,50 @@ public class QueryEntry extends QueryableEntry {
     }
 
     @Override
-    public Object getValue() {
-        return serializationService.toObject(value);
-    }
-
-    @Override
     public Data getKeyData() {
         return key;
     }
 
     @Override
+    public Object getValue() {
+        return serializationService.toObject(value);
+    }
+
+    @Override
     public Data getValueData() {
         return serializationService.toData(value);
+    }
+
+    @Override
+    public Object getKeyIfPresent() {
+        return null;
+    }
+
+    @Override
+    public Data getKeyDataIfPresent() {
+        return key;
+    }
+
+    @Override
+    public Object getValueIfPresent() {
+        if (!(value instanceof Data)) {
+            return value;
+        }
+
+        Object possiblyNotData = record.getValue();
+
+        return possiblyNotData instanceof Data ? null : possiblyNotData;
+    }
+
+    @Override
+    public Data getValueDataIfPresent() {
+        if (value instanceof Data) {
+            return (Data) value;
+        }
+
+        Object possiblyData = record.getValue();
+
+        return possiblyData instanceof Data ? (Data) possiblyData : null;
     }
 
     @Override

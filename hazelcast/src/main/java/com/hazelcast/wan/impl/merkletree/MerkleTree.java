@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package com.hazelcast.wan.impl.merkletree;
-
-import java.util.function.Consumer;
 
 /**
  * Interface defining methods for Merkle tree implementations
@@ -69,36 +67,6 @@ public interface MerkleTree extends MerkleTreeView {
     void updateRemove(Object key, Object removedValue);
 
     /**
-     * Performs the given action for each key of the specified node
-     * until all elements have been processed or the action throws an
-     * exception.
-     * <p>
-     * The node referenced by {@code nodeOrder} can be either a leaf or a
-     * non-leaf node. In the latter case {@code consumer} is called for
-     * each key that belong the the leaves of the subtree under the
-     * specified node.
-     * <p>
-     * This method does not define ordering for the keys belong to the
-     * node {@code nodeOrder}, therefore the caller should not rely on it.
-     *
-     * @param nodeOrder The node for which all keys
-     * @param consumer  The action which is called for each key
-     */
-    void forEachKeyOfNode(int nodeOrder, Consumer<Object> consumer);
-
-    /**
-     * Returns the number of the keys under the specified node.
-     * <p>
-     * The node referenced by {@code nodeOrder} can be either a leaf or a
-     * non-leaf node. In the latter case the method returns with the sum
-     * of the key counts of the subtree under the specified node
-     *
-     * @param nodeOrder The node for which the key count is queried
-     * @return the number of the keys under the specified node
-     */
-    int getNodeKeyCount(int nodeOrder);
-
-    /**
      * Returns the memory footprint of Merkle Tree in bytes
      *
      * @return the memory footprint of the Merkle Tree in bytes
@@ -109,5 +77,4 @@ public interface MerkleTree extends MerkleTreeView {
      * Clears the Merkle tree
      */
     void clear();
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,15 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.configuration.MutableConfiguration;
+
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -35,5 +42,15 @@ public class CacheManagerManagementTest extends org.jsr107.tck.management.CacheM
     @AfterClass
     public static void cleanup() {
         JsrTestUtil.cleanup();
+    }
+
+    @Test
+    public void testMBeansLeftoversAreDetected() throws Exception {
+        CacheManager cacheManager = getCacheManager();
+        MutableConfiguration<Integer, Integer> cacheConfig = new MutableConfiguration<>();
+        cacheConfig.setManagementEnabled(true);
+        Cache<Integer, Integer> cache = cacheManager.createCache("int-cache", cacheConfig);
+        assertThrows(AssertionError.class, JsrTestUtil::assertNoMBeanLeftovers);
+        cache.close();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.IntHashSet;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.SlowTest;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -35,11 +35,12 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Random;
 
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class HyperLogLogImplTest {
@@ -111,7 +112,7 @@ public class HyperLogLogImplTest {
             int toCount = random.nextInt();
             actualCount.add(toCount);
 
-            bb.clear();
+            upcast(bb).clear();
             bb.putInt(toCount);
             hyperLogLog.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 

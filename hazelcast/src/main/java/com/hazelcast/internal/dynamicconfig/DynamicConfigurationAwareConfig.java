@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,21 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -39,6 +44,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -46,12 +52,12 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
@@ -64,12 +70,15 @@ import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -80,6 +89,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger.merge;
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
@@ -118,6 +128,8 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public DynamicConfigurationAwareConfig(Config staticConfig, HazelcastProperties properties) {
         assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
+        merge(staticConfig.getHotRestartPersistenceConfig(), staticConfig.getPersistenceConfig());
+
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
         this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
@@ -152,7 +164,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Config setProperty(String name, String value) {
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
         return staticConfig.setProperty(name, value);
     }
 
@@ -253,13 +265,22 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    public <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
-        Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null && !existingConfiguration.equals(newConfig)) {
+    public static <T> boolean checkStaticConfigDoesNotExist(
+            Map<String, T> staticConfigurations,
+            String configName,
+            T newConfig
+    ) {
+        T existingConfiguration = staticConfigurations.get(configName);
+        return checkStaticConfigDoesNotExist(existingConfiguration, newConfig);
+    }
+
+    // be careful to not use this method with get*Config as it creates the config if not found
+    public static <T> boolean checkStaticConfigDoesNotExist(T oldConfig, T newConfig) {
+        if (oldConfig != null && !oldConfig.equals(newConfig)) {
             throw new InvalidConfigurationException("Cannot add a new dynamic configuration " + newConfig
-                    + " as static configuration already contains " + existingConfiguration);
+                    + " as static configuration already contains " + oldConfig);
         }
-        return existingConfiguration == null;
+        return oldConfig == null;
     }
 
     public Config getStaticConfig() {
@@ -850,7 +871,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return staticConfig.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
@@ -959,6 +980,51 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public PersistenceConfig getPersistenceConfig() {
+        return staticConfig.getPersistenceConfig();
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig prConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public DynamicConfigurationConfig getDynamicConfigurationConfig() {
+        return staticConfig.getDynamicConfigurationConfig();
+    }
+
+    @Override
+    public Config setDynamicConfigurationConfig(DynamicConfigurationConfig dynamicConfigurationConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public DeviceConfig getDeviceConfig(String name) {
+        return staticConfig.getDeviceConfig(name);
+    }
+
+    @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        return staticConfig.getDeviceConfig(clazz, name);
+    }
+
+    @Override
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        return staticConfig.getDeviceConfigs();
+    }
+
+    @Override
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         return staticConfig.getCRDTReplicationConfig();
     }
@@ -1053,8 +1119,8 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.toString();
     }
 
-    public void setConfigurationService(ConfigurationService configurationService) {
-        this.configurationService = configurationService;
+    public void setServices(NodeEngineImpl nodeEngine) {
+        this.configurationService = nodeEngine.getConfigurationService();
         this.configSearcher = initConfigSearcher();
     }
 
@@ -1085,6 +1151,66 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public AuditlogConfig getAuditlogConfig() {
+        return staticConfig.getAuditlogConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        return staticConfig.getInstanceTrackingConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public SqlConfig getSqlConfig() {
+        return staticConfig.getSqlConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        return staticConfig.getJetConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        return staticConfig.getIntegrityCheckerConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

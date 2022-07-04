@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ public final class TopicDataSerializerHook implements DataSerializerHook {
     public static final int PUBLISH = 0;
     public static final int TOPIC_EVENT = 1;
     public static final int RELIABLE_TOPIC_MESSAGE = 2;
+    public static final int PUBLISH_ALL = 3;
 
     @Override
     public int getFactoryId() {
@@ -50,6 +51,8 @@ public final class TopicDataSerializerHook implements DataSerializerHook {
                         return new TopicEvent();
                     case RELIABLE_TOPIC_MESSAGE:
                         return new ReliableTopicMessage();
+                    case PUBLISH_ALL:
+                        return new PublishAllOperation();
                     default:
                         return null;
                 }

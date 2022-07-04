@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -77,6 +78,11 @@ class ClusterMergeTask implements Runnable {
                     disposeTasks(coreTasks, nonCoreTasks);
                 }
             }
+
+            ILogger logger = node.getLogger(getClass());
+            if (logger.isFineEnabled()) {
+                logger.fine("Finished merge tasks.");
+            }
         } finally {
             lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
         }
@@ -108,7 +114,7 @@ class ClusterMergeTask implements Runnable {
         // - all socket connections will be closed
         // - connection listening thread will stop
         // - no new connection will be established
-        node.server.stop();
+        node.getServer().stop();
 
         // clear waiting operations in queue and notify invocations to retry
         node.nodeEngine.reset();
@@ -148,7 +154,7 @@ class ClusterMergeTask implements Runnable {
 
     private void rejoin() {
         // start connection-manager to setup and accept new connections
-        node.server.start();
+        node.getServer().start();
         // re-join to the target cluster
         node.join();
     }

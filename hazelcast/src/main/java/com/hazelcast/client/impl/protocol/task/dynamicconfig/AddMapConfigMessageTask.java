@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,21 +63,33 @@ public class AddMapConfigMessageTask
             config.setEntryListenerConfigs(
                     (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
-        config.setMerkleTreeConfig(parameters.merkleTreeConfig);
-        config.setEventJournalConfig(parameters.eventJournalConfig);
-        config.setHotRestartConfig(parameters.hotRestartConfig);
+        if (parameters.merkleTreeConfig != null) {
+            config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        }
+        if (parameters.eventJournalConfig != null) {
+            config.setEventJournalConfig(parameters.eventJournalConfig);
+        }
+        if (parameters.hotRestartConfig != null) {
+            config.setHotRestartConfig(parameters.hotRestartConfig);
+        }
+
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setAttributeConfigs(parameters.attributeConfigs);
         config.setReadBackupData(parameters.readBackupData);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
+        config.setPerEntryStatsEnabled(parameters.perEntryStatsEnabled);
         config.setIndexConfigs(parameters.indexConfigs);
         if (parameters.mapStoreConfig != null) {
             config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService));
         }
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfg(serializationService));
-        config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        if (parameters.evictionConfig != null) {
+            config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
+        }
+        if (parameters.mergePolicy != null) {
+            config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        }
         if (parameters.nearCacheConfig != null) {
             config.setNearCacheConfig(parameters.nearCacheConfig.asNearCacheConfig(serializationService));
         }
@@ -96,6 +108,8 @@ public class AddMapConfigMessageTask
         }
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setMetadataPolicy(MetadataPolicy.getById(parameters.metadataPolicy));
+        config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
+        config.setTieredStoreConfig(parameters.tieredStoreConfig);
         return config;
     }
 

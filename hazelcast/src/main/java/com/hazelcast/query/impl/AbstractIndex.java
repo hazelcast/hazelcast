@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -32,16 +30,19 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
  * Provides an abstract base for indexes.
  */
+@SuppressWarnings({"rawtypes", "methodcount"})
 public abstract class AbstractIndex implements InternalIndex {
 
     /**
@@ -61,29 +62,21 @@ public abstract class AbstractIndex implements InternalIndex {
     private final boolean ordered;
     private final PerIndexStats stats;
 
-    /**
-     * Reference to the store if it is bound to the same partition as the index (local index), {@code null} otherwise.
-     */
-    private final StoreAdapter partitionStoreAdapter;
-
     private volatile TypeConverter converter;
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public AbstractIndex(
-        IndexConfig config,
-        InternalSerializationService ss,
-        Extractors extractors,
-        IndexCopyBehavior copyBehavior,
-        PerIndexStats stats,
-        StoreAdapter partitionStoreAdapter
-    ) {
+            IndexConfig config,
+            InternalSerializationService ss,
+            Extractors extractors,
+            IndexCopyBehavior copyBehavior,
+            PerIndexStats stats) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
         this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.partitionStoreAdapter = partitionStoreAdapter;
         this.indexStore = createIndexStore(config, stats);
         this.stats = stats;
     }
@@ -116,12 +109,9 @@ public abstract class AbstractIndex implements InternalIndex {
         return converter;
     }
 
-    public StoreAdapter getPartitionStoreAdapter() {
-        return partitionStoreAdapter;
-    }
-
     @Override
-    public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+    public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                         OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 
@@ -133,27 +123,27 @@ public abstract class AbstractIndex implements InternalIndex {
          * and this causes to class cast exceptions.
          */
         if (converterIsUnassignedOrTransient(converter)) {
-            converter = obtainConverter(entry);
+            converter = obtainConverter(newEntry);
         }
 
-        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
-        if (oldValue == null) {
-            indexStore.insert(newAttributeValue, entry, operationStats);
+        Object newAttributeValue = extractAttributeValue(newEntry);
+        if (oldEntry == null) {
+            indexStore.insert(newAttributeValue, newEntry, entryToStore, operationStats);
             stats.onInsert(timestamp, operationStats, operationSource);
         } else {
-            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldValue);
-            indexStore.update(oldAttributeValue, newAttributeValue, entry, operationStats);
+            Object oldAttributeValue = extractAttributeValue(oldEntry);
+            indexStore.update(oldAttributeValue, newAttributeValue, newEntry, entryToStore, operationStats);
             stats.onUpdate(timestamp, operationStats, operationSource);
         }
     }
 
     @Override
-    public void removeEntry(Data key, Object value, OperationSource operationSource) {
+    public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 
-        Object attributeValue = extractAttributeValue(key, value);
-        indexStore.remove(attributeValue, key, value, operationStats);
+        Object attributeValue = extractAttributeValue(entry);
+        indexStore.remove(attributeValue, entry, operationStats);
         stats.onRemove(timestamp, operationStats, operationSource);
     }
 
@@ -170,7 +160,96 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public Set<QueryableEntry> evaluate(Predicate predicate) {
         assert converter != null;
-        return indexStore.evaluate(predicate, converter);
+        long timestamp = stats.makeTimestamp();
+
+        Set<QueryableEntry> result = indexStore.evaluate(predicate, converter);
+        stats.onIndexHit(timestamp, result.size());
+
+        return result;
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(descending);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(comparison, convert(value), descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(convert(value));
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(comparison, convert(value), descending);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(convert(from), fromInclusive, convert(to), toInclusive, descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(convert(from), fromInclusive, convert(to), toInclusive, descending);
     }
 
     @Override
@@ -260,15 +339,22 @@ public abstract class AbstractIndex implements InternalIndex {
         return stats;
     }
 
-    private Object extractAttributeValue(Data key, Object value) {
+    @Override
+    public String toString() {
+        return "AbstractIndex{"
+                + "config=" + config
+                + '}';
+    }
+
+    private Object extractAttributeValue(QueryableEntry entry) {
         if (components.length == 1) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, components[0], key, value, null);
+            return entry.getAttributeValue(components[0]);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
             for (int i = 0; i < components.length; ++i) {
                 String attribute = components[i];
 
-                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, attribute, key, value, null);
+                Object extractedValue = entry.getAttributeValue(attribute);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
                             "Collection/array attributes are not supported by composite indexes: " + attribute);

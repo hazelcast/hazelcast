@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,19 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Thrown when local partition-state version doesn't match the version
+ * Thrown when local partition stamp doesn't match the stamp
  * of master member while running a migration/replication operation.
  */
+ //RU_COMPAT_4_0:
+ // PartitionStateVersionMismatchException name is kept to provide rolling upgrade
+ // guarantees. Otherwise this class would be renamed to PartitionStateStampMismatchException.
 public class PartitionStateVersionMismatchException extends HazelcastException {
 
     public PartitionStateVersionMismatchException(String message) {
         super(message);
     }
 
-    public PartitionStateVersionMismatchException(int masterVersion, int localVersion) {
-        this("Local partition state version is not equal to master's version!"
-                + " Local: " + localVersion + ", Master: " + masterVersion);
+    public PartitionStateVersionMismatchException(int masterStamp, int localStamp) {
+        this("Local partition stamp is not equal to master's stamp!" + " Local: " + localStamp + ", Master: " + masterStamp);
     }
 }

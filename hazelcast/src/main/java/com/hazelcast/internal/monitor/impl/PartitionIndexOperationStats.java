@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,17 +36,13 @@ public class PartitionIndexOperationStats implements IndexOperationStats {
     }
 
     @Override
-    public void onEntryAdded(Object replacedValue, Object addedValue) {
-        if (replacedValue == null) {
-            ++entryCountDelta;
-        }
+    public void onEntryAdded(Object addedValue) {
+        ++entryCountDelta;
     }
 
     @Override
     public void onEntryRemoved(Object removedValue) {
-        if (removedValue != null) {
-            --entryCountDelta;
-        }
+        --entryCountDelta;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("119f59c8139d4050846784832d1ffe74")
+@Generated("ecd9e2b3f76828ea6d7aea7182b777fe")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;
@@ -50,15 +50,6 @@ public final class MapEventJournalSubscribeCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private MapEventJournalSubscribeCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * name of the map
-         */
-        public java.lang.String name;
     }
 
     public static ClientMessage encodeRequest(java.lang.String name) {
@@ -73,13 +64,14 @@ public final class MapEventJournalSubscribeCodec {
         return clientMessage;
     }
 
-    public static MapEventJournalSubscribeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * name of the map
+     */
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -115,5 +107,4 @@ public final class MapEventJournalSubscribeCodec {
         response.newestSequence = decodeLong(initialFrame.content, RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET);
         return response;
     }
-
 }

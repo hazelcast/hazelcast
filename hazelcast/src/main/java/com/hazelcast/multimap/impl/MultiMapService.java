@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -69,7 +69,6 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
@@ -99,7 +98,7 @@ import static java.lang.Thread.currentThread;
 import static java.util.Collections.EMPTY_MAP;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
+public class MultiMapService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService,
         StatisticsAwareService<LocalMultiMapStats>,
         SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data>,
@@ -190,7 +189,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public void shutdown(boolean terminate) {
         reset();
-        Arrays.fill(partitionContainers, null);
     }
 
     public MultiMapContainer getOrCreateCollectionContainer(int partitionId, String name) {
@@ -239,7 +237,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
-        getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         return keySet;
     }
 
@@ -346,7 +343,9 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             map.put(ns.getObjectName(), container.getMultiMapValues());
         }
 
-        return map.isEmpty() ? null : new MultiMapReplicationOperation(map);
+        return map.isEmpty() ? null : new MultiMapReplicationOperation(map).
+                setServiceName(MultiMapService.SERVICE_NAME)
+                .setNodeEngine(nodeEngine);
     }
 
     public void insertMigratedData(int partitionId, Map<String, Map<Data, MultiMapValue>> map) {
@@ -493,7 +492,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
         for (int i = 0; i < partitionContainers.length; i++) {
             MultiMapPartitionContainer container = partitionContainers[i];
-            if (container.containerMap.isEmpty()) {
+            if (container == null || container.containerMap.isEmpty()) {
                 continue;
             }
 

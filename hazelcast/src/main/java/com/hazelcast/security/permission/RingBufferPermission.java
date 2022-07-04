@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ public class RingBufferPermission extends InstancePermission {
 
     private static final int PUT = 4;
     private static final int READ = 8;
-    private static final int ALL = PUT | READ;
+    private static final int ALL = PUT | READ | CREATE | DESTROY;
 
     public RingBufferPermission(String name, String... actions) {
         super(name, actions);

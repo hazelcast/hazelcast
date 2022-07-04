@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,6 +63,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -131,10 +133,13 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         terminateInstance(hz2);
         terminateInstance(hz3);
 
-        hz3 = factory.newHazelcastInstance(hz3Address);
-        final Member newMember3 = getClusterService(hz3).getLocalMember();
+        HazelcastInstance newInstance = factory.newHazelcastInstance(hz3Address);
+        hz3 = newInstance;
+        Member newMember3 = getClusterService(hz3).getLocalMember();
 
         assertClusterSizeEventually(2, hz1, hz3);
+        // ensure partition state is applied on the new member
+        assertTrueEventually(() -> assertTrue(Accessors.isPartitionStateInitialized(newInstance)));
 
         final List<HazelcastInstance> instanceList = asList(hz1, hz3);
         assertTrueAllTheTime(new AssertTask() {
@@ -142,7 +147,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
             public void run() {
                 for (HazelcastInstance instance : instanceList) {
                     PartitionTableView newPartitionTable = getPartitionTable(instance);
-                    for (int i = 0; i < newPartitionTable.getLength(); i++) {
+                    for (int i = 0; i < newPartitionTable.length(); i++) {
                         for (int j = 0; j < InternalPartition.MAX_REPLICA_COUNT; j++) {
                             PartitionReplica replica = partitionTable.getReplica(i, j);
                             PartitionReplica newReplica = newPartitionTable.getReplica(i, j);
@@ -193,7 +198,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
         for (HazelcastInstance instance : instancesList) {
             PartitionTableView partitionTable = getPartitionTable(instance);
-            for (int i = 0; i < partitionTable.getLength(); i++) {
+            for (int i = 0; i < partitionTable.length(); i++) {
                 for (PartitionReplica replica : partitionTable.getReplicas(i)) {
                     if (replica == null) {
                         continue;
@@ -223,9 +228,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         hz3.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        newHazelcastInstance(initOrCreateConfig(new Config()),
+        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()),
                 randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
+        waitAllForSafeState(hz1, hz2, hz3);
 
         OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
@@ -257,6 +263,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         newHazelcastInstance(initOrCreateConfig(new Config()),
                 randomName(), new StaticMemberNodeContext(factory, member4.getUuid(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
+        waitAllForSafeState(hz1, hz2);
 
         OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();

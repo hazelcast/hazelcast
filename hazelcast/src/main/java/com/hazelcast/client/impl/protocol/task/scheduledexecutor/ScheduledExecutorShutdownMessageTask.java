@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,28 @@ package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class ScheduledExecutorShutdownMessageTask
-        extends AbstractInvocationMessageTask<ScheduledExecutorShutdownCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<ScheduledExecutorShutdownCodec.RequestParameters> {
 
     public ScheduledExecutorShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override

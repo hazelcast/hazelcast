@@ -1,0 +1,28 @@
+{
+  "instance": {
+    "hazelcast": {
+      "multimap": {
+        "default": {
+          "backup-count": 1,
+          "async-backup-count": 0,
+          "binary": true,
+          "value-collection-type": "SET",
+          "statistics-enabled": false,
+          "entry-listeners": [
+            {
+              "class-name": "com.hazelcast.examples.EntryListener",
+              "include-value": true,
+              "local": true
+            }
+          ],
+          "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
+          "merge-policy": {
+            "batch-size": 100,
+            "class-name": "PutIfAbsentMergePolicy"
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

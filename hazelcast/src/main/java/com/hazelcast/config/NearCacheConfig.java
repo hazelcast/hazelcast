@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,11 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
     /**
+     * Default name when it is not set explicitly.
+     */
+    public static final String DEFAULT_NAME = "default";
+
+    /**
      * Defines how to reflect local updates to the Near Cache.
      */
     public enum LocalUpdatePolicy {
@@ -87,7 +92,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     private boolean invalidateOnChange = DEFAULT_INVALIDATE_ON_CHANGE;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
-    private String name = "default";
+    private String name = DEFAULT_NAME;
     private EvictionConfig evictionConfig = new EvictionConfig();
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
     private LocalUpdatePolicy localUpdatePolicy = DEFAULT_LOCAL_UPDATE_POLICY;
@@ -129,7 +134,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * @return this Near Cache config instance
      */
     public NearCacheConfig setName(String name) {
-        this.name = name;
+        this.name = isNotNull(name, "name");
         return this;
     }
 
@@ -165,13 +170,13 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * @return this Near Cache config instance
      */
     public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
-        checkNotNull(inMemoryFormat, "In-Memory format cannot be null!");
+        isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
 
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
         return this;
@@ -191,7 +196,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets if the Near Cache key is stored in serialized format or by-reference.
-     *
+     * <p>
      * <b>NOTE:</b> It's not supported to disable the key serialization when the in-memory-format is {@code NATIVE}.
      * You can still set this value to {@code false}, but it will have no effect.
      *
@@ -389,7 +394,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeBoolean(invalidateOnChange);
@@ -402,7 +407,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         invalidateOnChange = in.readBoolean();

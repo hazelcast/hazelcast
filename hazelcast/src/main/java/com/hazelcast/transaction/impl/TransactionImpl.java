@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,9 +308,9 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    private void checkTimeout() throws TransactionException {
+    private void checkTimeout() throws TransactionTimedOutException {
         if (startTime + timeoutMillis < currentTimeMillis()) {
-            throw new TransactionException("Transaction is timed-out!");
+            throw new TransactionTimedOutException("Transaction is timed-out!");
         }
     }
 

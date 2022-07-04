@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.version.MemberVersion;
@@ -56,9 +56,15 @@ public abstract class AbstractMember implements Member {
 
     protected AbstractMember(Map<EndpointQualifier, Address> addresses, MemberVersion version,
                              UUID uuid, Map<String, String> attributes, boolean liteMember) {
-        this.address = addresses.get(MEMBER);
+        this(addresses, addresses.get(EndpointQualifier.MEMBER), version, uuid, attributes, liteMember);
+    }
+
+    protected AbstractMember(Map<EndpointQualifier, Address> addresses, Address address, MemberVersion version,
+                             UUID uuid, Map<String, String> attributes, boolean liteMember) {
+        this.address = address;
         this.addressMap = addresses;
         assert address != null : "Address is required!";
+        assert addressMap.containsValue(address) : "addresses should contain address";
         this.version = version;
         this.uuid = uuid;
         if (attributes != null) {
@@ -162,8 +168,8 @@ public abstract class AbstractMember implements Member {
         version = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         addressMap = readNullableMap(in);
@@ -178,8 +184,8 @@ public abstract class AbstractMember implements Member {
         Map<String, String> attributes = new HashMap<>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
         writeNullableMap(addressMap, out);
     }
@@ -223,5 +229,10 @@ public abstract class AbstractMember implements Member {
 
         Member that = (Member) obj;
         return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
+    }
+
+    // for testing only
+    public void setVersion(MemberVersion version) {
+        this.version = version;
     }
 }

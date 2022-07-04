@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);

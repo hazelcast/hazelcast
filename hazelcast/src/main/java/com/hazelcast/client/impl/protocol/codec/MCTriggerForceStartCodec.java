@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers force start
  */
-@Generated("548b76e783821fac91bf9ad7843037c1")
+@Generated("de6422a9b13e16be4e8a7d6c3b63b609")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;
@@ -47,10 +47,6 @@ public final class MCTriggerForceStartCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MCTriggerForceStartCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
     }
 
     public static ClientMessage encodeRequest() {
@@ -64,23 +60,6 @@ public final class MCTriggerForceStartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerForceStartCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if the forced start was successfully initiated, false otherwise
-         */
-        public boolean result;
-    }
-
     public static ClientMessage encodeResponse(boolean result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -91,12 +70,12 @@ public final class MCTriggerForceStartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerForceStartCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * True if the forced start was successfully initiated, false otherwise
+     */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
     }
-
 }

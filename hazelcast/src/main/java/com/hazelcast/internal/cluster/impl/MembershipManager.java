@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -26,11 +27,12 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -59,7 +61,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -82,8 +83,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 /**
- * MembershipManager maintains member list and version, manages member update, suspicion and removal mechanisms.
- * Also initiates and manages mastership claim process.
+ * MembershipManager maintains member list and version, manages member update,
+ * suspicion and removal mechanisms. Also, initiates and manages mastership
+ * claim process.
  *
  * @since 3.9
  */
@@ -106,7 +108,7 @@ public class MembershipManager {
      * doesn't allow new members to join, such as FROZEN or PASSIVE.
      * <p>
      * Missing members are associated with either their {@code UUID} or their {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence is enabled or not.
      */
     private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
@@ -185,7 +187,6 @@ public class MembershipManager {
         return memberMapRef.get();
     }
 
-    // used in Jet, must be public
     public MembersView getMembersView() {
         return memberMapRef.get().toMembersView();
     }
@@ -304,11 +305,17 @@ public class MembershipManager {
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
         int memberIndex = 0;
+        // Indicates whether we received a notification on lite member membership change
+        // (e.g. its promotion to a data member)
+        boolean updatedLiteMember = false;
         for (MemberInfo memberInfo : membersView.getMembers()) {
             Address address = memberInfo.getAddress();
             MemberImpl member = currentMemberMap.getMember(address);
 
             if (member != null && member.getUuid().equals(memberInfo.getUuid())) {
+                if (member.isLiteMember()) {
+                    updatedLiteMember = true;
+                }
                 member = createNewMemberImplIfChanged(memberInfo, member);
                 members[memberIndex++] = member;
                 continue;
@@ -341,8 +348,12 @@ public class MembershipManager {
 
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
 
+        if (updatedLiteMember) {
+            node.partitionService.updateMemberGroupSize();
+        }
+
         for (MemberImpl member : removedMembers) {
-            closeConnection(member.getAddress(), "Member left event received from master");
+            closeConnections(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }
 
@@ -660,7 +671,8 @@ public class MembershipManager {
     private boolean addSuspectedMember(MemberImpl suspectedMember, String reason,
             boolean shouldCloseConn) {
 
-        if (getMember(suspectedMember.getAddress(), suspectedMember.getUuid()) == null) {
+        Address address = suspectedMember.getAddress();
+        if (getMember(address, suspectedMember.getUuid()) == null) {
             if (logger.isFineEnabled()) {
                 logger.fine("Cannot suspect " + suspectedMember + ", since it's not a member.");
             }
@@ -674,10 +686,16 @@ public class MembershipManager {
             } else {
                 logger.warning(suspectedMember + " is suspected to be dead");
             }
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
+                .message("Member is suspected")
+                .addParameter("address", address)
+                .addParameter("reason", reason)
+                .log();
+            clusterService.getClusterJoinManager().addLeftMember(suspectedMember);
         }
 
         if (shouldCloseConn) {
-            closeConnection(suspectedMember.getAddress(), reason);
+            closeConnections(address, reason);
         }
         return true;
     }
@@ -692,12 +710,13 @@ public class MembershipManager {
                 return;
             }
 
+            Address address = member.getAddress();
             if (shouldCloseConn) {
-                closeConnection(member.getAddress(), reason);
+                closeConnections(address, reason);
             }
 
             MemberMap currentMembers = memberMapRef.get();
-            if (currentMembers.getMember(member.getAddress(), member.getUuid()) == null) {
+            if (currentMembers.getMember(address, member.getUuid()) == null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("No need to remove " + member + ", not a member.");
                 }
@@ -706,12 +725,19 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
-            clusterService.getClusterJoinManager().removeJoin(member.getAddress());
+            clusterService.getClusterJoinManager().removeJoin(address);
+            clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 
             MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, member);
             setMembers(newMembers);
+
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
+                .message("Member is removed")
+                .addParameter("address", address)
+                .addParameter("reason", reason)
+                .log();
 
             if (logger.isFineEnabled()) {
                 logger.fine(member + " is removed. Publishing new member list.");
@@ -725,11 +751,9 @@ public class MembershipManager {
         }
     }
 
-    private void closeConnection(Address address, String reason) {
-        Connection conn = node.getConnectionManager(MEMBER).get(address);
-        if (conn != null) {
-            conn.close(reason, null);
-        }
+    private void closeConnections(Address address, String reason) {
+        List<ServerConnection> connections = node.getServer().getConnectionManager(MEMBER).getAllConnections(address);
+        connections.forEach(conn -> conn.close(reason, null));
     }
 
     private void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {
@@ -752,10 +776,15 @@ public class MembershipManager {
                 unmodifiableSet(new LinkedHashSet<Member>(newMembers.getMembers())), false);
     }
 
-    void onMemberRemove(MemberImpl deadMember) {
+    void onMemberRemove(MemberImpl... deadMembers) {
+        if (deadMembers.length == 0) {
+            return;
+        }
         // sync calls
-        node.getPartitionService().memberRemoved(deadMember);
-        nodeEngine.onMemberLeft(deadMember);
+        node.getPartitionService().memberRemoved(deadMembers);
+        for (MemberImpl deadMember : deadMembers) {
+            nodeEngine.onMemberLeft(deadMember);
+        }
         node.getNodeExtension().onMemberListChange();
     }
 
@@ -789,6 +818,11 @@ public class MembershipManager {
 
     private void sendMembershipEventNotifications(MemberImpl member, Set<Member> members, final boolean added) {
         int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
+        node.getNodeExtension().getAuditlogService()
+                .eventBuilder(added ? AuditlogTypeIds.CLUSTER_MEMBER_ADDED : AuditlogTypeIds.CLUSTER_MEMBER_REMOVED)
+                .message("Membership changed")
+                .addParameter("memberAddress", member.getAddress())
+                .log();
         MembershipEvent membershipEvent = new MembershipEvent(clusterService, member, eventType, members);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
@@ -899,7 +933,7 @@ public class MembershipManager {
                 Address address = member.getAddress();
                 Future<MembersView> future = e.getValue();
 
-                long start = System.nanoTime();
+                long startNanos = Timer.nanos();
                 try {
                     long timeout = min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
                     MembersView membersView = future.get(timeout, MILLISECONDS);
@@ -933,7 +967,7 @@ public class MembershipManager {
                     }
                 }
 
-                mastershipClaimTimeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+                mastershipClaimTimeout -= Timer.millisElapsed(startNanos);
             }
 
             if (done) {
@@ -976,7 +1010,7 @@ public class MembershipManager {
 
     /**
      * Returns whether member with given identity (either {@code UUID} or {@code Address}
-     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     * depending on Persistence is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member
@@ -989,7 +1023,7 @@ public class MembershipManager {
 
     /**
      * Returns the missing member using either its {@code UUID} or its {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence feature is enabled or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member
@@ -1104,12 +1138,13 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             Map<Object, MemberImpl> m = missingMembersRef.get();
-            Collection<MemberImpl> members = m.values();
-            missingMembersRef.set(Collections.emptyMap());
-            for (MemberImpl member : members) {
-                onMemberRemove(member);
+            if (m.isEmpty()) {
+                return;
             }
+            MemberImpl[] members = m.values().toArray(new MemberImpl[0]);
+            missingMembersRef.set(Collections.emptyMap());
 
+            onMemberRemove(members);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -1317,6 +1352,11 @@ public class MembershipManager {
 
         @Override
         public void run() {
+            assert clusterService.isMaster() : "Mastership claim accepted without setting this member as master in "
+                    + "local";
+            assert clusterService.getClusterJoinManager().isMastershipClaimInProgress() : "Mastership claim accepted "
+                    + "without having the claim set in local";
+
             try {
                 innerRun();
             } catch (Throwable e) {

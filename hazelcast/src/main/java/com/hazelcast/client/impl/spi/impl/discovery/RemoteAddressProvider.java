@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,5 +61,10 @@ public class RemoteAddressProvider implements AddressProvider {
         privateToPublic = getAddresses.call();
 
         return privateToPublic.get(address);
+    }
+
+    @Override
+    public Address translate(Member member) throws Exception {
+        return translate(member.getAddress());
     }
 }

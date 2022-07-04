@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-
 /**
  * Starts a Hazelcast Member.
  */
@@ -43,6 +41,7 @@ public final class HazelcastMemberStarter {
      * @param args none
      */
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+        System.setProperty("hazelcast.tracking.server", "true");
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         printMemberPort(hz);
     }
@@ -50,12 +49,8 @@ public final class HazelcastMemberStarter {
     private static void printMemberPort(HazelcastInstance hz) throws FileNotFoundException, UnsupportedEncodingException {
         String printPort = System.getProperty("print.port");
         if (printPort != null) {
-            PrintWriter printWriter = null;
-            try {
-                printWriter = new PrintWriter("ports" + File.separator + printPort, "UTF-8");
+            try (PrintWriter printWriter = new PrintWriter("ports" + File.separator + printPort, "UTF-8")) {
                 printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
-            } finally {
-                closeResource(printWriter);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,7 @@ public interface ICountDownLatch extends DistributedObject {
      * @param count the number of times {@link #countDown} must be invoked
      *              before threads can pass through {@link #await}
      * @return {@code true} if the new count was set, {@code false} if the current count is not zero
-     * @throws IllegalArgumentException if {@code count} is negative
+     * @throws IllegalArgumentException if {@code count} is negative or zero
      */
     boolean trySetCount(int count);
 }

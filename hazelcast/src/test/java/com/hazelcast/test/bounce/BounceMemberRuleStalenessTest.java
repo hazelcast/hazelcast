@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -26,7 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -44,11 +45,12 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
             .clusterSize(2)
             .maximumStalenessSeconds(MAXIMUM_STALENESS_SECONDS)
             .bouncingIntervalSeconds(BOUNCING_INTERVAL_SECONDS)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
             .build();
 
     @Test
     public void stalenessIsDetected() {
-        long startTime = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             bounceMemberRule.testRepeatedly(1, new Runnable() {
                 @Override
@@ -59,7 +61,8 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
             fail("The Bouncing Rule should detect a staleness!");
         } catch (AssertionError ae) {
-            long detectionDurationSeconds = NANOSECONDS.toSeconds(System.nanoTime() - startTime);
+            assertThat(ae).hasMessageStartingWith("Stalling task detected");
+            long detectionDurationSeconds = Timer.secondsElapsed(startNanos);
             assertTrue("Staleness detector was too slow to detect stale. "
                             + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS
                             + " and it took " + detectionDurationSeconds + " seconds to detect staleness",

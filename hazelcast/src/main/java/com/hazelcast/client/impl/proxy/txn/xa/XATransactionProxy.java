@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class XATransactionProxy {
             startTime = Clock.currentTimeMillis();
             ClientMessage request = XATransactionCreateCodec.encodeRequest(xid, timeout);
             ClientMessage response = ClientTransactionUtil.invoke(request, txnId, client, connection);
-            txnId = XATransactionCreateCodec.decodeResponse(response).response;
+            txnId = XATransactionCreateCodec.decodeResponse(response);
             state = ACTIVE;
         } catch (Exception e) {
             throw rethrow(e);

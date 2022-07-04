@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("f8c8ce291fb75fb37a8f859816f7a1e8")
+@Generated("5823dce3634fbbacc4d3764e3cc46fb5")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;
@@ -48,15 +48,6 @@ public final class ClientDeployClassesCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientDeployClassesCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * list of class definitions
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions;
     }
 
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions) {
@@ -71,17 +62,14 @@ public final class ClientDeployClassesCodec {
         return clientMessage;
     }
 
-    public static ClientDeployClassesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * list of class definitions
+     */
+    public static java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.classDefinitions = EntryListCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return EntryListCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
     }
 
     public static ClientMessage encodeResponse() {
@@ -92,13 +80,4 @@ public final class ClientDeployClassesCodec {
 
         return clientMessage;
     }
-
-    public static ClientDeployClassesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

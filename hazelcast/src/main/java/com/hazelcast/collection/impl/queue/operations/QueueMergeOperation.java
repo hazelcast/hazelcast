@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,8 +72,9 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
                                    SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>,
                                            Collection<Object>> mergePolicy) {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingValue = (QueueMergeTypes<Object>) serializationService.getManagedContext().initialize(mergingValue);
+        mergePolicy = (SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         Queue<QueueItem> existingItems = container.getItemQueue();
         QueueMergeTypes<Object> existingValue = createMergingValueOrNull(serializationService, existingItems);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -33,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
+public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Function#apply}.
@@ -55,8 +57,9 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
      * java.util.function.Function#identity()}.
      * @param <T> the type of the input and output objects to the function
      */
+    @SuppressWarnings("unchecked")
     static <T> FunctionEx<T, T> identity() {
-        return t -> t;
+        return Util.Identity.INSTANCE;
     }
 
     /**

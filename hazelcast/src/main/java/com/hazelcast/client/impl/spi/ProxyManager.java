@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -131,12 +132,7 @@ public final class ProxyManager {
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id, ClientContext context) {
-                return new ClientReliableTopicProxy(id, context, client);
-            }
-        });
+        register(ReliableTopicService.SERVICE_NAME, (id, context) -> new ClientReliableTopicProxy(id, context, client));
         register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
@@ -418,7 +414,7 @@ public final class ProxyManager {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -428,30 +424,23 @@ public final class ProxyManager {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage);
         }
     }
 
-    private static class ClientProxyFuture {
+    private static class ClientProxyFuture implements ForkJoinPool.ManagedBlocker {
 
         volatile Object proxy;
 
         ClientProxy get() {
-            if (proxy == null) {
-                boolean interrupted = false;
-                synchronized (this) {
-                    while (proxy == null) {
-                        try {
-                            wait();
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                        }
-                    }
-                }
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
-                }
+            // Ensure sufficient parallelism if
+            // caller thread is a ForkJoinPool thread
+            try {
+                ForkJoinPool.managedBlock(this);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
+
             if (proxy instanceof Throwable) {
                 throw rethrow((Throwable) proxy);
             }
@@ -466,6 +455,36 @@ public final class ProxyManager {
                 proxy = o;
                 notifyAll();
             }
+        }
+
+        @Override
+        public boolean block() throws InterruptedException {
+            if (Thread.currentThread().isInterrupted()
+                    || isReleasable()) {
+                return true;
+            }
+
+            boolean interrupted = false;
+            synchronized (this) {
+                while (proxy == null) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                    }
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isReleasable() {
+            return proxy != null;
         }
     }
 

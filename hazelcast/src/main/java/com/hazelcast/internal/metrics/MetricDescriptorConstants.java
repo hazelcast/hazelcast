@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,6 +145,14 @@ public final class MetricDescriptorConstants {
     public static final String EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_REMAINING_QUEUE_CAPACITY = "remainingQueueCapacity";
     // ===[/EXECUTOR]===================================================
 
+    // ===[SCHEDULED-EXECUTOR]====================================================
+    public static final String SCHEDULED_EXECUTOR_PREFIX = "scheduledExecutor";
+    // ===[/SCHEDULED-EXECUTOR]===================================================
+
+    // ===[DURABLE-EXECUTOR]====================================================
+    public static final String DURABLE_EXECUTOR_PREFIX = "durableExecutor";
+    // ===[/DURABLE-EXECUTOR]===================================================
+
     // ===[FILE]========================================================
     public static final String FILE_PREFIX = "file.partition";
     public static final String FILE_DISCRIMINATOR_DIR = "dir";
@@ -178,16 +186,6 @@ public final class MetricDescriptorConstants {
     public static final String HD_METRIC_ENTRY_COUNT = "entryCount";
     // ===[/HD]=========================================================
 
-    // ===[HOT-RESTART]=================================================
-    public static final String HOTRESTART_PREFIX = "hot-restart";
-    public static final String HOTRESTART_METRIC_VAL_OCCUPANCY = "valOccupancy";
-    public static final String HOTRESTART_METRIC_VAL_GARBAGE = "valGarbage";
-    public static final String HOTRESTART_METRIC_TOMB_OCCUPANCY = "tombOccupancy";
-    public static final String HOTRESTART_METRIC_TOMB_GARBAGE = "tombGarbage";
-    public static final String HOTRESTART_METRIC_GC_LIVE_VALUES = "liveValues";
-    public static final String HOTRESTART_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
-    // ===[/HOT-RESTART]================================================
-
     // ===[LIST]=======================================================
     public static final String LIST_PREFIX = "list";
     public static final String LIST_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
@@ -199,7 +197,9 @@ public final class MetricDescriptorConstants {
     public static final String MAP_PREFIX = "map";
     public static final String MAP_PREFIX_INDEX = "map.index";
     public static final String MAP_PREFIX_NEARCACHE = "map.nearcache";
+    public static final String MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR = "map.entry.processor.offloadable.executor";
     public static final String MAP_DISCRIMINATOR_NAME = "name";
+    public static final String MAP_TAG_PARTITION = "partition";
     public static final String MAP_TAG_INDEX = "index";
     public static final String MAP_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
     public static final String MAP_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
@@ -242,6 +242,12 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_INDEX_REMOVE_COUNT = "removeCount";
     public static final String MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY = "totalRemoveLatency";
     public static final String MAP_METRIC_INDEX_MEMORY_COST = "memoryCost";
+    public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_COUNT = "fullPartitionReplicationCount";
+    public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_COUNT = "differentialPartitionReplicationCount";
+    public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_RECORDS_COUNT
+            = "fullPartitionReplicationRecordsCount";
+    public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT
+            = "differentialPartitionReplicationRecordsCount";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
@@ -426,8 +432,19 @@ public final class MetricDescriptorConstants {
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT = "localPartitionCount";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT = "activePartitionCount";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION = "stateVersion";
+    public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_STAMP = "stateStamp";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE = "memberGroupsSize";
     // ===[/PARTITIONS]=================================================
+
+    // ===[PERSISTENCE]=================================================
+    public static final String PERSISTENCE_PREFIX = "persistence";
+    public static final String PERSISTENCE_METRIC_VAL_OCCUPANCY = "valOccupancy";
+    public static final String PERSISTENCE_METRIC_VAL_GARBAGE = "valGarbage";
+    public static final String PERSISTENCE_METRIC_TOMB_OCCUPANCY = "tombOccupancy";
+    public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
+    public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
+    public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    // ===[/PERSISTENCE]================================================
 
     // ===[PN COUNTER]==================================================
     public static final String PNCOUNTER_PREFIX = "pnCounter";
@@ -531,8 +548,8 @@ public final class MetricDescriptorConstants {
     public static final String TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT = "openedCount";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT = "closedCount";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT = "acceptedSocketCount";
-    public static final String TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT = "clientCount";
-    public static final String TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT = "textCount";
+    public static final String TCP_METRIC_CLIENT_COUNT = "clientCount";
+    public static final String TCP_METRIC_TEXT_COUNT = "textCount";
     // ===[/TCP]========================================================
 
     // ===[TOPIC]=======================================================
@@ -555,6 +572,41 @@ public final class MetricDescriptorConstants {
     public static final String THREAD_FULL_METRIC_DAEMON_THREAD_COUNT = "thread.daemonThreadCount";
     public static final String THREAD_FULL_METRIC_TOTAL_STARTED_THREAD_COUNT = "thread.totalStartedThreadCount";
     // ===[/THREAD]=====================================================
+
+    // ===[TSTORE]======================================================
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_AVG = "tstore.hlog.readRecordDuration.avg";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_MIN = "tstore.hlog.readRecordDuration.min";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_MAX = "tstore.hlog.readRecordDuration.max";
+    public static final String TSTORE_HLOG_READ_RECORD_HITS = "tstore.hlog.readRecord.hits";
+    public static final String TSTORE_HLOG_READ_RECORD_MISSES = "tstore.hlog.readRecord.misses";
+    public static final String TSTORE_HLOG_READ_RECORD_HIT_PERCENT = "tstore.hlog.readRecord.hit.percent";
+    public static final String TSTORE_HLOG_READ_RECORD_MISS_PERCENT = "tstore.hlog.readRecord.miss.percent";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_AVG = "tstore.hlog.allocation.stall.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_MIN = "tstore.hlog.allocation.stall.min";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_MAX = "tstore.hlog.allocation.stall.max";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_TOTAL = "tstore.hlog.allocation.stall.total";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_AVG = "tstore.hlog.allocation.size.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_MIN = "tstore.hlog.allocation.size.min";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_MAX = "tstore.hlog.allocation.size.max";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_TOTAL = "tstore.hlog.allocation.size.total";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_AVG = "tstore.hlog.waste.alignment.avg";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_MIN = "tstore.hlog.waste.alignment.min";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_MAX = "tstore.hlog.waste.alignment.max";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_TOTAL = "tstore.hlog.waste.alignment.total";
+    public static final String TSTORE_HLOG_WASTE_PAGING_AVG = "tstore.hlog.waste.paging.avg";
+    public static final String TSTORE_HLOG_WASTE_PAGING_MIN = "tstore.hlog.waste.paging.min";
+    public static final String TSTORE_HLOG_WASTE_PAGING_MAX = "tstore.hlog.waste.paging.max";
+    public static final String TSTORE_HLOG_WASTE_PAGING_TOTAL = "tstore.hlog.waste.paging.total";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_AVG = "tstore.hlog.allocation.per.page.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_MIN = "tstore.hlog.allocation.per.page.min";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_MAX = "tstore.hlog.allocation.per.page.max";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
+    // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
     public static final String WAN_PREFIX = "wan";
@@ -591,6 +643,12 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_MERKLE_SYNC_MAX_LEAF_ENTRY_COUNT = "maxLeafEntryCount";
     public static final String WAN_METRIC_MERKLE_SYNC_AVG_ENTRIES_PER_LEAF = "avgEntriesPerLeaf";
     public static final String WAN_METRIC_MERKLE_SYNC_STD_DEV_ENTRIES_PER_LEAF = "stdDevEntriesPerLeaf";
+    public static final String WAN_METRIC_ACK_DELAY_TOTAL_COUNT = "ackDelayTotalCount";
+    public static final String WAN_METRIC_ACK_DELAY_TOTAL_MILLIS = "ackDelayTotalMillis";
+    public static final String WAN_METRIC_ACK_DELAY_CURRENT_MILLIS = "ackDelayCurrentMillis";
+    public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
+    public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
+    public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
     // ===[/WAN]========================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";

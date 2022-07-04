@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,10 +43,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @Ignore
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
 
@@ -131,7 +133,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    private void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, String> proxy, String value, int partitionId, int count) {
+    private static <T> void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, T> proxy, T value, int partitionId, int count) {
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(instance, partitionId);
             proxy.put(key, value);

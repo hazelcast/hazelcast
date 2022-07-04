@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassNameFilter;
-import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -40,6 +41,8 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -49,7 +52,15 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Random;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -60,24 +71,20 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
-@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber"})
+@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ClassDataAbstractionCoupling" })
 public final class IOUtil {
 
-    public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
-    public static final byte PRIMITIVE_TYPE_BYTE = 2;
-    public static final byte PRIMITIVE_TYPE_SHORT = 3;
-    public static final byte PRIMITIVE_TYPE_INTEGER = 4;
-    public static final byte PRIMITIVE_TYPE_LONG = 5;
-    public static final byte PRIMITIVE_TYPE_FLOAT = 6;
-    public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
-    public static final byte PRIMITIVE_TYPE_UTF = 8;
+    private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
+    private static final Random RANDOM = new Random();
 
     private IOUtil() {
     }
@@ -91,7 +98,7 @@ public final class IOUtil {
         if (bb.hasRemaining()) {
             bb.compact();
         } else {
-            bb.clear();
+            upcast(bb).clear();
         }
     }
 
@@ -103,24 +110,6 @@ public final class IOUtil {
         }
     }
 
-    public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
-        int size = (value == null) ? 0 : value.length;
-        out.writeInt(size);
-        if (size > 0) {
-            out.write(value);
-        }
-    }
-
-    public static byte[] readByteArray(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        if (size == 0) {
-            return null;
-        } else {
-            byte[] b = new byte[size];
-            in.readFully(b);
-            return b;
-        }
-    }
 
     public static void writeObject(ObjectDataOutput out, Object object) throws IOException {
         boolean isBinary = object instanceof Data;
@@ -139,6 +128,107 @@ public final class IOUtil {
             return (T) readData(in);
         }
         return in.readObject();
+    }
+
+    public static void writeBigInteger(ObjectDataOutput out, BigInteger value) throws IOException {
+        final byte[] bytes = value.toByteArray();
+        out.writeInt(bytes.length);
+        out.write(bytes);
+    }
+
+    public static BigInteger readBigInteger(ObjectDataInput in) throws IOException {
+        final byte[] bytes = new byte[in.readInt()];
+        in.readFully(bytes);
+        return new BigInteger(bytes);
+    }
+
+    public static void writeBigDecimal(ObjectDataOutput out, BigDecimal value) throws IOException {
+        IOUtil.writeBigInteger(out, value.unscaledValue());
+        int scale = value.scale();
+        out.writeInt(scale);
+    }
+
+    public static BigDecimal readBigDecimal(ObjectDataInput in) throws IOException {
+        BigInteger bigInteger = readBigInteger(in);
+        int scale = in.readInt();
+        return new BigDecimal(bigInteger, scale);
+    }
+
+    public static void writeLocalTime(ObjectDataOutput out, LocalTime value) throws IOException {
+        int hour = value.getHour();
+        int minute = value.getMinute();
+        int second = value.getSecond();
+        int nano = value.getNano();
+        out.writeByte(hour);
+        out.writeByte(minute);
+        out.writeByte(second);
+        out.writeInt(nano);
+    }
+
+    public static LocalTime readLocalTime(ObjectDataInput in) throws IOException {
+        int hour = in.readByte();
+        int minute = in.readByte();
+        int second = in.readByte();
+        int nano = in.readInt();
+        return LocalTime.of(hour, minute, second, nano);
+    }
+
+    public static void writeLocalDate(ObjectDataOutput out, LocalDate value) throws IOException {
+        int year = value.getYear();
+        int monthValue = value.getMonthValue();
+        int dayOfMonth = value.getDayOfMonth();
+        out.writeInt(year);
+        out.writeByte(monthValue);
+        out.writeByte(dayOfMonth);
+    }
+
+    public static LocalDate readLocalDate(ObjectDataInput in) throws IOException {
+        int year = in.readInt();
+        int month = in.readByte();
+        int dayOfMonth = in.readByte();
+        return LocalDate.of(year, month, dayOfMonth);
+    }
+
+    public static void writeLocalDateTime(ObjectDataOutput out, LocalDateTime value) throws IOException {
+        writeLocalDate(out, value.toLocalDate());
+        writeLocalTime(out, value.toLocalTime());
+    }
+
+    public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
+        int year = in.readInt();
+        int month = in.readByte();
+        int dayOfMonth = in.readByte();
+
+        int hour = in.readByte();
+        int minute = in.readByte();
+        int second = in.readByte();
+        int nano = in.readInt();
+
+        return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
+    }
+
+    public static void writeOffsetDateTime(ObjectDataOutput out, OffsetDateTime value) throws IOException {
+        writeLocalDate(out, value.toLocalDate());
+        writeLocalTime(out, value.toLocalTime());
+
+        ZoneOffset offset = value.getOffset();
+        int totalSeconds = offset.getTotalSeconds();
+        out.writeInt(totalSeconds);
+    }
+
+    public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
+        int year = in.readInt();
+        int month = in.readByte();
+        int dayOfMonth = in.readByte();
+
+        int hour = in.readByte();
+        int minute = in.readByte();
+        int second = in.readByte();
+        int nano = in.readInt();
+
+        int zoneTotalSeconds = in.readInt();
+        ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
+        return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
     }
 
     public static void writeData(ObjectDataOutput out, Data data) throws IOException {
@@ -197,7 +287,7 @@ public final class IOUtil {
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
-            InputStream in) throws IOException {
+                                                         InputStream in) throws IOException {
         return new ClassLoaderAwareObjectInputStream(classLoader, classFilter, in);
     }
 
@@ -233,24 +323,51 @@ public final class IOUtil {
         };
     }
 
+    /**
+     * Copies the contents of the {@code src} backed by an on-heap buffer to
+     * {@code dst}. The {@code dst} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
+    public static int copyFromHeapBuffer(ByteBuffer src, ByteBuffer dst) {
+        if (src == null) {
+            return 0;
+        }
+
+        int n = Math.min(src.remaining(), dst.remaining());
+        int srcPosition = src.position();
+        dst.put(src.array(), srcPosition, n);
+        upcast(src).position(srcPosition + n);
+        return n;
+    }
+
+    /**
+     * Copies the contents of the {@code src} to {@code dst} backed by an
+     * on-heap buffer. The {@code src} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
+
         int n = Math.min(src.remaining(), dst.remaining());
-        if (n > 0) {
-            if (n < 16) {
-                for (int i = 0; i < n; i++) {
-                    dst.put(src.get());
-                }
-            } else {
-                int srcPosition = src.position();
-                int destPosition = dst.position();
-                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
-                src.position(srcPosition + n);
-                dst.position(destPosition + n);
-            }
-        }
+        int dstPosition = dst.position();
+        src.get(dst.array(), dstPosition, n);
+        upcast(dst).position(dstPosition + n);
         return n;
     }
 
@@ -287,66 +404,11 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
-                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
+                LOGGER.finest("Decompression failed", e);
             }
         }
         inflater.end();
         return bos.toByteArray();
-    }
-
-    public static void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
-        Class<?> type = value.getClass();
-        if (type.equals(Boolean.class)) {
-            out.writeByte(PRIMITIVE_TYPE_BOOLEAN);
-            out.writeBoolean((Boolean) value);
-        } else if (type.equals(Byte.class)) {
-            out.writeByte(PRIMITIVE_TYPE_BYTE);
-            out.writeByte((Byte) value);
-        } else if (type.equals(Short.class)) {
-            out.writeByte(PRIMITIVE_TYPE_SHORT);
-            out.writeShort((Short) value);
-        } else if (type.equals(Integer.class)) {
-            out.writeByte(PRIMITIVE_TYPE_INTEGER);
-            out.writeInt((Integer) value);
-        } else if (type.equals(Long.class)) {
-            out.writeByte(PRIMITIVE_TYPE_LONG);
-            out.writeLong((Long) value);
-        } else if (type.equals(Float.class)) {
-            out.writeByte(PRIMITIVE_TYPE_FLOAT);
-            out.writeFloat((Float) value);
-        } else if (type.equals(Double.class)) {
-            out.writeByte(PRIMITIVE_TYPE_DOUBLE);
-            out.writeDouble((Double) value);
-        } else if (type.equals(String.class)) {
-            out.writeByte(PRIMITIVE_TYPE_UTF);
-            out.writeUTF((String) value);
-        } else {
-            throw new IllegalStateException("Illegal attribute type ID found");
-        }
-    }
-
-    public static Object readAttributeValue(ObjectDataInput in) throws IOException {
-        byte type = in.readByte();
-        switch (type) {
-            case PRIMITIVE_TYPE_BOOLEAN:
-                return in.readBoolean();
-            case PRIMITIVE_TYPE_BYTE:
-                return in.readByte();
-            case PRIMITIVE_TYPE_SHORT:
-                return in.readShort();
-            case PRIMITIVE_TYPE_INTEGER:
-                return in.readInt();
-            case PRIMITIVE_TYPE_LONG:
-                return in.readLong();
-            case PRIMITIVE_TYPE_FLOAT:
-                return in.readFloat();
-            case PRIMITIVE_TYPE_DOUBLE:
-                return in.readDouble();
-            case PRIMITIVE_TYPE_UTF:
-                return in.readUTF();
-            default:
-                throw new IllegalStateException("Illegal attribute type ID found");
-        }
     }
 
     /**
@@ -361,7 +423,7 @@ public final class IOUtil {
         try {
             closeable.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -372,7 +434,7 @@ public final class IOUtil {
         try {
             conn.close(reason, null);
         } catch (Throwable e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -388,7 +450,7 @@ public final class IOUtil {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -404,7 +466,7 @@ public final class IOUtil {
         try {
             socket.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -489,6 +551,53 @@ public final class IOUtil {
             throw new HazelcastException(format("Failed to rename %s to %s even after deleting %s.",
                     fileNow, fileToBe, fileToBe));
         }
+    }
+
+    /**
+     * Move or rename a file to a target file. This move method contains a fallback (delete target + atomic move) for cases when
+     * the first try fails. It's a NIO-based alternative to the {@link #rename(File, File)} method.
+     *
+     * @param source path to the file to move
+     * @param target path to the target file
+     */
+    public static void move(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.finest("File move failed. Fallbacking to delete&move.", e);
+            Files.deleteIfExists(target);
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        }
+    }
+
+    /**
+     * Move or rename a file to a target file with retries within the given timeout.
+     * Retrying can be beneficial on some systems (e.g. Windows), where file locking may behave non-intuitively.
+     *
+     * @param source path to the file to move
+     * @param target path to the target file
+     */
+    public static void moveWithTimeout(Path source, Path target, Duration duration) {
+        long endTime = System.nanoTime() + duration.toNanos();
+        IOException lastException = null;
+        do {
+            try {
+                move(source, target);
+            } catch (IOException e) {
+                lastException = e;
+                LOGGER.finest("File move failed", e);
+            }
+            if (!Files.exists(source)) {
+                return;
+            }
+            try {
+                //random delay up to half a second
+                Thread.sleep(RANDOM.nextInt(500));
+            } catch (InterruptedException e) {
+                ignore(e);
+            }
+        } while (System.nanoTime() - endTime < 0);
+        throw new HazelcastException("File move timed out.", lastException);
     }
 
     public static String toFileName(String name) {
@@ -693,9 +802,10 @@ public final class IOUtil {
 
     /**
      * Writes {@code len} bytes from the given input stream to the given output stream.
-     * @param input the input stream
+     *
+     * @param input  the input stream
      * @param output the output stream
-     * @param len the number of bytes to write
+     * @param len    the number of bytes to write
      * @throws IOException if there are not enough bytes in the input stream, or if there is any other IO error.
      */
     public static void drainTo(InputStream input, OutputStream output, int len) throws IOException {
@@ -706,6 +816,28 @@ public final class IOUtil {
             if (n == -1) {
                 throw new IOException("Not enough bytes in the input stream");
             }
+            output.write(buffer, 0, n);
+            remaining -= n;
+        }
+    }
+
+    /**
+     * Writes maximum {@code limit} bytes from the given input stream to the given output stream.
+     *
+     * @param input  the input stream
+     * @param output the output stream
+     * @param limit  the maximum number of bytes to write
+     * @throws IOException if there is any other IO error.
+     */
+    public static void drainToLimited(InputStream input, OutputStream output, int limit) throws IOException {
+        byte[] buffer = new byte[1024];
+        int remaining = limit;
+        while (remaining > 0) {
+            int n = input.read(buffer, 0, Math.min(buffer.length, remaining));
+            if (n < 1) {
+                return;
+            }
+
             output.write(buffer, 0, n);
             remaining -= n;
         }
@@ -727,17 +859,18 @@ public final class IOUtil {
 
     /**
      * Sets configured channel options on given {@link Channel}.
-     * @param channel   the {@link Channel} on which options will be set
-     * @param config    the endpoint configuration
+     *
+     * @param channel the {@link Channel} on which options will be set
+     * @param config  the endpoint configuration
      */
     public static void setChannelOptions(Channel channel, EndpointConfig config) {
         ChannelOptions options = channel.options();
         options.setOption(DIRECT_BUF, config.isSocketBufferDirect())
-               .setOption(TCP_NODELAY, config.isSocketTcpNoDelay())
-               .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
-               .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
-               .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
-               .setOption(SO_LINGER, config.getSocketLingerSeconds());
+                .setOption(TCP_NODELAY, config.isSocketTcpNoDelay())
+                .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
+                .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
+                .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
+                .setOption(SO_LINGER, config.getSocketLingerSeconds());
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
@@ -746,7 +879,7 @@ public final class IOUtil {
         private final ClassNameFilter classFilter;
 
         private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
-                final InputStream in) throws IOException {
+                                                  final InputStream in) throws IOException {
             super(in);
             this.classLoader = classLoader;
             this.classFilter = classFilter;

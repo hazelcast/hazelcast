@@ -1,0 +1,72 @@
+name: gcp-test
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
+      - '.github/terraform/gcp/**'
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    env:
+      GCP_KEY_FILE: ${{ secrets.GCP_KEY_FILE }}
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'hazelcast'
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        distribution: [ 'adopt' ]
+    steps:
+      # SET UP JDK
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
+
+      - run: java -version
+
+      # BUILD HAZELCAST GCP SNAPSHOT
+      - uses: actions/checkout@v3.0.2
+        with:
+          path: hazelcast
+
+      - name: Build hazelcast jar
+        run: |
+          cd hazelcast
+          mvn clean install -DskipTests -Dcheckstyle.skip
+          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+
+      - name: Create GCP credentials file
+        run: |
+          touch gcp_key_file.json
+          echo $GCP_KEY_FILE > gcp_key_file.json
+
+      # INSTALL TERRAFORM
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 1.1.8
+
+      - name: Terraform Init
+        working-directory: hazelcast/.github/terraform/gcp
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: hazelcast/.github/terraform/gcp
+        run: |
+          project_id=$(echo $GCP_KEY_FILE | grep -Po '"project_id":\s"\K[-a-zA-Z0-9]+')
+          terraform apply -var="hazelcast_mancenter_version=latest-snapshot" -var="hazelcast_path=~/hazelcast.jar" -var="gcp_key_file=~/gcp_key_file.json" -var="project_id=${project_id}" -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ always() }}
+        working-directory: hazelcast/.github/terraform/gcp
+        run: terraform destroy -auto-approve

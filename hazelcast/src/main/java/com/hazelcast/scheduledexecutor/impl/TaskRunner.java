@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -24,40 +26,53 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.AT_FIXED_RATE;
+import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
-class TaskRunner<V>
-        implements Callable<V>, Runnable {
+class TaskRunner<V> implements Callable<V>, Runnable {
 
-    private final ScheduledExecutorContainer container;
-
+    private final boolean statisticsEnabled;
+    private final String name;
     private final String taskName;
-
     private final Callable<V> original;
-
+    private final ExecutorStats executorStats;
     private final ScheduledTaskDescriptor descriptor;
-
+    private final ScheduledExecutorContainer container;
     private final ScheduledTaskStatisticsImpl statistics;
+    private final TaskDefinition.Type type;
 
-    private boolean initted;
-
+    private boolean initialized;
     private ScheduledTaskResult resolution;
 
-    TaskRunner(ScheduledExecutorContainer container, ScheduledTaskDescriptor descriptor) {
+    private volatile long creationTime = Clock.currentTimeMillis();
+
+    TaskRunner(ScheduledExecutorContainer container,
+               ScheduledTaskDescriptor descriptor, TaskDefinition.Type type) {
         this.container = container;
         this.descriptor = descriptor;
         this.original = descriptor.getDefinition().getCommand();
         this.taskName = descriptor.getDefinition().getName();
         this.statistics = descriptor.getStatsSnapshot();
-        statistics.onInit();
+        this.type = type;
+        this.statistics.onInit();
+        this.statisticsEnabled = container.isStatisticsEnabled();
+        this.executorStats = container.getExecutorStats();
+        this.name = container.getName();
+
+        if (statisticsEnabled) {
+            executorStats.startPending(name);
+        }
     }
 
     @Override
-    public V call()
-            throws Exception {
+    public V call() throws Exception {
+        long start = Clock.currentTimeMillis();
+        if (statisticsEnabled) {
+            executorStats.startExecution(name, start - creationTime);
+        }
         beforeRun();
         try {
             V result = original.call();
@@ -71,6 +86,15 @@ class TaskRunner<V>
             throw rethrow(t);
         } finally {
             afterRun();
+
+            if (statisticsEnabled) {
+                executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
+
+                if (type.equals(AT_FIXED_RATE)) {
+                    executorStats.startPending(name);
+                    creationTime = Clock.currentTimeMillis();
+                }
+            }
         }
     }
 
@@ -84,7 +108,7 @@ class TaskRunner<V>
     }
 
     private void initOnce() {
-        if (initted) {
+        if (initialized) {
             return;
         }
 
@@ -93,7 +117,7 @@ class TaskRunner<V>
             ((StatefulTask) original).load(snapshot);
         }
 
-        initted = true;
+        initialized = true;
     }
 
     private void beforeRun() {
@@ -115,7 +139,6 @@ class TaskRunner<V>
             if (original instanceof StatefulTask) {
                 ((StatefulTask) original).save(state);
             }
-
             container.publishTaskState(taskName, state, statistics.snapshot(), resolution);
         } catch (Exception ex) {
             container.log(WARNING, taskName, "Unexpected exception during afterRun occurred", ex);

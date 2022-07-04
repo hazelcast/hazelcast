@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ public class MCClusterMetadata {
     private ClusterState currentState;
     private long clusterTime;
     private String memberVersion;
-    private String jetVersion;
 
     public ClusterState getCurrentState() {
         return currentState;
@@ -46,13 +45,5 @@ public class MCClusterMetadata {
 
     public void setMemberVersion(String memberVersion) {
         this.memberVersion = memberVersion;
-    }
-
-    public String getJetVersion() {
-        return jetVersion;
-    }
-
-    public void setJetVersion(String jetVersion) {
-        this.jetVersion = jetVersion;
     }
 }

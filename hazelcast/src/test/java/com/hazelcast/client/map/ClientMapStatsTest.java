@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
 
     @Before
     public void setUp() {
-        member = factory.newHazelcastInstance();
+        member = factory.newHazelcastInstance(createMemberConfig());
         client = factory.newHazelcastClient();
     }
 
@@ -51,7 +51,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     }
 
     @Override
-    protected LocalMapStats getMapStats() {
+    protected LocalMapStats getMapStats(String mapName) {
         return member.getMap(mapName).getLocalMapStats();
     }
 
@@ -61,7 +61,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     }
 
     @Override
-    protected <K, V> IMap<K, V> getMap() {
+    protected <K, V> IMap<K, V> getMap(String mapName) {
         return client.getMap(mapName);
     }
 }

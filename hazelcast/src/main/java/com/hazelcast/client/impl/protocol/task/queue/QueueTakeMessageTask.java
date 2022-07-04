@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_TAKE}
  */
 public class QueueTakeMessageTask
-        extends AbstractPartitionMessageTask<QueueTakeCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueTakeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,11 +43,11 @@ public class QueueTakeMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new PollOperation(parameters.name, -1);
+        return new PollOperation(parameters, -1);
     }
 
     @Override
-    protected QueueTakeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueTakeCodec.decodeRequest(clientMessage);
     }
 
@@ -63,7 +63,7 @@ public class QueueTakeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new QueuePermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -78,6 +78,6 @@ public class QueueTakeMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

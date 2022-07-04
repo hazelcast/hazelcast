@@ -1,0 +1,107 @@
+{
+  "instance": {
+    "hazelcast": {
+      "security": {
+        "client-permissions": {
+          "on-join-operation": "INVALID",
+          "invalid-key": {
+            "principal": "admin",
+            "endpoints": [
+              "127.0.0.1"
+            ]
+          },
+          "multimap": {
+            "name": 2,
+            "principal": null,
+            "endpoints": [
+              null
+            ],
+            "actions": [
+              "create",
+              "invalid"
+            ]
+          },
+          "config": {
+            "actions": {
+              "action": "invalid"
+            }
+          },
+          "transaction": [],
+          "sql": [],
+          "all": []
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Security/properties/client-permissions",
+    "pointerToViolation": "#/hazelcast/security/client-permissions",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Security/properties/client-permissions/propertyNames",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/invalid-key",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "invalid-key is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Security/properties/client-permissions/additionalProperties",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/invalid-key",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/definitions/Security/properties/client-permissions/additionalProperties",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/multimap",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/definitions/SecurityPermission",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/all",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/Security/properties/client-permissions/properties/on-join-operation",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/on-join-operation",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "INVALID is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/SecurityPermission/properties/actions",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/config/actions",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/SecurityPermission/properties/actions/anyOf/0",
+            "pointerToViolation": "#/hazelcast/security/client-permissions/config/actions",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONArray, found: JSONObject"
+          },
+          {
+            "schemaLocation": "#/definitions/SecurityPermissionAction",
+            "pointerToViolation": "#/hazelcast/security/client-permissions/config/actions/action",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "invalid is not a valid enum value"
+          }
+        ],
+        "keyword": "anyOf",
+        "message": "#: no subschema matched out of the total 2 subschemas"
+      },
+      {
+        "schemaLocation": "#/definitions/SecurityPermission",
+        "pointerToViolation": "#/hazelcast/security/client-permissions/transaction",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      }
+    ],
+    "message": "8 schema violations found"
+  }
+}

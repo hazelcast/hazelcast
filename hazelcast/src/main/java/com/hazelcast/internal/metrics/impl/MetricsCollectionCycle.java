@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTar
 class MetricsCollectionCycle {
     private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
 
-    private final PoolingMetricDescriptorSupplier descriptorSupplier = new PoolingMetricDescriptorSupplier();
+    private final PoolingMetricDescriptorSupplier descriptorSupplier;
     private final Function<Class, SourceMetadata> lookupMetadataFn;
     private final Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn;
     private final MetricsCollector metricsCollector;
@@ -57,11 +57,16 @@ class MetricsCollectionCycle {
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
                            Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
                            MetricsCollector metricsCollector,
-                           ProbeLevel minimumLevel) {
+                           ProbeLevel minimumLevel, MetricDescriptorReusableData metricDescriptorReusableData) {
         this.lookupMetadataFn = lookupMetadataFn;
         this.lookupMetricValueCatcherFn = lookupMetricValueCatcherFn;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
+        if (metricDescriptorReusableData == null) {
+            this.descriptorSupplier = new PoolingMetricDescriptorSupplier();
+        } else {
+            this.descriptorSupplier = new PoolingMetricDescriptorSupplier(metricDescriptorReusableData);
+        }
     }
 
     void collectStaticMetrics(Map<MetricDescriptorImpl.LookupView, ProbeInstance> probeInstanceEntries) {
@@ -113,7 +118,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(methodProbe.probe.unit())
                         .withMetric(methodProbe.getProbeName())
-                        .withExcludedTargets(extractExcludedTargets(methodProbe));
+                        .withExcludedTargets(extractExcludedTargets(methodProbe, minimumLevel));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
                 collect(descriptorCopy, source, methodProbe);
@@ -126,7 +131,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
                         .withMetric(fieldProbe.getProbeName())
-                        .withExcludedTargets(extractExcludedTargets(fieldProbe));
+                        .withExcludedTargets(extractExcludedTargets(fieldProbe, minimumLevel));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
                 collect(descriptorCopy, source, fieldProbe);
@@ -171,8 +176,8 @@ class MetricsCollectionCycle {
         }
     }
 
-    public void cleanUp() {
-        descriptorSupplier.close();
+    public MetricDescriptorReusableData cleanUp() {
+        return descriptorSupplier.close();
     }
 
     private class MetricsContext implements MetricsCollectionContext {
@@ -188,7 +193,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
-                adjustExclusionsWithLevel(descriptorCopy, level);
+                adjustExclusionsWithLevel(descriptorCopy, level, minimumLevel);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectLong(descriptorCopy, value);
@@ -202,7 +207,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
-                adjustExclusionsWithLevel(descriptorCopy, level);
+                adjustExclusionsWithLevel(descriptorCopy, level, minimumLevel);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectDouble(descriptorCopy, value);

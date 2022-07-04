@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -123,9 +124,9 @@ public class ProxyServiceImpl
         return count;
     }
 
-    public void initializeAndPublishProxies() {
+    public void initializeProxies(boolean publishAfterInitialization) {
         for (ProxyRegistry registry : registries.values()) {
-            registry.initializeAndPublishProxies();
+            registry.initializeProxies(publishAfterInitialization);
         }
     }
 
@@ -159,7 +160,7 @@ public class ProxyServiceImpl
 
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<>(members.size());
+        Collection<Future<Boolean>> calls = new ArrayList<>(members.size());
         for (Member member : members) {
             if (member.localMember()) {
                 continue;
@@ -167,7 +168,7 @@ public class ProxyServiceImpl
 
             DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
             operation.setCallerUuid(source);
-            Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
+            Future<Boolean> f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
                     .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
@@ -194,7 +195,7 @@ public class ProxyServiceImpl
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {
         checkServiceNameNotNull(serviceName);
 
-        Collection<DistributedObject> result = new LinkedList<DistributedObject>();
+        Collection<DistributedObject> result = new LinkedList<>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
             registry.getDistributedObjects(result);
@@ -211,17 +212,34 @@ public class ProxyServiceImpl
         if (registry == null) {
             return Collections.emptySet();
         } else {
-            return registry.getDistributedObjectNames();
+            return Collections.unmodifiableCollection(registry.getDistributedObjectNames());
         }
     }
 
     @Override
+    public boolean existsDistributedObject(String serviceName, String objectId) {
+        checkServiceNameNotNull(serviceName);
+
+        ProxyRegistry registry = registries.get(serviceName);
+        if (registry == null) {
+            return false;
+        }
+        return registry.existsDistributedObject(objectId);
+    }
+
+    @Override
     public Collection<DistributedObject> getAllDistributedObjects() {
-        Collection<DistributedObject> result = new LinkedList<DistributedObject>();
+        Collection<DistributedObject> result = new LinkedList<>();
         for (ProxyRegistry registry : registries.values()) {
             registry.getDistributedObjects(result);
         }
         return result;
+    }
+
+    @Override
+    public long getCreatedCount(@Nonnull String serviceName) {
+        ProxyRegistry registry = registries.get(serviceName);
+        return registry == null ? 0 : registry.getCreatedCount();
     }
 
     @Override
@@ -274,11 +292,11 @@ public class ProxyServiceImpl
         listeners.clear();
     }
 
-    private static String checkServiceNameNotNull(String serviceName) {
-        return checkNotNull(serviceName, "Service name is required!");
+    private static void checkServiceNameNotNull(@Nonnull String serviceName) {
+        checkNotNull(serviceName, "Service name is required");
     }
 
-    private static String checkObjectNameNotNull(String name) {
-        return checkNotNull(name, "Object name is required!");
+    private static void checkObjectNameNotNull(@Nonnull String name) {
+        checkNotNull(name, "Object name is required");
     }
 }

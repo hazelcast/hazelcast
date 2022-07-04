@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlConfigLocator;
+import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
@@ -34,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -45,6 +47,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  * <p>
  * This config builder is compatible with the YAML 1.2 specification and
  * supports the JSON Schema.
+ * <p>
+ * Unlike {@link Config#load()} and its variants, a configuration constructed via
+ * {@code YamlConfigBuilder} does not apply overrides found in environment variables/system properties.
  */
 public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements ConfigBuilder {
 
@@ -147,16 +152,20 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.getName());
-        if (imdgRoot == null) {
-            imdgRoot = yamlRootNode;
+        YamlNode root = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.getName());
+        if (root == null) {
+            root = yamlRootNode;
         }
 
-        YamlDomChecker.check(imdgRoot);
+        YamlDomChecker.check(root, Collections.singleton(ConfigSections.HAZELCAST.getName()));
 
-        Node w3cRootNode = asW3cNode(imdgRoot);
+        Node w3cRootNode = asW3cNode(root);
         replaceVariables(w3cRootNode);
-        importDocuments(imdgRoot);
+        importDocuments(root);
+
+        if (shouldValidateTheSchema()) {
+            new YamlConfigSchemaValidator().validate(yamlRootNode);
+        }
 
         new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,10 @@ public class LRUEvictionPolicyComparator
 
     @Override
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-        int result = Long.compare(e1.getLastAccessTime(), e2.getLastAccessTime());
-        // if access times are same, we try to select oldest entry to evict
-        return result == 0 ? Long.compare(e1.getCreationTime(), e2.getCreationTime()) : result;
+        long time1 = Math.max(e1.getCreationTime(), e1.getLastAccessTime());
+        long time2 = Math.max(e2.getCreationTime(), e2.getLastAccessTime());
+
+        return Long.compare(time1, time2);
     }
 
     @Override

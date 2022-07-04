@@ -1,0 +1,356 @@
+{
+  "instance": {
+    "hazelcast": {
+      "wan-replication": {
+        "my-wan-cluster-batch": {
+          "unknown-prop": null,
+          "batch-publisher": {
+            "nycPublisherId": {
+              "unknown-prop": null,
+              "cluster-name": null,
+              "batch-size": "",
+              "batch-max-delay-millis": "2000",
+              "response-timeout-millis": "60000",
+              "acknowledge-type": "ACK_ON_OPERATION_COMP",
+              "initial-publisher-state": "INVALID",
+              "snapshot-enabled": "false",
+              "idle-max-park-ns": "250000000",
+              "idle-min-park-ns": "10000000",
+              "max-concurrent-invocations": "Inf",
+              "discovery-period-seconds": "10",
+              "use-endpoint-private-address": "false",
+              "queue-full-behavior": "INVALID",
+              "max-target-endpoints": "Inf",
+              "queue-capacity": "10000",
+              "target-endpoints": ["10.3.5.1:5701", "10.3.5.2:5701"],
+              "properties": "props",
+              "sync": {
+                "unknown-prop": null,
+                "consistency-check-strategy": "INVALID"
+              },
+              "discovery-strategies": {
+                "unknown-prop": null,
+                "node-filter": "com.yourpackage.NodeFilter",
+                "discovery-strategies": [
+                  "invalid",
+                  {
+                    "enabled": "On",
+                    "unknown-prop": false,
+                    "class": -1,
+                    "properties": []
+                  }
+                ]
+              }
+            }
+          },
+          "custom-publisher": {
+            "customPublisherId": {
+              "unknown-prop": "invalid",
+              "class-name": -1,
+              "properties": []
+            }
+          },
+          "consumer": {
+            "class-name": -1,
+            "properties": [],
+            "persist-wan-replicated-data": "On"
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/WanReplication/additionalProperties",
+    "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClassNameWithProps",
+        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/custom-publisher/customPublisherId",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClassNameWithProps",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/custom-publisher/customPublisherId",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-prop] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassNameWithProps/properties/class-name",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/custom-publisher/customPublisherId/class-name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassNameWithProps/properties/properties",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/custom-publisher/customPublisherId/properties",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: JSONArray"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/WanReplication/additionalProperties",
+        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown-prop] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties",
+        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/DiscoveryStrategies",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/DiscoveryStrategies",
+                "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies",
+                "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies",
+                "causingExceptions": [
+                  {
+                    "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items",
+                    "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/0",
+                    "causingExceptions": [],
+                    "keyword": "type",
+                    "message": "expected type: JSONObject, found: String"
+                  },
+                  {
+                    "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items",
+                    "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/1",
+                    "causingExceptions": [
+                      {
+                        "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items",
+                        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/1",
+                        "causingExceptions": [],
+                        "keyword": "additionalProperties",
+                        "message": "extraneous key [unknown-prop] is not permitted"
+                      },
+                      {
+                        "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items/properties/class",
+                        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/1/class",
+                        "causingExceptions": [],
+                        "keyword": "type",
+                        "message": "expected type: String, found: Integer"
+                      },
+                      {
+                        "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items/properties/enabled",
+                        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/1/enabled",
+                        "causingExceptions": [],
+                        "keyword": "type",
+                        "message": "expected type: Boolean, found: String"
+                      },
+                      {
+                        "schemaLocation": "#/definitions/DiscoveryStrategies/properties/discovery-strategies/items/properties/properties",
+                        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/discovery-strategies/1/properties",
+                        "causingExceptions": [],
+                        "keyword": "type",
+                        "message": "expected type: JSONObject, found: JSONArray"
+                      }
+                    ],
+                    "message": "4 schema violations found"
+                  }
+                ],
+                "message": "5 schema violations found"
+              },
+              {
+                "schemaLocation": "#/definitions/DiscoveryStrategies/properties/node-filter",
+                "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-strategies/node-filter",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: JSONObject, found: String"
+              }
+            ],
+            "message": "7 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-prop] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/acknowledge-type",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/acknowledge-type",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "ACK_ON_OPERATION_COMP is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/batch-max-delay-millis",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/batch-max-delay-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/batch-size",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/batch-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/cluster-name",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/cluster-name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/discovery-period-seconds",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/discovery-period-seconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/idle-max-park-ns",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/idle-max-park-ns",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/idle-min-park-ns",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/idle-min-park-ns",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/initial-publisher-state",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/initial-publisher-state",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "INVALID is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/max-concurrent-invocations",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/max-concurrent-invocations",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/max-target-endpoints",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/max-target-endpoints",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/properties",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/properties",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/queue-capacity",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/queue-capacity",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/queue-full-behavior",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/queue-full-behavior",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "INVALID is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/response-timeout-millis",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/response-timeout-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/snapshot-enabled",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/snapshot-enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/sync",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/sync",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/sync",
+                "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/sync",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/sync/properties/consistency-check-strategy",
+                "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/sync/consistency-check-strategy",
+                "causingExceptions": [],
+                "keyword": "enum",
+                "message": "INVALID is not a valid enum value"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/target-endpoints",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/target-endpoints",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: JSONArray"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/use-endpoint-private-address",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/use-endpoint-private-address",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "27 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/consumer",
+        "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/consumer",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/consumer/properties/class-name",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/consumer/class-name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/consumer/properties/persist-wan-replicated-data",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/consumer/persist-wan-replicated-data",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/consumer/properties/properties",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/consumer/properties",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: JSONArray"
+          }
+        ],
+        "message": "3 schema violations found"
+      }
+    ],
+    "message": "34 schema violations found"
+  }
+}

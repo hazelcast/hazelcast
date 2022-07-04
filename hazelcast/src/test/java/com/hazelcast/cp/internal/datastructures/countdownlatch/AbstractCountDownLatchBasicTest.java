@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,11 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
         latch.trySetCount(-20);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrySetCount_whenArgumentZero() {
+        latch.trySetCount(0);
+    }
+
     @Test
     public void testTrySetCount_whenCountIsZero() {
         assertTrue(latch.trySetCount(40));
@@ -73,7 +78,7 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
         latch.trySetCount(10);
 
         assertFalse(latch.trySetCount(20));
-        assertFalse(latch.trySetCount(0));
+        assertFalse(latch.trySetCount(1));
         assertEquals(10, latch.getCount());
     }
 
@@ -91,7 +96,7 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
 
         assertFalse(latch.trySetCount(20));
         assertFalse(latch.trySetCount(100));
-        assertFalse(latch.trySetCount(0));
+        assertFalse(latch.trySetCount(1));
         assertEquals(10, latch.getCount());
     }
 

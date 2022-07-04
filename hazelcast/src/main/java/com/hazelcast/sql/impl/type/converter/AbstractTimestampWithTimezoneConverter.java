@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,19 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 /**
  * Common converter class for TIMESTAMP WITH TIMEZONE type.
  */
 public abstract class AbstractTimestampWithTimezoneConverter extends AbstractTemporalConverter {
     protected AbstractTimestampWithTimezoneConverter(int id) {
-        super(id, QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
+        super(id, QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
+    }
+
+    @Override
+    public Class<?> getNormalizedValueClass() {
+        return OffsetDateTime.class;
     }
 
     @Override

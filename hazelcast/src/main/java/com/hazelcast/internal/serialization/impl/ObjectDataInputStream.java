@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.nio.DataReader;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 
 public class ObjectDataInputStream extends VersionedObjectDataInput
         implements Closeable, DataReader, SerializationServiceSupport {
@@ -274,7 +275,15 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String[] readUTFArray() throws IOException {
+        return readStringArray();
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -282,7 +291,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
         if (len > 0) {
             String[] values = new String[len];
             for (int i = 0; i < len; i++) {
-                values[i] = readUTF();
+                values[i] = readString();
             }
             return values;
         }
@@ -295,7 +304,15 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String readUTF() throws IOException {
+        return readString();
+    }
+
+    @Nullable
+    @Override
+    public String readString() throws IOException {
         int numberOfBytes = readInt();
         if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
@@ -303,7 +320,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
 
         byte[] utf8Bytes = new byte[numberOfBytes];
         dataInput.readFully(utf8Bytes);
-        return new String(utf8Bytes, UTF_8);
+        return new String(utf8Bytes, StandardCharsets.UTF_8);
     }
 
     @Override

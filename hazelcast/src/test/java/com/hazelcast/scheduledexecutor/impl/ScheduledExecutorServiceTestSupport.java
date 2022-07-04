@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -34,6 +35,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.currentTimeMillis;
@@ -261,6 +264,17 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    static class PlainRunnableTask implements Runnable, Serializable {
+
+        PlainRunnableTask() {
+        }
+
+        @Override
+        public void run() {
+            System.out.println("PlainRunnableTask");
+        }
+    }
+
     static class EchoTask implements Runnable, Serializable {
 
         EchoTask() {
@@ -269,6 +283,42 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             System.out.println("Echo ...cho ...oo ..o");
+        }
+
+    }
+
+    static class OneSecondSleepingTask implements Runnable, Serializable {
+
+        OneSecondSleepingTask() {
+        }
+
+        @Override
+        public void run() {
+            sleepSeconds(1);
+        }
+
+    }
+
+    static class CountableRunTask implements Runnable, Serializable {
+        private final CountDownLatch progress;
+        private final Semaphore suspend;
+
+        CountableRunTask(CountDownLatch progress, Semaphore suspend) {
+            this.progress = progress;
+            this.suspend = suspend;
+        }
+
+        @Override
+        public void run() {
+            progress.countDown();
+
+            if (progress.getCount() == 0) {
+                try {
+                    suspend.acquire();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                }
+            }
         }
 
     }
@@ -396,6 +446,51 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             return (instance != null);
+        }
+    }
+
+    public static class AutoDisposableCallable implements Callable<Boolean>, AutoDisposableTask {
+
+        @Override
+        public Boolean call() {
+            return true;
+        }
+    }
+
+    public static class AutoDisposableRunnable implements Runnable, AutoDisposableTask {
+
+        @Override
+        public void run() {
+        }
+    }
+
+    public static class NamedCallable implements Callable<Boolean>, NamedTask, Serializable {
+
+        public static final String NAME = "NAMED-CALLABLE";
+
+        @Override
+        public Boolean call() {
+            return true;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+    }
+
+    public static class NamedRunnable implements Runnable, NamedTask, Serializable {
+
+        public static final String NAME = "NAMED-RUNNABLE";
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
+        @Override
+        public void run() {
+
         }
     }
 

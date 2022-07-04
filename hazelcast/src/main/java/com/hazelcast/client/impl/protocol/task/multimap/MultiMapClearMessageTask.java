@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
@@ -36,14 +36,14 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CLEAR}
  */
 public class MultiMapClearMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapClearCodec.RequestParameters> {
+        extends AbstractMultiMapAllPartitionsMessageTask<String> {
 
     public MultiMapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
 
     @Override
@@ -52,14 +52,14 @@ public class MultiMapClearMessageTask
         for (Object affectedEntries : map.values()) {
             totalAffectedEntries += (Integer) affectedEntries;
         }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        service.publishMultiMapEvent(parameters.name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        service.publishMultiMapEvent(parameters, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         return null;
     }
 
-
     @Override
-    protected MultiMapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapClearCodec.decodeRequest(clientMessage);
     }
 
@@ -69,18 +69,13 @@ public class MultiMapClearMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
-    }
-
-    @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override
@@ -92,4 +87,5 @@ public class MultiMapClearMessageTask
     public Object[] getParameters() {
         return null;
     }
+
 }

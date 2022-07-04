@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -34,12 +36,23 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
     Collection<UUID> getDataMemberIds();
 
     /**
+     * @return IDs of active clients.
+     */
+    Set<UUID> getClientIds();
+
+    /**
      * Get connection to member.
      *
      * @param memberId Member ID.
      * @return Connection object or {@code null} if the connection cannot be established.
      */
     Connection getConnection(UUID memberId);
+
+    /**
+     * @param name Map name.
+     * @return Container or {@code null} if map with the given name doesn't exist.
+     */
+    MapContainer getMap(String name);
 
     /**
      * Get logger for class.

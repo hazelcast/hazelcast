@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -45,6 +46,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -281,6 +283,18 @@ class HazelcastOSGiInstanceImpl
     @Override
     public CPSubsystem getCPSubsystem() {
         return delegatedInstance.getCPSubsystem();
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return delegatedInstance.getSql();
+    }
+
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return delegatedInstance.getJet();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
@@ -393,7 +395,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link IAtomicReference} instance created on
      * CP Subsystem. Hazelcast's {@link IAtomicReference} is a distributed
-     * version of <tt>java.util.concurrent.atomic.AtomicLong</tt>. If no group
+     * version of <tt>java.util.concurrent.atomic.AtomicReference</tt>. If no group
      * name is given within the "name" parameter, then
      * the {@link IAtomicReference} instance will be created on the DEFAULT CP
      * group. If a group name is given, like
@@ -408,7 +410,7 @@ public interface CPSubsystem {
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link IAtomicReference} proxy
-     * @param <E> the type of object referred to by the reference
+     * @param <E>  the type of object referred to by the reference
      * @return {@link IAtomicReference} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
      */
@@ -436,7 +438,8 @@ public interface CPSubsystem {
      * @return {@link ICountDownLatch} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
      */
-    @Nonnull ICountDownLatch getCountDownLatch(@Nonnull String name);
+    @Nonnull
+    ICountDownLatch getCountDownLatch(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link FencedLock} instance created on CP
@@ -459,7 +462,8 @@ public interface CPSubsystem {
      * @throws HazelcastException if CP Subsystem is not enabled
      * @see FencedLockConfig
      */
-    @Nonnull FencedLock getLock(@Nonnull String name);
+    @Nonnull
+    FencedLock getLock(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link ISemaphore} instance created on CP
@@ -482,7 +486,8 @@ public interface CPSubsystem {
      * @throws HazelcastException if CP Subsystem is not enabled
      * @see SemaphoreConfig
      */
-    @Nonnull ISemaphore getSemaphore(@Nonnull String name);
+    @Nonnull
+    ISemaphore getSemaphore(@Nonnull String name);
 
     /**
      * Returns the local CP member if this Hazelcast member is part of
@@ -515,5 +520,42 @@ public interface CPSubsystem {
      * @return the {@link CPSessionManagementService} of this Hazelcast instance
      */
     CPSessionManagementService getCPSessionManagementService();
+
+    /**
+     * Registers a new CPMembershipListener to listen CP membership changes.
+     *
+     * @param listener membership listener
+     * @return id of the listener registration
+     * @since 4.1
+     */
+    UUID addMembershipListener(CPMembershipListener listener);
+
+    /**
+     * Removes membership listener registration. Previously registered listener
+     * will not receive further events.
+     *
+     * @param id of the registration
+     * @return true if listener registration is removed, false otherwise
+     * @since 4.1
+     */
+    boolean removeMembershipListener(UUID id);
+
+    /**
+     * Registers a new CPGroupAvailabilityListener to listen CP group availability changes.
+     *
+     * @param listener group availability listener
+     * @return id of the listener registration
+     * @since 4.1
+     */
+    UUID addGroupAvailabilityListener(CPGroupAvailabilityListener listener);
+
+    /**
+     * Removes CPGroupAvailabilityListener registration.
+     *
+     * @param id of the registration
+     * @return true if listener registration is removed, false otherwise
+     * @since 4.1
+     */
+    boolean removeGroupAvailabilityListener(UUID id);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.yaml;
 
-import org.snakeyaml.engine.v1.api.Load;
-import org.snakeyaml.engine.v1.api.LoadSettings;
-import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -144,7 +143,7 @@ public final class YamlLoader {
     }
 
     private static Load getLoad() {
-        LoadSettings settings = new LoadSettingsBuilder().build();
+        LoadSettings settings = LoadSettings.builder().build();
         return new Load(settings);
     }
 

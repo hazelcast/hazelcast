@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server;
 
+import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MemcacheProtocolConfig;
@@ -23,7 +24,6 @@ import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -37,7 +37,11 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
+/**
+ * Contains many of the dependencies passed to the {@link Server}.
+ */
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ServerContext {
 
@@ -53,6 +57,13 @@ public interface ServerContext {
 
     // returns the MEMBER server socket address
     Address getThisAddress();
+
+    /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getThisUuid();
 
     /**
      * @return all server socket addresses of this Hazelcast member, as picked by the
@@ -78,7 +89,7 @@ public interface ServerContext {
 
     TextCommandService getTextCommandService();
 
-    void removeEndpoint(Address endpoint);
+    void removeEndpoint(Address endpointAddress);
 
     void onSuccessfulConnection(Address address);
 
@@ -98,7 +109,7 @@ public interface ServerContext {
 
     void onDisconnect(Address endpoint, Throwable cause);
 
-    void executeAsync(Runnable runnable);
+    Future<Void> submitAsync(Runnable runnable);
 
     EventService getEventService();
 
@@ -113,11 +124,4 @@ public interface ServerContext {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
     AuditlogService getAuditLogService();
-
-    /**
-     * Returns UUID of the local member.
-     *
-     * @return member UUID
-     */
-    UUID getUuid();
 }

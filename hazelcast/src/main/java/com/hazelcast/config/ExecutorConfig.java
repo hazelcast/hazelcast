@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
@@ -132,9 +133,8 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     /**
-     * Gets if statistics gathering is enabled or disabled on the executor task.
-     *
-     * @return {@code true} if statistics gathering is enabled on the executor task (default), {@code false} otherwise
+     * @return {@code true} if statistics gathering is enabled
+     * on the executor task (default), {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -194,20 +194,20 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(poolSize);
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         poolSize = in.readInt();
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
     }
 
     @Override
@@ -231,8 +231,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         return name.equals(that.name);

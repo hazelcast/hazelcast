@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicate;
@@ -39,6 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
@@ -88,12 +90,17 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     @Test
     public void runFullQuery() {
         Predicate predicate = Predicates.equal("this", value);
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        Query query = Query.of()
+                .mapName(map.getName())
+                .predicate(predicate)
+                .iterationType(IterationType.ENTRY)
+                .partitionIdSet(SetUtil.allPartitionIds(instance.getPartitionService().getPartitions().size()))
+                .build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
-        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOwnedPartitions().toArray());
+        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOrInitCachedMemberPartitions().toArray());
     }
 
     @Test
@@ -101,9 +108,14 @@ public class QueryRunnerTest extends HazelcastTestSupport {
         map.addIndex(IndexType.HASH, "this");
         Predicate predicate = new EqualPredicate("this", value);
 
-        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        Query query = Query.of()
+                .mapName(map.getName())
+                .predicate(predicate)
+                .iterationType(IterationType.ENTRY)
+                .partitionIdSet(SetUtil.allPartitionIds(instance.getPartitionService().getPartitions().size()))
+                .build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         assertNull(result.getPartitionIds());
     }
@@ -116,11 +128,17 @@ public class QueryRunnerTest extends HazelcastTestSupport {
             @Override
             public Set<QueryableEntry> filter(QueryContext queryContext) {
                 // start a new migration while executing an indexed query
-                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1,
+                        UUID.randomUUID()));
                 return super.filter(queryContext);
             }
         };
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        Query query = Query.of()
+                .mapName(map.getName())
+                .predicate(predicate)
+                .iterationType(IterationType.ENTRY)
+                .partitionIdSet(SetUtil.allPartitionIds(instance.getPartitionService().getPartitions().size()))
+                .build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         assertNull(result.getPartitionIds());
     }
@@ -129,9 +147,14 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void verifyFullScanFailureWhileMigrating() {
         Predicate predicate = new EqualPredicate("this", value);
 
-        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        Query query = Query.of()
+                .mapName(map.getName())
+                .predicate(predicate)
+                .iterationType(IterationType.ENTRY)
+                .partitionIdSet(SetUtil.allPartitionIds(instance.getPartitionService().getPartitions().size()))
+                .build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         assertNull(result.getPartitionIds());
     }
@@ -142,11 +165,17 @@ public class QueryRunnerTest extends HazelcastTestSupport {
             @Override
             protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
                 // start a new migration while executing a full scan
-                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1,
+                        UUID.randomUUID()));
                 return super.applyForSingleAttributeValue(attributeValue);
             }
         };
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        Query query = Query.of()
+                .mapName(map.getName())
+                .predicate(predicate)
+                .iterationType(IterationType.ENTRY)
+                .partitionIdSet(SetUtil.allPartitionIds(instance.getPartitionService().getPartitions().size()))
+                .build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         assertNull(result.getPartitionIds());
     }

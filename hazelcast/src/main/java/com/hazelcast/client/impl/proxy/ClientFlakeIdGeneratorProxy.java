@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,7 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
         ClientFlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
-                new AutoBatcher.IdBatchSupplier() {
-                    @Override
-                    public IdBatch newIdBatch(int batchSize) {
-                        return ClientFlakeIdGeneratorProxy.this.newIdBatch(batchSize);
-                    }
-                });
+                ClientFlakeIdGeneratorProxy.this::newIdBatch);
     }
 
     @Override

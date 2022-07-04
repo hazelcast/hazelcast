@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cluster.Member;
+
+import java.util.Objects;
 
 /**
  * Configuration of User Code Deployment. When enabled, it allows Hazelcast members to load classes from other cluster
@@ -108,7 +110,7 @@ public class UserCodeDeploymentConfig {
      *
      *     HazelcastInstance instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
      * </pre>
-     *
+     * <p>
      * In the following example, the started member will be marked with the <code>class-provider</code> attribute -
      * the member configured above may use it to provide a class which is not locally available:
      * <pre>
@@ -119,7 +121,7 @@ public class UserCodeDeploymentConfig {
      *
      * HazelcastInstance instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
      * </pre>
-     *
+     * <p>
      * Setting the filter to null allows using any member to load classes.
      * <p>
      * Default: {@code null}
@@ -243,5 +245,25 @@ public class UserCodeDeploymentConfig {
      */
     public ClassCacheMode getClassCacheMode() {
         return classCacheMode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        UserCodeDeploymentConfig that = (UserCodeDeploymentConfig) o;
+        return enabled == that.enabled && classCacheMode == that.classCacheMode && providerMode == that.providerMode
+                && Objects.equals(blacklistedPrefixes, that.blacklistedPrefixes)
+                && Objects.equals(whitelistedPrefixes, that.whitelistedPrefixes)
+                && Objects.equals(providerFilter, that.providerFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(classCacheMode, providerMode, blacklistedPrefixes, whitelistedPrefixes, providerFilter, enabled);
     }
 }

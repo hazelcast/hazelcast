@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreInitCodec.encodeRequest(groupId, objectName, permits);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreInitCodec.decodeResponse(response).response;
+        return SemaphoreInitCodec.decodeResponse(response);
     }
 
     @Override
@@ -77,19 +77,9 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
     @Override
     public void acquire(int permits) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
 
-        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
-        UUID invocationUid = newUnsecureUUID();
-        ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
-                invocationUid, permits, -1);
-        HazelcastClientInstanceImpl client = getClient();
-        try {
-            new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        } catch (WaitKeyCancelledException e) {
-            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
-                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
-        }
+        doTryAcquire(permits, -1);
     }
 
     @Override
@@ -110,21 +100,9 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
         checkPositive(permits, "Permits must be positive!");
-
-        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
-        UUID invocationUid = newUnsecureUUID();
         long timeoutMs = max(0, unit.toMillis(timeout));
 
-        ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
-                invocationUid, permits, timeoutMs);
-        HazelcastClientInstanceImpl client = getClient();
-        try {
-            ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-            return SemaphoreAcquireCodec.decodeResponse(response).response;
-        } catch (WaitKeyCancelledException e) {
-            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
-                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
-        }
+        return doTryAcquire(permits, timeoutMs);
     }
 
     @Override
@@ -150,7 +128,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(groupId, objectName);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreAvailablePermitsCodec.decodeResponse(response).response;
+        return SemaphoreAvailablePermitsCodec.decodeResponse(response);
     }
 
     @Override
@@ -162,7 +140,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
                 invocationUid);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreDrainCodec.decodeResponse(response).response;
+        return SemaphoreDrainCodec.decodeResponse(response);
     }
 
     @Override
@@ -172,12 +150,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
             return;
         }
 
-        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
-        UUID invocationUid = newUnsecureUUID();
-
-        ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
-                invocationUid, -reduction);
-        new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
+        doChangePermits(-reduction);
     }
 
     @Override
@@ -187,12 +160,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
             return;
         }
 
-        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
-        UUID invocationUid = newUnsecureUUID();
-
-        ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
-                invocationUid, increase);
-        new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
+        doChangePermits(increase);
     }
 
     @Override
@@ -208,6 +176,29 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
     public CPGroupId getGroupId() {
         return groupId;
+    }
+
+    private boolean doTryAcquire(int permits, long timeoutMs) {
+        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
+        UUID invocationUid = newUnsecureUUID();
+        ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
+                invocationUid, permits, timeoutMs);
+        try {
+            ClientMessage response = new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
+            return SemaphoreAcquireCodec.decodeResponse(response);
+        } catch (WaitKeyCancelledException e) {
+            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+        }
+    }
+
+    private void doChangePermits(int delta) {
+        long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
+        UUID invocationUid = newUnsecureUUID();
+
+        ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
+                invocationUid, delta);
+        new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
     }
 
 }

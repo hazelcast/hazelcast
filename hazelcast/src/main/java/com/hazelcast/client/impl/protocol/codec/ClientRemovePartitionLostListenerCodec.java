@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified partition lost listener. If there is no such listener added before, this call does no change
  * in the cluster and returns false.
  */
-@Generated("f4f078dc7a2412e1687ce816e8f342f1")
+@Generated("acade439f56023b8e93cd7e25b5f5fd5")
 public final class ClientRemovePartitionLostListenerCodec {
     //hex: 0x000700
     public static final int REQUEST_MESSAGE_TYPE = 1792;
@@ -49,15 +49,6 @@ public final class ClientRemovePartitionLostListenerCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ClientRemovePartitionLostListenerCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id assigned during the listener registration.
-         */
-        public java.util.UUID registrationId;
     }
 
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
@@ -72,21 +63,13 @@ public final class ClientRemovePartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemovePartitionLostListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * The id assigned during the listener registration.
+     */
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the listener existed and removed, false otherwise.
-         */
-        public boolean response;
+        return decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(boolean response) {
@@ -99,12 +82,12 @@ public final class ClientRemovePartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemovePartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * true if the listener existed and removed, false otherwise.
+     */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

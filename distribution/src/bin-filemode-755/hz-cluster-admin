@@ -1,0 +1,250 @@
+#!/bin/bash
+
+if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
+    echo "Utility to query and change the state of a Hazelcast cluster."
+    echo "It uses the Hazelcast REST API, which must be enabled in the cluster's"
+    echo "configuration.  To enable REST API, do one of the following:"
+    echo "- Change member config using JAVA API: config.getNetworkConfig().getRestApiConfig().setEnabled(true);"
+    echo "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true"
+    echo "- Add system property: -Dhz.network.rest-api.enabled=true"
+    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true (recommended when running container/docker image)"
+    echo " A command may fail with a message like"
+    echo "'REST endpoint group is not enabled - CP'."
+    echo "In that case you must change the cluster's configuration to enable"
+    echo "the CP endpoint group. "
+    echo "To enable CP endpoint group, do one of the following:"
+    echo "- Change member config using JAVA API: config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup.CP);"
+    echo "- Change XML/YAML configuration property: hazelcast.network.rest-api.endpoint-group CP with `enabled` set to true"
+    echo "- Add system property: -Dhz.network.rest-api.endpoint-groups.cp.enabled=true"
+    echo "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS.CP.ENABLED=true (recommended when running container/docker image)"
+    echo
+    echo "Parameters:"
+    echo "  -o, --operation    : Specifies the operation to perform, one of 'get-state', 'change-state',"
+    echo "                       'shutdown', 'force-start', 'partial-start', 'get-cluster-version',"
+    echo "                       'change-cluster-version'."
+    echo "  -s, --state        : Changes the cluster state. Valid states: 'active', 'frozen', 'passive', 'no_migration'."
+    echo "  -a, --address      : IP address to connect to. The default is 127.0.0.1."
+    echo "  -p, --port         : TCP port to connect to. The default is 5701."
+    echo "  -c, --clustername : The name of the cluster. The default is 'dev'."
+    echo "  -P, --password     : The password of the cluster. The default is 'dev-pass'."
+    echo "  -v, --version      : The cluster version to change to. To be used with '-o change-cluster-version'."
+    echo "  -d, --debug        : Show verbose output from curl"
+    echo
+    echo "HTTPS-related (relevant only when TLS is enabled on the Hazelcast cluster):"
+    echo "      --https        : Use the HTTPS protocol for REST calls."
+    echo "      --cacert       : Path to the trusted PEM-encoded certificate, used to verify member certificates."
+    echo "      --cert         : Path to the PEM-encoded client certificate. Needed for client certificate authentication."
+    echo "      --key          : Path to the PEM-encoded client private key. Needed for client certificate authentication."
+    echo "      --insecure     : Disable member certificate verification."
+    exit 0
+fi
+
+command -v curl >/dev/null 2>&1 || { \
+    echo >&2 "The 'curl' command is not on the path. Cannot proceed."; exit 1; \
+}
+
+URL_SCHEME="http"
+CURL_ARGS="-sS" # silent, but show errors
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case "$key" in
+    -o|--operation)
+    OPERATION="$2"
+    shift # removes the recognized command-line option
+    ;;
+    -s|--state)
+    DESIRED_STATE="$2"
+    shift
+    ;;
+    -p|--port)
+    PORT="$2"
+    shift
+    ;;
+    -c|--clustername)
+    CLUSTERNAME="$2"
+    shift
+    ;;
+    -P|--password)
+    PASSWORD="$2"
+    shift
+     ;;
+     -a|--address)
+    ADDRESS="$2"
+    shift
+    ;;
+    -v|--version)
+    CLUSTER_VERSION="$2"
+    shift
+    ;;
+    -d|--debug)
+    CURL_ARGS="$CURL_ARGS -v"
+    ;;
+    --https)
+    URL_SCHEME="https"
+    ;;
+    --cert|--key)
+    CURL_ARGS="$CURL_ARGS $1 $2"
+    shift
+    ;;
+    --cacert)
+    CURL_ARGS="$CURL_ARGS --capath /dev/null $1 $2"
+    shift
+    ;;
+    --insecure)
+    echo "WARNING: You're using the --insecure switch. Hazelcast member TLS certificates will not be verified." >&2
+    CURL_ARGS="$CURL_ARGS $1"
+    ;;
+    *)
+esac
+shift # removes either an unrecognized option or the recognized option's argument
+done
+
+if [[ -z "$OPERATION" ]]; then
+    echo "No operation specified, using 'get-state'."
+    OPERATION="get-state"
+fi
+
+if [[ -z "$PORT" ]]; then
+    echo "No port specified, using 5701."
+    PORT="5701"
+fi
+
+if [[ -z "$CLUSTERNAME" ]]; then
+    echo "No cluster name specified, using 'dev'."
+    CLUSTERNAME="dev"
+fi
+
+if [[ -z "$PASSWORD" ]]; then
+    echo "No password specified, using 'dev-pass'."
+    PASSWORD="dev-pass"
+fi
+
+if [[ -z "$ADDRESS" ]]; then
+    echo "No IP address specified, using 127.0.0.1."
+    ADDRESS="127.0.0.1"
+fi
+
+make_request () {
+    echo "Connecting to ${ADDRESS}:${PORT}"
+    local curl_cmd="curl $CURL_ARGS"
+    local url="${URL_SCHEME}://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/$1"
+    if [[ "$1" = "version" ]] && [[ -z "$2" ]]; then
+        RESPONSE=$(${curl_cmd} "$url");
+    else
+        local data="${CLUSTERNAME}&${PASSWORD}"
+        if [[ "$2" ]]; then
+            data="${data}&$2"
+        fi
+        RESPONSE=$(${curl_cmd} --data "$data" "$url");
+    fi
+    local curl_exit_code=$?
+
+    if [[ ${curl_exit_code} = 7 ]]; then
+        echo "Unable to connect to the host. Is the server running?"
+        exit ${curl_exit_code}
+    elif [[ ${curl_exit_code} = 52 ]] || [[ ${curl_exit_code} = 55 ]] || [[ ${curl_exit_code} = 56 ]]; then
+        echo "Unable to send or receive data from the server. Is REST API enabled on the server?"
+        exit ${curl_exit_code}
+    elif [[ ${curl_exit_code} != 0 ]]; then
+        echo "Failed with exit code $curl_exit_code"
+        exit ${curl_exit_code}
+    fi
+    STATUS=$(echo "${RESPONSE}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    if [[ "$STATUS" = "fail" ]] && [[ "$1" != "changeState" ]]; then
+        echo "Got error response: $RESPONSE";
+        exit 0
+    fi
+    if [[ "$STATUS" = "forbidden" ]]; then
+        echo "Operation forbidden, wrong cluster name/password (or username/password combination when the Hazelcast security is enabled).";
+        exit 0
+    fi
+    if [[ "$STATUS" != "success" ]] && [[ "$STATUS" != "fail" ]]; then
+        echo "Didn't get a valid response. Make sure that there's a member of a"
+        echo "Hazelcast cluster running on ${ADDRESS}:${PORT} and that the specific"
+        echo "REST operation that you are requesting is enabled."
+        exit 0
+    fi
+}
+
+if [[ "$OPERATION" = "get-state" ]]; then
+    make_request state
+    CURR_STATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "The cluster state is '${CURR_STATE}'."
+    exit 0
+fi
+
+if [[ "$OPERATION" = "change-state" ]]; then
+    if [[ -z "$DESIRED_STATE" ]]; then
+        echo "Please specify the desired new cluster state: --state 'active' | 'no_migration' | 'frozen' | 'passive'"
+        exit 0
+    fi
+    if [[ "$DESIRED_STATE" != "frozen" ]] && [[ "$DESIRED_STATE" != "active" ]] && [[ "$DESIRED_STATE" != "no_migration" ]]  && [[ "$DESIRED_STATE" != "passive" ]]; then
+        echo "$DESIRED_STATE is not a valid cluster state, must be one of 'active', 'frozen', 'passive' or 'no_migration'"
+        exit 0
+    fi
+    echo "Changing cluster state to ${DESIRED_STATE}"
+    make_request changeState "${DESIRED_STATE}"
+    NEW_STATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+    if [[ "$STATUS" = "fail" ]]; then
+        if [[ "$NEW_STATE" != "null" ]]; then
+            echo "Cluster is already in the '${DESIRED_STATE}' state."
+        else
+            echo "Got error response: $RESPONSE";
+        fi
+        exit 0
+    fi
+    echo "The cluster is now in the '${NEW_STATE}' state"
+    exit 0
+fi
+
+if [[ "$OPERATION" = "force-start" ]]; then
+    echo "Force-starting the cluster. Expected state: cluster blocked during initialization,"
+    echo "waiting for all the members to finish reloading persistent data."
+    echo "Expected outcome: all members delete their persistent data and start empty."
+    make_request forceStart
+    echo "Cluster force-start completed."
+    exit 0
+fi
+
+if [[ "$OPERATION" = "partial-start" ]]; then
+    echo "Partially starting the cluster. Expected state: cluster blocked during initialization,"
+    echo "waiting for all the members to finish reloading persistent data."
+    echo "Expected outcome: members that haven't finished reloading are ejected from the cluster"
+    echo "and their persistent data is lost."
+    make_request partialStart
+    echo "Cluster partial-start completed."
+    exit 0
+fi
+
+if [[ "$OPERATION" = "shutdown" ]]; then
+    echo "Shutting down the cluster."
+    make_request clusterShutdown
+    echo "Cluster shutdown completed."
+    exit 0
+fi
+
+if [[ "$OPERATION" = "get-cluster-version" ]]; then
+    echo "Getting cluster version."
+    make_request version
+    CURR_VERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "Cluster is at version ${CURR_VERSION}."
+    exit 0
+fi
+
+if [[ "$OPERATION" = "change-cluster-version" ]]; then
+    if [[ -z "$CLUSTER_VERSION" ]]; then
+        echo "Please specify the desired new cluster version with --version MAJOR.MINOR."
+        echo "Example: --version 4.0"
+        exit 0
+    fi
+    echo "Changing cluster version to $CLUSTER_VERSION."
+    make_request version "${CLUSTER_VERSION}"
+    NEW_VERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "Cluster version changed to $NEW_VERSION."
+    exit 0
+fi
+
+echo "$OPERATION is not a valid cluster operation, must be one of 'get-state', 'change-state',"
+echo "'shutdown', 'force-start', 'partial-start', 'get-cluster-version', 'change-cluster-version'."

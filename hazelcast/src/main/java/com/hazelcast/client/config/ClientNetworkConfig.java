@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -55,6 +56,7 @@ public class ClientNetworkConfig {
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private ClientCloudConfig cloudConfig = new ClientCloudConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+    private AutoDetectionConfig autoDetectionConfig = new AutoDetectionConfig();
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
     private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
@@ -105,6 +107,47 @@ public class ClientNetworkConfig {
         return this;
     }
 
+
+    /**
+     * Returns the configuration of the Auto Detection discovery.
+     *
+     * @return Configuration of Auto Detection discovery
+     */
+    public AutoDetectionConfig getAutoDetectionConfig() {
+        return autoDetectionConfig;
+    }
+
+    /**
+     * Any other connect configuration takes precedence over auto-discovery, so auto-discovery is enabled only when no other
+     * strategy is enabled.
+     *
+     * @return true if auto-detection is enabled
+     */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionConfig.isEnabled()
+                && addressList.isEmpty()
+                && !cloudConfig.isEnabled()
+                && !awsConfig.isEnabled()
+                && !gcpConfig.isEnabled()
+                && !azureConfig.isEnabled()
+                && !kubernetesConfig.isEnabled()
+                && !eurekaConfig.isEnabled()
+                && !discoveryConfig.isEnabled();
+    }
+
+    /**
+     * Defines the Auto Detection configuration.
+     *
+     * @param autoDetectionConfig Auto Detection configuration
+     * @return this configuration
+     * @throws java.lang.IllegalArgumentException if autoDetectionConfig is null
+     */
+    public ClientNetworkConfig setAutoDetectionConfig(AutoDetectionConfig autoDetectionConfig) {
+        this.autoDetectionConfig = isNotNull(autoDetectionConfig, "autoDetectionConfig");
+        return this;
+    }
+
     /**
      * See {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
      *
@@ -115,7 +158,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * If {@code true}, client will route the key based operations to owner of the key on best-effort basis.
+     * If {@code true}, client will route the key-based operations to owner of the key on best-effort basis.
      * Note that it uses a cached version of {@link PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
      * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,31 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
-import com.hazelcast.internal.serialization.Data;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
-class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
+public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
     final int initialSize;
+
+    final int firstGrowthSize;
 
     byte[] buffer;
 
@@ -47,8 +51,13 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     private final boolean isBigEndian;
 
     ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
-        this.initialSize = size;
-        this.buffer = new byte[size];
+        this(size, -1, service, byteOrder);
+    }
+
+    ByteArrayObjectDataOutput(int initialSize, int firstGrowthSize, InternalSerializationService service, ByteOrder byteOrder) {
+        this.initialSize = initialSize;
+        this.firstGrowthSize = firstGrowthSize;
+        this.buffer = new byte[initialSize];
         this.service = service;
         isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
@@ -87,6 +96,17 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     @Override
     public final void writeBoolean(int position, final boolean v) throws IOException {
         write(position, v ? 1 : 0);
+    }
+
+    @Override
+    public void writeBooleanBit(int position, int bitIndex, boolean v) {
+        byte b = buffer[position];
+        if (v) {
+            b = (byte) (b | (1 << bitIndex));
+        } else {
+            b = (byte) (b & ~(1 << bitIndex));
+        }
+        buffer[position] = b;
     }
 
     @Override
@@ -251,13 +271,19 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
+    @Deprecated
     public void writeUTF(final String str) throws IOException {
+        writeString(str);
+    }
+
+    @Override
+    public void writeString(@Nullable String str) throws IOException {
         if (str == null) {
             writeInt(NULL_ARRAY_LENGTH);
             return;
         }
 
-        byte[] utf8Bytes = str.getBytes(UTF_8);
+        byte[] utf8Bytes = str.getBytes(StandardCharsets.UTF_8);
         writeInt(utf8Bytes.length);
         ensureAvailable(utf8Bytes.length);
         write(utf8Bytes);
@@ -350,12 +376,18 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
+    @Deprecated
     public void writeUTFArray(String[] strings) throws IOException {
+       writeStringArray(strings);
+    }
+
+    @Override
+    public void writeStringArray(@Nullable String[] strings) throws IOException {
         int len = strings != null ? strings.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
-                writeUTF(s);
+                writeString(s);
             }
         }
     }
@@ -363,10 +395,8 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     final void ensureAvailable(int len) {
         if (available() < len) {
             if (buffer != null) {
-                int newCap = Math.max(buffer.length << 1, buffer.length + len);
-                byte[] newBuffer = new byte[newCap];
-                System.arraycopy(buffer, 0, newBuffer, 0, pos);
-                buffer = newBuffer;
+                int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), firstGrowthSize);
+                buffer = Arrays.copyOf(buffer, newCap);
             } else {
                 buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
             }

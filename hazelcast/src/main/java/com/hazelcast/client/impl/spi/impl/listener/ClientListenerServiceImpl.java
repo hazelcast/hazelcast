@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
@@ -40,15 +41,17 @@ import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -99,8 +102,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
             ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
             registrations.put(userRegistrationId, registration);
-            Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
-            for (ClientConnection connection : connections) {
+            Collection<Connection> connections = clientConnectionManager.getActiveConnections();
+            for (Connection connection : connections) {
                 try {
                     invoke(registration, connection);
                 } catch (Exception e) {
@@ -178,7 +181,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ClientConnection connection = (ClientConnection) clientMessage.getConnection();
         EventHandler eventHandler = connection.getEventHandler(correlationId);
         if (eventHandler == null) {
-            logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            if (logger.isFineEnabled()) {
+                logger.fine("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            }
             return;
         }
 
@@ -238,7 +243,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     public void shutdown() {
         eventExecutor.shutdown();
-        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
+        registrationExecutor.shutdown();
+        ClientExecutionServiceImpl.awaitExecutorTermination("registrationExecutor", registrationExecutor, logger);
     }
 
     public void start() {
@@ -306,39 +312,41 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
-        ClientListenerRegistration listenerRegistration = registrations.get(userRegistrationId);
+        ClientListenerRegistration listenerRegistration = registrations.remove(userRegistrationId);
         if (listenerRegistration == null) {
             return false;
         }
-        boolean successful = true;
 
         Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
-        Iterator<Map.Entry<Connection, ClientConnectionRegistration>> iterator = registrations.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Connection, ClientConnectionRegistration> entry = iterator.next();
+        CompletableFuture[] futures = new CompletableFuture[registrations.size()];
+        int i = 0;
+        for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
-            Connection subscriber = entry.getKey();
-            try {
-                ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
-                UUID serverRegistrationId = registration.getServerRegistrationId();
-                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                if (request != null) {
-                    new ClientInvocation(client, request, null, subscriber).invoke().get();
-                }
-                ((ClientConnection) subscriber).removeEventHandler(registration.getCallId());
-                iterator.remove();
-            } catch (Exception e) {
-                if (subscriber.isAlive()) {
-                    successful = false;
-                    logger.warning("Deregistration of listener with ID " + userRegistrationId
-                            + " has failed to address " + subscriber.getRemoteAddress(), e);
-                }
+            ClientConnection subscriber = (ClientConnection) entry.getKey();
+            //remove local handler
+            subscriber.removeEventHandler(registration.getCallId());
+            //the rest is for deleting remote registration
+            ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
+            UUID serverRegistrationId = registration.getServerRegistrationId();
+            ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+            if (request == null) {
+                futures[i++] = CompletableFuture.completedFuture(null);
+                continue;
             }
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
+            clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
+            futures[i++] = clientInvocation.invokeUrgent().exceptionally(throwable -> {
+                if (!(throwable instanceof HazelcastClientNotActiveException
+                        || throwable instanceof IOException
+                        || throwable instanceof TargetDisconnectedException)) {
+                    logger.warning("Deregistration of listener with ID " + userRegistrationId
+                            + " has failed for address " + subscriber.getRemoteAddress(), throwable);
+                }
+                return null;
+            });
         }
-        if (successful) {
-            this.registrations.remove(userRegistrationId);
-        }
-        return successful;
+        CompletableFuture.allOf(futures).join();
+        return true;
     }
 
     private final class ClientEventProcessor implements StripedRunnable {

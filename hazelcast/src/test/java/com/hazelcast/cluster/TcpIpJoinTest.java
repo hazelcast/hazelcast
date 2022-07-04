@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Before
@@ -53,7 +53,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(false);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember("127.0.0.1");
@@ -67,7 +66,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(false);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember("127.0.0.1:5701");
@@ -82,7 +80,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(false);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember("127.0.0.1:5701");
@@ -105,8 +102,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         networkConfig.setPort(5701).setPortAutoIncrement(true)
                 .getInterfaces().addInterface("127.0.0.1").setEnabled(true);
         final JoinConfig joinConfig = networkConfig.getJoin();
-        joinConfig.getMulticastConfig().setEnabled(false);
-        joinConfig.getAwsConfig().setEnabled(false);
         joinConfig.getTcpIpConfig().addMember("localhost:5701").addMember("localhost:5702").setEnabled(true);
 
         testJoin(config);
@@ -117,7 +112,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         Config config = new Config();
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true);
         join.getTcpIpConfig().addMember("127.0.0.1");
 
@@ -129,7 +123,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         Config config = new Config();
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(false);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.addMember("localhost");
@@ -145,7 +138,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config1.setClusterName("group1");
-        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
 
@@ -153,7 +145,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config2.setClusterName("group2");
-        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
 
@@ -168,7 +159,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config1.getSecurityConfig().setMemberRealmConfig("m1",
                 new RealmConfig().setUsernamePasswordIdentityConfig("foo", "Here"));
-        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
                 .addMember("127.0.0.1");
 
@@ -177,7 +167,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config2.getSecurityConfig().setMemberRealmConfig("m1",
                 new RealmConfig().setUsernamePasswordIdentityConfig("foo", "There"));
-        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
                 .addMember("127.0.0.1");
 
@@ -193,7 +182,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
         config1.getPartitionGroupConfig().setEnabled(true)
@@ -202,7 +190,6 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         Config config2 = new Config();
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
         config2.getPartitionGroupConfig().setEnabled(true)
@@ -215,13 +202,12 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true).setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         Config config2 = new Config();
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setConnectionTimeoutSeconds(3)
                 .setEnabled(true).addMember("127.0.0.1");
 

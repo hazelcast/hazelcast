@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
                         .withMetric(metric)
                         .withUnit(unit)
                         .withTag("client", clientUuid.toString())
+                        .withTag("clientname", client.getName())
                         .withTag("timestamp", Long.toString(timestamp))
                         .withExcludedTargets(asList(MetricTarget.values()))
                         .withIncludedTarget(MANAGEMENT_CENTER);

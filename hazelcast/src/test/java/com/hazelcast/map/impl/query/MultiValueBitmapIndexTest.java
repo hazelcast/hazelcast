@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -38,7 +39,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -64,7 +64,7 @@ import static com.hazelcast.query.Predicates.or;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
@@ -203,6 +203,7 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = HazelcastTestSupport.smallInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         MapConfig mapConfig = config.getMapConfig("persons");
         mapConfig.addIndexConfig(indexConfig);
         // disable periodic metrics collection (may interfere with the test)
@@ -280,14 +281,14 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(id);
-            out.writeUTF(stringId);
+            out.writeString(stringId);
             out.writeLongArray(habits);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readLong();
-            stringId = in.readUTF();
+            stringId = in.readString();
             habits = in.readLongArray();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftRemoteService, RaftNodeLifecycleAwareService, SnapshotAwareService<S> {
 
-    private final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
+    protected final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
     private final Set<BiTuple<CPGroupId, String>> destroyedValues = newSetFromMap(new ConcurrentHashMap<>());
     private volatile RaftService raftService;
 
@@ -148,6 +148,10 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
         destroyedValues.add(key);
         return atomicValues.remove(key) != null;
+    }
+
+    public int getAtomicValuesCount() {
+        return atomicValues.size();
     }
 
     public final V getAtomicValue(CPGroupId groupId, String name) {

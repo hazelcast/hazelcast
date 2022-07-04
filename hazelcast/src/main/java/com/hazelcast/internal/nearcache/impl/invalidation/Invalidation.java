@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.IMapEvent;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
         // sourceUuid can be null.
         this.sourceUuid = sourceUuid;
         this.partitionUuid = checkNotNull(partitionUuid, "partitionUuid cannot be null");
-        this.sequence = checkPositive(sequence, "sequence should be positive");
+        this.sequence = checkPositive("sequence", sequence);
     }
 
     public final UUID getPartitionUuid() {
@@ -92,7 +92,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(dataStructureName);
+        out.writeString(dataStructureName);
         UUIDSerializationUtil.writeUUID(out, sourceUuid);
         out.writeLong(sequence);
 
@@ -106,7 +106,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataStructureName = in.readUTF();
+        dataStructureName = in.readString();
         sourceUuid = UUIDSerializationUtil.readUUID(in);
         sequence = in.readLong();
         boolean nullUuid = in.readBoolean();

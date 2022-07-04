@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,8 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.partition.MigrationState;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,18 +53,6 @@ public class PartitionServiceProxyTest {
         client = hazelcastFactory.newHazelcastClient();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddMigrationListener() throws Exception {
-        PartitionService p = client.getPartitionService();
-        p.addMigrationListener(new DumMigrationListener());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveMigrationListener() throws Exception {
-        PartitionService p = client.getPartitionService();
-        p.removeMigrationListener(UuidUtil.newUnsecureUUID());
-    }
-
     @Test
     public void testGetPartition() {
         String key = "Key";
@@ -84,8 +68,6 @@ public class PartitionServiceProxyTest {
 
     @Test
     public void testGetPartitions() {
-        String key = "Key";
-
         PartitionService clientPartitionService = client.getPartitionService();
         Set<Partition> clientPartitions = clientPartitionService.getPartitions();
 
@@ -93,25 +75,5 @@ public class PartitionServiceProxyTest {
         Set<Partition> serverPartitions = serverPartitionService.getPartitions();
 
         assertEquals(clientPartitions.size(), serverPartitions.size());
-    }
-
-    class DumMigrationListener implements MigrationListener {
-
-        @Override
-        public void migrationStarted(MigrationState state) {
-        }
-
-        @Override
-        public void migrationFinished(MigrationState state) {
-        }
-
-        @Override
-        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-        }
-
-        @Override
-        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-
-        }
     }
 }

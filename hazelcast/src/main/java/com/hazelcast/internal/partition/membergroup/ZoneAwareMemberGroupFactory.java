@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * ZoneAwareMemberGroupFactory is responsible for MemberGroups
@@ -37,46 +38,20 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+        Map<String, MemberGroup> groups = createHashMap(allMembers.size());
         for (Member member : allMembers) {
-
             final String zoneInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
-            final String rackInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK);
-            final String hostInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST);
-
-            if (zoneInfo == null && rackInfo == null && hostInfo == null) {
+            if (zoneInfo == null) {
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
-                        + "At least one of availability zone, rack or host information must be provided "
-                        + "with ZONE_AWARE partition group.");
+                        + "Availability zone information must be provided with ZONE_AWARE partition group.");
             }
-
-            if (zoneInfo != null) {
-                MemberGroup group = groups.get(zoneInfo);
-                if (group == null) {
-                    group = new DefaultMemberGroup();
-                    groups.put(zoneInfo, group);
-                }
-                group.addMember(member);
-            } else {
-                if (rackInfo != null) {
-                    MemberGroup group = groups.get(rackInfo);
-                    if (group == null) {
-                        group = new DefaultMemberGroup();
-                        groups.put(rackInfo, group);
-                    }
-                    group.addMember(member);
-                } else {
-                    if (hostInfo != null) {
-                        MemberGroup group = groups.get(hostInfo);
-                        if (group == null) {
-                            group = new DefaultMemberGroup();
-                            groups.put(hostInfo, group);
-                        }
-                        group.addMember(member);
-                    }
-                }
+            MemberGroup group = groups.get(zoneInfo);
+            if (group == null) {
+                group = new DefaultMemberGroup();
+                groups.put(zoneInfo, group);
             }
+            group.addMember(member);
         }
-        return new HashSet<MemberGroup>(groups.values());
+        return new HashSet<>(groups.values());
     }
 }

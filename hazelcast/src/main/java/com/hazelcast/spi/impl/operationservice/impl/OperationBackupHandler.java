@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,7 +277,7 @@ final class OperationBackupHandler {
     private Operation getBackupOperation(BackupAwareOperation backupAwareOp) {
         Operation backupOp = backupAwareOp.getBackupOperation();
         if (backupOp == null) {
-            throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
+            throw new IllegalArgumentException("Backup operation must not be null! " + backupAwareOp);
         }
         if (ASSERTION_ENABLED) {
             checkServiceNamespaces(backupAwareOp, backupOp);

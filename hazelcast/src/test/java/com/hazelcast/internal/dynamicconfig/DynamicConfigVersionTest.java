@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -47,6 +49,8 @@ public class DynamicConfigVersionTest {
         nonDynamicConfigClasses.add(WanReplicationConfig.class);
         nonDynamicConfigClasses.add(SplitBrainProtectionConfig.class);
         nonDynamicConfigClasses.add(ListenerConfig.class);
+        nonDynamicConfigClasses.add(DeviceConfig.class);
+        nonDynamicConfigClasses.add(DynamicConfigurationConfig.class);
         NON_DYNAMIC_CONFIG_CLASSES = nonDynamicConfigClasses;
     }
 

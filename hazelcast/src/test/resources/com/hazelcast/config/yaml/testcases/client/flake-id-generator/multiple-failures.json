@@ -1,0 +1,56 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "flake-id-generator": {
+        "this-is-bad": false,
+        "default": {
+          "unknown-prop": false,
+          "prefetch-count": -4,
+          "prefetch-validity-millis": "600000"
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientFlakeIdGenerator",
+    "pointerToViolation": "#/hazelcast-client/flake-id-generator",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientFlakeIdGenerator/additionalProperties",
+        "pointerToViolation": "#/hazelcast-client/flake-id-generator/default",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientFlakeIdGenerator/additionalProperties",
+            "pointerToViolation": "#/hazelcast-client/flake-id-generator/default",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-prop] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientFlakeIdGenerator/additionalProperties/properties/prefetch-count",
+            "pointerToViolation": "#/hazelcast-client/flake-id-generator/default/prefetch-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-4 is not greater or equal to 1"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientFlakeIdGenerator/additionalProperties/properties/prefetch-validity-millis",
+            "pointerToViolation": "#/hazelcast-client/flake-id-generator/default/prefetch-validity-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientFlakeIdGenerator/additionalProperties",
+        "pointerToViolation": "#/hazelcast-client/flake-id-generator/this-is-bad",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}

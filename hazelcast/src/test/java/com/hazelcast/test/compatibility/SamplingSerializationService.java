@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,25 @@
 package com.hazelcast.test.compatibility;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.JobRecord;
+import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -36,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.newSetFromMap;
 
@@ -58,6 +67,16 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String DUMMY_CLASS_PREFIX = "Dummy";
     private static final String TEST_CLASS_SUFFIX = "Test";
     private static final String TEST_PACKAGE_INFIX = ".test";
+    private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
+    private static final String JET_PACKAGE_PREFIX = "com.hazelcast.jet";
+    private static final String SQL_PACKAGE_PREFIX = "com.hazelcast.sql";
+
+    // Only a small subset of Jet classes requires backwards-compatibility. Jet doesn't provide client
+    // compatibility nor does it support rolling upgrades.
+    private static final Set<String> JET_BACKWARD_COMPATIBLE_CLASSES = Stream
+            .of(JobRecord.class, JobSummary.class, JobConfig.class)
+            .map(Class::getName)
+            .collect(Collectors.toSet());
 
     protected final InternalSerializationService delegate;
 
@@ -68,6 +87,13 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public <B extends Data> B toData(Object obj) {
         B data = delegate.toData(obj);
+        sampleObject(obj, data == null ? null : data.toByteArray());
+        return data;
+    }
+
+    @Override
+    public <B extends Data> B toDataWithSchema(Object obj) {
+        B data = delegate.toDataWithSchema(obj);
         sampleObject(obj, data == null ? null : data.toByteArray());
         return data;
     }
@@ -159,14 +185,38 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public BufferObjectDataOutput createObjectDataOutput(int initialSize, int firstGrowthSize) {
+        return delegate.createObjectDataOutput(initialSize, firstGrowthSize);
+    }
+
+    @Override
     public ManagedContext getManagedContext() {
         return delegate.getManagedContext();
     }
 
     @Override
-    public PortableReader createPortableReader(Data data)
-            throws IOException {
-        return delegate.createPortableReader(data);
+    public HeapData trimSchema(Data data) {
+        return delegate.trimSchema(data);
+    }
+
+    @Override
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
+        return delegate.readAsInternalGenericRecord(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        return delegate.extractSchemaFromObject(object);
+    }
+
+    @Override
+    public boolean isCompactSerializable(Object object) {
+        return delegate.isCompactSerializable(object);
     }
 
     @Override
@@ -228,7 +278,19 @@ public class SamplingSerializationService implements InternalSerializationServic
 
         String className = klass.getName();
 
+        if (obj instanceof CompactGenericRecord) {
+            return false;
+        }
+
         if (SAMPLED_CLASSES.contains(className)) {
+            return false;
+        }
+
+        if (className.startsWith(JET_PACKAGE_PREFIX) && !JET_BACKWARD_COMPATIBLE_CLASSES.contains(className)) {
+            return false;
+        }
+
+        if (className.startsWith(SQL_PACKAGE_PREFIX)) {
             return false;
         }
 
@@ -253,7 +315,7 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     public static boolean isTestClass(String className) {
         if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
-                || className.contains(DUMMY_CLASS_PREFIX)) {
+                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX)) {
             return true;
         }
         return false;

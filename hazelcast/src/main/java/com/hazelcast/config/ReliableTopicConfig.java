@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 
 /**
  * Configuration for a reliable {@link ITopic}.
@@ -229,7 +229,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * @throws IllegalArgumentException if the {@code readBatchSize} is smaller than 1
      */
     public ReliableTopicConfig setReadBatchSize(int readBatchSize) {
-        this.readBatchSize = checkPositive(readBatchSize, "readBatchSize should be positive");
+        this.readBatchSize = checkPositive("readBatchSize", readBatchSize);
         return this;
     }
 
@@ -317,20 +317,20 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(executor);
         out.writeInt(readBatchSize);
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(statisticsEnabled);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(topicOverloadPolicy.name());
+        out.writeString(topicOverloadPolicy.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         executor = in.readObject();
         readBatchSize = in.readInt();
-        name = in.readUTF();
+        name = in.readString();
         statisticsEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
-        topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readUTF());
+        topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readString());
     }
 
     @Override

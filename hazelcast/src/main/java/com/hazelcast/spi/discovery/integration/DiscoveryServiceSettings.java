@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ public final class DiscoveryServiceSettings {
     private ClassLoader configClassLoader;
     private DiscoveryConfig discoveryConfig;
     private List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private boolean autoDetectionEnabled;
     private DiscoveryMode discoveryMode;
 
     public DiscoveryNode getDiscoveryNode() {
@@ -92,6 +93,15 @@ public final class DiscoveryServiceSettings {
 
     public DiscoveryServiceSettings setAliasedDiscoveryConfigs(List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs) {
         this.aliasedDiscoveryConfigs = aliasedDiscoveryConfigs;
+        return this;
+    }
+
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionEnabled;
+    }
+
+    public DiscoveryServiceSettings setAutoDetectionEnabled(boolean enabled) {
+        this.autoDetectionEnabled = enabled;
         return this;
     }
 }

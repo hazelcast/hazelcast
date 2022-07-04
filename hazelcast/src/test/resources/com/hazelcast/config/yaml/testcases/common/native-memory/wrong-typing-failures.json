@@ -1,0 +1,101 @@
+{
+  "instance": {
+    "hazelcast": {
+      "native-memory": {
+        "enabled": 1,
+        "allocator-type": 0,
+        "size": {
+          "unit": 0,
+          "value": true
+        },
+        "min-block-size": null,
+        "page-size": null,
+        "metadata-space-percentage": "SomeString",
+        "persistent-memory-directory": 16
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/NativeMemory",
+    "pointerToViolation": "#/hazelcast/native-memory",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/MemorySize",
+        "pointerToViolation": "#/hazelcast/native-memory/size",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/MemorySize/properties/unit",
+            "pointerToViolation": "#/hazelcast/native-memory/size/unit",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "0 is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "pointerToViolation": "#/hazelcast/native-memory/size/value",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Number, found: Boolean"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/allocator-type",
+        "pointerToViolation": "#/hazelcast/native-memory/allocator-type",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "0 is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/enabled",
+        "pointerToViolation": "#/hazelcast/native-memory/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/metadata-space-percentage",
+        "pointerToViolation": "#/hazelcast/native-memory/metadata-space-percentage",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Number, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/min-block-size",
+        "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
+        "causingExceptions": [
+          {
+            "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "null is not a valid enum value"
+          },
+          {
+            "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: Null"
+          }
+        ],
+        "keyword": "allOf",
+        "message": "#: only 0 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/page-size",
+        "pointerToViolation": "#/hazelcast/native-memory/page-size",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/persistent-memory-directory",
+        "pointerToViolation": "#/hazelcast/native-memory/persistent-memory-directory",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      }
+    ],
+    "message": "9 schema violations found"
+  }
+}

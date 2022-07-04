@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,10 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataReader, SerializationServiceSupport {
+public interface BufferObjectDataInput extends ObjectDataInput, DataReader, SerializationServiceSupport {
 
     int UTF_BUFFER_SIZE = 1024;
 

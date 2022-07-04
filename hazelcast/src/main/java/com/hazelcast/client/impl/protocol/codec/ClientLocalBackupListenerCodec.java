@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("265faf35e3ad5b60b2b1ee500f1f6831")
+@Generated("14a3332e5fefb1598ea152642bc1b01a")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -54,10 +54,6 @@ public final class ClientLocalBackupListenerCodec {
     private ClientLocalBackupListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
-
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -67,23 +63,6 @@ public final class ClientLocalBackupListenerCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
-    }
-
-    public static ClientLocalBackupListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Returns the registration id for the listener.
-         */
-        public java.util.UUID response;
     }
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
@@ -96,12 +75,13 @@ public final class ClientLocalBackupListenerCodec {
         return clientMessage;
     }
 
-    public static ClientLocalBackupListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * Returns the registration id for the listener.
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeBackupEvent(long sourceInvocationCorrelationId) {
@@ -132,7 +112,7 @@ public final class ClientLocalBackupListenerCodec {
 
         /**
          * @param sourceInvocationCorrelationId correlation id of the invocation that backup acks belong to
-        */
+         */
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }

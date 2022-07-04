@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
@@ -41,7 +42,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_AN
 
 /**
  * The TcpServerConnector is responsible to make connections by connecting to a remote serverport. Once completed,
- * it will send the protocol and a MemberHandshake.
+ * it will send the protocol and a {@link com.hazelcast.internal.cluster.impl.MemberHandshake}.
  */
 class TcpServerConnector {
 
@@ -49,7 +50,6 @@ class TcpServerConnector {
     private static final int MILLIS_PER_SECOND = 1000;
 
     private final TcpServerConnectionManager connectionManager;
-
     private final ILogger logger;
     private final ServerContext serverContext;
     private final int outboundPortCount;
@@ -58,6 +58,7 @@ class TcpServerConnector {
     private final LinkedList<Integer> outboundPorts = new LinkedList<>();
     private final boolean socketClientBind;
     private final boolean socketClientBindAny;
+    private final int planeCount;
 
     TcpServerConnector(TcpServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -69,11 +70,12 @@ class TcpServerConnector {
         HazelcastProperties properties = serverContext.properties();
         this.socketClientBind = properties.getBoolean(SOCKET_CLIENT_BIND);
         this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
+        this.planeCount = connectionManager.planeCount;
     }
 
-    void asyncConnect(Address address, boolean silent) {
+    Future<Void> asyncConnect(Address address, boolean silent, int planeIndex) {
         serverContext.shouldConnectTo(address);
-        serverContext.executeAsync(new ConnectTask(address, silent));
+        return serverContext.submitAsync(new ConnectTask(address, silent, planeIndex));
     }
 
     private boolean useAnyOutboundPort() {
@@ -96,40 +98,42 @@ class TcpServerConnector {
     }
 
     private final class ConnectTask implements Runnable {
-        private final Address address;
+        private final Address remoteAddress;
         private final boolean silent;
+        private final int planeIndex;
 
-        ConnectTask(Address address, boolean silent) {
-            this.address = address;
+        ConnectTask(Address remoteAddress, boolean silent, int planeIndex) {
+            this.remoteAddress = remoteAddress;
             this.silent = silent;
+            this.planeIndex = planeIndex;
         }
 
         @Override
         public void run() {
             if (!connectionManager.getServer().isLive()) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("ConnectionManager is not live, connection attempt to " + address + " is cancelled!");
+                    logger.finest("ConnectionManager is not live, connection attempt to " + remoteAddress + " is cancelled!");
                 }
                 return;
             }
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Starting to connect to " + address);
+                logger.finest("Starting to connect to " + remoteAddress);
             }
 
             try {
                 Address thisAddress = serverContext.getThisAddress();
-                if (address.isIPv4()) {
+                if (remoteAddress.isIPv4()) {
                     // remote is IPv4; connect...
-                    tryToConnect(address.getInetSocketAddress(), serverContext.getSocketConnectTimeoutSeconds(
+                    tryToConnect(remoteAddress.getInetSocketAddress(), serverContext.getSocketConnectTimeoutSeconds(
                             connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                     // Both remote and this addresses are IPv6.
                     // This is a local IPv6 address and scope ID is known.
                     // find correct inet6 address for remote and connect...
                     Inet6Address inetAddress = AddressUtil
-                            .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                    tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
+                            .getInetAddressFor((Inet6Address) remoteAddress.getInetAddress(), thisAddress.getScopeId());
+                    tryToConnect(new InetSocketAddress(inetAddress, remoteAddress.getPort()),
                             serverContext.getSocketConnectTimeoutSeconds(
                                     connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else {
@@ -139,13 +143,13 @@ class TcpServerConnector {
                 }
             } catch (Throwable e) {
                 logger.finest(e);
-                connectionManager.failedConnection(address, e, silent);
+                connectionManager.failedConnection(remoteAddress, planeIndex, e, silent);
             }
         }
 
         private void tryConnectToIPv6() throws Exception {
             Collection<Inet6Address> possibleInetAddresses = AddressUtil
-                    .getPossibleInetAddressesFor((Inet6Address) address.getInetAddress());
+                    .getPossibleInetAddressesFor((Inet6Address) remoteAddress.getInetAddress());
             Level level = silent ? Level.FINEST : Level.INFO;
             //TODO: collection.toString() will likely not produce any useful output!
             if (logger.isLoggable(level)) {
@@ -159,7 +163,7 @@ class TcpServerConnector {
                     ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
             for (Inet6Address inetAddress : possibleInetAddresses) {
                 try {
-                    tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), timeoutMillis);
+                    tryToConnect(new InetSocketAddress(inetAddress, remoteAddress.getPort()), timeoutMillis);
                     connected = true;
                     break;
                 } catch (Exception e) {
@@ -178,7 +182,7 @@ class TcpServerConnector {
 
             TcpServerConnection connection = null;
             Channel channel = connectionManager.newChannel(socketChannel, true);
-            channel.attributeMap().put(Address.class, address);
+            channel.attributeMap().put(Address.class, remoteAddress);
             try {
                 if (socketClientBind) {
                     bindSocket(socketChannel);
@@ -195,8 +199,9 @@ class TcpServerConnector {
 
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
-                    connection = connectionManager.newConnection(channel, address);
-                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true).run();
+                    connection = connectionManager.newConnection(channel, remoteAddress, false);
+                    new SendMemberHandshakeTask(logger, serverContext, connection,
+                            remoteAddress, true, planeIndex, planeCount).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

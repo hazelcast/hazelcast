@@ -1,0 +1,39 @@
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The default Hazelcast client configuration used in hz-cli script.
+#
+# This file differs from hazelcast-client-default.yaml in some settings
+# and it is used in the ZIP/TAR distributions,
+# which are the basis for other distributions like docker & package managers.
+#
+# To learn how to configure Hazelcast, please see the Reference Manual
+# at https://docs.hazelcast.com/
+
+hazelcast-client:
+  network:
+    # List of addresses for the client to try to connect to. All members of
+    # a Hazelcast cluster accept client connections.
+    # Use the format <hostname>:<port>
+    # If a port number is not specified, port range 5701-5703 will be tried.
+    cluster-members:
+      - 127.0.0.1
+    # Whether client should discover and connect other members in the cluster
+    # and route requests to them or only connects to the members listed
+    # above.
+    smart-routing: false
+  connection-strategy:
+    connection-retry:
+      # how long the client should keep trying connecting to the server
+      cluster-connect-timeout-millis: 1000

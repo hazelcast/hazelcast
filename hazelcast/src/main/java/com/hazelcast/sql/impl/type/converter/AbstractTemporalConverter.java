@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * Base converter for date/time types.
  */
 public abstract class AbstractTemporalConverter extends Converter {
 
-    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    public static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
 
     protected AbstractTemporalConverter(int id, QueryDataTypeFamily typeFamily) {
         super(id, typeFamily);
@@ -63,7 +63,7 @@ public abstract class AbstractTemporalConverter extends Converter {
      * @return Timestamp with timezone.
      */
     protected static OffsetDateTime timestampToTimestampWithTimezone(LocalDateTime timestamp) {
-        return OffsetDateTime.ofInstant(timestamp.toInstant(ZoneOffset.UTC), DEFAULT_ZONE);
+        return ZonedDateTime.of(timestamp, DEFAULT_ZONE).toOffsetDateTime();
     }
 
     /**
@@ -73,6 +73,6 @@ public abstract class AbstractTemporalConverter extends Converter {
      * @return Timestamp.
      */
     protected static LocalDateTime timestampWithTimezoneToTimestamp(OffsetDateTime timestampWithTimezone) {
-        return timestampWithTimezone.atZoneSameInstant(DEFAULT_ZONE).toLocalDateTime();
+        return timestampWithTimezone.toLocalDateTime();
     }
 }

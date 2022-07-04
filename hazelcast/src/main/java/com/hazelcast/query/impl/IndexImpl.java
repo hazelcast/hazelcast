@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,27 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.getters.Extractors;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Provides implementation of on-heap indexes.
  */
 public class IndexImpl extends AbstractIndex {
 
-    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
+    private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
-        IndexConfig config,
-        InternalSerializationService ss,
-        Extractors extractors,
-        IndexCopyBehavior copyBehavior,
-        PerIndexStats stats
+            IndexConfig config,
+            InternalSerializationService ss,
+            Extractors extractors,
+            IndexCopyBehavior copyBehavior,
+            PerIndexStats stats,
+            int partitionCount
     ) {
-        super(config, ss, extractors, copyBehavior, stats, null);
+        super(config, ss, extractors, copyBehavior, stats);
+
+        partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }
 
     @Override
@@ -51,40 +50,61 @@ public class IndexImpl extends AbstractIndex {
             case HASH:
                 return new UnorderedIndexStore(copyBehavior);
             case BITMAP:
-                return new BitmapIndexStore(config, ss, extractors);
+                return new BitmapIndexStore(config);
             default:
                 throw new IllegalArgumentException("unexpected index type: " + config.getType());
         }
     }
 
     @Override
-    public void clear() {
-        super.clear();
-        indexedPartitions.clear();
+    public final boolean hasPartitionIndexed(int partitionId) {
+        return partitionTracker.isIndexed(partitionId);
     }
 
     @Override
-    public boolean hasPartitionIndexed(int partitionId) {
-        return indexedPartitions.contains(partitionId);
-    }
-
-    @Override
-    public boolean allPartitionsIndexed(int ownedPartitionCount) {
+    public final boolean allPartitionsIndexed(int ownedPartitionCount) {
         // This check guarantees that all partitions are indexed
         // only if there is no concurrent migrations. Check migration stamp
         // to detect concurrent migrations if needed.
-        return ownedPartitionCount < 0 || indexedPartitions.size() == ownedPartitionCount;
+        return ownedPartitionCount < 0 || partitionTracker.indexedCount() == ownedPartitionCount;
     }
 
     @Override
-    public void markPartitionAsIndexed(int partitionId) {
-        assert !indexedPartitions.contains(partitionId);
-        indexedPartitions.add(partitionId);
+    public final void beginPartitionUpdate() {
+        partitionTracker.beginPartitionUpdate();
     }
 
     @Override
-    public void markPartitionAsUnindexed(int partitionId) {
-        indexedPartitions.remove(partitionId);
+    public final void markPartitionAsIndexed(int partitionId) {
+        partitionTracker.partitionIndexed(partitionId);
     }
 
+    @Override
+    public final void markPartitionAsUnindexed(int partitionId) {
+        partitionTracker.partitionUnindexed(partitionId);
+    }
+
+    @Override
+    public final void clear() {
+        partitionTracker.clear();
+
+        super.clear();
+    }
+
+    @Override
+    public final PartitionStamp getPartitionStamp() {
+        return partitionTracker.getPartitionStamp();
+    }
+
+    @Override
+    public final boolean validatePartitionStamp(long stamp) {
+        return partitionTracker.validatePartitionStamp(stamp);
+    }
+
+    @Override
+    public String toString() {
+        return "IndexImpl{"
+                + "partitionTracker=" + partitionTracker
+                + "} " + super.toString();
+    }
 }

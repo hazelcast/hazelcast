@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,26 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
-import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 /**
  * A {@link DiagnosticsPlugin} that helps to detect if there are any performance issues with Stores/Loaders like e.g.
@@ -70,31 +70,14 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty RESET_PERIOD_SECONDS
             = new HazelcastProperty("hazelcast.diagnostics.storeLatency.reset.period.seconds", 0, SECONDS);
 
-    private static final int LOW_WATERMARK_MICROS = 100;
-
-    private static final int LATENCY_BUCKET_COUNT = 32;
-
-    private static final String[] LATENCY_KEYS;
-
-    static {
-        LATENCY_KEYS = new String[LATENCY_BUCKET_COUNT];
-        long maxDurationForBucket = LOW_WATERMARK_MICROS;
-        long p = 0;
-        for (int k = 0; k < LATENCY_KEYS.length; k++) {
-            LATENCY_KEYS[k] = p + ".." + (maxDurationForBucket - 1) + "us";
-            p = maxDurationForBucket;
-            maxDurationForBucket *= 2;
-        }
-    }
+    protected final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
+            = InstanceProbes::new;
 
     private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
             = new ConcurrentHashMap<String, ServiceProbes>();
 
     private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
             = ServiceProbes::new;
-
-    private final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
-            = InstanceProbes::new;
 
     private final long periodMillis;
     private final long resetPeriodMillis;
@@ -150,7 +133,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     // just for testing
     public long count(String serviceName, String dataStructureName, String methodName) {
-        return ((LatencyProbeImpl) newProbe(serviceName, dataStructureName, methodName)).stats.count;
+        return ((LatencyProbeImpl) newProbe(serviceName, dataStructureName, methodName)).distribution.count();
     }
 
     public LatencyProbe newProbe(String serviceName, String dataStructureName, String methodName) {
@@ -168,28 +151,37 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         private final ConcurrentReferenceHashMap<String, InstanceProbes> instanceProbesMap
                 = new ConcurrentReferenceHashMap<String, InstanceProbes>(ReferenceType.STRONG, ReferenceType.WEAK);
 
-        private ServiceProbes(String serviceName) {
+        protected ServiceProbes(String serviceName) {
             this.serviceName = serviceName;
         }
 
-        private LatencyProbe newProbe(String dataStructureName, String methodName) {
+        protected LatencyProbe newProbe(String dataStructureName, String methodName) {
             InstanceProbes instanceProbes = getOrPutIfAbsent(
                     instanceProbesMap, dataStructureName, instanceProbesConstructorFunction);
             return instanceProbes.newProbe(methodName);
         }
 
-        private void render(DiagnosticsLogWriter writer) {
+        protected void render(DiagnosticsLogWriter writer) {
             writer.startSection(serviceName);
-
-            for (InstanceProbes instanceProbes : instanceProbesMap.values()) {
-                instanceProbes.render(writer);
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+                InstanceProbes instanceProbes = it.next().getValue();
+                if (instanceProbes != null) {
+                    instanceProbes.render(writer);
+                } else {
+                    it.remove();
+                }
             }
             writer.endSection();
         }
 
-        private void resetStatistics() {
-            for (InstanceProbes instanceProbes : instanceProbesMap.values()) {
-                instanceProbes.resetStatistics();
+        public void resetStatistics() {
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+                InstanceProbes instanceProbes = it.next().getValue();
+                if (instanceProbes != null) {
+                    instanceProbes.resetStatistics();
+                } else {
+                    it.remove();
+                }
             }
         }
     }
@@ -217,7 +209,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             return probe;
         }
 
-        private void render(DiagnosticsLogWriter writer) {
+        void render(DiagnosticsLogWriter writer) {
             writer.startSection(dataStructureName);
             for (LatencyProbeImpl probe : probes.values()) {
                 probe.render(writer);
@@ -225,7 +217,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             writer.endSection();
         }
 
-        private void resetStatistics() {
+        void resetStatistics() {
             for (LatencyProbeImpl probe : probes.values()) {
                 probe.resetStatistics();
             }
@@ -236,7 +228,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     static final class LatencyProbeImpl implements LatencyProbe {
 
         // instead of storing it in a final field, it is stored in a volatile field because stats can be reset
-        volatile Statistics stats = new Statistics();
+        volatile LatencyDistribution distribution = new LatencyDistribution();
 
         // a strong reference to prevent garbage collection
         @SuppressWarnings("unused")
@@ -244,38 +236,33 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         private final String methodName;
 
-        private LatencyProbeImpl(String methodName, InstanceProbes instanceProbes) {
+        protected LatencyProbeImpl(String methodName, InstanceProbes instanceProbes) {
             this.methodName = methodName;
             this.instanceProbes = instanceProbes;
         }
 
         @Override
         public void recordValue(long durationNanos) {
-            stats.recordValue(durationNanos);
+            distribution.recordNanos(durationNanos);
         }
 
-        private void render(DiagnosticsLogWriter writer) {
-            Statistics stats = this.stats;
-            long invocations = stats.count;
-            long totalMicros = stats.totalMicros;
-            long avgMicros = invocations == 0 ? 0 : totalMicros / invocations;
-            long maxMicros = stats.maxMicros;
-
-            if (invocations == 0) {
+        protected void render(DiagnosticsLogWriter writer) {
+            LatencyDistribution stats = this.distribution;
+            if (stats.count() == 0) {
                 return;
             }
 
             writer.startSection(methodName);
-            writer.writeKeyValueEntry("count", invocations);
-            writer.writeKeyValueEntry("totalTime(us)", totalMicros);
-            writer.writeKeyValueEntry("avg(us)", avgMicros);
-            writer.writeKeyValueEntry("max(us)", maxMicros);
+            writer.writeKeyValueEntry("count", stats.count());
+            writer.writeKeyValueEntry("totalTime(us)", stats.totalMicros());
+            writer.writeKeyValueEntry("avg(us)", distribution.avgMicros());
+            writer.writeKeyValueEntry("max(us)", stats.maxMicros());
 
             writer.startSection("latency-distribution");
-            for (int k = 0; k < stats.latencyDistribution.length(); k++) {
-                long value = stats.latencyDistribution.get(k);
+            for (int bucket = 0; bucket < stats.bucketCount(); bucket++) {
+                long value = stats.bucket(bucket);
                 if (value > 0) {
-                    writer.writeKeyValueEntry(LATENCY_KEYS[k], value);
+                    writer.writeKeyValueEntry(LatencyDistribution.LATENCY_KEYS[bucket], value);
                 }
             }
             writer.endSection();
@@ -283,55 +270,8 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             writer.endSection();
         }
 
-        private void resetStatistics() {
-            stats = new Statistics();
-        }
-    }
-
-    static final class Statistics {
-
-        private static final AtomicLongFieldUpdater<Statistics> COUNT
-                = newUpdater(Statistics.class, "count");
-        private static final AtomicLongFieldUpdater<Statistics> TOTAL_MICROS
-                = newUpdater(Statistics.class, "totalMicros");
-        private static final AtomicLongFieldUpdater<Statistics> MAX_MICROS
-                = newUpdater(Statistics.class, "maxMicros");
-
-        volatile long count;
-        volatile long maxMicros;
-        volatile long totalMicros;
-
-        private final AtomicLongArray latencyDistribution = new AtomicLongArray(LATENCY_BUCKET_COUNT);
-
-        private void recordValue(long durationNanos) {
-            long durationMicros = NANOSECONDS.toMicros(durationNanos);
-
-            COUNT.addAndGet(this, 1);
-            TOTAL_MICROS.addAndGet(this, durationMicros);
-
-            for (; ; ) {
-                long currentMax = maxMicros;
-                if (durationMicros <= currentMax) {
-                    break;
-                }
-
-                if (MAX_MICROS.compareAndSet(this, currentMax, durationMicros)) {
-                    break;
-                }
-            }
-
-            int bucketIndex = 0;
-            long maxDurationForBucket = LOW_WATERMARK_MICROS;
-            for (int k = 0; k < latencyDistribution.length() - 1; k++) {
-                if (durationMicros >= maxDurationForBucket) {
-                    bucketIndex++;
-                    maxDurationForBucket *= 2;
-                } else {
-                    break;
-                }
-            }
-
-            latencyDistribution.incrementAndGet(bucketIndex);
+        protected void resetStatistics() {
+            distribution = new LatencyDistribution();
         }
     }
 

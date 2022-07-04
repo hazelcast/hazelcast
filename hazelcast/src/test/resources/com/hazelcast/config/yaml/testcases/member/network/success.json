@@ -1,0 +1,165 @@
+{
+  "instance": {
+    "hazelcast": {
+      "network": {
+        "public-address": "11.22.33.44:5555",
+        "port": {
+          "auto-increment": true,
+          "port-count": 100,
+          "port": 5701
+        },
+        "outbound-ports": [
+          34500
+        ],
+        "reuse-address": false,
+        "join": {
+          "auto-detection": {
+            "enabled": false
+          },
+          "multicast": {
+            "enabled": false,
+            "multicast-group": "224.2.2.3",
+            "multicast-port": 54327
+          },
+          "tcp-ip": {
+            "enabled": false,
+            "interface": "127.0.0.1",
+            "required-member": "10.0.0.1",
+            "member-list": [
+              "10.0.0.2",
+              "10.0.0.3"
+            ]
+          },
+          "aws": {
+            "enabled": false,
+            "access-key": "my-access-key",
+            "secret-key": "my-secret-key",
+            "iam-role": "dummy",
+            "region": "us-west-1",
+            "host-header": "ec2.amazonaws.com",
+            "security-group-name": "hazelcast-sg",
+            "tag-key": "type",
+            "tag-value": "hz-nodes"
+          },
+          "gcp": {
+            "enabled": false,
+            "zones": "us-east1-b,us-east1-c"
+          },
+          "azure": {
+            "enabled": false,
+            "client-id": "CLIENT_ID",
+            "client-secret": "CLIENT_SECRET",
+            "tenant-id": "TENANT_ID",
+            "subscription-id": "SUB_ID",
+            "cluster-id": "HZLCAST001",
+            "group-name": "RESOURCE-GROUP-NAME"
+          },
+          "kubernetes": {
+            "enabled": false,
+            "namespace": "MY-KUBERNETES-NAMESPACE",
+            "service-name": "MY-SERVICE-NAME",
+            "service-label-name": "MY-SERVICE-LABEL-NAME",
+            "service-label-value": "MY-SERVICE-LABEL-VALUE"
+          },
+          "eureka": {
+            "enabled": false,
+            "self-registration": true,
+            "namespace": "hazelcast"
+          },
+          "discovery-strategies": {
+            "node-filter": {
+              "class": "com.yourpackage.NodeFilter"
+            },
+            "discovery-strategies": [
+              {
+                "enabled": true,
+                "class": "com.hazelcast.jclouds.JCloudsDiscoveryStrategy",
+                "properties": {
+                  "provider": "google-compute-engine",
+                  "identity": "GCE_IDENTITY",
+                  "credential": "GCE_CREDENTIAL"
+                }
+              }
+            ]
+          }
+        },
+        "interfaces": {
+          "enabled": true,
+          "interfaces": [
+            "10.10.1.*"
+          ]
+        },
+        "ssl": {
+          "enabled": false,
+          "factory-class-name": "com.hazelcast.nio.ssl.BasicSSLContextFactory",
+          "properties": {
+            "protocol": "TLS",
+            "mutualAuthentication": "REQUIRED",
+            "keyStore": "/opt/hazelcast.keystore",
+            "keyStorePassword": "secret.97531",
+            "keyStoreType": "JKS",
+            "trustStore": "/opt/hazelcast.truststore",
+            "trustStorePassword": "changeit",
+            "trustStoreType": "JKS"
+          }
+        },
+        "socket-interceptor": {
+          "enabled": false
+        },
+        "symmetric-encryption": {
+          "enabled": false,
+          "algorithm": "PBEWithMD5AndDES",
+          "password": "...",
+          "salt": "...",
+          "iteration-count": 7
+        },
+        "member-address-provider": {
+          "enabled": false,
+          "class-name": "com.hazelcast.MemberAddressProviderImpl",
+          "properties": {
+            "prop1": "prop1-value",
+            "prop2": "prop2-value"
+          }
+        },
+        "failure-detector": {
+          "icmp": {
+            "enabled": true,
+            "timeout-milliseconds": 1000,
+            "fail-fast-on-startup": true,
+            "interval-milliseconds": 1000,
+            "max-attempts": 2,
+            "parallel-mode": true,
+            "ttl": 255
+          }
+        },
+        "rest-api": {
+          "enabled": false,
+          "endpoint-groups": {
+            "CLUSTER_READ": {
+              "enabled": true
+            },
+            "CLUSTER_WRITE": {
+              "enabled": false
+            },
+            "HEALTH_CHECK": {
+              "enabled": false
+            },
+            "HOT_RESTART": {
+              "enabled": false
+            },
+            "WAN": {
+              "enabled": false
+            },
+            "DATA": {
+              "enabled": false
+            }
+          }
+        },
+        "memcache-protocol": {
+          "enabled": false
+        }
+      }
+    }
+  },
+  "error": null
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,22 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.TestNodeContext;
-import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSupport {
@@ -70,8 +73,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
                 nodeContextWithThrowable);
     }
 
-    private static class FailingServer
-            implements Server {
+    private static class FailingServer implements Server {
 
         private boolean dummyMode;
 
@@ -82,42 +84,45 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public Set getActiveConnections() {
+            public @Nonnull Collection getConnections() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public ServerConnection get(@Nonnull Address address, int streamId) {
                 return null;
             }
 
             @Override
-            public Collection getConnections() {
+            @Nonnull
+            public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
                 return null;
             }
 
             @Override
-            public ServerConnection get(Address address) {
+            public ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
                 return null;
             }
 
             @Override
-            public ServerConnection getOrConnect(Address address) {
-                return null;
-            }
-
-            @Override
-            public ServerConnection getOrConnect(Address address, boolean silent) {
-                return null;
-            }
-
-            @Override
-            public boolean register(Address remoteAddress, ServerConnection connection) {
+            public boolean register(
+                    Address remoteAddress,
+                    Address targetAddress,
+                    Collection<Address> remoteAddressAliases,
+                    UUID remoteUuid,
+                    ServerConnection connection,
+                    int streamId
+            ) {
                 return false;
             }
 
             @Override
-            public boolean transmit(Packet packet, ServerConnection connection) {
-                return false;
-            }
-
-            @Override
-            public boolean transmit(Packet packet, Address target) {
+            public boolean transmit(Packet packet, Address target, int streamId) {
                 return false;
             }
 
@@ -145,8 +150,17 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         }
 
         @Override
-        public AggregateServerConnectionManager getAggregateConnectionManager() {
+        public @Nonnull Collection<ServerConnection> getConnections() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
             return null;
+        }
+
+        @Override
+        public void addConnectionListener(ConnectionListener<ServerConnection> listener) {
         }
 
         @Override
@@ -174,5 +188,4 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
         }
     }
-
 }

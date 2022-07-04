@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,29 @@
 package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.UuidUtil;
+
+import java.util.UUID;
 
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_CONSISTENCY_CHECK_IGNORED;
 
 public class WanConsistencyCheckIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     private final String reason;
 
-    public WanConsistencyCheckIgnoredEvent(String wanReplicationName, String wanPublisherId, String mapName,
+    public WanConsistencyCheckIgnoredEvent(String wanReplicationName, String wanPublisherId, String mapName, String reason) {
+        this(UuidUtil.newUnsecureUUID(), wanReplicationName, wanPublisherId, mapName, reason);
+    }
+
+    public WanConsistencyCheckIgnoredEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
                                            String reason) {
-        super(null, wanReplicationName, wanPublisherId, mapName);
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
+    }
+
+    public static WanConsistencyCheckIgnoredEvent enterpriseOnly(String wanReplicationName, String wanPublisherId,
+                                                                 String mapName) {
+        return new WanConsistencyCheckIgnoredEvent(UuidUtil.newUnsecureUUID(), wanReplicationName, wanPublisherId, mapName,
+                "Consistency check is supported for enterprise clusters only.");
     }
 
     @Override

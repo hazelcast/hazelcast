@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,55 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueStatisticsTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
+
+    @Parameterized.Parameter
+    public String comparatorClassName;
+
+    private HazelcastInstance instance;
 
     @Test
     public void testItemCount() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         int items = 20;
         for (int i = 0; i < items; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
         LocalQueueStats stats = queue.getLocalQueueStats();
         assertEquals(20, stats.getOwnedItemCount());
@@ -53,51 +73,41 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
 
     @Test
     public void testOfferOperationCount() throws Exception {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
         for (int i = 0; i < 10; i++) {
-            queue.add("item" + i);
+            queue.add(new VersionedObject<>("item" + i, i));
         }
         for (int i = 0; i < 10; i++) {
-            queue.put("item" + i);
+            queue.put(new VersionedObject<>("item" + i, i));
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(30, stats.getOfferOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(30, stats.getOfferOperationCount()));
     }
 
     @Test
     public void testRejectedOfferOperationCount() {
-        IQueue<String> queue = newQueue_WithMaxSizeConfig(30);
+        IQueue<VersionedObject<String>> queue = newQueue(30);
         for (int i = 0; i < 30; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(10, stats.getRejectedOfferOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(10, stats.getRejectedOfferOperationCount()));
     }
 
     @Test
     public void testPollOperationCount() throws Exception {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         for (int i = 0; i < 30; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         for (int i = 0; i < 10; i++) {
@@ -111,73 +121,64 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(30, stats.getPollOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(30, stats.getPollOperationCount()));
     }
 
     @Test
     public void testEmptyPollOperationCount() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
 
         for (int i = 0; i < 10; i++) {
             queue.poll();
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(10, stats.getEmptyPollOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(10, stats.getEmptyPollOperationCount()));
     }
 
     @Test
     public void testOtherOperationCount() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         for (int i = 0; i < 30; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<VersionedObject<String>> list = new ArrayList<>();
         queue.drainTo(list);
         queue.addAll(list);
         queue.removeAll(list);
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3, stats.getOtherOperationsCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(3, stats.getOtherOperationsCount()));
     }
 
     @Test
-    public void testAge() {
-        IQueue<String> queue = newQueue();
-        queue.offer("maxAgeItem");
-        queue.offer("minAgeItem");
+    public void testAge()
+            throws InterruptedException {
+        IQueue<VersionedObject<String>> queue = newQueue();
+        queue.offer(new VersionedObject<>("maxAgeItem", 0));
+        queue.offer(new VersionedObject<>("minAgeItem", 1));
+        sleepAtLeastMillis(100);
+        queue.poll();
+        queue.poll();
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
+        QueueService queueService = getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
+        LocalQueueStats stats = queueService.getStats().get(queue.getName());
+
         long maxAge = stats.getMaxAge();
         long minAge = stats.getMinAge();
-        long testAge = (maxAge + minAge) / 2;
+        long expectedAverageAge = (maxAge + minAge) / 2;
         long avgAge = stats.getAverageAge();
-        assertEquals(testAge, avgAge);
+        assertEquals(expectedAverageAge, avgAge);
     }
 
     @Test
     public void testEventOperationCount() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         TestListener listener = new TestListener(30);
         queue.addItemListener(listener, true);
 
         for (int i = 0; i < 30; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
         for (int i = 0; i < 30; i++) {
             queue.poll();
@@ -186,29 +187,24 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertOpenEventually(listener.addedLatch);
         assertOpenEventually(listener.removedLatch);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(60, stats.getEventOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(60, stats.getEventOperationCount()));
     }
 
-    private IQueue<String> newQueue() {
-        HazelcastInstance instance = createHazelcastInstance();
-        return instance.getQueue(randomString());
+    private IQueue<VersionedObject<String>> newQueue() {
+        return newQueue(QueueConfig.DEFAULT_MAX_SIZE);
     }
 
-    private IQueue<String> newQueue_WithMaxSizeConfig(int maxSize) {
+    private IQueue<VersionedObject<String>> newQueue(int maxSize) {
         String name = randomString();
-        Config config = new Config();
-        config.getQueueConfig(name).setMaxSize(maxSize);
-        HazelcastInstance instance = createHazelcastInstance(config);
+        Config config = smallInstanceConfig();
+        config.getQueueConfig(name)
+              .setPriorityComparatorClassName(comparatorClassName)
+              .setMaxSize(maxSize);
+        instance = createHazelcastInstance(config);
         return instance.getQueue(name);
     }
 
-    private static class TestListener implements ItemListener<String> {
-
+    private static class TestListener implements ItemListener<VersionedObject<String>> {
         final CountDownLatch addedLatch;
         final CountDownLatch removedLatch;
 
@@ -217,11 +213,11 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
             removedLatch = new CountDownLatch(latchCount);
         }
 
-        public void itemAdded(ItemEvent item) {
+        public void itemAdded(ItemEvent<VersionedObject<String>> item) {
             addedLatch.countDown();
         }
 
-        public void itemRemoved(ItemEvent item) {
+        public void itemRemoved(ItemEvent<VersionedObject<String>> item) {
             removedLatch.countDown();
         }
     }

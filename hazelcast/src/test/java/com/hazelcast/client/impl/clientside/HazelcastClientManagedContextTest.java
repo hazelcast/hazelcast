@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,11 +74,11 @@ public class HazelcastClientManagedContextTest extends HazelcastTestSupport {
 
     @Test
     public void testInitialize() {
-        serializationService.getManagedContext().initialize(userClass);
+        DependencyInjectionUserClass initializedUserClass = (DependencyInjectionUserClass) serializationService.getManagedContext().initialize(userClass);
 
-        assertEquals(client, userClass.hazelcastInstance);
-        assertNull("The client doesn't inject the Node", userClass.node);
-        assertEquals(serializationService, userClass.serializationService);
+        assertEquals(client, initializedUserClass.hazelcastInstance);
+        assertNull("The client doesn't inject the Node", initializedUserClass.node);
+        assertEquals(serializationService, initializedUserClass.serializationService);
         assertTrue(userContext.wasCalled);
     }
 

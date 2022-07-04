@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,6 +47,8 @@ hazelcast:
       - 37000,37001,37002,37003
       - 38000,38500-38600
     join:
+      auto-detection:
+        enabled: false
       multicast:
         enabled: true
         loopbackModeEnabled: true
@@ -86,12 +88,14 @@ hazelcast:
         zones: us-east1-b,us-east1-c
       azure:
         enabled: false
+        instance-metadata-available: false
         client-id: CLIENT_ID
-        client-secret: CLIENT_SECRET
         tenant-id: TENANT_ID
+        client-secret: CLIENT_SECRET
         subscription-id: SUB_ID
-        cluster-id: HZLCAST001
-        group-name: RESOURCE-GROUP-NAME
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        tag: TAG-NAME=HZLCAST001
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -164,7 +168,7 @@ hazelcast:
           enabled: true
         HEALTH_CHECK:
           enabled: true
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: true
         WAN:
           enabled: true

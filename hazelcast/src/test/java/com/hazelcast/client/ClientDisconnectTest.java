@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
@@ -273,5 +275,34 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         @Override
         public void onMessage(Message<Object> message) {
         }
+    }
+
+    @Test
+    public void testConnectionEventsFiredForClientsOnServerConnectionManager() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+
+        CountDownLatch clientConnected = new CountDownLatch(1);
+        CountDownLatch clientDisconnected = new CountDownLatch(1);
+        getNodeEngineImpl(server).getNode().getServer().addConnectionListener(new ConnectionListener<ServerConnection>() {
+            @Override
+            public void connectionAdded(ServerConnection connection) {
+                if (connection.isClient()) {
+                    clientConnected.countDown();
+                }
+            }
+
+            @Override
+            public void connectionRemoved(ServerConnection connection) {
+                if (connection.isClient()) {
+                    clientDisconnected.countDown();
+                }
+            }
+        });
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        assertOpenEventually(clientConnected);
+
+        client.shutdown();
+        assertOpenEventually(clientDisconnected);
     }
 }

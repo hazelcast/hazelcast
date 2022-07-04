@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.client.listeners.leak;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
@@ -39,6 +38,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
@@ -51,19 +51,18 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static org.mockito.Mockito.mock;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ListenerLeakTest extends ClientTestSupport {
 
@@ -83,12 +82,14 @@ public class ListenerLeakTest extends ClientTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, UUID id
-            , Collection<ClientConnectionRegistration> registrations) {
-        for (Node node : nodes) {
-            assertNoLeftOverOnNode(node, registrations);
-        }
-        assertEquals(0, getClientEventRegistrations(client, id).size());
+    private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, UUID id,
+                                  Collection<ClientConnectionRegistration> registrations) {
+        assertTrueEventually(() -> {
+            for (Node node : nodes) {
+                assertNoLeftOverOnNode(node, registrations);
+            }
+            assertEquals(0, getClientEventRegistrations(client, id).size());
+        });
     }
 
     private Collection<Node> createNodes() {
@@ -250,19 +251,6 @@ public class ListenerLeakTest extends ClientTestSupport {
         hazelcast.shutdown();
 
         assertTrueEventually(() -> assertEquals(0, getAllEventHandlers(client).size()));
-    }
-
-    @Test
-    public void testBackupListenerRemoved_afterClientShutdown() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        client.shutdown();
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
-        assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,10 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         Address expected = getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
+        InternalCompletableFuture<Address> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(local));
-        assertEquals(expected, invocation.join());
+        Address actual = invocation.join();
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -83,9 +84,10 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         Address expected = getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
+        InternalCompletableFuture<Address> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(remote));
-        assertEquals(expected, invocation.join());
+        Address actual = invocation.join();
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -93,9 +95,10 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         Address expected = getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
+        InternalCompletableFuture<Address> invocation = operationService.invokeOnTarget(
                 null, operation, getAddress(local));
-        assertEquals(expected, invocation.join());
+        Address actual = invocation.join();
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -103,9 +106,10 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         Address expected = getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
+        InternalCompletableFuture<Address> invocation = operationService.invokeOnTarget(
                 null, operation, getAddress(remote));
-        assertEquals(expected, invocation.join());
+        Address actual = invocation.join();
+        assertEquals(expected, actual);
     }
 
     @Test

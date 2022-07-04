@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.ascii.TextEncoder.TEXT_ENCODER;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SIZE;
@@ -56,6 +57,7 @@ public class UnifiedProtocolEncoder
     private final HazelcastProperties props;
     private volatile String inboundProtocol;
     private boolean clusterProtocolBuffered;
+    private volatile boolean encoderCanReplace;
 
     public UnifiedProtocolEncoder(ServerContext serverContext) {
         this.serverContext = serverContext;
@@ -109,18 +111,24 @@ public class UnifiedProtocolEncoder
                     return DIRTY;
                 }
 
-                initChannelForCluster();
+                if (encoderCanReplace) {
+                    initChannelForCluster();
+                }
             } else if (CLIENT_BINARY.equals(inboundProtocol)) {
                 // in case of a client, the member will not send the member protocol
-                initChannelForClient();
+                if (encoderCanReplace) {
+                    initChannelForClient();
+                }
             } else {
                 // in case of a text-client, the member will not send the member protocol
-                initChannelForText();
+                if (encoderCanReplace) {
+                    initChannelForText();
+                }
             }
 
             return CLEAN;
         } finally {
-            dst.flip();
+            upcast(dst).flip();
         }
     }
 
@@ -166,5 +174,10 @@ public class UnifiedProtocolEncoder
             sndBuf = props.getInteger(SOCKET_SEND_BUFFER_SIZE);
         }
         return sndBuf * KILO_BYTE;
+    }
+
+    public void signalEncoderCanReplace() {
+        encoderCanReplace = true;
+        channel.outboundPipeline().wakeup();
     }
 }

@@ -1,0 +1,15 @@
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      aws:
+        enabled: true
+        # discovery_role is created by main terraform script
+        iam-role: ${PREFIX}_discovery_role
+        hz-port: 5701
+        region: ${REGION}
+        tag-key: ${TAG_KEY}
+        tag-value: ${TAG_VALUE}
+    rest-api:
+      enabled: true

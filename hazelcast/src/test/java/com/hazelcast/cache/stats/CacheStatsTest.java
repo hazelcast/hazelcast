@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,10 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,12 +41,11 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.Callable;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
@@ -57,7 +57,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Override
     protected void onTearDown() {
-        factory.terminateAll();
+        factory.shutdownAll();
     }
 
     @Override
@@ -200,16 +200,14 @@ public class CacheStatsTest extends CacheTestSupport {
 
         final int ENTRY_COUNT = 100;
 
-        long start = System.nanoTime();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
-        long end = System.nanoTime();
-
-        float avgPutTime = NANOSECONDS.toMicros(end - start);
+        float avgPutTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAveragePutTime() > 0);
-        assertTrue(stats.getAveragePutTime() < avgPutTime);
+        assertTrue(stats.getAveragePutTime() < avgPutTimeMicros);
     }
 
     @Test
@@ -264,16 +262,14 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        long start = System.nanoTime();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
             cache.get(i);
         }
-        long end = System.nanoTime();
-
-        float avgGetTime = NANOSECONDS.toMicros(end - start);
+        float avgGetTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageGetTime() > 0);
-        assertTrue(stats.getAverageGetTime() < avgGetTime);
+        assertTrue(stats.getAverageGetTime() < avgGetTimeMicros);
     }
 
     @Test
@@ -329,16 +325,14 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        long start = System.nanoTime();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.remove(i);
         }
-        long end = System.nanoTime();
-
-        float avgRemoveTime = NANOSECONDS.toMicros(end - start);
+        float avgRemoveTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageRemoveTime() > 0);
-        assertTrue(stats.getAverageRemoveTime() < avgRemoveTime);
+        assertTrue(stats.getAverageRemoveTime() < avgRemoveTimeMicros);
 
         float currentAverageRemoveTime = stats.getAverageRemoveTime();
         sleepAtLeastMillis(1);
@@ -757,9 +751,14 @@ public class CacheStatsTest extends CacheTestSupport {
         // this put must trigger eviction
         cache1.put(key, "foo");
 
-        // number of evictions on primary and backup must be 1
-        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
-                + cache2.getLocalCacheStatistics().getCacheEvictions());
+        try {
+            // number of evictions on primary and backup must be 1
+            assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
+                    + cache2.getLocalCacheStatistics().getCacheEvictions());
+        } finally {
+            cache1.destroy();
+            cache2.destroy();
+        }
     }
 
     @Test(expected = UnsupportedOperationException.class)

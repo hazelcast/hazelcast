@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
@@ -37,24 +38,43 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.client.SqlError;
+import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
@@ -62,6 +82,7 @@ import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -530,6 +551,20 @@ public class ReferenceObjects {
         return a.isFsync() == b.isFsync();
     }
 
+    public static boolean isEqual(DataPersistenceConfig a, DataPersistenceConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        return a.isFsync() == b.isFsync();
+    }
+
     public static boolean isEqual(TimedExpiryPolicyFactoryConfig a, TimedExpiryPolicyFactoryConfig b) {
         if (a == b) {
             return true;
@@ -594,6 +629,25 @@ public class ReferenceObjects {
         return a.getProperties() != null ? a.getProperties().equals(b.getProperties()) : b.getProperties() == null;
     }
 
+    public static boolean isEqual(TieredStoreConfig a, TieredStoreConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        if (!Objects.equals(a.getMemoryTierConfig(), b.getMemoryTierConfig())) {
+            return false;
+        }
+
+        return Objects.equals(a.getDiskTierConfig(), b.getDiskTierConfig());
+    }
+
     private static boolean isEqualStackTrace(StackTraceElement stackTraceElement1, StackTraceElement stackTraceElement2) {
         //Not using stackTraceElement.equals
         //because in IBM JDK stacktraceElements with null method name are not equal
@@ -607,7 +661,6 @@ public class ReferenceObjects {
             return false;
         }
         return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
-
     }
 
     // Static values below should not be a random value, because the values are used when generating compatibility files and
@@ -617,6 +670,7 @@ public class ReferenceObjects {
     public static int anInt = 25;
     public static int anEnum = 1;
     public static long aLong = -50992225L;
+    public static long aPositiveLong = 50992225L;
     public static UUID aUUID = new UUID(123456789, 987654321);
     public static byte[] aByteArray = new byte[]{aByte};
     public static long[] aLongArray = new long[]{aLong};
@@ -636,6 +690,13 @@ public class ReferenceObjects {
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
+    public static CPMember aCpMember;
+    public static List<CPMember> aListOfCpMembers;
+    public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
+    public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
+    public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
+    public static List<Schema> aListOfSchemas = Collections.singletonList(aSchema);
 
     static {
         try {
@@ -643,6 +704,8 @@ public class ReferenceObjects {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        aCpMember = new CPMemberInfo(aUUID, anAddress);
+        aListOfCpMembers = Collections.singletonList(aCpMember);
     }
 
     public static List<Map.Entry<UUID, List<Integer>>> aListOfUUIDToListOfIntegers
@@ -715,17 +778,13 @@ public class ReferenceObjects {
         aHotRestartConfig.setFsync(aBoolean);
     }
 
-    public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
-    public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
-    public static BitmapIndexOptions aBitmapIndexOptions;
+    public static DataPersistenceConfig aDataPersistenceConfig;
 
     static {
-        aBitmapIndexOptions = new BitmapIndexOptions();
-        aBitmapIndexOptions.setUniqueKey(aString);
-        aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
+        aDataPersistenceConfig = new DataPersistenceConfig();
+        aDataPersistenceConfig.setEnabled(aBoolean);
+        aDataPersistenceConfig.setFsync(aBoolean);
     }
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
-    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static MerkleTreeConfig aMerkleTreeConfig;
 
@@ -734,6 +793,45 @@ public class ReferenceObjects {
         aMerkleTreeConfig.setEnabled(aBoolean);
         aMerkleTreeConfig.setDepth(anInt);
     }
+
+    public static Capacity aCapacity;
+    static {
+        aCapacity = Capacity.of(aPositiveLong, MemoryUnit.GIGABYTES);
+    }
+
+    public static MemoryTierConfig aMemoryTierConfig;
+    static {
+        aMemoryTierConfig = new MemoryTierConfig();
+        aMemoryTierConfig.setCapacity(aCapacity);
+    }
+
+    public static DiskTierConfig aDiskTierConfig;
+    static {
+        aDiskTierConfig = new DiskTierConfig();
+        aDiskTierConfig.setEnabled(aBoolean);
+        aDiskTierConfig.setDeviceName(aString);
+    }
+    public static TieredStoreConfig aTieredStoreConfig;
+
+    static {
+        aTieredStoreConfig = new TieredStoreConfig();
+        aTieredStoreConfig.setEnabled(aBoolean);
+        aTieredStoreConfig.setMemoryTierConfig(aMemoryTierConfig);
+        aTieredStoreConfig.setDiskTierConfig(aDiskTierConfig);
+    }
+
+    public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(ListenerConfigHolder.ListenerConfigType.ITEM, aData, aString, aBoolean, aBoolean);
+    public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
+    public static BitmapIndexOptions aBitmapIndexOptions;
+
+    static {
+        aBitmapIndexOptions = new BitmapIndexOptions();
+        aBitmapIndexOptions.setUniqueKey(aString);
+        aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
+    }
+
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
+    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
 
@@ -746,7 +844,7 @@ public class ReferenceObjects {
     public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
     public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
     public static List<IndexConfig> aListOfIndexConfigs = Collections.singletonList(anIndexConfig);
-    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs);
+    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs, aBoolean, aBoolean);
     public static QueueStoreConfigHolder aQueueStoreConfigHolder = new QueueStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);
@@ -767,6 +865,11 @@ public class ReferenceObjects {
     public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
             = Collections.singletonList(aCacheSimpleEntryListenerConfig);
     public static List<Data> aListOfData = Collections.singletonList(aData);
+    public static List<Object> aListOfObject = Collections.singletonList(anInt);
+    public static List<Collection<Data>> aListOfListOfData = Collections.singletonList(aListOfData);
+    public static List<Collection<Object>> aListOfListOfObject = Collections.singletonList(aListOfObject);
+    public static Collection<Map.Entry<Data, Collection<Data>>> aListOfDataToListOfData
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aListOfData));
     public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
     public static List<AttributeConfig> aListOfAttributeConfigs = Collections.singletonList(anAttributeConfig);
     public static List<QueryCacheConfigHolder> aListOfQueryCacheConfigHolders = Collections.singletonList(aQueryCacheConfigHolder);
@@ -778,10 +881,18 @@ public class ReferenceObjects {
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
-            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
-    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion));
+    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
+            ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
+
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
             anInt, anInt, aByte, aData);
+
+    public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
+    public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
+    public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
+    public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
+    public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
 }

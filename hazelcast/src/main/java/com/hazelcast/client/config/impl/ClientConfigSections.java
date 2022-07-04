@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ public enum ClientConfigSections {
     RELIABLE_TOPIC("reliable-topic", true),
     LABELS("client-labels", false),
     CLUSTER_NAME("cluster-name", false),
-    METRICS("metrics", false);
+    METRICS("metrics", false),
+    INSTANCE_TRACKING("instance-tracking", false);
 
     final boolean multipleOccurrence;
     private final String name;
@@ -58,10 +59,6 @@ public enum ClientConfigSections {
             }
         }
         return true;
-    }
-
-    public boolean isEqual(String name) {
-        return this.name.equals(name);
     }
 
     public String getName() {

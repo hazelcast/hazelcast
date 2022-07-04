@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -405,7 +405,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
         String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n"
-                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\"\n"
+                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd\"\n"
                 + "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n"
                 + "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                 + "\n"

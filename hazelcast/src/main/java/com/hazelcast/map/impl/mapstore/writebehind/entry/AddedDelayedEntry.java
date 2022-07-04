@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private final long expirationTime;
     private final int partitionId;
     private long storeTime;
-    private long sequence;
+    private volatile long sequence;
 
     AddedDelayedEntry(K key, V value, long expirationTime, long storeTime, int partitionId) {
         this.key = key;

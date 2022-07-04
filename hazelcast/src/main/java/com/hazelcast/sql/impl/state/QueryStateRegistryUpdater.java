@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,10 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.NodeServiceProvider;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.operation.QueryCheckOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
@@ -34,17 +29,13 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  * Class performing periodic query state check.
  */
 public class QueryStateRegistryUpdater {
-    /** Node service provider. */
+
     private final NodeServiceProvider nodeServiceProvider;
+    private final QueryClientStateRegistry clientStateRegistry;
+    private final PlanCacheChecker planCacheChecker;
 
-    /** State to be checked. */
-    private final QueryStateRegistry stateRegistry;
-
-    /** Operation handler. */
-    private final QueryOperationHandler operationHandler;
-
-    /** State check frequency. */
-    private final long stateCheckFrequency;
+    /** "volatile" instead of "final" only to allow for value change from unit tests. */
+    private volatile long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
     private final Worker worker;
@@ -52,8 +43,8 @@ public class QueryStateRegistryUpdater {
     public QueryStateRegistryUpdater(
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
-        QueryStateRegistry stateRegistry,
-        QueryOperationHandler operationHandler,
+        QueryClientStateRegistry clientStateRegistry,
+        PlanCacheChecker planCacheChecker,
         long stateCheckFrequency
     ) {
         if (stateCheckFrequency <= 0) {
@@ -61,8 +52,8 @@ public class QueryStateRegistryUpdater {
         }
 
         this.nodeServiceProvider = nodeServiceProvider;
-        this.stateRegistry = stateRegistry;
-        this.operationHandler = operationHandler;
+        this.clientStateRegistry = clientStateRegistry;
+        this.planCacheChecker = planCacheChecker;
         this.stateCheckFrequency = stateCheckFrequency;
 
         worker = new Worker(instanceName);
@@ -72,11 +63,21 @@ public class QueryStateRegistryUpdater {
         worker.start();
     }
 
-    public void stop() {
+    public void shutdown() {
         worker.stop();
     }
 
+    /**
+     * For testing only.
+     */
+    public void setStateCheckFrequency(long stateCheckFrequency) {
+        this.stateCheckFrequency = stateCheckFrequency;
+
+        worker.thread.interrupt();
+    }
+
     private final class Worker implements Runnable {
+
         private final Object startMux = new Object();
         private final String instanceName;
         private Thread thread;
@@ -107,11 +108,19 @@ public class QueryStateRegistryUpdater {
         @Override
         public void run() {
             while (!stopped) {
-                try {
-                    Thread.sleep(stateCheckFrequency);
+                long currentStateCheckFrequency = stateCheckFrequency;
 
-                    checkMemberState();
+                try {
+                    Thread.sleep(currentStateCheckFrequency);
+
+                    checkClientState();
+                    checkPlans();
                 } catch (InterruptedException e) {
+                    if (currentStateCheckFrequency != stateCheckFrequency) {
+                        // Interrupted due to frequency change.
+                        continue;
+                    }
+
                     Thread.currentThread().interrupt();
 
                     break;
@@ -119,37 +128,15 @@ public class QueryStateRegistryUpdater {
             }
         }
 
-        private void checkMemberState() {
-            Collection<UUID> activeMemberIds = nodeServiceProvider.getDataMemberIds();
+        private void checkClientState() {
+            Set<UUID> activeClientIds = nodeServiceProvider.getClientIds();
 
-            Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
+            clientStateRegistry.update(activeClientIds);
+        }
 
-            for (QueryState state : stateRegistry.getStates()) {
-                // 1. Check if the query has timed out.
-                if (state.tryCancelOnTimeout()) {
-                    continue;
-                }
-
-                // 2. Check whether the member required for the query has left.
-                if (state.tryCancelOnMemberLeave(activeMemberIds)) {
-                    continue;
-                }
-
-                // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
-                if (state.requestQueryCheck(stateCheckFrequency)) {
-                    QueryId queryId = state.getQueryId();
-
-                    checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
-                }
-            }
-
-            // 4. Send batched check requests.
-            UUID localMemberId = nodeServiceProvider.getLocalMemberId();
-
-            for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
-                QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
-
-                operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
+        private void checkPlans() {
+            if (planCacheChecker != null) {
+                planCacheChecker.check();
             }
         }
 

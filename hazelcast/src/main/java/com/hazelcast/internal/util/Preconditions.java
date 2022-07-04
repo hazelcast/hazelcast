@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,14 +158,14 @@ public final class Preconditions {
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
-     * @param value        the value tested to see if it is positive.
-     * @param errorMessage the message
+     * @param paramName the name of the checked parameter that will be in exception message
+     * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is not positive.
      */
-    public static long checkPositive(long value, String errorMessage) {
+    public static long checkPositive(String paramName, long value) {
         if (value <= 0) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
         }
         return value;
     }
@@ -188,14 +188,14 @@ public final class Preconditions {
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
-     * @param value        the value tested to see if it is positive.
-     * @param errorMessage the message
+     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is not positive.
      */
-    public static int checkPositive(int value, String errorMessage) {
+    public static int checkPositive(String paramName, int value) {
         if (value <= 0) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
         }
         return value;
     }
@@ -280,7 +280,7 @@ public final class Preconditions {
     public static <E> E checkInstanceOf(Class<E> type, Object object) {
         isNotNull(type, "type");
         if (!type.isInstance(object)) {
-            throw new IllegalArgumentException(object + " should be instanceof " + type.getName());
+            throw new IllegalArgumentException(object + " must be instanceof " + type.getName());
         }
         return (E) object;
     }
@@ -329,6 +329,19 @@ public final class Preconditions {
     }
 
     /**
+     * Tests whether the supplied expression is {@code true}.
+     *
+     * @param expression   the expression tested to see if it is {@code true}.
+     * @param errorMessage the exception message.
+     * @throws java.lang.UnsupportedOperationException if the supplied expression is {@code false}.
+     */
+    public static void checkTrueUnsupportedOperation(boolean expression, String errorMessage) {
+        if (!expression) {
+            throw new UnsupportedOperationException(errorMessage);
+        }
+    }
+
+    /**
      * Check if iterator has next element. If not throw NoSuchElementException
      *
      * @param iterator
@@ -356,4 +369,3 @@ public final class Preconditions {
         }
     }
 }
-

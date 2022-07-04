@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     private boolean scriptingEnabled;
 
+    private boolean consoleEnabled;
+
+    private boolean dataAccessEnabled = true;
+
     private final Set<String> trustedInterfaces = newSetFromMap(new ConcurrentHashMap<>());
 
     public ManagementCenterConfig() {
@@ -56,6 +60,53 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      */
     public boolean isScriptingEnabled() {
         return scriptingEnabled;
+    }
+
+    /**
+     * Enables/disables console commands execution on the member. Management center allows to send a console command for
+     * execution to a member. The console command can access the underlying system Hazelcast member is running and
+     * bypasses configured client permissions.
+     * Disabling console commands execution improves the member security.
+     * <p>
+     * Default value for this config element is {@code false}.
+     *
+     * @param consoleEnabled {@code true} to allow console commands on the member, {@code false} to disallow
+     * @return this management center config instance
+     * @since 5.1
+     */
+    public ManagementCenterConfig setConsoleEnabled(final boolean consoleEnabled) {
+        this.consoleEnabled = consoleEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if executing console commands is allowed ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isConsoleEnabled() {
+        return consoleEnabled;
+    }
+
+    /**
+     * Enables/disables access to contents of Hazelcast data structures (for instance map entries) for Management Center.
+     * Management Center can't access the data if at least one member has the data access disabled.
+     * <p>
+     * Default value for this config element is {@code true}.
+     *
+     * @param dataAccessEnabled {@code true} to allow data access for Management Center, {@code false} to disallow
+     * @return this management center config instance
+     * @since 5.1
+     */
+    public ManagementCenterConfig setDataAccessEnabled(boolean dataAccessEnabled) {
+        this.dataAccessEnabled = dataAccessEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if Management Center is allowed to access contents of Hazelcast data structures
+     * (for instance map entries) ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isDataAccessEnabled() {
+        return dataAccessEnabled;
     }
 
     /**
@@ -107,7 +158,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     @Override
     public int hashCode() {
-        return Objects.hash(scriptingEnabled, trustedInterfaces);
+        return Objects.hash(scriptingEnabled, consoleEnabled, dataAccessEnabled, trustedInterfaces);
     }
 
     @Override
@@ -122,6 +173,8 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
             return false;
         }
         ManagementCenterConfig other = (ManagementCenterConfig) obj;
-        return scriptingEnabled == other.scriptingEnabled && Objects.equals(trustedInterfaces, other.trustedInterfaces);
+        return scriptingEnabled == other.scriptingEnabled && consoleEnabled == other.consoleEnabled
+                && dataAccessEnabled == other.dataAccessEnabled
+                && Objects.equals(trustedInterfaces, other.trustedInterfaces);
     }
 }

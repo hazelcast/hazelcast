@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 
 class SqlParser {
@@ -121,7 +122,7 @@ class SqlParser {
             betweens:
             while (found) {
                 for (int i = 0; i < tokens.size(); i++) {
-                    if ("between".equalsIgnoreCase(tokens.get(i))) {
+                    if (equalsIgnoreCase("between", tokens.get(i))) {
                         tokens.set(i, "betweenAnd");
                         tokens.remove(i + 2);
                         dirty = true;

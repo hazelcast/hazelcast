@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,27 +32,39 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_PARTITION_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_STAMP;
+import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 
 /**
  * Maintains the partition table state.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public class PartitionStateManager {
+
+    /**
+     * Initial value of the partition table stamp.
+     * If stamp has this initial value then that means
+     * partition table is not initialized yet.
+     */
+    static final long INITIAL_STAMP = 0L;
 
     private final Node node;
     private final ILogger logger;
@@ -62,15 +74,25 @@ public class PartitionStateManager {
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 
-    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION)
-    private final AtomicInteger stateVersion = new AtomicInteger();
-
     private final PartitionStateGenerator partitionStateGenerator;
     private final MemberGroupFactory memberGroupFactory;
+
+    // snapshot of partition assignments taken on member UUID removal and
+    // before partition rebalancing
+    private final ConcurrentMap<UUID, PartitionTableView> snapshotOnRemove;
+
+    // we keep a cached buffer because stamp calculation can happen many times
+    // during repartitioning and this introduces GC pressure, especially at high
+    // partition counts
+    private final byte[] stampCalculationBuffer;
 
     // updates will be done under lock, but reads will be multithreaded.
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
+
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_STAMP)
+    // can be read and written concurrently...
+    private volatile long stateStamp = INITIAL_STAMP;
 
     @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE)
     // can be read and written concurrently...
@@ -83,16 +105,31 @@ public class PartitionStateManager {
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
+        this.stampCalculationBuffer = new byte[partitionCount * Integer.BYTES];
 
         PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new InternalPartitionImpl(i, interceptor, localReplica);
+            this.partitions[i] = new InternalPartitionImpl(i, localReplica, interceptor);
         }
 
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
+        snapshotOnRemove = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * @return {@code true} if there are partitions having {@link
+     * InternalPartitionImpl#isMigrating()} flag set, {@code false} otherwise.
+     */
+    boolean hasMigratingPartitions() {
+        for (int i = 0; i < partitionCount; ++i) {
+            if (partitions[i].isMigrating()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)
@@ -155,22 +192,20 @@ public class PartitionStateManager {
                     + "Expected: " + partitionCount + ", Actual: " + newState.length);
         }
 
-        // increment state version to make fail cluster state transaction
-        // if it's started and not locked the state yet.
-        stateVersion.incrementAndGet();
-        ClusterState clusterState = node.getClusterService().getClusterState();
-        if (!clusterState.isMigrationAllowed()) {
-            // cluster state is either changed or locked, decrement version back and fail.
-            stateVersion.decrementAndGet();
-            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
-            return false;
-        }
-
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
             PartitionReplica[] replicas = newState[partitionId];
             partition.setReplicas(replicas);
         }
+
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        if (!clusterState.isMigrationAllowed()) {
+            // cluster state is either changed or locked, reset state back and fail.
+            reset();
+            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return false;
+        }
+
         setInitialized();
         return true;
     }
@@ -214,16 +249,17 @@ public class PartitionStateManager {
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
-            PartitionReplica[] replicas = partitionTable.getReplicas(partitionId);
-            if (!foundReplica && replicas != null) {
+            InternalPartition newPartition = partitionTable.getPartition(partitionId);
+            if (!foundReplica && newPartition != null) {
                 for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                    foundReplica |= replicas[i] != null;
+                    foundReplica |= newPartition.getReplica(i) != null;
                 }
             }
             partition.reset(localReplica);
-            partition.setInitialReplicas(replicas);
+            if (newPartition != null) {
+                partition.setReplicasAndVersion(newPartition);
+            }
         }
-        stateVersion.set(partitionTable.getVersion());
         if (foundReplica) {
             setInitialized();
         }
@@ -292,12 +328,18 @@ public class PartitionStateManager {
         return partitions;
     }
 
-    /** Returns a copy of the current partition table. */
-    public InternalPartition[] getPartitionsCopy() {
+    /**
+     * Returns a copy of the current partition table.
+     */
+    public InternalPartition[] getPartitionsCopy(boolean readonly) {
         NopPartitionReplicaInterceptor interceptor = new NopPartitionReplicaInterceptor();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
-            result[i] = partitions[i].copy(interceptor);
+            if (readonly) {
+                result[i] = new ReadonlyInternalPartition(partitions[i]);
+            } else {
+                result[i] = partitions[i].copy(interceptor);
+            }
         }
         return result;
     }
@@ -340,32 +382,33 @@ public class PartitionStateManager {
         return partitions[partitionId].isMigrating();
     }
 
-    /** Sets the replica members for the {@code partitionId}. */
-    void updateReplicas(int partitionId, PartitionReplica[] replicas) {
+    public void updateStamp() {
+        stateStamp = calculateStamp(partitions, () -> stampCalculationBuffer);
+        if (logger.isFinestEnabled()) {
+            logger.finest("New calculated partition state stamp is: " + stateStamp);
+        }
+    }
+
+    public long getStamp() {
+        return stateStamp;
+    }
+
+    public int getPartitionVersion(int partitionId) {
+        return partitions[partitionId].version();
+    }
+
+    /**
+     * Increments partition version by delta and updates partition state stamp.
+     */
+    void incrementPartitionVersion(int partitionId, int delta) {
         InternalPartitionImpl partition = partitions[partitionId];
-        partition.setReplicas(replicas);
-    }
-
-    // called under partition service lock
-    void setVersion(int version) {
-        stateVersion.set(version);
-    }
-
-    public int getVersion() {
-        return stateVersion.get();
-    }
-
-    void incrementVersion(int delta) {
-        assert delta > 0 : "Delta: " + delta;
-        stateVersion.addAndGet(delta);
-    }
-
-    void incrementVersion() {
-        stateVersion.incrementAndGet();
+        partition.setVersion(partition.version() + delta);
+        updateStamp();
     }
 
     boolean setInitialized() {
         if (!initialized) {
+            updateStamp();
             initialized = true;
             node.getNodeExtension().onPartitionStateChange();
             return true;
@@ -379,7 +422,7 @@ public class PartitionStateManager {
 
     void reset() {
         initialized = false;
-        stateVersion.set(0);
+        stateStamp = INITIAL_STAMP;
         // local member uuid changes during ClusterService reset
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (InternalPartitionImpl partition : partitions) {
@@ -409,9 +452,19 @@ public class PartitionStateManager {
     }
 
     PartitionTableView getPartitionTable() {
-        if (!initialized) {
-            return new PartitionTableView(new PartitionReplica[partitions.length][InternalPartition.MAX_REPLICA_COUNT], 0);
-        }
-        return new PartitionTableView(partitions, stateVersion.get());
+        return new PartitionTableView(getPartitionsCopy(true));
+    }
+
+    void storeSnapshot(UUID crashedMemberUuid) {
+        logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
+        snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
+    }
+
+    Collection<PartitionTableView> snapshots() {
+        return Collections.unmodifiableCollection(snapshotOnRemove.values());
+    }
+
+    PartitionTableView getSnapshot(UUID crashedMemberUuid) {
+        return snapshotOnRemove.get(crashedMemberUuid);
     }
 }

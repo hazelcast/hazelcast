@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extensions>
+    <extension>
+        <groupId>co.leantechniques</groupId>
+        <artifactId>maven-buildtime-extension</artifactId>
+        <version>3.0.3</version>
+    </extension>
+</extensions>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_ALLOWED_FUTURE_MILLIS;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,14 +44,14 @@ public abstract class FlakeIdGenerator_AbstractBackpressureTest {
     public void backpressureTest() {
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
-        long testStart = System.nanoTime();
+        long testStartNanos = Timer.nanos();
         long allowedHiccupMillis = 2000;
         for (int i = 1; i <= 15; i++) {
             generator.newId();
-            long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - testStart);
+            long elapsedMs = Timer.millisElapsed(testStartNanos);
             long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> DEFAULT_BITS_SEQUENCE) - DEFAULT_ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
             long maximumAllowedMs = minimumRequiredMs + allowedHiccupMillis;
-            String msg = "Iteration " + i + ", elapsed: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms, "
+            String msg = "Iteration " + i + ", elapsed: " + Timer.millisElapsed(testStartNanos) + "ms, "
                     + "minimum: " + minimumRequiredMs + ", maximum: " + maximumAllowedMs;
             LOGGER.info(msg);
             assertTrue(msg, elapsedMs >= minimumRequiredMs && elapsedMs <= maximumAllowedMs);

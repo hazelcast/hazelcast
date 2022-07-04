@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
@@ -43,6 +44,7 @@ import com.hazelcast.internal.util.ModularJavaUtils;
  * Basic test which checks if correct Hazelcast modules are on the modulepath. It also checks that Hazelcast members and clients
  * are able to start and form a cluster.
  */
+@Category(ModulePathTest.class)
 public class SmokeModulePathTest {
 
     @After

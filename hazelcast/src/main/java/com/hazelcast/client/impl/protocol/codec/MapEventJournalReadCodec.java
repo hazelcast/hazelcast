@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("a97861edc51e29e0f83adf259fe06e5a")
+@Generated("279cde2b5923cc29d77ec15a93d6c0df")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -171,5 +171,4 @@ public final class MapEventJournalReadCodec {
         response.itemSeqs = CodecUtil.decodeNullable(iterator, LongArrayCodec::decode);
         return response;
     }
-
 }

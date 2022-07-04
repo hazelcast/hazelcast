@@ -1,0 +1,13 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "flake-id-generator": {
+        "default": {
+          "prefetch-count": 100,
+          "prefetch-validity-millis": 600000
+        }
+      }
+    }
+  },
+  "error": null
+}

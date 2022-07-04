@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
         try {
             storePermit.acquire();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         super.store(key, value);
     }
@@ -41,7 +41,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
         try {
             storeAllPermit.acquire();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         super.storeAll(map);
     }

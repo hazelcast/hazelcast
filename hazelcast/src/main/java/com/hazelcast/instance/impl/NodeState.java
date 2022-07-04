@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Possible states of a {@link Node} during its lifecycle.
@@ -36,7 +35,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 public enum NodeState {
 
     /**
-     * Initial state of the Node. An {@code ACTIVE} node is allowed to execute/process
+     * Basic state of the running Node. An {@code ACTIVE} node is allowed to execute/process
      * all kinds of operations. A node is in {@code ACTIVE} state while cluster state is one of
      * {@link ClusterState#ACTIVE}, {@link ClusterState#NO_MIGRATION} or {@link ClusterState#FROZEN}.
      */
@@ -54,12 +53,6 @@ public enum NodeState {
      * {@link Cluster#changeClusterState(ClusterState)}
      * </li>
      * </ul>
-     * <p>
-     * In {@code PASSIVE} state, all operations will be rejected except operations marked as
-     * {@link ReadonlyOperation}, join operations of some members that are explained in
-     * {@link ClusterState}, replication / migration operations and heartbeat operations.
-     * Operations those are to be allowed during {@code PASSIVE} state should be marked as
-     * {@link AllowedDuringPassiveState}.
      */
     PASSIVE,
 
@@ -68,5 +61,10 @@ public enum NodeState {
      * In {@code SHUT_DOWN} state node will be completely inactive. All operations/invocations
      * will be rejected. Once a node is shutdown, it cannot be restarted.
      */
-    SHUT_DOWN
+    SHUT_DOWN,
+
+    /**
+     * Initial state of the node before switching to the {@link #ACTIVE} state.
+     */
+    STARTING
 }

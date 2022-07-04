@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -40,7 +40,7 @@ public final class MD5Util {
             if (md == null || str == null) {
                 return null;
             }
-            byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
+            byte[] byteData = md.digest(str.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder sb = new StringBuilder();
             for (byte aByteData : byteData) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,13 @@ import java.util.Map.Entry;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
- * Migration operation used by Hazelcast version 3.9
- *
- * It runs on the migration destination and applies the received fragments.
- * Sent by the partition owner to the migration destination to start the migration process on the destination.
- * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
+ * Migration operation used by Hazelcast version 3.9.
+ * <p>
+ * It runs on the migration destination and applies the received
+ * fragments. Sent by the partition owner to the migration
+ * destination to start the migration process on the destination.
+ * Contains the operations which will be executed on the destination
+ * node to migrate the data and the replica versions to be set.
  */
 public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
 
@@ -66,8 +68,9 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion,
-            ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
+    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations,
+                              int partitionStateVersion, ReplicaFragmentMigrationState fragmentMigrationState,
+                              boolean firstFragment, boolean lastFragment) {
         super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentMigrationState = fragmentMigrationState;
         this.firstFragment = firstFragment;
@@ -103,31 +106,28 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     /** Notifies services that migration started, invokes all sent migration tasks and updates the replica versions. */
     private void doRun() {
-        if (migrationInfo.startProcessing()) {
-            try {
-                if (firstFragment) {
-                    executeBeforeMigrations();
-                }
-
-                for (Operation migrationOperation : fragmentMigrationState.getMigrationOperations()) {
-                    runMigrationOperation(migrationOperation);
-                }
-
-                success = true;
-            } catch (Throwable e) {
-                failureReason = e;
-                getLogger().severe("Error while executing replication operations " + migrationInfo, e);
-            } finally {
-                afterMigrate();
+        try {
+            if (firstFragment) {
+                executeBeforeMigrations();
             }
-        } else {
-            logMigrationCancelled();
+
+            for (Operation migrationOperation : fragmentMigrationState.getMigrationOperations()) {
+                runMigrationOperation(migrationOperation);
+            }
+
+            success = true;
+        } catch (Throwable e) {
+            failureReason = e;
+            getLogger().severe("Error while executing replication operations " + migrationInfo, e);
+        } finally {
+            afterMigrate();
         }
     }
 
     private void checkActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
-        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration();
+        MigrationInfo activeMigration = partitionService.getMigrationManager()
+                .getActiveMigration(migrationInfo.getPartitionId());
         if (!migrationInfo.equals(activeMigration)) {
             throw new IllegalStateException("Unexpected active migration " + activeMigration
                     + "! First migration fragment should have set active migration to: " + migrationInfo);
@@ -162,22 +162,14 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
                 replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), namespace,
                                                            replicaVersions, replicaOffset);
                 if (logger.isFinestEnabled()) {
-                    logger.finest("ReplicaVersions are set after migration. partitionId="
-                            + migrationInfo.getPartitionId() + " namespace: " + namespace
-                            + " replicaVersions=" + Arrays.toString(replicaVersions));
+                    logger.finest("ReplicaVersions are set after migration. " + migrationInfo
+                            + ", namespace=" + namespace + ", replicaVersions=" + Arrays.toString(replicaVersions));
                 }
             }
 
         } else if (logger.isFinestEnabled()) {
-            logger.finest("ReplicaVersions are not set since migration failed. partitionId="
-                    + migrationInfo.getPartitionId());
+            logger.finest("ReplicaVersions are not set since migration failed. " + migrationInfo);
         }
-
-        migrationInfo.doneProcessing();
-    }
-
-    private void logMigrationCancelled() {
-        getLogger().warning("Migration is cancelled -> " + migrationInfo);
     }
 
     private void logMigrationFailure(Throwable e) {
@@ -193,7 +185,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     protected PartitionMigrationEvent getMigrationEvent() {
         return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
                 migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
-                migrationInfo.getDestinationNewReplicaIndex());
+                migrationInfo.getDestinationNewReplicaIndex(), migrationInfo.getUid());
     }
 
     @Override

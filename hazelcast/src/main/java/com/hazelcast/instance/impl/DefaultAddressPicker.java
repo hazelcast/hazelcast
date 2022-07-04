@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,32 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.NetworkInterfaceInfo;
+import com.hazelcast.internal.util.NetworkInterfacesEnumerator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,7 @@ class DefaultAddressPicker
     private Address publicAddress;
     private Address bindAddress;
     private ServerSocketChannel serverSocketChannel;
+    private NetworkInterfacesEnumerator networkInterfacesEnumerator = NetworkInterfacesEnumerator.defaultEnumerator();
 
     DefaultAddressPicker(Config config, ILogger logger) {
         this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
@@ -148,8 +150,11 @@ class DefaultAddressPicker
         int port = serverSocketChannel.socket().getLocalPort();
         bindAddress = createAddress(bindAddressDef, port);
 
-        logger.info("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
-                + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+        if (logger.isFineEnabled()) {
+            logger.fine("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
+                    + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+        }
+
         return getPublicAddress(port);
     }
 
@@ -183,8 +188,12 @@ class DefaultAddressPicker
         if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))) {
             return pickLoopbackAddress(null);
         }
-        logger.info("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
-        if (interfaces.size() > 0) {
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
+        }
+
+        if (!interfaces.isEmpty()) {
             AddressDefinition addressDef = pickMatchingAddress(interfaces);
             if (addressDef != null) {
                 return addressDef;
@@ -261,7 +270,7 @@ class DefaultAddressPicker
     }
 
     private static void appendMatchingInterfaces(Collection<InterfaceDefinition> interfaces,
-            Map<String, String> address2DomainMap, String configInterface) {
+                                                 Map<String, String> address2DomainMap, String configInterface) {
 
         for (Entry<String, String> entry : address2DomainMap.entrySet()) {
             String address = entry.getKey();
@@ -322,7 +331,7 @@ class DefaultAddressPicker
     }
 
     AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
-        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        List<NetworkInterfaceInfo> networkInterfaces = networkInterfacesEnumerator.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
         boolean preferIPv6Addresses = preferIPv6Addresses();
         AddressDefinition matchingAddress = null;
@@ -333,14 +342,11 @@ class DefaultAddressPicker
         // - preferIPv4Stack=false, preferIPv6Addresses=true: Either an IPv4 or IPv6 address may be picked
         // but IPv6 address will be preferred over IPv4.
 
-        while (networkInterfaces.hasMoreElements()) {
-            NetworkInterface ni = networkInterfaces.nextElement();
+        for (NetworkInterfaceInfo ni : networkInterfaces) {
             if (isEmpty(interfaces) && skipInterface(ni)) {
                 continue;
             }
-            Enumeration<InetAddress> e = ni.getInetAddresses();
-            while (e.hasMoreElements()) {
-                InetAddress inetAddress = e.nextElement();
+            for (InetAddress inetAddress : ni.getInetAddresses()) {
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     // IPv4 stack is preferred, so only IPv4 address can be picked.
                     continue;
@@ -380,7 +386,7 @@ class DefaultAddressPicker
      * Checks given network interface and returns true when it should not be used for picking address. Reasons for skipping are
      * the interface is: down, virtual or loopback.
      */
-    private boolean skipInterface(NetworkInterface ni) throws SocketException {
+    private boolean skipInterface(NetworkInterfaceInfo ni) throws SocketException {
         boolean skipInterface = !ni.isUp() || ni.isVirtual() || ni.isLoopback();
         if (skipInterface && logger.isFineEnabled()) {
             logger.fine("Skipping NetworkInterface '" + ni.getName() + "': isUp=" + ni.isUp() + ", isVirtual=" + ni.isVirtual()
@@ -429,11 +435,24 @@ class DefaultAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        return Collections.singletonMap(MEMBER, publicAddress);
+        HashMap<EndpointQualifier, Address> publicAddressMap = new HashMap<>();
+        publicAddressMap.put(MEMBER, publicAddress);
+        return publicAddressMap;
+    }
+
+    @Override
+    public Map<EndpointQualifier, Address> getBindAddressMap() {
+        HashMap<EndpointQualifier, Address> bindAddressMap = new HashMap<>();
+        bindAddressMap.put(MEMBER, bindAddress);
+        return bindAddressMap;
     }
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {
         this.hostnameResolver = checkNotNull(hostnameResolver);
+    }
+
+    void setNetworkInterfacesEnumerator(NetworkInterfacesEnumerator networkInterfacesEnumerator) {
+        this.networkInterfacesEnumerator = networkInterfacesEnumerator;
     }
 
     static class InterfaceDefinition {
@@ -529,6 +548,8 @@ class DefaultAddressPicker
         }
     }
 
+
+    @FunctionalInterface
     interface HostnameResolver {
         Collection<String> resolve(String hostname) throws UnknownHostException;
     }

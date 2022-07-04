@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
-import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
@@ -52,7 +52,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
 
     protected final AbstractCacheRecordStore cacheRecordStore;
     protected final long now;
-    protected final long start;
+    protected final long startNanos;
     protected final ExpiryPolicy expiryPolicy;
     protected final int completionId;
 
@@ -64,11 +64,9 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
         this.completionId = completionId;
-        this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
+        this.startNanos = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? Timer.nanos() : 0;
 
-        final Factory<ExpiryPolicy> expiryPolicyFactory =
-                cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
-        this.expiryPolicy = expiryPolicyFactory.create();
+        this.expiryPolicy = cacheRecordStore.getExpiryPolicy(record, null);
     }
 
     @Override
@@ -163,7 +161,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNanos(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
                 }
                 boolean saved =
                         cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy,
@@ -181,7 +179,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 onUpdate(keyData, value, record, expiryPolicy, now, false, completionId, saved);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNanos(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
                 }
                 break;
             case REMOVE:

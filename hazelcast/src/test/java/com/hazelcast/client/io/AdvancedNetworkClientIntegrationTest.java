@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,13 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -56,15 +58,16 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class AdvancedNetworkClientIntegrationTest {
 
     private static final int CLUSTER_SIZE = 3;
     private static final int BASE_CLIENT_PORT = 9090;
 
-    private HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
+    private final HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
     private HazelcastInstance client;
 
     @Before
@@ -84,6 +87,7 @@ public class AdvancedNetworkClientIntegrationTest {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void clientSmokeTest() {
         client = HazelcastClient.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap("test");
@@ -106,6 +110,16 @@ public class AdvancedNetworkClientIntegrationTest {
 
         for (Member member : members) {
             assertContains(clientViewOfAddresses, member.getAddressMap().get(CLIENT));
+        }
+    }
+
+    @Test
+    public void testClientViewOfAddressMap() {
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
+        for (Member member: client.getCluster().getMembers()) {
+            assertEquals(member.getAddress(), member.getAddressMap().get(CLIENT));
+            int memberPort = member.getAddressMap().get(EndpointQualifier.MEMBER).getPort();
+            assertTrue("member address port is between 5700 and 6000", 5700  <= memberPort && memberPort <= 6000);
         }
     }
 
@@ -138,6 +152,7 @@ public class AdvancedNetworkClientIntegrationTest {
         instances[2] = Hazelcast.newHazelcastInstance(getConfig());
         assertClusterSizeEventually(3, instances);
 
+        assertTrueEventually(() -> assertNotNull(memberAdded.get()));
         assertEquals(memberAdded.get().getAddress(), instances[2].getCluster().getLocalMember().getAddressMap().get(CLIENT));
     }
 

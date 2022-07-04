@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -63,6 +65,17 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
     }
 
     @Override
+    public Set<UUID> getClientIds() {
+        Set<UUID> res = new HashSet<>();
+
+        for (Client client : nodeEngine.getHazelcastInstance().getClientService().getConnectedClients()) {
+            res.add(client.getUuid());
+        }
+
+        return res;
+    }
+
+    @Override
     public Connection getConnection(UUID memberId) {
         MemberImpl member = nodeEngine.getClusterService().getMember(memberId);
 
@@ -70,9 +83,17 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
             return null;
         }
 
-        ServerConnectionManager endpointManager = nodeEngine.getNode().getConnectionManager(EndpointQualifier.MEMBER);
+        return nodeEngine.getNode()
+                .getServer()
+                .getConnectionManager(EndpointQualifier.MEMBER)
+                .getOrConnect(member.getAddress());
+    }
 
-        return endpointManager.getOrConnect(member.getAddress());
+    @Override
+    public MapContainer getMap(String name) {
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+
+        return mapService.getMapServiceContext().getMapContainers().get(name);
     }
 
     @Override

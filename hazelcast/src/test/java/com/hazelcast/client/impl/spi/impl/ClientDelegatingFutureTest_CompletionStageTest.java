@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class ClientDelegatingFutureTest_CompletionStageTest extends CompletableF
         ClientInvocationFuture cf = invocation.getClientInvocationFuture();
 
         ClientDelegatingFuture<Object> future =
-                new ClientDelegatingFuture<>(cf, serializationService, message -> MapGetCodec.decodeResponse(message).response);
+                new ClientDelegatingFuture<>(cf, serializationService, MapGetCodec::decodeResponse);
 
         Executor completionExecutor;
         if (completeAfterMillis <= 0) {

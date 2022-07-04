@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
@@ -23,6 +24,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
+import java.security.AccessControlException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -56,6 +58,10 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
         Future<String> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> {
+                    ManagementCenterConfig mcConfig = getNodeEngine().getConfig().getManagementCenterConfig();
+                    if (!mcConfig.isConsoleEnabled()) {
+                        throw new AccessControlException("Using Console is not allowed on this Hazelcast member.");
+                    }
                     try {
                         final String ns = namespace;
                         String cmd = command;

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <hz:config id="secure-config">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network port="${cluster.port}" port-auto-increment="false">
+            <hz:join>
+                <hz:multicast enabled="${boolean.true}"
+                              multicast-group="224.2.2.3" multicast-port="54327"/>
+            </hz:join>
+        </hz:network>
+
+        <hz:security enabled="${boolean.true}">
+            <hz:realms>
+                <hz:realm name="mr">
+                    <hz:identity>
+                        <hz:credentials-factory implementation="dummyCredentialsFactory"/>
+                    </hz:identity>
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+                <hz:realm name="cr">
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                            <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+            </hz:realms>
+            <hz:member-authentication realm="mr"/>
+            <hz:client-authentication realm="cr"/>
+            <hz:client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy"
+                                         implementation="dummyPermissionPolicy">
+                <hz:properties>
+                    <hz:property name="property">value</hz:property>
+                </hz:properties>
+            </hz:client-permission-policy>
+            <hz:client-permissions>
+                <hz:all-permissions principal="admin">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                </hz:all-permissions>
+                <hz:map-permission name="customMap" principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                    <hz:actions>
+                        <hz:action>create</hz:action>
+                        <hz:action>destroy</hz:action>
+                        <hz:action>put</hz:action>
+                        <hz:action>get</hz:action>
+                    </hz:actions>
+                </hz:map-permission>
+                <hz:queue-permission name="customQ" principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                    <hz:actions>
+                        <hz:action>create</hz:action>
+                        <hz:action>destroy</hz:action>
+                        <hz:action>offer</hz:action>
+                        <hz:action>poll</hz:action>
+                    </hz:actions>
+                </hz:queue-permission>
+                <hz:cache-permission name="test-cache" principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                    <hz:actions>
+                        <hz:action>create</hz:action>
+                        <hz:action>add</hz:action>
+                        <hz:action>read</hz:action>
+                        <hz:action>destroy</hz:action>
+                    </hz:actions>
+                </hz:cache-permission>
+                <hz:config-permission principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                </hz:config-permission>
+            </hz:client-permissions>
+            <hz:security-interceptors>
+                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"
+                                implementation="dummySecurityInterceptor"/>
+            </hz:security-interceptors>
+        </hz:security>
+    </hz:config>
+
+    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory">
+        <constructor-arg index="0" value="${cluster.name}"/>
+        <constructor-arg index="1" value=""/>
+    </bean>
+    <bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy"/>
+    <bean id="dummySecurityInterceptor" class="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+    <bean id="dummyLoginModule" class="com.hazelcast.spring.security.DummyLoginModule"/>
+</beans>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -35,7 +35,6 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
@@ -43,11 +42,11 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.function.Predicate;
 
 /**
@@ -66,6 +65,7 @@ import java.util.function.Predicate;
  *
  * @see MapManagedService
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 
@@ -75,7 +75,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Data toData(Object object);
 
+    Data toDataWithSchema(Object object);
+
     MapContainer getMapContainer(String mapName);
+
+    MapContainer getExistingMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();
 
@@ -133,12 +137,13 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
-    PartitionIdSet getOwnedPartitions();
-
     /**
-     * Reloads the cached collection of partitions owned by this node.
+     * Returns cached collection of owned partitions,
+     * When it is null, reloads and caches it again.
      */
-    void reloadOwnedPartitions();
+    PartitionIdSet getOrInitCachedMemberPartitions();
+
+    void nullifyOwnedPartitions();
 
     ExpirationManager getExpirationManager();
 
@@ -166,8 +171,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Extractors getExtractors(String mapName);
 
-    void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
-
     boolean removeMapContainer(MapContainer mapContainer);
 
     PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config);
@@ -192,7 +195,26 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     IndexCopyBehavior getIndexCopyBehavior();
 
+    boolean globalIndexEnabled();
+
     ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
 
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
+
+    ExecutorStats getOffloadedEntryProcessorExecutorStats();
+
+    Semaphore getNodeWideLoadedKeyLimiter();
+
+    /**
+     * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
+     * otherwise {@code false}.
+     */
+    default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
+        return false;
+    }
+
+    /**
+     * @return {@link EventListenerCounter} object.
+     */
+    EventListenerCounter getEventListenerCounter();
 }

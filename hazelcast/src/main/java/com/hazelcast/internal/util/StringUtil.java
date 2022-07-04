@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,21 @@
 
 package com.hazelcast.internal.util;
 
-import java.nio.charset.Charset;
+import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
@@ -37,27 +42,26 @@ import static java.lang.Character.toLowerCase;
 public final class StringUtil {
 
     /**
-     * UTF-8 Charset
-     */
-    public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-
-    /**
      * Points to the System property 'line.separator'.
      */
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     /**
      * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to
-     * {@code java.util.Locale.US} (US English).
+     * {@code java.util.Locale.ROOT} (language neutral).
      */
-    //TODO Use java.util.Locale#ROOT value (language neutral) in Hazelcast 4
-    public static final Locale LOCALE_INTERNAL = Locale.US;
+    public static final Locale LOCALE_INTERNAL = Locale.ROOT;
 
     /**
      * Pattern used to tokenize version strings.
      */
     public static final Pattern VERSION_PATTERN
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
+
+    /**
+     * Empty String.
+     */
+    public static final String EMPTY_STRING = "";
 
     private static final String GETTER_PREFIX = "get";
 
@@ -73,7 +77,7 @@ public final class StringUtil {
      * @return the string created from the byte array.
      */
     public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length, UTF8_CHARSET);
+        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -84,7 +88,7 @@ public final class StringUtil {
      */
     public static String bytesToString(byte[] bytes) {
 
-        return new String(bytes, UTF8_CHARSET);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**
@@ -94,7 +98,7 @@ public final class StringUtil {
      * @return the byte array created from the string.
      */
     public static byte[] stringToBytes(String s) {
-        return s.getBytes(UTF8_CHARSET);
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -117,12 +121,35 @@ public final class StringUtil {
      * @param s the string to check.
      * @return true if the string is {@code null} or empty, false otherwise
      */
-
     public static boolean isNullOrEmptyAfterTrim(String s) {
         if (s == null) {
             return true;
         }
         return s.trim().isEmpty();
+    }
+
+    /**
+     * Check if all Strings are not blank
+     * @param values the strings to check
+     * @return true if all the strings are not {@code null} and not blank, false otherwise
+     */
+    public static boolean isAllNullOrEmptyAfterTrim(String... values) {
+        if (values == null) {
+            return false;
+        }
+        return Arrays.stream(values).noneMatch(StringUtil::isNullOrEmptyAfterTrim);
+    }
+
+    /**
+     * Check if any String from the provided Strings
+     * @param values the strings to check
+     * @return true if at least one string of the {@param values} are not {@code null} and not blank
+     */
+    public static boolean isAnyNullOrEmptyAfterTrim(String... values) {
+        if (values == null) {
+            return false;
+        }
+        return Arrays.stream(values).anyMatch(s -> !isNullOrEmptyAfterTrim(s));
     }
 
     /**
@@ -403,5 +430,123 @@ public final class StringUtil {
             return str.substring(0, str.length() - 1);
         }
         return str;
+    }
+
+    /**
+     * Returns a string where named placeholders are replaced by values from the
+     * given {@code variableValues} map. The placeholder is defined as the
+     * variable name prefixed by ${@code placeholderNamespace}&#123; and followed
+     * by &#125;. For example, if the {@code placeholderNamespace} is {@code HZ_TEST}
+     * the placeholder for "instance_name" would be $HZ_TEST&#123;instance_name&#125;.
+     * <p>
+     * The variable replacement is fail-safe which means any incorrect syntax such
+     * as missing closing brackets or missing variable values is ignored.
+     *
+     * @param pattern              the pattern in which placeholders should be replaced
+     * @param placeholderNamespace the string inserted into the placeholder prefix to distinguish between
+     *                             different types of placeholders
+     * @param variableValues       the placeholder variable values
+     * @return the formatted string
+     */
+    public static String resolvePlaceholders(String pattern,
+                                             String placeholderNamespace,
+                                             Map<String, Object> variableValues) {
+        StringBuilder sb = new StringBuilder(pattern);
+        String placeholderPrefix = "$" + placeholderNamespace + "{";
+        int endIndex;
+        int startIndex = sb.indexOf(placeholderPrefix);
+
+        while (startIndex > -1) {
+            endIndex = sb.indexOf("}", startIndex);
+            if (endIndex == -1) {
+                // ignore bad syntax, search finished
+                break;
+            }
+
+            String variableName = sb.substring(startIndex + placeholderPrefix.length(), endIndex);
+            Object variableValue = variableValues.get(variableName);
+            // ignore missing values
+            if (variableValue != null) {
+                String valueStr = variableValue.toString();
+                sb.replace(startIndex, endIndex + 1, valueStr);
+                endIndex = startIndex + valueStr.length();
+            }
+
+            startIndex = sb.indexOf(placeholderPrefix, endIndex);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Converts the provided collection to string, joined by LINE_SEPARATOR
+     * @param collection collection to convert to string
+     * @return string
+     */
+    public static <T> String toString(Collection<T> collection) {
+        return collection.stream()
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
+    }
+
+    /**
+     * Converts the provided array to string, joined by LINE_SEPARATOR
+     * @param arr array to convert to string
+     * @return string
+     */
+    public static <T> String toString(T[] arr) {
+        return Arrays.stream(arr)
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
+    }
+
+    /**
+     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
+     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
+     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
+     *
+     * @param input the XML String
+     * @param indent indentation (number of spaces used for one indentation level)
+     * @return formatted XML String or the original String if the formatting fails.
+     * @throws IllegalArgumentException when indentation is equal to zero
+     * @deprecated Use directly {@link XmlUtil#format(String, int)}
+     */
+    @Deprecated
+    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
+        return XmlUtil.format(input, indent);
+    }
+
+    /**
+     * Ensures that the returned string is at most {@code maxLength} long. If
+     * it's longer, trims it to one char less (not taking word boundaries into
+     * account), and appends an ellipsis. Returns {@code null} for null input.
+     *
+     * @param s The string to shorten
+     * @param maxLength Maximum length the returned string must have
+     * @return Shortened string
+     */
+    public static String shorten(String s, int maxLength) {
+        Preconditions.checkPositive("maxLength", maxLength);
+        if (s == null || s.length() <= maxLength) {
+            return s;
+        }
+        return s.substring(maxLength - 1) + '…';
+    }
+
+    /**
+     * Removes all occurrence of {@code charToRemove} from {@code str}. This method is more efficient than
+     * {@link String#replaceAll(String, String)} which compiles a regex from the first parameter every invocation.
+     */
+    public static String removeCharacter(String str, char charToRemove) {
+        if (str == null || str.indexOf(charToRemove) == -1) {
+            return str;
+        }
+        char[] chars = str.toCharArray();
+        int pos = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] != charToRemove) {
+                chars[pos++] = chars[i];
+            }
+        }
+        return new String(chars, 0, pos);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,18 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ClientTestSupport extends HazelcastTestSupport {
 
@@ -77,9 +80,16 @@ public class ClientTestSupport extends HazelcastTestSupport {
         ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).unblockTo(address);
     }
 
-    protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+    protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
+    }
+
+    public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
+        assertTrueEventually(() -> {
+            ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+            assertNull(connectionManager.getConnection(memberUUID));
+        });
     }
 
     protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
@@ -91,10 +101,10 @@ public class ClientTestSupport extends HazelcastTestSupport {
 
     protected Map<Long, EventHandler> getAllEventHandlers(HazelcastInstance client) {
         ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
         HashMap<Long, EventHandler> map = new HashMap<>();
-        for (ClientConnection activeConnection : activeConnections) {
-            map.putAll(activeConnection.getEventHandlers());
+        for (Connection activeConnection : activeConnections) {
+            map.putAll(((ClientConnection) activeConnection).getEventHandlers());
         }
         return map;
     }

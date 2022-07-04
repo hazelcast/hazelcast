@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given unreachable CP member from the active CP members
  * list and all CP groups it belongs to.
  */
-@Generated("95f7469bb890a2b18e040e4ab36a4320")
+@Generated("cb20a5bdfcce80049cb394d48a83e141")
 public final class MCRemoveCPMemberCodec {
     //hex: 0x201B00
     public static final int REQUEST_MESSAGE_TYPE = 2104064;
@@ -48,15 +48,6 @@ public final class MCRemoveCPMemberCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCRemoveCPMemberCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * UUID of the unreachable CP member
-         */
-        public java.util.UUID cpMemberUuid;
     }
 
     public static ClientMessage encodeRequest(java.util.UUID cpMemberUuid) {
@@ -71,16 +62,13 @@ public final class MCRemoveCPMemberCodec {
         return clientMessage;
     }
 
-    public static MCRemoveCPMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * UUID of the unreachable CP member
+     */
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.cpMemberUuid = decodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return decodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse() {
@@ -91,13 +79,4 @@ public final class MCRemoveCPMemberCodec {
 
         return clientMessage;
     }
-
-    public static MCRemoveCPMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

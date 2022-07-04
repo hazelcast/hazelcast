@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.partition.InternalPartitionService.PARTITIO
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddPartitionLostListenerMessageTask
-        extends AbstractAddListenerMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractAddListenerMessageTask<Boolean> {
 
     public AddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -56,7 +56,7 @@ public class AddPartitionLostListenerMessageTask
             }
         };
 
-        if (parameters.localOnly) {
+        if (parameters) {
             return newCompletedFuture(partitionService.addLocalPartitionLostListener(listener));
         }
 
@@ -64,7 +64,7 @@ public class AddPartitionLostListenerMessageTask
     }
 
     @Override
-    protected ClientAddPartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected Boolean decodeClientMessage(ClientMessage clientMessage) {
         return ClientAddPartitionLostListenerCodec.decodeRequest(clientMessage);
     }
 

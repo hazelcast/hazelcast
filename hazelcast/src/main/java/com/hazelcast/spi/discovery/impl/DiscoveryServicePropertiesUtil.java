@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,11 @@ final class DiscoveryServicePropertiesUtil {
 
         for (PropertyDefinition propertyDefinition : propertyDefinitions) {
             String propertyKey = propertyDefinition.key();
+
+            if (properties.containsKey(propertyKey.replace("-", ""))) {
+                properties.put(propertyKey, properties.remove(propertyKey.replace("-", "")));
+            }
+
             if (!properties.containsKey(propertyKey)) {
                 if (!propertyDefinition.optional()) {
                     throw new InvalidConfigurationException(
@@ -81,7 +86,7 @@ final class DiscoveryServicePropertiesUtil {
 
     private static void verifyNoUnknownProperties(Map<String, Comparable> mappedProperties,
                                                   Map<String, Comparable> allProperties) {
-        Set<String> notMappedProperties = new HashSet<String>(allProperties.keySet());
+        Set<String> notMappedProperties = new HashSet<>(allProperties.keySet());
         notMappedProperties.removeAll(mappedProperties.keySet());
         if (!notMappedProperties.isEmpty()) {
             throw new InvalidConfigurationException(

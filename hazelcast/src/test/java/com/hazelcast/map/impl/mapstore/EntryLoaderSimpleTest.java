@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,14 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,7 +46,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -56,7 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getPartitionService;
@@ -65,9 +65,10 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({ParallelJVMTest.class, QuickTest.class})
 public class EntryLoaderSimpleTest extends HazelcastTestSupport {
@@ -175,7 +176,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testGetAllLoadsEntriesWithExpiration() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -184,7 +185,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertEquals("val" + i, entries.get("key" + i));
         }
-        sleepAtLeastSeconds(10);
+        sleepAtLeastSeconds(6);
         for (int i = 0; i < 50; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }
@@ -233,6 +234,14 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     public void testPutIfAbsent_returnValue() {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
         assertEquals("val", map.putIfAbsent("key", "val2"));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync_returnValue() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
+        assertEquals("val", ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test
@@ -389,15 +398,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Config config = mapServiceContext.getNodeEngine().getConfig();
         MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);
         Data key = mapServiceContext.toData("key");
-        final AtomicBoolean invoked = new AtomicBoolean();
-        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) {
-            @Override
-            protected long expirationTimeToTtl(long definedExpirationTime) {
-                invoked.set(true);
-                return 0;
-            }
-        };
+        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) ;
         assertNull(recordStore.loadRecordOrNull(key, false, null));
-        assertTrue(invoked.get());
     }
 }

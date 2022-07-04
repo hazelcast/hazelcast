@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast client.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at https://docs.hazelcast.com/
 
 hazelcast-client:
 
@@ -109,7 +109,7 @@ hazelcast-client:
   # This feature reduces number of hops and increase performance for smart clients.
   # It is enabled by default for smart clients. This config has no effect for unisocket clients.
   #
-  backup-ack-to-client: true
+  backup-ack-to-client-enabled: true
 
   #
   # ===== HAZELCAST NETWORK CONFIGURATION =====
@@ -162,20 +162,18 @@ hazelcast-client:
   #         kerberos-host: kerb-host-name
   #         kerberos-config-file: kerb.conf
   # * "ssl":
-  #     Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-  #     Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-  #     your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-  #     By default, it is disabled. The following is an example:
+  #     Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+  #     Enterprise.
+  #     The default configuration usually uses JSSE engine available in Java.
+  #     Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
   #     ssl:
   #       enabled: true
-  #       factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
+  #       factory-class-name: com.hazelcast.nio.ssl.OpenSSLEngineFactory
   #       properties:
-  #         keyStore: keyStore
-  #         keyStorePassword: keyStorePassword
-  #         keyManagerAlgorithm: SunX509
-  #         trustManagerAlgorithm: SunX509
-  #         protocol: TLS
-  #         mutualAuthentication: REQUIRED
+  #         protocol: TLSv1.2
+  #         trustCertCollectionFile: /opt/hazelcast/trusted-certs.pem
+  #         keyFile: /opt/hazelcast/privkey.pem
+  #         keyCertChainFile: /opt/hazelcast/chain.pem
   # * "aws":
   #     Set its "enabled" sub-element to true for discovery within Amazon EC2.
   #     Please refer to https://github.com/hazelcast/hazelcast-aws/#configuration for the configuration details.
@@ -231,7 +229,7 @@ hazelcast-client:
   #         Maximum number of hops the packets should go through. Its default value is 255. You can set to 0 to use
   #         your system’s default TTL.
   #     * "echo-fail-fast-on-startup":
-  #         Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
+  #         The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
   #         Failure is usually due to OS level restrictions.
   #
   network:
@@ -258,41 +256,59 @@ hazelcast-client:
 
     ssl:
       enabled: false
-      factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
         protocol: TLS
 
         trustStore: /opt/hazelcast-client.truststore
         trustStorePassword: secret.123456
-        trustStoreType: JKS
+        trustStoreType: PKCS12
 
         # Following properties are only needed when the mutual authentication is used.
         keyStore: /opt/hazelcast-client.keystore
         keyStorePassword: keystorePassword123
-        keyStoreType: JKS
+        keyStoreType: PKCS12
 
+    auto-detection:
+      enabled: false
     aws:
-      enabled: true
-      connection-timeout-seconds: 11
-      inside-aws: true
-      access-key: TEST_ACCESS_KEY
-      secret-key: TEST_SECRET_KEY
-      region: us-east-1
+      enabled: false
+      access-key: my-access-key
+      secret-key: my-secret-key
+      region: us-west-1
       host-header: ec2.amazonaws.com
+      connection-timeout-seconds: 7
+      read-timeout-seconds: 7
+      connection-retries: 4
+      hz-port: 5701-5710
+      use-public-ip: true
       security-group-name: hazelcast-sg
       tag-key: type
       tag-value: hz-nodes
+      iam-role: dummy
+      # cluster: my-cluster
+      # family: test-family
+      # service-name: test-service
     gcp:
       enabled: false
-      zones: us-east1-b,us-east1-c
+      private-key-path: key-path
+      projects: project-1,project-2
+      region: us-central1
+      zones: us-central1-b,us-central1-c
+      label: key=value
+      hz-port: 5701-5710
+      use-public-ip: true
     azure:
       enabled: false
+      instance-metadata-available: false
       client-id: CLIENT_ID
-      client-secret: CLIENT_SECRET
       tenant-id: TENANT_ID
+      client-secret: CLIENT_SECRET
       subscription-id: SUB_ID
-      cluster-id: HZLCAST001
-      group-name: RESOURCE-GROUP-NAME
+      resource-group: RESOURCE-GROUP-NAME
+      scale-set: SCALE-SET-NAME
+      tag: TAG-NAME=HZLCAST001
+      hz-port: 5701-5707
+      use-public-ip: true
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE
@@ -342,12 +358,30 @@ hazelcast-client:
   # * "token"
   #     Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
   #     Content of the attribute "value" is token value in given encoding (or in plain text).
-  #
+  # * "kerberos"
+  #     Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+  #     It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
+
   security:
     credentials-factory:
       class-name: com.hazelcast.examples.MyCredentialsFactory
       properties:
         property: value
+    realms:
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: jduke@HAZELCAST.COM
+                keyTab: /opt/jduke.keytab
+
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====
   #
@@ -376,6 +410,8 @@ hazelcast-client:
   #     Set as true to enable shared object when default Java serialization is used. Its default value is false.
   # * "allow-unsafe":
   #     Set as true to allow the usage of unsafe. Its default value is false.
+  # * "allow-override-default-serializers":
+  #     Set as true to allow override of default serializers. Its default value is false.
   # * "data-serializable-factories":
   #     Lists your class implementations of Hazelcast's DataSerializableFactory. Each factory has the required
   #     "factory-id" attribute that you should give as the ID of your factory.
@@ -406,6 +442,7 @@ hazelcast-client:
     enable-compression: false
     enable-shared-object: true
     allow-unsafe: false
+    allow-override-default-serializers: false
     data-serializable-factories:
       - factory-id: 1
         class-name: com.hazelcast.examples.DataSerializableFactory
@@ -434,6 +471,13 @@ hazelcast-client:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #
@@ -471,6 +515,18 @@ hazelcast-client:
     min-block-size: 1
     page-size: 1
     metadata-space-percentage: 40.5
+    # Simple configuration for single-socket machines with non-volatile memory
+    # persistent-memory-directory: /mnt/optane
+    # Advanced configuration for non-volatile memory
+    persistent-memory:
+      enabled: true
+      mode: MOUNTED
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
+
   #
   # ===== HAZELCAST PROXY FACTORY CONFIGURATION =====
   #
@@ -493,6 +549,8 @@ hazelcast-client:
   # It has a scalar sub-node called "type". The valid values for the type of the load balancer are:
   # * "random": The member the operations to be sent to is chosen randomly.
   # * "round-robin": The member the operations to be sent to is chosen in a round-robin fashion.
+  # * "custom": The member the operations to be sent to is chosen by provided load balancer implementation.
+  #             The implementation class name is specified in additional "class-name" key.
   #
   load-balancer:
     type: random
@@ -501,7 +559,7 @@ hazelcast-client:
   #
   # Configuration element's name is "near-cache".
   # It has the following attribute:
-  #   - name: You can give a name for your Near Cache. It is optional and its default value is "default".
+  #   - name: You can give a name for your Near Cache. It is mandatory.
   #
   # It has the following sub-nodes:
   #   - "max-size":
@@ -634,6 +692,9 @@ hazelcast-client:
   #     Set to true if you want to enable the coalescing of your query cache. Its default value is false.
   # * "populate":
   #     Set to true if you want to enable the initial population of your query cache. Its default value is true.
+  # * "serialize-keys":
+  #     Defines if the Query Cache keys should be serialized or not. Keys should be serialized if they are mutable
+  #     and need to be cloned via serialization. Default value is false.
   # * "eviction":
   #     Configuration for the eviction of your query cache.
   #     It has the following attributes:
@@ -672,6 +733,7 @@ hazelcast-client:
       in-memory-format: BINARY
       coalesce: false
       populate: true
+      serialize-keys: true
       eviction:
         eviction-policy: LRU
         max-size-policy: ENTRY_COUNT
@@ -690,7 +752,7 @@ hazelcast-client:
   #
   # Configuration node's name is "connection-strategy".
   # It has the following sub-nodes:
-  #   - "async-start": If set to true, creating Hazelcast client doesn't not wait for connecting to the cluster.
+  #   - "async-start": If set to true, creating Hazelcast client does not wait for connecting to the cluster.
   #   - "reconnect-mode": Defines the reconnection mode. The valid values are:
   #     - "ON":
   #         Enables reconnection in a blocking manner where all the waiting invocations are blocked until a
@@ -707,11 +769,13 @@ hazelcast-client:
   #       Specifies how long to wait (backoff) after the first failure before retrying in milliseconds.
   #       Its default value is 1000 ms.
   #   * "max-backoff-millis": Specifies the upper limit for the backoff in milliseconds. Its default value is 30000 ms.
-  #   * "multiplier": Factor to multiply the backoff after a failed retry. Its default value is 2.
+  #   * "multiplier": Factor to multiply the backoff after a failed retry. Its default value is 1.05.
   #   * "cluster-connect-timeout-millis": Timeout value in milliseconds for the client to give up to connect to the current cluster
   #      Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
-  #      Its default value is 20000
-  #   * "jitter": Specifies by how much to randomize backoffs. Its default value is 0.2.
+  #      Its default value is -1. For the default value, the client will not stop trying to connect to the cluster.
+  #      If the failover client is used, the client will start trying to connect alternative clusters after
+  #      120000 ms. For any other value, both the failover and non-failover client will use that as it is.
+  #   * "jitter": Specifies by how much to randomize backoffs. Its default value is 0.
   #
   connection-strategy:
     async-start: true
@@ -844,3 +908,47 @@ hazelcast-client:
     jmx:
       enabled: false
     collection-frequency-seconds: 42
+
+  #
+  # ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
+  #
+  # Configuration element's name is "instance-tracking".
+  #
+  # It has the following sub-elements:
+  #     * "enabled":
+  #         Enables or disables instance tracking.
+  #
+  # * "format-pattern":
+  #     Sets the pattern used to render the contents of the instance tracking file.
+  #     It may contain placeholders for these properties:
+  #     - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+  #     - "version": The instance version.
+  #     - "mode": The instance mode which can be "server", "embedded" or "client".
+  #     - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+  #     measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+  #     - "licensed": If this instance is using a license or not. The value 0 signifies
+  #     that there is no license set and the value 1 signifies that a license is in use.
+  #     - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+  #     process ID on all JVMs and operating systems so please test before use. In case we are unable to
+  #     get the PID, the value will be -1.
+  #     The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }.
+  #     For instance, a placeholder for the "start_timestamp" would be $HZ_INSTANCE_TRACKING{start_timestamp}.
+  #     The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+  #     is ignored and only the known properties are resolved, placeholders for
+  #     any parameters which do not have defined values will be ignored. This also
+  #     means that if there is a missing closing bracket in one of the placeholders,
+  #     the property name will be resolved as anything from the opening bracket
+  #     to the next closing bracket, which might contain additional opening brackets.
+  #     If unset, a JSON formatted output will be used.
+  #
+  # * "file-name":
+  #     Sets the name of the file which will contain the tracking metadata. If left unset
+  #     a file named "Hazelcast.process" will be created in the directory as returned by
+  #     System.getProperty("java.io.tmpdir").
+  #     The filename can contain placeholders that will be resolved in the same way
+  #     as placeholders for the format pattern.
+  #
+  instance-tracking:
+    enabled: false
+    file-name: hazelcast.process
+    format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}

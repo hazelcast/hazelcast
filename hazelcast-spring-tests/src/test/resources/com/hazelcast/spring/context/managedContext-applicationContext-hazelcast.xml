@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <tx:annotation-driven transaction-manager="dummyTransactionManager"/>
+
+    <context:annotation-config/>
+    <context:component-scan base-package="com.hazelcast.spring.context"/>
+
+    <hz:hazelcast id="instance1">
+        <hz:config>
+            <hz:spring-aware/>
+            <hz:cluster-name>test-managed-context</hz:cluster-name>
+            <hz:network port="24701">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:interface>127.0.0.1:24701</hz:interface>
+                        <hz:interface>127.0.0.1:24702</hz:interface>
+                    </hz:tcp-ip>
+                </hz:join>
+            </hz:network>
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:hazelcast id="instance2">
+        <hz:config>
+            <hz:spring-aware/>
+            <hz:cluster-name>test-managed-context</hz:cluster-name>
+            <hz:network port="24702">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:interface>127.0.0.1:24701</hz:interface>
+                        <hz:interface>127.0.0.1:24702</hz:interface>
+                    </hz:tcp-ip>
+                </hz:join>
+            </hz:network>
+        </hz:config>
+    </hz:hazelcast>
+
+
+</beans>

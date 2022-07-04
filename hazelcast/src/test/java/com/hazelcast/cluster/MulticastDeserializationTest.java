@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,8 +43,8 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -65,7 +66,7 @@ public class MulticastDeserializationTest {
 
     @Rule
     public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
-            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
+            .clear(ClusterProperty.MULTICAST_GROUP.getName());
 
     @Before
     public void before() {
@@ -74,8 +75,8 @@ public class MulticastDeserializationTest {
 
     @AfterClass
     public static void cleanup() {
-        TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
+        TestDeserialized.isDeserialized = false;
     }
 
     /**
@@ -120,7 +121,8 @@ public class MulticastDeserializationTest {
                 .setEnabled(true)
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
-                .setMulticastTimeToLive(MULTICAST_TTL);
+                .setMulticastTimeToLive(MULTICAST_TTL)
+                ;
         return config;
     }
 
@@ -137,6 +139,9 @@ public class MulticastDeserializationTest {
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
             multicastSocket.setTimeToLive(MULTICAST_TTL);
+            if (OsHelper.isMac()) {
+                multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
+            }
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);
             int msgSize = data.length;

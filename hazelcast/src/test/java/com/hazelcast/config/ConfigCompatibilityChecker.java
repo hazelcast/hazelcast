@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
@@ -34,7 +36,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,6 +93,9 @@ public class ConfigCompatibilityChecker {
                 new ManagementCenterConfigChecker());
         checkCompatibleConfigs("hot restart", c1.getHotRestartPersistenceConfig(), c2.getHotRestartPersistenceConfig(),
                 new HotRestartConfigChecker());
+        checkCompatibleConfigs("persistence", c1.getPersistenceConfig(), c2.getPersistenceConfig(),
+                new PersistenceConfigChecker());
+        checkCompatibleConfigs("device", c1, c2, c1.getDeviceConfigs(), c2.getDeviceConfigs(), new DeviceConfigChecker());
         checkCompatibleConfigs("CRDT replication", c1.getCRDTReplicationConfig(), c2.getCRDTReplicationConfig(),
                 new CRDTReplicationConfigChecker());
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
@@ -126,6 +130,16 @@ public class ConfigCompatibilityChecker {
                 singletonMap("", c2.getSecurityConfig()), new SecurityConfigChecker());
         checkCompatibleConfigs("cp subsystem", c1, c2, singletonMap("", c1.getCPSubsystemConfig()),
                 singletonMap("", c2.getCPSubsystemConfig()), new CPSubsystemConfigChecker());
+        checkCompatibleConfigs("auditlog", c1, c2, singletonMap("", c1.getAuditlogConfig()),
+                singletonMap("", c2.getAuditlogConfig()), new AuditlogConfigChecker());
+
+        checkCompatibleConfigs("metrics", c1.getMetricsConfig(), c2.getMetricsConfig(), new MetricsConfigChecker());
+        checkCompatibleConfigs("sql", c1.getSqlConfig(), c2.getSqlConfig(), new SqlConfigChecker());
+
+        checkCompatibleConfigs("instance-tracking", c1.getInstanceTrackingConfig(), c2.getInstanceTrackingConfig(),
+                new InstanceTrackingConfigChecker());
+        checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
+                new NativeMemoryConfigChecker());
 
         return true;
     }
@@ -257,6 +271,14 @@ public class ConfigCompatibilityChecker {
 
     public static void checkMapConfig(MapConfig expectedConfig, MapConfig actualConfig) {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
+    }
+
+    public static void checkDynamicConfigurationConfig(DynamicConfigurationConfig expectedConfig, DynamicConfigurationConfig actualConfig) {
+        checkCompatibleConfigs("dynamic-configuration-config", expectedConfig, actualConfig, new DynamicConfigurationConfigChecker());
+    }
+
+    public static void checkDeviceConfig(LocalDeviceConfig expectedConfig, LocalDeviceConfig actualConfig) {
+        checkCompatibleConfigs("device-config", expectedConfig, actualConfig, new DeviceConfigChecker());
     }
 
     public static void checkRingbufferConfig(RingbufferConfig expectedConfig, RingbufferConfig actualConfig) {
@@ -404,7 +426,8 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getQueueStoreConfig(), c2.getQueueStoreConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
+                    && nullSafeEqual(c1.getPriorityComparatorClassName(), c2.getPriorityComparatorClassName());
         }
 
         private static boolean isCompatible(QueueStoreConfig c1, QueueStoreConfig c2) {
@@ -516,7 +539,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity());
+                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
         @Override
@@ -533,7 +557,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
-                    && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize());
+                    && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
         @Override
@@ -773,6 +798,76 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    public static class NativeMemoryConfigChecker extends ConfigChecker<NativeMemoryConfig> {
+
+        @Override
+        boolean check(NativeMemoryConfig c1, NativeMemoryConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.isEnabled() == c2.isEnabled()
+                    && c1.getAllocatorType() == c2.getAllocatorType()
+                    && c1.getMetadataSpacePercentage() == c2.getMetadataSpacePercentage()
+                    && c1.getMinBlockSize() == c2.getMinBlockSize()
+                    && c1.getPageSize() == c2.getPageSize()
+                    && c1.getPersistentMemoryConfig().isEnabled() == c2.getPersistentMemoryConfig().isEnabled()
+                    && c1.getPersistentMemoryConfig().getMode() == c2.getPersistentMemoryConfig().getMode()
+                    && c1.getPersistentMemoryConfig().getDirectoryConfigs()
+                         .equals(c2.getPersistentMemoryConfig().getDirectoryConfigs());
+        }
+
+        @Override
+        NativeMemoryConfig getDefault(Config c) {
+            return c.getNativeMemoryConfig();
+        }
+    }
+
+    public static class SqlConfigChecker extends ConfigChecker<SqlConfig> {
+
+        @Override
+        boolean check(SqlConfig c1, SqlConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+        }
+
+        @Override
+        SqlConfig getDefault(Config c) {
+            return c.getSqlConfig();
+        }
+    }
+
+    public static class InstanceTrackingConfigChecker extends ConfigChecker<InstanceTrackingConfig> {
+
+        @Override
+        boolean check(InstanceTrackingConfig c1, InstanceTrackingConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.isEnabled() == c2.isEnabled()
+                    && nullSafeEqual(c1.getFileName(), c2.getFileName())
+                    && nullSafeEqual(c1.getFormatPattern(), c2.getFormatPattern());
+        }
+
+        @Override
+        InstanceTrackingConfig getDefault(Config c) {
+            return c.getInstanceTrackingConfig();
+        }
+    }
+
     private static class CacheSimpleConfigChecker extends ConfigChecker<CacheSimpleConfig> {
         @Override
         boolean check(CacheSimpleConfig c1, CacheSimpleConfig c2) {
@@ -883,7 +978,8 @@ public class ConfigCompatibilityChecker {
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig());
+                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig())
+                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig());
         }
 
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
@@ -920,7 +1016,11 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
-                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
+                && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
+                && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
+                && nullSafeEqual(c1.getInitialLoadMode(), c2.getInitialLoadMode());
         }
 
         @Override
@@ -933,6 +1033,20 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(IndexConfig c1, IndexConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null) && nullSafeEqual(c1, c2);
+        }
+    }
+
+    private static class DynamicConfigurationConfigChecker extends ConfigChecker<DynamicConfigurationConfig> {
+        @Override
+        boolean check(DynamicConfigurationConfig t1, DynamicConfigurationConfig t2) {
+            return Objects.equals(t1, t2);
+        }
+    }
+
+    private static class DeviceConfigChecker extends ConfigChecker<DeviceConfig> {
+        @Override
+        boolean check(DeviceConfig t1, DeviceConfig t2) {
+            return Objects.equals(t1, t2);
         }
     }
 
@@ -1236,9 +1350,9 @@ public class ConfigCompatibilityChecker {
         boolean check(Collection<String> portDefinitions1, Collection<String> portDefinitions2) {
             String[] defaultValues = {"0", "*"};
             boolean defaultDefinition1 = CollectionUtil.isEmpty(portDefinitions1)
-                    || (portDefinitions1.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions1.iterator().next()));
+                    || (portDefinitions1.size() == 1 && contains(defaultValues, portDefinitions1.iterator().next()));
             boolean defaultDefinition2 = CollectionUtil.isEmpty(portDefinitions2)
-                    || (portDefinitions2.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions2.iterator().next()));
+                    || (portDefinitions2.size() == 1 && contains(defaultValues, portDefinitions2.iterator().next()));
             return (defaultDefinition1 && defaultDefinition2) || nullSafeEqual(portDefinitions1, portDefinitions2);
         }
     }
@@ -1262,6 +1376,17 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(
                         classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                         classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+        }
+    }
+
+    public static class AuditlogConfigChecker extends ConfigChecker<AuditlogConfig> {
+        @Override
+        boolean check(AuditlogConfig c1, AuditlogConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
@@ -1455,7 +1580,9 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnableCompression(), c2.isEnableCompression())
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
                     && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
-                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
+                    && nullSafeEqual(c1.isAllowOverrideDefaultSerializers(), c2.isAllowOverrideDefaultSerializers())
+                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig())
+                    && nullSafeEqual(c1.getCompactSerializationConfig(), c2.getCompactSerializationConfig());
         }
 
         private static boolean isCompatible(GlobalSerializerConfig c1, GlobalSerializerConfig c2) {
@@ -1555,8 +1682,10 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getJaasAuthenticationConfig(), c2.getJaasAuthenticationConfig())
                     && isCompatible(c1.getTlsAuthenticationConfig(), c2.getTlsAuthenticationConfig())
                     && isCompatible(c1.getLdapAuthenticationConfig(), c2.getLdapAuthenticationConfig())
+                    && isCompatible(c1.getKerberosAuthenticationConfig(), c2.getKerberosAuthenticationConfig())
                     && isCompatible(c1.getUsernamePasswordIdentityConfig(), c2.getUsernamePasswordIdentityConfig())
                     && isCompatible(c1.getTokenIdentityConfig(), c2.getTokenIdentityConfig())
+                    && isCompatible(c1.getKerberosIdentityConfig(), c2.getKerberosIdentityConfig())
                     ;
         }
 
@@ -1574,6 +1703,14 @@ public class ConfigCompatibilityChecker {
         }
 
         private static boolean isCompatible(LdapAuthenticationConfig c1, LdapAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(KerberosAuthenticationConfig c1, KerberosAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(KerberosIdentityConfig c1, KerberosIdentityConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
         }
 
@@ -1688,7 +1825,9 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(ManagementCenterConfig c1, ManagementCenterConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null
-                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled()))
+                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled())
+                    && (c1.isConsoleEnabled() == c2.isConsoleEnabled())
+                    && (c1.isDataAccessEnabled() == c2.isDataAccessEnabled()))
                     && nullSafeEqual(c1.getTrustedInterfaces(), c2.getTrustedInterfaces());
         }
     }
@@ -1706,6 +1845,31 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
                     && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
                     && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
+        }
+    }
+
+    private static class PersistenceConfigChecker extends ConfigChecker<PersistenceConfig> {
+        @Override
+        boolean check(PersistenceConfig c1, PersistenceConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getBaseDir(), c2.getBaseDir())
+                    && nullSafeEqual(c1.getBackupDir(), c2.getBackupDir())
+                    && nullSafeEqual(c1.getParallelism(), c2.getParallelism())
+                    && nullSafeEqual(c1.getValidationTimeoutSeconds(), c2.getValidationTimeoutSeconds())
+                    && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
+                    && nullSafeEqual(c1.getRebalanceDelaySeconds(), c2.getRebalanceDelaySeconds())
+                    && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
+                    && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
+        }
+    }
+
+    private static class LocalDeviceConfigChecker extends ConfigChecker<LocalDeviceConfig> {
+
+        @Override
+        boolean check(LocalDeviceConfig t1, LocalDeviceConfig t2) {
+            return Objects.equals(t1, t2);
         }
     }
 
@@ -1763,5 +1927,17 @@ public class ConfigCompatibilityChecker {
             }
             return (c1.isEnabled() == c2.isEnabled());
         }
+    }
+
+    private static boolean contains(Object[] values, Object toFind) {
+        if (values == null || values.length == 0) {
+            return false;
+        }
+        for (int i = 0; i < values.length; i++) {
+            if (toFind == values[i] || (toFind != null && toFind.equals(values[i]))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LogEvent;
@@ -25,7 +25,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,10 +57,7 @@ public class ClientLoggingService implements LoggingService {
     }
 
     public void updateClusterName(String clusterName) {
-        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        this.versionMessage = instanceName + " [" + clusterName + "]"
-                + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
-                + " [" + buildInfo.getVersion() + "] ";
+        this.versionMessage = instanceName + " [" + clusterName + "] [" + buildInfo.getVersion() + "] ";
     }
 
     @Override

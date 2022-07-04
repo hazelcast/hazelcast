@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * always tell if an attempt to insert an element will succeed by inspecting remainingCapacity because it may be
  * the case that another thread is about to insert or remove an element.
  */
-@Generated("36d0f4e64ce82f962c0bc9e2cc7c583f")
+@Generated("fceadd488766b4bbb979d5790ea0f04a")
 public final class QueueRemainingCapacityCodec {
     //hex: 0x031300
     public static final int REQUEST_MESSAGE_TYPE = 201472;
@@ -50,15 +50,6 @@ public final class QueueRemainingCapacityCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private QueueRemainingCapacityCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Queue
-         */
-        public java.lang.String name;
     }
 
     public static ClientMessage encodeRequest(java.lang.String name) {
@@ -73,22 +64,14 @@ public final class QueueRemainingCapacityCodec {
         return clientMessage;
     }
 
-    public static QueueRemainingCapacityCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * Name of the Queue
+     */
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The remaining capacity
-         */
-        public int response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(int response) {
@@ -101,12 +84,12 @@ public final class QueueRemainingCapacityCodec {
         return clientMessage;
     }
 
-    public static QueueRemainingCapacityCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * The remaining capacity
+     */
+    public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

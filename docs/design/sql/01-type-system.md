@@ -12,8 +12,8 @@ higher value has precedence over a type with a lower value. If two types have th
 the type with higher precision has precedence.
 
 **Type family** is a collection of types with the same name, but different precisions. All types
-within a family have the same name and precedence. For example, `INT(11)` and `INT(12)` are two types
-from the same `INT` family.
+within a family have the same name and precedence. For example, `INTEGER(11)` and `INTEGER(12)` are two types
+from the same `INTEGER` family.
 
 The scale is not used in Hazelcast Mustang. It is applicable only for `DECIMAL`, `REAL`, and `DOUBLE` types.
 Instead of defining it as a separate value, we just treat these types as types with infinite scale.
@@ -23,15 +23,20 @@ Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the
 
 `OBJECT` is a Hazelcast-specific type representing an object which doesn't match any other type.
 
+`NULL` is a special type representing a type of a `NULL` literal to which a more
+specific type couldn't be assigned. Consider `SELECT NULL FROM t` query, the `NULL`
+literal would have `NULL` type assigned. 
+
 *Table 1: Hazelcast Mustang Data Types*
 
 | SQL Type | Precedence | Precision |
 |---|---|---|
+| `NULL` | 0 |  |
 | `VARCHAR` | 100 |  |
-| `BIT` | 200 | 1 |
+| `BOOLEAN` | 200 | 1 |
 | `TINYINT` | 300 | 4 |
 | `SMALLINT` | 400 | 7 |
-| `INT` | 500 | 11 |
+| `INTEGER` | 500 | 11 |
 | `BIGINT` | 600 | 20 |
 | `DECIMAL` | 700 | Unlimited |
 | `REAL` | 800 | Unlimited |
@@ -68,11 +73,12 @@ Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 
 | SQL Type | Java Type |
 |---|---|
+| `NULL` | `java.lang.Void` |
 | `VARCHAR` | `java.lang.String` |
-| `BIT` | `java.lang.Boolean` |
+| `BOOLEAN` | `java.lang.Boolean` |
 | `TINYINT` | `java.lang.Byte` |
 | `SMALLINT` | `java.lang.Short` |
-| `INT` | `java.lang.Integer` |
+| `INTEGER` | `java.lang.Integer` |
 | `BIGINT` | `java.lang.Long` |
 | `DECIMAL` | `java.math.BigDecimal` |
 | `REAL` | `java.lang.Float` |
@@ -93,12 +99,13 @@ Table 3 establishes a many-to-one mapping between Java and SQL types.
 
 | Java Type | SQL Type |
 |---|---|
+| `java.lang.Void` | `NULL` |
 | `java.lang.String` | `VARCHAR` |
 | `java.lang.Character` | `VARCHAR` |
-| `java.lang.Boolean` | `BIT` |
+| `java.lang.Boolean` | `BOOLEAN` |
 | `java.lang.Byte` | `TINYINT` |
 | `java.lang.Short` | `SMALLINT` |
-| `java.lang.Integer` | `INT` |
+| `java.lang.Integer` | `INTEGER` |
 | `java.lang.Long` | `BIGINT` |
 | `java.math.BigInteger` | `DECIMAL`  |
 | `java.math.BigDecimal` | `DECIMAL`  |
@@ -120,29 +127,27 @@ The following SQL types are mapped to several Java types:
 - `TIMESTAMP W/ TZ` is mapped to multiple date/time classes which represent a time instant.
 
 ## 3. Type Conversions
-Different types might be converted to each other either implicitly or explicitly. Implicit conversion is performed between
-compatible types without explicit user requests based on type compatibility matrix and **type precedence**. Explicit
-conversion is performed through `CAST` or `CONVERT` functions. Explicit conversion may fail if the source value cannot be
-converted to the target type.
+Different types might be converted to each other. The table provides the list of type conversions.
 
 *Table 4: Type conversions (I - implicit, E - explicit)*
 
-| From/To | VARCHAR | BIT | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BIT** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
-| **TINYINT** | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
-| **SMALLINT** | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **INT** | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **BIGINT** | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **DECIMAL** | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **REAL** | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
-| **DOUBLE** | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
-| **TIME** | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
-| **DATE** | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
-| **TIMESTAMP** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |
-| **TIMESTAMP W/ TZ** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `E`  | `I` | `I` |
-| **OBJECT** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |
+| From/To | NULL | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **NULL** | `-` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` |
+| **VARCHAR** |  | `-` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` |
+| **BOOLEAN** |  | `Y` | `-` |  |  |  |  |  |  |  |  |  |  |  | `Y` |
+| **TINYINT** |  | `Y` |  | `-` | `Y` | `Y` | `Y` | `Y` | `Y` |`Y`  |  |  |  |  | `Y` |
+| **SMALLINT** |  | `Y` |  | `Y` | `-` | `Y` | `Y` | `Y` | `Y` | `Y` |  |  |  |  | `Y` |
+| **INTEGER** |  | `Y` |  | `Y` | `Y` | `-` | `Y` | `Y` | `Y` | `Y` |  |  |  |  | `Y` |
+| **BIGINT** |  | `Y` |  | `Y` | `Y` | `Y` | `-` | `Y` | `Y` | `Y` |  |  |  |  | `Y` |
+| **DECIMAL** |  | `Y` |  | `Y` | `Y` | `Y` | `Y` | `-` | `Y` | `Y` |  |  |  |  | `Y` |
+| **REAL** |  | `Y` |  | `Y` | `Y` | `Y` | `Y` | `Y` | `-` | `Y` |  |  |  |  | `Y` |
+| **DOUBLE** |  | `Y` |  | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `-` |  |  |  |  | `Y` |
+| **DATE** |  | `Y` |  |  |  |  |  |  |  |  | `-` |  | `Y` | `Y` | `Y` |
+| **TIME** |  | `Y` |  |  |  |  |  |  |  |  |  | `-` | `Y` | `Y` | `Y` |
+| **TIMESTAMP** |  | `Y` |  |  |  |  |  |  |  |  | `Y` | `Y` | `-` | `Y` | `Y` |
+| **TIMESTAMP W/ TZ** |  | `Y` |  |  |  |  |  |  |  |  | `Y` | `Y` | `Y`  | `-` | `Y` |
+| **OBJECT** |  | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `Y` | `-` |
 
 Conversions between VARCHAR and temporal types are performed using patterns defined in `java.time.format.DateTimeFormatter`
 class [[1]].

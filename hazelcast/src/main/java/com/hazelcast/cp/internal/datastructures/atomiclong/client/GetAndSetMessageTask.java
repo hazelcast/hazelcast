@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndSetOp;
@@ -40,10 +39,7 @@ public class GetAndSetMessageTask extends AbstractCPMessageTask<AtomicLongGetAnd
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new GetAndSetOp(parameters.name, parameters.newValue))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new GetAndSetOp(parameters.name, parameters.newValue));
     }
 
     @Override
@@ -78,6 +74,6 @@ public class GetAndSetMessageTask extends AbstractCPMessageTask<AtomicLongGetAnd
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.newValue};
+        return new Object[] {parameters.newValue};
     }
 }

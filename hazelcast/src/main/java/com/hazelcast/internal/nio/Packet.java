@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 
 /**
  * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
- *
+ * <p>
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
  * not the preferred solution (prefer composition over inheritance), but in this case that
  * would mean more object litter.
- *
+ * <p>
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
 // Declaration order suppressed due to private static int FLAG_TYPEx declarations
@@ -44,7 +44,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 1. URGENT (bit 4)
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
-
+    // 4. 4.x flag (bit 7)
 
     // 1. URGENT flag
 
@@ -89,7 +89,6 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
-
     // 3.b Jet packet flags
 
     /**
@@ -97,6 +96,10 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
+    /**
+     * Marks a packet as sent by a 4.x member
+     */
+    public static final int FLAG_4_0 = 1 << 7;
 
     //            END OF HEADER FLAG SECTION
 
@@ -108,6 +111,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient ServerConnection conn;
 
     public Packet() {
+        raiseFlags(FLAG_4_0);
     }
 
     public Packet(byte[] payload) {
@@ -117,6 +121,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
+        raiseFlags(FLAG_4_0);
     }
 
     /**
@@ -303,17 +308,17 @@ public final class Packet extends HeapData implements OutboundFrame {
             }
         },
         /**
-         * The type of a Bind Message packet.
+         * TcpServer specific control messages.
          * <p>
          * {@code ordinal = 4}
          */
-        MEMBER_HANDSHAKE,
+        SERVER_CONTROL,
         /**
-         * The type of an SQL packet.
+         * Unused packet type. Available for future use.
          * <p>
          * {@code ordinal = 5}
          */
-        SQL,
+        UNDEFINED5,
         /**
          * Unused packet type. Available for future use.
          * <p>

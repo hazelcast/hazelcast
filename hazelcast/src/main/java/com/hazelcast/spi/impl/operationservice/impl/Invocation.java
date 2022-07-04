@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.ClientBackupAwareResponse;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
@@ -26,12 +27,12 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -120,6 +121,12 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
 
     /**
+     * The time in nanoseconds the first time the invocation got executed.
+     */
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final long firstInvocationTimeNanos = System.nanoTime();
+
+    /**
      * A flag to prevent multiple responses to be send to the invocation (only needed for local operations).
      */
     // TODO: this should not be needed; it is taken care of by the future anyway
@@ -145,10 +152,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      */
     private volatile int invokeCount;
 
-    /**
-     * Shows whether this Invocation is targeting a remote member or not.
-     */
-    private boolean remote;
     /**
      * Shows the address of current target.
      * <p>
@@ -176,7 +179,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      */
     private int memberListVersion;
 
-    private ServerConnectionManager connectionManager;
+    private final ServerConnectionManager connectionManager;
 
     /**
      * Shows maximum number of retry counts for this Invocation.
@@ -203,6 +206,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                long callTimeoutMillis,
                boolean deserialize,
                ServerConnectionManager connectionManager) {
+        super(context.logger);
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -210,7 +214,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
-        this.connectionManager = getEndpointManager(connectionManager);
+        this.connectionManager = getConnectionManager(connectionManager);
     }
 
     @Override
@@ -266,7 +270,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         Member previousTargetMember = targetMember;
         T target = getInvocationTarget();
         if (target == null) {
-            remote = false;
             throw newTargetNullException();
         }
 
@@ -292,8 +295,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (op instanceof TargetAware) {
             ((TargetAware) op).setTarget(targetAddress);
         }
-
-        remote = !context.thisAddress.equals(targetAddress);
     }
 
     /**
@@ -374,7 +375,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             this.pendingResponse = new ExceptionalResult(cause);
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
+                // we are done since not all backups have completed. Therefore we should not notify the future
                 return;
             }
         }
@@ -395,8 +396,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             return;
         }
 
-        if (context.logger.isFinestEnabled()) {
-            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
         long oldWaitTimeout = op.getWaitTimeout();
@@ -450,7 +451,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     boolean skipTimeoutDetection() {
         // skip if local and not BackupAwareOperation
-        return !(remote || op instanceof BackupAwareOperation);
+        return isLocal() && !(op instanceof BackupAwareOperation);
     }
 
     HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
@@ -507,10 +508,15 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             return true;
         }
 
-        boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
-        if (!allowed) {
+        boolean allowed = true;
+        if (state == NodeState.SHUT_DOWN) {
             notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
-            remote = false;
+            allowed = false;
+        } else if (!(op instanceof AllowedDuringPassiveState)
+                && context.clusterService.getClusterState() == ClusterState.PASSIVE) {
+            // Similar to OperationRunnerImpl.checkNodeState(op)
+            notifyError(new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op));
+            allowed = false;
         }
         return allowed;
     }
@@ -570,11 +576,15 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             return;
         }
 
-        if (remote) {
-            doInvokeRemote();
-        } else {
+        if (isLocal()) {
             doInvokeLocal(isAsync);
+        } else {
+            doInvokeRemote();
         }
+    }
+
+    private boolean isLocal() {
+        return context.thisAddress.equals(targetAddress);
     }
 
     private void doInvokeLocal(boolean isAsync) {
@@ -595,9 +605,16 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     private void doInvokeRemote() {
         assert connectionManager != null : "Endpoint manager was null";
 
-        ServerConnection connection = connectionManager.getOrConnect(targetAddress);
+        ServerConnection connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
         this.connection = connection;
-        if (!context.outboundOperationHandler.send(op, connection)) {
+        boolean write;
+        if (connection != null) {
+            write = context.outboundOperationHandler.send(op, connection);
+        } else {
+            write = context.outboundOperationHandler.send(op, targetAddress, connectionManager);
+        }
+
+        if (!write) {
             notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
         }
     }
@@ -610,7 +627,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return "Packet not sent to -> " + targetAddress + " over " + connection;
     }
 
-    private ServerConnectionManager getEndpointManager(ServerConnectionManager connectionManager) {
+    private ServerConnectionManager getConnectionManager(ServerConnectionManager connectionManager) {
         return connectionManager != null ? connectionManager : context.defaultServerConnectionManager;
     }
 
@@ -654,17 +671,21 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     @Override
     protected void complete(Object value) {
         future.complete(value);
-        if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
-            context.asyncExecutor.execute(taskDoneCallback);
-        }
+        complete0();
     }
+
 
     @Override
     protected void completeExceptionally(Throwable t) {
         future.completeExceptionallyInternal(t);
+        complete0();
+    }
+
+    private void complete0() {
         if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
             context.asyncExecutor.execute(taskDoneCallback);
         }
+        context.invocationRegistry.retire(this);
     }
 
     private void handleRetry(Object cause) {
@@ -672,8 +693,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
         if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
-            if (context.logger.isLoggable(level)) {
-                context.logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
+            if (logger.isLoggable(level)) {
+                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
             }
         }
 
@@ -697,8 +718,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
     private void completeWhenRetryRejected(RejectedExecutionException e) {
-        if (context.logger.isFinestEnabled()) {
-            context.logger.finest(e);
+        if (logger.isFinestEnabled()) {
+            logger.finest(e);
         }
         completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
@@ -715,10 +736,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         backupsAcksReceived = 0;
         lastHeartbeatMillis = 0;
         doInvoke(false);
-    }
-
-    boolean isRemote() {
-        return remote;
     }
 
     Address getTargetAddress() {
@@ -766,8 +783,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     return;
                 }
 
-                if (context.logger.isFinestEnabled()) {
-                    context.logger.finest("Node is not joined. Re-scheduling " + this
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Node is not joined. Re-scheduling " + this
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
                 try {

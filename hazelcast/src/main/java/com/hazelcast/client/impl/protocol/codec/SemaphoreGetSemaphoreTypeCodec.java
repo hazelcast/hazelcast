@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated("f0b1a0363dd09599d853a6610ab58b3b")
+@Generated("6c8f18db2876d0fd13e9c21666e86a3a")
 public final class SemaphoreGetSemaphoreTypeCodec {
     //hex: 0x0C0700
     public static final int REQUEST_MESSAGE_TYPE = 788224;
@@ -47,15 +47,6 @@ public final class SemaphoreGetSemaphoreTypeCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private SemaphoreGetSemaphoreTypeCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the ISemaphore proxy
-         */
-        public java.lang.String proxyName;
     }
 
     public static ClientMessage encodeRequest(java.lang.String proxyName) {
@@ -70,22 +61,14 @@ public final class SemaphoreGetSemaphoreTypeCodec {
         return clientMessage;
     }
 
-    public static SemaphoreGetSemaphoreTypeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * Name of the ISemaphore proxy
+     */
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxyName = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the semaphore is JDK compatible
-         */
-        public boolean response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(boolean response) {
@@ -98,12 +81,12 @@ public final class SemaphoreGetSemaphoreTypeCodec {
         return clientMessage;
     }
 
-    public static SemaphoreGetSemaphoreTypeCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * true if the semaphore is JDK compatible
+     */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

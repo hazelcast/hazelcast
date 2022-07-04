@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -76,6 +77,8 @@ public class CountDownLatchProxy implements ICountDownLatch {
 
     @Override
     public boolean trySetCount(int count) {
+        checkPositive(count, "Count must be positive!");
+
         return invocationManager.<Boolean>invoke(groupId, new TrySetCountOp(objectName, count)).joinInternal();
     }
 

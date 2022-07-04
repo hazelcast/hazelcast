@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches a new batch of ids for the given flake id generator.
  */
-@Generated("37aff7a01e30d4b3e73c0a29c655245a")
+@Generated("52c4e5d446c824a54ddce183890a9fe8")
 public final class FlakeIdGeneratorNewIdBatchCodec {
     //hex: 0x1C0100
     public static final int REQUEST_MESSAGE_TYPE = 1835264;
@@ -128,5 +128,4 @@ public final class FlakeIdGeneratorNewIdBatchCodec {
         response.batchSize = decodeInt(initialFrame.content, RESPONSE_BATCH_SIZE_FIELD_OFFSET);
         return response;
     }
-
 }

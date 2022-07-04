@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Interface to resolve field types of a single node.
  */
 public interface PlanNodeFieldTypeProvider {
+
+    PlanNodeFieldTypeProvider FAILING_FIELD_TYPE_PROVIDER = index -> {
+        throw new IllegalStateException("The operation should not be called.");
+    };
+
     /**
      * Gets the type of the operator's column at the given index (zero-based).
      *

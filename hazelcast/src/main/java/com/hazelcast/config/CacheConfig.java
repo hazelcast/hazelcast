@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -43,10 +43,10 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CacheWriter;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
@@ -56,7 +56,6 @@ import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -64,7 +63,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned {
 
     private String name;
     private String managerPrefix;
@@ -80,6 +79,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private EvictionConfig evictionConfig = new EvictionConfig();
     @SuppressFBWarnings("SE_BAD_FIELD")
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
     /**
@@ -87,8 +87,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
      */
     private boolean disablePerEntryInvalidationEvents;
-
-    private TenantControl tenantControl = NOOP_TENANT_CONTROL;
 
     public CacheConfig() {
     }
@@ -108,6 +106,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
             this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
@@ -122,6 +121,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             }
             this.splitBrainProtectionName = config.splitBrainProtectionName;
             this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
+            this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
             this.serializationService = config.serializationService;
             this.classLoader = config.classLoader;
@@ -156,7 +156,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         copyListeners(simpleConfig);
         this.splitBrainProtectionName = simpleConfig.getSplitBrainProtectionName();
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
+        this.merkleTreeConfig = new MerkleTreeConfig(simpleConfig.getMerkleTreeConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.dataPersistenceConfig = new DataPersistenceConfig(simpleConfig.getDataPersistenceConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
@@ -467,6 +469,24 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
+     * Gets the {@code MerkleTreeConfig} for this {@code CacheConfig}
+     *
+     * @return merkle tree config
+     */
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     */
+    public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "merkleTreeConfig cannot be null!");
+    }
+
+    /**
      * Returns invalidation events disabled status for per entry.
      *
      * @return {@code true} if invalidation events are disabled for per entry, {@code false} otherwise
@@ -489,19 +509,18 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(managerPrefix);
-        out.writeUTF(uriString);
+        out.writeString(name);
+        out.writeString(managerPrefix);
+        out.writeString(uriString);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
 
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(evictionConfig);
 
         out.writeObject(wanReplicationRef);
         // SUPER
         writeKeyValueTypes(out);
-        writeTenant(out);
         writeFactories(out);
 
         out.writeBoolean(isReadThrough);
@@ -512,7 +531,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
 
         out.writeBoolean(hasListenerConfiguration());
         if (hasListenerConfiguration()) {
@@ -523,6 +542,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeBoolean(disablePerEntryInvalidationEvents);
 
         writePartitionLostListenerConfigs(out);
+
+        out.writeObject(merkleTreeConfig);
+        out.writeObject(dataPersistenceConfig);
     }
 
     private void writePartitionLostListenerConfigs(ObjectDataOutput out)
@@ -545,42 +567,33 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        managerPrefix = in.readUTF();
-        uriString = in.readUTF();
+        name = in.readString();
+        managerPrefix = in.readString();
+        uriString = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
 
-        String resultInMemoryFormat = in.readUTF();
+        String resultInMemoryFormat = in.readString();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
-        // set the thread-context and class loading context for this cache's tenant application
-        // This way user customizations (loader factories, listeners) and keyType/valueType
-        // can be CDI / EJB / JPA objects
-        Closeable tenantContext = tenantControl.setTenant(false);
-        try {
-            evictionConfig = in.readObject();
-            wanReplicationRef = in.readObject();
+        evictionConfig = in.readObject();
+        wanReplicationRef = in.readObject();
 
-            readKeyValueTypes(in);
-            readTenant(in);
-            readFactories(in);
+        readKeyValueTypes(in);
+        readFactories(in);
 
-            isReadThrough = in.readBoolean();
-            isWriteThrough = in.readBoolean();
-            isStoreByValue = in.readBoolean();
-            isManagementEnabled = in.readBoolean();
-            isStatisticsEnabled = in.readBoolean();
-            hotRestartConfig = in.readObject();
-            eventJournalConfig = in.readObject();
+        isReadThrough = in.readBoolean();
+        isWriteThrough = in.readBoolean();
+        isStoreByValue = in.readBoolean();
+        isManagementEnabled = in.readBoolean();
+        isStatisticsEnabled = in.readBoolean();
+        setHotRestartConfig(in.readObject());
+        eventJournalConfig = in.readObject();
 
-            splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
 
-            final boolean listNotEmpty = in.readBoolean();
-            if (listNotEmpty) {
-                readListenerConfigurations(in);
-            }
-        } finally {
-            tenantContext.close();
+        final boolean listNotEmpty = in.readBoolean();
+        if (listNotEmpty) {
+            readListenerConfigurations(in);
         }
 
         mergePolicyConfig = in.readObject();
@@ -591,6 +604,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.serializationService = ((SerializationServiceSupport) in).getSerializationService();
 
         readPartitionLostListenerConfigs(in);
+
+        merkleTreeConfig = in.readObject();
+        setDataPersistenceConfig(in.readObject());
     }
 
     private void readPartitionLostListenerConfigs(ObjectDataInput in)
@@ -623,13 +639,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         }
 
         final CacheConfig that = (CacheConfig) o;
-        if (managerPrefix != null ? !managerPrefix.equals(that.managerPrefix) : that.managerPrefix != null) {
+        if (!Objects.equals(managerPrefix, that.managerPrefix)) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
+        if (!Objects.equals(uriString, that.uriString)) {
             return false;
         }
 
@@ -644,16 +660,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", wanReplicationRef=" + wanReplicationRef
+                + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';
-    }
-
-    TenantControl getTenantControl() {
-        return tenantControl;
-    }
-
-    void setTenantControl(TenantControl tenantControl) {
-        this.tenantControl = tenantControl;
     }
 
     protected void writeTenant(ObjectDataOutput out) throws IOException {
@@ -712,7 +722,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @return the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
-        target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
@@ -728,18 +737,19 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             target.setValueClassName(getValueClassName());
         }
 
-        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy();
-        target.cacheWriterFactory = cacheWriterFactory.shallowCopy();
-        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy();
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, serializationService);
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, serializationService);
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, serializationService);
 
         target.listenerConfigurations = createConcurrentSet();
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
-            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy());
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, serializationService));
         }
 
         target.setManagementEnabled(isManagementEnabled());
         target.setManagerPrefix(getManagerPrefix());
         target.setMergePolicyConfig(getMergePolicyConfig());
+        target.setMerkleTreeConfig(getMerkleTreeConfig());
         target.setName(getName());
         target.setPartitionLostListenerConfigs(getPartitionLostListenerConfigs());
         target.setSplitBrainProtectionName(getSplitBrainProtectionName());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,12 +57,17 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
 
     @Override
     public boolean shouldWait() {
+        RingbufferContainer ringbuffer = getRingBufferContainerOrNull();
+
         if (resultSet == null) {
             resultSet = new ReadResultSetImpl<>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
             sequence = startSequence;
         }
 
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        if (ringbuffer == null) {
+            return minSize > 0;
+        }
+
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
@@ -97,14 +102,18 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        reportReliableTopicReceived(resultSet.size());
+    }
+
+    @Override
     public Object getResponse() {
         return resultSet;
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        return getRingbufferWaitNotifyKey();
     }
 
     @Override

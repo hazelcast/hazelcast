@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeState;
-
 /**
  * Marker interface for operations those are allowed to be executed or invoked during
- * {@link Node}'s {@link NodeState#PASSIVE} state.
+ * when cluster is in {@link com.hazelcast.cluster.ClusterState#PASSIVE} state.
  * <p>
- * By default, only join, replication and cluster heartbeat operations are allowed during shutdown.
+ * By default, only join, replication, cluster heartbeat operations and readonly operation are allowed.
  *
- * @see NodeState
  * @since 3.6
  */
 public interface AllowedDuringPassiveState {

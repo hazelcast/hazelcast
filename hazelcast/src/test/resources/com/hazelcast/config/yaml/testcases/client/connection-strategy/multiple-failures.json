@@ -1,0 +1,96 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "connection-strategy": {
+        "unknown": true,
+        "async-start": "On",
+        "reconnect-mode": "SYNC",
+        "connection-retry": {
+          "unknown": true,
+          "initial-backoff-millis": "2000",
+          "max-backoff-millis": "60000",
+          "multiplier": "3",
+          "cluster-connect-timeout-millis": "5000",
+          "jitter": "0.5"
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ConnectionStrategy",
+    "pointerToViolation": "#/hazelcast-client/connection-strategy",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/async-start",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/async-start",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/jitter",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/jitter",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Number, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/multiplier",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/multiplier",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Number, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/initial-backoff-millis",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/initial-backoff-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/max-backoff-millis",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/max-backoff-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/cluster-connect-timeout-millis",
+            "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/cluster-connect-timeout-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/reconnect-mode",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/reconnect-mode",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "SYNC is not a valid enum value"
+      }
+    ],
+    "message": "9 schema violations found"
+  }
+}

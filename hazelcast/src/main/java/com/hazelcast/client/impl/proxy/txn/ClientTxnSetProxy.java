@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.transaction.TransactionalSet;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
@@ -45,7 +45,7 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy imple
         Data value = toData(e);
         ClientMessage request = TransactionalSetAddCodec.encodeRequest(name, getTransactionId(), getThreadId(), value);
         ClientMessage response = invoke(request);
-        return TransactionalSetAddCodec.decodeResponse(response).response;
+        return TransactionalSetAddCodec.decodeResponse(response);
     }
 
     @Override
@@ -54,14 +54,14 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy imple
         Data value = toData(e);
         ClientMessage request = TransactionalSetRemoveCodec.encodeRequest(name, getTransactionId(), getThreadId(), value);
         ClientMessage response = invoke(request);
-        return TransactionalSetRemoveCodec.decodeResponse(response).response;
+        return TransactionalSetRemoveCodec.decodeResponse(response);
     }
 
     @Override
     public int size() {
         ClientMessage request = TransactionalSetSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        return TransactionalSetSizeCodec.decodeResponse(response).response;
+        return TransactionalSetSizeCodec.decodeResponse(response);
     }
 
     @Override

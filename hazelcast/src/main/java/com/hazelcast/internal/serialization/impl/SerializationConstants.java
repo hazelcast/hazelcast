@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,10 +127,22 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_PRIORITY_QUEUE = -49;
 
-    // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 50;
+    public static final int JAVA_DEFAULT_TYPE_OPTIONAL = -50;
 
-    public static final int JAVA_DEFAULT_TYPE_ENUM = -50;
+    public static final int JAVA_DEFAULT_TYPE_LOCALDATE = -51;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCALTIME = -52;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCALDATETIME = -53;
+
+    public static final int JAVA_DEFAULT_TYPE_OFFSETDATETIME = -54;
+
+    public static final int TYPE_COMPACT = -55;
+
+    public static final int TYPE_COMPACT_WITH_SCHEMA = -56;
+
+    // NUMBER OF CONSTANT SERIALIZERS...
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 57;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

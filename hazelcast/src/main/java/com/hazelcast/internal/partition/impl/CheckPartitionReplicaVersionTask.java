@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryRep
                                      BiConsumer<Object, Throwable> callback) {
         super(nodeEngine, partitionId);
         if (replicaIndex < 1 || replicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Replica index should be in range [1-"
+            throw new IllegalArgumentException("Replica index must be in range [1-"
                     + InternalPartition.MAX_BACKUP_COUNT + "]");
         }
         this.replicaIndex = replicaIndex;

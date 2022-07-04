@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            return CacheAddEntryListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -122,7 +122,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage);
         }
     }
 
@@ -141,7 +141,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -151,7 +151,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage);
         }
     }
 

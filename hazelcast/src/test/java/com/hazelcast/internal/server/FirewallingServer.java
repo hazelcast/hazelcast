@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,28 @@
 
 package com.hazelcast.internal.server;
 
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 
+import javax.annotation.Nonnull;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -46,13 +54,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class FirewallingServer
         implements Server, Consumer<Packet> {
 
+    public final Server delegate;
     private final ScheduledExecutorService scheduledExecutor
             = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
-    private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<>());
 
-    private final Server delegate;
     private final Consumer<Packet> packetConsumer;
-    private AtomicReference<ServerConnectionManager> endpointManagerRef = new AtomicReference<ServerConnectionManager>(null);
+    private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
 
     @SuppressWarnings("unchecked")
     public FirewallingServer(Server delegate, Set<Address> initiallyBlockedAddresses) {
@@ -67,9 +75,19 @@ public class FirewallingServer
     }
 
     @Override
-    public AggregateServerConnectionManager getAggregateConnectionManager() {
-        final AggregateServerConnectionManager delegateAggregateEndpointManager = this.delegate.getAggregateConnectionManager();
-        return new FirewallingAggregateConnectionManager(delegateAggregateEndpointManager);
+    public @Nonnull
+    Collection getConnections() {
+        return delegate.getConnections();
+    }
+
+    @Override
+    public void addConnectionListener(ConnectionListener listener) {
+        delegate.addConnectionListener(listener);
+    }
+
+    @Override
+    public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+        return delegate.getNetworkStats();
     }
 
     @Override
@@ -79,13 +97,13 @@ public class FirewallingServer
 
     @Override
     public ServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
-        if (endpointManagerRef.get() == null) {
+        if (connectionManagerRef.get() == null) {
             final ServerConnectionManager delegateServerConnectionManager = this.delegate.getConnectionManager(MEMBER);
-            endpointManagerRef.compareAndSet(null, new FirewallingEndpointManager(delegateServerConnectionManager));
+            connectionManagerRef.compareAndSet(null, new FirewallingServerConnectionManager(delegateServerConnectionManager));
         }
 
         //TODO (TK) : Hint this manager was also delegating getClientConnections etc. I removed them, are they needed (verify during test)
-        return endpointManagerRef.get();
+        return connectionManagerRef.get();
     }
 
     @Override
@@ -131,7 +149,7 @@ public class FirewallingServer
         @Override
         public void run() {
             if (connection != null) {
-                delegate.getConnectionManager(MEMBER).transmit(packet, connection);
+                connection.write(packet);
             } else {
                 delegate.getConnectionManager(MEMBER).transmit(packet, target);
             }
@@ -144,8 +162,8 @@ public class FirewallingServer
         final long maxDelayMs;
 
         private PacketDelayProps(long minDelayMs, long maxDelayMs) {
-            checkPositive(minDelayMs, "minDelayMs must be positive, but was " + minDelayMs);
-            checkPositive(maxDelayMs, "maxDelayMs must be positive, but was " + maxDelayMs);
+            checkPositive("minDelayMs", minDelayMs);
+            checkPositive("maxDelayMs", maxDelayMs);
             checkState(maxDelayMs >= minDelayMs, "maxDelayMs must not be smaller than minDelayMs (maxDelayMs: " + maxDelayMs
                     + ", minDelayMs: " + minDelayMs + ")");
 
@@ -154,45 +172,15 @@ public class FirewallingServer
         }
     }
 
-    public class FirewallingAggregateConnectionManager
-            implements AggregateServerConnectionManager {
-
-        final AggregateServerConnectionManager delegate;
-
-        FirewallingAggregateConnectionManager(AggregateServerConnectionManager delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Collection getActiveConnections() {
-            return delegate.getActiveConnections();
-        }
-
-        @Override
-        public Collection getConnections() {
-            return delegate.getConnections();
-        }
-
-        @Override
-        public void addConnectionListener(ConnectionListener listener) {
-            delegate.addConnectionListener(listener);
-        }
-
-        @Override
-        public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
-            return delegate.getNetworkStats();
-        }
-    }
-
-    public class FirewallingEndpointManager
+    public class FirewallingServerConnectionManager
             implements ServerConnectionManager {
 
-        private volatile PacketFilter   packetFilter;
+        private volatile PacketFilter packetFilter;
         private volatile PacketDelayProps delayProps = new PacketDelayProps(500, 5000);
 
         final ServerConnectionManager delegate;
 
-        FirewallingEndpointManager(ServerConnectionManager delegate) {
+        FirewallingServerConnectionManager(ServerConnectionManager delegate) {
             this.delegate = delegate;
         }
 
@@ -204,11 +192,6 @@ public class FirewallingServer
         @Override
         public void accept(Packet packet) {
             delegate.accept(packet);
-        }
-
-        @Override
-        public synchronized ServerConnection getOrConnect(Address address, boolean silent) {
-            return getOrConnect(address);
         }
 
         public synchronized void blockNewConnection(Address address) {
@@ -261,26 +244,7 @@ public class FirewallingServer
         }
 
         @Override
-        public boolean transmit(Packet packet, ServerConnection connection) {
-            if (connection != null) {
-                PacketFilter.Action action = applyFilter(packet, connection.getRemoteAddress());
-                switch (action) {
-                    case DROP:
-                        return true;
-                    case REJECT:
-                        return false;
-                    case DELAY:
-                        scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), getDelayMs(), MILLISECONDS);
-                        return true;
-                    default:
-                        // NOP
-                }
-            }
-            return delegate.transmit(packet, connection);
-        }
-
-        @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(Packet packet, Address target, int streamId) {
             PacketFilter.Action action = applyFilter(packet, target);
             switch (action) {
                 case DROP:
@@ -291,7 +255,7 @@ public class FirewallingServer
                     scheduledExecutor.schedule(new DelayedPacketTask(packet, target), getDelayMs(), MILLISECONDS);
                     return true;
                 default:
-                    return delegate.transmit(packet, target);
+                    return delegate.transmit(packet, target, streamId);
             }
         }
 
@@ -301,28 +265,57 @@ public class FirewallingServer
         }
 
         @Override
-        public Collection<ServerConnection> getConnections() {
+        public @Nonnull
+        Collection<ServerConnection> getConnections() {
             return delegate.getConnections();
         }
 
         @Override
-        public Collection<ServerConnection> getActiveConnections() {
-            return delegate.getActiveConnections();
+        public int connectionCount() {
+            return delegate.connectionCount();
         }
 
         @Override
-        public ServerConnection get(Address address) {
-            return delegate.get(address);
+        public ServerConnection get(@Nonnull Address address, int streamId) {
+            return wrap(delegate.get(address, streamId));
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address) {
-            return delegate.getOrConnect(address);
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+            return delegate.getAllConnections(address).stream().map(this::wrap).collect(Collectors.toList());
+        }
+
+        private ServerConnection wrap(ServerConnection c) {
+            return c == null ? null : new FirewallingConnection(c, this);
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection) {
-            return delegate.register(remoteAddress, connection);
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
+            return wrap(delegate.getOrConnect(address, streamId));
+        }
+
+        @Override
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
+            return wrap(delegate.getOrConnect(address, streamId));
+        }
+
+        @Override
+        public boolean blockOnConnect(Address address,
+                                      long timeoutMillis, int streamId) throws InterruptedException {
+            return delegate.blockOnConnect(address, timeoutMillis, streamId);
+        }
+
+        @Override
+        public boolean register(
+                Address remoteAddress,
+                Address targetAddress,
+                Collection<Address> remoteAddressAliases,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
+            return delegate.register(remoteAddress, targetAddress, remoteAddressAliases, remoteUuid, connection, streamId);
         }
 
         @Override
@@ -330,4 +323,131 @@ public class FirewallingServer
             return delegate.getNetworkStats();
         }
     }
+
+    private class FirewallingConnection implements ServerConnection {
+        private ServerConnection delegate;
+        private FirewallingServerConnectionManager firewallingServerConnectionManager;
+
+        FirewallingConnection(ServerConnection delegate, FirewallingServerConnectionManager firewallingServerConnectionManager) {
+            this.delegate = delegate;
+            this.firewallingServerConnectionManager = firewallingServerConnectionManager;
+        }
+
+        @Override
+        public ServerConnectionManager getConnectionManager() {
+            return firewallingServerConnectionManager;
+        }
+
+        @Override
+        public String getConnectionType() {
+            return delegate.getConnectionType();
+        }
+
+        @Override
+        public void setConnectionType(String connectionType) {
+            delegate.setConnectionType(connectionType);
+        }
+
+        @Override
+        public boolean isClient() {
+            return delegate.isClient();
+        }
+
+        @Override
+        public ConcurrentMap attributeMap() {
+            return delegate.attributeMap();
+        }
+
+        @Override
+        public boolean isAlive() {
+            return delegate.isAlive();
+        }
+
+        @Override
+        public long lastReadTimeMillis() {
+            return delegate.lastReadTimeMillis();
+        }
+
+        @Override
+        public long lastWriteTimeMillis() {
+            return delegate.lastWriteTimeMillis();
+        }
+
+        @Override
+        public InetSocketAddress getRemoteSocketAddress() {
+            return delegate.getRemoteSocketAddress();
+        }
+
+        @Override
+        public Address getRemoteAddress() {
+            return delegate.getRemoteAddress();
+        }
+
+        @Override
+        public void setRemoteAddress(Address remoteAddress) {
+            delegate.setRemoteAddress(remoteAddress);
+        }
+
+        @Override
+        public UUID getRemoteUuid() {
+            return delegate.getRemoteUuid();
+        }
+
+        @Override
+        public void setRemoteUuid(UUID remoteUuid) {
+            delegate.setRemoteUuid(remoteUuid);
+        }
+
+        @Override
+        public InetAddress getInetAddress() {
+            return delegate.getInetAddress();
+        }
+
+        @Override
+        public boolean write(OutboundFrame packet) {
+            PacketFilter.Action action = firewallingServerConnectionManager.applyFilter((Packet) packet, getRemoteAddress());
+            switch (action) {
+                case DROP:
+                    return true;
+                case REJECT:
+                    return false;
+                case DELAY:
+                    scheduledExecutor.schedule(new DelayedPacketTask((Packet) packet, delegate),
+                            firewallingServerConnectionManager.getDelayMs(), MILLISECONDS);
+                    return true;
+                case ALLOW:
+                    return delegate.write(packet);
+                default:
+                    throw new RuntimeException();
+            }
+        }
+
+        @Override
+        public void close(String reason, Throwable cause) {
+            delegate.close(reason, cause);
+        }
+
+        @Override
+        public String getCloseReason() {
+            return delegate.getCloseReason();
+        }
+
+        @Override
+        public Throwable getCloseCause() {
+            return delegate.getCloseCause();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            FirewallingConnection that = (FirewallingConnection) o;
+            return delegate == that.delegate;
+        }
+    }
+
 }

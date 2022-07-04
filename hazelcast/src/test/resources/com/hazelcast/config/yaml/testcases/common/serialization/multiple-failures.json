@@ -1,0 +1,386 @@
+{
+  "instance": {
+    "hazelcast": {
+      "serialization": {
+        "unknown-prop": "INVALID",
+        "portable-version": null,
+        "use-native-byte-order": "off",
+        "byte-order": "BACK_AND_FORTH_ENDIAN",
+        "enable-compression": "Yes",
+        "enable-shared-object": "Yes",
+        "allow-unsafe": "Yes",
+        "data-serializable-factories": [
+          {
+            "unknown-prop": false
+          },
+          2,
+          {
+            "class-name": null,
+            "factory-id": "uuid"
+          }
+        ],
+        "portable-factories": null,
+        "global-serializer": {
+          "className": "com.hazelcast.examples.GlobalSerializerFactory"
+        },
+        "serializers": [
+          {
+            "unknown-prop": false
+          },
+          {
+            "type-class": null,
+            "class-name": [
+              "com.hazelcast.examples.SerializerFactory"
+            ]
+          }
+        ],
+        "check-class-def-errors": "Off",
+        "java-serialization-filter": {
+          "defaults-disabled": "Off",
+          "blacklist": {
+            "class": null,
+            "package": [
+              2
+            ],
+            "unknown-prop": "INVALID"
+          },
+          "whitelist": []
+        },
+        "allow-override-default-serializers": "Yes",
+        "compact-serialization": {
+          "enabled": "NO",
+          "extra-property": 3,
+          "registered-classes": [
+            {
+              "no-class": "someValue"
+            },
+            {
+              "class": "someValue",
+              "type-name": 3
+            },
+            {
+              "class": "someValue",
+              "serializer": false
+            }
+          ]
+        }
+      }
+    },
+    "error": "global object property"
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Serialization",
+    "pointerToViolation": "#/hazelcast/serialization",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Serialization",
+        "pointerToViolation": "#/hazelcast/serialization",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown-prop] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/use-native-byte-order",
+        "pointerToViolation": "#/hazelcast/serialization/use-native-byte-order",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/byte-order",
+        "pointerToViolation": "#/hazelcast/serialization/byte-order",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "BACK_AND_FORTH_ENDIAN is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/compact-serialization",
+        "pointerToViolation": "#/hazelcast/serialization/compact-serialization",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/compact-serialization",
+            "pointerToViolation": "#/hazelcast/serialization/compact-serialization",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [extra-property] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/registered-classes",
+            "pointerToViolation": "#/hazelcast/serialization/compact-serialization/registered-classes",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/registered-classes/items",
+                "pointerToViolation": "#/hazelcast/serialization/compact-serialization/registered-classes/0",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [no-class] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/registered-classes/items/properties/type-name",
+                "pointerToViolation": "#/hazelcast/serialization/compact-serialization/registered-classes/1/type-name",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              },
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/registered-classes/items/properties/serializer",
+                "pointerToViolation": "#/hazelcast/serialization/compact-serialization/registered-classes/2/serializer",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Boolean"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/enabled",
+            "pointerToViolation": "#/hazelcast/serialization/compact-serialization/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "5 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/allow-unsafe",
+        "pointerToViolation": "#/hazelcast/serialization/allow-unsafe",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/data-serializable-factories",
+        "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClassWithFactoryId",
+            "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/0",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/ClassWithFactoryId",
+                "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/0",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [factory-id] not found"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassWithFactoryId",
+                "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/0",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [class-name] not found"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassWithFactoryId",
+                "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/0",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassWithFactoryId",
+            "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/1",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassWithFactoryId",
+            "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/2",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/ClassWithFactoryId/properties/factory-id",
+                "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/2/factory-id",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassWithFactoryId/properties/class-name",
+                "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/2/class-name",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Null"
+              }
+            ],
+            "message": "2 schema violations found"
+          }
+        ],
+        "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/global-serializer",
+        "pointerToViolation": "#/hazelcast/serialization/global-serializer",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/global-serializer",
+            "pointerToViolation": "#/hazelcast/serialization/global-serializer",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [class-name] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/global-serializer",
+            "pointerToViolation": "#/hazelcast/serialization/global-serializer",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [className] is not permitted"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/check-class-def-errors",
+        "pointerToViolation": "#/hazelcast/serialization/check-class-def-errors",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/java-serialization-filter",
+        "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClassFilter",
+            "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/blacklist",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/ClassFilter",
+                "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/blacklist",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassFilter/properties/package/items",
+                "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/blacklist/package/0",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassFilter/properties/class",
+                "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/blacklist/class",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: JSONArray, found: Null"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/java-serialization-filter/properties/defaults-disabled",
+            "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/defaults-disabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassFilter",
+            "pointerToViolation": "#/hazelcast/serialization/java-serialization-filter/whitelist",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: JSONArray"
+          }
+        ],
+        "message": "5 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/serializers",
+        "pointerToViolation": "#/hazelcast/serialization/serializers",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/serializers/items",
+            "pointerToViolation": "#/hazelcast/serialization/serializers/0",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/serializers/items",
+                "pointerToViolation": "#/hazelcast/serialization/serializers/0",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [type-class] not found"
+              },
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/serializers/items",
+                "pointerToViolation": "#/hazelcast/serialization/serializers/0",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [class-name] not found"
+              },
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/serializers/items",
+                "pointerToViolation": "#/hazelcast/serialization/serializers/0",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/Serialization/properties/serializers/items",
+            "pointerToViolation": "#/hazelcast/serialization/serializers/1",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/serializers/items/properties/type-class",
+                "pointerToViolation": "#/hazelcast/serialization/serializers/1/type-class",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Null"
+              },
+              {
+                "schemaLocation": "#/definitions/Serialization/properties/serializers/items/properties/class-name",
+                "pointerToViolation": "#/hazelcast/serialization/serializers/1/class-name",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: JSONArray"
+              }
+            ],
+            "message": "2 schema violations found"
+          }
+        ],
+        "message": "5 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/portable-factories",
+        "pointerToViolation": "#/hazelcast/serialization/portable-factories",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/allow-override-default-serializers",
+        "pointerToViolation": "#/hazelcast/serialization/allow-override-default-serializers",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/enable-shared-object",
+        "pointerToViolation": "#/hazelcast/serialization/enable-shared-object",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/enable-compression",
+        "pointerToViolation": "#/hazelcast/serialization/enable-compression",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Serialization/properties/portable-version",
+        "pointerToViolation": "#/hazelcast/serialization/portable-version",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: Null"
+      }
+    ],
+    "message": "33 schema violations found"
+  }
+}

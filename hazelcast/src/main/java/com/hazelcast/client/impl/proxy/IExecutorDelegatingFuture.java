@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -100,20 +99,18 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
                     ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, mayInterruptIfRunning);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
             ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
+            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get());
         } else {
             ClientMessage request =
                     ExecutorServiceCancelOnMemberCodec.encodeRequest(uuid, member.getUuid(), mayInterruptIfRunning);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, member.getUuid());
             ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnMemberCodec.decodeResponse(f.get()).response;
+            return ExecutorServiceCancelOnMemberCodec.decodeResponse(f.get());
         }
     }
 
     private void waitForRequestToBeSend() throws InterruptedException {
-        InternalCompletableFuture future = getFuture();
-        ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
-        clientCallFuture.getInvocation().getSendConnectionOrWait();
+        ClientInvocationFuture future = getFuture();
+        future.getInvocation().waitInvoked();
     }
-
 }

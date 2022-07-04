@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,9 +45,7 @@ public class LocalWanPublisherStatsTest {
         deserialized.fromJson(serialized);
 
         assertEquals(localWanPublisherStats.isConnected(), deserialized.isConnected());
-        assertEquals(localWanPublisherStats.getTotalPublishedEventCount(), deserialized.getTotalPublishedEventCount());
-        assertEquals(localWanPublisherStats.getOutboundQueueSize(), deserialized.getOutboundQueueSize());
-        assertEquals(localWanPublisherStats.getTotalPublishLatency(), deserialized.getTotalPublishLatency());
+        assertEquals(localWanPublisherStats.getPublisherState(), deserialized.getPublisherState());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ import java.util.concurrent.TimeUnit;
  * one, when a caller makes its very first {@link #acquire()} call, it starts
  * a new CP session with the underlying CP group. Then, liveliness of the
  * caller is tracked via this CP session. When the caller fails, permits
- * acquired by this caller are automatically and safely released. However,
- * the session-aware version comes with a limitation, that is,
+ * acquired by this HazelcastInstance are automatically and safely released.
+ * However, the session-aware version comes with a limitation, that is,
  * a HazelcastInstance cannot release permits before acquiring them
  * first. In other words, a HazelcastInstance can release only
  * the permits it has acquired earlier. It means, you can acquire a permit
@@ -86,7 +86,7 @@ import java.util.concurrent.TimeUnit;
  * <li>
  * The second impl offered by {@link CPSubsystem} is sessionless. This impl
  * does not perform auto-cleanup of acquired permits on failures. Acquired
- * permits are not bound to threads and permits can be released without
+ * permits are not bound to HazelcastInstance and permits can be released without
  * acquiring first. This one is compatible with {@link Semaphore#release()}.
  * However, you need to handle failed permit owners on your own. If a Hazelcast
  * server or a client fails while holding some permits, they will not be
@@ -131,6 +131,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @param permits the given permit count
      * @return true if initialization success. false if already initialized
+     * @throws IllegalArgumentException if {@code permits} is negative
      */
     boolean init(int permits);
 
@@ -187,7 +188,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @param permits the number of permits to acquire
      * @throws InterruptedException     if the current thread is interrupted
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     void acquire(int permits) throws InterruptedException;
@@ -236,14 +237,14 @@ public interface ISemaphore extends DistributedObject {
      * of them will unblock by acquiring the permit released by this call.
      * <p>
      * If the underlying {@link ISemaphore} is configured as non-JDK compatible
-     * via {@link SemaphoreConfig} then a thread can only release a permit which
-     * it has acquired before. In other words, a thread cannot release a permit
+     * via {@link SemaphoreConfig} then a HazelcastInstance can only release a permit which
+     * it has acquired before. In other words, a HazelcastInstance cannot release a permit
      * without acquiring it first.
      * <p>
      * Otherwise, which means the underlying impl is the JDK compatible
      * Semaphore is configured via {@link SemaphoreConfig}, there is no requirement
-     * that a thread that releases a permit must have acquired that permit by
-     * calling one of the {@link #acquire()} methods. A thread can freely
+     * that a HazelcastInstance that releases a permit must have acquired that permit by
+     * calling one of the {@link #acquire()} methods. A HazelcastInstance can freely
      * release a permit without acquiring it first. In this case, correct usage
      * of a semaphore is established by programming convention in the application.
      *
@@ -259,19 +260,19 @@ public interface ISemaphore extends DistributedObject {
      * <p>
      * If the underlying {@link ISemaphore} impl is the non-JDK compatible
      * CP impl that is configured via {@link SemaphoreConfig} and fetched
-     * via {@link CPSubsystem}, then a thread can only release a permit which
-     * it has acquired before. In other words, a thread cannot release a permit
+     * via {@link CPSubsystem}, then a HazelcastInstance can only release a permit which
+     * it has acquired before. In other words, a HazelcastInstance cannot release a permit
      * without acquiring it first.
      * <p>
      * Otherwise, which means the underlying impl is the JDK compatible
      * Semaphore is configured via {@link SemaphoreConfig}, there is no requirement
-     * that a thread that releases a permit must have acquired that permit by
-     * calling one of the {@link #acquire()} methods. A thread can freely
+     * that a HazelcastInstance that releases a permit must have acquired that permit by
+     * calling one of the {@link #acquire()} methods. A HazelcastInstance can freely
      * release a permit without acquiring it first. In this case, correct usage
      * of a semaphore is established by programming convention in the application.
      *
      * @param permits the number of permits to release
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException if the Semaphore is non-JDK-compatible
      *         and the caller does not have a permit
      */
@@ -378,7 +379,7 @@ public interface ISemaphore extends DistributedObject {
      * @return {@code true} if all permits were acquired,
      * {@code false} if the waiting time elapsed before all permits could be acquired
      * @throws InterruptedException     if the current thread is interrupted
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;

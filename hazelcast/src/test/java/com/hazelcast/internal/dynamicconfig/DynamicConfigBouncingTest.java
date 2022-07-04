@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +64,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
             .clusterSize(4)
             .driverCount(1)
             .useTerminate(true)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
             .build();
 
     public Config getConfig() {
@@ -139,6 +141,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addAttributeConfig(new AttributeConfig("attribute", "foo.bar.ExtractorClass"))
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)
+                .setPerEntryStatsEnabled(true)
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))
                 .setSplitBrainProtectionName("split-brain-protection");
     }

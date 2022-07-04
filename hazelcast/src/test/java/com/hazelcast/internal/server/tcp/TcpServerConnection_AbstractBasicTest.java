@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static java.lang.System.currentTimeMillis;
 import static org.junit.Assert.assertEquals;
@@ -43,34 +44,27 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     private List<Packet> packetsB;
 
+    @Mock
+    private ConnectionLifecycleListener<TcpServerConnection> mockedListener;
+
     @Before
     public void setup() throws Exception {
         super.setup();
-        packetsB = Collections.synchronizedList(new ArrayList<Packet>());
-        startAllNetworkingServices();
-        serverContextB.packetConsumer = new Consumer<Packet>() {
-            @Override
-            public void accept(Packet packet) {
-                packetsB.add(packet);
-            }
-        };
+        packetsB = Collections.synchronizedList(new ArrayList<>());
+        startAllTcpServers();
+        serverContextB.packetConsumer = packet -> packetsB.add(packet);
     }
 
     @Test
     public void write_whenNonUrgent() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
         boolean result = c.write(packet);
 
         assertTrue(result);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, packetsB.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, packetsB.size()));
 
         Packet found = packetsB.get(0);
         assertEquals(packet, found);
@@ -78,7 +72,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void write_whenUrgent() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
         packet.raiseFlags(Packet.FLAG_URGENT);
@@ -86,12 +80,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         boolean result = c.write(packet);
 
         assertTrue(result);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, packetsB.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, packetsB.size()));
 
         Packet found = packetsB.get(0);
         assertEquals(packet, found);
@@ -99,7 +88,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void lastWriteTimeMillis_whenPacketWritten() {
-        TcpServerConnection connAB = connect(networkingServiceA, addressB);
+        TcpServerConnection connAB = connect(tcpServerA, addressB);
 
         // we need to sleep some so that the lastWriteTime of the connection gets nice and old.
         // we need this so we can determine the lastWriteTime got updated
@@ -110,12 +99,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         connAB.write(packet);
 
         // wait for the packet to get written
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, packetsB.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, packetsB.size()));
 
         long lastWriteTimeMs = connAB.lastWriteTimeMillis();
         long nowMs = currentTimeMillis();
@@ -131,7 +115,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void lastWriteTime_whenNothingWritten() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         long result1 = c.lastWriteTimeMillis();
         long result2 = c.lastWriteTimeMillis();
@@ -143,8 +127,8 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
     // on the remote side we check the if the lastReadTime is updated
     @Test
     public void lastReadTimeMillis() {
-        TcpServerConnection connAB = connect(networkingServiceA, addressB);
-        TcpServerConnection connBA = connect(networkingServiceB, addressA);
+        TcpServerConnection connAB = connect(tcpServerA, addressB);
+        TcpServerConnection connBA = connect(tcpServerB, addressA);
 
         // we need to sleep some so that the lastReadTime of the connection gets nice and old.
         // we need this so we can determine the lastReadTime got updated
@@ -155,12 +139,9 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         connAB.write(packet);
 
         // wait for the packet to get read
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, packetsB.size());
-                System.out.println("Packet processed");
-            }
+        assertTrueEventually(() -> {
+            assertEquals(1, packetsB.size());
+            System.out.println("Packet processed");
         });
 
         long lastReadTimeMs = connBA.lastReadTimeMillis();
@@ -176,7 +157,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void lastReadTime_whenNothingWritten() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         long result1 = c.lastReadTimeMillis();
         long result2 = c.lastReadTimeMillis();
@@ -186,7 +167,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void write_whenNotAlive() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
         c.close(null, null);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
@@ -198,7 +179,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void getRemoteSocketAddress() {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         InetSocketAddress result = c.getRemoteSocketAddress();
 
@@ -207,8 +188,8 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
     @Test
     public void test_equals() {
-        TcpServerConnection connAB = connect(networkingServiceA, addressB);
-        TcpServerConnection connAC = connect(networkingServiceA, addressC);
+        TcpServerConnection connAB = connect(tcpServerA, addressB);
+        TcpServerConnection connAC = connect(tcpServerA, addressC);
 
         assertEquals(connAB, connAB);
         assertEquals(connAC, connAC);
@@ -216,5 +197,21 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         assertNotEquals(connAB, connAC);
         assertNotEquals(connAC, connAB);
         assertNotEquals(connAB, "foo");
+
+        //don't mock if you don't need to
+        TcpServerConnectionManager cm = connAB.getConnectionManager();
+        Channel channel = connAB.getChannel();
+        TcpServerConnection conn1 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
+        TcpServerConnection conn2 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
+        TcpServerConnection conn3 = new TcpServerConnection(cm, mockedListener, 0, channel, false);
+        assertEquals(conn1, conn2);
+        assertNotEquals(conn1, conn3);
+        conn1.setRemoteAddress(addressA);
+        assertNotEquals(conn1, conn2);
+        conn2.setRemoteAddress(addressB);
+        assertNotEquals(conn1, conn2);
+        conn2.setRemoteAddress(addressA);
+        assertEquals(conn1, conn2);
     }
+
 }

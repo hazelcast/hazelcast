@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,18 @@ import java.io.IOException;
 
 /**
  * Configures the Hot Restart Persistence per Hazelcast data structure.
+ *
+ * <br><br>
+ * Note: If either, but not both, data-persistence ({@code DataPersistenceConfig}) or
+ * hot-restart ({@code HotRestartConfig}) is enabled,
+ * Hazelcast will use the configuration of the enabled element. If both are
+ * enabled, Hazelcast will use the data-persistence ({@code DataPersistenceConfig})
+ * configuration. hot-restart element (and thus {@code HotRestartConfig})
+ * will be removed in a future release.
+ *
+ * @deprecated since 5.0 use {@link DataPersistenceConfig}
  */
+@Deprecated
 public class HotRestartConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,14 @@ public class AddDurableExecutorConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
+        // This is to handle 4.0 client versions. Those
+        // versions don't aware of `statisticsEnabled` parameter.
+        // The parameter was added at version 4.1 and its default value is  true.
+        boolean statsEnabled = !parameters.isStatisticsEnabledExists
+                || parameters.statisticsEnabled;
+
         DurableExecutorConfig config = new DurableExecutorConfig(parameters.name, parameters.poolSize,
-                parameters.durability, parameters.capacity);
+                parameters.durability, parameters.capacity, statsEnabled);
         return config;
     }
 

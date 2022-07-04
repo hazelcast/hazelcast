@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -30,6 +31,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
@@ -55,43 +57,32 @@ import static java.nio.ByteOrder.nativeOrder;
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
     static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
-
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
-
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<>();
-
     protected final Map<Integer, PortableFactory> portableFactories = new HashMap<>();
-
     protected final Set<ClassDefinition> classDefinitions = new HashSet<>();
-
     protected ClassLoader classLoader;
     protected SerializationConfig config;
-
     protected byte version = -1;
     protected int portableVersion = -1;
-
     protected boolean checkClassDefErrors = true;
-
     protected ManagedContext managedContext;
-
     protected boolean useNativeByteOrder;
     protected ByteOrder byteOrder = DEFAULT_BYTE_ORDER;
-
     protected boolean enableCompression;
     protected boolean enableSharedObject;
     protected boolean allowUnsafe;
-
+    protected boolean allowOverrideDefaultSerializers;
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
-
     protected PartitioningStrategy partitioningStrategy;
-
     protected HazelcastInstance hazelcastInstance;
-
+    protected CompactSerializationConfig compactSerializationConfig;
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
-
     protected ClassNameFilter classNameFilter;
+    protected SchemaService schemaService;
+    protected boolean isCompatibility;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -131,8 +122,10 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableCompression = config.isEnableCompression();
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
+        allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
         classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
 
@@ -224,6 +217,18 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
+    public SerializationServiceBuilder setSchemaService(SchemaService schemaService) {
+        this.schemaService = schemaService;
+        return this;
+    }
+
+    @Override
+    public SerializationServiceBuilder isCompatibility(boolean isCompatibility) {
+        this.isCompatibility = isCompatibility;
+        return this;
+    }
+
+    @Override
     public InternalSerializationService build() {
         initVersions();
         if (config != null) {
@@ -296,8 +301,13 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withEnableSharedObject(enableSharedObject)
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
                     .withClassNameFilter(classNameFilter)
+                    .withCheckClassDefErrors(checkClassDefErrors)
+                    .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
+                    .withCompactSerializationConfig(compactSerializationConfig)
+                    .withSchemaService(schemaService)
+                    .withCompatibility(isCompatibility)
                     .build();
-                serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
+                serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
 
             // future version note: add new versions here by adding cases for each version and instantiate it properly
@@ -408,8 +418,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     private void addConfigPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
                                             ClassLoader cl) {
-        registerPortableFactories(portableFactories, config);
-        buildPortableFactories(portableFactories, config, cl);
+        PortableFactoriesHelper.registerPortableFactories(portableFactories, config);
+        PortableFactoriesHelper.buildPortableFactories(portableFactories, config, cl);
 
         for (PortableFactory f : portableFactories.values()) {
             if (f instanceof HazelcastInstanceAware) {
@@ -418,39 +428,45 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         }
     }
 
-    private void registerPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config) {
-        for (Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
-            int factoryId = entry.getKey();
-            PortableFactory factory = entry.getValue();
-            if (factoryId <= 0) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
+    private static class PortableFactoriesHelper {
+        private static void registerPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+                                                      final SerializationConfig config) {
+            for (final Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
+                final int factoryId = entry.getKey();
+                final PortableFactory factory = entry.getValue();
+                if (factoryId <= 0) {
+                    throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
+                }
+                if (portableFactories.containsKey(factoryId)) {
+                    throw new IllegalArgumentException("PortableFactory with factoryId '"
+                      + factoryId + "' is already registered!");
+                }
+                portableFactories.put(factoryId, factory);
             }
-            if (portableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
-            }
-            portableFactories.put(factoryId, factory);
         }
-    }
 
-    private void buildPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
-                                        ClassLoader cl) {
-        Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
-        for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
-            int factoryId = entry.getKey();
-            String factoryClassName = entry.getValue();
-            if (factoryId <= 0) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factoryClassName);
+        private static void buildPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+                                                   final SerializationConfig config, final ClassLoader cl) {
+            final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
+            for (final Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
+                int factoryId = entry.getKey();
+                String factoryClassName = entry.getValue();
+                if (factoryId <= 0) {
+                    throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> "
+                      + factoryClassName);
+                }
+                if (portableFactories.containsKey(factoryId)) {
+                    throw new IllegalArgumentException("PortableFactory with factoryId '"
+                      + factoryId + "' is already registered!");
+                }
+                PortableFactory factory;
+                try {
+                    factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
+                } catch (Exception e) {
+                    throw new HazelcastSerializationException(e);
+                }
+                portableFactories.put(factoryId, factory);
             }
-            if (portableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
-            }
-            PortableFactory factory;
-            try {
-                factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
-            } catch (Exception e) {
-                throw new HazelcastSerializationException(e);
-            }
-            portableFactories.put(factoryId, factory);
         }
     }
 }

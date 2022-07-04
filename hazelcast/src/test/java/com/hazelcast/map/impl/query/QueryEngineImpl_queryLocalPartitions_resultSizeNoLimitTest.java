@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -42,7 +43,9 @@ public class QueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends 
 
     @Before
     public void setup() {
-        HazelcastInstance hz = createHazelcastInstance();
+        Config config = regularInstanceConfig()
+                .setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        HazelcastInstance hz = createHazelcastInstance(config);
         map = hz.getMap(randomName());
 
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);

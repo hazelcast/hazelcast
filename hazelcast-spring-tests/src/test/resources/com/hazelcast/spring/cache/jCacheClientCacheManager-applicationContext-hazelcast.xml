@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:p="http://jboss.org/xml/ns/javax/validation/mapping"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/cache
+        http://www.springframework.org/schema/cache/spring-cache.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <cache:annotation-driven cache-manager="cacheManager"/>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:instance-name>named-spring-hz-instance</hz:instance-name>
+            <hz:cluster-name>${cluster.name}-jCacheClientCacheManager</hz:cluster-name>
+            <hz:properties>
+                <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+                <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+            </hz:properties>
+            <hz:network port="${cluster.port}">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
+                </hz:join>
+            </hz:network>
+            <hz:cache name="city"/>
+            <hz:cache name="name"/>
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:client id="client" depends-on="instance">
+        <hz:cluster-name>${cluster.name}-jCacheClientCacheManager</hz:cluster-name>
+        <hz:properties>
+            <hz:property name="hazelcast.client.retry.count">13</hz:property>
+        </hz:properties>
+        <hz:network connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+            <hz:member> 127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:5702</hz:member>
+            <hz:member>127.0.0.1:5703</hz:member>
+            <hz:member>127.0.0.1:5704</hz:member>
+            <hz:member>127.0.0.1:5705</hz:member>
+            <hz:member>127.0.0.1:5707</hz:member>
+            <hz:member>127.0.0.1:5708</hz:member>
+            <hz:member>127.0.0.1:5709</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+    </hz:client>
+
+    <hz:cache-manager id="hazelcastJCacheCacheManager" instance-ref="client" name="hazelcastJCacheCacheManager"/>
+
+    <bean id="cacheManager" class="org.springframework.cache.jcache.JCacheCacheManager">
+        <constructor-arg ref="hazelcastJCacheCacheManager"/>
+    </bean>
+
+    <hz:cache-manager id="cacheManager2" name="cacheManager2" uri="testURI">
+        <hz:properties>
+            <hz:property name="hazelcast.instance.name">named-spring-hz-instance</hz:property>
+            <hz:property name="testProperty">testValue</hz:property>
+        </hz:properties>
+    </hz:cache-manager>
+
+    <bean id="dummy" class="com.hazelcast.spring.cache.JCacheCacheManagerTest.DummyBean"/>
+</beans>

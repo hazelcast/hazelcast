@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ public final class BooleanConverter extends Converter {
 
     public static final BooleanConverter INSTANCE = new BooleanConverter();
 
-    protected static final String TRUE = "true";
-    protected static final String FALSE = "false";
+    static final String TRUE = "true";
+    static final String FALSE = "false";
 
     private BooleanConverter() {
-        super(ID_BOOLEAN, QueryDataTypeFamily.BIT);
+        super(ID_BOOLEAN, QueryDataTypeFamily.BOOLEAN);
     }
 
     @Override
@@ -38,7 +38,7 @@ public final class BooleanConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
+    public boolean asBoolean(Object val) {
         return ((Boolean) val);
     }
 
@@ -51,6 +51,6 @@ public final class BooleanConverter extends Converter {
 
     @Override
     public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asBit(val);
+        return valConverter.asBoolean(val);
     }
 }

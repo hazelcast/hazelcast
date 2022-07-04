@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class WildcardConfigPatternMatcher implements ConfigPatternMatcher {
         for (String pattern : configPatterns) {
             if (matches(pattern, itemName)) {
                 if (candidate != null) {
-                    throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, pattern);
+                    throw ConfigUtils.createAmbiguousConfigurationException(itemName, candidate, pattern);
                 }
                 candidate = pattern;
             }
@@ -65,7 +65,9 @@ public class WildcardConfigPatternMatcher implements ConfigPatternMatcher {
             return false;
         }
 
-        return true;
+        // if we remove the wildcard, itemName length cannot be
+        // less than pattern length, in order to match
+        return itemName.length() + 1 >= pattern.length();
     }
 
     @Override

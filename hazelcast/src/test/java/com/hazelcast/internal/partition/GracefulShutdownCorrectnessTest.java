@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.ClassRule;
@@ -28,13 +30,15 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GracefulShutdownCorrectnessTest extends AbstractGracefulShutdownCorrectnessTest {
 
     @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-graceful-shutdown-correctness.xml");
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1},shutdown:{2}")
     public static Collection<Object[]> parameters() {
@@ -44,4 +48,12 @@ public class GracefulShutdownCorrectnessTest extends AbstractGracefulShutdownCor
                 {2, 3, 1},
         });
     }
+
+    @Override
+    protected Config getConfig() {
+        // Partition count is overwritten back to PartitionCorrectnessTestSupport.partitionCount
+        // in PartitionCorrectnessTestSupport.getConfig(boolean, boolean).
+        return smallInstanceConfig();
+    }
+
 }

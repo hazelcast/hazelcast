@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -647,7 +647,7 @@ public class ClusterHeartbeatManager {
     private void logIfConnectionToEndpointIsMissing(long now, Member member) {
         long heartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - heartbeatTime) >= heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            Connection conn = node.getConnectionManager(MEMBER).getOrConnect(member.getAddress());
+            Connection conn = node.getServer().getConnectionManager(MEMBER).getOrConnect(member.getAddress());
             if (conn == null || !conn.isAlive()) {
                 logger.warning("This node does not have a connection to " + member);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 import javax.annotation.Nullable;
@@ -24,15 +25,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * An EntryProcessor passes you a {@link java.util.Map.Entry}. At the time you receive it
- * the entry is locked and not released until the EntryProcessor completes.
+ * An EntryProcessor processes a {@link java.util.Map.Entry}.
+ * The {@code EntryProcessor}'s {@link #process(Map.Entry)} method is executed atomically.
  * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
  * <p>
  * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
  * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT}, then there is no de-serialization or serialization
  * cost.
  * <p>
- * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued.
+ * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued
+ * and executed sequentially.
  * <p>
  * While executing partition migrations are not allowed. Any migrations are queued on the partition thread.
  * <p>
@@ -56,11 +58,40 @@ import java.util.Map.Entry;
  * otherwise EntryProcessor does not guarantee that it will modify the entry.
  *<p>
  * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
- * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely on threadlocals.
+ * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely
+ * on {@code ThreadLocal}s.
+ * <p>
+ * Since Hazelcast 4.1, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Map.Entry)}
+ * method:
+ * <pre>
+ * {@code
+ * class IncrementWithOptionalTtl implements EntryProcessor<Integer, Integer, Void> {
+ *     private final long ttlSeconds;
+ *
+ *     public IncrementWithOptionalTtl(long ttlSeconds) {
+ *         this.ttlSeconds = ttlSeconds;
+ *     }
+ *
+ *     @Override
+ *     public Void process(Map.Entry<Integer, Integer> e) {
+ *         ExtendedMapEntry<Integer, Integer> entry = (ExtendedMapEntry<Integer, Integer>) e;
+ *         int newValue = entry.getValue() + 1;
+ *         if (ttlSeconds > 0) {
+ *             entry.setValue(newValue, ttlSeconds, TimeUnit.SECONDS);
+ *         } else {
+ *             entry.setValue(newValue);
+ *         }
+ *         return null;
+ *     }
+ * }
+ * }
+ * </pre>
  *
  * @param <K> map entry key type
  * @param <V> map entry value type
  * @param <R> return type
+ *
+ * @see ExtendedMapEntry
  */
 @BinaryInterface
 @FunctionalInterface
@@ -113,6 +144,9 @@ public interface EntryProcessor<K, V, R> extends Serializable {
      * @return the backup entry processor
      */
     default @Nullable EntryProcessor<K, V, R> getBackupProcessor() {
+        if (this instanceof ReadOnly) {
+            return null;
+        }
         return this;
     }
 }

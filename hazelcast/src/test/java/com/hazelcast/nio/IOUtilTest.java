@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
@@ -46,7 +48,9 @@ import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +60,7 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.IOUtil.compress;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.copyFile;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.decompress;
 import static com.hazelcast.internal.nio.IOUtil.delete;
@@ -64,34 +69,32 @@ import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.newInputStream;
 import static com.hazelcast.internal.nio.IOUtil.newOutputStream;
-import static com.hazelcast.internal.nio.IOUtil.readAttributeValue;
-import static com.hazelcast.internal.nio.IOUtil.readByteArray;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.internal.nio.IOUtil.readObject;
 import static com.hazelcast.internal.nio.IOUtil.rename;
 import static com.hazelcast.internal.nio.IOUtil.toFileName;
 import static com.hazelcast.internal.nio.IOUtil.touch;
-import static com.hazelcast.internal.nio.IOUtil.writeByteArray;
 import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.Integer.min;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -108,6 +111,9 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Rule
     public TestName testName = new TestName();
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final List<File> files = new ArrayList<>();
 
@@ -121,39 +127,6 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(IOUtil.class);
-    }
-
-    @Test
-    public void testWriteAndReadByteArray() throws Exception {
-        byte[] bytes = new byte[SIZE];
-        bytes[0] = SIZE - 1;
-        bytes[1] = 23;
-        bytes[2] = 42;
-
-        byte[] output = writeAndReadByteArray(bytes);
-
-        assertNotNull(output);
-        assertEquals(SIZE - 1, output[0]);
-        assertEquals(23, output[1]);
-        assertEquals(42, output[2]);
-    }
-
-    @Test
-    public void testWriteAndReadByteArray_withNull() throws Exception {
-        byte[] output = writeAndReadByteArray(null);
-
-        assertNull(output);
-    }
-
-    private byte[] writeAndReadByteArray(byte[] bytes) throws Exception {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
-        writeByteArray(out, bytes);
-        byte[] data = bout.toByteArray();
-
-        ByteArrayInputStream bin = new ByteArrayInputStream(data);
-        ObjectDataInput in = createObjectDataInputStream(bin, serializationService);
-        return readByteArray(in);
     }
 
     @Test
@@ -425,8 +398,12 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void testTouch_failsWhenLastModifiedCannotBeSet() {
-        File file = spy(newFile("touchMe"));
-        when(file.setLastModified(anyLong())).thenReturn(false);
+        File file = new File(tempFolder.getRoot(), "touchMe") {
+            @Override
+            public boolean setLastModified(long time) {
+                return false;
+            }
+        };
 
         touch(file);
     }
@@ -712,8 +689,8 @@ public class IOUtilTest extends HazelcastTestSupport {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
         buffer.put((byte) 0xFF);
         buffer.put((byte) 0xFF);
-        buffer.flip();
-        buffer.position(1);
+        upcast(buffer).flip();
+        upcast(buffer).position(1);
         compactOrClear(buffer);
         assertEquals("Buffer position invalid", 1, buffer.position());
 
@@ -724,104 +701,49 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCopyFromHeapBuffer_whenDestinationIsHeapBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyFromHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyFromHeapBuffer_whenDestinationIsDirectBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.allocateDirect(SIZE);
+
+        assertEquals(SIZE, copyFromHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyFromHeapBuffer_whenSourceIsNull() {
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(0, copyFromHeapBuffer(null, dst));
+    }
+
+    @Test
+    public void testCopyToHeapBuffer_whenSourceIsHeapBuffer() {
+        ByteBuffer src = ByteBuffer.wrap(new byte[SIZE]);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyToHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testCopyToHeapBuffer_whenSourceIsDirectBuffer() {
+        ByteBuffer src = ByteBuffer.allocateDirect(SIZE);
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(SIZE, copyToHeapBuffer(src, dst));
+    }
+
+    @Test
     public void testCopyToHeapBuffer_whenSourceIsNull() {
         ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
 
         assertEquals(0, copyToHeapBuffer(null, dst));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeBoolean() throws Exception {
-        final boolean expected = true;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BOOLEAN);
-        when(input.readBoolean()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeByte() throws Exception {
-        final byte expected = (byte) 0xFF;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BYTE).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeShort() throws Exception {
-        final short expected = 42;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_SHORT);
-        when(input.readShort()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeInteger() throws Exception {
-        final int expected = 42;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_INTEGER);
-        when(input.readInt()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeLong() throws Exception {
-        final long expected = 42L;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_LONG);
-        when(input.readLong()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeFloat() throws Exception {
-        final float expected = 0.42f;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_FLOAT);
-        when(input.readFloat()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(Float.floatToIntBits(expected), Float.floatToIntBits((Float) actual));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeDouble() throws Exception {
-        final double expected = 42.42f;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_DOUBLE);
-        when(input.readDouble()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(Double.doubleToLongBits(expected), Double.doubleToLongBits((Double) actual));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeUTF() throws Exception {
-        final String expected = "UTF";
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_UTF);
-        when(input.readUTF()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testReadAttributeValue_whenInvalidType() throws Exception {
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn((byte) 0xFF);
-        readAttributeValue(input);
     }
 
     @Test
@@ -879,6 +801,33 @@ public class IOUtilTest extends HazelcastTestSupport {
         String expected = format("%s%s%s%s%s", root, File.separator, parent, File.separator, child);
         String actual = getPath(root, parent, child);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testMove_targetDoesntExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Path target = src.resolveSibling("target.txt");
+
+        assertMoveInternal(src, target, false);
+        assertMoveInternal(target, src, true);
+    }
+
+    @Test
+    public void testMove_targetExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Path target = src.resolveSibling("target.txt");
+        Files.write(target, "foo".getBytes(UTF_8), CREATE);
+        assertMoveInternal(src, target, false);
+        Files.write(src, "bar".getBytes(UTF_8), CREATE);
+        assertMoveInternal(target, src, true);
+    }
+
+    @Test
+    public void testMove_sourceDoesntExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Files.delete(src);
+        Path target = src.resolveSibling("target.txt");
+        Assert.assertThrows(NoSuchFileException.class, () -> IOUtil.move(src, target));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1004,5 +953,20 @@ public class IOUtilTest extends HazelcastTestSupport {
             closeResource(is1);
             closeResource(is2);
         }
+    }
+
+    private void assertMoveInternal(Path src, Path target, boolean withTimeout) throws IOException {
+        Files.write(src, "Hazelcast".getBytes(UTF_8), TRUNCATE_EXISTING);
+        if (withTimeout) {
+            IOUtil.moveWithTimeout(src, target, Duration.ofSeconds(2));
+        } else {
+            IOUtil.move(src, target);
+        }
+
+        assertFalse(Files.exists(src));
+        assertTrue(Files.exists(target));
+        List<String> lines = Files.readAllLines(target);
+        assertEquals(1, lines.size());
+        assertEquals("Hazelcast", lines.get(0));
     }
 }

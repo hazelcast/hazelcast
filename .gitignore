@@ -17,3 +17,13 @@ atlassian-ide-plugin.xml
 *dependency-reduced-pom.xml
 hazelcast/src/main/java/com/hazelcast/instance/GeneratedBuildProperties.java
 diagnostics-*.log
+performance*.log
+build/
+reports/
+*/src/test/resources/data/file*
+*/src/test/resources/data/result*
+*.jfr
+
+# Hadoop files
+*.crc
+**/node_modules/**

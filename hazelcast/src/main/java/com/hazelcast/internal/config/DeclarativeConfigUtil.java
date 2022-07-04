@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,7 +141,7 @@ public final class DeclarativeConfigUtil {
      * the accepted list, {@code false} otherwise
      */
     public static boolean isAcceptedSuffixConfigured(String configFile, Collection<String> acceptedSuffixes) {
-        String configFileLower = configFile.toLowerCase();
+        String configFileLower = StringUtil.lowerCaseInternal(configFile);
         int lastDotIndex = configFileLower.lastIndexOf('.');
         if (lastDotIndex == -1) {
             return false;

@@ -1,0 +1,12 @@
+# JVM Configuration for bin/jet command
+
+# One option per line
+# Lines starting with # and empty lines are ignored
+
+# Memory configuration
+#-Xmx1g
+
+# Generate heap dump on out-of-memory error
+# Uncomment to enable
+#-XX:+HeapDumpOnOutOfMemoryError
+#-XX:HeapDumpPath=$JET_HOME

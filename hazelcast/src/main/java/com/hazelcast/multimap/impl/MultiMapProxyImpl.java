@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,32 +20,40 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.DataCollection;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrueUnsupportedOperation;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -56,6 +64,9 @@ public class MultiMapProxyImpl<K, V>
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    protected static final String MINIMUM_VERSION_ERROR_FORMAT = "{0} is only available with cluster version {1} or greater";
+    protected static final String MINIMUM_VERSION_ERROR_4_1 = MessageFormat.format(MINIMUM_VERSION_ERROR_FORMAT,
+            "MultiMap#putAllAsync", "4.1");
 
     public MultiMapProxyImpl(MultiMapConfig config, MultiMapService service, NodeEngine nodeEngine, String name) {
         super(config, service, nodeEngine, name);
@@ -90,6 +101,37 @@ public class MultiMapProxyImpl<K, V>
                 }
             }
         }
+    }
+
+    @Override
+    public CompletionStage<Void> putAllAsync(@Nonnull Map<? extends K, Collection<? extends V>> m) {
+        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        Map<Data, Data> dataMap = new HashMap<>();
+
+        for (Map.Entry e : m.entrySet()) {
+            Collection<Data> dataCollection = CollectionUtil
+                    .objectToDataCollection(((Collection<? extends V>) e.getValue()),
+                            getNodeEngine().getSerializationService());
+
+            dataMap.put(toData(e.getKey()), toData(new DataCollection(dataCollection)));
+        }
+        putAllInternal(dataMap, future);
+        return future;
+    }
+
+    @Override
+    public CompletionStage<Void> putAllAsync(@Nonnull K key, @Nonnull Collection<? extends V> value) {
+        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        Map<Data, Data> dataMap = new HashMap<>();
+
+        Collection<Data> dataCollection = CollectionUtil
+                .objectToDataCollection(value, getNodeEngine().getSerializationService());
+        dataMap.put(toData(key), toData(new DataCollection(dataCollection)));
+
+        putAllInternal(dataMap, future);
+        return future;
     }
 
     @Override
@@ -238,6 +280,13 @@ public class MultiMapProxyImpl<K, V>
 
     @Nonnull
     @Override
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        return getService().addLocalListener(name, listener, null, includeValue);
+    }
+
+    @Nonnull
+    @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, includeValue);
@@ -272,7 +321,7 @@ public class MultiMapProxyImpl<K, V>
     public void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(timeUnit, "Null timeUnit is not allowed!");
-        checkPositive(leaseTime, "leaseTime should be positive");
+        checkPositive("leaseTime", leaseTime);
 
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -347,6 +396,9 @@ public class MultiMapProxyImpl<K, V>
         Set<K> keySet = createHashSet(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
+        }
+        if (config.isStatisticsEnabled()) {
+            getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         }
         return keySet;
     }

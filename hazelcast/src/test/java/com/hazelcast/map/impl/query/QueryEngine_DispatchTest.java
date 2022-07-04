@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.query.Target.TargetMode;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,7 +58,9 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        instance = createHazelcastInstance();
+        Config config = regularInstanceConfig()
+                .setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
@@ -77,16 +81,17 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
 
     @Test
     public void dispatchFullQueryOnQueryThread_localMembers() {
-        dispatchFullQueryOnQueryThread(Target.LOCAL_NODE);
+        dispatchFullQueryOnQueryThread(TargetMode.LOCAL_NODE);
     }
 
     @Test
     public void dispatchFullQueryOnQueryThread_allMembers() {
-        dispatchFullQueryOnQueryThread(Target.ALL_NODES);
+        dispatchFullQueryOnQueryThread(TargetMode.ALL_NODES);
     }
 
-    private void dispatchFullQueryOnQueryThread(Target target) {
+    private void dispatchFullQueryOnQueryThread(TargetMode target) {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
+                .partitionIdSet(queryEngine.getAllPartitionIds())
                 .iterationType(IterationType.ENTRY).build();
         List<Future<Result>> futures = queryEngine
                 .dispatchFullQueryOnQueryThread(query, target);

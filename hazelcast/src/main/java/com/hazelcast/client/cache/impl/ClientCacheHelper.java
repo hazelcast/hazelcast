@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ final class ClientCacheHelper {
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
 
-            CacheConfigHolder cacheConfigHolder = CacheGetConfigCodec.decodeResponse(responseMessage).response;
+            CacheConfigHolder cacheConfigHolder = CacheGetConfigCodec.decodeResponse(responseMessage);
             if (cacheConfigHolder == null) {
                 return null;
             }
@@ -100,7 +100,7 @@ final class ClientCacheHelper {
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = urgent ? clientInvocation.invokeUrgent() : clientInvocation.invoke();
             final ClientMessage response = future.get();
-            final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response).response;
+            final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response);
             if (cacheConfigHolder == null) {
                 return null;
             }

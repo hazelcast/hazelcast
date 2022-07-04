@@ -1,0 +1,19 @@
+{
+  "instance": {
+    "hazelcast": {
+      "jet": {
+        "cooperative-thread-count": 2,
+        "flow-control-period": 3,
+        "backup-count": 4,
+        "scale-up-delay-millis": 20,
+        "lossless-restart-enabled": true,
+        "edge-defaults": {
+          "queue-size": 8,
+          "packet-size-limit": 16384,
+          "receive-window-multiplier": 10
+        }
+      }
+    }
+  },
+  "error": null
+}

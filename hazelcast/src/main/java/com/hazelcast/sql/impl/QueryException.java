@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,36 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 
-import java.util.Collection;
 import java.util.UUID;
 
 /**
  * Exception occurred during SQL query execution.
  */
-public final class QueryException extends HazelcastException {
+public final class QueryException extends HazelcastException implements WrappableException<QueryException> {
 
     private final int code;
+    private final String suggestion;
     private final UUID originatingMemberId;
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
+        this(code, message, cause, null, originatingMemberId);
+    }
+
+    private QueryException(
+            int code,
+            String message,
+            Throwable cause,
+            String suggestion,
+            UUID originatingMemberId
+    ) {
         super(message, cause);
 
         this.code = code;
+        this.suggestion = suggestion;
         this.originatingMemberId = originatingMemberId;
     }
 
@@ -42,7 +54,7 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException error(String message, Throwable cause) {
-        return error(SqlErrorCode.GENERIC, message, cause, null);
+        return error(SqlErrorCode.GENERIC, message, cause);
     }
 
     public static QueryException error(int code, String message) {
@@ -53,6 +65,10 @@ public final class QueryException extends HazelcastException {
         return new QueryException(code, message, cause, null);
     }
 
+    public static QueryException error(int code, String message, Throwable cause, String suggestion) {
+        return new QueryException(code, message, cause, suggestion, null);
+    }
+
     public static QueryException error(int code, String message, UUID originatingMemberId) {
         return new QueryException(code, message, null, originatingMemberId);
     }
@@ -61,24 +77,29 @@ public final class QueryException extends HazelcastException {
         return new QueryException(code, message, cause, originatingMemberId);
     }
 
-    public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
+    public static QueryException memberConnection(Address address) {
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Member cannot be reached: " + address);
     }
 
-    public static QueryException memberLeave(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
-    }
-
-    public static QueryException memberLeave(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members has left the topology: " + memberIds);
+    public static QueryException clientMemberConnection(UUID clientId) {
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Client cannot be reached: " + clientId);
     }
 
     public static QueryException timeout(long timeout) {
-        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to timeout (" + timeout + " ms)");
+        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to a timeout (" + timeout + " ms)");
     }
 
     public static QueryException cancelledByUser() {
-        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
+        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by the user");
+    }
+
+    public static QueryException dataException(String message, Throwable cause) {
+        return error(SqlErrorCode.DATA_EXCEPTION, message, cause);
+    }
+
+    public static QueryException dataException(String message) {
+        return dataException(message, null);
     }
 
     /**
@@ -86,6 +107,13 @@ public final class QueryException extends HazelcastException {
      */
     public int getCode() {
         return code;
+    }
+
+    /**
+     * @return Suggested SQL statement to remediate experienced error.
+     */
+    public String getSuggestion() {
+        return suggestion;
     }
 
     /**
@@ -99,11 +127,7 @@ public final class QueryException extends HazelcastException {
     }
 
     @Override
-    public String getMessage() {
-        if (originatingMemberId != null) {
-            return super.getMessage() + " (code=" + code + ", originatingMemberId=" + originatingMemberId + ')';
-        } else {
-            return super.getMessage() + " (code=" + code + ')';
-        }
+    public QueryException wrap() {
+        return new QueryException(code, getMessage(), this, suggestion, originatingMemberId);
     }
 }

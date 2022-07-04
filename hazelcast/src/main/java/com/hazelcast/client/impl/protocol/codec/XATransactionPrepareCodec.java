@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Ask a member to prepare for a transaction commit of the transaction specified in xid.
  */
-@Generated("f65a952d8cc28c2671005d3ca546897c")
+@Generated("07becc3603ad2ec1ea9731205606b5b5")
 public final class XATransactionPrepareCodec {
     //hex: 0x140600
     public static final int REQUEST_MESSAGE_TYPE = 1312256;
@@ -47,15 +47,6 @@ public final class XATransactionPrepareCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private XATransactionPrepareCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id of the transaction to prepare.
-         */
-        public java.util.UUID transactionId;
     }
 
     public static ClientMessage encodeRequest(java.util.UUID transactionId) {
@@ -70,16 +61,13 @@ public final class XATransactionPrepareCodec {
         return clientMessage;
     }
 
-    public static XATransactionPrepareCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * The id of the transaction to prepare.
+     */
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.transactionId = decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse() {
@@ -90,13 +78,4 @@ public final class XATransactionPrepareCodec {
 
         return clientMessage;
     }
-
-    public static XATransactionPrepareCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

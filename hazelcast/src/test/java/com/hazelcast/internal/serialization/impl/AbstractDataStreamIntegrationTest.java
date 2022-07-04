@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutput, I extends ObjectDataInput> {
@@ -269,12 +270,12 @@ public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutp
     public void testUTF() throws IOException {
         String s1 = "Vim is a text editor that is upwards compatible to Vi. It can be used to edit all kinds of plain text.";
         String s2 = "簡単なものから複雑なものまで、具体的な例を使って説明しています。本のように最初から順を追って読んでください。";
-        out.writeUTF(s1);
-        out.writeUTF(s2);
+        out.writeString(s1);
+        out.writeString(s2);
 
         ObjectDataInput in = getDataInputFromOutput();
-        assertEquals(s1, in.readUTF());
-        assertEquals(s2, in.readUTF());
+        assertEquals(s1, in.readString());
+        assertEquals(s2, in.readString());
     }
 
     @Test
@@ -285,7 +286,7 @@ public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutp
         out.writeUTFArray(arr);
 
         ObjectDataInput in = getDataInputFromOutput();
-        assertArrayEquals(arr, in.readUTFArray());
+        assertArrayEquals(arr, in.readStringArray());
     }
 
     protected abstract byte[] getWrittenBytes();

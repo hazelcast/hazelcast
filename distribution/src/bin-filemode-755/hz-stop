@@ -1,0 +1,20 @@
+#!/bin/bash
+PROCESS_MATCHER="com.hazelcast.commandline.HazelcastServerCommandLine"
+
+if [ "$1" = "help" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  echo "Usage : $0"
+  echo "Used to stop any running instances of HazelcastServerCommandLine."
+  echo "Finds any processes matching \"$PROCESS_MATCHER\" and stops all of them."
+  exit 1
+fi
+
+PIDS=$(ps ax | grep $PROCESS_MATCHER | grep -v grep | awk '{print $1}')
+
+if [ -z "$PIDS" ]; then
+  echo "No Hazelcast server found to stop"
+  exit 1
+else
+  kill -s TERM $PIDS
+  echo "Stopped Hazelcast instances with the following PIDs:"
+  echo "$PIDS"
+fi

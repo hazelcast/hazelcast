@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
- * Copyright (c) 2017-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2017-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class PhiAccrualFailureDetector implements FailureDetector {
      *                                       in the beginning)
      */
     public PhiAccrualFailureDetector(double threshold, int maxSampleSize, double minStdDeviationMillis,
-            long acceptableHeartbeatPauseMillis, long firstHeartbeatEstimateMillis) {
+                                     long acceptableHeartbeatPauseMillis, long firstHeartbeatEstimateMillis) {
 
         this.threshold = checkPositive(threshold, "Threshold must be positive: " + threshold);
         this.minStdDeviationMillis = checkPositive(minStdDeviationMillis, "Minimum standard deviation must be positive: "
@@ -78,7 +78,7 @@ public class PhiAccrualFailureDetector implements FailureDetector {
         this.acceptableHeartbeatPauseMillis = checkNotNegative(acceptableHeartbeatPauseMillis,
                 "Acceptable heartbeat pause millis must be >= 0: " + acceptableHeartbeatPauseMillis);
 
-        checkPositive(firstHeartbeatEstimateMillis, "First heartbeat value must be > 0: " + firstHeartbeatEstimateMillis);
+        checkPositive("firstHeartbeatEstimateMillis", firstHeartbeatEstimateMillis);
 
         heartbeatHistory = new HeartbeatHistory(maxSampleSize);
         firstHeartbeat(firstHeartbeatEstimateMillis);

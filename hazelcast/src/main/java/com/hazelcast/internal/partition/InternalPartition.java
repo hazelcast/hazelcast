@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,21 @@ public interface InternalPartition extends IPartition {
      * @throws ArrayIndexOutOfBoundsException when replica index is out of bounds
      */
     PartitionReplica getReplica(int replicaIndex);
+
+    /**
+     * Returns the copy of replicas assigned to this partition.
+     *
+     * @return copy of partition replicas
+     */
+    PartitionReplica[] getReplicasCopy();
+
+    /**
+     * Checks if given replica is owner of primary or backup of this partition.
+     *
+     * @param replica owner replica
+     * @return {@code true} if replica is owner or backup, {@code false} otherwise
+     */
+    boolean isOwnerOrBackup(PartitionReplica replica);
 
     /**
      * Returns the integer replica indices of {@code InternalPartition} as a stream.

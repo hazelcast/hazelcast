@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package com.hazelcast.internal.dynamicconfig.search;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
@@ -48,10 +46,6 @@ class DynamicFirstSearcher<T extends IdentifiedDataSerializable> implements Sear
         T config = configSupplier.getDynamicConfig(configurationService, baseName);
         if (config == null) {
             config = lookupByPattern(configPatternMatcher, staticCacheConfigs, baseName);
-            if (config != null && MapConfig.class.isAssignableFrom(config.getClass())) {
-                // this is required only for map config
-                initDefaultMaxSizeForOnHeapMaps(((MapConfig) config).getNearCacheConfig());
-            }
         }
         if (config == null) {
             config = configSupplier.getStaticConfig(staticConfig, fallbackName);

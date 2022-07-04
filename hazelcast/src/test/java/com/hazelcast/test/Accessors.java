@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hazelcast.test;
 
+import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.ISet;
@@ -25,12 +26,14 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -73,8 +76,8 @@ public class Accessors {
         return (ClientEngineImpl) getNode(instance).getClientEngine();
     }
 
-    public static ServerConnectionManager getEndpointManager(HazelcastInstance hz) {
-        return getNode(hz).getConnectionManager();
+    public static ServerConnectionManager getConnectionManager(HazelcastInstance hz) {
+        return getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
     }
 
     public static ClusterService getClusterService(HazelcastInstance hz) {
@@ -83,6 +86,11 @@ public class Accessors {
 
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
         return getNode(hz).getPartitionService();
+    }
+
+    public static boolean isPartitionStateInitialized(HazelcastInstance hz) {
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz);
+        return partitionService.getPartitionStateManager().isInitialized();
     }
 
     public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
@@ -95,6 +103,14 @@ public class Accessors {
 
     public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getMetricsRegistry();
+    }
+
+    public static AuditlogService getAuditlogService(HazelcastInstance hz) {
+        return getNode(hz).getNodeExtension().getAuditlogService();
+    }
+
+    public static <T> T getService(HazelcastInstance hz, String serviceName) {
+        return getNodeEngineImpl(hz).getService(serviceName);
     }
 
     public static Address getAddress(HazelcastInstance hz) {
@@ -189,5 +205,9 @@ public class Accessors {
         }
 
         return allIndexes;
+    }
+
+    public static PartitionReplicaStateChecker getPartitionReplicaStateChecker(HazelcastInstance instance) {
+        return getPartitionService(instance).getPartitionReplicaStateChecker();
     }
 }

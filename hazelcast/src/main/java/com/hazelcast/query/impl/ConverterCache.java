@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ public final class ConverterCache {
 
         @Override
         public Comparable convert(Comparable value) {
-            throw new UnsupportedOperationException("should never be called");
+            throw new UnsupportedOperationException("must never be called");
         }
 
     }

@@ -1,0 +1,7 @@
+hazelcast-client:
+  network:
+    aws:
+      enabled: true
+      region: ${REGION}
+      tag-key: ${TAG_KEY}
+      tag-value: ${TAG_VALUE}

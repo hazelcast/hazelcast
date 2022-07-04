@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("ada90cc84d53540ac967d710919b6571")
+@Generated("c4a7845e21435ccc626da89f31aaf869")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;
@@ -46,10 +46,6 @@ public final class MCGetMemberConfigCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCGetMemberConfigCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
     }
 
     public static ClientMessage encodeRequest() {
@@ -63,23 +59,6 @@ public final class MCGetMemberConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMemberConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Effective config of a member rendered as XML.
-         */
-        public java.lang.String configXml;
-    }
-
     public static ClientMessage encodeResponse(java.lang.String configXml) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -90,13 +69,13 @@ public final class MCGetMemberConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMemberConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * Effective config of a member rendered as XML.
+     */
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.configXml = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -45,6 +46,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -61,9 +63,9 @@ import java.util.concurrent.ConcurrentMap;
  * A proxy around the actual HazelcastInstanceImpl. This class serves 2 purposes:
  * <ol>
  * <li>
- * if the HazelcastInstance is shutdown, the reference to the original HazelcastInstanceImpl is null'ed and
- * this HazelcastInstanceImpl and all its dependencies can be gc'ed. If the HazelcastInstanceImpl would
- * be exposed directly, it could still retain unusable objects due to its not null fields.</li>
+ * if the HazelcastInstance is shut down, the reference to the original HazelcastInstanceImpl is nulled and
+ * this HazelcastInstanceImpl and all its dependencies can be GCed. If the HazelcastInstanceImpl would
+ * be exposed directly, it could still retain unusable objects due to its not-null fields.</li>
  * <li>
  * it provides a barrier for accessing the HazelcastInstanceImpl internals. Otherwise a simple cast to HazelcastInstanceImpl
  * would be sufficient but now a bit of reflection is needed to get there.
@@ -290,6 +292,18 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public CPSubsystem getCPSubsystem() {
         return getOriginal().getCPSubsystem();
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return getOriginal().getSql();
+    }
+
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return getOriginal().getJet();
     }
 
     @Override

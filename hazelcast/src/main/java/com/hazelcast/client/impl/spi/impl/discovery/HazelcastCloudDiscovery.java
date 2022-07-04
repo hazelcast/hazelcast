@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -123,7 +124,7 @@ public class HazelcastCloudDiscovery {
     }
 
     private static String readInputStream(InputStream is) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
         String line;
         StringBuilder response = new StringBuilder();
         while ((line = in.readLine()) != null) {

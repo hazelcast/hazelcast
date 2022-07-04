@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.hazelcast.splitbrainprotection.map;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,7 +33,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -42,10 +43,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
+import static org.junit.Assume.assumeTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtectionTest {
@@ -116,6 +117,22 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     @Test(expected = ExecutionException.class)
     public void putAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
         map(3).putAsync("foo", "bar").toCompletableFuture().get();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void putIfAbsentAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(0) instanceof MapProxyImpl);
+
+        ((MapProxyImpl<Object, Object>) map(0)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    @SuppressWarnings("unchecked")
+    public void putIfAbsentAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(3) instanceof MapProxyImpl);
+
+        ((MapProxyImpl<Object, Object>) map(3)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
     }
 
     @Test

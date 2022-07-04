@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.type.converter;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 /**
  * Converter for {@link Instant} type.
@@ -38,6 +37,6 @@ public final class InstantConverter extends AbstractTimestampWithTimezoneConvert
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return OffsetDateTime.ofInstant(((Instant) val), ZoneOffset.UTC);
+        return OffsetDateTime.ofInstant(((Instant) val), DEFAULT_ZONE);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -40,13 +39,15 @@ public class ClientExtensionTest extends HazelcastTestSupport {
         assertInstanceOf(ClientProxyFactory.class, clientExtension.createServiceProxyFactory(MapService.class));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_createServiceProxyFactory_whenUnknownServicePassed() throws Exception {
+    @Test
+    public void test_createServiceProxyFactory_whenUnknownServicePassed() {
         ClientExtension clientExtension = new DefaultClientExtension();
-        assertEquals(ClientProxyFactory.class, clientExtension.createServiceProxyFactory(TestService.class));
+        Assertions.assertThatThrownBy(() -> clientExtension.createServiceProxyFactory(TestService.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Proxy factory cannot be created. Unknown service");
     }
 
-    private class TestService {
+    private static class TestService {
 
     }
 }

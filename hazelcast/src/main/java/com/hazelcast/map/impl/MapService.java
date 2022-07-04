@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -41,6 +43,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.LocalMapStats;
@@ -68,6 +71,7 @@ import java.util.UUID;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_INDEX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_NEARCACHE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_INDEX;
@@ -89,12 +93,16 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  * @see MapServiceContext
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
-public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-                                   DynamicMetricsProvider {
+public class MapService implements ManagedService, ChunkedMigrationAwareService,
+        TransactionalService, RemoteService,
+        EventPublishingService<Object, ListenerAdapter>,
+        PostJoinAwareService, SplitBrainHandlerService,
+        WanSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService,
+        SplitBrainProtectionAwareService, NotifiableEventListener,
+        ClusterStateListener, LockInterceptorService<Data>,
+        DynamicMetricsProvider, TenantContextAwareService,
+        OffloadedReplicationPreparation {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -157,7 +165,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         return migrationAwareService.prepareReplicationOperation(event, namespaces);
     }
 
@@ -237,25 +245,23 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onRegister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onRegister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.increaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().incCounter(mapName);
     }
 
     @Override
-    public void onDeregister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onDeregister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.decreaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().decCounter(mapName);
     }
 
     public int getMigrationStamp() {
@@ -276,7 +282,12 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
         // we have no use for the return value, invoked just for the side-effects
-        recordStore.getRecordOrNull(key);
+        recordStore.beforeOperation();
+        try {
+            recordStore.getRecordOrNull(key);
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     public static ObjectNamespace getObjectNamespace(String mapName) {
@@ -321,6 +332,26 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
                         .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
                 context.collect(nearCacheDescriptor, nearCacheStats);
             }
+
         }
+        // stats of offloaded-entry-processor's executor
+        ExecutorStats executorStats = mapServiceContext.getOffloadedEntryProcessorExecutorStats();
+        executorStats.getStatsMap().forEach((name, offloadedExecutorStats) -> {
+            MetricDescriptor nearCacheDescriptor = descriptor
+                    .copy()
+                    .withPrefix(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR)
+                    .withDiscriminator(MAP_DISCRIMINATOR_NAME, name);
+            context.collect(nearCacheDescriptor, offloadedExecutorStats);
+        });
+    }
+
+    @Override
+    public boolean shouldOffload() {
+        return migrationAwareService.shouldOffload();
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
+        return migrationAwareService.newChunkSupplier(event, namespace);
     }
 }

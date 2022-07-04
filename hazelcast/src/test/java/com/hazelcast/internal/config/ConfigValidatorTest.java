@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -54,6 +56,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     private HazelcastProperties properties;
     private NativeMemoryConfig nativeMemoryConfig;
     private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
+    private ILogger logger;
 
     @Before
     public void setUp() {
@@ -62,10 +65,11 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(config.getClassLoader());
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
         properties = nodeEngine.getProperties();
+        logger = nodeEngine.getLogger(MapConfig.class);
     }
 
     @Test
@@ -75,12 +79,18 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapConfig_fails_with_merge_policy_which_requires_per_entry_stats_enabled() {
+        checkMapConfig(getMapConfig(BINARY).setPerEntryStatsEnabled(false),
+                nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     /**
@@ -88,12 +98,30 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+    }
+
+    /**
+     * Not supported in open source version, so test is expected to throw exception.
+     */
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapConfig_TieredStore() {
+        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
-        return new MapConfig()
-                .setInMemoryFormat(inMemoryFormat);
+        MapConfig mapConfig = new MapConfig()
+                .setInMemoryFormat(inMemoryFormat)
+                .setPerEntryStatsEnabled(true);
+        mapConfig.getMergePolicyConfig()
+                .setPolicy(HigherHitsMergePolicy.class.getName());
+        return mapConfig;
+    }
+
+    private MapConfig getMapConfig(boolean tieredStoreEnabled) {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.getTieredStoreConfig().setEnabled(tieredStoreEnabled);
+        return mapConfig;
     }
 
     @Test

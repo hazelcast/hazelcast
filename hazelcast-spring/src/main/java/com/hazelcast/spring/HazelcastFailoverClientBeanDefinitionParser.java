@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -76,15 +76,15 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         SpringXmlBuilder(ParserContext parserContext, BeanDefinitionBuilder builder) {
             this.parserContext = parserContext;
             this.builder = builder;
-            this.failoverConfigBuilder = rootBeanDefinition(ClientFailoverConfig.class);
+            this.failoverConfigBuilder = rootBeanDefinition(ConfigFactory.class, "newClientFailoverConfig");
         }
 
         AbstractBeanDefinition handleMultipleClusterAwareClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             String attribute = element.getAttribute("try-count");
-            failoverConfigBuilder.addPropertyValue("tryCount", Integer.valueOf(attribute));
+            failoverConfigBuilder.addPropertyValue("tryCount", attribute);
 
-            ManagedList<BeanDefinition> configs = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> configs = new ManagedList<>();
             for (Node node : childElements(element)) {
                 HazelcastClientBeanDefinitionParser.SpringXmlBuilder springXmlBuilder =
                         new HazelcastClientBeanDefinitionParser.SpringXmlBuilder(parserContext);

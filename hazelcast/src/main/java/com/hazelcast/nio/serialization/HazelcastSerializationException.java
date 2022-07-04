@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * This is an exception thrown when an exception occurs while serializing/deserializing objects.
+ * An exception thrown when a problem occurs while serializing/deserializing objects.
  */
 public class HazelcastSerializationException extends HazelcastException {
 

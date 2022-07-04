@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,25 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.executionservice.impl.StatsAwareRunnable;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
@@ -39,22 +44,21 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.UuidUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -135,7 +139,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class EntryOperation extends LockAwareOperation
+public class
+EntryOperation extends LockAwareOperation
         implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
@@ -169,7 +174,7 @@ public class EntryOperation extends LockAwareOperation
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(entryProcessor);
+        entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
     @Override
@@ -357,7 +362,7 @@ public class EntryOperation extends LockAwareOperation
 
         @SuppressWarnings("unchecked")
         private void executeReadOnlyEntryProcessor(final Object oldValue, String executorName) {
-            executionService.execute(executorName, () -> {
+            doExecute(executorName, () -> {
                 try {
                     Data result = operator(EntryOperation.this, entryProcessor)
                             .operateOnKeyValue(dataKey, oldValue).getResult();
@@ -383,16 +388,17 @@ public class EntryOperation extends LockAwareOperation
             lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
 
             try {
-                executionService.execute(executorName, () -> {
+                doExecute(executorName, () -> {
                     try {
                         EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
                                 .operateOnKeyValue(dataKey, oldValue);
                         Data result = entryOperator.getResult();
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
+                            long newTtl = entryOperator.getEntry().getNewTtl();
                             Data newValue = serializationService.toData(entryOperator.getByPreferringDataNewValue());
                             updateAndUnlock(serializationService.toData(oldValue),
-                                    newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
+                                    newValue, modificationType, newTtl, finalCaller, finalThreadId, result, finalBegin);
                         } else {
                             unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
@@ -404,6 +410,22 @@ public class EntryOperation extends LockAwareOperation
             } catch (Throwable t) {
                 unlock(finalDataKey, finalCaller, finalThreadId, finalCallId, t);
                 sneakyThrow(t);
+            }
+        }
+
+        private void doExecute(String executorName, Runnable runnable) {
+            boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+            ExecutorStats executorStats = mapServiceContext.getOffloadedEntryProcessorExecutorStats();
+            try {
+                Runnable command = statisticsEnabled
+                        ? new StatsAwareRunnable(runnable, executorName, executorStats) : runnable;
+                executionService.execute(executorName, command);
+            } catch (RejectedExecutionException e) {
+                if (statisticsEnabled) {
+                    executorStats.rejectExecution(executorName);
+                }
+
+                throw e;
             }
         }
 
@@ -425,14 +447,17 @@ public class EntryOperation extends LockAwareOperation
         }
 
         private void unlockOnly(final Object result, UUID caller, long threadId, long now) {
-            updateAndUnlock(null, null, null, caller, threadId, result, now);
+            updateAndUnlock(null, null, null, UNSET, caller, threadId, result, now);
         }
 
         @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
-        private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, UUID caller,
+        private void updateAndUnlock(Data previousValue, Data newValue,
+                                     EntryEventType modificationType,
+                                     long newTtl, UUID caller,
                                      long threadId, final Object result, long now) {
             EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
-                    dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
+                    newTtl, dataKey, previousValue, newValue, caller,
+                    threadId, now, entryProcessor.getBackupProcessor());
 
             updateOperation.setPartitionId(getPartitionId());
             updateOperation.setReplicaIndex(0);

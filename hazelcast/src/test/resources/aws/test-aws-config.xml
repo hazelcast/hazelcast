@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020 Hazelcast Inc.
+  ~
+  ~ Licensed under the Hazelcast Community License (the "License"); you may not use
+  ~ this file except in compliance with the License. You may obtain a copy of the
+  ~ License at
+  ~
+  ~ http://hazelcast.com/hazelcast-community-license
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OF ANY KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations under the License.
+  -->
+
+<hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-5.2.xsd"
+           xmlns="http://www.hazelcast.com/schema/config">
+
+    <properties>
+        <property name="hazelcast.discovery.enabled">true</property>
+    </properties>
+
+    <network>
+        <join>
+            <multicast enabled="false"/>
+            <tcp-ip/>
+            <aws enabled="false"/>
+            <discovery-strategies>
+                <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
+                    <properties>
+                        <property name="access-key">test-access-key</property>
+                        <property name="secret-key">test-secret-key</property>
+                        <property name="region">us-east-1</property>
+                        <property name="host-header">ec2.test-host-header</property>
+                        <property name="security-group-name">test-security-group-name</property>
+                        <property name="tag-key">test-tag-key</property>
+                        <property name="tag-value">test-tag-value</property>
+                        <property name="connection-timeout-seconds">10</property>
+                        <property name="connection-retries">10</property>
+                        <property name="read-timeout-seconds">11</property>
+                        <property name="hz-port">5702</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+        </join>
+    </network>
+
+</hazelcast>

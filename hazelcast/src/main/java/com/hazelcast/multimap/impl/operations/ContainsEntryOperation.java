@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ public class ContainsEntryOperation extends AbstractMultiMapOperation implements
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

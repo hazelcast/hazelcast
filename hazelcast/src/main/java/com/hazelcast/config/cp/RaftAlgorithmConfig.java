@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.config.cp;
+
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
@@ -157,8 +159,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setLeaderElectionTimeoutInMillis(long leaderElectionTimeoutInMillis) {
-        checkPositive(leaderElectionTimeoutInMillis, "leader election timeout in millis: "
-                + leaderElectionTimeoutInMillis + " must be positive!");
+        checkPositive("leaderElectionTimeoutInMillis", leaderElectionTimeoutInMillis);
         this.leaderElectionTimeoutInMillis = leaderElectionTimeoutInMillis;
         return this;
     }
@@ -168,8 +169,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setLeaderHeartbeatPeriodInMillis(long leaderHeartbeatPeriodInMillis) {
-        checkPositive(leaderHeartbeatPeriodInMillis, "leader heartbeat period in millis: "
-                + leaderHeartbeatPeriodInMillis + " must be positive!");
+        checkPositive("leaderHeartbeatPeriodInMillis", leaderHeartbeatPeriodInMillis);
         this.leaderHeartbeatPeriodInMillis = leaderHeartbeatPeriodInMillis;
         return this;
     }
@@ -222,7 +222,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setAppendRequestBackoffTimeoutInMillis(long appendRequestBackoffTimeoutInMillis) {
-        checkPositive(appendRequestBackoffTimeoutInMillis, "append request backoff timeout must be positive!");
+        checkPositive("appendRequestBackoffTimeoutInMillis", appendRequestBackoffTimeoutInMillis);
         this.appendRequestBackoffTimeoutInMillis = appendRequestBackoffTimeoutInMillis;
         return this;
     }
@@ -235,5 +235,30 @@ public class RaftAlgorithmConfig {
                 + ", commitIndexAdvanceCountToSnapshot=" + commitIndexAdvanceCountToSnapshot
                 + ", uncommittedEntryCountToRejectNewAppends=" + uncommittedEntryCountToRejectNewAppends
                 + ", appendRequestBackoffTimeoutInMillis=" + appendRequestBackoffTimeoutInMillis + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RaftAlgorithmConfig that = (RaftAlgorithmConfig) o;
+        return leaderElectionTimeoutInMillis == that.leaderElectionTimeoutInMillis
+                && leaderHeartbeatPeriodInMillis == that.leaderHeartbeatPeriodInMillis
+                && maxMissedLeaderHeartbeatCount == that.maxMissedLeaderHeartbeatCount
+                && appendRequestMaxEntryCount == that.appendRequestMaxEntryCount
+                && commitIndexAdvanceCountToSnapshot == that.commitIndexAdvanceCountToSnapshot
+                && uncommittedEntryCountToRejectNewAppends == that.uncommittedEntryCountToRejectNewAppends
+                && appendRequestBackoffTimeoutInMillis == that.appendRequestBackoffTimeoutInMillis;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(leaderElectionTimeoutInMillis, leaderHeartbeatPeriodInMillis, maxMissedLeaderHeartbeatCount,
+                appendRequestMaxEntryCount, commitIndexAdvanceCountToSnapshot, uncommittedEntryCountToRejectNewAppends,
+                appendRequestBackoffTimeoutInMillis);
     }
 }

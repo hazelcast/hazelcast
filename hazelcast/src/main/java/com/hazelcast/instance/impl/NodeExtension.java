@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -33,16 +32,19 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -55,6 +57,100 @@ import java.util.function.Function;
 public interface NodeExtension {
 
     /**
+     * Called before node attempts to join to the cluster
+     */
+    default void beforeJoin() {
+    }
+
+    /**
+     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     * right after setting the state to PASSIVE.
+     */
+    default void shutdown() {
+    }
+
+    /**
+     * Returns the security service if security context is available.
+     * Returns {@code null} by default.
+     */
+    default SecurityService getSecurityService() {
+        return null;
+    }
+
+    /**
+     * Called on thread start to inject/intercept extension specific logic,
+     * like; registering thread in some service,
+     * executing a special method before thread starts to do its own task.
+     *
+     * @param thread thread starting
+     */
+    default void onThreadStart(Thread thread) {
+    }
+
+    /**
+     * Called before a thread stops to clean/release injected by {@link #onThreadStart(Thread)}.
+     *
+     * @param thread thread stopping
+     */
+    default void onThreadStop(Thread thread) {
+    }
+
+    /**
+     * Called when initial cluster state is received while joining the cluster.
+     *
+     * @param initialState initial cluster state
+     */
+    default void onInitialClusterState(ClusterState initialState) {
+    }
+
+    /**
+     * Called after the cluster state change transaction has completed
+     * (successfully or otherwise). Called only on the member that initiated
+     * the state change.
+     *
+     * @param oldState the state before the change
+     * @param newState the new cluster state, can be equal to {@code oldState} if the
+     *                 state change transaction failed
+     * @param isTransient whether the change will be recorded in persistent storage, affecting the
+     *                    initial state after cluster restart. Transient changes happen during
+     *                    system operations such as an orderly all-cluster shutdown.
+     */
+    default void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient) {
+    }
+
+    /**
+     * Creates a UUID for local member
+     * @return new UUID
+     */
+    default UUID createMemberUuid() {
+        return UuidUtil.newUnsecureUUID();
+    }
+
+    /** Returns a byte array processor for incoming data on the Multicast joiner */
+    default ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext) {
+        return null;
+    }
+
+    /** Returns a byte array processor for outgoing data on the Multicast joiner */
+    default ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext) {
+        return null;
+    }
+
+    /**
+     * Cluster version auto upgrade is done asynchronously. Every call of this
+     * method creates and schedules a new auto upgrade task.
+     */
+    default void scheduleClusterVersionAutoUpgrade() {
+    }
+
+    /**
+     * @return true if client failover feature is supported
+     */
+    default boolean isClientFailoverSupported() {
+        return false;
+    }
+
+    /**
      * Called before node is started
      */
     void beforeStart();
@@ -65,9 +161,9 @@ public interface NodeExtension {
     void printNodeInfo();
 
     /**
-     * Called before node attempts to join to the cluster
+     * Logs metadata about the instance to the configured instance tracking output.
      */
-    void beforeJoin();
+    void logInstanceTrackingMetadata();
 
     /**
      * Called after node is started
@@ -82,12 +178,13 @@ public interface NodeExtension {
     /**
      * Called before <tt>Node.shutdown()</tt>
      */
-    void beforeShutdown();
+    void beforeShutdown(boolean terminate);
 
     /**
      * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     * right before setting the state to SHUT_DOWN.
      */
-    void shutdown();
+    void afterShutdown();
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
@@ -96,7 +193,13 @@ public interface NodeExtension {
      */
     InternalSerializationService createSerializationService();
 
-    SecurityService getSecurityService();
+    /**
+     * Creates and returns a serialization service for (de)serializing objects
+     * compatible with a compatibility (3.x) format.
+     *
+     * @return the compatibility serialization service
+     */
+    InternalSerializationService createCompatibilitySerializationService();
 
     /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.
@@ -109,10 +212,11 @@ public interface NodeExtension {
      * Creates a service which is an implementation of given type parameter.
      *
      * @param type type of service
+     * @param params additional parameter to create the service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
-    <T> T createService(Class<T> type);
+    <T> T createService(Class<T> type, Object... params);
 
     /**
      * Creates additional extension services, which will be registered by
@@ -128,8 +232,11 @@ public interface NodeExtension {
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
      * otherwise returns null.
      *
+     * @param endpointQualifier an endpoint qualifier that identifies
+     *                         groups of network connections sharing a
+     *                         common ProtocolType and the same network
+     *                         settings
      * @return MemberSocketInterceptor
-     * @param endpointQualifier
      */
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
@@ -140,7 +247,7 @@ public interface NodeExtension {
      * can be returned. This is the first item in the chain.
      *
      * @param connection tcp-ip connection
-     * @param serverContext  ServerContext
+     * @param context a server context
      * @return the created InboundHandler.
      */
     InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection, ServerContext context);
@@ -154,7 +261,6 @@ public interface NodeExtension {
      */
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection, ServerContext context);
 
-
     /**
      * Creates the channel initializer function.
      *
@@ -162,22 +268,6 @@ public interface NodeExtension {
      * @return
      */
     Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(ServerContext serverContext);
-
-    /**
-     * Called on thread start to inject/intercept extension specific logic,
-     * like; registering thread in some service,
-     * executing a special method before thread starts to do its own task.
-     *
-     * @param thread thread starting
-     */
-    void onThreadStart(Thread thread);
-
-    /**
-     * Called before a thread stops to clean/release injected by {@link #onThreadStart(Thread)}.
-     *
-     * @param thread thread stopping
-     */
-    void onThreadStop(Thread thread);
 
     /**
      * Returns MemoryStats of for the JVM and current HazelcastInstance.
@@ -188,18 +278,11 @@ public interface NodeExtension {
 
      /**
       * Executed on the master node before allowing a new member to join from
-      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager#handleJoinRequest(JoinRequest, Connection)}.
+      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager#handleJoinRequest(JoinRequest, ServerConnection)}.
       * Implementation should check if the {@code JoinMessage} should be allowed to proceed, otherwise throw an exception
       * with a message explaining rejection reason.
       */
     void validateJoinRequest(JoinMessage joinMessage);
-
-    /**
-     * Called when initial cluster state is received while joining the cluster.
-     *
-     * @param initialState initial cluster state
-     */
-    void onInitialClusterState(ClusterState initialState);
 
     /**
      * Called before starting a cluster state change transaction. Called only
@@ -224,20 +307,6 @@ public interface NodeExtension {
      *                    system operations such as an orderly all-cluster shutdown.
      */
     void onClusterStateChange(ClusterState newState, boolean isTransient);
-
-    /**
-     * Called after the cluster state change transaction has completed
-     * (successfully or otherwise). Called only on the member that initiated
-     * the state change.
-     *
-     * @param oldState the state before the change
-     * @param newState the new cluster state, can be equal to {@code oldState} if the
-     *                 state change transaction failed
-     * @param isTransient whether the change will be recorded in persistent storage, affecting the
-     *                    initial state after cluster restart. Transient changes happen during
-     *                    system operations such as an orderly all-cluster shutdown.
-     */
-    void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient);
 
     /**
      * Called synchronously when partition state (partition assignments, version etc) changes
@@ -270,17 +339,13 @@ public interface NodeExtension {
      */
     boolean registerListener(Object listener);
 
-    /** Returns the public hot restart service */
+    /**
+     * Returns the public hot restart service
+     */
     HotRestartService getHotRestartService();
 
     /** Returns the internal hot restart service */
     InternalHotRestartService getInternalHotRestartService();
-
-    /**
-     * Creates a UUID for local member
-     * @return new UUID
-     */
-    UUID createMemberUuid();
 
     /**
      * Creates a TimedMemberStateFactory for a given Hazelcast instance
@@ -292,19 +357,6 @@ public interface NodeExtension {
     ManagementService createJMXManagementService(HazelcastInstanceImpl instance);
 
     TextCommandService createTextCommandService();
-
-    /** Returns a byte array processor for incoming data on the Multicast joiner */
-    ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext);
-
-    /** Returns a byte array processor for outgoing data on the Multicast joiner */
-    ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext);
-
-    /**
-     * Creates a listener for changes in dynamic data structure configurations
-     *
-     * @return Listener to be notfied about changes in data structure configurations
-     */
-    DynamicConfigListener createDynamicConfigListener();
 
     /**
      * Register the node extension specific diagnostics plugins on the provided
@@ -320,17 +372,6 @@ public interface NodeExtension {
     void sendPhoneHome();
 
     /**
-     * Cluster version auto upgrade is done asynchronously. Every call of this
-     * method creates and schedules a new auto upgrade task.
-     */
-    void scheduleClusterVersionAutoUpgrade();
-
-    /**
-     * @return true if client failover feature is supported
-     */
-    boolean isClientFailoverSupported();
-
-    /**
      * @return not-{@code null} {@link AuditlogService} instance
      */
     AuditlogService getAuditlogService();
@@ -339,4 +380,13 @@ public interface NodeExtension {
      * Returns CP persistence service.
      */
     CPPersistenceService getCPPersistenceService();
+
+    /**
+     * Returns a JetService.
+     */
+    JetService getJet();
+
+    /** Returns the internal jet service backend */
+    @Nullable
+    JetServiceBackend getJetServiceBackend();
 }

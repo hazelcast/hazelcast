@@ -6,8 +6,8 @@ contact_links:
   - name: Stack Overflow
     url: https://stackoverflow.com/questions/tagged/hazelcast
     about: We're not actively answering questions in Github so feel free to ask one in Stack Overflow
-  - name: Hazelcast Gitter Room
-    url: https://gitter.im/hazelcast/hazelcast
-    about: We're not actively answering questions in Github so feel free to ask one in Gitter
+  - name: Hazelcast community Slack
+    url: https://slack.hazelcast.com/
+    about: We're not actively answering questions in Github so feel free to ask one on Slack
 
 

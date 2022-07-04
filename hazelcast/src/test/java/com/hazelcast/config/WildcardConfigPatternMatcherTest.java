@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,19 @@ public class WildcardConfigPatternMatcherTest {
 
         assertEquals(queueConfig, config.getQueueConfig("abcD"));
         assertNotEquals(queueConfig, config.getQueueConfig("abDD"));
+    }
+
+    @Test
+    public void testQueueConfigWildcardSamePrefixAndSuffix() {
+        QueueConfig queueConfig = new QueueConfig().setName("abc*abc");
+
+        Config config = new Config();
+        config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
+        config.addQueueConfig(queueConfig);
+
+        assertNotEquals(queueConfig, config.getQueueConfig("abc"));
+        assertEquals(queueConfig, config.getQueueConfig("abcabc"));
+        assertEquals(queueConfig, config.getQueueConfig("abcDabc"));
     }
 
     @Test

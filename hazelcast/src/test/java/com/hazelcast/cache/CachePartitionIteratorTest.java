@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,9 +41,10 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CachePartitionIteratorTest extends HazelcastTestSupport {
 
@@ -76,10 +78,14 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
 
     }
 
+    protected  <T> Iterator<Cache.Entry<T, T>> getIterator(CacheProxy<T, T> cache) {
+        return cache.iterator(10, 1, prefetchValues);
+    }
+
     @Test
     public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
         CacheProxy<Integer, Integer> cache = getCacheProxy();
-        Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<Integer, Integer>> iterator = getIterator(cache);
         assertFalse(iterator.hasNext());
     }
 
@@ -91,7 +97,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         assertTrue(iterator.hasNext());
     }
 
@@ -103,7 +109,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
@@ -116,7 +122,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
@@ -129,10 +135,10 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            String key = generateKeyForPartition(server, 42);
+            String key = generateKeyForPartition(server, 1);
             cache.put(key, value);
         }
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 42, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         for (int i = 0; i < count; i++) {
             Cache.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());

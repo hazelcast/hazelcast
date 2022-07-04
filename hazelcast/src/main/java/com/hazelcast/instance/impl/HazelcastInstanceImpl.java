@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -64,6 +65,7 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -407,6 +409,18 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public CPSubsystem getCPSubsystem() {
         return cpSubsystem;
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return node.getNodeEngine().getSqlService();
+    }
+
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return node.getNodeExtension().getJet();
     }
 
     @Override

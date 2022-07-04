@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,15 +23,15 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd
-  or the Reference Manual at https://hazelcast.org/documentation/
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd
+  or the Reference Manual at https://docs.hazelcast.com/
 -->
 
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -187,21 +187,18 @@
                 </properties>
             </socket-interceptor>
         * <ssl>:
-            Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-            Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-            your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-            By default, it is disabled. The following is an example:
+            Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast Enterprise.
+            The default configuration usually uses JSSE engine available in Java.
+            Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
             <ssl enabled="true">
                 <factory-class-name>
-                    com.hazelcast.nio.ssl.BasicSSLContextFactory
+                    com.hazelcast.nio.ssl.OpenSSLEngineFactory
                 </factory-class-name>
                 <properties>
-                    <property name="keyStore">keyStore</property>
-                    <property name="keyStorePassword">keyStorePassword</property>
-                    <property name="keyManagerAlgorithm">SunX509</property>
-                    <property name="trustManagerAlgorithm">SunX509</property>
-                    <property name="protocol">TLS</property>
-                    <property name="mutualAuthentication">REQUIRED</property>
+                    <property name="protocol">TLSv1.2</property>
+                    <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                    <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                    <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
                 </properties>
             </ssl>
         * <aws>:
@@ -291,40 +288,60 @@
         </socket-interceptor>
 
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
                 <property name="protocol">TLS</property>
 
                 <property name="trustStore">/opt/hazelcast-client.truststore</property>
                 <property name="trustStorePassword">secret.123456</property>
-                <property name="trustStoreType">JKS</property>
+                <property name="trustStoreType">PKCS12</property>
 
                 <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
                 <property name="keyStorePassword">keystorePassword123</property>
-                <property name="keyStoreType">JKS</property>
+                <property name="keyStoreType">PKCS12</property>
             </properties>
         </ssl>
-        <aws enabled="true" connection-timeout-seconds="11">
-            <inside-aws>true</inside-aws>
-            <access-key>TEST_ACCESS_KEY</access-key>
-            <secret-key>TEST_SECRET_KEY</secret-key>
-            <region>us-east-1</region>
+        <auto-detection enabled="false"/>
+        <aws enabled="false">
+            <access-key>my-access-key</access-key>
+            <secret-key>my-secret-key</secret-key>
+            <region>us-west-1</region>
             <host-header>ec2.amazonaws.com</host-header>
-            <security-group-name>hazelcast-sg</security-group-name>
+            <connection-timeout-seconds>7</connection-timeout-seconds>
+            <read-timeout-seconds>7</read-timeout-seconds>
+            <connection-retries>4</connection-retries>
+            <hz-port>5701-5710</hz-port>
+            <use-public-ip>true</use-public-ip>
             <tag-key>type</tag-key>
             <tag-value>hz-nodes</tag-value>
+            <security-group-name>hazelcast-sg</security-group-name>
+            <iam-role>dummy</iam-role>
+            <!--
+            <cluster>my-cluster</cluster>
+            <family>test-family</family>
+            <service-name>test-service</service-name>
+            -->
         </aws>
         <gcp enabled="false">
-            <zones>us-east1-b,us-east1-c</zones>
+            <private-key-path>key-path</private-key-path>
+            <projects>project-1,project-2</projects>
+            <region>us-central1</region>
+            <zones>us-central1-b,us-central1-c</zones>
+            <label>key=value</label>
+            <hz-port>5701-5710</hz-port>
+            <use-public-ip>true</use-public-ip>
         </gcp>
         <azure enabled="false">
+            <instance-metadata-available>false</instance-metadata-available>
             <client-id>CLIENT_ID</client-id>
             <client-secret>CLIENT_SECRET</client-secret>
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
-            <cluster-id>HZLCAST001</cluster-id>
-            <group-name>RESOURCE-GROUP-NAME</group-name>
+            <resource-group>RESOURCE-GROUP-NAME</resource-group>
+            <scale-set>SCALE-SET-NAME</scale-set>
+            <tag>TAG-NAME=HZLCAST001</tag>
+            <hz-port>5701-5707</hz-port>
+            <use-public-ip>true</use-public-ip>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -373,10 +390,13 @@
             "name" used to define the name of the attribute. The value of the property is defined in the body.
         * <username-password>
             Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
-             "username" and "password" attributes.
+            "username" and "password" attributes.
         * <token>
             Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
             Content of the element is token value in given encoding (or in plain text).
+        * <kerberos>
+            Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+            It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
     -->
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
@@ -387,7 +407,33 @@
         <!--
         <username-password username="client1" password="s3crEt"/>
         <token encoding="base64">SGF6ZWxjYXN0</token>
+        <kerberos>
+            <realm>HAZELCAST.COM</realm>
+            <security-realm>krb5Initiator</security-realm>
+            <service-name-prefix>hz/</service-name-prefix>
+            <use-canonical-hostname>true</use-canonical-hostname>
+            <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
+        </kerberos>
          -->
+        <realms>
+            <realm name="krb5Initiator">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="isInitiator">true</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">jduke@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/jduke.keytab</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
+        </realms>
     </security>
 
     <!--
@@ -420,6 +466,8 @@
             Set as true to enable shared object when default Java serialization is used. Its default value is false.
         * <allow-unsafe>:
             Set as true to allow the usage of unsafe. Its default value is false.
+        * <allow-override-default-serializers>:
+            Set as true to allow override of default serializers. Its default value is false.
         * <data-serializable-factories>:
             Lists your class implementations of Hazelcast's DataSerializableFactory using the <data-serializable-factory>
             sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your
@@ -453,6 +501,7 @@
         <enable-compression>false</enable-compression>
         <enable-shared-object>true</enable-shared-object>
         <allow-unsafe>false</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
@@ -481,6 +530,16 @@
                 <prefix>com.</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
     <!--
         ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
@@ -515,6 +574,15 @@
         <min-block-size>1</min-block-size>
         <page-size>1</page-size>
         <metadata-space-percentage>40.5</metadata-space-percentage>
+        <!-- Simple configuration for single-socket machines with non-volatile memory -->
+        <!-- <persistent-memory-directory>/mnt/optane</persistent-memory-directory> -->
+        <!-- Advanced configuration for non-volatile memory -->
+        <persistent-memory enabled="true" mode="MOUNTED">
+            <directories>
+                <directory numa-node="0">/mnt/pmem0</directory>
+                <directory numa-node="1">/mnt/pmem1</directory>
+            </directories>
+        </persistent-memory>
     </native-memory>
     <!--
         ===== HAZELCAST PROXY FACTORY CONFIGURATION =====
@@ -537,6 +605,8 @@
         It has the attribute "type". The valid values for the type of the load balancer are"
         * "random": The member the operations to be sent to is chosen randomly.
         * "round-robin": The member the operations to be sent to is chosen in a round-robin fashion.
+        * "custom": The member the operations to be sent to is chosen by provided load balancer implementation.
+                    The implementation class name is specified as text content.
     -->
     <load-balancer type="random"/>
 
@@ -699,6 +769,7 @@
             <in-memory-format>BINARY</in-memory-format>
             <coalesce>false</coalesce>
             <populate>true</populate>
+            <serialize-keys>true</serialize-keys>
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
@@ -735,12 +806,14 @@
                 Specifies how long to wait (backoff) after the first failure before retrying in milliseconds.
                 Its default value is 1000 ms.
             * <max-backoff-millis>: Specifies the upper limit for the backoff in milliseconds. Its default value is 30000 ms.
-            * <multiplier>: Factor to multiply the backoff after a failed retry. Its default value is 2.
+            * <multiplier>: Factor to multiply the backoff after a failed retry. Its default value is 1.05.
             * <cluster-connect-timeout-millis>: Timeout value in milliseconds for the client to give up to connect to
               the current cluster
               Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
-              Its default value is 20000
-            * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.2.
+              Its default value is -1. For the default value, the client will not stop trying to connect to the cluster.
+              If the failover client is used, the client will start trying to connect alternative clusters after
+              120000 ms. For any other value, both the failover and non-failover client will use that as it is.
+            * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.
     -->
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
         <connection-retry>
@@ -876,5 +949,50 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>42</collection-frequency-seconds>
     </metrics>
+
+    <!--
+      ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
+
+      Configuration element's name is <instance-tracking>.
+
+      It has the following attributes:
+      - enabled:
+          Enables or disables instance tracking.
+
+      It has the following sub-elements:
+      * <format-pattern>:
+          Sets the pattern used to render the contents of the instance tracking file.
+          It may contain placeholders for these properties:
+          - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+          - "version": The instance version.
+          - "mode": The instance mode which can be "server", "embedded" or "client".
+          - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+          measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+          - "licensed": If this instance is using a license or not. The value 0 signifies
+          that there is no license set and the value 1 signifies that a license is in use.
+          - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+          process ID on all JVMs and operating systems so please test before use. In case we are unable to
+          get the PID, the value will be -1.
+          The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }. For instance,
+          a placeholder for the "start_timestamp" would be $HZ_INSTANCE_TRACKING{start_timestamp}.
+          The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+          is ignored and only the known properties are resolved, placeholders for
+          any parameters which do not have defined values will be ignored. This also
+          means that if there is a missing closing bracket in one of the placeholders,
+          the property name will be resolved as anything from the opening bracket
+          to the next closing bracket, which might contain additional opening brackets.
+          If unset, a JSON formatted output will be used.
+      * <file-name>:
+          Sets the name of the file which will contain the tracking metadata. If left unset
+          a file named "Hazelcast.process" will be created in the directory as returned by
+          System.getProperty("java.io.tmpdir").
+          The filename can contain placeholders that will be resolved in the same way
+          as placeholders for the format pattern.
+
+  -->
+    <instance-tracking enabled="false">
+        <file-name>hazelcast.process</file-name>
+        <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
+    </instance-tracking>
 
 </hazelcast-client>

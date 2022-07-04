@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -57,7 +58,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
@@ -87,6 +88,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         this.backoff = backoffTimeoutMillis;
         this.bounceMemberRule = BounceMemberRule
                 .with(new Config())
+                .driverType(BounceTestConfiguration.DriverType.CLIENT)
                 .driverFactory(new MultiSocketClientDriverFactory(
                         new ClientConfig()
                                 .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))

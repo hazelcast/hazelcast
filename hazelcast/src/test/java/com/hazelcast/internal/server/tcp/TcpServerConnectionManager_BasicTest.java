@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,19 +31,19 @@ public class TcpServerConnectionManager_BasicTest
 
     @Test
     public void start() {
-        networkingServiceA.start();
+        tcpServerA.start();
 
-        assertTrue(networkingServiceA.isLive());
+        assertTrue(tcpServerA.isLive());
     }
 
     @Test
     public void start_whenAlreadyStarted_thenCallIgnored() {
         // first time
-        networkingServiceA.start();
+        tcpServerA.start();
 
         // second time
-        networkingServiceA.start();
+        tcpServerA.start();
 
-        assertTrue(networkingServiceA.isLive());
+        assertTrue(tcpServerA.isLive());
     }
 }

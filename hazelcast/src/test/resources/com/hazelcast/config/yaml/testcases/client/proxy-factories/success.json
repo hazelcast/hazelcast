@@ -1,0 +1,17 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "proxy-factories": [
+        {
+          "class-name": "MyClass",
+          "service": "hz:MapService"
+        },
+        {
+          "class-name": "OtherClass",
+          "service": "hz:ListService"
+        }
+      ]
+    }
+  },
+  "error": null
+}

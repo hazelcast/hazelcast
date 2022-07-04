@@ -1,0 +1,82 @@
+{
+  "instance": {
+    "hazelcast": {
+      "security": {
+        "realms": [
+          {
+            "identity": {
+              "token": {
+                "encoding": "invalid",
+                "value": 2
+              }
+            }
+          },
+          {
+            "identity": {
+              "token": {}
+            }
+          },
+          {
+            "identity": null
+          }
+        ]
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Security/properties/realms",
+    "pointerToViolation": "#/hazelcast/security/realms",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Security/properties/realms/items/properties/identity",
+        "pointerToViolation": "#/hazelcast/security/realms/2/identity",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/TokenIdentity",
+        "pointerToViolation": "#/hazelcast/security/realms/0/identity/token",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/TokenIdentity/properties/encoding",
+            "pointerToViolation": "#/hazelcast/security/realms/0/identity/token/encoding",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "invalid is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/TokenIdentity/properties/value",
+            "pointerToViolation": "#/hazelcast/security/realms/0/identity/token/value",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/TokenIdentity",
+        "pointerToViolation": "#/hazelcast/security/realms/1/identity/token",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/TokenIdentity",
+            "pointerToViolation": "#/hazelcast/security/realms/1/identity/token",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [encoding] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/TokenIdentity",
+            "pointerToViolation": "#/hazelcast/security/realms/1/identity/token",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [value] not found"
+          }
+        ],
+        "message": "2 schema violations found"
+      }
+    ],
+    "message": "5 schema violations found"
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -36,11 +37,13 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +55,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
     @After
@@ -62,6 +65,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void testClientPortConnection() {
         Config config1 = new Config();
         config1.setClusterName("foo");
@@ -234,6 +238,11 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             public Address translate(Address address) {
                 return address;
             }
+
+            @Override
+            public Address translate(Member member) throws Exception {
+                return member.getAddress();
+            }
         };
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
@@ -244,14 +253,16 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         warmUpPartitions(instance1, instance2);
         String keyOwnedBy2 = generateKeyOwnedBy(instance2);
-
+        makeSureConnectedToServers(client, 2);
 
         IMap<Object, Object> clientMap = client.getMap("test");
 
         //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
+        UUID memberUUID = instance1.getLocalEndpoint().getUuid();
         instance1.shutdown();
 
+        makeSureDisconnectedFromServer(client, memberUUID);
         //we expect these operations to run without throwing exception, since they are done on live instance.
         clientMap.put(keyOwnedBy2, 1);
         assertEquals(1, clientMap.get(keyOwnedBy2));

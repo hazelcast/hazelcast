@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.NOOP_PERMIT;
@@ -40,7 +40,8 @@ public class ScheduledExecutorMemberBin
             }
 
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            return new ScheduledExecutorMemberOwnedContainer(name, newPermitFor(name, service, config) , nodeEngine);
+            return new ScheduledExecutorMemberOwnedContainer(name, newPermitFor(name, service, config),
+                    nodeEngine, config.isStatisticsEnabled());
         };
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution
  */
-@Generated("331f4f35a2fc22a4974a8ff0d251b67e")
+@Generated("9b2969b872d4e7cb88c34529f224121c")
 public final class DurableExecutorSubmitToPartitionCodec {
     //hex: 0x180300
     public static final int REQUEST_MESSAGE_TYPE = 1573632;
@@ -86,15 +86,6 @@ public final class DurableExecutorSubmitToPartitionCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the sequence for the submitted execution.
-         */
-        public int response;
-    }
-
     public static ClientMessage encodeResponse(int response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,12 @@ public final class DurableExecutorSubmitToPartitionCodec {
         return clientMessage;
     }
 
-    public static DurableExecutorSubmitToPartitionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * the sequence for the submitted execution.
+     */
+    public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

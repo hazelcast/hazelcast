@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.io.IOException;
  *
  * <p>
  *
- * Portable serialization that have the following advantages:
+ * Portable serialization has the following advantages:
  * <ul>
- *     <li>Support multiversion of the same object type.
+ *     <li>Support multiple versions of the same object type.
  *     (See {@link com.hazelcast.config.SerializationConfig#setPortableVersion(int)})</li>
  *     <li>Fetching individual fields without having to rely on reflection.</li>
  *     <li>Querying and indexing support without de-serialization and/or reflection.</li>

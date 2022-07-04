@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.w3c.dom.UserDataHandler;
 import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
 
 @SuppressWarnings({"checkstyle:methodcount"})
-class ScalarTextNodeAdapter implements Node {
+public class ScalarTextNodeAdapter implements Node {
     private YamlScalar scalar;
 
     ScalarTextNodeAdapter(YamlScalar scalar) {
@@ -44,6 +44,10 @@ class ScalarTextNodeAdapter implements Node {
     public String getNodeValue() throws DOMException {
         Object nodeValue = scalar.nodeValue();
         return nodeValue != null ? nodeValue.toString() : null;
+    }
+
+    public Object getNodeRawValue() {
+        return scalar.nodeValue();
     }
 
     @Override

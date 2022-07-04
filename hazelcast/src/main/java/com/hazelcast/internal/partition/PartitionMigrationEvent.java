@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.partition;
 
+import java.util.UUID;
+
 /**
  * An {@link java.util.EventObject} for a partition migration. Can be used by SPI services to get a callback
  * to listen to partition migration.  See {@link MigrationAwareService} for more info.
@@ -30,12 +32,15 @@ public class PartitionMigrationEvent {
 
     private final int newReplicaIndex;
 
-    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId,
-            int currentReplicaIndex, int newReplicaIndex) {
+    private final UUID migrationUid;
+
+    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId, int currentReplicaIndex,
+            int newReplicaIndex, UUID migrationUid) {
         this.migrationEndpoint = migrationEndpoint;
         this.partitionId = partitionId;
         this.currentReplicaIndex = currentReplicaIndex;
         this.newReplicaIndex = newReplicaIndex;
+        this.migrationUid = migrationUid;
     }
 
     /**
@@ -74,6 +79,13 @@ public class PartitionMigrationEvent {
      */
     public int getNewReplicaIndex() {
         return newReplicaIndex;
+    }
+
+    /**
+     * Returns the uid of the specific migration.
+     */
+    public UUID getMigrationUid() {
+        return migrationUid;
     }
 
     @Override
@@ -116,6 +128,7 @@ public class PartitionMigrationEvent {
                 + ", partitionId=" + partitionId
                 + ", currentReplicaIndex=" + currentReplicaIndex
                 + ", newReplicaIndex=" + newReplicaIndex
+                + ", uuid=" + migrationUid
                 + '}';
     }
 }

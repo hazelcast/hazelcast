@@ -1,0 +1,141 @@
+{
+  "instance": {
+    "hazelcast": {
+      "split-brain-protection": {
+        "my-sbp": {
+          "enabled": "On",
+          "minimum-cluster-size": 1,
+          "protect-on": "delete",
+          "function-class-name": null,
+          "listeners": {
+            "item": "xxx"
+          },
+          "recently-active-split-brain-protection": {
+            "heartbeat-tolerance-millis": "3000ms",
+            "unknown": null
+          },
+          "probabilistic-split-brain-protection": {
+            "acceptable-heartbeat-pause-millis": "37400",
+            "suspicion-threshold": "3.14592",
+            "max-sample-size": "42ms",
+            "min-std-deviation-millis": null,
+            "heartbeat-interval-millis": "4321",
+            "unknown": null
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties",
+    "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/enabled",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/function-class-name",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/function-class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/listeners",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/listeners",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/minimum-cluster-size",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/minimum-cluster-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "1 is not greater or equal to 2"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection/properties/acceptable-heartbeat-pause-millis",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection/acceptable-heartbeat-pause-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection/properties/heartbeat-interval-millis",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection/heartbeat-interval-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection/properties/max-sample-size",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection/max-sample-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection/properties/min-std-deviation-millis",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection/min-std-deviation-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/probabilistic-split-brain-protection/properties/suspicion-threshold",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/probabilistic-split-brain-protection/suspicion-threshold",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Number, found: String"
+          }
+        ],
+        "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/protect-on",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/protect-on",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "delete is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/recently-active-split-brain-protection",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/recently-active-split-brain-protection",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/recently-active-split-brain-protection",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/recently-active-split-brain-protection",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/recently-active-split-brain-protection/properties/heartbeat-tolerance-millis",
+            "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/recently-active-split-brain-protection/heartbeat-tolerance-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "2 schema violations found"
+      }
+    ],
+    "message": "13 schema violations found"
+  }
+}

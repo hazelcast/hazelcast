@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.EVICTED;
@@ -483,34 +484,34 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         assertEquals(-1, state.getNewestSequence());
         assertEventJournalSize(context.dataAdapter, 0);
 
-        final String key = randomPartitionKey();
         final Integer value = RANDOM.nextInt();
         final CountDownLatch latch = new CountDownLatch(1);
         final int startSequence = 1;
 
         final BiConsumer<ReadResultSet<EJ_TYPE>, Throwable> callback = (response, t) -> {
             if (t == null) {
+                latch.countDown();
                 assertEquals(1, response.size());
                 final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
                 final EJ_TYPE e = response.get(0);
 
                 assertEquals(ADDED, journalAdapter.getType(e));
-                assertEquals(key, journalAdapter.getKey(e));
                 assertEquals(value, journalAdapter.getNewValue(e));
-                assertNotEquals(startSequence + response.readCount(), response.getNextSequenceToReadFrom());
-                assertEquals(1, response.getNextSequenceToReadFrom());
-                latch.countDown();
             } else {
-                t.printStackTrace();
+                rethrow(t);
             }
         };
-        readFromEventJournal(context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION)
-                .whenCompleteAsync(callback);
+        CompletionStage<ReadResultSet<EJ_TYPE>> callbackStage =
+                readFromEventJournal(context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION)
+                    .whenCompleteAsync(callback);
 
-        context.dataAdapter.put(key, value);
+        assertTrueEventually(() -> {
+            context.dataAdapter.put(randomPartitionKey(), value);
+            assertTrue(latch.await(200, TimeUnit.MILLISECONDS));
+        }, 30);
 
-        assertOpenEventually(latch, 30);
-        assertEventJournalSize(context.dataAdapter, 1);
+        // ensure no exception thrown from callback
+        callbackStage.toCompletableFuture().join();
     }
 
     /**

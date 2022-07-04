@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,26 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapFetchNearCacheInvalidationMetadataTask
-        extends AbstractInvocationMessageTask<MapFetchNearCacheInvalidationMetadataCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<MapFetchNearCacheInvalidationMetadataCodec.RequestParameters> {
 
     public MapFetchNearCacheInvalidationMetadataTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.uuid);
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
+    protected UUID getTargetUuid() {
+        return parameters.uuid;
     }
 
     @Override

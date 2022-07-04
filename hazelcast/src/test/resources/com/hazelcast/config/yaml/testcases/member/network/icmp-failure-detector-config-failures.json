@@ -1,0 +1,98 @@
+{
+  "instance": {
+    "hazelcast": {
+      "network": {
+        "failure-detector": {
+          "unknown-prop": "icmp",
+          "icmp": {
+            "unknown-prop": "invalid",
+            "enabled": "Off",
+            "timeout-milliseconds": 0,
+            "fail-fast-on-startup": "On",
+            "interval-milliseconds": 999,
+            "max-attempts": -1,
+            "parallel-mode": "Off",
+            "ttl": -1
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/FailureDetector",
+    "pointerToViolation": "#/hazelcast/network/failure-detector",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/FailureDetector",
+        "pointerToViolation": "#/hazelcast/network/failure-detector",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown-prop] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/FailureDetector/properties/icmp",
+        "pointerToViolation": "#/hazelcast/network/failure-detector/icmp",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-prop] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/fail-fast-on-startup",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/fail-fast-on-startup",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/interval-milliseconds",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/interval-milliseconds",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "999 is not greater or equal to 1000"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/parallel-mode",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/parallel-mode",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/timeout-milliseconds",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/timeout-milliseconds",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/max-attempts",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/max-attempts",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-1 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/ttl",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/ttl",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-1 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/FailureDetector/properties/icmp/properties/enabled",
+            "pointerToViolation": "#/hazelcast/network/failure-detector/icmp/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "8 schema violations found"
+      }
+    ],
+    "message": "9 schema violations found"
+  }
+}

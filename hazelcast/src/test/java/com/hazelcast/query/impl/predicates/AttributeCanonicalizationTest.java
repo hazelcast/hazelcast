@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.query.impl.IndexUtils.canonicalizeAttribute;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -64,7 +65,8 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testIndexes() {
-        Indexes indexes = Indexes.newBuilder(new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER).build();
+        Indexes indexes = Indexes.newBuilder(
+                new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
         checkIndex(indexes, "foo", "foo");
         checkIndex(indexes, "this.foo", "foo");
@@ -78,19 +80,20 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testCompositeIndexes() {
-        Indexes indexes = Indexes.newBuilder(new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER).build();
+        Indexes indexes = Indexes.newBuilder(
+                new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
-        checkIndex(indexes, new String[] { "foo", "bar" }, new String[] { "foo", "bar"});
-        checkIndex(indexes, new String[] { "this.foo", "bar" }, new String[] { "foo", "bar"});
-        checkIndex(indexes, new String[] { "this", "__key" }, new String[] { "this", "__key"});
-        checkIndex(indexes, new String[] { "foo", "bar.this.baz" }, new String[] { "foo", "bar.this.baz"});
-        checkIndex(indexes, new String[] { "this.foo", "bar.this.baz" }, new String[] { "foo", "bar.this.baz"});
-        checkIndex(indexes, new String[] { "foo.bar", "baz" }, new String[] { "foo.bar", "baz"});
-        checkIndex(indexes, new String[] { "foo", "this.bar", "__key.baz" }, new String[] { "foo", "bar", "__key.baz"});
+        checkIndex(indexes, new String[]{"foo", "bar"}, new String[]{"foo", "bar"});
+        checkIndex(indexes, new String[]{"this.foo", "bar"}, new String[]{"foo", "bar"});
+        checkIndex(indexes, new String[]{"this", "__key"}, new String[]{"this", "__key"});
+        checkIndex(indexes, new String[]{"foo", "bar.this.baz"}, new String[]{"foo", "bar.this.baz"});
+        checkIndex(indexes, new String[]{"this.foo", "bar.this.baz"}, new String[]{"foo", "bar.this.baz"});
+        checkIndex(indexes, new String[]{"foo.bar", "baz"}, new String[]{"foo.bar", "baz"});
+        checkIndex(indexes, new String[]{"foo", "this.bar", "__key.baz"}, new String[]{"foo", "bar", "__key.baz"});
     }
 
     private void checkIndex(Indexes indexes, String attribute, String expAttribute) {
-        checkIndex(indexes, new String[] { attribute }, new String[] { expAttribute });
+        checkIndex(indexes, new String[]{attribute}, new String[]{expAttribute});
     }
 
     private void checkIndex(Indexes indexes, String[] attributes, String[] expAttributes) {
@@ -126,7 +129,7 @@ public class AttributeCanonicalizationTest {
 
         assertEquals(expName.toString(), normalizedConfig.getName());
 
-        InternalIndex index = indexes.addOrGetIndex(normalizedConfig, null);
+        InternalIndex index = indexes.addOrGetIndex(normalizedConfig);
         assertEquals(normalizedConfig.getName(), index.getName());
 
         assertNotNull(indexes.getIndex(normalizedConfig.getName()));

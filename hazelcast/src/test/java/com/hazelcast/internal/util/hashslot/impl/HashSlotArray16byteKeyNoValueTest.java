@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -240,11 +240,7 @@ public class HashSlotArray16byteKeyNoValueTest {
         cursor.advance();
         cursor.advance();
 
-        try {
-            cursor.advance();
-            fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
-        } catch (AssertionError ignored) {
-        }
+        assertThrows(AssertionError.class, cursor::advance);
     }
 
     @Test

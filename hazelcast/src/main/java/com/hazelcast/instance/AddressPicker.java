@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,27 @@ public interface AddressPicker {
      */
     Address getPublicAddress(EndpointQualifier qualifier);
 
+    /**
+     * Returns all public {@link Address}es of this member which are advertised to other
+     * members, mapped by corresponding {@link EndpointQualifier}. Also, see
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake} and
+     * {@link com.hazelcast.internal.server.tcp.SendMemberHandshakeTask}.
+     *
+     * @return a {@code Map<EndpointQualifier, Address>} of this member's public addresses
+     * or an empty map if called before {@link #pickAddress()}
+     * @since 3.12
+     */
     Map<EndpointQualifier, Address> getPublicAddressMap();
+
+    /**
+     * Returns all bound server socket {@link Address}es of this member, mapped by
+     * corresponding {@link EndpointQualifier}
+     *
+     * @return a {@code Map<EndpointQualifier, Address>} of the bound addresses of
+     * this member's server sockets or an empty map if called before {@link #pickAddress()}
+     * @since 5.1
+     */
+    Map<EndpointQualifier, Address> getBindAddressMap();
 
     /**
      * Returns a server channel.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,61 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueEvictionTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
+
+    @Parameterized.Parameter
+    public String comparatorClassName;
 
     @Test
     public void testQueueEviction_whenTtlIsSet_thenTakeThrowsException() throws Exception {
         String queueName = randomString();
 
-        Config config = new Config();
-        config.getQueueConfig(queueName).setEmptyQueueTtl(2);
+        Config config = smallInstanceConfig();
+        config.getQueueConfig(queueName)
+              .setPriorityComparatorClassName(comparatorClassName)
+              .setEmptyQueueTtl(2);
         HazelcastInstance hz = createHazelcastInstance(config);
-        IQueue<Object> queue = hz.getQueue(queueName);
+        IQueue<VersionedObject<String>> queue = hz.getQueue(queueName);
 
         try {
-            assertTrue(queue.offer("item"));
-            assertEquals("item", queue.poll());
+            assertTrue(queue.offer(new VersionedObject<>("item")));
+            assertEquals(new VersionedObject<>("item"), queue.poll());
 
             queue.take();
             fail();
@@ -66,7 +84,9 @@ public class QueueEvictionTest extends HazelcastTestSupport {
     public void testQueueEviction_whenTtlIsZero_thenListenersAreNeverthelessExecuted() throws Exception {
         String queueName = randomString();
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
+        config.getQueueConfig("default")
+              .setPriorityComparatorClassName(comparatorClassName);
         config.getQueueConfig(queueName).setEmptyQueueTtl(0);
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -81,9 +101,9 @@ public class QueueEvictionTest extends HazelcastTestSupport {
             }
         });
 
-        IQueue<Object> queue = hz.getQueue(queueName);
-        assertTrue(queue.offer("item"));
-        assertEquals("item", queue.poll());
+        IQueue<VersionedObject<String>> queue = hz.getQueue(queueName);
+        assertTrue(queue.offer(new VersionedObject<>("item")));
+        assertEquals(new VersionedObject<>("item"), queue.poll());
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }

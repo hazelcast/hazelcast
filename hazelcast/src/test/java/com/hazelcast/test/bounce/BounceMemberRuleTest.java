@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ public class BounceMemberRuleTest {
     private String mapName = randomMapName();
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).clusterSize(3).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).clusterSize(3)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
 
     @Before
     public void setup() {

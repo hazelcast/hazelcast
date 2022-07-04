@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,26 @@ import java.nio.ByteOrder;
 
 public interface InputOutputFactory {
 
-    BufferObjectDataInput createInput(Data data, InternalSerializationService service);
+    BufferObjectDataInput createInput(Data data,
+                                      InternalSerializationService service,
+                                      boolean isCompatibility);
 
-    BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service);
+    BufferObjectDataInput createInput(byte[] buffer,
+                                      InternalSerializationService service,
+                                      boolean isCompatibility);
 
-    BufferObjectDataInput createInput(byte[] buffer, int offset, InternalSerializationService service);
+    BufferObjectDataInput createInput(byte[] buffer,
+                                      int offset,
+                                      InternalSerializationService service,
+                                      boolean isCompatibility);
 
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
+
+    /**
+     * Creating new {@link BufferObjectDataOutput}. The size of the internal buffer is set to initialSize at construction.
+     * When the buffer is too small to accept new bytes the buffer will grow to at least firstGrowthSize.
+     */
+    BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service);
 
     ByteOrder getByteOrder();
 }

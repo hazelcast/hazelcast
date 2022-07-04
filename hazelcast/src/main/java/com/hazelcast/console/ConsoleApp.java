@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -44,13 +43,12 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.FileInputStream;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,7 +98,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private boolean silent;
     private boolean echo;
 
-    private volatile LineReader lineReader;
     private volatile boolean running;
 
     private final PrintStream outOrig;
@@ -162,17 +159,16 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + i).getLocalExecutorStats();
         }
 
-        if (lineReader == null) {
-            lineReader = new DefaultLineReader();
-        }
-        running = true;
-        while (running) {
-            print("hazelcast[" + namespace + "] > ");
-            try {
-                final String command = lineReader.readLine();
-                handleCommand(command);
-            } catch (Throwable e) {
-                e.printStackTrace();
+        try (LineReader lineReader = new DefaultLineReader()) {
+            running = true;
+            while (running) {
+                print("hazelcast[" + namespace + "] > ");
+                try {
+                    final String command = lineReader.readLine();
+                    handleCommand(command);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -1534,24 +1530,29 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    /**
-     * Starts the test application.
-     * <p>
-     * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
-     * @throws Exception in case of any exceptional case
-     */
-    public static void main(String[] args) throws Exception {
-        Config config;
-        try {
-            config = new FileSystemXmlConfig("hazelcast.xml");
-        } catch (FileNotFoundException e) {
-            config = new Config();
-        }
+    protected boolean isRunning() {
+        return running;
+    }
+
+    protected static ConsoleApp create() throws Exception {
+        Config config = Config.load();
         for (int i = 1; i <= LOAD_EXECUTORS_COUNT; i++) {
             config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + i).setPoolSize(i));
         }
 
-        ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(config), System.out);
-        consoleApp.start();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        return new ConsoleApp(instance, System.out);
+    }
+
+    /**
+     * Starts the test application.
+     * <p>
+     * It loads the Hazelcast member configuration using the resolution logic as described in
+     * {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
+     *
+     * @throws Exception in case of any exceptional case
+     */
+    public static void main(String[] args) throws Exception {
+        create().start();
     }
 }

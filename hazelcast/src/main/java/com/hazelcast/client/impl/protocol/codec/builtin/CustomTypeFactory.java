@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,41 +18,54 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 
-import java.net.UnknownHostException;
+import javax.annotation.Nonnull;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public final class CustomTypeFactory {
 
     private CustomTypeFactory() {
     }
 
     public static Address createAddress(String host, int port) {
-        try {
-            return new Address(host, port);
-        } catch (UnknownHostException e) {
-            throw new HazelcastException(e);
-        }
+        return Address.createUnresolvedAddress(host, port);
     }
 
     public static CacheEventDataImpl createCacheEventData(String name, int cacheEventType, Data dataKey,
@@ -62,7 +75,7 @@ public final class CustomTypeFactory {
     }
 
     public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(int expiryPolicyType,
-                                                                                        DurationConfig durationConfig) {
+                                                                                      DurationConfig durationConfig) {
         return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getById(expiryPolicyType), durationConfig);
     }
 
@@ -93,9 +106,19 @@ public final class CustomTypeFactory {
         return config;
     }
 
-    public static MerkleTreeConfig createMerkleTreeConfig(boolean enabled, int depth) {
-        MerkleTreeConfig config = new MerkleTreeConfig();
+    public static DataPersistenceConfig createDataPersistenceConfig(boolean enabled, boolean fsync) {
+        DataPersistenceConfig config = new DataPersistenceConfig();
         config.setEnabled(enabled);
+        config.setFsync(fsync);
+        return config;
+    }
+
+    public static MerkleTreeConfig createMerkleTreeConfig(boolean enabled, int depth,
+                                                          boolean isEnabledSetExists, boolean isEnabledSet) {
+        MerkleTreeConfig config = new MerkleTreeConfig();
+        if (!isEnabledSetExists || isEnabledSet) {
+            config.setEnabled(enabled);
+        }
         config.setDepth(depth);
         return config;
     }
@@ -112,9 +135,9 @@ public final class CustomTypeFactory {
     }
 
     public static SimpleEntryView<Data, Data> createSimpleEntryView(Data key, Data value, long cost, long creationTime,
-                                                        long expirationTime, long hits, long lastAccessTime,
-                                                        long lastStoredTime, long lastUpdateTime, long version,
-                                                        long ttl, long maxIdle) {
+                                                                    long expirationTime, long hits, long lastAccessTime,
+                                                                    long lastStoredTime, long lastUpdateTime, long version,
+                                                                    long ttl, long maxIdle) {
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<>();
         entryView.setKey(key);
         entryView.setValue(value);
@@ -132,7 +155,7 @@ public final class CustomTypeFactory {
     }
 
     public static DefaultQueryCacheEventData createQueryCacheEventData(Data dataKey, Data dataNewValue, long sequence,
-                                                                int eventType, int partitionId) {
+                                                                       int eventType, int partitionId) {
         DefaultQueryCacheEventData eventData = new DefaultQueryCacheEventData();
         eventData.setDataKey(dataKey);
         eventData.setDataNewValue(dataNewValue);
@@ -186,5 +209,74 @@ public final class CustomTypeFactory {
             throw new HazelcastException("Unexpected client B/W list entry type = [" + type + "]");
         }
         return new ClientBwListEntryDTO(entryType, value);
+    }
+
+    public static EndpointQualifier createEndpointQualifier(int type, String identifier) {
+        ProtocolType protocolType = ProtocolType.getById(type);
+        if (protocolType == null) {
+            throw new HazelcastException("Unexpected protocol type = [" + type + "]");
+        }
+        return EndpointQualifier.resolve(protocolType, identifier);
+    }
+
+    public static SqlColumnMetadata createSqlColumnMetadata(String name, int type, boolean isNullableExists, boolean nullability) {
+        SqlColumnType sqlColumnType = SqlColumnType.getById(type);
+
+        if (sqlColumnType == null) {
+            throw new HazelcastException("Unexpected SQL column type = [" + type + "]");
+        }
+
+        if (isNullableExists) {
+            return new SqlColumnMetadata(name, sqlColumnType, nullability);
+        }
+
+        return new SqlColumnMetadata(name, sqlColumnType, true);
+    }
+
+    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int id) {
+        FieldKind fieldKind = FieldKind.get(id);
+        return new FieldDescriptor(fieldName, fieldKind);
+    }
+
+    public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
+        TreeMap<String, FieldDescriptor> map = new TreeMap<>(Comparator.naturalOrder());
+        for (FieldDescriptor field : fields) {
+            map.put(field.getFieldName(), field);
+        }
+        return new Schema(typeName, map);
+    }
+
+    public static HazelcastJsonValue createHazelcastJsonValue(String value) {
+        return new HazelcastJsonValue(value);
+    }
+
+    public static Capacity createCapacity(long value, int unit) {
+        MemoryUnit memoryUnit = MemoryUnit.getById(unit);
+        return new Capacity(value, memoryUnit);
+    }
+
+    public static MemoryTierConfig createMemoryTierConfig(Capacity capacity) {
+        MemoryTierConfig config = new MemoryTierConfig();
+        config.setCapacity(capacity);
+        return config;
+    }
+
+    public static DiskTierConfig createDiskTierConfig(boolean enabled, String deviceName) {
+        DiskTierConfig config = new DiskTierConfig();
+        config.setEnabled(enabled);
+        config.setDeviceName(deviceName);
+        return config;
+    }
+
+    public static TieredStoreConfig createTieredStoreConfig(
+            boolean enabled,
+            MemoryTierConfig memoryTierConfig,
+            DiskTierConfig diskTierConfig
+    ) {
+        TieredStoreConfig config = new TieredStoreConfig();
+        config.setEnabled(enabled);
+        config.setMemoryTierConfig(memoryTierConfig);
+        config.setDiskTierConfig(diskTierConfig);
+        return config;
     }
 }

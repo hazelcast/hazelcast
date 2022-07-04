@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
+import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -98,18 +100,16 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         if (count == 1) {
             return Collections.singleton(factory.newHazelcastInstance(config));
         } else {
-            Collection<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(count);
+            Collection<HazelcastInstance> instances = new ArrayList<>(count);
             final Collection<HazelcastInstance> syncInstances = Collections.synchronizedCollection(instances);
 
             final CountDownLatch latch = new CountDownLatch(count);
             for (int i = 0; i < count; i++) {
-                new Thread() {
-                    public void run() {
-                        HazelcastInstance instance = factory.newHazelcastInstance(config);
-                        syncInstances.add(instance);
-                        latch.countDown();
-                    }
-                }.start();
+                new Thread(() -> {
+                    HazelcastInstance instance = factory.newHazelcastInstance(config);
+                    syncInstances.add(instance);
+                    latch.countDown();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
             return instances;
@@ -122,19 +122,17 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         } else {
             final CountDownLatch latch = new CountDownLatch(addresses.size());
             for (final Address address : addresses) {
-                new Thread() {
-                    public void run() {
-                        factory.newHazelcastInstance(address, config);
-                        latch.countDown();
-                    }
-                }.start();
+                new Thread(() -> {
+                    factory.newHazelcastInstance(address, config);
+                    latch.countDown();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
         }
     }
 
     Collection<Address> terminateNodes(int count) throws InterruptedException {
-        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(factory.getAllHazelcastInstances());
+        List<HazelcastInstance> instances = new ArrayList<>(factory.getAllHazelcastInstances());
         assertThat(instances.size(), greaterThanOrEqualTo(count));
 
         Collections.shuffle(instances);
@@ -147,23 +145,21 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         } else {
             final CountDownLatch latch = new CountDownLatch(count);
             final Throwable[] error = new Throwable[1];
-            Collection<Address> addresses = new HashSet<Address>();
+            Collection<Address> addresses = new HashSet<>();
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.get(i);
                 addresses.add(getNode(hz).getThisAddress());
 
-                new Thread() {
-                    public void run() {
-                        try {
-                            TestUtil.terminateInstance(hz);
-                        } catch (Throwable e) {
-                            error[0] = e;
-                        } finally {
-                            latch.countDown();
-                        }
+                new Thread(() -> {
+                    try {
+                        TestUtil.terminateInstance(hz);
+                    } catch (Throwable e) {
+                        error[0] = e;
+                    } finally {
+                        latch.countDown();
                     }
-                }.start();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
             if (error[0] != null) {
@@ -181,14 +177,28 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
 
+        HazelcastInstance master = null;
+        for (HazelcastInstance hz : instances) {
+            if (getClusterService(hz).isMaster()) {
+                master = hz;
+                break;
+            }
+        }
+        assertNotNull(master);
+
+        InternalPartitionService masterPartitionService = getPartitionService(master);
+        InternalPartition[] masterPartitions = masterPartitionService.getInternalPartitions();
+
         for (HazelcastInstance hz : instances) {
             Node node = getNode(hz);
-            InternalPartitionService partitionService = node.getPartitionService();
-            InternalPartition[] partitions = partitionService.getInternalPartitions();
+            InternalPartition[] partitions = node.getPartitionService().getInternalPartitions();
             ClusterService clusterService = node.getClusterService();
             Member localMember = node.getLocalMember();
 
             for (InternalPartition partition : partitions) {
+                assertEquals("On " + localMember + ", Partition " + partition.getPartitionId() + " versions don't match: " + partition,
+                        masterPartitions[partition.getPartitionId()].version(), partition.version());
+
                 for (int i = 0; i < replicaCount; i++) {
                     PartitionReplica replica = partition.getReplica(i);
                     assertNotNull("On " + localMember + ", Replica " + i + " is not found in " + partition, replica);
@@ -196,6 +206,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                             clusterService.getMember(replica.address(), replica.uuid()));
                 }
             }
+
+            assertEquals(masterPartitionService.getPartitionStateStamp(), node.getPartitionService().getPartitionStateStamp());
         }
     }
 
@@ -247,10 +259,10 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 assertNoMissingData(fragmentedService, partitions, localReplica, name);
             }
 
-            // check values
-            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
+            // check replica versions and values
+            assertReplicaVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
             for (String name : NAMESPACES) {
-                assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
+                assertReplicaVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
             }
 
             Address thisAddress = node.getThisAddress();
@@ -285,7 +297,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
     }
 
-    private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
+    private <N> void assertReplicaVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
                                                             Node node, InternalPartition[] partitions, N name, boolean allowDirty) {
         Address thisAddress = node.getThisAddress();
         ServiceNamespace namespace = service.getNamespace(name);
@@ -308,8 +320,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     PartitionReplicaVersionsView backupReplicaVersionsView
                             = getPartitionReplicaVersionsView(backupNode, partitionId);
                     long[] backupReplicaVersions = backupReplicaVersionsView.getVersions(namespace);
-                    assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId,
-                            backupReplicaVersions);
+                    assertNotNull(namespace + " replica versions are null on " + backupNode.address
+                                    + ", partitionId: " + partitionId + ", replicaIndex: " + replica, backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {
                         assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address
@@ -362,7 +374,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     Config getConfig(boolean withService, boolean antiEntropyEnabled) {
-        Config config = new Config();
+        Config config = getConfig();
 
         if (withService) {
             ServicesConfig servicesConfig = ConfigAccessor.getServicesConfig(config);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.RemoteCallHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadUtil;
@@ -45,14 +45,14 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private UUID ownerUuid;
     private Operation op;
 
-    private transient NearCachingHook nearCachingHook = NearCachingHook.EMPTY_HOOK;
+    private transient RemoteCallHook remoteCallHook = RemoteCallHook.EMPTY_HOOK;
 
     public MapTransactionLogRecord() {
     }
 
     public MapTransactionLogRecord(String name, Data key, int partitionId,
                                    Operation op, UUID ownerUuid, UUID transactionId,
-                                   @Nonnull NearCachingHook nearCachingHook) {
+                                   @Nonnull RemoteCallHook remoteCallHook) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -62,12 +62,13 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         this.ownerUuid = ownerUuid;
         this.partitionId = partitionId;
         this.transactionId = transactionId;
-        this.nearCachingHook = nearCachingHook;
+        this.remoteCallHook = remoteCallHook;
     }
 
     @Override
     public Operation newPrepareOperation() {
-        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId, name, key, ownerUuid, transactionId);
+        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId,
+                name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -84,24 +85,25 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void onCommitSuccess() {
-        nearCachingHook.onRemoteCallSuccess();
+        remoteCallHook.onRemoteCallSuccess(op);
     }
 
     @Override
     public void onCommitFailure() {
-        nearCachingHook.onRemoteCallFailure();
+        remoteCallHook.onRemoteCallFailure();
     }
 
     @Override
     public Operation newRollbackOperation() {
-        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId, name, key, ownerUuid, transactionId);
+        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId,
+                name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(partitionId);
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
@@ -116,7 +118,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         partitionId = in.readInt();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
@@ -134,6 +136,16 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
+    }
+
+    @Override
     public String toString() {
         return "MapTransactionRecord{"
                 + "name='" + name + '\''
@@ -143,15 +155,5 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
                 + ", op=" + op
                 + ", transactionId=" + transactionId
                 + '}';
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }

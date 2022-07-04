@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -39,12 +37,12 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_MET
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_OWNED_ITEM_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_TOTAL;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getInt;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
+public class LocalQueueStatsImpl implements LocalQueueStats {
 
+    public static final long DEFAULT_MAX_AGE = 0;
+    public static final long DEFAULT_MIN_AGE = Long.MAX_VALUE;
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS =
@@ -63,13 +61,13 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     @Probe(name = QUEUE_METRIC_BACKUP_ITEM_COUNT)
     private int backupItemCount;
     @Probe(name = QUEUE_METRIC_MIN_AGE, unit = MS)
-    private long minAge;
+    private long minAge = DEFAULT_MIN_AGE;
     @Probe(name = QUEUE_METRIC_MAX_AGE, unit = MS)
-    private long maxAge;
+    private long maxAge = DEFAULT_MAX_AGE;
     @Probe(name = QUEUE_METRIC_AVERAGE_AGE, unit = MS)
     private long averageAge;
     @Probe(name = QUEUE_METRIC_CREATION_TIME, unit = MS)
-    private long creationTime;
+    private final long creationTime;
 
     // These fields are only accessed through the updater
     @Probe(name = QUEUE_METRIC_NUMBER_OF_OFFERS)
@@ -197,40 +195,6 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     @Override
     public long getEventOperationCount() {
         return numberOfEvents;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("ownedItemCount", ownedItemCount);
-        root.add("backupItemCount", backupItemCount);
-        root.add("minAge", minAge);
-        root.add("maxAge", maxAge);
-        root.add("averageAge", averageAge);
-        root.add("creationTime", creationTime);
-        root.add("numberOfOffers", numberOfOffers);
-        root.add("numberOfPolls", numberOfPolls);
-        root.add("numberOfRejectedOffers", numberOfRejectedOffers);
-        root.add("numberOfEmptyPolls", numberOfEmptyPolls);
-        root.add("numberOfOtherOperations", numberOfOtherOperations);
-        root.add("numberOfEvents", numberOfEvents);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        ownedItemCount = getInt(json, "ownedItemCount", -1);
-        backupItemCount = getInt(json, "backupItemCount", -1);
-        minAge = getLong(json, "minAge", -1L);
-        maxAge = getLong(json, "maxAge", -1L);
-        averageAge = getLong(json, "averageAge", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        NUMBER_OF_OFFERS.set(this, getLong(json, "numberOfOffers", -1L));
-        NUMBER_OF_POLLS.set(this, getLong(json, "numberOfPolls", -1L));
-        NUMBER_OF_REJECTED_OFFERS.set(this, getLong(json, "numberOfRejectedOffers", -1L));
-        NUMBER_OF_EMPTY_POLLS.set(this, getLong(json, "numberOfEmptyPolls", -1L));
-        NUMBER_OF_OTHER_OPERATIONS.set(this, getLong(json, "numberOfOtherOperations", -1L));
-        NUMBER_OF_EVENTS.set(this, getLong(json, "numberOfEvents", -1L));
     }
 
     @Override

@@ -1,0 +1,5 @@
+hazelcast:
+  jet:
+    backup-count: 4
+    instance:
+      backup-count: 5

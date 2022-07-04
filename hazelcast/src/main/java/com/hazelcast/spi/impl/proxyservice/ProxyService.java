@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.services.CoreService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -43,6 +44,17 @@ public interface ProxyService extends CoreService {
     Collection<String> getDistributedObjectNames(String serviceName);
 
     Collection<DistributedObject> getAllDistributedObjects();
+
+    boolean existsDistributedObject(String serviceName, String objectId);
+
+    /**
+     * Returns the total number of created proxies for the given {@code serviceName},
+     * even if some have already been destroyed.
+     *
+     * @param serviceName the distributed service name
+     * @return the total count of created proxies
+     */
+    long getCreatedCount(@Nonnull String serviceName);
 
     UUID addProxyListener(DistributedObjectListener distributedObjectListener);
 

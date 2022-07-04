@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
@@ -33,6 +34,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,7 +61,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testWithIllegalAddress() {
         String illegalAddress = randomString();
 
@@ -67,25 +69,25 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         config.getNetworkConfig().addAddress(illegalAddress);
-        hazelcastFactory.newHazelcastClient(config);
+        assertThrows(IllegalStateException.class, () -> HazelcastClient.newHazelcastClient(config));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyStringAsAddress() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("");
+        ClientNetworkConfig networkConfig = new ClientConfig().getNetworkConfig();
+        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullAsAddress() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress(null);
+        ClientNetworkConfig networkConfig = new ClientConfig().getNetworkConfig();
+        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullAsAddresses() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress(null, null);
+        ClientNetworkConfig networkConfig = new ClientConfig().getNetworkConfig();
+        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress(null, null));
     }
 
     @Test
@@ -154,6 +156,8 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         assertOpenEventually(reconnectListener.reconnectedLatch);
 
         connectionToServer.close(null, null);
+        assertEqualsEventually(() -> listener.connectionRemovedCount.get(), 1);
+        sleepMillis(100);
         assertEquals("connection removed should be called only once", 1, listener.connectionRemovedCount.get());
     }
 

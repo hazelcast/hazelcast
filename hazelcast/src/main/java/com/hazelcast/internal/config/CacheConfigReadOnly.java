@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.WanReplicationRef;
 
 import javax.annotation.Nonnull;
@@ -76,9 +78,28 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Nonnull
     @Override
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        DataPersistenceConfig dataPersistenceConfig = super.getDataPersistenceConfig();
+        return new DataPersistenceConfigReadOnly(dataPersistenceConfig);
+    }
+
+    @Nonnull
+    @Override
     public EventJournalConfig getEventJournalConfig() {
         EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
         return new EventJournalConfigReadOnly(eventJournalConfig);
+    }
+
+    @Override
+    public MergePolicyConfig getMergePolicyConfig() {
+        MergePolicyConfig mergePolicyConfig = super.getMergePolicyConfig();
+        return new MergePolicyConfigReadOnly(mergePolicyConfig);
+    }
+
+    @Override
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        return new MerkleTreeConfigReadOnly(merkleTreeConfig);
     }
 
     @Override
@@ -203,6 +224,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
         throw throwReadOnly();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,16 @@ import com.hazelcast.client.config.impl.ClientFailoverConfigSections;
 import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientFailoverDomConfigProcessor;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
-import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.ConfigLoader;
+import com.hazelcast.internal.config.YamlConfigSchemaValidator;
+import com.hazelcast.internal.config.yaml.YamlDomChecker;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
@@ -37,6 +38,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -46,23 +48,27 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 /**
  * Loads the {@link com.hazelcast.client.config.ClientFailoverConfig} using YAML.
  */
-public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
+public class YamlClientFailoverConfigBuilder
+        extends AbstractYamlConfigBuilder {
 
     private final InputStream in;
 
-    public YamlClientFailoverConfigBuilder(String resource) throws IOException {
+    public YamlClientFailoverConfigBuilder(String resource)
+            throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
         checkTrue(url != null, "Could not load " + resource);
 
         this.in = url.openStream();
     }
 
-    public YamlClientFailoverConfigBuilder(File file) throws IOException {
+    public YamlClientFailoverConfigBuilder(File file)
+            throws IOException {
         checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
-    public YamlClientFailoverConfigBuilder(URL url) throws IOException {
+    public YamlClientFailoverConfigBuilder(URL url)
+            throws IOException {
         checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
@@ -81,6 +87,7 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
      * <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
      * <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
      * </ol>
+     *
      * @throws HazelcastException if no failover configuration is found
      */
     public YamlClientFailoverConfigBuilder() {
@@ -138,7 +145,8 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
         }
     }
 
-    private void parseAndBuildConfig(ClientFailoverConfig config) throws Exception {
+    private void parseAndBuildConfig(ClientFailoverConfig config)
+            throws Exception {
         YamlMapping yamlRootNode;
         try {
             yamlRootNode = ((YamlMapping) YamlLoader.load(in));
@@ -152,11 +160,15 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
             clientFailoverRoot = yamlRootNode;
         }
 
-        YamlDomChecker.check(clientFailoverRoot);
+        YamlDomChecker.check(clientFailoverRoot, Collections.singleton(ClientFailoverConfigSections.CLIENT_FAILOVER.getName()));
 
         Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);
         importDocuments(clientFailoverRoot);
+
+        if (shouldValidateTheSchema()) {
+            new YamlConfigSchemaValidator().validate(yamlRootNode);
+        }
 
         new YamlClientFailoverDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }

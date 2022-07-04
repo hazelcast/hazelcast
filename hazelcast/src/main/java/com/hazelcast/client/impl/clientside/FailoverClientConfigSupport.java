@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,10 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.impl.XmlClientConfigLocator;
-import com.hazelcast.client.config.XmlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
-import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.client.config.impl.YamlClientConfigLocator;
-import com.hazelcast.client.config.YamlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 
 import java.util.List;
-
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Static methods to resolve and validate multiple client configs for blue green feature
@@ -55,7 +43,7 @@ public final class FailoverClientConfigSupport {
      * @throws InvalidConfigurationException when given config is not valid
      */
     public static ClientFailoverConfig resolveClientFailoverConfig() {
-        return resolveClientFailoverConfig(locateAndCreateClientFailoverConfig());
+        return resolveClientFailoverConfig(null);
     }
 
     /**
@@ -72,7 +60,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
         if (clientFailoverConfig == null) {
-            clientFailoverConfig = locateAndCreateClientFailoverConfig();
+            clientFailoverConfig = ClientFailoverConfig.load();
         }
         checkValidAlternative(clientFailoverConfig.getClientConfigs());
         return clientFailoverConfig;
@@ -92,75 +80,13 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientConfig resolveClientConfig(ClientConfig config) {
         if (config == null) {
-            return locateAndCreateClientConfig();
-        }
-        return config;
-    }
-
-    private static ClientFailoverConfig locateAndCreateClientFailoverConfig() {
-        ClientFailoverConfig config;
-
-        validateSuffixInSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
-
-        XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
-        YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
-
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            throw new HazelcastException("Failed to load ClientFailoverConfig");
-        }
-        return config;
-    }
-
-    private static ClientConfig locateAndCreateClientConfig() {
-        ClientConfig config;
-
-        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
-
-        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
-        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
-
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return ClientConfig.load();
         }
         return config;
     }
 
     /**
-     * For a client to be valid alternative, all configurations should be equal except
+     * For a client to be valid alternative, all configurations must be equal except
      * Cluster name
      * SecurityConfig
      * Discovery related parts of NetworkConfig
@@ -171,13 +97,12 @@ public final class FailoverClientConfigSupport {
      */
     private static void checkValidAlternative(List<ClientConfig> alternativeClientConfigs) {
         if (alternativeClientConfigs.isEmpty()) {
-            throw new InvalidConfigurationException("ClientFailoverConfig should have at least one client config.");
+            throw new InvalidConfigurationException("ClientFailoverConfig must have at least one client config.");
         }
         ClientConfig mainConfig = alternativeClientConfigs.get(0);
         for (ClientConfig alternativeClientConfig : alternativeClientConfigs.subList(1, alternativeClientConfigs.size())) {
             checkValidAlternative(mainConfig, alternativeClientConfig);
         }
-
     }
 
     private static void throwInvalidConfigurationException(String rootClusterName, String clusterName, String configName) {
@@ -195,76 +120,82 @@ public final class FailoverClientConfigSupport {
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternative(ClientConfig mainConfig, ClientConfig alternativeConfig) {
         String mainClusterName = mainConfig.getClusterName();
-        String alterNativeClusterName = alternativeConfig.getClusterName();
+        String alternativeClusterName = alternativeConfig.getClusterName();
 
         checkValidAlternativeForNetwork(mainConfig, alternativeConfig);
 
         if (notEqual(mainConfig.getProperties(), alternativeConfig.getProperties())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "properties");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "properties");
         }
         if (notEqual(mainConfig.getLoadBalancer(), alternativeConfig.getLoadBalancer())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "loadBalancer");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "loadBalancer");
+        }
+        if (notEqual(mainConfig.getLoadBalancerClassName(), alternativeConfig.getLoadBalancerClassName())) {
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "loadBalancerClassName");
         }
         if (notEqual(mainConfig.getListenerConfigs(), alternativeConfig.getListenerConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "listeners");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "listeners");
         }
         if (notEqual(mainConfig.getInstanceName(), alternativeConfig.getInstanceName())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "instanceName");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "instanceName");
         }
         if (notEqual(mainConfig.getConfigPatternMatcher(), alternativeConfig.getConfigPatternMatcher())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "configPatternMatcher");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "configPatternMatcher");
         }
         if (notEqual(mainConfig.getNearCacheConfigMap(), alternativeConfig.getNearCacheConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "nearCache");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "nearCache");
         }
         if (notEqual(mainConfig.getReliableTopicConfigMap(), alternativeConfig.getReliableTopicConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "reliableTopic");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "reliableTopic");
         }
         if (notEqual(mainConfig.getQueryCacheConfigs(), alternativeConfig.getQueryCacheConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "queryCacheConfigs");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "queryCacheConfigs");
         }
         if (notEqual(mainConfig.getSerializationConfig(), alternativeConfig.getSerializationConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "serializationConfig");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "serializationConfig");
         }
         if (notEqual(mainConfig.getNativeMemoryConfig(), alternativeConfig.getNativeMemoryConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "nativeMemory");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "nativeMemory");
         }
         if (notEqual(mainConfig.getProxyFactoryConfigs(), alternativeConfig.getProxyFactoryConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "proxyFactory");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "proxyFactory");
         }
         if (notEqual(mainConfig.getManagedContext(), alternativeConfig.getManagedContext())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "managedContext");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "managedContext");
         }
         if (notEqual(mainConfig.getClassLoader(), alternativeConfig.getClassLoader())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "classLoader");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "classLoader");
         }
         if (notEqual(mainConfig.getConnectionStrategyConfig(), alternativeConfig.getConnectionStrategyConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "connectionStrategy");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "connectionStrategy");
         }
         if (notEqual(mainConfig.getUserCodeDeploymentConfig(), alternativeConfig.getUserCodeDeploymentConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userCodeDeployment");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "userCodeDeployment");
         }
         if (notEqual(mainConfig.getFlakeIdGeneratorConfigMap(), alternativeConfig.getFlakeIdGeneratorConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "flakeIdGenerator");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "flakeIdGenerator");
         }
         if (notEqual(mainConfig.getLabels(), alternativeConfig.getLabels())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "labels");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "labels");
         }
         if (notEqual(mainConfig.getUserContext(), alternativeConfig.getUserContext())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userContext");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "userContext");
         }
         if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "metricsConfig");
+        }
+        if (notEqual(mainConfig.getInstanceTrackingConfig(), alternativeConfig.getInstanceTrackingConfig())) {
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "instanceTrackingConfig");
         }
         if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "isBackupAckToClientEnabled");
         }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternativeForNetwork(ClientConfig mainConfig, ClientConfig alternativeConfig) {
         String mainClusterName = mainConfig.getClusterName();
-        String alterNativeClusterName = alternativeConfig.getClusterName();
+        String alternativeClusterName = alternativeConfig.getClusterName();
 
         ClientNetworkConfig mainNetworkConfig = mainConfig.getNetworkConfig();
         ClientNetworkConfig alternativeNetworkConfig = alternativeConfig.getNetworkConfig();
@@ -274,29 +205,29 @@ public final class FailoverClientConfigSupport {
         }
 
         if (mainNetworkConfig == null || alternativeNetworkConfig == null) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network");
         }
 
         if (mainNetworkConfig.isSmartRouting() != alternativeNetworkConfig.isSmartRouting()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:smartRouting");
         }
         if (mainNetworkConfig.isRedoOperation() != alternativeNetworkConfig.isRedoOperation()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:redoOperation");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:redoOperation");
         }
         if (mainNetworkConfig.getConnectionTimeout() != alternativeNetworkConfig.getConnectionTimeout()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionTimeout");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:connectionTimeout");
         }
         if (notEqual(mainNetworkConfig.getSocketOptions(), alternativeNetworkConfig.getSocketOptions())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:socketOptions");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:socketOptions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPortDefinitions(), alternativeNetworkConfig.getOutboundPortDefinitions())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPortDefinitions");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:outboundPortDefinitions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPorts(), alternativeNetworkConfig.getOutboundPorts())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:outboundPorts");
         }
         if (notEqual(mainNetworkConfig.getClientIcmpPingConfig(), alternativeNetworkConfig.getClientIcmpPingConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:clientIcmp");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:clientIcmp");
         }
     }
 }

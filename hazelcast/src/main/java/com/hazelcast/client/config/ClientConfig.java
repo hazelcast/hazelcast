@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.impl.XmlClientConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -30,6 +33,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
@@ -48,7 +52,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
@@ -81,6 +88,11 @@ public class ClientConfig {
     private LoadBalancer loadBalancer;
 
     /**
+     * Load balancer class name. Used internally with declarative configuration.
+     */
+    private String loadBalancerClassName;
+
+    /**
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
@@ -104,6 +116,7 @@ public class ClientConfig {
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
+    private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -124,6 +137,7 @@ public class ClientConfig {
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
+        loadBalancerClassName = config.loadBalancerClassName;
         listenerConfigs = new LinkedList<>();
         for (ListenerConfig listenerConfig : config.listenerConfigs) {
             listenerConfigs.add(new ListenerConfig(listenerConfig));
@@ -166,6 +180,49 @@ public class ClientConfig {
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
+        instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
+    }
+
+    /**
+     * Populates Hazelcast {@link ClientConfig} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast Client configuration from a list of well-known locations,
+     * and then applies overrides found in environment variables/system properties
+     *
+     * When no location contains Hazelcast Client configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastClient()}.
+     *
+     * @return ClientConfig created from a file when exists, otherwise default.
+     */
+    public static ClientConfig load() {
+        return new ExternalConfigurationOverride().overwriteClientConfig(loadFromFile());
+    }
+
+    private static ClientConfig loadFromFile() {
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
+
+        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
+        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
+
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config from the configuration provided in system property
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config from the configuration provided in system property
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        }
     }
 
     /**
@@ -559,7 +616,9 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the {@link LoadBalancer}
+     * Sets the {@link LoadBalancer}.
+     * <p>
+     * If a load balancer class name was set, it will be removed.
      *
      * @param loadBalancer {@link LoadBalancer}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
@@ -567,8 +626,35 @@ public class ClientConfig {
      */
     public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
+        this.loadBalancerClassName = null;
         return this;
     }
+
+    /**
+     * Gets load balancer class name
+     *
+     * @return load balancer class name
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public String getLoadBalancerClassName() {
+        return loadBalancerClassName;
+    }
+
+    /**
+     * Sets load balancer class name.
+     * <p>
+     * If a load balancer implementation was set, it will be removed.
+     *
+     * @param loadBalancerClassName {@link LoadBalancer}
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public ClientConfig setLoadBalancerClassName(@Nonnull String loadBalancerClassName) {
+        this.loadBalancerClassName = checkHasText(loadBalancerClassName, "Load balancer class name must contain text");
+        this.loadBalancer = null;
+        return this;
+    }
+
 
     /**
      * Gets the classLoader
@@ -880,13 +966,31 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        return instanceTrackingConfig;
+    }
+
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public ClientConfig setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
+        Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
+        this.instanceTrackingConfig = instanceTrackingConfig;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
-                flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
+                flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig);
     }
 
     @Override
@@ -909,6 +1013,7 @@ public class ClientConfig {
                 && Objects.equals(flakeIdGeneratorConfigMap, other.flakeIdGeneratorConfigMap)
                 && Objects.equals(instanceName, other.instanceName) && Objects.equals(labels, other.labels)
                 && Objects.equals(listenerConfigs, other.listenerConfigs) && Objects.equals(loadBalancer, other.loadBalancer)
+                && Objects.equals(loadBalancerClassName, other.loadBalancerClassName)
                 && Objects.equals(managedContext, other.managedContext) && Objects.equals(metricsConfig, other.metricsConfig)
                 && Objects.equals(nativeMemoryConfig, other.nativeMemoryConfig)
                 && Objects.equals(nearCacheConfigMap, other.nearCacheConfigMap)
@@ -919,7 +1024,8 @@ public class ClientConfig {
                 && Objects.equals(securityConfig, other.securityConfig)
                 && Objects.equals(serializationConfig, other.serializationConfig)
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
-                && Objects.equals(userContext, other.userContext);
+                && Objects.equals(userContext, other.userContext)
+                && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig);
     }
 
     @Override
@@ -930,6 +1036,7 @@ public class ClientConfig {
                 + ", securityConfig=" + securityConfig
                 + ", networkConfig=" + networkConfig
                 + ", loadBalancer=" + loadBalancer
+                + ", loadBalancerClassName=" + loadBalancerClassName
                 + ", listenerConfigs=" + listenerConfigs
                 + ", instanceName='" + instanceName + '\''
                 + ", configPatternMatcher=" + configPatternMatcher
@@ -945,6 +1052,7 @@ public class ClientConfig {
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
+                + ", instanceTrackingConfig=" + instanceTrackingConfig
                 + '}';
     }
 }

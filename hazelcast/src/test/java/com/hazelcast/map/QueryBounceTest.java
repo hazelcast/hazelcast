@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +55,7 @@ public class QueryBounceTest {
             BounceMemberRule.with(getConfig())
                     .clusterSize(4)
                     .driverCount(4)
+                    .driverType(BounceTestConfiguration.DriverType.MEMBER)
                     .useTerminate(useTerminate())
                     .build();
 

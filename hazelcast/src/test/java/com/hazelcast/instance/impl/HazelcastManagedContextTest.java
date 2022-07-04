@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,11 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
 
     @Test
     public void testInitialize() {
-        serializationService.getManagedContext().initialize(userClass);
+        DependencyInjectionUserClass initializedUserClass = (DependencyInjectionUserClass) serializationService.getManagedContext().initialize(userClass);
 
-        assertEquals(hazelcastInstance, userClass.hazelcastInstance);
-        assertEquals(node, userClass.node);
-        assertEquals(serializationService, userClass.serializationService);
+        assertEquals(hazelcastInstance, initializedUserClass.hazelcastInstance);
+        assertEquals(node, initializedUserClass.node);
+        assertEquals(serializationService, initializedUserClass.serializationService);
         assertTrue(userContext.wasCalled);
     }
 

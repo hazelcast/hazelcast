@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -77,18 +76,6 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
-        HazelcastClient.newHazelcastClient(config);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15576")
-    public void testAwsEnabled_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().getAwsConfig()
-                .setEnabled(true)
-                .setProperty("access-key", "12345")
-                .setProperty("secret-key", "56789");
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         HazelcastClient.newHazelcastClient(config);
     }
 }

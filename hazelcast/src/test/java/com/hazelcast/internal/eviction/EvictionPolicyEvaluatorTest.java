@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,20 +125,25 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
         long baseTime = System.currentTimeMillis();
-
+        long minCreationTime = -1;
         for (int i = 0; i < recordCount; i++) {
             long creationTime = baseTime + (i * 100);
+            minCreationTime = minCreationTime == -1 ? creationTime : Math.min(creationTime, minCreationTime);
+
             CacheObjectRecord record = new CacheObjectRecord(i, creationTime, Long.MAX_VALUE);
             if (i == expectedEvictedRecordValue) {
-                // The record in the middle will be minimum access time.
-                // So, it will be selected for eviction
-                record.setLastAccessTime(baseTime - 1000);
+                // The record in the middle will be minimum access
+                // time. So, it will be selected for eviction
+                // (set creation-time also to keep this condition
+                // true --> creation-time <= last-access-time)
+                record.setCreationTime(minCreationTime);
+                record.setLastAccessTime(minCreationTime + 1);
             } else if (i == expectedExpiredRecordValue) {
                 record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setLastAccessTime(creationTime + 1000);
             }
-            records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
+            records.add(new SimpleEvictionCandidate<>(i, record));
         }
 
         sleepAtLeastMillis(1);

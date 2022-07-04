@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,39 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkSuppliers;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
+import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
@@ -52,16 +60,20 @@ import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sen
  *
  * @see MapService
  */
-class MapMigrationAwareService implements FragmentedMigrationAwareService {
+class MapMigrationAwareService
+        implements ChunkedMigrationAwareService, OffloadedReplicationPreparation {
 
     protected final PartitionContainer[] containers;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
 
+    private final ILogger logger;
+
     MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.containers = mapServiceContext.getPartitionContainers();
+        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -86,7 +98,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             clearNonGlobalIndexes(event);
 
             // 2. Populate non-global partitioned indexes.
-            populateIndexes(event, TargetIndexes.NON_GLOBAL);
+            populateIndexes(event, TargetIndexes.NON_GLOBAL, "beforeMigration");
         }
 
         flushAndRemoveQueryCaches(event);
@@ -134,9 +146,22 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         return operation;
     }
 
-    private boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
+                                          Collection<ServiceNamespace> namespaces) {
+        List<ChunkSupplier> chain = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
-            assert isKnownServiceNamespace(namespace) : namespace + " is not a MapService namespace!";
+            chain.add(new MapChunkSupplier(mapServiceContext, namespace,
+                    event.getPartitionId(), event.getReplicaIndex()));
+        }
+
+        return ChunkSuppliers.newChainedChunkSupplier(chain);
+    }
+
+    boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
+        for (ServiceNamespace namespace : namespaces) {
+            assert isKnownServiceNamespace(namespace)
+                    : namespace + " is not a MapService namespace!";
         }
         return true;
     }
@@ -144,9 +169,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == DESTINATION) {
-            populateIndexes(event, TargetIndexes.GLOBAL);
+            populateIndexes(event, TargetIndexes.GLOBAL, "commitMigration");
         } else {
-            depopulateIndexes(event);
+            depopulateIndexes(event, "commitMigration");
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
@@ -160,11 +185,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         PartitionContainer partitionContainer
                 = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
-            // in case the record store has been created without loading during migration trigger again
-            // if loading has been already started this call will do nothing
+            // in case the record store has been created without
+            // loading during migration trigger again if loading
+            // has been already started this call will do nothing
             recordStore.startLoading();
         }
-        mapServiceContext.reloadOwnedPartitions();
+        mapServiceContext.nullifyOwnedPartitions();
 
         removeOrRegenerateNearCacheUuid(event);
     }
@@ -192,13 +218,13 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
-        mapServiceContext.reloadOwnedPartitions();
+        mapServiceContext.nullifyOwnedPartitions();
     }
 
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            final MapContainer mapContainer = recordStore.getMapContainer();
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex() || indexes.isGlobal()) {
@@ -237,7 +263,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     /**
      * @param backupCount number of backups of a maps' partition
      * @return predicate to find all map partitions which are expected to have
-     * lesser backups than given backupCount.
+     * fewer backups than given backupCount.
      */
     private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
@@ -247,7 +273,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         return mapServiceContext.getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
     }
 
-    private void populateIndexes(PartitionMigrationEvent event, TargetIndexes targetIndexes) {
+    @SuppressWarnings("checkstyle:NPathComplexity")
+    private void populateIndexes(PartitionMigrationEvent event,
+                                 TargetIndexes targetIndexes, String stepName) {
         assert event.getMigrationEndpoint() == DESTINATION;
         assert targetIndexes != null;
 
@@ -256,13 +284,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
-            final StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
+            MapContainer mapContainer = recordStore.getMapContainer();
 
-            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            indexes.createIndexesFromRecordedDefinitions(storeAdapter);
+            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            indexes.createIndexesFromRecordedDefinitions();
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
@@ -277,21 +304,31 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
+            Indexes.beginPartitionUpdate(indexesSnapshot);
+
+            CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
+            CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
+                    mapContainer.getExtractors()) : null;
             recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                     queryEntry.setRecord(record);
-                    queryEntry.setStoreAdapter(storeAdapter);
-                    indexes.putEntry(queryEntry, null, Index.OperationSource.SYSTEM);
+                    CachedQueryEntry<?, ?> newEntry =
+                            cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
+                    indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
                 }
             }, false);
 
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("Populated indexes at step `%s`:[%s]", stepName, event));
+        }
     }
 
-    private void depopulateIndexes(PartitionMigrationEvent event) {
+    private void depopulateIndexes(PartitionMigrationEvent event, String stepName) {
         assert event.getMigrationEndpoint() == SOURCE;
         assert event.getNewReplicaIndex() != 0 : "Invalid migration event: " + event;
 
@@ -300,11 +337,10 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
-
-            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            MapContainer mapContainer = recordStore.getMapContainer();
+            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
@@ -312,12 +348,20 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
+            Indexes.beginPartitionUpdate(indexesSnapshot);
+
+            CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
             recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
+                entry.init(key, value);
+                indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
             }, false);
 
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("Depopulated indexes at step `%s`:[%s]", stepName, event));
         }
     }
 
@@ -325,7 +369,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         GLOBAL, NON_GLOBAL
     }
 
-    private static boolean isLocalPromotion(PartitionMigrationEvent event) {
+    public static boolean isLocalPromotion(PartitionMigrationEvent event) {
         return event.getMigrationEndpoint() == DESTINATION && event.getCurrentReplicaIndex() > 0
                 && event.getNewReplicaIndex() == 0;
     }

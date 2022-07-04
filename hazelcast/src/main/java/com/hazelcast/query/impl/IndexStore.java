@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Defines a contract for index stores, so different index stores may be used
  * interchangeably with the same {@link Index} implementation.
  */
+@SuppressWarnings("rawtypes")
 public interface IndexStore {
 
     /**
@@ -51,13 +52,18 @@ public interface IndexStore {
      * acting as an index key.
      *
      * @param value          the value to insert the entry under.
-     * @param entry          the entry to insert.
+     * @param entry          the entry from which attribute values should be read.
+     * @param entryToStore   the entry that should be stored in this index store;
+     *                       it might differ from the passed {@code entry}: for
+     *                       instance, {@code entryToStore} might be optimized
+     *                       specifically for storage, while {@code entry} is
+     *                       always optimized for attribute values extraction.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#putEntry
      * @see IndexOperationStats#onEntryAdded
      */
-    void insert(Object value, QueryableEntry entry, IndexOperationStats operationStats);
+    void insert(Object value, CachedQueryEntry entry, QueryableEntry entryToStore, IndexOperationStats operationStats);
 
     /**
      * Updates the existing entry mapping in this index by remapping it from the
@@ -69,6 +75,11 @@ public interface IndexStore {
      * @param oldValue       the value to remap the entry from.
      * @param newValue       the new value to remap the entry to.
      * @param entry          the entry to remap.
+     * @param entryToStore   the entry that should be stored in this index store;
+     *                       it might differ from the passed {@code entry}: for
+     *                       instance, {@code entryToStore} might be optimized
+     *                       specifically for storage, while {@code entry} is
+     *                       always optimized for attribute values extraction.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see #remove
@@ -77,20 +88,20 @@ public interface IndexStore {
      * @see IndexOperationStats#onEntryRemoved
      * @see IndexOperationStats#onEntryAdded
      */
-    void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats);
+    void update(Object oldValue, Object newValue, CachedQueryEntry entry, QueryableEntry entryToStore,
+                IndexOperationStats operationStats);
 
     /**
      * Removes the existing entry mapping in this index.
      *
      * @param value          the value to remove the mapping from.
-     * @param entryKey       the entry key to remove the mapping to.
-     * @param entryValue     the entry value to remove the mapping to.
+     * @param entry          the entry to remove.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#removeEntry
      * @see IndexOperationStats#onEntryRemoved
      */
-    void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats);
+    void remove(Object value, CachedQueryEntry entry, IndexOperationStats operationStats);
 
     /**
      * Clears the contents of this index by purging all its entries.
@@ -123,6 +134,85 @@ public interface IndexStore {
      * @return a set containing entries matching the given predicate.
      */
     Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
+
+    /**
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over all index entries
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(boolean descending);
+
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
+
+    /**
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries matching the given range
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive,
+                                                  Comparable to, boolean toInclusive, boolean descending);
+
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value);
+
+    /**
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over all index entries
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
+
+    /**
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries matching the given range
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    );
 
     /**
      * Obtains entries that have indexed attribute value equal to the given
@@ -169,5 +259,4 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
-
 }

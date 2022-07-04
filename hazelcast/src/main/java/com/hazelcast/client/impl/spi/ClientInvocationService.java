@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 
 import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
  * Invocation service for Hazelcast clients.
- *
+ * <p>
  * Allows remote invocations on different targets like {@link ClientConnection},
  * partition owners or {@link Member} based targets.
  */
@@ -60,11 +62,20 @@ public interface ClientInvocationService {
      * SmartClient randomly picks a connection to invoke on via {@link LoadBalancer}
      *
      * @param invocation to be invoked
-     * @return true if successfully send , false otherwise
+     * @return true if successfully send, false otherwise
      */
     boolean invoke(ClientInvocation invocation);
 
     boolean isRedoOperation();
 
     Consumer<ClientMessage> getResponseHandler();
+
+    /**
+     * This will be called on each connection close.
+     * Note that is different than {@link ConnectionListener#connectionRemoved(Connection)} where `connectionRemoved`
+     * means an authenticated connection is disconnected
+     *
+     * @param connection closed connection
+     */
+    void onConnectionClose(ClientConnection connection);
 }

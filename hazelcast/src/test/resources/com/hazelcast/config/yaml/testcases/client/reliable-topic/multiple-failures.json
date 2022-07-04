@@ -1,0 +1,58 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "reliable-topic": {
+        "my-reliable-topic": {
+          "unknown": true,
+          "read-batch-size": "100",
+          "topic-overload-policy": "invalid"
+        },
+        "other-topic": {
+          "read-batch-size": 0
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientReliableTopic",
+    "pointerToViolation": "#/hazelcast-client/reliable-topic",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties",
+        "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties",
+            "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/read-batch-size",
+            "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic/read-batch-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/topic-overload-policy",
+            "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic/topic-overload-policy",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "invalid is not a valid enum value"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/read-batch-size",
+        "pointerToViolation": "#/hazelcast-client/reliable-topic/other-topic/read-batch-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0 is not greater or equal to 1"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}

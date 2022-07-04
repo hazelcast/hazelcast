@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
-import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
-import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
+import com.hazelcast.internal.serialization.impl.portable.PortableTest.ChildPortableObject;
+import com.hazelcast.internal.serialization.impl.portable.PortableTest.GrandParentPortableObject;
+import com.hazelcast.internal.serialization.impl.portable.PortableTest.ParentPortableObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
@@ -83,6 +83,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
+        cfg.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         final IMap<String, Value> map = instance.getMap("default");
         for (int i = 0; i < 10; i++) {
@@ -788,6 +789,37 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         values = map.values(Predicates.sql("name == 'name1' OR name == 'name2' OR city = 'city3'"));
         assertEquals(3, values.size());
+    }
+
+    @Test
+    public void testLikePredicate_withAndWithoutIndexOnMap() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+        factory.newHazelcastInstance(getConfig());
+        IMap<Integer, Employee> withIndex = instance.getMap("withIndex");
+        withIndex.addIndex(IndexType.SORTED, "name");
+        IMap<Integer, Employee> withoutIndex = instance.getMap("withoutIndex");
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int employeeId = i * 3 + j;
+                String employeeName = String.format("name%d%d", i, j);
+                Employee employee = new Employee(employeeId, employeeName, "city" + i + j, employeeId, true, employeeId);
+                withIndex.put(employeeId, employee);
+                withoutIndex.put(employeeId, employee);
+            }
+        }
+
+        assertEquals(withIndex.size(), 9);
+        assertEquals(withoutIndex.size(), 9);
+
+        Predicate<Integer, Employee> predicate = Predicates.like("name", "name1%");
+        Collection<Employee> namesByIndex = withIndex.values(predicate);
+        Collection<Employee> namesMapLookup = withoutIndex.values(predicate);
+
+        assertEquals(namesMapLookup.size(), 3);
+        assertEquals(namesByIndex.size(), 3);
+        assertEquals(namesMapLookup, namesByIndex);
     }
 
     @Test

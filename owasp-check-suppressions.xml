@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-gcp.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-gcp@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-azure.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-azure@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-hibernate.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-hibernate.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-wm.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-wm@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The Avatica version is not related to the Calcite version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.calcite\.avatica/avatica\-core@.*$</packageUrl>
+        <cpe>cpe:/a:apache:calcite</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hazelcast version and not the jsurfer.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jsurfer/jsurfer\-.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the postgres version and not the debezium-connector-postgres.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-postgres@.*$</packageUrl>
+        <cpe>cpe:/a:postgresql:postgresql</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hadoop version and not the shaded guava.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-guava@.*$</packageUrl>
+        <cpe>cpe:/a:apache:hadoop</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
+        <cpe>cpe:/a:apache:hadoop</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the WildFly and OpenSSL version and not the wildfly-openssl library.
+        The OpenSSL is linked dynamically in the wildly-openssl.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@.*$</packageUrl>
+        <cpe>cpe:/a:openssl:openssl</cpe>
+        <cpe>cpe:/a:redhat:openssl</cpe>
+        <cpe>cpe:/a:redhat:wildfly</cpe>
+        <cpe>cpe:/a:wildfly:wildfly</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The memory leak was fixed already in the wildfly-openssl-1.0.11.Final.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@1\.0\.12.*$</packageUrl>
+        <cve>CVE-2020-25644</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+        <cve>CVE-2020-9488</cve>
+        <cve>CVE-2020-9493</cve>
+        <cve>CVE-2022-23307</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - google-http-client-gson-.*.jar incorrectly identified as gson.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+        <cpe>cpe:/a:google:gson</cpe>
+    </suppress>
+</suppressions>

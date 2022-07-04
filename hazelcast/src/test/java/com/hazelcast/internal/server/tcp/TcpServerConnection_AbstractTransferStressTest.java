@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
     @Before
     public void setup() throws Exception {
         super.setup();
-        startAllNetworkingServices();
+        startAllTcpServers();
     }
 
     @Test
@@ -93,7 +93,7 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
     }
 
     private void testPackets(long verifyTimeoutInMillis) {
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         WriteThread thread1 = new WriteThread(1, c);
         WriteThread thread2 = new WriteThread(2, c);
@@ -116,7 +116,7 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final TcpServerConnection connection = connect(networkingServiceB, addressA);
+        final TcpServerConnection connection = connect(tcpServerB, addressA);
         long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override

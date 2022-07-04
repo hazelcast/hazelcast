@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020 Hazelcast Inc.
+  ~
+  ~ Licensed under the Hazelcast Community License (the "License"); you may not use
+  ~ this file except in compliance with the License. You may obtain a copy of the
+  ~ License at
+  ~
+  ~ http://hazelcast.com/hazelcast-community-license
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OF ANY KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations under the License.
+  -->
+
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
+
+    <properties>
+        <property name="hazelcast.discovery.enabled">true</property>
+    </properties>
+
+    <network>
+        <join>
+            <multicast enabled="false"/>
+            <tcp-ip enabled="false" />
+            <aws enabled="false"/>
+            <discovery-strategies>
+                <discovery-strategy enabled="true" class="com.hazelcast.azure.AzureDiscoveryStrategy">
+                    <properties>
+                        <property name="invalid-property">INVALID</property>
+                        <property name="client-secret">CLIENT_SECRET</property>
+                        <property name="tenant-id">TENANT_ID</property>
+                        <property name="subscription-id">SUB_ID</property>
+                        <property name="resource-group">RESOURCE_GROUP</property>
+                        <property name="scale-set">SCALE_SET</property>
+                        <property name="tag">TAG_KEY=HZLCAST001</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+        </join>
+    </network>
+
+</hazelcast>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_INDEX;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION_2;
+
 public class SendMemberHandshakeTask implements Runnable {
 
     private final ILogger logger;
@@ -36,17 +40,23 @@ public class SendMemberHandshakeTask implements Runnable {
     private final TcpServerConnection connection;
     private final Address remoteAddress;
     private final boolean reply;
+    private final int planeIndex;
+    private final int planeCount;
 
     public SendMemberHandshakeTask(ILogger logger,
                                    ServerContext serverContext,
                                    TcpServerConnection connection,
                                    Address remoteAddress,
-                                   boolean reply) {
+                                   boolean reply,
+                                   int planeIndex,
+                                   int planeCount) {
         this.logger = logger;
         this.serverContext = serverContext;
         this.connection = connection;
         this.remoteAddress = remoteAddress;
         this.reply = reply;
+        this.planeIndex = planeIndex;
+        this.planeCount = planeCount;
     }
 
     @Override
@@ -57,10 +67,16 @@ public class SendMemberHandshakeTask implements Runnable {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending memberHandshake packet to " + remoteAddress);
         }
-        MemberHandshake memberHandshake
-                = new MemberHandshake((byte) 1, getConfiguredLocalAddresses(), remoteAddress, reply, serverContext.getUuid());
+        MemberHandshake memberHandshake = new MemberHandshake(
+                SCHEMA_VERSION_2,
+                getConfiguredLocalAddresses(),
+                remoteAddress,
+                reply,
+                serverContext.getThisUuid())
+                .addOption(OPTION_PLANE_COUNT, planeCount)
+                .addOption(OPTION_PLANE_INDEX, planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.SERVER_CONTROL);
         connection.write(packet);
         //now you can send anything...
     }
@@ -69,11 +85,7 @@ public class SendMemberHandshakeTask implements Runnable {
         Map<ProtocolType, Collection<Address>> addressMap = new HashMap<ProtocolType, Collection<Address>>();
         Map<EndpointQualifier, Address> addressesPerEndpointQualifier = serverContext.getThisAddresses();
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressesPerEndpointQualifier.entrySet()) {
-            Collection<Address> addresses = addressMap.get(addressEntry.getKey().getType());
-            if (addresses == null) {
-                addresses = new ArrayList<Address>();
-                addressMap.put(addressEntry.getKey().getType(), addresses);
-            }
+            Collection<Address> addresses = addressMap.computeIfAbsent(addressEntry.getKey().getType(), k -> new ArrayList<>());
             addresses.add(addressEntry.getValue());
         }
         return addressMap;

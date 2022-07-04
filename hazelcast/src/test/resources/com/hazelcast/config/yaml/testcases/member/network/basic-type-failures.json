@@ -1,0 +1,134 @@
+{
+  "instance": {
+    "hazelcast": {
+      "network": {
+        "public-address": false,
+        "port": [],
+        "outbound-ports": "",
+        "reuse-address": "Off",
+        "join": null,
+        "interfaces": false,
+        "ssl": "",
+        "socket-interceptor": null,
+        "symmetric-encryption": "Off",
+        "member-address-provider": null,
+        "failure-detector": [],
+        "rest-api": null,
+        "memcache-protocol": false
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Network",
+    "pointerToViolation": "#/hazelcast/network",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/FailureDetector",
+        "pointerToViolation": "#/hazelcast/network/failure-detector",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/Interfaces",
+        "pointerToViolation": "#/hazelcast/network/interfaces",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/MemberAddressProvider",
+        "pointerToViolation": "#/hazelcast/network/member-address-provider",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/memcache-protocol",
+        "pointerToViolation": "#/hazelcast/network/memcache-protocol",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/port",
+        "pointerToViolation": "#/hazelcast/network/port",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/public-address",
+        "pointerToViolation": "#/hazelcast/network/public-address",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/rest-api",
+        "pointerToViolation": "#/hazelcast/network/rest-api",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/reuse-address",
+        "pointerToViolation": "#/hazelcast/network/reuse-address",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Network/properties/symmetric-encryption",
+        "pointerToViolation": "#/hazelcast/network/symmetric-encryption",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/NetworkJoin",
+        "pointerToViolation": "#/hazelcast/network/join",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/OutboundPorts",
+        "pointerToViolation": "#/hazelcast/network/outbound-ports",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/OutboundPorts/anyOf/0",
+            "pointerToViolation": "#/hazelcast/network/outbound-ports",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONArray, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/OutboundPorts/anyOf/1",
+            "pointerToViolation": "#/hazelcast/network/outbound-ports",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: String"
+          }
+        ],
+        "keyword": "anyOf",
+        "message": "#: no subschema matched out of the total 2 subschemas"
+      },
+      {
+        "schemaLocation": "#/definitions/SSL",
+        "pointerToViolation": "#/hazelcast/network/ssl",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketInterceptor",
+        "pointerToViolation": "#/hazelcast/network/socket-interceptor",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      }
+    ],
+    "message": "14 schema violations found"
+  }
+}

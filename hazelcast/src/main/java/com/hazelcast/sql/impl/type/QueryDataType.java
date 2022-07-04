@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,14 @@ import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
-import com.hazelcast.sql.impl.type.converter.LateConverter;
+import com.hazelcast.sql.impl.type.converter.IntervalConverter;
+import com.hazelcast.sql.impl.type.converter.JsonConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LongConverter;
+import com.hazelcast.sql.impl.type.converter.MapConverter;
+import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
@@ -45,28 +48,27 @@ import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
+ * <p>
+ * Java serialization is needed for Jet.
  */
-public class QueryDataType implements IdentifiedDataSerializable {
-    public static final int PRECISION_BIT = 1;
-    public static final int PRECISION_TINYINT = 4;
-    public static final int PRECISION_SMALLINT = 7;
-    public static final int PRECISION_INT = 11;
-    public static final int PRECISION_BIGINT = 20;
-    public static final int PRECISION_UNLIMITED = -1;
+public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
-    public static final QueryDataType LATE = new QueryDataType(LateConverter.INSTANCE);
+    public static final int MAX_DECIMAL_PRECISION = 76;
+    public static final int MAX_DECIMAL_SCALE = 38;
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
 
-    public static final QueryDataType BIT = new QueryDataType(BooleanConverter.INSTANCE, PRECISION_BIT);
-    public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE, PRECISION_TINYINT);
-    public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE, PRECISION_SMALLINT);
-    public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE, PRECISION_INT);
-    public static final QueryDataType BIGINT = new QueryDataType(LongConverter.INSTANCE, PRECISION_BIGINT);
+    public static final QueryDataType BOOLEAN = new QueryDataType(BooleanConverter.INSTANCE);
+
+    public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE);
+    public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE);
+    public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE);
+    public static final QueryDataType BIGINT = new QueryDataType(LongConverter.INSTANCE);
     public static final QueryDataType DECIMAL = new QueryDataType(BigDecimalConverter.INSTANCE);
     public static final QueryDataType DECIMAL_BIG_INTEGER = new QueryDataType(BigIntegerConverter.INSTANCE);
     public static final QueryDataType REAL = new QueryDataType(FloatConverter.INSTANCE);
@@ -83,20 +85,22 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
 
+    public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
+
+    public static final QueryDataType INTERVAL_YEAR_MONTH = new QueryDataType(IntervalConverter.YEAR_MONTH);
+    public static final QueryDataType INTERVAL_DAY_SECOND = new QueryDataType(IntervalConverter.DAY_SECOND);
+
+    public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
+    public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
+
     private Converter converter;
-    private int precision;
 
     public QueryDataType() {
         // No-op.
     }
 
     QueryDataType(Converter converter) {
-        this(converter, PRECISION_UNLIMITED);
-    }
-
-    QueryDataType(Converter converter, int precision) {
         this.converter = converter;
-        this.precision = precision;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -107,8 +111,53 @@ public class QueryDataType implements IdentifiedDataSerializable {
         return converter;
     }
 
-    public int getPrecision() {
-        return precision;
+    /**
+     * Normalize the given value to a value returned by this instance. If the value doesn't match
+     * the type expected by the converter, an exception is thrown.
+     *
+     * @param value Value
+     * @return Normalized value
+     * @throws QueryDataTypeMismatchException In case of data type mismatch.
+     */
+    public Object normalize(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        Class<?> valueClass = value.getClass();
+
+        if (valueClass == converter.getNormalizedValueClass()) {
+            // Do nothing if the value is already in the normalized form.
+            return value;
+        }
+
+        if (!converter.getValueClass().isAssignableFrom(valueClass)) {
+            // Expected and actual class don't match. Throw an error.
+            throw new QueryDataTypeMismatchException(converter.getValueClass(), valueClass);
+        }
+
+        return converter.convertToSelf(converter, value);
+    }
+
+    /**
+     * Normalize the given value to a value returned by this instance. If the value doesn't match
+     * the type expected by the converter, a conversion is performed.
+     *
+     * @param value Value
+     * @return Normalized value
+     */
+    public Object convert(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        Class<?> valueClass = value.getClass();
+
+        if (valueClass == converter.getNormalizedValueClass()) {
+            return value;
+        }
+
+        return converter.convertToSelf(Converters.getConverter(valueClass), value);
     }
 
     @Override
@@ -124,18 +173,16 @@ public class QueryDataType implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
-        out.writeInt(precision);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         converter = Converters.getConverter(in.readInt());
-        precision = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return 31 * converter.getId() + precision;
+        return 31 * converter.getId();
     }
 
     @Override
@@ -150,11 +197,11 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
         QueryDataType type = (QueryDataType) o;
 
-        return converter.getId() == type.converter.getId() && precision == type.precision;
+        return converter.getId() == type.converter.getId();
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " {family=" + getTypeFamily() + ", precision=" + precision + "}";
+        return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
     }
 }

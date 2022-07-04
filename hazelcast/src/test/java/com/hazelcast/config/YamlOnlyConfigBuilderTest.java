@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,8 +27,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test cases specific only to YAML based configuration. The cases not
@@ -108,18 +106,6 @@ public class YamlOnlyConfigBuilderTest {
 
         expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/instance-name"));
         buildConfig(yaml);
-    }
-
-    @Test
-    public void testWithoutRootHazelcastNode() {
-        String yaml = ""
-                + "map:\n"
-                + "  myMap:\n"
-                + "    backup-count: 2";
-
-        Config config = buildConfig(yaml);
-        MapConfig myMapConfig = config.getMapConfig("myMap");
-        assertEquals(2, myMapConfig.getBackupCount());
     }
 
     private Config buildConfig(String yaml) {

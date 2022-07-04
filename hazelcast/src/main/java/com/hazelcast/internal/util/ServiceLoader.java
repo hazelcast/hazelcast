@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -49,8 +51,8 @@ import static java.lang.Boolean.getBoolean;
  * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
-    //compatibility flag to re-introduce behaviour from 3.8.0 with classloading fallbacks
-    private static final boolean USE_CLASSLOADING_FALLBACK = getBoolean("hazelcast.compat.classloading.hooks.fallback");
+    // kill-switch for URLDefinition#equals fix to take into account classloader
+    private static final boolean URLDEFINITION_COMPAT = getBoolean("hazelcast.compat.classloading.urldefinition");
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
 
@@ -71,13 +73,13 @@ public final class ServiceLoader {
 
     public static <T> Iterator<T> iterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) throws Exception {
         Iterator<Class<T>> classIterator = classIterator(expectedType, factoryId, classLoader);
-        return new NewInstanceIterator<T>(classIterator);
+        return new NewInstanceIterator<>(classIterator);
     }
 
     public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
             throws Exception {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-        return new ClassIterator<T>(serviceDefinitions, expectedType);
+        return new ClassIterator<>(serviceDefinitions, expectedType);
     }
 
     private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
@@ -125,7 +127,7 @@ public final class ServiceLoader {
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.url;
-                r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+                r = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
                 while (true) {
                     String line = r.readLine();
                     if (line == null) {
@@ -153,7 +155,7 @@ public final class ServiceLoader {
 
     static List<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
         // list prevents reordering!
-        List<ClassLoader> classLoaders = new ArrayList<ClassLoader>();
+        List<ClassLoader> classLoaders = new ArrayList<>();
 
         if (classLoader != null) {
             classLoaders.add(classLoader);
@@ -262,7 +264,7 @@ public final class ServiceLoader {
             if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
-            return true;
+            return URLDEFINITION_COMPAT || Objects.equals(classLoader, that.classLoader);
         }
 
         @Override
@@ -293,13 +295,10 @@ public final class ServiceLoader {
                     constructor.setAccessible(true);
                 }
                 return constructor.newInstance();
-            } catch (InstantiationException e) {
-                throw new HazelcastException(e);
-            } catch (IllegalAccessException e) {
-                throw new HazelcastException(e);
-            } catch (NoSuchMethodException e) {
-                throw new HazelcastException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InstantiationException
+                    | IllegalAccessException
+                    | NoSuchMethodException
+                    | InvocationTargetException e) {
                 throw new HazelcastException(e);
             }
         }
@@ -322,8 +321,8 @@ public final class ServiceLoader {
 
         private final Iterator<ServiceDefinition> iterator;
         private final Class<T> expectedType;
+        private final Set<Class<?>> alreadyProvidedClasses = new HashSet<>();
         private Class<T> nextClass;
-        private Set<Class<?>> alreadyProvidedClasses = new HashSet<Class<?>>();
 
         ClassIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> expectedType) {
             iterator = serviceDefinitions.iterator();
@@ -366,13 +365,7 @@ public final class ServiceLoader {
         }
 
         private Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
-            Class<?> candidate;
-            if (USE_CLASSLOADING_FALLBACK) {
-                candidate = ClassLoaderUtil.loadClass(classLoader, className);
-            } else {
-                candidate = classLoader.loadClass(className);
-            }
-            return candidate;
+            return classLoader.loadClass(className);
         }
 
         private void onClassNotFoundException(String className, ClassLoader classLoader, ClassNotFoundException e) {
@@ -410,7 +403,6 @@ public final class ServiceLoader {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public Class<T> next() {
             if (nextClass == null) {
                 advance();

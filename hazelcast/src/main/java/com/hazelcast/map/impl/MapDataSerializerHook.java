@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
+import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -64,7 +66,10 @@ import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
+import com.hazelcast.map.impl.operation.MapChunk;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -130,7 +135,6 @@ import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.ConsumeAccumulatorOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
@@ -269,7 +273,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int WRITE_BEHIND_STATE_HOLDER = 104;
     public static final int AGGREGATION_RESULT = 105;
     public static final int QUERY = 106;
-    public static final int TARGET = 107;
     public static final int MAP_INVALIDATION_METADATA = 108;
     public static final int MAP_INVALIDATION_METADATA_RESPONSE = 109;
     public static final int MAP_NEAR_CACHE_STATE_HOLDER = 110;
@@ -313,8 +316,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int COMPUTE_IF_PRESENT_PROCESSOR = 148;
     public static final int COMPUTE_IF_ABSENT_PROCESSOR = 149;
     public static final int KEY_VALUE_CONSUMING_PROCESSOR = 150;
+    public static final int COMPUTE_MAP_OPERATION_PROCESSOR = 151;
+    public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
+    public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
+    public static final int LOCAL_RECORD_STORE_STATS = 154;
+    public static final int MAP_FETCH_INDEX_OPERATION = 155;
+    public static final int INDEX_ITERATION_POINTER = 156;
+    public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 157;
+    public static final int MAP_CHUNK = 158;
 
-    private static final int LEN = KEY_VALUE_CONSUMING_PROCESSOR + 1;
+    private static final int LEN = MAP_CHUNK + 1;
 
     @Override
     public int getFactoryId() {
@@ -429,7 +440,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[WRITE_BEHIND_STATE_HOLDER] = arg -> new WriteBehindStateHolder();
         constructors[AGGREGATION_RESULT] = arg -> new AggregationResult();
         constructors[QUERY] = arg -> new Query();
-        constructors[TARGET] = arg -> new Target();
         constructors[MAP_INVALIDATION_METADATA] = arg -> new MapGetInvalidationMetaDataOperation();
         constructors[MAP_INVALIDATION_METADATA_RESPONSE] = arg -> new MapGetInvalidationMetaDataOperation.MetaDataResponse();
         constructors[MAP_NEAR_CACHE_STATE_HOLDER] = arg -> new MapNearCacheStateHolder();
@@ -473,6 +483,14 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[COMPUTE_IF_PRESENT_PROCESSOR] = arg -> new ComputeIfPresentEntryProcessor<>();
         constructors[COMPUTE_IF_ABSENT_PROCESSOR] = arg -> new ComputeIfAbsentEntryProcessor<>();
         constructors[KEY_VALUE_CONSUMING_PROCESSOR] = arg -> new KeyValueConsumingEntryProcessor<>();
+        constructors[COMPUTE_MAP_OPERATION_PROCESSOR] = arg -> new ComputeEntryProcessor<>();
+        constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
+        constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
+        constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
+        constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
+        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
+        constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
+        constructors[MAP_CHUNK] = arg -> new MapChunk();
 
         return new ArrayDataSerializableFactory(constructors);
     }

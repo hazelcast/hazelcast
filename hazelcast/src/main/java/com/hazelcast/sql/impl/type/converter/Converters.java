@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,9 +90,6 @@ public final class Converters {
     private static List<Converter> prepareConverters() {
         List<Converter> converters = new ArrayList<>();
 
-        // Late binding support.
-        converters.add(LateConverter.INSTANCE);
-
         // Boolean converter.
         converters.add(BooleanConverter.INSTANCE);
 
@@ -125,6 +122,19 @@ public final class Converters {
 
         // Object converter.
         converters.add(ObjectConverter.INSTANCE);
+
+        // Interval converters.
+        converters.add(IntervalConverter.YEAR_MONTH);
+        converters.add(IntervalConverter.DAY_SECOND);
+
+        // MAP converter.
+        converters.add(MapConverter.INSTANCE);
+
+        // NULL converter.
+        converters.add(NullConverter.INSTANCE);
+
+        // JSON converter
+        converters.add(JsonConverter.INSTANCE);
 
         return converters;
     }
@@ -163,7 +173,7 @@ public final class Converters {
             Converter oldConverter = map.put(converter.getId(), converter);
 
             if (oldConverter != null) {
-                throw new HazelcastException("Two converters has the same ID [id=" + converter.getId()
+                throw new HazelcastException("Two converters have the same ID [id=" + converter.getId()
                     + ", converter1=" + oldConverter.getClass().getSimpleName()
                     + ", converter2=" + converter.getClass().getSimpleName() + ']');
             }
@@ -223,6 +233,10 @@ public final class Converters {
 
         if (targetClass == Double.class) {
             return double.class;
+        }
+
+        if (targetClass == Void.class) {
+            return void.class;
         }
 
         return null;

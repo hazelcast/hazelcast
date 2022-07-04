@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ public enum ConfigSections {
     SPLIT_BRAIN_PROTECTION("split-brain-protection", true),
     LITE_MEMBER("lite-member", false),
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
+    PERSISTENCE("persistence", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false),
     CARDINALITY_ESTIMATOR("cardinality-estimator", true),
     RELIABLE_ID_GENERATOR("reliable-id-generator", true),
@@ -61,7 +62,14 @@ public enum ConfigSections {
     PN_COUNTER("pn-counter", true),
     ADVANCED_NETWORK("advanced-network", false),
     CP_SUBSYSTEM("cp-subsystem", false),
-    METRICS("metrics", false);
+    METRICS("metrics", false),
+    AUDITLOG("auditlog", false),
+    INSTANCE_TRACKING("instance-tracking", false),
+    SQL("sql", false),
+    JET("jet", false),
+    LOCAL_DEVICE("local-device", true),
+    DYNAMIC_CONFIGURATION("dynamic-configuration", false),
+    INTEGRITY_CHECKER("integrity-checker", false);
 
     final boolean multipleOccurrence;
     private final String name;
@@ -78,10 +86,6 @@ public enum ConfigSections {
             }
         }
         return false;
-    }
-
-    public boolean isEqual(String name) {
-        return this.name.equals(name);
     }
 
     public String getName() {

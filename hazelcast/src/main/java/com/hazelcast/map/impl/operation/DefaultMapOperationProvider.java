@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -296,6 +298,17 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     @Override
     public MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize) {
         return new MapFetchEntriesOperation(name, pointers, fetchSize);
+    }
+
+    @Override
+    public MapOperation createFetchIndexOperation(
+            String mapName,
+            String indexName,
+            IndexIterationPointer[] pointers,
+            PartitionIdSet partitionIdSet,
+            int sizeLimit
+    ) {
+        return new MapFetchIndexOperation(mapName, indexName, pointers, partitionIdSet, sizeLimit);
     }
 
     @Override

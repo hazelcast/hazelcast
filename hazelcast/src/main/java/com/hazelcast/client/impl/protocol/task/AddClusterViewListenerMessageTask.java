@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import java.security.Permission;
 
 public class AddClusterViewListenerMessageTask
-        extends AbstractCallableMessageTask<ClientAddClusterViewListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
 
     public AddClusterViewListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,8 +51,8 @@ public class AddClusterViewListenerMessageTask
     }
 
     @Override
-    protected ClientAddClusterViewListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientAddClusterViewListenerCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

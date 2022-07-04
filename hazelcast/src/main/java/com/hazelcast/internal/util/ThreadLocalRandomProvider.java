@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@ package com.hazelcast.internal.util;
 
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A random number generator isolated to the current thread.
  */
 public final class ThreadLocalRandomProvider {
 
-    private static final Random SEED_GENERATOR = new Random();
-
-    private static final ThreadLocal<Random> THREAD_LOCAL_RANDOM = new ThreadLocal<Random>();
-    private static final ThreadLocal<SecureRandom> THREAD_LOCAL_SECURE_RANDOM = new ThreadLocal<SecureRandom>();
+    private static final ThreadLocal<SecureRandom> THREAD_LOCAL_SECURE_RANDOM = new ThreadLocal<>();
 
     private ThreadLocalRandomProvider() {
     }
@@ -38,13 +36,7 @@ public final class ThreadLocalRandomProvider {
      * @return the current thread's {@link Random}.
      */
     public static Random get() {
-        Random random = THREAD_LOCAL_RANDOM.get();
-        if (random == null) {
-            long seed = SEED_GENERATOR.nextLong();
-            random = new Random(seed);
-            THREAD_LOCAL_RANDOM.set(random);
-        }
-        return random;
+        return ThreadLocalRandom.current();
     }
 
     /**

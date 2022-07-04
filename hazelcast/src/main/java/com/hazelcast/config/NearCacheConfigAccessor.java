@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,23 @@ public final class NearCacheConfigAccessor {
     private NearCacheConfigAccessor() {
     }
 
-    public static void initDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
+    public static NearCacheConfig copyWithInitializedDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
         if (nearCacheConfig == null) {
-            return;
+            return null;
         }
 
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE && !evictionConfig.sizeConfigured) {
-            evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
+        if (nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE
+                || evictionConfig.sizeConfigured) {
+            return nearCacheConfig;
         }
+
+        // create copy of eviction config
+        EvictionConfig copyEvictionConfig = new EvictionConfig(evictionConfig)
+                .setSize(MapConfig.DEFAULT_MAX_SIZE);
+
+        // create copy of nearCache config and set eviction config
+        return new NearCacheConfig(nearCacheConfig)
+                .setEvictionConfig(copyEvictionConfig);
     }
 }

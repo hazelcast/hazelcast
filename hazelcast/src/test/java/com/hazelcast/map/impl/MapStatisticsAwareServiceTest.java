@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +49,9 @@ public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
     public void setUp() throws Exception {
         hz = createHazelcastInstance();
         warmUpPartitions(hz);
+        sleepSeconds(15);
         map = hz.getMap("map");
+        sleepSeconds(5);
     }
 
     @Test
@@ -67,7 +70,12 @@ public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
         Map<String, LocalMapStats> mapStats = mapService.getStats();
 
         // then we obtain 1 local map stats instance
-        assertEquals(1, mapStats.size());
+        int size = mapStats.size();
+        if (size != 1) {
+            String names = mapStats.keySet()
+                    .stream().filter(name -> !name.equals("map")).collect(Collectors.joining(" "));
+            assertEquals("Unexpected map statistics found: " + names, 1, size);
+        }
         assertNotNull(mapStats.get("map"));
 
         hz.shutdown();

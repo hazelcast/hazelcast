@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -35,7 +35,7 @@ public final class ListMultiFrameCodec {
     private ListMultiFrameCodec() {
     }
 
-    public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
+    public static <T> void encode(ClientMessage clientMessage, Iterable<T> collection,
                                   BiConsumer<ClientMessage, T> encodeFunction) {
         clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {
@@ -44,7 +44,7 @@ public final class ListMultiFrameCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static <T> void encodeContainsNullable(ClientMessage clientMessage, Collection<T> collection,
+    public static <T> void encodeContainsNullable(ClientMessage clientMessage, Iterable<T> collection,
                                                   BiConsumer<ClientMessage, T> encodeFunction) {
         clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {
@@ -68,7 +68,7 @@ public final class ListMultiFrameCodec {
 
     public static <T> List<T> decode(ClientMessage.ForwardFrameIterator iterator,
                                      Function<ClientMessage.ForwardFrameIterator, T> decodeFunction) {
-        List<T> result = new LinkedList<>();
+        List<T> result = new ArrayList<>();
         //begin frame, list
         iterator.next();
         while (!nextFrameIsDataStructureEndFrame(iterator)) {
@@ -81,7 +81,7 @@ public final class ListMultiFrameCodec {
 
     public static <T> List<T> decodeContainsNullable(ClientMessage.ForwardFrameIterator iterator,
                                                      Function<ClientMessage.ForwardFrameIterator, T> decodeFunction) {
-        List<T> result = new LinkedList<>();
+        List<T> result = new ArrayList<>();
         //begin frame, list
         iterator.next();
         while (!nextFrameIsDataStructureEndFrame(iterator)) {

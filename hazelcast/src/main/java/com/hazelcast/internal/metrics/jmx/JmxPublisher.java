@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.MutableInteger;
 
+import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -42,7 +43,6 @@ import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.LONG;
  * rendered.
  */
 public class JmxPublisher implements MetricsPublisher {
-
     private final MBeanServer platformMBeanServer;
     private final String instanceNameEscaped;
     private final String domainPrefix;
@@ -106,13 +106,30 @@ public class JmxPublisher implements MetricsPublisher {
             metricData = metricNameToMetricData.get(originalDescriptor);
         }
 
-        assert !metricData.wasPresent : "metric '" + originalDescriptor.toString() + "' was rendered twice";
+        assertDoubleRendering(originalDescriptor, metricData, value);
+
         metricData.wasPresent = true;
         MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, createMBeanFunction);
         if (isShutdown) {
             unregisterMBeanIgnoreError(metricData.objectName);
         }
         mBean.setMetricValue(metricData.metric, metricData.unit, value, type);
+    }
+
+    private void assertDoubleRendering(MetricDescriptor originalDescriptor, MetricData metricData, Number newValue) {
+            assert !metricData.wasPresent
+                    : "metric '" + originalDescriptor.toString()
+                            + "' was rendered twice. Present value: " + metricValue(metricData)
+                            + ", new value: " + newValue;
+    }
+
+    private Number metricValue(MetricData metricData) {
+        try {
+            return (Number) mBeans.get(metricData.objectName).getAttribute(metricData.metric);
+        } catch (AttributeNotFoundException ex) {
+            throw new IllegalStateException("Metric is marked as present but no mBean is registered with object name "
+                    + "'" + metricData.objectName + "' and attribute '" + metricData.metric + "'");
+        }
     }
 
     private MetricDescriptor copy(MetricDescriptor descriptor) {
@@ -153,25 +170,42 @@ public class JmxPublisher implements MetricsPublisher {
     // package-visible for test
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     static String escapeObjectNameValue(String name) {
-        if (name.indexOf(',') < 0
-                && name.indexOf('=') < 0
-                && name.indexOf(':') < 0
-                && name.indexOf('*') < 0
-                && name.indexOf('?') < 0
-                && name.indexOf('\"') < 0
-                && name.indexOf('\n') < 0) {
+        if (!shouldEscapeObjectNameValue(name)) {
             return name;
         }
-        return "\"" + name
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("*", "\\*")
-                .replace("?", "\\?")
-                + '"';
+
+        int length = name.length();
+        StringBuilder builder = new StringBuilder(length + (1 << 3));
+        builder.append('"');
+        for (int i = 0; i < length; i++) {
+            char ch = name.charAt(i);
+            if (ch == '\\' || ch == '"' || ch == '*' || ch == '?') {
+                builder.append('\\');
+            }
+            if (ch == '\n') {
+                builder.append("\\n");
+            } else {
+                builder.append(ch);
+            }
+        }
+        builder.append('"');
+        return builder.toString();
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private static boolean shouldEscapeObjectNameValue(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == '=' || ch == ':' || ch == '*' || ch == '?' || ch == '"' || ch == '\n') {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class MetricData {
+        public static final int INITIAL_MBEAN_BUILDER_CAPACITY = 250;
+        public static final int INITIAL_MODULE_BUILDER_CAPACITY = 350;
         ObjectName objectName;
         String metric;
         String unit;
@@ -183,8 +217,8 @@ public class JmxPublisher implements MetricsPublisher {
         @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity",
                            "checkstyle:CyclomaticComplexity"})
         MetricData(MetricDescriptor descriptor, String instanceNameEscaped, String domainPrefix) {
-            StringBuilder mBeanTags = new StringBuilder();
-            StringBuilder moduleBuilder = new StringBuilder();
+            StringBuilder mBeanTags = new StringBuilder(INITIAL_MBEAN_BUILDER_CAPACITY);
+            StringBuilder moduleBuilder = new StringBuilder(INITIAL_MODULE_BUILDER_CAPACITY);
             String module = null;
             metric = descriptor.metric();
             ProbeUnit descriptorUnit = descriptor.unit();
@@ -247,6 +281,9 @@ public class JmxPublisher implements MetricsPublisher {
     @Override
     public void shutdown() {
         isShutdown = true;
+        if (platformMBeanServer == null) {
+            return;
+        }
         try {
             // unregister the MBeans registered by this JmxPublisher
             // the mBeans map can't be used since it is not thread-safe

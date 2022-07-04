@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.internal.util.ConstructorFunction;
 
+import java.lang.invoke.MethodHandles;
+
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
@@ -32,6 +34,8 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable
  * configuration for the classloader that loads Hazelcast version 3.8.
  */
 public abstract class AbstractStarterObjectConstructor implements ConstructorFunction<Object, Object> {
+
+    static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
 
     final Class<?> targetClass;
 

@@ -1,0 +1,13 @@
+hazelcast:
+  network:
+    public-address: 127.0.0.1
+    port:
+      auto-increment: 5
+      port-count: 100
+      port: 5701
+    reuse-adress: false
+    join:
+      auto-detection:
+        enabled: true
+    memcache-protocol:
+    enabled: true

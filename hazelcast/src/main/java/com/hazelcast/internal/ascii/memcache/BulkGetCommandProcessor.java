@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,6 @@ public class BulkGetCommandProcessor extends MemcacheCommandProcessor<BulkGetCom
 
     @Override
     public void handleRejection(BulkGetCommand request) {
-        throw new UnsupportedOperationException("not used, this method should be removed from the interface");
+        throw new UnsupportedOperationException("not used, remove this method from the interface");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -478,15 +478,23 @@ public final class Predicates {
     }
 
     /**
-     * Creates a <b>SQL</b> predicate that will pass items that match the given SQL 'where' expression. The following
-     * operators are supported: {@code =}, {@code &lt;}, {@code &gt;}, {@code &lt;=}, {@code &gt;=}, {@code ==},
-     * {@code !=}, {@code &lt;&gt;}, {@code between}, {@code in}, {@code like}, {@code ilike}, {@code regex},
-     * {@code and}, {@code or}.
+     * Creates a predicate that will pass items that match the given SQL 'where' expression. The following
+     * operators are supported: {@code =}, {@code <}, {@code >}, {@code <=}, {@code >=}, {@code ==},
+     * {@code !=}, {@code <>}, {@code BETWEEN}, {@code IN}, {@code LIKE}, {@code ILIKE}, {@code REGEX},
+     * {@code AND}, {@code OR} and {@code NOT}. The operators are case-insensitive, but attribute names are
+     * case sensitive.
      * <p>
-     * Example: {@code active AND (age &gt; 20 OR salary &lt; 60000)}
+     * Example: {@code active AND (age > 20 OR salary < 60000)}
      * <p>
      * See also <i>Special Attributes</i>, <i>Attribute Paths</i>, <i>Handling of {@code null}</i> and
      * <i>Implicit Type Conversion</i> sections of {@link Predicates}.
+     * <p>
+     * Differences to standard SQL:<ul>
+     *     <li>we don't use ternary boolean logic. {@code field=10} evaluates to {@code false}, if {@code field}
+     *         is {@code null}, in standard SQL it evaluates to {@code UNKNOWN}.
+     *     <li>{@code IS [NOT] NULL} is not supported, use {@code =NULL} or {@code <>NULL}
+     *     <li>{@code IS [NOT] DISTINCT FROM} is not supported, but {@code =} and {@code <>} behave like it.
+     * </ul>
      *
      * @param expression the 'where' expression.
      * @param <K>        the type of keys the predicate operates on.

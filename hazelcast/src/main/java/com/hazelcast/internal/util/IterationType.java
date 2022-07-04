@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ public enum IterationType {
      */
     ENTRY((byte) 2);
 
+    private static final IterationType[] VALUES = values();
+
     private final byte id;
 
     IterationType(byte id) {
@@ -59,7 +61,7 @@ public enum IterationType {
      * @throws IllegalArgumentException if no IterationType was found
      */
     public static IterationType getById(byte id) {
-        for (IterationType type : values()) {
+        for (IterationType type : VALUES) {
             if (type.id == id) {
                 return type;
             }

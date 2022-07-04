@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,19 +55,19 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
     /**
      * Current owner of the lock
      */
-    private LockInvocationKey owner;
+    private volatile LockInvocationKey owner;
 
     /**
      * Number of acquires the current lock owner has committed
      */
-    private int lockCount;
+    private volatile int lockCount;
 
     /**
      * Uids of the current lock owner's lock() / unlock() invocations,
      * and uid of the previous owner's last unlock() invocation.
      * Used for preventing duplicate execution of lock() / unlock() invocations
      */
-    private Map<BiTuple<LockEndpoint, UUID>, LockOwnershipState> ownerInvocationRefUids = new HashMap<>();
+    private final Map<BiTuple<LockEndpoint, UUID>, LockOwnershipState> ownerInvocationRefUids = new HashMap<>();
 
     Lock() {
     }
@@ -91,6 +92,8 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
      * with one of the previous invocations of the current lock owner,
      * memorized result of the previous invocation is returned.
      */
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "'lockCount' field is updated only by a single thread.")
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     AcquireResult acquire(LockInvocationKey key, boolean wait) {
         LockEndpoint endpoint = key.endpoint();
         UUID invocationUid = key.invocationUid();
@@ -154,6 +157,7 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
         return doRelease(endpoint, invocationUid, 1);
     }
 
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     private ReleaseResult doRelease(LockEndpoint endpoint, UUID invocationUid, int releaseCount) {
         LockOwnershipState memorized = ownerInvocationRefUids.get(BiTuple.of(endpoint, invocationUid));
         if (memorized != null) {
@@ -187,21 +191,23 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
     private Collection<LockInvocationKey> setNewLockOwner() {
         Collection<LockInvocationKey> newOwnerWaitKeys;
         Iterator<WaitKeyContainer<LockInvocationKey>> iter = waitKeyContainersIterator();
-        if (iter.hasNext()) {
-            WaitKeyContainer<LockInvocationKey> container = iter.next();
-            LockInvocationKey newOwner = container.key();
-            newOwnerWaitKeys = container.keyAndRetries();
+        synchronized (waitKeys) {
+            if (iter.hasNext()) {
+                WaitKeyContainer<LockInvocationKey> container = iter.next();
+                LockInvocationKey newOwner = container.key();
+                newOwnerWaitKeys = container.keyAndRetries();
 
-            iter.remove();
-            owner = newOwner;
-            lockCount = 1;
-            ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
-        } else {
-            owner = null;
-            newOwnerWaitKeys = Collections.emptyList();
+                iter.remove();
+                owner = newOwner;
+                lockCount = 1;
+                ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
+            } else {
+                owner = null;
+                newOwnerWaitKeys = Collections.emptyList();
+            }
+
+            return newOwnerWaitKeys;
         }
-
-        return newOwnerWaitKeys;
     }
 
     LockOwnershipState lockOwnershipState() {
@@ -248,12 +254,25 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
      */
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.emptyList();
+        LockInvocationKey ownerCopy = owner;
+        return ownerCopy != null ? Collections.singleton(ownerCopy.sessionId()) : Collections.emptyList();
     }
 
     @Override
     protected void onWaitKeyExpire(LockInvocationKey key) {
         ownerInvocationRefUids.put(BiTuple.of(key.endpoint(), key.invocationUid()), NOT_LOCKED);
+    }
+
+    int lockCountLimit() {
+        return lockCountLimit;
+    }
+
+    int lockCount() {
+        return lockCount;
+    }
+
+    LockInvocationKey owner() {
+        return owner;
     }
 
     @Override

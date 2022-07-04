@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InputOutputFactory;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.nio.ByteOrder;
 
@@ -33,23 +33,35 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
     }
 
     @Override
-    public BufferObjectDataInput createInput(Data data, InternalSerializationService service) {
-        return new ByteArrayObjectDataInput(data.toByteArray(), HeapData.DATA_OFFSET, service, byteOrder);
+    public BufferObjectDataInput createInput(Data data,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new ByteArrayObjectDataInput(data.toByteArray(), HeapData.DATA_OFFSET, service, byteOrder, isCompatibility);
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service) {
-        return new ByteArrayObjectDataInput(buffer, service, byteOrder);
+    public BufferObjectDataInput createInput(byte[] buffer,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new ByteArrayObjectDataInput(buffer, service, byteOrder, isCompatibility);
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, int offset, InternalSerializationService service) {
-        return new ByteArrayObjectDataInput(buffer, offset, service, byteOrder);
+    public BufferObjectDataInput createInput(byte[] buffer,
+                                             int offset,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new ByteArrayObjectDataInput(buffer, offset, service, byteOrder, isCompatibility);
     }
 
     @Override
     public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
         return new ByteArrayObjectDataOutput(size, service, byteOrder);
+    }
+
+    @Override
+    public BufferObjectDataOutput createOutput(int initialSize, int firstGrowthSize, InternalSerializationService service) {
+        return new ByteArrayObjectDataOutput(initialSize, firstGrowthSize, service, byteOrder);
     }
 
     @Override

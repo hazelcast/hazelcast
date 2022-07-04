@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ public class WaitStrategy {
     private final ILogger logger;
     private int attempt;
     private int currentBackoffMillis;
-    private long clusterConnectTimeoutMillis;
+    private final long clusterConnectTimeoutMillis;
+    private final String clusterConnectTimeoutText;
     private long clusterConnectAttemptBegin;
 
     WaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
@@ -40,6 +41,13 @@ public class WaitStrategy {
         this.maxBackoffMillis = maxBackoffMillis;
         this.multiplier = multiplier;
         this.clusterConnectTimeoutMillis = clusterConnectTimeoutMillis;
+        if (clusterConnectTimeoutMillis == Long.MAX_VALUE) {
+            // For a better logging output for the default values, we will
+            // replace "Long.MAX_VALUE ms" with this in our output.
+            clusterConnectTimeoutText = "INFINITE";
+        } else {
+            clusterConnectTimeoutText = clusterConnectTimeoutMillis + " ms";
+        }
         this.jitter = jitter;
         this.logger = logger;
     }
@@ -54,22 +62,23 @@ public class WaitStrategy {
         attempt++;
         long currentTimeMillis = Clock.currentTimeMillis();
         long timePassed = currentTimeMillis - clusterConnectAttemptBegin;
+
         if (timePassed > clusterConnectTimeoutMillis) {
-            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%d millis) is "
-                    + "reached. Attempt %d.", clusterConnectTimeoutMillis, attempt));
+            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%s) is "
+                    + "reached. Attempt %d.", clusterConnectTimeoutText, attempt));
             return false;
         }
 
         //random_between
         // Random(-jitter * current_backoff, jitter * current_backoff)
-        long actualSleepTime = (long) (currentBackoffMillis - (currentBackoffMillis * jitter)
-                + (currentBackoffMillis * jitter * random.nextDouble()));
+        long actualSleepTime = (long) (currentBackoffMillis
+                + currentBackoffMillis * jitter * (2.0 * random.nextDouble() - 1.0));
 
         actualSleepTime = Math.min(actualSleepTime, clusterConnectTimeoutMillis - timePassed);
 
-        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d "
-                + ", cluster connect timeout: %d seconds "
-                + ", max backoff millis: %d", actualSleepTime, attempt, clusterConnectTimeoutMillis, maxBackoffMillis));
+        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d"
+                + ", cluster connect timeout: %s"
+                + ", max backoff: %d ms", actualSleepTime, attempt, clusterConnectTimeoutText, maxBackoffMillis));
 
         try {
             Thread.sleep(actualSleepTime);

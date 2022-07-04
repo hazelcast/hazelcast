@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,9 @@ public abstract class AbstractUnsafeRaftOp extends Operation implements Identifi
     public final CallStatus call() throws Exception {
         RaftService service = getService();
         if (service.isCpSubsystemEnabled()) {
-            throw new IllegalStateException("CP subsystem is enabled!");
+            throw new IllegalStateException("CP subsystem is enabled on this member, "
+                    + "but received an UNSAFE operation! This could be due to a misconfiguration on the caller side. "
+                    + "CP subsystem configuration must be the same on all members.");
         }
 
         NodeEngine nodeEngine = getNodeEngine();

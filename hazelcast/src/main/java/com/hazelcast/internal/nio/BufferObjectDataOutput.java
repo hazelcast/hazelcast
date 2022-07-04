@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable,
     void writeLong(int position, long v, ByteOrder byteOrder) throws IOException;
 
     void writeBoolean(int position, boolean v) throws IOException;
+
+    void writeBooleanBit(int position, int bitIndex, boolean v) throws IOException;
 
     void writeByte(int position, int v) throws IOException;
 

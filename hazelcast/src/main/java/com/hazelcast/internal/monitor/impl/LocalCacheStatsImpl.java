@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_AVERAGE_GET_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_AVERAGE_PUT_TIME;
@@ -39,8 +37,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_MET
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_OWNED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
-import static com.hazelcast.internal.util.JsonUtil.getFloat;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.metrics.ProbeUnit.US;
 
 /**
  * Default implementation of {@link com.hazelcast.internal.monitor.LocalCacheStats}
@@ -52,13 +49,12 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
  * There are no calculations are done in this class, all statistics gathered from
  * {@link com.hazelcast.cache.CacheStatistics}
  * <p>
- * No setter methods are provided, all class fields supposed to be populated either
- * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
- * ({@link #fromJson(com.hazelcast.internal.json.JsonObject)}.
+ * No setter methods are provided, all class fields supposed to be populated by
+ * a {@link com.hazelcast.cache.CacheStatistics}.
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
-public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
+public class LocalCacheStatsImpl implements LocalCacheStats {
 
     @Probe(name = CACHE_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
@@ -84,11 +80,11 @@ public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
     private long cacheRemovals;
     @Probe(name = CACHE_METRIC_CACHE_EVICTIONS)
     private long cacheEvictions;
-    @Probe(name = CACHE_METRIC_AVERAGE_GET_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_GET_TIME, unit = US)
     private float averageGetTime;
-    @Probe(name = CACHE_METRIC_AVERAGE_PUT_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_PUT_TIME, unit = US)
     private float averagePutTime;
-    @Probe(name = CACHE_METRIC_AVERAGE_REMOVAL_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_REMOVAL_TIME, unit = US)
     private float averageRemoveTime;
 
     public LocalCacheStatsImpl() {
@@ -185,46 +181,6 @@ public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
     @Override
     public long getCreationTime() {
         return creationTime;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("lastAccessTime", lastAccessTime);
-        root.add("lastUpdateTime", lastUpdateTime);
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("cacheHits", cacheHits);
-        root.add("cacheHitPercentage", cacheHitPercentage);
-        root.add("cacheMisses", cacheMisses);
-        root.add("cacheMissPercentage", cacheMissPercentage);
-        root.add("cacheGets", cacheGets);
-        root.add("cachePuts", cachePuts);
-        root.add("cacheRemovals", cacheRemovals);
-        root.add("cacheEvictions", cacheEvictions);
-        root.add("averageGetTime", averageGetTime);
-        root.add("averagePutTime", averagePutTime);
-        root.add("averageRemoveTime", averageRemoveTime);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        lastAccessTime = getLong(json, "lastAccessTime", -1L);
-        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        cacheHits = getLong(json, "cacheHits", -1L);
-        cacheHitPercentage = getFloat(json, "cacheHitPercentage", -1f);
-        cacheMisses = getLong(json, "cacheMisses", -1L);
-        cacheMissPercentage = getFloat(json, "cacheMissPercentage", -1f);
-        cacheGets = getLong(json, "cacheGets", -1L);
-        cachePuts = getLong(json, "cachePuts", -1L);
-        cacheRemovals = getLong(json, "cacheRemovals", -1L);
-        cacheEvictions = getLong(json, "cacheEvictions", -1L);
-        averageGetTime = getFloat(json, "averageGetTime", -1f);
-        averagePutTime = getFloat(json, "averagePutTime", -1f);
-        averageRemoveTime = getFloat(json, "averageRemoveTime", -1f);
     }
 
     @Override

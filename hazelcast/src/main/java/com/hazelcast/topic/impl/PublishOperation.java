@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class PublishOperation extends AbstractNamedOperation
      * @throws Exception
      */
     @Override
-    public void beforeRun() throws Exception {
+    public void afterRun() throws Exception {
         TopicService service = getService();
         service.incrementPublishes(name);
     }
@@ -78,6 +78,7 @@ public class PublishOperation extends AbstractNamedOperation
             lock.unlock();
         }
     }
+
 
     @Override
     public int getFactoryId() {

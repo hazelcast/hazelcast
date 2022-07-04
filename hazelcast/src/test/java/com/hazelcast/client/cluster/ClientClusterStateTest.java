@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 package com.hazelcast.client.cluster;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -107,12 +105,11 @@ public class ClientClusterStateTest {
         factory.newHazelcastClient();
     }
 
-    @Test(expected = OperationTimeoutException.class)
+    @Test(expected = IllegalStateException.class)
     public void testClient_canNotExecuteWriteOperations_whenClusterState_passive() {
         warmUpPartitions(instances);
 
-        ClientConfig clientConfig = new ClientConfig().setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        HazelcastInstance client = factory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         map.put(1, 1);

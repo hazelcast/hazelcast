@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
-public class EntryRemovingProcessor implements EntryProcessor, IdentifiedDataSerializable {
+public class EntryRemovingProcessor implements EntryProcessor<Object, Object, Void>, IdentifiedDataSerializable {
 
     public static final EntryRemovingProcessor ENTRY_REMOVING_PROCESSOR = new EntryRemovingProcessor();
 
     public EntryRemovingProcessor() {
     }
 
-    public Object process(Map.Entry entry) {
-        ((LazyMapEntry) entry).remove();
+    public Void process(Map.Entry<Object, Object> entry) {
+        ((LazyMapEntry<Object, Object>) entry).remove();
         return null;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,19 +48,6 @@ public class LocalSetStatsImplTest {
         long afterCreationTime = Clock.currentTimeMillis();
 
         assertBetween("creationTime", localSetStats.getCreationTime(), beforeCreationTime, afterCreationTime);
-    }
-
-    @Test
-    public void testSerialization() {
-        LocalSetStatsImpl localSetStats = createTestStats();
-
-        JsonObject serialized = localSetStats.toJson();
-        LocalSetStatsImpl deserialized = new LocalSetStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(123456, deserialized.getLastUpdateTime());
-        assertEquals(654321, deserialized.getLastAccessTime());
     }
 
     private LocalSetStatsImpl createTestStats() {

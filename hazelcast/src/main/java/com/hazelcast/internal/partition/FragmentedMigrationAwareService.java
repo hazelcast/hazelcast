@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,11 +74,10 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
      * <p>
      * Returning null is allowed and means service does not have anything to replicate.
      *
-     * @param event replication event
+     * @param event      replication event
      * @param namespaces replica fragment namespaces to replicate
      * @return replication operation or null if nothing will be replicated
      * @see #prepareReplicationOperation(PartitionReplicationEvent)
      */
     Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces);
-
 }

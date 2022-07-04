@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
-    private static final String HAZELCAST_CLIENT_FAILOVER_START_TAG =
+    public static final String HAZELCAST_CLIENT_FAILOVER_START_TAG =
             "<hazelcast-client-failover xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
-    private static final String HAZELCAST_CLIENT_FAILOVER_END_TAG = "</hazelcast-client-failover>";
+    public static final String HAZELCAST_CLIENT_FAILOVER_END_TAG = "</hazelcast-client-failover>";
 
     @Before
     public void init() throws Exception {
@@ -128,7 +128,7 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
         return new XmlClientFailoverConfigBuilder().build();
     }
 
-    private static ClientFailoverConfig buildConfig(String yaml) {
+    public static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }
 

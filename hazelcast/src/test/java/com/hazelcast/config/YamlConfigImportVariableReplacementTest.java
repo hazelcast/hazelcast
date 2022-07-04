@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    ${name}:\n"
-                + "      backup-count: ${async.backup.count}${backup.count}\n";
+                + "      backup-count: ${backup.count}\n"
+                + "      async-backup-count: ${async.backup.count}\n";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
@@ -578,10 +579,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "import:\n"
-                + "  - " + "${file}\n"
-                + "instance-name: my-instance";
+        String yaml = "hazelcast:\n"
+                + "  import:\n"
+                + "    - " + "${file}\n"
+                + "  instance-name: my-instance";
         Config config = buildConfig(yaml, "file", path);
         assertEquals("my-instance", config.getInstanceName());
         assertEquals("value1", config.getProperty("prop1"));

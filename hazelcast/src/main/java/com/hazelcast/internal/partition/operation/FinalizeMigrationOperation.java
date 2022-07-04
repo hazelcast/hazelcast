@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -54,6 +54,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
      */
+    @SuppressWarnings("unused")
     public FinalizeMigrationOperation() {
         migrationInfo = null;
         endpoint = null;
@@ -133,7 +134,8 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
                 endpoint == MigrationEndpoint.SOURCE
                         ? migrationInfo.getSourceCurrentReplicaIndex() : migrationInfo.getDestinationCurrentReplicaIndex(),
                 endpoint == MigrationEndpoint.SOURCE
-                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
+                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex(),
+                migrationInfo.getUid());
     }
 
     /** Updates the replica versions on the migration source if the replica index has changed. */

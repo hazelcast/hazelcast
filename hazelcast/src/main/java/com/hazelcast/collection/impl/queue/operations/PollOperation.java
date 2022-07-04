@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,16 +48,16 @@ public final class PollOperation extends QueueBackupAwareOperation
         QueueContainer queueContainer = getContainer();
         item = queueContainer.poll();
         if (item != null) {
-            response = item.getData();
+            response = item.getSerializedObject();
         }
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (response != null) {
             stats.incrementPolls();
-            publishEvent(ItemEventType.REMOVED, item.getData());
+            publishEvent(ItemEventType.REMOVED, item.getSerializedObject());
         } else {
             stats.incrementEmptyPolls();
         }

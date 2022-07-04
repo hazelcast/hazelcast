@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -43,19 +44,35 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClusterViewListenerService {
     private static final int PUSH_PERIOD_IN_SECONDS = 30;
-    private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
+    private static final long PARTITION_UPDATE_DELAY_MS = 100;
+    private static final long PARTITION_UPDATE_MAX_DELAY_MS = 500;
+
+    private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<>();
     private final NodeEngine nodeEngine;
     private final boolean advancedNetworkConfigEnabled;
-    private AtomicBoolean pushScheduled = new AtomicBoolean();
+    private final AtomicBoolean pushScheduled = new AtomicBoolean();
+    private final CoalescingDelayedTrigger delayedPartitionUpdateTrigger;
+    // This is an emulation of the pre-4.1 partition state version.
+    // We will increment this version if a partition table change is detected
+    // while sending partition table to the client.
+    // Because of the client compatibility requirement, this integer version
+    // wil remain until the next major version of the client protocol.
+    private final AtomicInteger partitionTableVersion = new AtomicInteger();
+    // Latest observed partition stamp
+    private final AtomicLong latestPartitionStamp = new AtomicLong();
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+        this.delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
+                PARTITION_UPDATE_DELAY_MS, PARTITION_UPDATE_MAX_DELAY_MS, this::pushPartitionTableView);
     }
 
     private void schedulePeriodicPush() {
@@ -64,18 +81,19 @@ public class ClusterViewListenerService {
     }
 
     private void pushView() {
-        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
-        if (partitionViewMessage != null) {
-            sendToListeningEndpoints(partitionViewMessage);
-        }
+        pushPartitionTableView();
         sendToListeningEndpoints(getMemberListViewMessage());
     }
 
-    public void onPartitionStateChange() {
+    private void pushPartitionTableView() {
         ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
         if (partitionViewMessage != null) {
             sendToListeningEndpoints(partitionViewMessage);
         }
+    }
+
+    public void onPartitionStateChange() {
+        delayedPartitionUpdateTrigger.executeWithDelay();
     }
 
     public void onMemberListChange() {
@@ -127,9 +145,16 @@ public class ClusterViewListenerService {
         if (partitions.size() == 0) {
             return null;
         }
-        int partitionStateVersion = partitionTableView.getVersion();
 
-        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionStateVersion, partitions.entrySet());
+        int version;
+        long currentStamp = partitionTableView.stamp();
+        long latestStamp = latestPartitionStamp.get();
+        if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
+            partitionTableVersion.incrementAndGet();
+        }
+        version = partitionTableVersion.get();
+
+        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(version, partitions.entrySet());
     }
 
     private ClientMessage getMemberListViewMessage() {
@@ -142,9 +167,8 @@ public class ClusterViewListenerService {
         ArrayList<MemberInfo> memberInfos = new ArrayList<>();
         for (MemberInfo member : members) {
             memberInfos.add(new MemberInfo(clientAddressOf(member.getAddress()), member.getUuid(), member.getAttributes(),
-                    member.isLiteMember(), member.getVersion()));
+                    member.isLiteMember(), member.getVersion(), member.getAddressMap()));
         }
-
         return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);
     }
 
@@ -174,7 +198,7 @@ public class ClusterViewListenerService {
     public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
         Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
 
-        int partitionCount = partitionTableView.getLength();
+        int partitionCount = partitionTableView.length();
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);

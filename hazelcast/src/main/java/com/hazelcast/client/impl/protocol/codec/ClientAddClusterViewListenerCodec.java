@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a cluster view listener to a connection.
  */
-@Generated("4d45d253876d85142bee14cfcd195e3b")
+@Generated("0ca8b724bdec71e9b92e902d55549b7f")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -57,10 +57,6 @@ public final class ClientAddClusterViewListenerCodec {
     private ClientAddClusterViewListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
-
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -72,18 +68,6 @@ public final class ClientAddClusterViewListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddClusterViewListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -91,14 +75,6 @@ public final class ClientAddClusterViewListenerCodec {
         clientMessage.add(initialFrame);
 
         return clientMessage;
-    }
-
-    public static ClientAddClusterViewListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
     }
 
     public static ClientMessage encodeMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos) {
@@ -113,6 +89,7 @@ public final class ClientAddClusterViewListenerCodec {
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
         return clientMessage;
     }
+
     public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -152,13 +129,13 @@ public final class ClientAddClusterViewListenerCodec {
          * @param version Incremental member list version
          * @param memberInfos List of member infos  at the cluster associated with the given version
          *                    params:
-        */
+         */
         public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos);
 
         /**
          * @param version Incremental state version of the partition table
          * @param partitions The partition table. In each entry, it has uuid of the member and list of partitions belonging to that member
-        */
+         */
         public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("852283d0c6c65b3a4403783a90aa0231")
+@Generated("2d71c8f67f13f16a988e7dcf6f87f1fb")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -85,15 +85,6 @@ public final class MCRunScriptCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Execution result: script output.
-         */
-        public @Nullable java.lang.String result;
-    }
-
     public static ClientMessage encodeResponse(@Nullable java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -104,13 +95,13 @@ public final class MCRunScriptCodec {
         return clientMessage;
     }
 
-    public static MCRunScriptCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * Execution result: script output.
+     */
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.result = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, StringCodec::decode);
     }
-
 }

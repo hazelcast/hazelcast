@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ package com.hazelcast.internal.server;
  * Stats per {@link ServerConnectionManager} for both directions of network traffic (inbound or outbound).
  * <p>
  * Stores number of bytes sent and received. Used only when Advanced Networking is enabled.
- *
- * @see ServerConnectionManager#getNetworkStats()
- * @see AggregateServerConnectionManager#getNetworkStats()
  */
 public interface NetworkStats {
 

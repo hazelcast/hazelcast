@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -38,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -50,13 +50,14 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
  * 3) How many times is it retried?
  */
 public class ClientInvocation extends BaseInvocation implements Runnable {
+    private static final AtomicReferenceFieldUpdater<ClientInvocation, ClientConnection> SENT_CONNECTION
+            = AtomicReferenceFieldUpdater.newUpdater(ClientInvocation.class, ClientConnection.class, "sentConnection");
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int UNASSIGNED_PARTITION = -1;
     private static final AtomicLongFieldUpdater<ClientInvocation> INVOKE_COUNT
             = AtomicLongFieldUpdater.newUpdater(ClientInvocation.class, "invokeCount");
     final LifecycleService lifecycleService;
     private final ClientInvocationFuture clientInvocationFuture;
-    private final ILogger logger;
     private final ClientInvocationServiceImpl invocationService;
     private final TaskScheduler executionService;
     private volatile ClientMessage clientMessage;
@@ -68,12 +69,24 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final long retryPauseMillis;
     private final Object objectName;
     private final boolean isSmartRoutingEnabled;
-    private volatile ClientConnection sendConnection;
+    /**
+     * We achieve synchronization of different threads via this field
+     * sentConnection starts as null.
+     * This field is set to a non-null when `connection` to be sent is determined.
+     * This field is set to null when a response/exception is going to be notified.
+     * This field is trying to be compared and set to null on connection close case with dead connection,
+     * to prevent invocation to be notified which is already retried on another connection.
+     * Only one thread that can set this to null can be actively notify a response/exception.
+     * {@link #getPermissionToNotifyForDeadConnection}
+     * {@link #getPermissionToNotify(long)}
+     */
+    private volatile ClientConnection sentConnection;
     private EventHandler handler;
     private volatile long invokeCount;
     private volatile long invocationTimeoutMillis;
     private boolean urgent;
     private boolean allowRetryOnRandom = true;
+    private volatile boolean invoked;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -81,6 +94,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                int partitionId,
                                UUID uuid,
                                Connection connection) {
+        super(((ClientInvocationServiceImpl) client.getInvocationService()).invocationLogger);
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = client.getTaskScheduler();
@@ -91,7 +105,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.connection = connection;
         this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
-        this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
@@ -165,11 +178,10 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 invocationService.checkInvocationAllowed();
             }
 
-
             if (isBindToSingleConnection()) {
                 boolean invoked = invocationService.invokeOnConnection(this, (ClientConnection) connection);
                 if (!invoked) {
-                    notifyException(new IOException("Could not invoke on connection " + connection));
+                    notifyExceptionWithOwnedPermission(new IOException("Could not invoke on connection " + connection));
                 }
                 return;
             }
@@ -190,11 +202,11 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 invoked = invocationService.invoke(this);
             }
             if (!invoked) {
-                notifyException(new IOException("No connection found to invoke"));
+                notifyExceptionWithOwnedPermission(new IOException("No connection found to invoke"));
             }
 
         } catch (Throwable e) {
-            notifyException(e);
+            notifyExceptionWithOwnedPermission(e);
         }
     }
 
@@ -204,6 +216,11 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         retry();
     }
 
+    /**
+     * Retry is guaranteed to be run via single thread at a time per invocation.
+     * {@link #getPermissionToNotifyForDeadConnection}
+     * {@link #getPermissionToNotify(long)}}
+     */
     private void retry() {
         // first we force a new invocation slot because we are going to return our old invocation slot immediately after
         // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
@@ -222,15 +239,43 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.invocationTimeoutMillis = invocationTimeoutMillis;
     }
 
-
     /**
+     * We make sure that `notifyResponse` can not be called by multiple threads concurrently
+     * Only ones that can set a null on `sentConnection` can notify the invocation
+     *
      * @param clientMessage return true if invocation completed
      */
     void notify(ClientMessage clientMessage) {
         assert clientMessage != null : "response can't be null";
-        int expectedBackups = clientMessage.getNumberOfBackupAcks();
 
-        notifyResponse(clientMessage, expectedBackups);
+        if (getPermissionToNotify(clientMessage.getCorrelationId())) {
+            int expectedBackups = clientMessage.getNumberOfBackupAcks();
+            notifyResponse(clientMessage, expectedBackups);
+        }
+    }
+
+    boolean getPermissionToNotify(long responseCorrelationId) {
+        ClientConnection conn = this.sentConnection;
+        if (conn == null) {
+            //invocation is being handled by a second thread.
+            //we don't need to take action
+            return false;
+        }
+
+        long requestCorrelationId = clientMessage.getCorrelationId();
+
+        if (responseCorrelationId != requestCorrelationId) {
+            //invocation is retried with new correlation id
+            //we should not notify
+            return false;
+        }
+        //we have the permission to notify if we can compareAndSet
+        //otherwise another thread is handling it, we don't need to notify anymore
+        return SENT_CONNECTION.compareAndSet(this, conn, null);
+    }
+
+    boolean getPermissionToNotifyForDeadConnection(ClientConnection deadConnection) {
+        return SENT_CONNECTION.compareAndSet(this, deadConnection, null);
     }
 
     @Override
@@ -254,7 +299,17 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return invocationService.shouldFailOnIndeterminateOperationState();
     }
 
-    void notifyException(Throwable exception) {
+    void notifyException(long correlationId, Throwable exception) {
+        if (getPermissionToNotify(correlationId)) {
+            notifyExceptionWithOwnedPermission(exception);
+        }
+    }
+
+    /**
+     * We make sure that this method can not be called from multiple threads per invocation at the same time
+     * Only ones that can set a null on `sentConnection` can notify the invocation
+     */
+    void notifyExceptionWithOwnedPermission(Throwable exception) {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
@@ -327,19 +382,19 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.handler = handler;
     }
 
-    public void setSendConnection(ClientConnection connection) {
-        this.sendConnection = connection;
+    public void setSentConnection(ClientConnection connection) {
+        SENT_CONNECTION.set(this, connection);
     }
 
-    public ClientConnection getSendConnectionOrWait() throws InterruptedException {
-        while (sendConnection == null && !clientInvocationFuture.isDone()) {
+    void invoked() {
+        invoked = true;
+    }
+
+    public void waitInvoked() throws InterruptedException {
+        //it could be either invoked or cancelled before invoked
+        while (!invoked && !clientInvocationFuture.isDone()) {
             Thread.sleep(retryPauseMillis);
         }
-        return sendConnection;
-    }
-
-    public ClientConnection getSendConnection() {
-        return sendConnection;
     }
 
     private boolean shouldRetry(Throwable t) {
@@ -379,7 +434,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 + "clientMessage = " + clientMessage
                 + ", objectName = " + objectName
                 + ", target = " + target
-                + ", sendConnection = " + sendConnection + '}';
+                + ", sentConnection = " + sentConnection + '}';
     }
 
     // package private methods for tests

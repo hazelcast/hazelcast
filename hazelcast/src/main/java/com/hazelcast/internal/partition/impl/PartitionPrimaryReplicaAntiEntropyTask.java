@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,25 +27,33 @@ import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COU
 
 final class PartitionPrimaryReplicaAntiEntropyTask extends AbstractPartitionPrimaryReplicaAntiEntropyTask {
 
-    PartitionPrimaryReplicaAntiEntropyTask(NodeEngineImpl nodeEngine, int partitionId) {
+    private final Runnable afterRun;
+
+    PartitionPrimaryReplicaAntiEntropyTask(NodeEngineImpl nodeEngine, int partitionId, Runnable afterRun) {
         super(nodeEngine, partitionId);
+        this.afterRun = afterRun;
     }
 
     @Override
     public void run() {
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isLocal() || partition.isMigrating()) {
-            return;
-        }
+        try {
+            InternalPartition partition = partitionService.getPartition(partitionId, false);
+            if (!partition.isLocal() || partition.isMigrating()) {
+                return;
+            }
 
-        Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
+            Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
 
-        for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
-            PartitionReplica replica = partition.getReplica(index);
-            if (replica != null) {
-                invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+            for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
+                PartitionReplica replica = partition.getReplica(index);
+                if (replica != null) {
+                    invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+                }
+            }
+        } finally {
+            if (afterRun != null) {
+                afterRun.run();
             }
         }
     }
-
 }

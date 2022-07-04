@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,21 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
                     + newSplitBrainProtectionState, e);
         }
 
+        if (previousSplitBrainProtectionState == SplitBrainProtectionState.INITIAL
+                && newSplitBrainProtectionState != SplitBrainProtectionState.HAS_MIN_CLUSTER_SIZE) {
+            // We should not set the new quorum state until quorum is met the first time
+            // after local member joins the cluster.
+            return;
+        }
+
         splitBrainProtectionState = newSplitBrainProtectionState;
+
+        if (previousSplitBrainProtectionState == SplitBrainProtectionState.INITIAL) {
+            // We should not fire any quorum events before quorum is present the first time
+            // when local member joins the cluster.
+            return;
+        }
+
         if (previousSplitBrainProtectionState != newSplitBrainProtectionState) {
             createAndPublishEvent(members, newSplitBrainProtectionState == SplitBrainProtectionState.HAS_MIN_CLUSTER_SIZE);
         }

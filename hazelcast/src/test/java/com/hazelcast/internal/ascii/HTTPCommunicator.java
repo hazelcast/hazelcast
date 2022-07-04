@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -57,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
@@ -108,6 +110,14 @@ public class HTTPCommunicator {
     public static final String URI_CP_MEMBERS_URL = "cp-subsystem/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
 
+    // Log Level
+    public static final String URI_LOG_LEVEL = "log-level";
+    public static final String URI_LOG_LEVEL_RESET = "log-level/reset";
+
+    // Config
+    public static final String URI_CONFIG_RELOAD = "config/reload";
+    public static final String URI_CONFIG_UPDATE = "config/update";
+
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
@@ -115,13 +125,14 @@ public class HTTPCommunicator {
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
+    private final ILogger logger;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this(instance, null);
     }
 
     public HTTPCommunicator(HazelcastInstance instance, String baseRestAddress) {
-
+        logger = instance.getLoggingService().getLogger(HTTPCommunicator.class);
         AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
         SSLConfig sslConfig;
         if (anc.isEnabled()) {
@@ -139,6 +150,13 @@ public class HTTPCommunicator {
             this.baseRestAddress = baseRestAddress;
         }
         this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
+    }
+
+    HTTPCommunicator(int port) {
+        this.baseRestAddress = "/127.0.0.1:" + port;
+        this.address = "http:/" + this.baseRestAddress + "/hazelcast/rest/";
+        this.sslEnabled = false;
+        this.logger = null;
     }
 
     public String getUrl(String suffix) {
@@ -360,6 +378,16 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
+    public ConnectionResponse configReload(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_CONFIG_RELOAD);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
+    public ConnectionResponse configUpdate(String clusterName, String clusterPassword, String configAsString) throws IOException {
+        String url = getUrl(URI_CONFIG_UPDATE);
+        return doPost(url, clusterName, clusterPassword, configAsString);
+    }
+
     public ConnectionResponse getCPGroupIds() throws IOException {
         String url = getUrl(URI_CP_GROUPS_URL);
         return doGet(url);
@@ -411,10 +439,10 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword);
     }
 
-    static class ConnectionResponse {
-        final String response;
-        final int responseCode;
-        final Map<String, List<String>> responseHeaders;
+    public static class ConnectionResponse {
+        public final String response;
+        public final int responseCode;
+        public final Map<String, List<String>> responseHeaders;
 
         ConnectionResponse(CloseableHttpResponse httpResponse) throws IOException {
             int responseCode = httpResponse.getStatusLine().getStatusCode();
@@ -434,9 +462,20 @@ public class HTTPCommunicator {
             this.response = responseStr;
             this.responseHeaders = responseHeaders;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder("HTTP ").append(responseCode).append("\r\n");
+            responseHeaders.forEach((name, values) -> {
+                values.forEach(headerValue -> str.append(name).append(": ").append(headerValue).append("\r\n"));
+            });
+            str.append("\r\n");
+            return str.append(response).toString();
+        }
     }
 
     private ConnectionResponse doHead(String url) throws IOException {
+        logRequest("HEAD", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -449,7 +488,8 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doGet(String url) throws IOException {
+    public ConnectionResponse doGet(String url) throws IOException {
+        logRequest("GET", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -464,6 +504,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse doPost(String url, String... params) throws IOException {
+        logRequest("POST", url);
         CloseableHttpClient client = newClient();
 
         List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
@@ -496,7 +537,8 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doDelete(String url) throws IOException {
+    public ConnectionResponse doDelete(String url) throws IOException {
+        logRequest("DELETE", url);
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -507,6 +549,12 @@ public class HTTPCommunicator {
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
+        }
+    }
+
+    private void logRequest(String method, String url) {
+        if (logger != null && logger.isFineEnabled()) {
+            logger.fine("Sending " + method + " request to " + url);
         }
     }
 
@@ -607,4 +655,20 @@ public class HTTPCommunicator {
     public void enableChunkedStreaming() {
         this.enableChunkedStreaming = true;
     }
+
+    public ConnectionResponse getLogLevel() throws IOException {
+        String url = getUrl(URI_LOG_LEVEL);
+        return doGet(url);
+    }
+
+    public ConnectionResponse setLogLevel(String clusterName, String clusterPassword, Level level) throws IOException {
+        String url = getUrl(URI_LOG_LEVEL);
+        return doPost(url, clusterName, clusterPassword, level.getName());
+    }
+
+    public ConnectionResponse resetLogLevel(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_LOG_LEVEL_RESET);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
 }

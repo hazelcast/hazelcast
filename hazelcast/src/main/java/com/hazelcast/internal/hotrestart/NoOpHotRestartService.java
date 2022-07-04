@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.hotrestart;
 
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.persistence.BackupTaskState;
+import com.hazelcast.persistence.BackupTaskStatus;
 
 /**
  * Empty implementation of HotRestartService to avoid null checks. This will provide default behaviour when hot restart is
@@ -50,6 +50,11 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public boolean isHotBackupEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean isBackupEnabled() {
         return false;
     }
 

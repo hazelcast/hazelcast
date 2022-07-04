@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ public class ClientLongRegisterTest extends HazelcastTestSupport {
         assertEquals(7, longRegister.decrementAndGet());
         assertEquals(7, longRegister.getAndIncrement());
         assertEquals(8, longRegister.getAndSet(9));
-        assertEquals(10, longRegister.incrementAndGet());
+        assertEquals(9, longRegister.getAndDecrement());
+        assertEquals(9, longRegister.incrementAndGet());
     }
 
     @Test

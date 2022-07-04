@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -56,6 +57,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
@@ -66,19 +68,19 @@ import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPER
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
+ * An {@link OperationExecutor} that schedules:
  * <ol>
- * <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition ID)</li>
- * <li>non specific operations to generic-operation-threads</li>
+ * <li>partition-specific operations to a specific-partition operation thread (using a mod on the partition ID)</li>
+ * <li>non-specific operations to generic operation threads</li>
  * </ol>
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
- * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
- * reduce pressure on the GC.
+ * create wrapper Runnables around tasks. This is done to reduce the amount of object litter and therefore
+ * reduce the pressure on the GC.
  * <p>
- * There are 2 category of operation threads:
+ * There are 2 categories of operation threads:
  * <ol>
- * <li>partition specific operation threads: these threads are responsible for executing e.g. a map.put.
- * Operations for the same partition, always end up in the same thread.
+ * <li>partition-specific operation threads: these threads are responsible for executing e.g. a {@code map.put()}.
+ * Operations for the same partition always end up in the same thread.
  * </li>
  * <li>
  * generic operation threads: these threads are responsible for executing operations that are not
@@ -91,7 +93,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
-
+    private final ThreadAffinity threadAffinity = newSystemThreadAffinity("hazelcast.operation.thread.affinity");
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
@@ -99,7 +101,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue
-            = new OperationQueueImpl(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
+            = new OperationQueueImpl(new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericThreads;
@@ -152,19 +154,22 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                                             NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
+        if (threadAffinity.isEnabled()) {
+            threadCount = threadAffinity.getThreadCount();
+        }
 
         IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
-            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(idleStrategy);
 
-            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<Object>());
+            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);
-
+            partitionThread.setThreadAffinity(threadAffinity);
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
         }
@@ -509,8 +514,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void start() {
-        logger.info("Starting " + partitionThreads.length + " partition threads and "
-                + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+        if (logger.isFineEnabled()) {
+            logger.fine("Starting " + partitionThreads.length + " partition threads and "
+                  + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+        }
         startAll(partitionThreads);
         startAll(genericThreads);
     }

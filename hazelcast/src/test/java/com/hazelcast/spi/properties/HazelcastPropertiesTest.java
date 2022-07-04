@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,17 @@ public class HazelcastPropertiesTest {
         HazelcastProperties properties = new HazelcastProperties(props);
 
         assertEquals("value1", properties.get("key1"));
+    }
+
+    @Test
+    public void testGet_whenValueNotString() {
+        // given a "compromised" Properties object
+        Properties props = new Properties();
+        props.put("key", 1);
+
+        // HazelcastProperties.get returns null
+        HazelcastProperties hzProperties = new HazelcastProperties(props);
+        assertNull(hzProperties.get("key"));
     }
 
     @Test
@@ -206,11 +217,19 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getFloat() {
-        HazelcastProperty property = new HazelcastProperty("foo", "10");
+        HazelcastProperty property = new HazelcastProperty("foo", 10.1F);
 
-        float maxFileSize = defaultProperties.getFloat(property);
+        float foo = defaultProperties.getFloat(property);
 
-        assertEquals(10, maxFileSize, 0.0001);
+        assertEquals(10.1F, foo, 0.0001);
+    }
+
+    @Test
+    public void getDouble() {
+        HazelcastProperty property = new HazelcastProperty("foo", 10.1D);
+        double foo = defaultProperties.getDouble(property);
+
+        assertEquals(10.1D, foo, 0.0001);
     }
 
     @Test
@@ -259,7 +278,7 @@ public class HazelcastPropertiesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getTimeUnit_noTimeUnitProperty() {
-        defaultProperties.getMillis(ClusterProperty.AUDIT_LOG_ENABLED);
+        defaultProperties.getMillis(ClusterProperty.EVENT_THREAD_COUNT);
     }
 
     @Test

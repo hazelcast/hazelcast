@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 /**
- * <p>This package contains Hot Restart classes needed for open source Hazelcast code<br>
+ * @deprecated since 5.0
+ * Please use {@link com.hazelcast.persistence} for the replacement.
  */
 package com.hazelcast.hotrestart;

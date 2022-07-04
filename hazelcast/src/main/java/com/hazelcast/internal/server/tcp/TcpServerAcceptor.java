@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -44,6 +45,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -57,11 +59,11 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Contains the logic for accepting TcpIpConnections.
+ * Contains the logic for accepting {@link TcpServerConnection}s.
  *
  * The {@link TcpServerAcceptor} and {@link TcpServerConnector} are 2 sides of the same coin. The
  * {@link TcpServerConnector} take care of the 'client' side of a connection and the {@link TcpServerAcceptor}
- * is the 'server' side of a connection (each connection has a client and server-side
+ * is the 'server' side of a connection (each connection has a client and server-side)
  */
 public class TcpServerAcceptor implements DynamicMetricsProvider {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
@@ -72,12 +74,12 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
     private final TcpServer server;
     private final ILogger logger;
     private final ServerContext serverContext;
-    @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT, level = DEBUG)
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT, level = DEBUG)
     private final SwCounter exceptionCount = newSwCounter();
     // count number of times the selector was recreated (if selectWorkaround is enabled)
-    @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT, level = DEBUG)
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
     // last time select returned
@@ -106,7 +108,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS, unit = MS)
+    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS, unit = MS, level = DEBUG)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
@@ -174,7 +176,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             } catch (Throwable e) {
                 logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
             } finally {
-                closeSelector();
+                closeResource(selector);
             }
         }
 
@@ -226,7 +228,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 key.cancel();
             }
             selectionKeys.clear();
-            closeSelector();
+            closeResource(selector);
             Selector newSelector = Selector.open();
             selector = newSelector;
             for (ServerSocketRegistry.Pair entry : registry) {
@@ -261,22 +263,6 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             }
         }
 
-        private void closeSelector() {
-            if (selector == null) {
-                return;
-            }
-
-            if (logger.isFinestEnabled()) {
-                logger.finest("Closing selector " + Thread.currentThread().getName());
-            }
-
-            try {
-                selector.close();
-            } catch (Exception e) {
-                logger.finest("Exception while closing selector", e);
-            }
-        }
-
         private void handleAcceptException(ServerSocketChannel serverSocketChannel, Exception e) {
             exceptionCount.inc();
 
@@ -298,16 +284,20 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         }
 
         private void newConnection(final EndpointQualifier qualifier, SocketChannel socketChannel) throws IOException {
-            TcpServerConnectionManager connectionManager = (TcpServerConnectionManager)
-                    server.getUnifiedOrDedicatedEndpointManager(qualifier);
+            TcpServerConnectionManager connectionManager = server.getConnectionManager(qualifier);
             Channel channel = connectionManager.newChannel(socketChannel, false);
 
             if (logger.isFineEnabled()) {
                 logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
             }
-
+            serverContext.getAuditLogService()
+                .eventBuilder(AuditlogTypeIds.NETWORK_CONNECT)
+                .message("New connection accepted.")
+                .addParameter("qualifier", qualifier)
+                .addParameter("remoteAddress", socketChannel.getRemoteAddress())
+                .log();
             if (serverContext.isSocketInterceptorEnabled(qualifier)) {
-                serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
+                serverContext.submitAsync(() -> newConnection0(connectionManager, channel));
             } else {
                 newConnection0(connectionManager, channel);
             }
@@ -316,7 +306,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         private void newConnection0(TcpServerConnectionManager connectionManager, Channel channel) {
             try {
                 serverContext.interceptSocket(connectionManager.getEndpointQualifier(), channel.socket(), true);
-                connectionManager.newConnection(channel, null);
+                connectionManager.newConnection(channel, null, true);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);

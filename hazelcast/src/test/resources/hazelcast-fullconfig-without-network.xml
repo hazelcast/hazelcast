@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false">
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true">
         <trusted-interfaces>
             <interface>10.10.1.*</interface>
             <interface>10.10.2.*</interface>
@@ -92,12 +92,14 @@
                 <zones>us-east1-b,us-east1-c</zones>
             </gcp>
             <azure enabled="false">
+                <instance-metadata-available>false</instance-metadata-available>
                 <client-id>CLIENT_ID</client-id>
                 <client-secret>CLIENT_SECRET</client-secret>
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
-                <cluster-id>HZLCAST001</cluster-id>
-                <group-name>RESOURCE-GROUP-NAME</group-name>
+                <resource-group>RESOURCE-GROUP-NAME</resource-group>
+                <scale-set>SCALE-SET-NAME</scale-set>
+                <tag>TAG-NAME=HZLCAST001</tag>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -150,12 +152,14 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </executor-service>
     <durable-executor-service name="dummy">
+        <statistics-enabled>false</statistics-enabled>
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
+        <statistics-enabled>false</statistics-enabled>
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>
@@ -197,6 +201,7 @@
 
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
     </queue>
 
     <map name="default">
@@ -220,10 +225,19 @@
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
 
         <!--
-            Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
-            You can disable if you do not plan to use eviction on your entries.
+            Whether map level statistical information (total
+            hits, memory-cost etc.) should be gathered and stored.
         -->
-        <statistics-enabled>false</statistics-enabled>
+        <statistics-enabled>true</statistics-enabled>
+
+        <!--
+            Whether statistical information (hits, creation
+            time, last access time etc.) should be gathered
+            and stored. You have to enable this if you plan to
+            implement a custom eviction policy, out-of-the-box
+            eviction policies work regardless of this setting.
+        -->
+        <per-entry-stats-enabled>false</per-entry-stats-enabled>
 
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--
@@ -316,11 +330,11 @@
             <max-idle-seconds>0</max-idle-seconds>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
-            <eviction eviction-policy="LRU" size="10000"/>
+            <eviction eviction-policy="LFU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -414,6 +428,12 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <tiered-store enabled="true">
+            <memory-tier>
+                <capacity unit="MEGABYTES" value="256"/>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="default-tiered-store-device"/>
+        </tiered-store>
     </map>
 
     <multimap name="default">
@@ -503,8 +523,8 @@
         <write-through>true</write-through>
         <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory">
-            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="TOUCHED" duration-amount="123" time-unit="MICROSECONDS"/>
         </expiry-policy-factory>
 
         <cache-entry-listeners>
@@ -523,7 +543,7 @@
         <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
                   max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -534,6 +554,9 @@
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
         </partition-lost-listeners>
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
@@ -567,6 +590,7 @@
         <enable-compression>true</enable-compression>
         <enable-shared-object>true</enable-shared-object>
         <allow-unsafe>true</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
@@ -595,18 +619,47 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
         <size unit="MEGABYTES" value="256"/>
-        <min-block-size>123</min-block-size>
+        <min-block-size>128</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
+        <persistent-memory enabled="true" mode="MOUNTED">
+            <directories>
+                <directory numa-node="0">/mnt/pmem0</directory>
+                <directory numa-node="1">/mnt/pmem1</directory>
+            </directories>
+        </persistent-memory>
     </native-memory>
 
     <security enabled="false">
         <realms>
-            <realm name="mr">
+            <realm name="simpleRealm">
+                <authentication>
+                    <simple>
+                        <user username="test" password="a1234">
+                            <role>monitor</role>
+                            <role>hazelcast</role>
+                        </user>
+                        <user username="dev" password="secret">
+                            <role>root</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+            <realm name="jaasRealm">
                 <authentication>
                     <jaas>
                         <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
@@ -624,25 +677,125 @@
                     </credentials-factory>
                 </identity>
             </realm>
-            <realm name="cr">
+            <realm name="ldapRealm">
+                <authentication>
+                    <ldap>
+                        <url>ldap://ldap.my-company.example</url>
+                        <socket-factory-class-name>socketFactoryClassName</socket-factory-class-name>
+                        <parse-dn>true</parse-dn>
+                        <role-context>roleContext</role-context>
+                        <role-filter>roleFilter</role-filter>
+                        <role-mapping-attribute>roleMappingAttribute</role-mapping-attribute>
+                        <role-mapping-mode>reverse</role-mapping-mode>
+                        <role-name-attribute>roleNameAttribute</role-name-attribute>
+                        <role-recursion-max-depth>25</role-recursion-max-depth>
+                        <role-search-scope>object</role-search-scope>
+                        <user-name-attribute>userNameAttribute</user-name-attribute>
+                        <system-user-dn>systemUserDn</system-user-dn>
+                        <system-user-password>systemUserPassword</system-user-password>
+                        <system-authentication>simple</system-authentication>
+                        <security-realm>realmName</security-realm>
+                        <password-attribute>passwordAttribute</password-attribute>
+                        <user-context>userContext</user-context>
+                        <user-filter>userFilter</user-filter>
+                        <user-search-scope>one-level</user-search-scope>
+                    </ldap>
+                </authentication>
+            </realm>
+            <realm name="tlsRealm">
+                <authentication>
+                    <tls roleAttribute="cn"/>
+                </authentication>
+            </realm>
+            <realm name="usernamePasswordIdentityRealm">
+                <identity>
+                    <username-password username="user" password="Hazelcast" />
+                </identity>
+            </realm>
+            <realm name="tokenIdentityRealm">
+                <identity>
+                    <token encoding="base64">SGF6ZWxjYXN0</token>
+                </identity>
+            </realm>
+            <realm name="kerberosRealm">
+                <authentication>
+                    <kerberos>
+                        <skip-role>true</skip-role>
+                        <relax-flags-check>true</relax-flags-check>
+                        <use-name-without-realm>true</use-name-without-realm>
+                        <security-realm>krb5Acceptor</security-realm>
+                        <ldap>
+                            <url>ldap://127.0.0.1/</url>
+                            <system-authentication>GSSAPI</system-authentication>
+                            <security-realm>krb5Initiator</security-realm>
+                            <skip-authentication>true</skip-authentication>
+                            <user-filter>(krb5PrincipalName={login})</user-filter>
+                            <role-mapping-attribute>cn</role-mapping-attribute>
+                        </ldap>
+                    </kerberos>
+                </authentication>
+                <identity>
+                    <kerberos>
+                        <realm>HAZELCAST.COM</realm>
+                        <security-realm>krb5Initiator</security-realm>
+                        <service-name-prefix>hz/</service-name-prefix>
+                        <use-canonical-hostname>true</use-canonical-hostname>
+                        <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
+                    </kerberos>
+                </identity>
+            </realm>
+            <realm name="simpleKerberosRealm">
+                <authentication>
+                    <kerberos>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
+                    </kerberos>
+                </authentication>
+                <identity>
+                    <kerberos>
+                        <realm>HAZELCAST.COM</realm>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
+                    </kerberos>
+                </identity>
+            </realm>
+            <realm name="krb5Acceptor">
                 <authentication>
                     <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
                             <properties>
-                                <property name="property">value</property>
+                                <property name="isInitiator">false</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">hz/127.0.0.1@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/hz-localhost.keytab</property>
                             </properties>
                         </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                    </jaas>
+                </authentication>
+            </realm>
+            <realm name="krb5Initiator">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
                             <properties>
-                                <property name="property">value</property>
+                                <property name="isInitiator">true</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">hz/127.0.0.1@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/hz-localhost.keytab</property>
                             </properties>
                         </login-module>
                     </jaas>
                 </authentication>
             </realm>
         </realms>
-        <member-authentication realm="mr"/>
-        <client-authentication realm="cr"/>
+        <member-authentication realm="jaasRealm"/>
+        <client-authentication realm="simpleRealm"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
@@ -717,7 +870,7 @@
                     <action>all</action>
                 </actions>
             </countdown-latch-permission>
-            <semaphore-permission name="*">
+            <semaphore-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -737,7 +890,7 @@
                     <action>all</action>
                 </actions>
             </cardinality-estimator-permission>
-            <scheduled-executor-permission name="*">
+            <scheduled-executor-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -747,7 +900,7 @@
                     <action>all</action>
                 </actions>
             </cache-permission>
-            <user-code-deployment-permission name="*">
+            <user-code-deployment-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -757,7 +910,7 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
-            <ring-buffer-permission name="*">
+            <ring-buffer-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -767,6 +920,27 @@
                     <action>all</action>
                 </actions>
             </reliable-topic-permission>
+            <replicatedmap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </replicatedmap-permission>
+            <management-permission principal="mcadmin"/>
+            <job-permission principal="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </job-permission>
+            <connector-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </connector-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </sql-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -811,14 +985,29 @@
         <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
-    <hot-restart-persistence enabled="false">
+    <persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>
         <base-dir>base-dir</base-dir>
         <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
         <data-load-timeout-seconds>42</data-load-timeout-seconds>
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
-    </hot-restart-persistence>
+        <rebalance-delay-seconds>240</rebalance-delay-seconds>
+    </persistence>
+
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <backup-dir>/mnt/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
+
+    <local-device name="default-tiered-store-device">
+        <base-dir>base-dir</base-dir>
+        <block-size>4096</block-size>
+        <capacity value="256" unit="GIGABYTES"/>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>1</write-io-thread-count>
+    </local-device>
 
     <lite-member enabled="true"/>
 
@@ -863,6 +1052,15 @@
         </locks>
     </cp-subsystem>
 
+    <auditlog enabled="false">
+        <factory-class-name>com.acme.AuditlogToSyslogFactory</factory-class-name>
+        <properties>
+            <property name="host">syslogserver.acme.com</property>
+            <property name="port">514</property>
+            <property name="type">tcp</property>
+        </properties>
+    </auditlog>
+
     <metrics enabled="false">
         <management-center enabled="false">
             <retention-seconds>42</retention-seconds>
@@ -870,4 +1068,12 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>24</collection-frequency-seconds>
     </metrics>
+
+    <instance-tracking enabled="false">
+
+    </instance-tracking>
+
+    <sql>
+        <statement-timeout-millis>0</statement-timeout-millis>
+    </sql>
 </hazelcast>

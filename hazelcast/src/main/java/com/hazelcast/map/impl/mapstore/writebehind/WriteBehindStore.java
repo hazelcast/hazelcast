@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,18 +182,19 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void addForcibly(DelayedEntry<Data, Object> delayedEntry) {
+        delayedEntry.setSequence(sequence.incrementAndGet());
         writeBehindQueue.addLast(delayedEntry, true);
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
-        delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
     public void add(DelayedEntry<Data, Object> delayedEntry) {
+        delayedEntry.setSequence(sequence.incrementAndGet());
+
         writeBehindQueue.addLast(delayedEntry, false);
 
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
-        delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
     @Override

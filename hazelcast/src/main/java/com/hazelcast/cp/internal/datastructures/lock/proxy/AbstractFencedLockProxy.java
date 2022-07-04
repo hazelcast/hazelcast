@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
                 throw new IllegalMonitorStateException("Lock[" + objectName + "] not acquired because the lock call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             } catch (Throwable t) {
+                releaseSession(sessionId);
                 if (t instanceof InterruptedException) {
                     throw (InterruptedException) t;
                 } else {
@@ -134,6 +135,9 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
                 releaseSession(sessionId);
                 throw new IllegalMonitorStateException("Lock[" + objectName + "] not acquired because the lock call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+            } catch (Throwable t) {
+                releaseSession(sessionId);
+                throw rethrow(t);
             }
         }
     }
@@ -188,6 +192,9 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
                 if (timeoutMillis <= 0) {
                     return INVALID_FENCE;
                 }
+            } catch (Throwable t) {
+                releaseSession(sessionId);
+                throw rethrow(t);
             }
         }
     }

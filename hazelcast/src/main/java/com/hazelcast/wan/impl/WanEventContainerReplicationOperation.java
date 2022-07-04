@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         int partitionId = getPartitionId();
 
         for (WanReplicationConfig wanReplicationConfig : wanReplicationConfigs) {
-            service.appendWanReplicationConfig(wanReplicationConfig);
+            service.addWanReplicationConfigLocally(wanReplicationConfig);
         }
 
         // first ensure all publishers have configuration
@@ -115,12 +115,12 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         for (Entry<String, Map<String, Object>> entry : eventContainers.entrySet()) {
             String wanReplicationScheme = entry.getKey();
             Map<String, Object> eventContainersByPublisherId = entry.getValue();
-            out.writeUTF(wanReplicationScheme);
+            out.writeString(wanReplicationScheme);
             out.writeInt(eventContainersByPublisherId.size());
             for (Entry<String, Object> publisherEventContainer : eventContainersByPublisherId.entrySet()) {
                 String publisherId = publisherEventContainer.getKey();
                 Object eventContainer = publisherEventContainer.getValue();
-                out.writeUTF(publisherId);
+                out.writeString(publisherId);
                 out.writeObject(eventContainer);
             }
         }
@@ -136,11 +136,11 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         int wanReplicationSchemeCount = in.readInt();
         eventContainers = createHashMap(wanReplicationSchemeCount);
         for (int i = 0; i < wanReplicationSchemeCount; i++) {
-            String wanReplicationScheme = in.readUTF();
+            String wanReplicationScheme = in.readString();
             int publisherCount = in.readInt();
             Map<String, Object> eventContainersByPublisherId = createHashMap(publisherCount);
             for (int j = 0; j < publisherCount; j++) {
-                String publisherId = in.readUTF();
+                String publisherId = in.readString();
                 Object eventContainer = in.readObject();
                 eventContainersByPublisherId.put(publisherId, eventContainer);
             }

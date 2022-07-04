@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
                 throw new IllegalArgumentException("empty unique key transformation");
             }
 
-            String upperCasedText = name.toUpperCase();
+            String upperCasedText = StringUtil.upperCaseInternal(name);
             if (upperCasedText.equals(OBJECT.name)) {
                 return OBJECT;
             }
@@ -208,13 +208,13 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uniqueKey);
+        out.writeString(uniqueKey);
         out.writeInt(uniqueKeyTransformation.getId());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uniqueKey = in.readUTF();
+        uniqueKey = in.readString();
         uniqueKeyTransformation = UniqueKeyTransformation.fromId(in.readInt());
     }
 

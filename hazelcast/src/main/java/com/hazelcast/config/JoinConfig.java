@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package com.hazelcast.config;
 
 import java.util.Collection;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
- * Contains the 3 different join configurations; TCP-IP/multicast/AWS. Only one of them should be enabled!
+ * Contains the multiple different join configuration. Only one of them should be enabled!
  */
 public class JoinConfig {
 
@@ -40,6 +41,8 @@ public class JoinConfig {
     private EurekaConfig eurekaConfig = new EurekaConfig();
 
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+
+    private AutoDetectionConfig autoDetectionConfig = new AutoDetectionConfig();
 
     /**
      * @return the multicastConfig join configuration
@@ -174,6 +177,41 @@ public class JoinConfig {
     }
 
     /**
+     * @return the autoDetectionConfig join configuration
+     */
+    public AutoDetectionConfig getAutoDetectionConfig() {
+        return autoDetectionConfig;
+    }
+
+    /**
+     * @param autoDetectionConfig the autoDetectionConfig join configuration to set
+     * @throws IllegalArgumentException if autoDetectionConfig is null
+     */
+    public JoinConfig setAutoDetectionConfig(final AutoDetectionConfig autoDetectionConfig) {
+        this.autoDetectionConfig = isNotNull(autoDetectionConfig, "autoDetectionConfig");
+        return this;
+    }
+
+    /**
+     * Any other join configuration takes precedence over auto-discovery, so auto-discovery is enabled only when no other join
+     * strategy is enabled.
+     *
+     * @return true if auto-detection is enabled
+     */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionConfig.isEnabled()
+                && !multicastConfig.isEnabled()
+                && !tcpIpConfig.isEnabled()
+                && !awsConfig.isEnabled()
+                && !gcpConfig.isEnabled()
+                && !azureConfig.isEnabled()
+                && !kubernetesConfig.isEnabled()
+                && !eurekaConfig.isEnabled()
+                && !discoveryConfig.isEnabled();
+    }
+
+    /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
      * @throws InvalidConfigurationException when the join config is not valid
@@ -202,12 +240,13 @@ public class JoinConfig {
         if (getEurekaConfig().isEnabled()) {
             countEnabled++;
         }
+
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
         countEnabled += discoveryStrategyConfigs.size();
 
         if (countEnabled > 1) {
             throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
-                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka or Discovery Strategy");
+                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka, or Discovery Strategy");
         }
     }
 
@@ -222,6 +261,31 @@ public class JoinConfig {
                 + ", kubernetesConfig=" + kubernetesConfig
                 + ", eurekaConfig=" + eurekaConfig
                 + ", discoveryConfig=" + discoveryConfig
+                + ", autoDetectionConfig=" + autoDetectionConfig
                 + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JoinConfig that = (JoinConfig) o;
+        return Objects.equals(multicastConfig, that.multicastConfig)
+                && Objects.equals(tcpIpConfig, that.tcpIpConfig) && Objects.equals(awsConfig, that.awsConfig)
+                && Objects.equals(gcpConfig, that.gcpConfig) && Objects.equals(azureConfig, that.azureConfig)
+                && Objects.equals(kubernetesConfig, that.kubernetesConfig)
+                && Objects.equals(eurekaConfig, that.eurekaConfig)
+                && Objects.equals(discoveryConfig, that.discoveryConfig)
+                && Objects.equals(autoDetectionConfig, that.autoDetectionConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(multicastConfig, tcpIpConfig, awsConfig, gcpConfig, azureConfig, kubernetesConfig, eurekaConfig,
+                discoveryConfig, autoDetectionConfig);
     }
 }

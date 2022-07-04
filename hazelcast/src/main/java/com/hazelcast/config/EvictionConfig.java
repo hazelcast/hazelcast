@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -30,12 +30,12 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for eviction.
- *
+ * <p>
  * You can set a limit for number of
  * entries or total memory cost of entries.
  * <p>
@@ -83,7 +83,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     }
 
     public EvictionConfig(EvictionConfig config) {
-        this.sizeConfigured = true;
+        this.sizeConfigured = config.sizeConfigured;
         this.size = config.size;
         this.maxSizePolicy = config.maxSizePolicy;
         this.evictionPolicy = config.evictionPolicy;
@@ -250,18 +250,18 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(size);
-        out.writeUTF(maxSizePolicy.toString());
-        out.writeUTF(evictionPolicy.toString());
-        out.writeUTF(comparatorClassName);
+        out.writeString(maxSizePolicy.toString());
+        out.writeString(evictionPolicy.toString());
+        out.writeString(comparatorClassName);
         out.writeObject(comparator);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
-        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
-        evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
-        comparatorClassName = in.readUTF();
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readString());
+        evictionPolicy = EvictionPolicy.valueOf(in.readString());
+        comparatorClassName = in.readString();
         comparator = in.readObject();
     }
 
@@ -288,10 +288,10 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         EvictionConfig that = (EvictionConfig) o;
 
         return size == that.size
-            && maxSizePolicy == that.maxSizePolicy
-            && evictionPolicy == that.evictionPolicy
-            && Objects.equals(comparatorClassName, that.comparatorClassName)
-            && Objects.equals(comparator, that.comparator);
+                && maxSizePolicy == that.maxSizePolicy
+                && evictionPolicy == that.evictionPolicy
+                && Objects.equals(comparatorClassName, that.comparatorClassName)
+                && Objects.equals(comparator, that.comparator);
     }
 
     @Override

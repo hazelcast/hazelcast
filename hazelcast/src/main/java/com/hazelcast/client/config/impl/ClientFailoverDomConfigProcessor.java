@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class ClientFailoverDomConfigProcessor extends AbstractDomConfigProcessor
 
     protected void handleClients(Node node) {
         for (Node child : childElements(node)) {
-            if ("client".equals(cleanNodeName(child))) {
+            if (matches("client", cleanNodeName(child))) {
                 String clientPath = getTextContent(child);
                 try {
                     ClientConfig config = new XmlClientConfigBuilder(clientPath).build();

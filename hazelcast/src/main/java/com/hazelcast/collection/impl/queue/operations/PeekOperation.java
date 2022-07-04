@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,11 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     public void run() {
         QueueContainer queueContainer = getContainer();
         QueueItem item = queueContainer.peek();
-        response = item != null ? item.getData() : null;
+        response = item != null ? item.getSerializedObject() : null;
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
     }

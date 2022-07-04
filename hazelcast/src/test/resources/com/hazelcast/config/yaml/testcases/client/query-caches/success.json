@@ -1,0 +1,49 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "query-caches": {
+        "query-cache-class-name-predicate": {
+          "batch-size": 1,
+          "buffer-size": 16,
+          "coalesce": false,
+          "delay-seconds": 0,
+          "entry-listeners": [
+            {
+              "class-name": "com.hazelcast.examples.EntryListener",
+              "include-value": true,
+              "local": false
+            }
+          ],
+          "eviction": {
+            "comparator-class-name": "com.hazelcast.examples.MyEvictionComparator",
+            "eviction-policy": "LRU",
+            "max-size-policy": "ENTRY_COUNT",
+            "size": 10000
+          },
+          "in-memory-format": "BINARY",
+          "include-value": true,
+          "indexes": [
+            {
+              "attributes": [
+                "name"
+              ],
+              "type": "HASH"
+            }
+          ],
+          "map-name": "map-name",
+          "populate": true,
+          "predicate": {
+            "class-name": "com.hazelcast.examples.ExamplePredicate"
+          }
+        },
+        "query-cache-sql-predicate": {
+          "map-name": "map-name",
+          "predicate": {
+            "sql": "%age=40"
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

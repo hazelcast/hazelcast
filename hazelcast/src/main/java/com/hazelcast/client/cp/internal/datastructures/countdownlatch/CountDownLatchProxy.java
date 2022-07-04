@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,18 @@
 package com.hazelcast.client.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
-import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -37,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -61,7 +62,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
         ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(groupId, objectName, newUnsecureUUID(), timeoutMillis);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
-        return CountDownLatchAwaitCodec.decodeResponse(response).response;
+        return CountDownLatchAwaitCodec.decodeResponse(response);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
         ClientMessage request = CountDownLatchGetRoundCodec.encodeRequest(groupId, objectName);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
-        return CountDownLatchGetRoundCodec.decodeResponse(response).response;
+        return CountDownLatchGetRoundCodec.decodeResponse(response);
     }
 
     private void countDown(int round, UUID invocationUid) {
@@ -97,15 +98,17 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
         ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(groupId, objectName);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
-        return CountDownLatchGetCountCodec.decodeResponse(response).response;
+        return CountDownLatchGetCountCodec.decodeResponse(response);
     }
 
     @Override
     public boolean trySetCount(int count) {
+        checkPositive(count, "Count must be positive!");
+
         ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(groupId, objectName, count);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
-        return CountDownLatchTrySetCountCodec.decodeResponse(response).response;
+        return CountDownLatchTrySetCountCodec.decodeResponse(response);
     }
 
     @Override

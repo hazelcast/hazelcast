@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -38,9 +38,9 @@ import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
-        extends ManagedService, RemoteService, FragmentedMigrationAwareService,
-                EventPublishingService<Object, CacheEventListener>,
-                StatisticsAwareService<LocalCacheStats>, DynamicMetricsProvider {
+        extends ManagedService, RemoteService, ChunkedMigrationAwareService,
+        EventPublishingService<Object, CacheEventListener>,
+        StatisticsAwareService<LocalCacheStats>, DynamicMetricsProvider {
 
     String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =
             "There is no valid JCache API library at classpath. "
@@ -170,6 +170,4 @@ public interface ICacheService
      * @since 3.10
      */
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
-
-    <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,7 +53,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
-import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Collections.emptyList;
@@ -89,7 +90,7 @@ public class ClientMessageProtectionTest {
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(UTF8_CHARSET));
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 writeClientMessage(os, clientMessage);
                 ClientMessage respMessage = readResponse(is);
                 assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, respMessage.getMessageType());
@@ -127,7 +128,7 @@ public class ClientMessageProtectionTest {
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(UTF8_CHARSET));
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 writeClientMessage(os, subFrames.get(0));
@@ -149,7 +150,7 @@ public class ClientMessageProtectionTest {
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(UTF8_CHARSET));
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 writeClientMessage(os, clientMessage);
                 expected.expect(connectionClosedException());
                 readResponse(is);
@@ -166,7 +167,7 @@ public class ClientMessageProtectionTest {
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(UTF8_CHARSET));
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 // it should be enough to write just the first frame
@@ -194,7 +195,7 @@ public class ClientMessageProtectionTest {
         InetSocketAddress address = getNode(hz).getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(UTF8_CHARSET));
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 // it should be enough to write just the first frame
                 byte[] firstFrameBytes = frameAsBytes(clientMessage.getStartFrame(), false);
                 os.write(firstFrameBytes);
@@ -262,7 +263,7 @@ public class ClientMessageProtectionTest {
     }
 
     private static byte[] byteBufferToBytes(ByteBuffer buffer) {
-        buffer.flip();
+        upcast(buffer).flip();
         byte[] requestBytes = new byte[buffer.limit()];
         buffer.get(requestBytes);
         return requestBytes;

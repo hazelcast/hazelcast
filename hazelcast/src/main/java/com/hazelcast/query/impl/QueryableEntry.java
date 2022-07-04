@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -47,17 +46,8 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
-    private StoreAdapter storeAdapter;
-    private Record record;
-
-    // overridden in some subclasses
-    public Metadata getMetadata() {
-        // record is not set in plenty of internal unit tests
-        if (record != null) {
-            return record.getMetadata();
-        }
-        return null;
-    }
+    protected Record record;
+    private transient JsonMetadata metadata;
 
     public Record getRecord() {
         return record;
@@ -67,26 +57,26 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         this.record = record;
     }
 
-    public StoreAdapter getStoreAdapter() {
-        return storeAdapter;
-    }
-
-    public void setStoreAdapter(StoreAdapter storeAdapter) {
-        this.storeAdapter = storeAdapter;
-    }
-
     @Override
     public Object getAttributeValue(String attributeName) throws QueryException {
         return extractAttributeValue(attributeName);
     }
 
-    public abstract V getValue();
-
     public abstract K getKey();
 
     public abstract Data getKeyData();
 
+    public abstract V getValue();
+
     public abstract Data getValueData();
+
+    public abstract K getKeyIfPresent();
+
+    public abstract Data getKeyDataIfPresent();
+
+    public abstract V getValueIfPresent();
+
+    public abstract Data getValueDataIfPresent();
 
     protected abstract Object getTargetObject(boolean key);
 
@@ -122,8 +112,8 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            Object metadata = getMetadataOrNull(this. getMetadata(), isKey);
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
+            Object metadata = getMetadataOrNull(isKey);
+            result = extractors.extract(target, attributeName, metadata);
         }
         if (result instanceof HazelcastJsonValue) {
             return Json.parse(result.toString());
@@ -144,35 +134,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return null;
     }
 
-    /**
-     * Static version of the extractAttributeValue() method used when the caller does not have
-     * an instance of the QueryableEntry, but is in possession of key and value.
-     */
-    static Object extractAttributeValue(Extractors extractors, InternalSerializationService serializationService,
-                                        String attributeName, Data key, Object value, Object metadata) throws QueryException {
-        Object result = extractAttributeValueIfAttributeQueryConstant(serializationService, attributeName, key, value);
-        if (result == null) {
-            boolean isKey = startsWithKeyConstant(attributeName);
-            attributeName = getAttributeName(isKey, attributeName);
-            Object target = isKey ? key : value;
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
-        }
-        return result;
-    }
-
-    /**
-     * Static version of the extractAttributeValueIfAttributeQueryConstant() method that needs key and value upfront.
-     */
-    private static Object extractAttributeValueIfAttributeQueryConstant(InternalSerializationService serializationService,
-                                                                        String attributeName, Data key, Object value) {
-        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return serializationService.toObject(key);
-        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return value instanceof Data ? serializationService.toObject(value) : value;
-        }
-        return null;
-    }
-
     private static boolean startsWithKeyConstant(String attributeName) {
         return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value() + ".");
     }
@@ -183,11 +144,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         } else {
             return attributeName;
         }
-    }
-
-    private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                String attributeName, Object target, Object metadata) {
-        return extractors.extract(target, attributeName, metadata);
     }
 
     /**
@@ -206,11 +162,19 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return ReflectionHelper.getAttributeType(attributeValue.getClass());
     }
 
-    private static Object getMetadataOrNull(Metadata metadata, boolean isKey) {
+    private Object getMetadataOrNull(boolean isKey) {
         if (metadata == null) {
             return null;
         }
         return isKey ? metadata.getKeyMetadata() : metadata.getValueMetadata();
+    }
+
+    public JsonMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(JsonMetadata metadata) {
+        this.metadata = metadata;
     }
 
 }

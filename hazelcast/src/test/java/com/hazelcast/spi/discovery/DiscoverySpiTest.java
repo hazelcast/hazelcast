@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,7 +223,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-4.0.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-5.2.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -267,7 +267,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testNodeStartup() {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
-        Config config = getDiscoverySPIConfig(xmlFileName);
+        Config config = getDiscoverySPIConfig(xmlFileName, false);
 
         try {
             final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
@@ -318,22 +318,27 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         PropertyDefinition second = new SimplePropertyDefinition("second", BOOLEAN);
         PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
         PropertyDefinition fourth = new SimplePropertyDefinition("fourth", true, PropertyTypeConverter.STRING);
+        PropertyDefinition onlyInEnv = new SimplePropertyDefinition("only_in_env", true, PropertyTypeConverter.INTEGER);
 
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("first", "value-first");
         properties.put("second", Boolean.FALSE);
         properties.put("third", 100);
 
+        Map<String, String> environmentVariables = new HashMap<>();
+
         // system property > system environment > configuration
         // property 'first' => "value-first"
         // property 'second' => true
-        setEnvironment("test.second", "true");
+        environmentVariables.put("test.second", "true");
         // property 'third' => 300
-        setEnvironment("test.third", "200");
+        environmentVariables.put("test.third", "200");
         System.setProperty("test.third", "300");
         // property 'fourth' => null
 
-        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties);
+        environmentVariables.put("test.only_in_env", "500");
+
+        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties, environmentVariables::get);
 
         // without lookup of environment
         assertEquals("value-first", strategy.getOrNull(first));
@@ -341,13 +346,13 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(100, ((Integer) strategy.getOrNull(third)).intValue());
         assertNull(strategy.getOrNull(fourth));
 
-        // with lookup of environment (workaround to set environment doesn't work on all JDKs)
-        if (System.getenv("test.third") != null) {
-            assertEquals("value-first", strategy.getOrNull("test", first));
-            assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
-            assertEquals(300, ((Integer) strategy.getOrNull("test", third)).intValue());
-            assertNull(strategy.getOrNull("test", fourth));
-        }
+        assertEquals("value-first", strategy.getOrNull("test", first));
+        assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
+        assertEquals(300, ((Integer) strategy.getOrNull("test", third)).intValue());
+        assertNull(strategy.getOrNull("test", fourth));
+
+        assertEquals(500, ((Integer) strategy.getOrNull("test", onlyInEnv)).intValue());
+
     }
 
     @Test
@@ -376,7 +381,27 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testSPIAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
-        Config config = getDiscoverySPIConfig(xmlFileName);
+        Config config = getDiscoverySPIConfig(xmlFileName, false);
+        // we create this instance in order to fully create Node
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        Node node = getNode(hazelcastInstance);
+        assertNotNull(node);
+
+        MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());
+        Collection<Member> members = createMembers();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+        }
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void testSPIAwareMemberGroupFactoryCreateMemberGroups_withDeprecated() throws Exception {
+        String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
+        Config config = getDiscoverySPIConfig(xmlFileName, true);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         Node node = getNode(hazelcastInstance);
@@ -470,17 +495,20 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void setEnvironment(String key, String value) throws Exception {
-        Class[] classes = Collections.class.getDeclaredClasses();
-        Map<String, String> env = System.getenv();
-        for (Class cl : classes) {
-            if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
-                Field field = cl.getDeclaredField("m");
-                field.setAccessible(true);
-                Map<String, String> map = (Map<String, String>) field.get(env);
-                map.put(key, value);
-            }
+    @Test
+    public void noBreakingChangeInPartitionGroupStrategyAbstractClass() {
+        TestBreakingChangesDiscoveryStrategy strategy = new TestBreakingChangesDiscoveryStrategy();
+        assertNull(strategy.getPartitionGroupStrategy());
+    }
+
+    static class TestBreakingChangesDiscoveryStrategy extends AbstractDiscoveryStrategy {
+        TestBreakingChangesDiscoveryStrategy() {
+            super(null, Collections.<String, Comparable>emptyMap());
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return null;
         }
     }
 
@@ -494,6 +522,10 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
+        }
+
+        PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties, EnvVariableProvider envVariableProvider) {
+            super(logger, properties, envVariableProvider);
         }
 
         @Override
@@ -552,13 +584,20 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return null;
         }
 
         @Override
         public Map<String, String> discoverLocalMetadata() {
             return Collections.emptyMap();
+        }
+    }
+
+    private static class DeprecatedTestDiscoveryStrategy extends TestDiscoveryStrategy {
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return null;
         }
     }
 
@@ -594,9 +633,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     public static class CollectingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        private final List<DiscoveryNode> discoveryNodes;
+        protected final List<DiscoveryNode> discoveryNodes;
 
-        private CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+        CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
             this.discoveryNodes = discoveryNodes;
         }
 
@@ -613,6 +652,22 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
             return null;
+        }
+    }
+
+    private static class DeprecatedCollectingDiscoveryStrategyFactory extends CollectingDiscoveryStrategyFactory {
+        DeprecatedCollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+            super(discoveryNodes);
+        }
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return DeprecatedCollectingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
+            return new DeprecatedCollectingDiscoveryStrategy(node, discoveryNodes, logger, properties);
         }
     }
 
@@ -638,7 +693,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         // need to provide a custom impl
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return new SPIPartitionGroupStrategy();
         }
 
@@ -651,6 +706,18 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         public void destroy() {
             super.destroy();
             discoveryNodes.remove(discoveryNode);
+        }
+    }
+
+    private static class DeprecatedCollectingDiscoveryStrategy extends CollectingDiscoveryStrategy {
+        DeprecatedCollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                              Map<String, Comparable> properties) {
+            super(discoveryNode, discoveryNodes, logger, properties);
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
         }
     }
 
@@ -706,7 +773,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return new SPIPartitionGroupStrategy();
         }
 
@@ -715,6 +782,17 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("test-string", "TEST");
             return metadata;
+        }
+    }
+
+    private static class DeprecatedMetadataProvidingDiscoveryStrategy extends MetadataProvidingDiscoveryStrategy {
+        DeprecatedMetadataProvidingDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+            super(discoveryNode, logger, properties);
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
         }
     }
 
@@ -743,7 +821,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         return members;
     }
 
-    private static Config getDiscoverySPIConfig(String xmlFileName) {
+    private static Config getDiscoverySPIConfig(String xmlFileName, boolean isDeprecated) {
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
         config.getNetworkConfig().setPort(50001);
@@ -753,7 +831,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         interfaces.addInterface("127.0.0.1");
 
         List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
-        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
+        DiscoveryStrategyFactory factory = isDeprecated ? new DeprecatedCollectingDiscoveryStrategyFactory(discoveryNodes)
+                : new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();

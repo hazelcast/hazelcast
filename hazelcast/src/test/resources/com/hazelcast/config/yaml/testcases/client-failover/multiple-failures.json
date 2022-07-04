@@ -1,0 +1,31 @@
+{
+  "instance": {
+    "hazelcast-client-failover": {
+      "clients": {
+        "file": "/path"
+      },
+      "try-count": -1
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast-client-failover",
+    "pointerToViolation": "#/hazelcast-client-failover",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/properties/hazelcast-client-failover/properties/clients",
+        "pointerToViolation": "#/hazelcast-client-failover/clients",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast-client-failover/properties/try-count",
+        "pointerToViolation": "#/hazelcast-client-failover/try-count",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

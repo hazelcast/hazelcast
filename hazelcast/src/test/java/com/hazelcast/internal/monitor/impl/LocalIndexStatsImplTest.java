@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,26 +66,6 @@ public class LocalIndexStatsImplTest {
         assertEquals(1454957, stats.getTotalRemoveLatency());
         assertEquals(2345, stats.getMemoryCost());
         assertNotNull(stats.toString());
-    }
-
-    @Test
-    public void testSerialization() {
-        LocalIndexStatsImpl deserialized = new LocalIndexStatsImpl();
-        deserialized.fromJson(stats.toJson());
-
-        assertEquals(1234, deserialized.getCreationTime());
-        assertEquals(20, deserialized.getHitCount());
-        assertEquals(11, deserialized.getQueryCount());
-        assertEquals(0.5, deserialized.getAverageHitSelectivity(), 0.01);
-        assertEquals(81273, deserialized.getAverageHitLatency());
-        assertEquals(91238, deserialized.getInsertCount());
-        assertEquals(83912, deserialized.getTotalInsertLatency());
-        assertEquals(712639, deserialized.getUpdateCount());
-        assertEquals(34623, deserialized.getTotalUpdateLatency());
-        assertEquals(749274, deserialized.getRemoveCount());
-        assertEquals(1454957, deserialized.getTotalRemoveLatency());
-        assertEquals(2345, deserialized.getMemoryCost());
-        assertNotNull(deserialized.toString());
     }
 
 }

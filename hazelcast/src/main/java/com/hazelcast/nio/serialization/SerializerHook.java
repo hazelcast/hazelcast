@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ package com.hazelcast.nio.serialization;
  * It needs to be registered using a file called "com.hazelcast.SerializerHook"
  * in META-INF/services.
  * Those services files are not registered using the standard Java6+ java.util.ServiceLoader
- * but with a Hazelcast version that is capable of working with multiple classloaders
+ * but with a Hazelcast version that is capable of working with multiple class loaders
  * to support JEE and OSGi environments.
  *
  * @param <T> the type of the serialized object

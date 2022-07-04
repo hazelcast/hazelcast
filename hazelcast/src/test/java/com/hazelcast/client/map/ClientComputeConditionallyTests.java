@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,6 +202,66 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
 
         assertEquals(expectedValue, newValue);
         assertEquals(expectedValue, map.get("absent_key"));
+    }
+
+    @Test
+    public void testComputeShouldReplaceValueWhenBothOldAndNewValuesArePresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        map.put("present_key", "present_value");
+        String newValue = map.compute("present_key", (k, v) -> "new_value");
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("present_key"));
+    }
+
+    @Test
+    public void testComputeShouldRemoveValueWhenOldValuePresentButNewValuesIsNotPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        map.put("present_key", "present_value");
+        String newValue = map.compute("present_key", (k, v) -> null);
+        assertEquals(null, newValue);
+        assertEquals(null, map.get("present_key"));
+    }
+
+    @Test
+    public void testComputeShouldPutValueWhenOldValueNotPresentButNewValuesIsPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String newValue = map.compute("absent_key", (k, v) -> "new_value");
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("absent_key"));
+    }
+
+    @Test
+    public void testComputeShouldNotDoAnythingWhenBothOldAndNewValuesAreNotPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String result = map.compute("absent_key", (k, v) -> null);
+        assertEquals(null, result);
+        assertEquals(null, map.get("absent_key"));
+    }
+
+    @Test
+    public void testMergeShouldReplaceValueWhenBothOldAndNewValuesArePresent() {
+        final IMap<String, String> map = client.getMap("testMerge");
+        map.put("present_key", "present_value");
+        Object newValue = map.merge("present_key", "new_value", (ov, nv) -> ov + "_" + nv);
+        assertEquals("present_value_new_value", newValue);
+        assertEquals("present_value_new_value", map.get("present_key"));
+    }
+
+    @Test
+    public void testMergeShouldRemoveValueWhenOldValuePresentButNewValuesIsNotPresent() {
+        final IMap<String, String> map = client.getMap("testMerge");
+        map.put("present_key", "present_value");
+        String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
+        assertEquals(null, newValue);
+        assertEquals(null, map.get("present_key"));
+    }
+
+    @Test
+    public void testMergeShouldPutValueWhenOldValueNotPresentButNewValuesIsPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String newValue = map.merge("absent_key", "new_value", (ov, nv) -> null);
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("absent_key"));
     }
 
 }

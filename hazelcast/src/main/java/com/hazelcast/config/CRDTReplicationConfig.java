@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.config;
+
+import java.util.Objects;
 
 /**
  * Configures the replication mechanism for all
@@ -92,5 +94,23 @@ public class CRDTReplicationConfig {
         }
         this.maxConcurrentReplicationTargets = maxConcurrentReplicationTargets;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CRDTReplicationConfig that = (CRDTReplicationConfig) o;
+        return replicationPeriodMillis == that.replicationPeriodMillis
+                && maxConcurrentReplicationTargets == that.maxConcurrentReplicationTargets;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(replicationPeriodMillis, maxConcurrentReplicationTargets);
     }
 }

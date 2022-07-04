@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,26 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -42,12 +46,15 @@ import java.util.Collection;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport {
 
     private static final float BACKUP_BLOCK_RATIO = 0.65f;
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
@@ -59,6 +66,13 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
                 {3, 4},
                 {3, InternalPartition.MAX_REPLICA_COUNT},
         });
+    }
+
+    @Override
+    protected Config getConfig() {
+        // Partition count is overwritten back to PartitionCorrectnessTestSupport.partitionCount
+        // in PartitionCorrectnessTestSupport.getConfig(boolean, boolean).
+        return smallInstanceConfig();
     }
 
     @Test
@@ -84,14 +98,14 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
                     assertEquals(PARALLEL_REPLICATIONS, availablePermits);
                 }
             }
-        }, 10);
+        }, 30);
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
         Node node = getNode(instance);
-        FirewallingServer.FirewallingEndpointManager
-                em = (FirewallingServer.FirewallingEndpointManager) node.getConnectionManager();
-        em.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
+        FirewallingServer.FirewallingServerConnectionManager cm = (FirewallingServer.FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        cm.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
     }
 
     private static class BackupPacketDropFilter extends OperationPacketFilter implements PacketFilter {

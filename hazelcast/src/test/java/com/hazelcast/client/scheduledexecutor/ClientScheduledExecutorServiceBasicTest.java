@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,5 +80,18 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
     @Ignore("Never supported feature")
     @Override
     public void scheduleOnMember_testMemberLostEvent() {
+    }
+
+    @Test
+    @Ignore("Only implemented for server-side runs")
+    @Override
+    public void scheduledAtFixedRate_generates_statistics_when_stats_enabled() {
+    }
+
+    @Test
+    @Ignore("Only implemented for server-side runs")
+    @Override
+    public void scheduledAtFixedRate_does_not_generate_statistics_when_stats_disabled() {
+        super.scheduledAtFixedRate_does_not_generate_statistics_when_stats_disabled();
     }
 }

@@ -1,0 +1,47 @@
+{
+  "instance": {
+    "hazelcast": {
+      "ringbuffer": {
+        "my-ringbuffer": {
+          "capacity": 10000,
+          "time-to-live-seconds": 0,
+          "backup-count": 1,
+          "async-backup-count": 0,
+          "in-memory-format": "BINARY",
+          "ringbuffer-store": {
+            "enabled": true,
+            "class-name": "com.hazelcast.RingbufferStoreImpl",
+            "properties": {
+              "prop1": "prop1-value",
+              "prop2": "prop2-value"
+            }
+          },
+          "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
+          "merge-policy": {
+            "class-name": "PutIfAbsentMergePolicy"
+          }
+        },
+        "my-second-ringbuffer": {
+          "capacity": 10000,
+          "time-to-live-seconds": 0,
+          "backup-count": 1,
+          "async-backup-count": 0,
+          "in-memory-format": "BINARY",
+          "ringbuffer-store": {
+            "enabled": true,
+            "factory-class-name": "com.hazelcast.RingbufferStoreFactoryImpl",
+            "properties": {
+              "prop1": "prop1-value",
+              "prop2": "prop2-value"
+            }
+          },
+          "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
+          "merge-policy": {
+            "class-name": "PutIfAbsentMergePolicy"
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

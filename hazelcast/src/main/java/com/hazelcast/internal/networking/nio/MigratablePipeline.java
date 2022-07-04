@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
+
 /**
  * A NioPipeline that supports migration between {@link NioThread} instances.
- * This API is called by the {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer}.
+ * This API is called by the {@link IOBalancer}.
  */
 public interface MigratablePipeline {
 
@@ -36,9 +38,9 @@ public interface MigratablePipeline {
     void requestMigration(NioThread newOwner);
 
     /**
-     * Get NioThread currently owning this pipeline. Pipeline owner is a thread running this pipeline.
-     * {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer} can decide to migrate
-     * a pipeline to another owner.
+     * Get NioThread currently owning this pipeline. Pipeline owner is a thread
+     * running this pipeline. {@link IOBalancer} can decide to migrate a pipeline
+     * to another owner.
      *
      * @return current owner
      */

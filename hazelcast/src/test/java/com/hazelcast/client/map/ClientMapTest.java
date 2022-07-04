@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,9 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.NamedPortable;
+import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.TestSerializationConstants;
+import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;

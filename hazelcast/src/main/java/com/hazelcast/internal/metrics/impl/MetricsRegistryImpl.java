@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
+import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Set;
@@ -36,8 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
@@ -74,6 +75,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
 
+    private final AtomicReference<MetricDescriptorReusableData> metricDescriptorReusableData = new AtomicReference<>(null);
+
     /**
      * Creates a MetricsRegistryImpl instance.
      *
@@ -89,16 +92,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     /**
      * Creates a MetricsRegistryImpl instance.
      *
-     * @param name Name of the registry
+     * @param name         Name of the registry
      * @param logger       the ILogger used
-     * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
-     *                     then the registration is skipped.
+     * @param minimumLevel the minimum ProbeLevel. If a
+     *                     probe is registered with a ProbeLevel lower than the
+     *                     minimum ProbeLevel, then the registration is skipped.
      * @throws NullPointerException if logger or minimumLevel is null
      */
     public MetricsRegistryImpl(String name, ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
-        this.scheduler = new ScheduledThreadPoolExecutor(2,
+        this.scheduler = new LoggingScheduledExecutor(logger, 2,
                 new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
@@ -114,8 +118,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public Set<String> getNames() {
         return unmodifiableSet(probeInstances.values().stream()
-                                             .map(probeInstance -> probeInstance.descriptor.metricString())
-                                             .collect(Collectors.toSet()));
+                .map(probeInstance -> probeInstance.descriptor.metricString())
+                .collect(Collectors.toSet()));
     }
 
     /**
@@ -233,7 +237,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        descriptor.withExcludedTargets(extractExcludedTargets(function));
+        descriptor.withExcludedTargets(extractExcludedTargets(function, minimumLevel));
 
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances
@@ -297,7 +301,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             String prefix = name.substring(0, bracketOpenIdx);
             String discriminator = name.substring(bracketOpenIdx + 1, bracketCloseIdx);
             descriptor.withPrefix(prefix)
-                      .withDiscriminator("ignored", discriminator);
+                    .withDiscriminator("ignored", discriminator);
         } else {
             descriptor.withPrefix(name.substring(0, dotIdx));
         }
@@ -310,12 +314,16 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(collector, "collector can't be null");
 
         MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata,
-                this::lookupMetricValueCatcher, collector, minimumLevel);
+                this::lookupMetricValueCatcher, collector, minimumLevel, metricDescriptorReusableData.getAndSet(null));
 
         collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
         collectionCycle.notifyAllGauges(gauges.values());
-        collectionCycle.cleanUp();
+        MetricDescriptorReusableData reusableData = collectionCycle.cleanUp();
+        boolean set = metricDescriptorReusableData.compareAndSet(null, reusableData);
+        if (!set) {
+            reusableData.destroy();
+        }
     }
 
     private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {

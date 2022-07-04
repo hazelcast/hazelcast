@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,24 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -57,6 +58,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     private long clusterStartTime;
     private ClusterState clusterState;
     private Version clusterVersion;
+    private boolean deferPartitionProcessing;
 
     private transient boolean finalized;
     private transient Exception deserializationFailure;
@@ -67,7 +69,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @SuppressWarnings("checkstyle:parameternumber")
     public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, UUID clusterId, long clusterStartTime, ClusterState clusterState,
-                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
+                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState,
+                          boolean deferPartitionProcessing) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
@@ -75,6 +78,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         this.clusterStartTime = clusterStartTime;
         this.clusterState = clusterState;
         this.clusterVersion = clusterVersion;
+        this.deferPartitionProcessing = deferPartitionProcessing;
     }
 
     @Override
@@ -87,6 +91,12 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
+        InternalHotRestartService hrService = getInternalHotRestartService();
+        boolean hrServiceEnabled = hrService != null && hrService.isEnabled();
+        if (hrServiceEnabled) {
+            // notify hot restart before setting initial cluster state
+            hrService.setRejoiningActiveCluster(deferPartitionProcessing);
+        }
         finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
                 clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
@@ -94,7 +104,16 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
             return;
         }
 
-        processPartitionState();
+        if (deferPartitionProcessing && hrServiceEnabled && partitionRuntimeState != null) {
+            partitionRuntimeState.setMaster(getCallerAddress());
+            hrService.deferApplyPartitionState(partitionRuntimeState);
+        } else {
+            processPartitionState();
+        }
+    }
+
+    private InternalHotRestartService getInternalHotRestartService() {
+        return getNodeEngine().getServiceOrNull(InternalHotRestartService.SERVICE_NAME);
     }
 
     private void checkDeserializationFailure(ClusterServiceImpl clusterService) {
@@ -114,8 +133,14 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
             return;
         }
 
+        final boolean shouldExecutePostJoinOp = preparePostOp(postJoinOp);
+        if (deferPartitionProcessing && getInternalHotRestartService() != null && getInternalHotRestartService().isEnabled()) {
+            getInternalHotRestartService().deferPostJoinOps(postJoinOp);
+            return;
+        }
+
         sendPostJoinOperationsBackToMaster();
-        if (preparePostOp(postJoinOp)) {
+        if (shouldExecutePostJoinOp) {
             getNodeEngine().getOperationService().run(postJoinOp);
         }
     }
@@ -158,10 +183,11 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         super.writeInternalImpl(out);
         UUIDSerializationUtil.writeUUID(out, clusterId);
         out.writeLong(clusterStartTime);
-        out.writeUTF(clusterState.toString());
+        out.writeString(clusterState.toString());
         out.writeObject(clusterVersion);
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
+        out.writeBoolean(deferPartitionProcessing);
     }
 
     @Override
@@ -169,11 +195,12 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         super.readInternalImpl(in);
         clusterId = UUIDSerializationUtil.readUUID(in);
         clusterStartTime = in.readLong();
-        String stateName = in.readUTF();
+        String stateName = in.readString();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
         preJoinOp = readOnJoinOp(in);
         postJoinOp = readOnJoinOp(in);
+        deferPartitionProcessing = in.readBoolean();
     }
 
     private OnJoinOp readOnJoinOp(ObjectDataInput in) {

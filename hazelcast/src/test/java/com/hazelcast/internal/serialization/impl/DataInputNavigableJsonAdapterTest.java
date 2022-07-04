@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,11 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.charset.MalformedInputException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder.DEFAULT_BYTE_ORDER;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -43,10 +44,10 @@ import static org.junit.Assert.fail;
 public class DataInputNavigableJsonAdapterTest {
 
     private static final byte[][] SAMPLE_BYTES = new byte[][] {
-            "\uD83E\uDD13".getBytes(UTF_8),
-            "Bariš".getBytes(UTF_8),
-            "Simple code points".getBytes(UTF_8),
-            "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム".getBytes(UTF_8),
+            "\uD83E\uDD13".getBytes(StandardCharsets.UTF_8),
+            "Bariš".getBytes(StandardCharsets.UTF_8),
+            "Simple code points".getBytes(StandardCharsets.UTF_8),
+            "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム".getBytes(StandardCharsets.UTF_8),
     };
 
     private static final byte[][] MALFORMED_SAMPLE_BYTES = new byte[][] {
@@ -158,7 +159,7 @@ public class DataInputNavigableJsonAdapterTest {
 
     private void assertReadFully(DataInputNavigableJsonAdapter.UTF8Reader reader, byte[] sample)
             throws IOException {
-        String expected = new String(sample, UTF_8);
+        String expected = new String(sample, StandardCharsets.UTF_8);
         char[] chars = new char[expected.length()];
         int charsRead = reader.read(chars, 0, chars.length);
         assertEquals(chars.length, charsRead);
@@ -167,22 +168,22 @@ public class DataInputNavigableJsonAdapterTest {
 
     private void assertReadOne(DataInputNavigableJsonAdapter.UTF8Reader reader, byte[] sample)
             throws IOException {
-        String expected = new String(sample, UTF_8);
+        String expected = new String(sample, StandardCharsets.UTF_8);
         CharBuffer buffer = CharBuffer.allocate(expected.length() * 3);
         int next = reader.read();
         while (next != -1) {
             buffer.append((char) next);
             next = reader.read();
         }
-        buffer.limit(buffer.position());
-        buffer.rewind();
+        upcast(buffer).limit(buffer.position());
+        upcast(buffer).rewind();
         String actual = buffer.toString();
         assertEquals(expected, actual);
     }
 
     private void assertReadMixed(byte[] sample, boolean singleReadFirst)
             throws IOException {
-        String expected = new String(sample, UTF_8);
+        String expected = new String(sample, StandardCharsets.UTF_8);
         input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
         DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
         char[] chars = new char[expected.length()];

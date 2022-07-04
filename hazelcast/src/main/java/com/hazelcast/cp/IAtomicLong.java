@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,13 @@ public interface IAtomicLong extends DistributedObject {
      * @return the updated value, the current value decremented by one
      */
     long decrementAndGet();
+
+    /**
+     * Atomically decrements the current value by one.
+     *
+     * @return the old value
+     */
+    long getAndDecrement();
 
     /**
      * Gets the current value.
@@ -241,6 +248,17 @@ public interface IAtomicLong extends DistributedObject {
      * @since 3.7
      */
     CompletionStage<Long> decrementAndGetAsync();
+
+    /**
+     * Atomically decrements the current value by one.
+     * <p>
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
+     *
+     * @return a {@link CompletionStage} with the old value
+     * @since 4.1
+     */
+    CompletionStage<Long> getAndDecrementAsync();
 
     /**
      * Gets the current value. This method will dispatch a request and return

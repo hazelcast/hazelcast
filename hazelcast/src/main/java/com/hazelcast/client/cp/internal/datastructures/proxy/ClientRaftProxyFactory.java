@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class ClientRaftProxyFactory {
     private ISemaphore createSemaphore(RaftGroupId groupId, String proxyName, String objectName) {
         ClientMessage request = SemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
-        boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response).response;
+        boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response);
 
         return jdkCompatible
                 ? new SessionlessSemaphoreProxy(context, groupId, proxyName, objectName)
@@ -122,7 +122,7 @@ public class ClientRaftProxyFactory {
     private RaftGroupId getGroupId(String proxyName, String objectName) {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return CPGroupCreateCPGroupCodec.decodeResponse(response).groupId;
+        return CPGroupCreateCPGroupCodec.decodeResponse(response);
     }
 
 }

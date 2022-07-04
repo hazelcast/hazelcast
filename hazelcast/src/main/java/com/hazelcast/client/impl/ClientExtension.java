@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.SocketInterceptor;
@@ -43,6 +44,11 @@ public interface ClientExtension {
      * Called after node is started
      */
     void afterStart(HazelcastClientInstanceImpl client);
+
+    /**
+     * Logs metadata about the instance to the configured instance tracking output.
+     */
+    void logInstanceTrackingMetadata();
 
     /**
      * Creates a {@link InternalSerializationService} instance to be used by this client.
@@ -101,4 +107,9 @@ public interface ClientExtension {
      * @return memory statistics
      */
     MemoryStats getMemoryStats();
+
+    /**
+     * Returns a JetService.
+     */
+    JetService getJet();
 }

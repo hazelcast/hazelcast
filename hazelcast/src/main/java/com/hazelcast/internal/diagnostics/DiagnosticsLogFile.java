@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_COUNT;
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_SIZE_MB;
@@ -41,7 +41,7 @@ import static java.lang.String.format;
  * <p>
  * Should only be called from the {@link Diagnostics}.
  */
-final class DiagnosticsLogFile {
+final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private static final int ONE_MB = 1024 * 1024;
 
@@ -62,7 +62,7 @@ final class DiagnosticsLogFile {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
         this.fileName = diagnostics.baseFileName + "-%03d.log";
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file
@@ -98,6 +98,7 @@ final class DiagnosticsLogFile {
 
     private File newFile(int index) {
         createDirectoryIfDoesNotExist();
+        logger.info("Diagnostics log directory is [" + diagnostics.directory + "]");
         return new File(diagnostics.directory, format(fileName, index));
     }
 
@@ -123,14 +124,14 @@ final class DiagnosticsLogFile {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) {
+        logWriter.resetSectionLevel();
         logWriter.init(printWriter);
-
         plugin.run(logWriter);
     }
 
     private PrintWriter newWriter() throws FileNotFoundException {
         FileOutputStream fos = new FileOutputStream(file, true);
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
         return new PrintWriter(new BufferedWriter(new OutputStreamWriter(fos, encoder), Short.MAX_VALUE));
     }
 

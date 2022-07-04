@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+function findScriptDir() {
+  CURRENT=$PWD
+
+  DIR=$(dirname "$0")
+  cd "$DIR" || exit
+  TARGET_FILE=$(basename "$0")
+
+  # Iterate down a (possible) chain of symlinks
+  while [ -L "$TARGET_FILE" ]
+  do
+      TARGET_FILE=$(readlink "$TARGET_FILE")
+      DIR=$(dirname "$TARGET_FILE")
+      cd "$DIR" || exit
+      TARGET_FILE=$(basename "$TARGET_FILE")
+  done
+
+  SCRIPT_DIR=$(pwd -P)
+  # Restore current directory
+  cd "$CURRENT" || exit
+}
+
+findScriptDir
+
+. "$SCRIPT_DIR"/common.sh
+
+if [ -z "$LOGGING_CONFIG" ]; then
+  # Use the default log4j2 file
+  LOGGING_CONFIG="file:$HAZELCAST_HOME/config/log4j2.properties"
+else
+  if [ -f "$LOGGING_CONFIG" ]; then
+    # Try if the file exists - either absolute or relative path
+    LOGGING_CONFIG="file:$LOGGING_CONFIG"
+  elif [ -f "$HAZELCAST_HOME/config/$LOGGING_CONFIG" ]; then
+    # Try file in the config directory
+    LOGGING_CONFIG="file:$HAZELCAST_HOME/config/$LOGGING_CONFIG"
+  else
+    echo "Could not find specified LOGGING_CONFIG file."
+    exit 1
+  fi
+fi
+
+# HAZELCAST_CONFIG holds the configuration path.
+# If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
+# The path can be absolute.
+# By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml, with fallback to $HAZELCAST_HOME/config/hazelcast.yaml
+# and to $HAZELCAST_HOME/config/hazelcast.yml if the xml file is not present.
+if [ -z "$HAZELCAST_CONFIG" ]; then
+    HAZELCAST_CONFIG="config/hazelcast.xml"
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yaml"
+    fi
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yml"
+    fi
+
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in $HAZELCAST_HOME/config or set the HAZELCAST_CONFIG environment variable."
+        exit 1
+    fi
+fi
+# if the first character is /, then this is an absolute path, use as is
+# otherwise prepend (HAZELCAST_HOME)
+if [ "${HAZELCAST_CONFIG:0:1}" != "/" ]; then
+  HAZELCAST_CONFIG="$HAZELCAST_HOME/$HAZELCAST_CONFIG"
+fi
+
+if [ "${PROMETHEUS_PORT}" ]; then
+    echo "Prometheus enabled on port ${PROMETHEUS_PORT}"
+    PROMETHEUS="-javaagent:${HAZELCAST_HOME}/lib/jmx_prometheus_javaagent-${prometheus.version}.jar=${PROMETHEUS_PORT}:${HAZELCAST_HOME}/config/jmx_agent_config.yaml"
+fi
+
+readJvmOptionsFile "jvm.options"
+
+if [ "$HAZELCAST_LICENSE_KEY" ]; then
+    echo "HAZELCAST_LICENSE_KEY env variable is deprecated. Use HZ_LICENSEKEY instead."
+    LICENSING_OPT="-Dhazelcast.enterprise.license.key=${HAZELCAST_LICENSE_KEY}"
+fi
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.logging.type=log4j2" \
+"-Dlog4j.configurationFile=$LOGGING_CONFIG" \
+"-Dhazelcast.config=$HAZELCAST_CONFIG" \
+"-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
+$PROMETHEUS \
+$LICENSING_OPT\
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+if [ -z "$LOGGING_PATTERN" ]; then
+  if [ "$(arch)" == "s390x" ]; then
+    # Workaround for s390x architecture where the orignal pattern fails
+    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n%xEx"
+  else
+    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n%xEx"
+  fi
+fi
+
+if [[ "$1" != "--version" ]] && [[ "$1" != "-V" ]]; then
+  echo "########################################"
+  echo "# JAVA=$JAVA"
+  echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+  echo "# CLASSPATH=$CLASSPATH"
+  echo "########################################"
+fi
+
+exec "${JAVA}" -cp "${CLASSPATH}" ${JAVA_OPTS_ARRAY[*]} com.hazelcast.commandline.HazelcastServerCommandLine "$@"

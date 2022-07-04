@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,8 +111,10 @@ public abstract class AbstractJoiner
 
     @Override
     public void blacklist(Address address, boolean permanent) {
-        logger.info(address + " is added to the blacklist.");
-        blacklistedAddresses.putIfAbsent(address, permanent);
+        Boolean prev = blacklistedAddresses.putIfAbsent(address, permanent);
+        if (prev == null) {
+            logger.info(address + " is " + (permanent ? "permanently " : "") + "added to the blacklist.");
+        }
     }
 
     @Override
@@ -188,7 +190,8 @@ public abstract class AbstractJoiner
                 boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
-                    if (!member.localMember() && node.getConnectionManager(MEMBER).getOrConnect(member.getAddress()) == null) {
+                    if (!member.localMember() && node.getServer().getConnectionManager(MEMBER)
+                            .getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFineEnabled()) {
                             logger.fine("Not-connected to " + member.getAddress());
@@ -238,7 +241,7 @@ public abstract class AbstractJoiner
             logger.fine("Sending SplitBrainJoinMessage to " + target);
         }
 
-        Connection conn = node.getConnectionManager(MEMBER).getOrConnect(target, true);
+        Connection conn = node.getServer().getConnectionManager(MEMBER).getOrConnect(target, true);
         long timeout = SPLIT_BRAIN_CONN_TIMEOUT_MILLIS;
         while (conn == null) {
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
@@ -253,7 +256,7 @@ public abstract class AbstractJoiner
                 currentThread().interrupt();
                 return null;
             }
-            conn = node.getConnectionManager(MEMBER).get(target);
+            conn = node.getServer().getConnectionManager(MEMBER).get(target);
         }
 
         NodeEngine nodeEngine = node.nodeEngine;

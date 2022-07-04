@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,16 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
  * Typed authentication configuration for {@code BasicLdapLoginModule} and {@code LdapLoginModule}.
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class LdapAuthenticationConfig implements AuthenticationConfig {
+public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAuthenticationConfig> {
 
     private String url;
     private String socketFactoryClassName;
     private String systemUserDn;
     private String systemUserPassword;
+    private String systemAuthentication;
 
     // BasicLdapLoginModule
-    private boolean parseDn;
+    private Boolean parseDn;
     private String roleContext;
     private String roleFilter;
     private String roleMappingAttribute;
@@ -53,6 +54,8 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
     private String userContext;
     private String userFilter;
     private LdapSearchScope userSearchScope;
+    private Boolean skipAuthentication;
+    private String securityRealm;
 
     public String getUrl() {
         return url;
@@ -90,11 +93,20 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
         return this;
     }
 
-    public boolean isParseDn() {
+    public Boolean getParseDn() {
         return parseDn;
     }
 
-    public LdapAuthenticationConfig setParseDn(boolean parseDn) {
+    /**
+     * Returns {@code true} iff parseDn is configured and {@code TRUE}.
+     *
+     * @deprecated Use {@link #getParseDn()}
+     */
+    public boolean isParseDn() {
+        return parseDn != null && parseDn.booleanValue();
+    }
+
+    public LdapAuthenticationConfig setParseDn(Boolean parseDn) {
         this.parseDn = parseDn;
         return this;
     }
@@ -207,18 +219,39 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
         return this;
     }
 
-    @Override
-    public LoginModuleConfig[] asLoginModuleConfigs() {
-        boolean useSystemUser = !isNullOrEmpty(systemUserDn);
-        LoginModuleConfig loginModuleConfig = new LoginModuleConfig(
-                useSystemUser ? "com.hazelcast.security.loginimpl.LdapLoginModule"
-                        : "com.hazelcast.security.loginimpl.BasicLdapLoginModule",
-                LoginModuleUsage.REQUIRED);
+    public Boolean getSkipAuthentication() {
+        return skipAuthentication;
+    }
 
-        Properties props = loginModuleConfig.getProperties();
+    public LdapAuthenticationConfig setSkipAuthentication(Boolean skipAuthentication) {
+        this.skipAuthentication = skipAuthentication;
+        return this;
+    }
+
+    public String getSecurityRealm() {
+        return securityRealm;
+    }
+
+    public LdapAuthenticationConfig setSecurityRealm(String securityRealm) {
+        this.securityRealm = securityRealm;
+        return this;
+    }
+
+    public String getSystemAuthentication() {
+        return systemAuthentication;
+    }
+
+    public LdapAuthenticationConfig setSystemAuthentication(String systemAuthentication) {
+        this.systemAuthentication = systemAuthentication;
+        return this;
+    }
+
+    @Override
+    protected Properties initLoginModuleProperties() {
+        Properties props = super.initLoginModuleProperties();
         setIfConfigured(props, Context.PROVIDER_URL, url);
         setIfConfigured(props, "java.naming.ldap.factory.socket", socketFactoryClassName);
-        props.setProperty("parseDN", String.valueOf(parseDn));
+        setIfConfigured(props, "parseDN", parseDn);
         setIfConfigured(props, "roleContext", roleContext);
         setIfConfigured(props, "roleFilter", roleFilter);
         setIfConfigured(props, "roleMappingAttribute", roleMappingAttribute);
@@ -228,85 +261,89 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
         setIfConfigured(props, "roleSearchScope", roleSearchScope);
         setIfConfigured(props, "userNameAttribute", userNameAttribute);
 
-        if (useSystemUser) {
-            props.setProperty(Context.SECURITY_AUTHENTICATION, "simple");
-            props.setProperty(Context.SECURITY_PRINCIPAL, systemUserDn);
+        boolean useSystemAccount = !isNullOrEmpty(systemUserDn) || !isNullOrEmpty(systemAuthentication);
+        if (useSystemAccount) {
+            setIfConfigured(props, Context.SECURITY_AUTHENTICATION, systemAuthentication);
+            setIfConfigured(props, Context.SECURITY_PRINCIPAL, systemUserDn);
             setIfConfigured(props, Context.SECURITY_CREDENTIALS, systemUserPassword);
             setIfConfigured(props, "passwordAttribute", passwordAttribute);
             setIfConfigured(props, "userContext", userContext);
             setIfConfigured(props, "userFilter", userFilter);
             setIfConfigured(props, "userSearchScope", userSearchScope);
+            setIfConfigured(props, "skipAuthentication", skipAuthentication);
+            setIfConfigured(props, "securityRealm", securityRealm);
         }
+        return props;
+    }
+
+    @Override
+    public LoginModuleConfig[] asLoginModuleConfigs() {
+        boolean useSystemAccount = !isNullOrEmpty(systemUserDn) || !isNullOrEmpty(systemAuthentication);
+        LoginModuleConfig loginModuleConfig = new LoginModuleConfig(
+                useSystemAccount ? "com.hazelcast.security.loginimpl.LdapLoginModule"
+                        : "com.hazelcast.security.loginimpl.BasicLdapLoginModule",
+                LoginModuleUsage.REQUIRED);
+
+        loginModuleConfig.setProperties(initLoginModuleProperties());
 
         return new LoginModuleConfig[] { loginModuleConfig };
     }
 
     @Override
     public String toString() {
-        return "LdapAuthenticationConfig [url=" + url + ", socketFactoryClassName=" + socketFactoryClassName + ", systemUserDN="
-                + systemUserDn + ", systemUserPassword=***, parseDN=" + parseDn + ", roleContext="
-                + roleContext + ", roleFilter=" + roleFilter + ", roleMappingAttribute=" + roleMappingAttribute
-                + ", roleMappingMode=" + roleMappingMode + ", roleNameAttribute=" + roleNameAttribute
-                + ", roleRecursionMaxDepth=" + roleRecursionMaxDepth + ", roleSearchScope=" + roleSearchScope
-                + ", userNameAttribute=" + userNameAttribute + ", passwordAttribute=" + passwordAttribute + ", userContext="
-                + userContext + ", userFilter=" + userFilter + ", userSearchScope=" + userSearchScope + "]";
+        return "LdapAuthenticationConfig [url=" + url + ", socketFactoryClassName=" + socketFactoryClassName + ", systemUserDn="
+                + systemUserDn + ", systemUserPassword=***, parseDn=" + parseDn + ", roleContext=" + roleContext
+                + ", roleFilter=" + roleFilter + ", roleMappingAttribute=" + roleMappingAttribute + ", roleMappingMode="
+                + roleMappingMode + ", roleNameAttribute=" + roleNameAttribute + ", roleRecursionMaxDepth="
+                + roleRecursionMaxDepth + ", roleSearchScope=" + roleSearchScope + ", userNameAttribute=" + userNameAttribute
+                + ", passwordAttribute=" + passwordAttribute + ", userContext=" + userContext + ", userFilter=" + userFilter
+                + ", userSearchScope=" + userSearchScope + ", skipAuthentication=" + skipAuthentication + ", securityRealm="
+                + securityRealm + ", systemAuthentication=" + systemAuthentication + ", getSkipIdentity()=" + getSkipIdentity()
+                + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()=" + getSkipRole() + "]";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(parseDn, passwordAttribute, roleContext, roleFilter, roleMappingAttribute, roleMappingMode,
-                roleNameAttribute, roleRecursionMaxDepth, roleSearchScope, socketFactoryClassName, systemUserDn,
-                systemUserPassword, url, userContext, userFilter, userNameAttribute, userSearchScope);
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(parseDn, passwordAttribute, roleContext, roleFilter, roleMappingAttribute,
+                roleMappingMode, roleNameAttribute, roleRecursionMaxDepth, roleSearchScope, skipAuthentication,
+                socketFactoryClassName, systemUserDn, systemUserPassword, url, userContext, userFilter, userNameAttribute,
+                userSearchScope, securityRealm, systemAuthentication);
+        return result;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (!super.equals(obj)) {
             return false;
         }
         if (getClass() != obj.getClass()) {
             return false;
         }
         LdapAuthenticationConfig other = (LdapAuthenticationConfig) obj;
-        return parseDn == other.parseDn
-                && Objects.equals(passwordAttribute, other.passwordAttribute)
-                && Objects.equals(roleContext, other.roleContext)
-                && Objects.equals(roleFilter, other.roleFilter)
-                && Objects.equals(roleMappingAttribute, other.roleMappingAttribute)
-                && roleMappingMode == other.roleMappingMode
+        return parseDn == other.parseDn && Objects.equals(passwordAttribute, other.passwordAttribute)
+                && Objects.equals(roleContext, other.roleContext) && Objects.equals(roleFilter, other.roleFilter)
+                && Objects.equals(roleMappingAttribute, other.roleMappingAttribute) && roleMappingMode == other.roleMappingMode
                 && Objects.equals(roleNameAttribute, other.roleNameAttribute)
                 && Objects.equals(roleRecursionMaxDepth, other.roleRecursionMaxDepth)
-                && roleSearchScope == other.roleSearchScope
+                && roleSearchScope == other.roleSearchScope && Objects.equals(skipAuthentication, other.skipAuthentication)
                 && Objects.equals(socketFactoryClassName, other.socketFactoryClassName)
                 && Objects.equals(systemUserDn, other.systemUserDn)
-                && Objects.equals(systemUserPassword, other.systemUserPassword)
-                && Objects.equals(url, other.url)
-                && Objects.equals(userContext, other.userContext)
-                && Objects.equals(userFilter, other.userFilter)
-                && Objects.equals(userNameAttribute, other.userNameAttribute)
-                && userSearchScope == other.userSearchScope;
+                && Objects.equals(systemUserPassword, other.systemUserPassword) && Objects.equals(url, other.url)
+                && Objects.equals(userContext, other.userContext) && Objects.equals(userFilter, other.userFilter)
+                && Objects.equals(securityRealm, other.securityRealm)
+                && Objects.equals(systemAuthentication, other.systemAuthentication)
+                && Objects.equals(userNameAttribute, other.userNameAttribute) && userSearchScope == other.userSearchScope;
     }
 
-    private void setIfConfigured(Properties props, String propertyName, String value) {
-        if (!isNullOrEmpty(value)) {
-            props.setProperty(propertyName, value);
-        }
-    }
-
-    private void setIfConfigured(Properties props, String propertyName, Object value) {
-        if (value != null) {
-            props.setProperty(propertyName, value.toString());
-        }
-    }
-
-    private void setIfConfigured(Properties props, String propertyName, Enum<?> value) {
-        if (value != null) {
-            props.setProperty(propertyName, value.toString());
-        }
+    @Override
+    protected LdapAuthenticationConfig self() {
+        return this;
     }
 
 }

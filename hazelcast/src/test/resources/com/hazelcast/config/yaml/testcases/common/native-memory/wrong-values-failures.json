@@ -1,0 +1,86 @@
+{
+  "instance": {
+    "hazelcast": {
+      "native-memory": {
+        "enabled": null,
+        "allocator-type": "FREE",
+        "size": {
+          "unit": "TERABYTES",
+          "value": 0
+        },
+        "min-block-size": 15,
+        "page-size": 0,
+        "metadata-space-percentage": -3,
+        "persistent-memory-directory": ""
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/NativeMemory",
+    "pointerToViolation": "#/hazelcast/native-memory",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/MemorySize",
+        "pointerToViolation": "#/hazelcast/native-memory/size",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/MemorySize/properties/unit",
+            "pointerToViolation": "#/hazelcast/native-memory/size/unit",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "TERABYTES is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "pointerToViolation": "#/hazelcast/native-memory/size/value",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/allocator-type",
+        "pointerToViolation": "#/hazelcast/native-memory/allocator-type",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "FREE is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/enabled",
+        "pointerToViolation": "#/hazelcast/native-memory/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/metadata-space-percentage",
+        "pointerToViolation": "#/hazelcast/native-memory/metadata-space-percentage",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-3 is not greater or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/min-block-size",
+        "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
+        "causingExceptions": [{
+          "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
+          "causingExceptions": [],
+          "keyword": "enum",
+          "message": "15 is not a valid enum value"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/NativeMemory/properties/page-size",
+        "pointerToViolation": "#/hazelcast/native-memory/page-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0 is not greater or equal to 1"
+      }
+    ],
+    "message": "7 schema violations found"
+  }
+}

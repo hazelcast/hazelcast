@@ -1,0 +1,65 @@
+{
+  "instance": {
+    "hazelcast": {
+      "wan-replication": {
+        "my-wan-cluster-batch": {
+          "batch-publisher": {
+            "nycPublisherId": {
+              "cluster-name": "nyc",
+              "batch-size": 1000,
+              "batch-max-delay-millis": 2000,
+              "response-timeout-millis": 60000,
+              "acknowledge-type": "ACK_ON_OPERATION_COMPLETE",
+              "initial-publisher-state": "REPLICATING",
+              "snapshot-enabled": false,
+              "idle-max-park-ns": 250000000,
+              "idle-min-park-ns": 10000000,
+              "max-concurrent-invocations": -1,
+              "discovery-period-seconds": 10,
+              "use-endpoint-private-address": false,
+              "queue-full-behavior": "DISCARD_AFTER_MUTATION",
+              "max-target-endpoints": 2147483647,
+              "queue-capacity": 10000,
+              "target-endpoints": "10.3.5.1:5701,10.3.5.2:5701",
+              "properties": {
+                "custom-prop": "name"
+              },
+              "sync": {
+                "consistency-check-strategy": "NONE"
+              },
+              "discovery-strategies": {
+                "node-filter": {
+                  "class": "com.yourpackage.NodeFilter"
+                },
+                "discovery-strategies": [
+                  {
+                    "enabled": true,
+                    "class": "com.hazelcast.jclouds.JCloudsDiscoveryStrategy",
+                    "properties": {
+                      "provider": "google-compute-engine",
+                      "identity": "GCE_IDENTITY",
+                      "credential": "GCE_CREDENTIAL"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "custom-publisher": {
+            "customPublisherId": {
+              "class-name": "com.companyName.CustomWanPublisher",
+              "properties": {
+                "prop1": "prop1-value",
+                "prop2": "prop2-value"
+              }
+            }
+          },
+          "consumer": {
+            "persist-wan-replicated-data": true
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

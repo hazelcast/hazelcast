@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,8 @@ public class ScheduledExecutorDataSerializerHook
 
     public static final int HASH_MAP_ADAPTER = 29;
 
+    public static final int AUTO_DISPOSABLE_TASK_DECORATOR = 30;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -164,6 +166,8 @@ public class ScheduledExecutorDataSerializerHook
                         return new MergeBackupOperation();
                     case HASH_MAP_ADAPTER:
                         return new HashMapAdapter<>();
+                    case AUTO_DISPOSABLE_TASK_DECORATOR:
+                        return new AutoDisposableTaskDecorator();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

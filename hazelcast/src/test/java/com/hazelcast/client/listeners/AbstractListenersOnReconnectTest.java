@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -74,6 +73,30 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     @After
     public void tearDown() {
         factory.terminateAll();
+    }
+
+    //-------------------------- testListenersWhenClientIsGone --------------------- //
+
+    @Test
+    public void testListenersWhenClientIsGone_smart() {
+        testListenersWhenClientIsGone(true);
+    }
+
+    @Test
+    public void testListenersWhenClientIsGone_unisocket() {
+        testListenersWhenClientIsGone(false);
+    }
+
+    private void testListenersWhenClientIsGone(boolean isSmartClient) {
+        factory.newInstances(null, 2);
+        ClientConfig clientConfig = createClientConfig(isSmartClient);
+        client = factory.newHazelcastClient(clientConfig);
+
+        setupListener();
+
+        client.shutdown();
+
+        validateRegistrationsOnMembers(factory, 0);
     }
 
     //-------------------------- testListenersTerminateRandomNode --------------------- //
@@ -279,7 +302,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertOpenEventually(connectedLatch);
         setupListener();
 
-        validateRegistrationsOnMembers(factory);
+        validateRegistrationsOnMembers(factory, 1);
 
         for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
             instance.getLifecycleService().terminate();
@@ -304,13 +327,13 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private void validateRegistrationsAndListenerFunctionality() {
         assertClusterSizeEventually(clusterSize, client);
-        validateRegistrationsOnMembers(factory);
+        validateRegistrationsOnMembers(factory, 1);
         validateRegistrations(clusterSize, registrationId, getHazelcastClientInstanceImpl(client));
         validateListenerFunctionality();
         assertTrue(removeListener(registrationId));
     }
 
-    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
+    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
                 NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
@@ -319,7 +342,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 Member member = instance.getCluster().getLocalMember();
                 assertNotNull(member.toString(), serviceSegment);
                 ConcurrentMap registrationIdMap = serviceSegment.getRegistrationIdMap();
-                assertEquals(member.toString() + " Current registrations:" + registrationIdMap, 1,
+                assertEquals(member.toString() + " Current registrations:" + registrationIdMap, expected,
                         registrationIdMap.size());
                 ILogger logger = nodeEngineImpl.getLogger(AbstractListenersOnReconnectTest.class);
                 logger.warning("Current registrations at member " + member.toString() + ": " + registrationIdMap);
@@ -351,7 +374,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
             } else {
                 Iterator<Connection> expectedIterator = registrations.keySet().iterator();
                 assertTrue(expectedIterator.hasNext());
-                Iterator<ClientConnection> iterator = clientInstanceImpl.getConnectionManager().getActiveConnections().iterator();
+                Iterator<Connection> iterator = clientInstanceImpl.getConnectionManager().getActiveConnections().iterator();
                 assertTrue(iterator.hasNext());
                 assertEquals(iterator.next(), expectedIterator.next());
             }

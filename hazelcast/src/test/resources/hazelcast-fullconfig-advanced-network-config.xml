@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -36,12 +36,13 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
 
     <import resource="hazelcast-fullconfig-without-network.xml"/>
 
     <advanced-network enabled="true">
         <join>
+            <auto-detection enabled="false"/>
             <multicast enabled="true" loopbackModeEnabled="true">
                 <multicast-group>1.2.3.4</multicast-group>
                 <multicast-port>12345</multicast-port>
@@ -81,12 +82,14 @@
                 <zones>us-east1-b,us-east1-c</zones>
             </gcp>
             <azure enabled="false">
+                <instance-metadata-available>false</instance-metadata-available>
                 <client-id>CLIENT_ID</client-id>
                 <client-secret>CLIENT_SECRET</client-secret>
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
-                <cluster-id>HZLCAST001</cluster-id>
-                <group-name>RESOURCE-GROUP-NAME</group-name>
+                <resource-group>RESOURCE-GROUP-NAME</resource-group>
+                <scale-set>SCALE-SET-NAME</scale-set>
+                <tag>TAG-NAME=HZLCAST001</tag>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>

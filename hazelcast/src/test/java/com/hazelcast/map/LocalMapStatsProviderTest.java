@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
             mcs.getTimedMemberStateJson();
 
             //check partition migration triggered or not
-            int partitionStateVersion = getNode(instance).getPartitionService().getPartitionStateVersion();
-            assertEquals(0, partitionStateVersion);
+            long partitionStateStamp = getNode(instance).getPartitionService().getPartitionStateStamp();
+            assertEquals(0, partitionStateStamp);
         }, 5);
     }
 }

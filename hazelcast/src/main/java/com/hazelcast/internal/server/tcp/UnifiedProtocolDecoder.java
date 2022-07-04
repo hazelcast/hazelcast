@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.auditlog.Level;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.auditlog.Level;
-import com.hazelcast.internal.auditlog.impl.AuditlogTypeIds;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
@@ -31,8 +31,8 @@ import com.hazelcast.internal.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.internal.nio.ascii.RestApiTextDecoder;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.nio.ByteBuffer;
@@ -47,16 +47,19 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE;
+import static java.lang.String.format;
 
 /**
  * A {@link InboundHandler} that reads the protocol bytes
  * {@link Protocols} and based on the protocol it creates the
  * appropriate handlers.
- *
+ * <p>
  * The ProtocolDecoder doesn't forward to the dst; it replaces itself once the
  * protocol bytes are known. So that is why the Void type for dst.
  */
@@ -80,7 +83,7 @@ public class UnifiedProtocolDecoder
 
     @Override
     public HandlerStatus onRead() throws Exception {
-        src.flip();
+        upcast(src).flip();
 
         try {
             if (src.remaining() < PROTOCOL_LENGTH) {
@@ -91,11 +94,11 @@ public class UnifiedProtocolDecoder
             String protocol = loadProtocol();
 
             serverContext.getAuditLogService()
-                .eventBuilder(AuditlogTypeIds.CONNECTION_ASKS_PROTOCOL)
-                .message("Protocol bytes received for a connection")
-                .level(Level.DEBUG)
-                .addParameter("protocol", protocol)
-                .log();
+                    .eventBuilder(AuditlogTypeIds.NETWORK_SELECT_PROTOCOL)
+                    .message("Protocol bytes received for a connection")
+                    .level(Level.DEBUG)
+                    .addParameter("protocol", protocol)
+                    .log();
             if (CLUSTER.equals(protocol)) {
                 initChannelForCluster();
             } else if (CLIENT_BINARY.equals(protocol)) {
@@ -103,13 +106,25 @@ public class UnifiedProtocolDecoder
             } else if (RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 RestApiConfig restApiConfig = serverContext.getRestApiConfig();
                 if (!restApiConfig.isEnabledAndNotEmpty()) {
-                    throw new IllegalStateException("REST API is not enabled.");
+                    throw new IllegalStateException("REST API is not enabled. "
+                            + "To enable REST API, do one of the following:\n"
+                            + format(CONFIG_CHANGE_TEMPLATE,
+                            "config.getNetworkConfig().getRestApiConfig().setEnabled(true);",
+                            "hazelcast.network.rest-api.enabled to true",
+                            "-Dhz.network.rest-api.enabled=true",
+                            "HZ_NETWORK_RESTAPI_ENABLED=true"));
                 }
                 initChannelForText(protocol, true);
             } else if (MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 MemcacheProtocolConfig memcacheProtocolConfig = serverContext.getMemcacheProtocolConfig();
-                if (! memcacheProtocolConfig.isEnabled()) {
-                    throw new IllegalStateException("Memcache text protocol is not enabled.");
+                if (!memcacheProtocolConfig.isEnabled()) {
+                    throw new IllegalStateException("Memcache text protocol is not enabled. "
+                            + "To enable Memcache, do one of the following:\n"
+                            + format(CONFIG_CHANGE_TEMPLATE,
+                                "config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);",
+                                "hazelcast.network.memcache-protocol.enabled to true",
+                                "-Dhz.network.memcache-protocol.enabled=true",
+                                "HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true"));
                 }
                 // text doesn't have a protocol; anything that isn't cluster/client protocol will be interpreted as txt.
                 initChannelForText(protocol, false);
@@ -138,6 +153,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForCluster() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
@@ -147,6 +163,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForClient() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_RCVBUF, clientRcvBuf())
                 // clients dont support direct buffers
@@ -157,6 +174,8 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForText(String protocol, boolean restApi) {
+        protocolEncoder.signalEncoderCanReplace();
+
         ChannelOptions config = channel.options();
 
         config.setOption(SO_RCVBUF, clientRcvBuf());

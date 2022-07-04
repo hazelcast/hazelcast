@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +51,7 @@ public class RingbufferServiceTest extends HazelcastTestSupport {
     public void rollbackMigration() {
         Ringbuffer ringbuffer = hz.getRingbuffer("foo");
         int partitionId = getPartitionId(hz, ringbuffer.getName());
-        PartitionMigrationEvent partitionEvent = new PartitionMigrationEvent(DESTINATION, partitionId, -1, 0);
+        PartitionMigrationEvent partitionEvent = new PartitionMigrationEvent(DESTINATION, partitionId, -1, 0, UUID.randomUUID());
 
         service.rollbackMigration(partitionEvent);
 

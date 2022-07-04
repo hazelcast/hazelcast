@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -41,7 +40,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_KEYSET}
  */
 public class MultiMapKeySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapKeySetCodec.RequestParameters> {
+        extends AbstractMultiMapAllPartitionsMessageTask<String> {
 
     public MultiMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +48,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
     }
 
     @Override
@@ -66,11 +65,12 @@ public class MultiMapKeySetMessageTask
                 keys.addAll(coll);
             }
         }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return keys;
     }
 
     @Override
-    protected MultiMapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapKeySetCodec.decodeRequest(clientMessage);
     }
 
@@ -80,18 +80,13 @@ public class MultiMapKeySetMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
-    }
-
-    @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

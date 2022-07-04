@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.security.Permission;
@@ -33,7 +34,9 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 public class HotRestartTriggerBackupMessageTask
-        extends AbstractCallableMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerBackup");
 
     private final Node node;
 
@@ -62,8 +65,8 @@ public class HotRestartTriggerBackupMessageTask
     }
 
     @Override
-    protected MCTriggerHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCTriggerHotRestartBackupCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override
@@ -78,7 +81,7 @@ public class HotRestartTriggerBackupMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

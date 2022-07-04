@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.test.jitter;
+
+import com.hazelcast.internal.util.Timer;
 
 import static com.hazelcast.test.jitter.JitterRule.RESOLUTION_NANOS;
 import static java.lang.Math.min;
@@ -32,13 +34,12 @@ public class JitterThread extends Thread {
     }
 
     public void run() {
-        long beforeNanos = System.nanoTime();
+        long beforeNanos = Timer.nanos();
         long shortestHiccup = Long.MAX_VALUE;
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             long beforeMillis = System.currentTimeMillis();
             sleepNanos(RESOLUTION_NANOS);
-            long after = System.nanoTime();
-            long delta = after - beforeNanos;
+            long delta = Timer.nanosElapsed(beforeNanos);
             long currentHiccup = delta - RESOLUTION_NANOS;
 
             // subtract the shortest observed hiccups, as that's an inherit
@@ -47,7 +48,7 @@ public class JitterThread extends Thread {
             currentHiccup -= shortestHiccup;
 
             jitterRecorder.recordPause(beforeMillis, currentHiccup);
-            beforeNanos = after;
+            beforeNanos = Timer.nanos();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import javax.annotation.Nonnull;
@@ -54,16 +55,28 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      */
     void checkInvocationAllowed() throws IOException;
 
-    Collection<ClientConnection> getActiveConnections();
+    Collection<Connection> getActiveConnections();
 
     UUID getClientUuid();
 
     /**
-     * For the smart client, Random ClientConnection is chosen via LoadBalancer
-     * For the unisocket client, the only ClientConnection will be returned
+     * For a smart client a random ClientConnection is chosen via LoadBalancer.
+     * For a unisocket client the only ClientConnection will be returned.
      *
      * @return random ClientConnection if available, null otherwise
      */
     ClientConnection getRandomConnection();
 
+    /**
+     * Return:<ol>
+     *     <li>a random connection to a data member from the larger same-version
+     *         group
+     *     <li>if there's no such connection, return connection to a random data
+     *         member
+     *     <li>if there's no such connection, return any random connection
+     * </ol>
+     */
+    ClientConnection getConnectionForSql();
+
+    String getConnectionType();
 }

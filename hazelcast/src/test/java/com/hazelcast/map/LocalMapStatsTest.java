@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -45,19 +50,46 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     HazelcastInstance instance;
     private String mapName = "mapName";
+    private String mapWithObjectFormat = "mapWithObjectFormat";
 
     @Before
     public void setUp() {
-        instance = createHazelcastInstance(getConfig());
+        instance = createHazelcastInstance(createMemberConfig());
     }
 
-    protected LocalMapStats getMapStats() {
+    protected final LocalMapStats getMapStats() {
+        return getMapStats(mapName);
+    }
+
+    protected LocalMapStats getMapStats(String mapName) {
         return instance.getMap(mapName).getLocalMapStats();
     }
 
-    protected <K, V> IMap<K, V> getMap() {
+    protected final <K, V> IMap<K, V> getMap() {
+        return getMap(mapName);
+    }
+
+    protected <K, V> IMap<K, V> getMap(String mapName) {
         warmUpPartitions(instance);
         return instance.getMap(mapName);
+    }
+
+    protected Config createMemberConfig() {
+        return getConfig().addMapConfig(new MapConfig()
+                .setName(mapWithObjectFormat)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+        );
+    }
+
+    @Test
+    public void memoryCostIsMinusOne_ifInMemoryFormat_is_OBJECT() {
+        IMap<Object, Object> map = getMap(mapWithObjectFormat);
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats(mapWithObjectFormat);
+        assertEquals(-1, localMapStats.getOwnedEntryMemoryCost());
+        assertEquals(-1, localMapStats.getBackupEntryMemoryCost());
     }
 
     @Test
@@ -69,6 +101,23 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         }
         LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testHits_can_still_be_seen_when_all_entries_are_removed_due_to_the_expiry() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i);
+            map.get(i);
+        }
+
+        // set ttl to entries (this also increases hits)
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        assertSizeEventually(0, map);
+        assertEquals(20, getMapStats().getHits());
     }
 
     @Test
@@ -102,6 +151,18 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.putAsync(i, i);
         }
         final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getPutOperationCount()));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() {
+        assumeTrue(getMap() instanceof MapProxyImpl);
+
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getMap();
+        for (int i = 0; i < 100; i++) {
+            map.putIfAbsentAsync(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
         assertTrueEventually(() -> assertEquals(100, localMapStats.getPutOperationCount()));
     }
 

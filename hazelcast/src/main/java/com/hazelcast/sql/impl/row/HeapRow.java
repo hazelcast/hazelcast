@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,8 +56,6 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T get(int index) {
-        assert index >= 0 && index < values.length;
-
         return (T) values[index];
     }
 
@@ -67,8 +65,6 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
     }
 
     public void set(int index, Object val) {
-        assert index >= 0 && index < values.length;
-
         values[index] = val;
     }
 

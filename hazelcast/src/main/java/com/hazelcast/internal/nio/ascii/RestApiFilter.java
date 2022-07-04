@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import com.hazelcast.logging.LoggingService;
 
 import java.util.StringTokenizer;
 
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
+import static java.lang.String.format;
+
 /**
  * This class is a policy enforcement point for HTTP REST API. It checks incoming command lines and validates if the command can
  * be processed. If the command is unknown or not allowed the connection is closed.
@@ -46,7 +49,15 @@ public class RestApiFilter implements TextProtocolFilter {
         RestEndpointGroup restEndpointGroup = getEndpointGroup(commandLine);
         if (restEndpointGroup != null) {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {
-                connection.close("REST endpoint group is not enabled - " + restEndpointGroup, null);
+                String name = restEndpointGroup.name();
+                connection.close("REST endpoint group is not enabled - " + restEndpointGroup
+                        + ". To enable it, do one of the following:\n"
+                        + format(CONFIG_CHANGE_TEMPLATE,
+                        "config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");",
+                        "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true",
+                        "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true",
+                        "HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true"),
+                        null);
             }
         } else if (!commandLine.isEmpty()) {
             connection.close("Unsupported command received on REST API handler.", null);
@@ -67,13 +78,13 @@ public class RestApiFilter implements TextProtocolFilter {
         if (parsers.getParser(operation) == null) {
             return null;
         }
-        // the operation is a HTTP method so the next token should be a resource path
+        // the operation is an HTTP method so the next token should be a resource path
         String requestUri = nextToken(st);
         return requestUri != null ? getHttpApiEndpointGroup(operation, requestUri) : null;
     }
 
-    @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity",
-            "checkstyle:booleanexpressioncomplexity" })
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity",
+            "checkstyle:booleanexpressioncomplexity"})
     private RestEndpointGroup getHttpApiEndpointGroup(String operation, String requestUri) {
         if (requestUri.startsWith(HttpCommandProcessor.URI_MAPS)
                 || requestUri.startsWith(HttpCommandProcessor.URI_QUEUES)) {
@@ -87,23 +98,32 @@ public class RestApiFilter implements TextProtocolFilter {
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_FORCESTART_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_PARTIALSTART_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_PERSISTENCE_BACKUP_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_PERSISTENCE_BACKUP_INTERRUPT_CLUSTER_URL)
+                // deprecated
                 || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_CLUSTER_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
-            return RestEndpointGroup.HOT_RESTART;
+                // deprecated
+                || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)
+        ) {
+            return RestEndpointGroup.PERSISTENCE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_NODES_URL)
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO))
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL))
-                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)
+                || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL))) {
             return RestEndpointGroup.CLUSTER_READ;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_NODE_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CHANGE_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)
+                || requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CONFIG_RELOAD)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CONFIG_UPDATE)) {
             return RestEndpointGroup.CLUSTER_WRITE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CP_SUBSYSTEM_BASE_URL)) {

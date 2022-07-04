@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -102,7 +103,8 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         configureNeedsReplicaStateCheckResponse();
 
         Address address = new Address("127.0.0.1", 5701);
-        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{new PartitionReplica(address, UuidUtil.newUnsecureUUID())}, 1);
+        PartitionReplica replica = new PartitionReplica(address, UuidUtil.newUnsecureUUID());
+        InternalPartition partition = new ReadonlyInternalPartition(new PartitionReplica[]{replica}, 1, 0);
         partitions.add(partition);
 
         assertEquals(REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
@@ -113,7 +115,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     public void whenHasMissingReplicaOwners_withoutAddress_thenWaitForMissingReplicaOwners() {
         configureNeedsReplicaStateCheckResponse();
 
-        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[0], 1);
+        InternalPartition partition = new ReadonlyInternalPartition(new PartitionReplica[0], 1, 0);
         partitions.add(partition);
 
         assertEquals(REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
@@ -141,7 +143,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     public void whenCheckAndTriggerReplicaSync() {
         configureNeedsReplicaStateCheckResponseOnEachSecondCall();
 
-        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{null}, 1);
+        InternalPartition partition = new ReadonlyInternalPartition(new PartitionReplica[]{null}, 1, 0);
         partitions.add(partition);
 
         assertEquals(REPLICA_NOT_SYNC, replicaStateChecker.getPartitionServiceState());

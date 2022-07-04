@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.security.Permission;
  * SetGetAllMessageTask
  */
 public class SetGetAllMessageTask
-        extends AbstractPartitionMessageTask<SetGetAllCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public SetGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class SetGetAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionGetAllOperation(parameters.name);
+        return new CollectionGetAllOperation(parameters);
     }
 
     @Override
-    protected SetGetAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return SetGetAllCodec.decodeRequest(clientMessage);
     }
 
@@ -67,7 +67,7 @@ public class SetGetAllMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new SetPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new SetPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class SetGetAllMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

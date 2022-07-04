@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,13 @@ public class InternalPartitionImplConstructorTest {
     public void testConstructor() throws Exception {
         PartitionReplica local = new PartitionReplica(new Address("172.16.16.1", 4223), UuidUtil.newUnsecureUUID());
         PartitionReplica[] replicas = new PartitionReplica[]{new PartitionReplica(new Address("127.0.0.1", 2342), UuidUtil.newUnsecureUUID())};
-        InternalPartition partition = new InternalPartitionImpl(42, null, local, replicas);
+        InternalPartition partition = new InternalPartitionImpl(42, local, replicas, 1, null);
 
         InternalPartitionImplConstructor constructor = new InternalPartitionImplConstructor(InternalPartitionImpl.class);
         InternalPartition clonedPartition = (InternalPartition) constructor.createNew(partition);
 
         assertEquals(partition.getPartitionId(), clonedPartition.getPartitionId());
+        assertEquals(partition.version(), clonedPartition.version());
         assertEquals(partition.getOwnerOrNull(), clonedPartition.getOwnerOrNull());
         assertEquals(partition.getReplicaAddress(0), clonedPartition.getReplicaAddress(0));
         assertEquals(partition.getReplica(0), clonedPartition.getReplica(0));

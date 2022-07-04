@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeClusterStateOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -32,14 +32,16 @@ import java.security.Permission;
 
 import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.decodeRequest;
 
-public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<Integer> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeState");
 
     public ChangeClusterStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected Integer decodeClientMessage(ClientMessage clientMessage) {
         return decodeRequest(clientMessage);
     }
 
@@ -56,7 +58,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeClusterStateOperation(ClusterState.getById(parameters.newState));
+        return new ChangeClusterStateOperation(ClusterState.getById(parameters));
     }
 
     @Override
@@ -66,12 +68,12 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.newState};
+        return new Object[]{parameters};
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

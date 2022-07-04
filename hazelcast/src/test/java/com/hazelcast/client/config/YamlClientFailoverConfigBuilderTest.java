@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,13 +54,11 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         assertEquals(2, clientFailoverConfig.getTryCount());
     }
 
-    @Test
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testExpectsAtLeastOneConfig() {
         String yaml = ""
                 + "hazelcast-client-failover:\n"
-                + "  clients: {}";
-
-        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client-failover/clients"));
+                + "  clients: []";
         buildConfig(yaml);
     }
 
@@ -95,6 +93,16 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         assertEquals(11, config.getTryCount());
     }
 
+    @Test
+    public void testEmptyYamlConfig() {
+        String emptyYaml = "hazelcast-client-failover:\n";
+        ClientFailoverConfig emptyFailoverConfig = buildConfig(emptyYaml);
+        ClientFailoverConfig defaultFailoverConfig = new ClientFailoverConfig();
+
+        assertEquals(emptyFailoverConfig.getTryCount(), defaultFailoverConfig.getTryCount());
+        HazelcastTestSupport.assertContainsAll(emptyFailoverConfig.getClientConfigs(), defaultFailoverConfig.getClientConfigs());
+    }
+
     @Override
     @Test
     public void testWithClasspathConfig() {
@@ -125,7 +133,7 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         return new YamlClientFailoverConfigBuilder().build();
     }
 
-    private static ClientFailoverConfig buildConfig(String yaml) {
+    public static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }
 

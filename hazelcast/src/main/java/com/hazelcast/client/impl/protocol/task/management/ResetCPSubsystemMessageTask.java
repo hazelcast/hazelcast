@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,19 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
-public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<RequestParameters, Void> {
+public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<Void, Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.resetCPSubsystem");
 
     public ResetCPSubsystemMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,8 +44,8 @@ public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<Reques
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCPromoteToCPMemberCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override
@@ -58,7 +60,7 @@ public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<Reques
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

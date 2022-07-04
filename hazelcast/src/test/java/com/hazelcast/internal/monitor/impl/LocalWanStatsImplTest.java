@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,14 +66,10 @@ public class LocalWanStatsImplTest {
         LocalWanPublisherStats deserializedSingapore = deserialized.getLocalWanPublisherStats().get("singapore");
 
         assertEquals(tokyo.isConnected(), deserializedTokyo.isConnected());
-        assertEquals(tokyo.getTotalPublishedEventCount(), deserializedTokyo.getTotalPublishedEventCount());
-        assertEquals(tokyo.getOutboundQueueSize(), deserializedTokyo.getOutboundQueueSize());
-        assertEquals(tokyo.getTotalPublishLatency(), deserializedTokyo.getTotalPublishLatency());
+        assertEquals(tokyo.getPublisherState(), deserializedTokyo.getPublisherState());
 
         assertEquals(singapore.isConnected(), deserializedSingapore.isConnected());
-        assertEquals(singapore.getTotalPublishedEventCount(), deserializedSingapore.getTotalPublishedEventCount());
-        assertEquals(singapore.getOutboundQueueSize(), deserializedSingapore.getOutboundQueueSize());
-        assertEquals(singapore.getTotalPublishLatency(), deserializedSingapore.getTotalPublishLatency());
+        assertEquals(singapore.getPublisherState(), deserializedSingapore.getPublisherState());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * Marked interface for exceptions.
+ * Marker interface for exceptions.
  *
  * When an exception is marked with this interface then
- * it won't be logged by {@link Operation#logError(Throwable)}
+ * it won't be logged by {@link Operation#logError(Throwable)} on the
+ * callee side.
  *
  * It's intended to be used for exceptions which are part of a flow,
  * for example {@link com.hazelcast.durableexecutor.StaleTaskIdException}

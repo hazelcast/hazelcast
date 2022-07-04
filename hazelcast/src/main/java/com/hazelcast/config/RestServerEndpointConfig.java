@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import com.hazelcast.instance.EndpointQualifier;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static java.util.Collections.synchronizedSet;
+import static com.hazelcast.config.RestEndpointGroup.getAllEndpointGroups;
 
 /**
  * Server socket endpoint config specialized for REST service
@@ -37,12 +39,12 @@ import static java.util.Collections.synchronizedSet;
 public class RestServerEndpointConfig
         extends ServerSocketEndpointConfig {
 
-    private final Set<RestEndpointGroup> enabledGroups = synchronizedSet(EnumSet.noneOf(RestEndpointGroup.class));
+    private final Set<Integer> enabledGroupCodes = Collections.synchronizedSet(new HashSet<>());
 
     public RestServerEndpointConfig() {
-        for (RestEndpointGroup eg : RestEndpointGroup.values()) {
+        for (RestEndpointGroup eg : getAllEndpointGroups()) {
             if (eg.isEnabledByDefault()) {
-                enabledGroups.add(eg);
+                enabledGroupCodes.add(eg.getCode());
             }
         }
     }
@@ -69,7 +71,7 @@ public class RestServerEndpointConfig
      */
     public RestServerEndpointConfig enableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
-            enabledGroups.addAll(Arrays.asList(endpointGroups));
+            enabledGroupCodes.addAll(Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode).collect(Collectors.toSet()));
         }
         return this;
     }
@@ -78,7 +80,7 @@ public class RestServerEndpointConfig
      * Disables all REST endpoint groups.
      */
     public RestServerEndpointConfig disableAllGroups() {
-        enabledGroups.clear();
+        enabledGroupCodes.clear();
         return this;
     }
 
@@ -87,7 +89,7 @@ public class RestServerEndpointConfig
      */
     public RestServerEndpointConfig disableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
-            enabledGroups.removeAll(Arrays.asList(endpointGroups));
+            Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode).forEach(enabledGroupCodes::remove);
         }
         return this;
     }
@@ -96,14 +98,14 @@ public class RestServerEndpointConfig
      * Return true if the REST API is enabled and at least one REST endpoint group is allowed.
      */
     public boolean isEnabledAndNotEmpty() {
-        return !enabledGroups.isEmpty();
+        return !enabledGroupCodes.isEmpty();
     }
 
     /**
      * Returns a not-{@code null} set of enabled REST endpoint groups.
      */
     public Set<RestEndpointGroup> getEnabledGroups() {
-        return new HashSet<RestEndpointGroup>(enabledGroups);
+        return enabledGroupCodes.stream().map(RestEndpointGroup::getRestEndpointGroup).collect(Collectors.toSet());
     }
 
     /**
@@ -111,13 +113,13 @@ public class RestServerEndpointConfig
      * It can return {@code true} even if the REST API itself is disabled.
      */
     public boolean isGroupEnabled(RestEndpointGroup group) {
-        return enabledGroups.contains(group);
+        return enabledGroupCodes.contains(group.getCode());
     }
 
     public RestServerEndpointConfig setEnabledGroups(Collection<RestEndpointGroup> groups) {
-        enabledGroups.clear();
+        enabledGroupCodes.clear();
         if (groups != null) {
-            enabledGroups.addAll(groups);
+            enabledGroupCodes.addAll(groups.stream().map(RestEndpointGroup::getCode).collect(Collectors.toSet()));
         }
         return this;
     }
@@ -244,6 +246,26 @@ public class RestServerEndpointConfig
 
     @Override
     public String toString() {
-        return "RestServerEndpointConfig{enabledGroups=" + enabledGroups + "}";
+        return "RestServerEndpointConfig{enabledGroups=" + getEnabledGroups() + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        RestServerEndpointConfig that = (RestServerEndpointConfig) o;
+        return Objects.equals(enabledGroupCodes, that.enabledGroupCodes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), enabledGroupCodes);
     }
 }

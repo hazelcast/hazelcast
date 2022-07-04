@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,20 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestParameters, Void> {
+public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<UUID, Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.removeCPMember");
 
     public RemoveCPMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,11 +41,11 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
     protected CompletableFuture<Void> processInternal() {
         CPSubsystemManagementService cpService =
                 nodeEngine.getHazelcastInstance().getCPSubsystem().getCPSubsystemManagementService();
-        return cpService.removeCPMember(parameters.cpMemberUuid).toCompletableFuture();
+        return cpService.removeCPMember(parameters).toCompletableFuture();
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected UUID decodeClientMessage(ClientMessage clientMessage) {
         return MCRemoveCPMemberCodec.decodeRequest(clientMessage);
     }
 
@@ -58,7 +61,7 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override
@@ -73,7 +76,7 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.cpMemberUuid };
+        return new Object[]{parameters};
     }
 
     @Override

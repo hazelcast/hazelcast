@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.internal.config.ConfigReplacerHelper;
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlDomVariableReplacer;
-import com.hazelcast.internal.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.YamlElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.MutableYamlSequence;
 import com.hazelcast.internal.yaml.YamlLoader;
@@ -57,7 +57,7 @@ import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
 /**
  * Contains logic for replacing system variables in the YAML file and importing YAML files from different locations.
  */
-public abstract class AbstractYamlConfigBuilder {
+public abstract class AbstractYamlConfigBuilder extends AbstractConfigBuilder {
     private final Set<String> currentlyImportedFiles = new HashSet<>();
     private Properties properties = System.getProperties();
 
@@ -242,7 +242,7 @@ public abstract class AbstractYamlConfigBuilder {
     }
 
     private void fillReplacerProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = asMapping(((YamlElementAdapter) node).getYamlNode());
         for (YamlNameNodePair childNodePair : propertiesMapping.childrenPairs()) {
             String childName = childNodePair.nodeName();
             YamlNode child = childNodePair.childNode();

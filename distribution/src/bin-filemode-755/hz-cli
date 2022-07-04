@@ -1,0 +1,49 @@
+#!/bin/bash
+
+function findScriptDir() {
+  CURRENT=$PWD
+
+  DIR=$(dirname "$0")
+  cd "$DIR" || exit
+  TARGET_FILE=$(basename "$0")
+
+  # Iterate down a (possible) chain of symlinks
+  while [ -L "$TARGET_FILE" ]
+  do
+      TARGET_FILE=$(readlink "$TARGET_FILE")
+      DIR=$(dirname "$TARGET_FILE")
+      cd "$DIR" || exit
+      TARGET_FILE=$(basename "$TARGET_FILE")
+  done
+
+  SCRIPT_DIR=$(pwd -P)
+  # Restore current directory
+  cd "$CURRENT" || exit
+}
+
+findScriptDir
+. "$SCRIPT_DIR/common.sh"
+
+# HAZELCAST_CLIENT_CONFIG holds the configuration path.
+# If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
+# The path can be absolute.
+# By default, it is set to $HAZELCAST_HOME/config/hazelcast-client.xml
+if [ -z "$HAZELCAST_CLIENT_CONFIG" ]; then
+    HAZELCAST_CLIENT_CONFIG="config/hazelcast-client.xml"
+fi
+# if the first character is /, then this is an absolute path, use as is
+# otherwise prepend (HAZELCAST_HOME)
+if [ "${HAZELCAST_CLIENT_CONFIG:0:1}" != "/" ]; then
+  HAZELCAST_CLIENT_CONFIG="$HAZELCAST_HOME/$HAZELCAST_CLIENT_CONFIG"
+fi
+
+readJvmOptionsFile "jvm-client.options"
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.client.config=$HAZELCAST_CLIENT_CONFIG" \
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"

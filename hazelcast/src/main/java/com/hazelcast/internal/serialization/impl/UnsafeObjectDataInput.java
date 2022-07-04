@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,12 +49,28 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
-    UnsafeObjectDataInput(byte[] buffer, InternalSerializationService service) {
-        super(buffer, service, ByteOrder.nativeOrder());
+    UnsafeObjectDataInput(byte[] buffer,
+                          InternalSerializationService service) {
+        super(buffer, service, ByteOrder.nativeOrder(), false);
     }
 
-    UnsafeObjectDataInput(byte[] buffer, int offset, InternalSerializationService service) {
-        super(buffer, offset, service, ByteOrder.nativeOrder());
+    UnsafeObjectDataInput(byte[] buffer,
+                          InternalSerializationService service,
+                          boolean isCompatibility) {
+        super(buffer, service, ByteOrder.nativeOrder(), isCompatibility);
+    }
+
+    UnsafeObjectDataInput(byte[] buffer,
+                          int offset,
+                          InternalSerializationService service) {
+        super(buffer, offset, service, ByteOrder.nativeOrder(), false);
+    }
+
+    UnsafeObjectDataInput(byte[] buffer,
+                          int offset,
+                          InternalSerializationService service,
+                          boolean isCompatibility) {
+        super(buffer, offset, service, ByteOrder.nativeOrder(), isCompatibility);
     }
 
     @Override
@@ -64,7 +80,7 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public int read(int position) {
-        return (position < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + position) : NULL_ARRAY_LENGTH;
+        return (position < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + position) & 0xFF : NULL_ARRAY_LENGTH;
     }
 
     @Override

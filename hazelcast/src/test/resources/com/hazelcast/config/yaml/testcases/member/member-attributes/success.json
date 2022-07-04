@@ -1,0 +1,17 @@
+{
+  "instance": {
+    "hazelcast": {
+      "member-attributes": {
+        "CPU_CORE_COUNT": {
+          "type": "int",
+          "value": 4
+        },
+        "CPU_CORE_FREQ": {
+          "type": "int",
+          "value": 1033
+        }
+      }
+    }
+  },
+  "error": null
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
@@ -49,11 +50,6 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     }
 
     @Override
-    protected void updateStatistics() {
-
-    }
-
-    @Override
     protected Member getMember(ReliableTopicMessage m) {
         Member member = null;
         if (m.getPublisherAddress() != null) {
@@ -64,7 +60,13 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
 
     @Override
     protected boolean handleInternalException(Throwable t) {
-        if (t instanceof HazelcastClientOfflineException) {
+        if (t instanceof HazelcastClientNotActiveException) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
+                        + " Reason: HazelcastClient is shutting down");
+            }
+            return false;
+        } else if (t instanceof HazelcastClientOfflineException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("MessageListener " + listener + " on topic: " + topicName + " got exception: " + t
                         + ". Continuing from last known sequence: " + sequence);

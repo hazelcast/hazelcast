@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -153,8 +157,12 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int EVICTION_CONFIG = 60;
     public static final int PERMISSION_CONFIG = 61;
     public static final int BITMAP_INDEX_OPTIONS = 62;
+    public static final int DATA_PERSISTENCE_CONFIG = 63;
+    public static final int TIERED_STORE_CONFIG = 64;
+    public static final int MEMORY_TIER_CONFIG = 65;
+    public static final int DISK_TIER_CONFIG = 66;
 
-    private static final int LEN = BITMAP_INDEX_OPTIONS + 1;
+    private static final int LEN = DISK_TIER_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -227,6 +235,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
         constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
         constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
+        constructors[DATA_PERSISTENCE_CONFIG] = arg -> new DataPersistenceConfig();
+        constructors[TIERED_STORE_CONFIG] = arg -> new TieredStoreConfig();
+        constructors[MEMORY_TIER_CONFIG] = arg -> new MemoryTierConfig();
+        constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

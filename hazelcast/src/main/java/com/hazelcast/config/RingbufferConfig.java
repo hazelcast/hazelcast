@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         if (config.ringbufferStoreConfig != null) {
             this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
         }
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.splitBrainProtectionName = config.splitBrainProtectionName;
     }
 
@@ -163,7 +163,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
      * @see #getCapacity()
      */
     public RingbufferConfig setCapacity(int capacity) {
-        this.capacity = checkPositive(capacity, "capacity can't be smaller than 1");
+        this.capacity = checkPositive("capacity", capacity);
         return this;
     }
 
@@ -406,27 +406,27 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(capacity);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         capacity = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         ringbufferStoreConfig = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 
@@ -441,19 +441,19 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
         RingbufferConfig that = (RingbufferConfig) o;
         return capacity == that.capacity
-            && backupCount == that.backupCount
-            && asyncBackupCount == that.asyncBackupCount
-            && timeToLiveSeconds == that.timeToLiveSeconds
-            && Objects.equals(name, that.name)
-            && inMemoryFormat == that.inMemoryFormat
-            && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
-            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
-            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
+                && backupCount == that.backupCount
+                && asyncBackupCount == that.asyncBackupCount
+                && timeToLiveSeconds == that.timeToLiveSeconds
+                && Objects.equals(name, that.name)
+                && inMemoryFormat == that.inMemoryFormat
+                && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
+                && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, capacity, backupCount, asyncBackupCount, timeToLiveSeconds, inMemoryFormat,
-            ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
+                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -35,9 +38,7 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -54,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -62,6 +62,7 @@ import static com.hazelcast.internal.util.MapUtil.HASHMAP_DEFAULT_LOAD_FACTOR;
 import static com.hazelcast.internal.util.MapUtil.calculateInitialCapacity;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount"})
 public class ScheduledExecutorServiceProxy
@@ -108,12 +109,12 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return schedule(callable, delay, unit);
     }
 
@@ -122,12 +123,14 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> schedule(@Nonnull Callable<V> command, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
+        boolean autoDisposable = isAutoDisposable(command);
 
-        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -138,14 +141,14 @@ public class ScheduledExecutorServiceProxy
                                                        long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
-
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -157,7 +160,7 @@ public class ScheduledExecutorServiceProxy
                                                     long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         Map<Member, IScheduledFuture<V>> futureMap = scheduleOnMembers(command, Collections.singleton(member), delay, unit);
         return futureMap.get(member);
@@ -170,7 +173,7 @@ public class ScheduledExecutorServiceProxy
                                                     long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -182,7 +185,7 @@ public class ScheduledExecutorServiceProxy
                                                                long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         Map<Member, IScheduledFuture<V>> futureMap =
                 scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit);
@@ -196,9 +199,9 @@ public class ScheduledExecutorServiceProxy
                                                       long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter<V> callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
     }
 
@@ -210,12 +213,14 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
+        boolean autoDisposable = isAutoDisposable(command);
 
-        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
 
@@ -227,13 +232,14 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -244,7 +250,7 @@ public class ScheduledExecutorServiceProxy
                                                                      long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -254,7 +260,7 @@ public class ScheduledExecutorServiceProxy
                                                                      long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -264,7 +270,7 @@ public class ScheduledExecutorServiceProxy
                                                                                 long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(), initialDelay, period,
                 unit);
     }
@@ -277,9 +283,9 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
-        ScheduledRunnableAdapter callable = createScheduledRunnableAdapter(command);
+        Callable<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnMembers(callable, members, delay, unit);
     }
 
@@ -291,12 +297,15 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
+        boolean autoDisposable = isAutoDisposable(command);
+
         for (Member member : members) {
-            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                    unit, autoDisposable);
 
             futures.put(member,
                     submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
@@ -314,14 +323,15 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMapAdapter(members.size());
+
         for (Member member : members) {
             TaskDefinition definition =
-                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
             futures.put(member, submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
         }
@@ -334,8 +344,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> getScheduledFuture(@Nonnull ScheduledTaskHandler handler) {
         checkNotNull(handler, "Handler is null");
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler, this);
-        initializeManagedContext(proxy);
-        return proxy;
+        return initializeManagedContext(proxy);
     }
 
     @Nonnull
@@ -406,8 +415,7 @@ public class ScheduledExecutorServiceProxy
 
             for (ScheduledTaskHandler handler : handlers) {
                 IScheduledFuture future = new ScheduledFutureProxy(handler, this);
-                initializeManagedContext(future);
-                futures.add(future);
+                futures.add(initializeManagedContext(future));
             }
 
             if (accumulator.containsKey(owner)) {
@@ -472,12 +480,21 @@ public class ScheduledExecutorServiceProxy
     }
 
     private String extractNameOrGenerateOne(Object command) {
-        String name = null;
-        if (command instanceof NamedTask) {
-            name = ((NamedTask) command).getName();
-        }
+        String taskName = getNamedTaskName(command);
+        return taskName != null ? taskName : UuidUtil.newUnsecureUuidString();
+    }
 
-        return name != null ? name : UuidUtil.newUnsecureUuidString();
+    private String getNamedTaskName(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            NamedTask namedTask = ((AbstractTaskDecorator<?>) command).undecorateTo(NamedTask.class);
+            if (namedTask != null) {
+                return namedTask.getName();
+            }
+        }
+        if (command instanceof NamedTask) {
+            return ((NamedTask) command).getName();
+        }
+        return null;
     }
 
     private @Nonnull
@@ -495,13 +512,14 @@ public class ScheduledExecutorServiceProxy
         return createFutureProxy(uuid, taskName);
     }
 
-    private void initializeManagedContext(Object object) {
+    private <T> T initializeManagedContext(Object object) {
         ManagedContext context = getNodeEngine().getSerializationService().getManagedContext();
-        if (object instanceof NamedTaskDecorator) {
-            ((NamedTaskDecorator) object).initializeContext(context);
+        if (object instanceof AbstractTaskDecorator) {
+            ((AbstractTaskDecorator) object).initializeContext(context);
         } else {
-            context.initialize(object);
+            object = context.initialize(object);
         }
+        return (T) object;
     }
 
     private static class GetAllScheduledOnMemberOperationFactory
@@ -517,5 +535,12 @@ public class ScheduledExecutorServiceProxy
         public Operation get() {
             return new GetAllScheduledOnMemberOperation(schedulerName);
         }
+    }
+
+    private boolean isAutoDisposable(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            return ((AbstractTaskDecorator) command).isDecoratedWith(AutoDisposableTask.class);
+        }
+        return command instanceof AutoDisposableTask;
     }
 }

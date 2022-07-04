@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 
 /**
@@ -52,6 +53,11 @@ public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
 
         }
         return nearCacheStats;
+    }
+
+    @Override
+    public LocalReplicationStatsImpl getReplicationStats() {
+        throw new UnsupportedOperationException("This statistic is not supported for client.");
     }
 
     @Override

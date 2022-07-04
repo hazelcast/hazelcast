@@ -1,0 +1,27 @@
+syntax = "proto3";
+option java_package = "com.hazelcast.jet.grpc.greeter";
+
+service Greeter {
+  // Sends a greeting
+  rpc SayHelloBidirectional (stream HelloRequest) returns (stream HelloReply) {}
+  rpc SayHelloUnary (HelloRequest) returns (HelloReply) {}
+  rpc SayHelloRepeatedBidirectional (stream HelloRequestList) returns (stream HelloReplyList) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
+
+message HelloRequestList {
+  repeated string name = 1;
+}
+
+message HelloReplyList {
+  repeated string message = 1;
+}

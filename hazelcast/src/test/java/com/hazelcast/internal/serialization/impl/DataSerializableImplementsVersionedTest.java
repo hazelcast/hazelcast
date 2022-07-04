@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class DataSerializableImplementsVersionedTest {
 
         try {
             dataSerializable.writeData(out);
-        } catch (NullPointerException | UnsupportedOperationException ignored) {
+        } catch (NullPointerException | UnsupportedOperationException | AssertionError ignored) {
         }
 
         return isGetVersionCalled(out);
@@ -182,7 +182,10 @@ public class DataSerializableImplementsVersionedTest {
 
     // overridden in EE
     protected ObjectDataInput getObjectDataInput() {
-        return mock(ObjectDataInput.class,
-                withSettings().extraInterfaces(DataReader.class));
+        ObjectDataInput input = mock(ObjectDataInput.class,
+                withSettings().extraInterfaces(SerializationServiceSupport.class, DataReader.class));
+        when(((SerializationServiceSupport) input).getSerializationService())
+                .thenReturn(serializationService);
+        return input;
     }
 }

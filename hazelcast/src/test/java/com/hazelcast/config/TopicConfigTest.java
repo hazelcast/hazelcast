@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,6 @@ public class TopicConfigTest {
                 .withPrefabValues(TopicConfigReadOnly.class,
                         new TopicConfigReadOnly(new TopicConfig("Topic1")),
                         new TopicConfigReadOnly(new TopicConfig("Topic2")))
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,6 @@ public abstract class SwCounter implements Counter {
             OFFSET = MEM.objectFieldOffset(field);
         }
 
-        private long localValue;
         private volatile long value;
 
         UnsafeSwCounter(long initialValue) {
@@ -99,7 +98,7 @@ public abstract class SwCounter implements Counter {
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public long inc() {
-            long newLocalValue = localValue += 1;
+            final long newLocalValue = value + 1;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
@@ -107,7 +106,7 @@ public abstract class SwCounter implements Counter {
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public long inc(long amount) {
-            long newLocalValue = localValue += amount;
+            final long newLocalValue = value + amount;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
@@ -119,8 +118,14 @@ public abstract class SwCounter implements Counter {
 
         @Override
         public void set(long newValue) {
-            localValue = newValue;
             MEM.putOrderedLong(this, OFFSET, newValue);
+        }
+
+        @Override
+        public long getAndSet(long newValue) {
+            final long oldLocalValue = value;
+            MEM.putOrderedLong(this, OFFSET, newValue);
+            return oldLocalValue;
         }
 
         @Override
@@ -164,6 +169,13 @@ public abstract class SwCounter implements Counter {
         @Override
         public void set(long newValue) {
             COUNTER.lazySet(this, newValue);
+        }
+
+        @Override
+        public long getAndSet(long newValue) {
+            final long oldValue = value;
+            COUNTER.lazySet(this, newValue);
+            return oldValue;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class PagingPredicateImpl<K, V>
      */
     public PagingPredicateImpl(int pageSize) {
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("pageSize should be greater than 0!");
+            throw new IllegalArgumentException("pageSize must be greater than 0!");
         }
         this.pageSize = pageSize;
         anchorList = new ArrayList<>();
@@ -337,7 +337,7 @@ public class PagingPredicateImpl<K, V>
         out.writeObject(comparator);
         out.writeInt(page);
         out.writeInt(pageSize);
-        out.writeUTF(iterationType.name());
+        out.writeString(iterationType.name());
         out.writeInt(anchorList.size());
         for (Map.Entry<Integer, Map.Entry<K, V>> anchor : anchorList) {
             out.writeInt(anchor.getKey());
@@ -353,7 +353,7 @@ public class PagingPredicateImpl<K, V>
         comparator = in.readObject();
         page = in.readInt();
         pageSize = in.readInt();
-        iterationType = IterationType.valueOf(in.readUTF());
+        iterationType = IterationType.valueOf(in.readString());
         int size = in.readInt();
         anchorList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

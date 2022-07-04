@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast": {
+      "sql": {
+        "statement-timeout-millis": 2
+      }
+    }
+  },
+  "error": null
+}

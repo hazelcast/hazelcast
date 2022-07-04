@@ -1,0 +1,16 @@
+{
+  "instance": {
+    "hazelcast": {
+      "lite-member": {
+        "enabled": 11
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/LiteMember/properties/enabled",
+    "pointerToViolation": "#/hazelcast/lite-member/enabled",
+    "causingExceptions": [],
+    "keyword": "type",
+    "message": "expected type: Boolean, found: Integer"
+  }
+}

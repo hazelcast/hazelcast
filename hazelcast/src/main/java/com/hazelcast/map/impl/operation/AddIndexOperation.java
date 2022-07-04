@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
@@ -35,6 +36,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 
 public class AddIndexOperation extends MapOperation
         implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
@@ -83,20 +86,25 @@ public class AddIndexOperation extends MapOperation
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        RecordStoreAdapter recordStoreAdapter = new RecordStoreAdapter(recordStore);
-        InternalIndex index = indexes.addOrGetIndex(config, indexes.isGlobal() ? null : recordStoreAdapter);
+        InternalIndex index = indexes.addOrGetIndex(config);
         if (index.hasPartitionIndexed(partitionId)) {
             return;
         }
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
+        index.beginPartitionUpdate();
+
+        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
+        CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
+                mapContainer.getExtractors()) : null;
         recordStore.forEach((dataKey, record) -> {
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryEntry = mapContainer.newQueryEntry(dataKey, value);
+            QueryableEntry<?, ?> queryEntry = mapContainer.newQueryEntry(dataKey, value);
             queryEntry.setRecord(record);
-            queryEntry.setStoreAdapter(recordStoreAdapter);
-            index.putEntry(queryEntry, null, Index.OperationSource.USER);
+            CachedQueryEntry<?, ?> newEntry =
+                    cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(dataKey, value);
+            index.putEntry(newEntry, null, queryEntry, Index.OperationSource.USER);
         }, false);
 
         index.markPartitionAsIndexed(partitionId);

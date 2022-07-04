@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
@@ -84,42 +89,50 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public Collection<ServerConnection> getConnections() {
-            return null;
+        public @Nonnull Collection<ServerConnection> getConnections() {
+            return Collections.emptyList();
         }
 
         @Override
-        public Collection<ServerConnection> getActiveConnections() {
-            return null;
+        public int connectionCount(Predicate<ServerConnection> predicate) {
+            return 0;
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection) {
+        public boolean register(
+                Address remoteAddress,
+                Address targetAddress,
+                Collection<Address> remoteAddressAliases,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
             return false;
         }
 
         @Override
-        public ServerConnection get(Address address) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             return null;
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address) {
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public ServerConnection getOrConnect(@Nonnull Address address , int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address, boolean silent) {
+        public ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
-        public boolean transmit(Packet packet, ServerConnection connection) {
-            return false;
-        }
-
-        @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(Packet packet, Address target, int streamId) {
             return false;
         }
 

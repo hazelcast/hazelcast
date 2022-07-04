@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
+import com.hazelcast.internal.util.Timer;
 
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
@@ -27,11 +29,11 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
 
     static final String KEY = "CacheLoaderLatency";
 
-    private final CacheLoader<K, V> delegate;
+    private final TenantContextual<CacheLoader<K, V>> delegate;
     private final LatencyProbe loadProbe;
     private final LatencyProbe loadAllProbe;
 
-    public LatencyTrackingCacheLoader(CacheLoader<K, V> delegate, StoreLatencyPlugin plugin, String cacheName) {
+    public LatencyTrackingCacheLoader(TenantContextual<CacheLoader<K, V>> delegate, StoreLatencyPlugin plugin, String cacheName) {
         this.delegate = delegate;
         this.loadProbe = plugin.newProbe(KEY, cacheName, "load");
         this.loadAllProbe = plugin.newProbe(KEY, cacheName, "loadAll");
@@ -39,21 +41,21 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
 
     @Override
     public V load(K k) throws CacheLoaderException {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
-            return delegate.load(k);
+            return delegate.get().load(k);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<K, V> loadAll(Iterable<? extends K> iterable) throws CacheLoaderException {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
-            return delegate.loadAll(iterable);
+            return delegate.get().loadAll(iterable);
         } finally {
-            loadAllProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

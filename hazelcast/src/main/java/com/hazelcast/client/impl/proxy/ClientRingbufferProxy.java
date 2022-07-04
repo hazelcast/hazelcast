@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -63,12 +61,6 @@ import static java.lang.String.format;
  * @param <E> the type of elements in this ringbuffer
  */
 public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<E> {
-
-    private static final ClientMessageDecoder ADD_ASYNC_ASYNC_RESPONSE_DECODER =
-            clientMessage -> RingbufferAddCodec.decodeResponse(clientMessage).response;
-
-    private static final ClientMessageDecoder ADD_ALL_ASYNC_RESPONSE_DECODER =
-            clientMessage -> RingbufferAddAllCodec.decodeResponse(clientMessage).response;
 
     private ClientMessageDecoder readManyAsyncResponseDecoder;
 
@@ -98,8 +90,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         if (capacity == -1) {
             ClientMessage request = RingbufferCapacityCodec.encodeRequest(name);
             ClientMessage response = invoke(request, partitionId);
-            RingbufferCapacityCodec.ResponseParameters resultParameters = RingbufferCapacityCodec.decodeResponse(response);
-            capacity = resultParameters.response;
+            capacity = RingbufferCapacityCodec.decodeResponse(response);
         }
         return capacity;
     }
@@ -108,33 +99,28 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     public long size() {
         ClientMessage request = RingbufferSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferSizeCodec.ResponseParameters resultParameters = RingbufferSizeCodec.decodeResponse(response);
-        return resultParameters.response;
+        return RingbufferSizeCodec.decodeResponse(response);
     }
 
     @Override
     public long tailSequence() {
         ClientMessage request = RingbufferTailSequenceCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferTailSequenceCodec.ResponseParameters resultParameters = RingbufferTailSequenceCodec.decodeResponse(response);
-        return resultParameters.response;
+        return RingbufferTailSequenceCodec.decodeResponse(response);
     }
 
     @Override
     public long headSequence() {
         ClientMessage request = RingbufferHeadSequenceCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferHeadSequenceCodec.ResponseParameters resultParameters = RingbufferHeadSequenceCodec.decodeResponse(response);
-        return resultParameters.response;
+        return RingbufferHeadSequenceCodec.decodeResponse(response);
     }
 
     @Override
     public long remainingCapacity() {
         ClientMessage request = RingbufferRemainingCapacityCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferRemainingCapacityCodec.ResponseParameters resultParameters
-                = RingbufferRemainingCapacityCodec.decodeResponse(response);
-        return resultParameters.response;
+        return RingbufferRemainingCapacityCodec.decodeResponse(response);
     }
 
     @Override
@@ -144,8 +130,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         Data element = toData(item);
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, OverflowPolicy.OVERWRITE.getId(), element);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferAddCodec.ResponseParameters resultParameters = RingbufferAddCodec.decodeResponse(response);
-        return resultParameters.response;
+        return RingbufferAddCodec.decodeResponse(response);
     }
 
     @Override
@@ -156,9 +141,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         Data element = toData(item);
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
-                    ADD_ASYNC_ASYNC_RESPONSE_DECODER);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            return new ClientDelegatingFuture<>(future, getSerializationService(), RingbufferAddCodec::decodeResponse);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -170,13 +154,12 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
         ClientMessage request = RingbufferReadOneCodec.encodeRequest(name, sequence);
         ClientMessage response = invoke(request, partitionId);
-        RingbufferReadOneCodec.ResponseParameters resultParameters = RingbufferReadOneCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return toObject(RingbufferReadOneCodec.decodeResponse(response));
     }
 
     @Override
     public InternalCompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
-                                                @Nonnull OverflowPolicy overflowPolicy) {
+                                                       @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
         checkFalse(collection.isEmpty(), "collection can't be empty");
@@ -186,8 +169,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), ADD_ALL_ASYNC_RESPONSE_DECODER);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            return new ClientDelegatingFuture<>(future, getSerializationService(), RingbufferAddAllCodec::decodeResponse);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -195,7 +178,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public InternalCompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount,
-                                                              int maxCount, IFunction<E, Boolean> filter) {
+                                                                     int maxCount, IFunction<E, Boolean> filter) {
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
         checkTrue(maxCount >= minCount, "maxCount should be equal or larger than minCount");
@@ -233,17 +216,11 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     protected <T> T invoke(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-            return (T) future.get();
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof StaleSequenceException) {
-                StaleSequenceException se = (StaleSequenceException) e.getCause();
-                long l = headSequence();
-                throw new StaleSequenceException(se.getMessage(), l);
-            }
-            throw rethrow(e);
-        } catch (Exception e) {
-            throw rethrow(e);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            return (T) future.joinInternal();
+        } catch (StaleSequenceException e) {
+            long l = headSequence();
+            throw new StaleSequenceException(e.getMessage(), l);
         }
     }
 

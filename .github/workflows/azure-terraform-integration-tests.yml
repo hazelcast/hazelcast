@@ -1,0 +1,69 @@
+name: azure-tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+      - '.github/terraform/azure/**'
+
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'hazelcast'
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        distribution: [ 'adopt' ]
+    steps:
+      # SET UP JDK
+      - name: Setup JDK
+        uses: actions/setup-java@v2.1.0
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
+
+      - run: java -version
+
+      # BUILD HAZELCAST AZURE SNAPSHOT
+      - uses: actions/checkout@v3.0.2
+        with:
+          path: hazelcast
+
+      - name: Build hazelcast jar
+        run: |
+          cd hazelcast
+          mvn clean install -DskipTests -Dcheckstyle.skip
+          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+
+      # INSTALL TERRAFORM
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 1.1.8
+
+      - name: Terraform Init
+        working-directory: hazelcast/.github/terraform/azure
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: hazelcast/.github/terraform/azure
+        run: terraform apply -var="hazelcast_mancenter_version=latest-snapshot" -var="hazelcast_path=~/hazelcast.jar" -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ always() }}
+        working-directory: hazelcast/.github/terraform/azure
+        run: terraform destroy -auto-approve

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,17 +46,17 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected static final int LOAD_BALANCING_BYTE = 1;
     protected static final int LOAD_BALANCING_FRAME = 2;
 
-    // for the time being we configure using a int until we have decided which load strategy to use.
+    // for the time being we configure using an int until we have decided which load strategy to use.
     protected final int loadType = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     // the number of time the NioPipeline.process() method has been called.
-    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_PROCESS_COUNT)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_PROCESS_COUNT, level = DEBUG)
     protected final SwCounter processCount = newSwCounter();
     protected final ILogger logger;
     protected final NioChannel channel;
     protected final SocketChannel socketChannel;
-    // needs to be volatile because it can accessed concurrently (only the owner will modify). Owner can be null if the
-    // pipeline is being migrated.
+    // needs to be volatile because it can be accessed concurrently (only the owner will modify).
+    // Owner can be null if the pipeline is being migrated.
     protected volatile NioThread owner;
 
     // in case of outbound pipeline, this selectionKey is only changed when the pipeline is scheduled
@@ -66,12 +66,12 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     private final int initialOps;
     private final IOBalancer ioBalancer;
     private final AtomicReference<TaskNode> delayedTaskStack = new AtomicReference<>();
-    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_OWNER_ID)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_OWNER_ID, level = DEBUG)
     private volatile int ownerId;
     // counts the number of migrations that have happened so far
-    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_STARTED_MIGRATIONS)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_STARTED_MIGRATIONS, level = DEBUG)
     private final SwCounter startedMigrations = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_COMPLETED_MIGRATIONS)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_COMPLETED_MIGRATIONS, level = DEBUG)
     private final SwCounter completedMigrations = newSwCounter();
     private volatile NioThread newOwner;
 

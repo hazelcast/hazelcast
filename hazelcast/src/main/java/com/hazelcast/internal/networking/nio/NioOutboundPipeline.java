@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,6 +52,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
@@ -87,7 +90,7 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         BLOCKED,
         /*
@@ -98,27 +101,27 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         RESCHEDULE
     }
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE, level = DEBUG)
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE, level = DEBUG)
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<>();
 
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
     private final AtomicReference<State> scheduled = new AtomicReference<>(State.SCHEDULED);
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN, unit = BYTES, level = DEBUG)
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter priorityFramesWritten = newSwCounter();
 
     private volatile long lastWriteTime;
@@ -185,12 +188,12 @@ public final class NioOutboundPipeline
         return bytesPending;
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS, level = DEBUG)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED, level = DEBUG)
     private long scheduled() {
         return scheduled.get().ordinal();
     }
@@ -229,9 +232,9 @@ public final class NioOutboundPipeline
         }
     }
 
-    // executes the pipeline. Either on the calling thread or on th owning NIO thread.
+    // executes the pipeline. Either on the calling thread or on the owning NIO thread.
     private void executePipeline() {
-         if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+        if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
             // we are allowed to do a write through, so lets process the request on the calling thread
             try {
                 process();
@@ -239,11 +242,22 @@ public final class NioOutboundPipeline
                 onError(t);
             }
         } else {
-            if (selectionKeyWakeupEnabled) {
-                registerOp(OP_WRITE);
-                selectionKey.selector().wakeup();
+            SelectionKey selectionKey = this.selectionKey;
+            if (selectionKeyWakeupEnabled && selectionKey != null) {
+                try {
+                    registerOp(OP_WRITE);
+                    selectionKey.selector().wakeup();
+                } catch (CancelledKeyException t) {
+                    //this means that the selection key is cancelled via another thread, which can happen only
+                    //on connection close. Only thing we can do is to ignore the exception. The calling thread could be
+                    //user thread and this exception should not be propagated to the user.
+                    //From the caller of `com.hazelcast.internal.nio.Connection#write`s perspective,
+                    // this is the same situation as connection closed after connection.write() successfully returns.
+                    ignore(t);
+                }
             } else {
-                owner.addTaskAndWakeup(this);
+                // the owner can be also null during the Pipeline migration, so let's use the helper method
+                ownerAddTaskAndWakeup(this);
             }
         }
     }
@@ -255,7 +269,7 @@ public final class NioOutboundPipeline
             if (prevState == State.RESCHEDULE) {
                 break;
             } else {
-                  if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
+                if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
                     if (prevState == State.UNSCHEDULED || prevState == State.BLOCKED) {
                         ownerAddTaskAndWakeup(this);
                     }

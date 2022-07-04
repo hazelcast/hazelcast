@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -39,6 +41,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -131,6 +135,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
         assertTrue(serializationConfig.isCheckClassDefErrors());
         assertFalse(serializationConfig.isAllowUnsafe());
+        assertFalse(serializationConfig.isAllowOverrideDefaultSerializers());
         assertFalse(serializationConfig.isEnableCompression());
         assertTrue(serializationConfig.isEnableSharedObject());
         assertTrue(serializationConfig.isUseNativeByteOrder());
@@ -251,6 +256,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
+        assertFalse(queryCacheClassPredicateConfig.isSerializeKeys());
         for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
             assertFalse(indexConfig.getType() == IndexType.SORTED);
@@ -292,11 +298,11 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertEquals(20000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
+        assertEquals(-1, exponentialRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
-        assertEquals(1, exponentialRetryConfig.getMultiplier(), 0);
+        assertEquals(1.05, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test
@@ -403,6 +409,17 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
         Properties properties = credentialsFactoryConfig.getProperties();
         assertEquals("value", properties.getProperty("property"));
+        RealmConfig realmConfig = securityConfig.getRealmConfig("krb5Initiator");
+        assertNotNull(realmConfig);
+        JaasAuthenticationConfig jaasConf = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasConf);
+        List<LoginModuleConfig> loginModuleConfigs = jaasConf.getLoginModuleConfigs();
+        assertNotNull(loginModuleConfigs);
+        assertEquals(1, loginModuleConfigs.size());
+        LoginModuleConfig loginModuleConfig = loginModuleConfigs.get(0);
+        assertEquals("com.sun.security.auth.module.Krb5LoginModule", loginModuleConfig.getClassName());
+        assertEquals(LoginModuleUsage.REQUIRED, loginModuleConfig.getUsage());
+        assertEquals("jduke@HAZELCAST.COM", loginModuleConfig.getProperties().get("principal"));
     }
 
     @Test(expected = HazelcastException.class)
@@ -451,18 +468,69 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testLoadBalancerRoundRobin();
 
     @Test
+    public abstract void testLoadBalancerCustom();
+
+    @Test
     public abstract void testWhitespaceInNonSpaceStrings();
 
     @Test
     public abstract void testTokenIdentityConfig();
 
     @Test
+    public abstract void testKerberosIdentityConfig();
+
+    @Test
     public abstract void testMetricsConfig();
+
+    @Test
+    public abstract void testInstanceTrackingConfig();
 
     @Test
     public abstract void testMetricsConfigMasterSwitchDisabled();
 
     @Test
     public abstract void testMetricsConfigJmxDisabled();
+
+    @Test
+    public abstract void testPersistentMemoryDirectoryConfiguration();
+
+    @Test
+    public abstract void testPersistentMemoryDirectoryConfigurationSimple();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows();
+
+    @Test
+    public abstract void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses();
+
+    @Test
+    public abstract void testPersistentMemoryConfiguration_SystemMemoryMode();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
+
+    @Test
+    public abstract void testCompactSerialization();
+
+    @Test
+    public abstract void testCompactSerialization_explicitSerializationRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustTypeName();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustSerializer();
 
 }

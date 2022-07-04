@@ -1,0 +1,91 @@
+{
+  "instance": {
+    "hazelcast": {
+      "reliable-topic": {
+        "my-reliable-topic": {
+          "statistics-enabled": 0,
+          "unknown-property": "unknown",
+          "topic-overload-policy": "INVALID",
+          "read-batch-size": "20",
+          "message-listeners": null
+        },
+        "other": {
+          "read-batch-size": 0,
+          "message-listeners": [
+            null
+          ]
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ReliableTopic",
+    "pointerToViolation": "#/hazelcast/reliable-topic",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ReliableTopic/additionalProperties",
+        "pointerToViolation": "#/hazelcast/reliable-topic/other",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/message-listeners/items",
+            "pointerToViolation": "#/hazelcast/reliable-topic/other/message-listeners/0",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/read-batch-size",
+            "pointerToViolation": "#/hazelcast/reliable-topic/other/read-batch-size",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ReliableTopic/additionalProperties",
+        "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown-property] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/message-listeners",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/message-listeners",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONArray, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/statistics-enabled",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/statistics-enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/read-batch-size",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/read-batch-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/topic-overload-policy",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/topic-overload-policy",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "INVALID is not a valid enum value"
+          }
+        ],
+        "message": "5 schema violations found"
+      }
+    ],
+    "message": "7 schema violations found"
+  }
+}

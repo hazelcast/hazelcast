@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
@@ -48,7 +48,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import testsubjects.StaticSerializableBiConsumer;
+import testsubjects.StaticSerializableBiFunction;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +70,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -79,20 +83,40 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
 public class BasicMapTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean statisticsEnabled;
+    @Parameterized.Parameter(1)
+    public boolean perEntryStatsEnabled;
+
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true, true},
+                {false, true},
+                {true, false},
+                {false, false},
+        });
+    }
 
     /**
      * This rule is here artificially just to test that ChangeLoggingRule is working (meaning not broken).
@@ -114,8 +138,19 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     protected Config getConfig() {
         Config cfg = smallInstanceConfig();
+        cfg.getMapConfig("default")
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         MapConfig mapConfig = new MapConfig("mapWithTTL*");
         mapConfig.setTimeToLiveSeconds(1);
+        mapConfig.setStatisticsEnabled(statisticsEnabled);
+        mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+
+        cfg.getMapConfig("testEntryView")
+        .setStatisticsEnabled(statisticsEnabled)
+        .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         cfg.addMapConfig(mapConfig);
         return cfg;
     }
@@ -272,7 +307,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
         final CountDownLatch latchEvicted = new CountDownLatch(1);
-        final CountDownLatch latchExpired = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
             @Override
@@ -775,8 +809,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
-        Config config = new Config();
-        config.getMapConfig("default").setStatisticsEnabled(true);
+        assumeThat(perEntryStatsEnabled, is(true));
+
         HazelcastInstance instance = getInstance();
 
         IMap<Integer, Integer> map = instance.getMap("testEntryView");
@@ -919,6 +953,27 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutIfAbsentAsync() {
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getInstance().getMap("testPutIfAbsentAsync");
+        try {
+            assertNull(map.putIfAbsentAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putIfAbsentAsync(1, 2).toCompletableFuture().get());
+            assertEquals(1, map.putIfAbsentAsync(1, 3).toCompletableFuture().get());
+            assertEquals(1, map.size());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testAsyncMethodChaining() {
+        IMap<Integer, Integer> map = getInstance().getMap("testGetPutRemoveAsync");
+        CompletionStage<Integer> setThenGet = map.setAsync(1, 1)
+                .thenCompose(v -> map.getAsync(1));
+        assertEquals(1L, (long) setThenGet.toCompletableFuture().join());
+    }
+
+    @Test
     public void testPutAllEmpty() {
         IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
         map.putAll(emptyMap());
@@ -927,7 +982,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testPutAllAsyncEmpty() {
         IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
-        ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
+        map.putAllAsync(emptyMap());
     }
 
     @Test
@@ -1037,7 +1092,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
-        InternalCompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
+        CompletableFuture<Void> future = map.putAllAsync(mm).toCompletableFuture();
         assertTrueEventually(() -> assertTrue(future.isDone()));
         assertEquals(map.size(), size);
         for (int i = 0; i < size; i++) {
@@ -1054,7 +1109,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1073,7 +1128,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1090,7 +1145,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         final Future<Void> future = map.setAllAsync(expected).toCompletableFuture();
 
         assertEqualsEventually(future::isDone, true);
@@ -1213,17 +1268,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "axyz");
         map.remove("key1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("key1", addedKey[0]);
-                assertEquals("abc", addedValue[0]);
-                assertEquals("key2", updatedKey[0]);
-                assertEquals("bcd", oldValue[0]);
-                assertEquals("axyz", newValue[0]);
-                assertEquals("key1", removedKey[0]);
-                assertEquals("abc", removedValue[0]);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("key1", addedKey[0]);
+            assertEquals("abc", addedValue[0]);
+            assertEquals("key2", updatedKey[0]);
+            assertEquals("bcd", oldValue[0]);
+            assertEquals("axyz", newValue[0]);
+            assertEquals("key1", removedKey[0]);
+            assertEquals("abc", removedValue[0]);
         });
     }
 
@@ -1305,17 +1357,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("key");
         map.remove("keyz");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(addedKey[0], "key");
-                assertEquals(addedValue[0], "value");
-                assertEquals(updatedKey[0], "key");
-                assertEquals(oldValue[0], "value");
-                assertEquals(newValue[0], "value2");
-                assertEquals(removedKey[0], "key");
-                assertEquals(removedValue[0], "value2");
-            }
+        assertTrueEventually(() -> {
+            assertEquals(addedKey[0], "key");
+            assertEquals(addedValue[0], "value");
+            assertEquals(updatedKey[0], "key");
+            assertEquals(oldValue[0], "value");
+            assertEquals(newValue[0], "value2");
+            assertEquals(removedKey[0], "key");
+            assertEquals(removedValue[0], "value2");
         });
     }
 
@@ -1369,17 +1418,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value2");
         map.remove("key");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(addedKey[0], "key");
-                assertEquals(addedValue[0], null);
-                assertEquals(updatedKey[0], "key");
-                assertEquals(oldValue[0], null);
-                assertEquals(newValue[0], null);
-                assertEquals(removedKey[0], "key");
-                assertEquals(removedValue[0], null);
-            }
+        assertTrueEventually(() -> {
+            assertEquals(addedKey[0], "key");
+            assertEquals(addedValue[0], null);
+            assertEquals(updatedKey[0], "key");
+            assertEquals(oldValue[0], null);
+            assertEquals(newValue[0], null);
+            assertEquals(removedKey[0], "key");
+            assertEquals(removedValue[0], null);
         });
     }
 
@@ -1389,12 +1435,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         map.put("key", "value", 2, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get("key"));
-            }
-        }, 30);
+        assertTrueEventually(() -> assertNull(map.get("key")), 30);
     }
 
     @Test
@@ -1503,7 +1544,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnValue() throws Exception {
+    public void github_11489_verifyNoFailingCastOnValue() {
         // always run map.values on a map proxy backed by the current-version instance otherwise, when running as compatibility
         // test, the TestPagingPredicate will be proxied and fail with a NullPointerException during serialization
         IMap<Integer, Integer> test = instances[instances.length - 1].getMap("github_11489");
@@ -1648,6 +1689,18 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null, 1, TimeUnit.SECONDS)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync(null, "value");
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(null, \"value\")");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", null);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(\"key\", null)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync(null, "value", 1, SECONDS);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(null, \"value\", 1, TimeUnit.SECONDS)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", null, 1, SECONDS);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(\"key\", null, 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
@@ -1991,4 +2044,25 @@ public class BasicMapTest extends HazelcastTestSupport {
         sourceMap.entrySet().forEach(e -> assertEquals(e.getValue(), targetMap.get(e.getKey())));
     }
 
+    @Test
+    public void testReplaceAllWithLambdaFunction() {
+        final IMap<String, Integer> testMap = getInstance().getMap("test_map");
+        testMap.put("k1", 1);
+        testMap.put("k2", 2);
+        testMap.replaceAll((k, v) -> v * 10);
+        assertEquals((int) testMap.get("k1"), 10);
+        assertEquals((int) testMap.get("k2"), 20);
+    }
+
+    @Test
+    public void testReplaceAllWithStaticSerializableFunction() {
+        final IMap<String, String> testMap = getInstance().getMap("test_map");
+        testMap.put("k1", "v1");
+        testMap.put("k2", "v2");
+        testMap.replaceAll(new StaticSerializableBiFunction("v_new"));
+        assertEquals(testMap.get("k1"), "v_new");
+        assertEquals(testMap.get("k2"), "v_new");
+    }
+
 }
+

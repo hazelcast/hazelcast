@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.Locale;
 
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -163,6 +167,96 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertEquals("a", StringUtil.stripTrailingSlash("a/"));
         assertEquals("a/a", StringUtil.stripTrailingSlash("a/a"));
         assertEquals("a/", StringUtil.stripTrailingSlash("a//"));
+    }
+
+    @Test
+    public void testResolvePlaceholders() throws Exception {
+        assertResolvePlaceholder(
+                "noPlaceholders",
+                "noPlaceholders",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: value",
+                "param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: ${param",
+                "param: ${param",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}",
+                "missing: ${missing}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}, param: value",
+                "missing: ${missing}, param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "broken: ${broken, param: ${param}",
+                "broken: ${broken, param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: value, broken: ${broken",
+                "param: ${param}, broken: ${broken",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}, param: value, broken: ${broken",
+                "missing: ${missing}, param: ${param}, broken: ${broken",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param1: value1, param2: value2, param3: value3",
+                "param1: ${param1}, param2: ${param2}, param3: ${param3}",
+                "", "param1", "value1", "param2", "value2", "param3", "value3");
+        assertResolvePlaceholder(
+                "param: value, param: $OTHER_PREFIX{param}",
+                "param: $PREFIX{param}, param: $OTHER_PREFIX{param}",
+                "PREFIX", "param", "value");
+    }
+
+    @Test
+    public void isNotBlank() {
+        assertTrue(!StringUtil.isNullOrEmptyAfterTrim("string"));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim("  "));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(""));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(null));
+    }
+
+    @Test
+    public void isAllFilledTest() {
+        assertTrue(isAllNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
+        assertFalse(isAllNullOrEmptyAfterTrim("test-string-1", ""));
+        assertFalse(isAllNullOrEmptyAfterTrim("", "", null));
+    }
+
+    @Test
+    public void isAnyFilledTest() {
+        assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
+        assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", ""));
+        assertFalse(isAnyNullOrEmptyAfterTrim("", "", null));
+    }
+
+    @Test
+    public void when_removingCharactersFromString_then_properValue() {
+        assertEquals("", StringUtil.removeCharacter("-------", '-'));
+        assertEquals("-------", StringUtil.removeCharacter("-------", '0'));
+        assertEquals("-------", StringUtil.removeCharacter("-0-0-0-0-0-0-", '0'));
+        assertEquals("-------", StringUtil.removeCharacter("-00000-0-0000-0000-0-0-", '0'));
+    }
+
+    @Test
+    public void when_removingNotExistingCharactersFromString_then_sameInstanceIsReturned() {
+        assertSame("-------", StringUtil.removeCharacter("-------", '0'));
+    }
+
+    private void assertResolvePlaceholder(String expected,
+                                          String pattern,
+                                          String placeholderNamespace,
+                                          Object... params) {
+        HashMap<String, Object> paramMap = new HashMap<>();
+        for (int i = 0; i < params.length; i += 2) {
+            paramMap.put(params[i].toString(), params[i + 1]);
+        }
+        assertEquals(expected, StringUtil.resolvePlaceholders(pattern, placeholderNamespace, paramMap));
     }
 
     private String[] arr(String... strings) {

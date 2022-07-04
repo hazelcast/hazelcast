@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.io.IOException;
 public class Person implements DataSerializable {
 
     public Double age;
+    public byte[] overhead;
 
     public Person() {
     }
@@ -33,13 +34,20 @@ public class Person implements DataSerializable {
         this.age = age;
     }
 
+    public Person(Double age, byte[] overhead) {
+        this.age = age;
+        this.overhead = overhead;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeDouble(age);
+        out.writeByteArray(overhead);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         age = in.readDouble();
+        overhead = in.readByteArray();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -41,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfig {
+public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The minimum number of backups.
@@ -81,7 +83,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
     private String cacheWriter;
 
     private ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig;
-    private List<CacheSimpleEntryListenerConfig> cacheEntryListeners;
+    private List<CacheSimpleEntryListenerConfig> cacheEntryListeners = new ArrayList<>();
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -94,13 +96,17 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     private String splitBrainProtectionName;
 
-    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>();
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
+    private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
 
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
 
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
@@ -136,9 +142,20 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 : new ArrayList<>(cacheSimpleConfig.partitionLostListenerConfigs);
         this.splitBrainProtectionName = cacheSimpleConfig.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
+        this.merkleTreeConfig = new MerkleTreeConfig(cacheSimpleConfig.merkleTreeConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
+        this.dataPersistenceConfig = new DataPersistenceConfig(cacheSimpleConfig.dataPersistenceConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
+    }
+
+    /**
+     * Create a Cache Simple Config for a cache with a specific name.
+     *
+     * @param name cache name
+     */
+    public CacheSimpleConfig(String name) {
+        setName(name);
     }
 
     public CacheSimpleConfig() {
@@ -432,7 +449,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      */
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         if (cacheEntryListeners == null) {
-            cacheEntryListeners = new ArrayList<CacheSimpleEntryListenerConfig>();
+            cacheEntryListeners = new ArrayList<>();
         }
         return cacheEntryListeners;
     }
@@ -639,13 +656,40 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
     }
 
     /**
+     * Gets the {@code DataPersistenceConfig} for this {@code CacheSimpleConfig}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheSimpleConfig} instance
+     *
+     * @deprecated since 5.0 use {@link CacheSimpleConfig#setDataPersistenceConfig(DataPersistenceConfig)}
      */
+    @Deprecated
     public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = hotRestartConfig;
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code CacheSimpleConfig}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setDataPersistenceConfig(DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = dataPersistenceConfig;
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -690,6 +734,27 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         return this;
     }
 
+    /**
+     * Gets the {@code MerkleTreeConfig} for this {@code CacheSimpleConfig}
+     *
+     * @return merkle tree config
+     */
+    @Nonnull
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code CacheSimpleConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "MerkleTreeConfig cannot be null");
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -702,58 +767,64 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(keyType);
-        out.writeUTF(valueType);
+        out.writeString(name);
+        out.writeString(keyType);
+        out.writeString(valueType);
         out.writeBoolean(statisticsEnabled);
         out.writeBoolean(managementEnabled);
         out.writeBoolean(readThrough);
         out.writeBoolean(writeThrough);
         out.writeBoolean(disablePerEntryInvalidationEvents);
-        out.writeUTF(cacheLoaderFactory);
-        out.writeUTF(cacheWriterFactory);
-        out.writeUTF(cacheLoader);
-        out.writeUTF(cacheWriter);
+        out.writeString(cacheLoaderFactory);
+        out.writeString(cacheWriterFactory);
+        out.writeString(cacheLoader);
+        out.writeString(cacheWriter);
         out.writeObject(expiryPolicyFactoryConfig);
         writeNullableList(cacheEntryListeners, out);
         out.writeInt(asyncBackupCount);
         out.writeInt(backupCount);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(evictionConfig);
         out.writeObject(wanReplicationRef);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         writeNullableList(partitionLostListenerConfigs, out);
         out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
+
+        out.writeObject(merkleTreeConfig);
+        out.writeObject(dataPersistenceConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        keyType = in.readUTF();
-        valueType = in.readUTF();
+        name = in.readString();
+        keyType = in.readString();
+        valueType = in.readString();
         statisticsEnabled = in.readBoolean();
         managementEnabled = in.readBoolean();
         readThrough = in.readBoolean();
         writeThrough = in.readBoolean();
         disablePerEntryInvalidationEvents = in.readBoolean();
-        cacheLoaderFactory = in.readUTF();
-        cacheWriterFactory = in.readUTF();
-        cacheLoader = in.readUTF();
-        cacheWriter = in.readUTF();
+        cacheLoaderFactory = in.readString();
+        cacheWriterFactory = in.readString();
+        cacheLoader = in.readString();
+        cacheWriter = in.readString();
         expiryPolicyFactoryConfig = in.readObject();
         cacheEntryListeners = readNullableList(in);
         asyncBackupCount = in.readInt();
         backupCount = in.readInt();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         evictionConfig = in.readObject();
         wanReplicationRef = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicyConfig = in.readObject();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
+
+        merkleTreeConfig = in.readObject();
+        setDataPersistenceConfig(in.readObject());
     }
 
     @Override
@@ -834,9 +905,16 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
+        if (!Objects.equals(merkleTreeConfig, that.merkleTreeConfig)) {
+            return false;
+        }
         if (!Objects.equals(eventJournalConfig, that.eventJournalConfig)) {
             return false;
         }
+        if (!Objects.equals(dataPersistenceConfig, that.dataPersistenceConfig)) {
+            return false;
+        }
+
         return Objects.equals(hotRestartConfig, that.hotRestartConfig);
     }
 
@@ -864,7 +942,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        result = 31 * result + (merkleTreeConfig != null ? merkleTreeConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
+        result = 31 * result + (dataPersistenceConfig != null ? dataPersistenceConfig.hashCode() : 0);
         result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
         return result;
@@ -894,7 +974,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", merkleTreeConfig=" + merkleTreeConfig
                 + ", hotRestartConfig=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", eventJournal=" + eventJournalConfig
                 + '}';
     }
@@ -940,13 +1022,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(className);
+            out.writeString(className);
             out.writeObject(timedExpiryPolicyFactoryConfig);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            className = in.readUTF();
+            className = in.readString();
             timedExpiryPolicyFactoryConfig = in.readObject();
         }
 
@@ -1021,13 +1103,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
             @Override
             public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeUTF(expiryPolicyType.name());
+                out.writeString(expiryPolicyType.name());
                 out.writeObject(durationConfig);
             }
 
             @Override
             public void readData(ObjectDataInput in) throws IOException {
-                expiryPolicyType = ExpiryPolicyType.valueOf(in.readUTF());
+                expiryPolicyType = ExpiryPolicyType.valueOf(in.readString());
                 durationConfig = in.readObject();
             }
 
@@ -1153,13 +1235,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
             @Override
             public void writeData(ObjectDataOutput out) throws IOException {
                 out.writeLong(durationAmount);
-                out.writeUTF(timeUnit.name());
+                out.writeString(timeUnit.name());
             }
 
             @Override
             public void readData(ObjectDataInput in) throws IOException {
                 durationAmount = in.readLong();
-                timeUnit = TimeUnit.valueOf(in.readUTF());
+                timeUnit = TimeUnit.valueOf(in.readString());
             }
 
             @Override

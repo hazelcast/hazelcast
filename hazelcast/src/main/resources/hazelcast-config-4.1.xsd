@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -70,7 +70,10 @@
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="auditlog" type="factory-class-with-properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="sql" type="sql" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -553,6 +556,17 @@
 
     <xs:complexType name="queue">
         <xs:all>
+        	<xs:element name="priority-comparator-class-name" type="non-space-string" minOccurs="0" maxOccurs="1" >
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Fully-qualified comparator's class name to be used for the priority queue.
+	                    If nothing is provided, then queue behaves as a FIFO queue.
+
+                        If this value is non-null, then Hazelcast will ignore the queue store
+                        "memory-limit" configuration value.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -1283,7 +1297,13 @@
             </xs:element>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        SSL configuration with com.hazelcast.nio.ssl.SSLContextFactory used as the factory type.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -1494,6 +1514,15 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="auto-detection">
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the auto-detection discovery is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="join">
         <xs:annotation>
             <xs:documentation>
@@ -1510,6 +1539,7 @@
             <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="auto-detection" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
@@ -1596,6 +1626,13 @@
 
     <xs:complexType name="durable-executor-service">
         <xs:all>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the executor task, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>
@@ -1637,6 +1674,13 @@
 
     <xs:complexType name="scheduled-executor-service">
         <xs:all>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the executor task, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>
@@ -2409,12 +2453,12 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
-    <xs:complexType name="ssl">
+    <xs:complexType name="factory-class-with-properties">
         <xs:all>
             <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
+                        Full factory classname.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2423,26 +2467,7 @@
         <xs:attribute name="enabled" default="false" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
-                    True to enable this ssl configuration, false to disable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="mutual-auth">
-        <xs:all>
-            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    True to enable this mutual-auth configuration, false to disable.
+                    True to enable this configuration element, false to disable.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2549,6 +2574,7 @@
                     <xs:enumeration value="CUSTOM"/>
                     <xs:enumeration value="PER_MEMBER"/>
                     <xs:enumeration value="ZONE_AWARE"/>
+                    <xs:enumeration value="NODE_AWARE"/>
                     <xs:enumeration value="SPI"/>
                 </xs:restriction>
             </xs:simpleType>
@@ -2661,6 +2687,7 @@
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="replicatedmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
     </xs:complexType>
@@ -3100,7 +3127,7 @@
 
     <xs:complexType name="native-memory">
         <xs:all>
-            <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
             <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
             <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
             <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
@@ -3114,6 +3141,7 @@
                 </xs:simpleType>
             </xs:element>
             <xs:element name="persistent-memory-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="persistent-memory" type="persistent-memory" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
@@ -3147,6 +3175,102 @@
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="persistent-memory">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for persistent memory (e.g. Intel Optane) devices.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="directories" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of directories where the persistent memory
+                        is mounted to. Requires the mode attribute of persistent-memory
+                        to be MOUNTED (default).
+
+                        If the specified directories are not unique either in the directories
+                        themselves or in the NUMA nodes specified for them,
+                        the configuration is treated as invalid. Setting the NUMA
+                        node on the subset of the configured directories while leaving
+                        not set on others also makes the configuration invalid.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element name="directory" type="persistent-memory-directory"/>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" default="false" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets if using persistent memory as Hazelcast native memory is enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mode" default="MOUNTED" type="persistent-memory-mode">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the operational mode of the persistent memory configured
+                    on the machine.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:simpleType name="persistent-memory-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="MOUNTED">
+                <xs:annotation>
+                    <xs:documentation>
+                        The persistent memory is mounted into the file system (also known as FS DAX mode).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="SYSTEM_MEMORY">
+                <xs:annotation>
+                    <xs:documentation>
+                        The persistent memory is onlined as system memory (also known as KMEM DAX mode).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="persistent-memory-directory">
+        <xs:annotation>
+            <xs:documentation>
+                The directory where persistent memory is mounted to.
+
+                If the specified directory id not unique either in the
+                directory itself or in the NUMA node specified, the
+                configuration will be treated as invalid. Setting the NUMA
+                node on the subset of the configured directories while leaving
+                not set on others also results in invalid configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="numa-node" type="xs:int" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The NUMA node that the persistent memory mounted
+                            to the given directory is attached to.
+
+                            NUMA nodes have to be unique across the entire
+                            persistent memory configuration, otherwise the
+                            configuration will be treated as invalid. Similarly,
+                            setting the NUMA node on the subset of the configured
+                            directories while leaving not set on others also
+                            results in invalid configuration.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <xs:complexType name="property">
         <xs:simpleContent>
@@ -3584,7 +3708,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1">
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         SSL/TLS configuration for HTTPS connections.
@@ -3962,7 +4086,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3973,7 +4097,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="bits-sequence" minOccurs="0" default="6">
                 <xs:annotation>
                     <xs:documentation>
@@ -4201,7 +4325,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
@@ -4270,7 +4394,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
@@ -4356,7 +4480,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
@@ -4815,6 +4939,121 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="instance-tracking">
+        <xs:annotation>
+            <xs:documentation>
+                Configures tracking of a running Hazelcast instance. For now, this is
+                limited to writing information about the Hazelcast instance to a file
+                while the instance is starting.
+                The file is overwritten on every start of the Hazelcast instance and if
+                multiple instance share the same file system, every instance will
+                overwrite the tracking file of a previously started instance.
+                If this instance is unable to write the file, the exception is logged and
+                the instance is allowed to start.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="file-name" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the name of the file which will contain the tracking metadata. If left unset
+                        a file named "Hazelcast.process" will be created in the directory as returned by
+                        System.getProperty("java.io.tmpdir").
+                        The filename can contain placeholders that will be resolved in the same way
+                        as placeholders for the format pattern.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="format-pattern" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the pattern used to render the contents of the instance tracking file.
+                        It may contain placeholders for these properties:
+                        - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+                        - "version": The instance version.
+                        - "mode": The instance mode which can be "server", "embedded" or "client".
+                        - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+                        measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+                        - "licensed": If this instance is using a license or not. The value 0 signifies
+                        that there is no license set and the value 1 signifies that a license is in use.
+                        - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+                        process ID on all JVMs and operating systems so please test before use. In case we are unable to
+                        get the PID, the value will be -1.
+
+                        The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }.
+                        For instance, a placeholder for the "start_timestamp" would be
+                        $HZ_INSTANCE_TRACKING{start_timestamp}.
+                        The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+                        is ignored and only the known properties are resolved, placeholders for
+                        any parameters which do not have defined values will be ignored. This also
+                        means that if there is a missing closing bracket in one of the placeholders,
+                        the property name will be resolved as anything from the opening bracket
+                        to the next closing bracket, which might contain additional opening brackets.
+                        If unset, a JSON formatted output will be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Enables or disables instance tracking.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="sql">
+        <xs:annotation>
+            <xs:documentation>
+                SQL service configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" maxOccurs="1" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads responsible for execution of SQL statements.
+                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
+                        for the most workloads.
+                        Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
+                        subsystem. This may be beneficial if you would like to prioritize other CPU-intensive workloads on the
+                        same machine.
+                        It is not recommended to set the value of this parameter greater than the number of CPU cores because it
+                        may decrease the system's overall performance due to excessive context switches.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="operation-pool-size" type="xs:int" minOccurs="0" maxOccurs="1" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads responsible for network operations processing.
+                        When Hazelcast members execute a statement, they send commands to each other over the network to
+                        coordinate the execution. This includes requests to start or stop execution, or a request to process a
+                        batch of data. These commands are processed in a separate operation thread pool, to avoid frequent
+                        interruption of running SQL fragments.
+                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
+                        for the most workloads.
+                        Setting the value to less than the number of CPU cores may improve the overall performance on machines
+                        with large CPU count, because it will decrease the number of context switches.
+                        It is not recommended to set the value of this parameter greater than the number of CPU cores because it
+                        may decrease the system's overall performance due to excessive context switches.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statement-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the timeout in milliseconds that is applied to SQL statements without an explicit timeout.
+                        It is possible to set a timeout through the SqlStatement.setTimeout(long) method. If the statement
+                        timeout is not set, then the value of this parameter will be used.
+                        Zero value means no timeout. Negative values are prohibited.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
     <xs:complexType name="realms">
         <xs:sequence>
             <xs:element name="realm" type="realm" minOccurs="0" maxOccurs="unbounded"/>
@@ -4832,33 +5071,52 @@
             <xs:element name="jaas" type="login-modules"/>
             <xs:element name="tls" type="tls-authentication"/>
             <xs:element name="ldap" type="ldap-authentication"/>
+            <xs:element name="kerberos" type="kerberos-authentication"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="basic-authentication">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="skip-identity" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="skip-endpoint" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="skip-role" type="xs:boolean" minOccurs="0"/>
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="tls-authentication">
-        <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn" />
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn" />
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="ldap-authentication">
-        <xs:all>
-            <xs:element name="url" type="xs:string"/>
-            <xs:element name="socket-factory-class-name" type="xs:string" minOccurs="0"/>
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="url" type="xs:string"/>
+                    <xs:element name="socket-factory-class-name" type="xs:string" minOccurs="0"/>
 
-            <xs:element name="parse-dn" type="xs:boolean" minOccurs="0"/>
-            <xs:element name="role-context" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-filter" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-mapping-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-mapping-mode" type="ldap-role-mapping-mode" minOccurs="0"/>
-            <xs:element name="role-name-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-recursion-max-depth" type="xs:int" minOccurs="0"/>
-            <xs:element name="role-search-scope" type="ldap-search-scope" minOccurs="0"/>
-            <xs:element name="user-name-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="parse-dn" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="role-context" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-filter" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-mapping-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-mapping-mode" type="ldap-role-mapping-mode" minOccurs="0"/>
+                    <xs:element name="role-name-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-recursion-max-depth" type="xs:int" minOccurs="0"/>
+                    <xs:element name="role-search-scope" type="ldap-search-scope" minOccurs="0"/>
+                    <xs:element name="user-name-attribute" type="xs:string" minOccurs="0"/>
 
-            <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
-            <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
-            <xs:element name="password-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-context" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-search-scope" type="ldap-search-scope" minOccurs="0"/>
-        </xs:all>
+                    <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
+                    <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
+                    <xs:element name="system-authentication" type="xs:string" minOccurs="0"/>
+                    <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+                    <xs:element name="password-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-context" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-search-scope" type="ldap-search-scope" minOccurs="0"/>
+                    <xs:element name="skip-authentication" type="xs:boolean" minOccurs="0"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:simpleType name="ldap-role-mapping-mode">
         <xs:restriction base="non-space-string">
@@ -4874,12 +5132,38 @@
             <xs:enumeration value="subtree"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="kerberos-authentication">
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="relax-flags-check" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="use-name-without-realm" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+                    <xs:element name="principal" type="xs:string" minOccurs="0"/>
+                    <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
+                    <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="identity">
         <xs:choice>
             <xs:element name="username-password" type="username-password"/>
             <xs:element name="credentials-factory" type="security-object"/>
             <xs:element name="token" type="token"/>
+            <xs:element name="kerberos" type="kerberos-identity"/>
         </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="kerberos-identity">
+        <xs:all>
+            <xs:element name="realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="principal" type="xs:string" minOccurs="0"/>
+            <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
+            <xs:element name="spn" type="xs:string" minOccurs="0"/>
+            <xs:element name="use-canonical-hostname" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
     <xs:complexType name="username-password">
         <xs:attribute name="username" type="xs:string" use="required" />

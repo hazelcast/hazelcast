@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,21 +55,24 @@ public class FailoverConfigTest {
                 "setNearCacheConfigMap", "getFlakeIdGeneratorConfigMap", "findFlakeIdGeneratorConfig",
                 "getFlakeIdGeneratorConfig", "addFlakeIdGeneratorConfig", "setFlakeIdGeneratorConfigMap",
                 "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setClusterName",
-                "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "setClassLoader",
-                "getManagedContext", "setManagedContext", "getExecutorPoolSize", "setExecutorPoolSize", "getProxyFactoryConfigs",
-                "setProxyFactoryConfigs", "getSerializationConfig", "setSerializationConfig", "getNativeMemoryConfig",
-                "setNativeMemoryConfig", "getLicenseKey", "setLicenseKey", "addQueryCacheConfig", "getQueryCacheConfigs",
-                "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
-                "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
-                "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "setMetricsConfig",
-                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString");
+                "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "getLoadBalancerClassName",
+                "setLoadBalancerClassName", "setClassLoader", "getManagedContext", "setManagedContext", "getExecutorPoolSize",
+                "setExecutorPoolSize", "getProxyFactoryConfigs", "setProxyFactoryConfigs", "getSerializationConfig",
+                "setSerializationConfig", "getNativeMemoryConfig", "setNativeMemoryConfig", "getLicenseKey", "setLicenseKey",
+                "addQueryCacheConfig", "getQueryCacheConfigs", "setQueryCacheConfigs", "getInstanceName", "setInstanceName",
+                "getConnectionStrategyConfig", "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
+                "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels", "setUserContext",
+                "getUserContext", "setMetricsConfig", "load", "setBackupAckToClientEnabled", "isBackupAckToClientEnabled",
+                "getMetricsConfig", "equals", "hashCode", "toString", "setInstanceTrackingConfig", "getInstanceTrackingConfig");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
+            if (Modifier.isPrivate(method.getModifiers())) {
+                continue;
+            }
             String methodName = method.getName();
             if (!methodName.startsWith("$") && !allClientConfigMethods.contains(methodName)) {
                 throw new IllegalStateException("There is a new method on client config. " + methodName
-                        + "Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
+                        + ". Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
             }
         }
     }
@@ -77,14 +81,14 @@ public class FailoverConfigTest {
     public void testAllClientNetworkConfigsAreHandledInMultipleClientConfigSupport() {
         Set<String> allClientNetworkConfigMethods = new HashSet<>();
         Collections.addAll(allClientNetworkConfigMethods, "isSmartRouting", "setSmartRouting", "getSocketInterceptorConfig",
-                "setSocketInterceptorConfig", "getConnectionTimeout", "setConnectionTimeout",
-                "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions",
-                "setSocketOptions", "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig",
-                "getAwsConfig", "setGcpConfig", "getGcpConfig", "setAzureConfig", "getAzureConfig", "setKubernetesConfig",
-                "getKubernetesConfig", "setEurekaConfig", "getEurekaConfig", "getCloudConfig", "setCloudConfig",
-                "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions", "setOutboundPorts",
-                "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig", "setClientIcmpPingConfig",
-                "equals", "hashCode", "toString");
+                "setSocketInterceptorConfig", "getConnectionTimeout", "setConnectionTimeout", "addAddress", "setAddresses",
+                "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions", "setSocketOptions",
+                "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig", "getAwsConfig",
+                "setGcpConfig", "getGcpConfig", "setAzureConfig", "getAzureConfig", "setKubernetesConfig", "getKubernetesConfig",
+                "setEurekaConfig", "getEurekaConfig", "setAutoDetectionConfig", "getAutoDetectionConfig", "isAutoDetectionEnabled",
+                "getCloudConfig", "setCloudConfig", "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions",
+                "setOutboundPorts", "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig",
+                "setClientIcmpPingConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientNetworkConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (!method.getName().startsWith("$") && !allClientNetworkConfigMethods.contains(method.getName())) {

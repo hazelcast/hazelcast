@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AddAndGetOp;
@@ -29,7 +27,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -46,14 +43,15 @@ public class AddAndGetMessageTask extends AbstractCPMessageTask<AtomicLongAddAnd
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftInvocationManager invocationManager = service.getInvocationManager();
         CPGroupId groupId = parameters.groupId;
         long delta = parameters.delta;
         RaftOp op = new AddAndGetOp(parameters.name, delta);
-        InternalCompletableFuture<Long> future = (delta == 0)
-                ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
-        future.whenCompleteAsync(this);
+
+        if (delta == 0) {
+            query(groupId, op, LINEARIZABLE);
+        } else {
+            invoke(groupId, op);
+        }
     }
 
     @Override

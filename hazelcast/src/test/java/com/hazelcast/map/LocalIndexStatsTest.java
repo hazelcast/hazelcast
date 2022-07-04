@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -48,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
@@ -336,7 +337,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, valueStats().getQueryCount());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testQueryCounting_WhenPartitionPredicateIsUsed() {
         addIndex(map, "this", false);
@@ -383,7 +383,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(keyEmptyCost > 0);
         assertTrue(valueEmptyCost > 0);
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 10000; ++i) {
             map.put(i, i);
         }
         long keyFullCost = keyStats().getMemoryCost();
@@ -391,25 +391,60 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(keyFullCost > keyEmptyCost);
         assertTrue(valueFullCost > valueEmptyCost);
 
-        for (int i = 0; i < 50; ++i) {
+        for (int i = 0; i < 5000; ++i) {
             map.remove(i);
         }
         long keyHalfFullCost = keyStats().getMemoryCost();
         long valueHalfFullCost = valueStats().getMemoryCost();
-        assertTrue(keyHalfFullCost > keyEmptyCost && keyHalfFullCost < keyFullCost);
+        // keyHalfFullCost < keyFullCost does not necessarily hold, since
+        // keys are inlined and b+ tree nodes are deleted only when they become
+        // fully empty
+        assertTrue(keyHalfFullCost > keyEmptyCost);
         assertTrue(valueHalfFullCost > valueEmptyCost && valueHalfFullCost < valueFullCost);
 
-        for (int i = 0; i < 50; ++i) {
+        // 'force' some extra pages to be allocated
+        for (int i = 10000; i < 15000; ++i) {
             map.put(i, i);
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
         assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
 
-        for (int i = 0; i < 50; ++i) {
+        for (int i = 0; i < 5000; ++i) {
             map.set(i, i * i);
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
         assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
+    }
+
+    @Test
+    public void testMemoryCostIsNotDrifting() {
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
+
+        long keyEmptyCost = keyStats().getMemoryCost();
+        long valueEmptyCost = valueStats().getMemoryCost();
+        assertTrue(keyEmptyCost > 0);
+        assertTrue(valueEmptyCost > 0);
+
+        map.set(0, 0);
+        long keyPopulatedCost = keyStats().getMemoryCost();
+        long valuePopulatedCost = valueStats().getMemoryCost();
+        assertTrue(keyPopulatedCost > keyEmptyCost);
+        assertTrue(valuePopulatedCost > valueEmptyCost);
+
+        for (int i = 0; i < 100; ++i) {
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+
+            map.remove(0);
+            assertEquals(keyEmptyCost, keyStats().getMemoryCost());
+            assertEquals(valueEmptyCost, valueStats().getMemoryCost());
+
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+        }
     }
 
     @Test
@@ -424,9 +459,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         for (int i = 1; i <= QUERIES; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.entrySet(Predicates.equal("__key", i));
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertTrue(keyStats().getAverageHitLatency() > 0);
             assertTrue(keyStats().getAverageHitLatency() <= totalMeasuredLatency / i);
@@ -450,9 +485,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalInsertLatency = 0;
         for (int i = 1; i <= 100; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.put(i, i);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getInsertCount());
             assertTrue(keyStats().getTotalInsertLatency() > previousTotalInsertLatency);
@@ -480,9 +515,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalUpdateLatency = 0;
         for (int i = 1; i <= 50; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.put(i, i * 2);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getUpdateCount());
             assertTrue(keyStats().getTotalUpdateLatency() > previousTotalUpdateLatency);
@@ -510,9 +545,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalRemoveLatency = 0;
         for (int i = 1; i <= 50; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.remove(i);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getRemoveCount());
             assertTrue(keyStats().getTotalRemoveLatency() > previousTotalRemoveLatency);

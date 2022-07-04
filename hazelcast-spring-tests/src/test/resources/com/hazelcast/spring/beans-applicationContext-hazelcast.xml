@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+    <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
+        <hz:config>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:network port="5950">
+                <hz:join>
+                    <hz:multicast enabled="${boolean.false}"/>
+                    <hz:aws enabled="false"/>
+                    <hz:auto-detection enabled="${boolean:false}"/>
+                </hz:join>
+                <hz:interfaces enabled="true">
+                    <hz:interface>127.0.0.1</hz:interface>
+                </hz:interfaces>
+            </hz:network>
+            <hz:map name="map1" backup-count="${backup.count}" statistics-enabled="${boolean.false}"/>
+            <hz:map name="map-with-eviction"
+                    backup-count="0"
+                    async-backup-count="1"
+                    max-idle-seconds="${dummy.max.idle.seconds:7200}">
+                <hz:eviction eviction-policy="RANDOM"
+                             max-size-policy="PER_PARTITION"
+                             size="${dummy.eviction.size:5000}"/>
+            </hz:map>
+            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
+                              min-block-size="10"
+                              page-size="20">
+                <hz:size unit="MEGABYTES" value="${native.memory.size}"/>
+            </hz:native-memory>
+            <hz:queue name="testQueue" priority-comparator-class-name="com.hazelcast.collection.impl.queue.model.PriorityElementComparator">
+            </hz:queue>
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:client id="client" lazy-init="true" scope="prototype">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+
+            <hz:member>127.0.0.1:5950</hz:member>
+            <hz:member>127.0.0.1:5951</hz:member>
+            <hz:member>127.0.0.1:5952</hz:member>
+            <hz:member>127.0.0.1:5953</hz:member>
+            <hz:member>127.0.0.1:5954</hz:member>
+            <hz:member>127.0.0.1:5955</hz:member>
+            <hz:member>127.0.0.1:5956</hz:member>
+            <hz:member>127.0.0.1:5957</hz:member>
+            <hz:member>127.0.0.1:5958</hz:member>
+            <hz:member>127.0.0.1:5959</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+        <hz:query-caches>
+            <hz:query-cache name="cache1" mapName="map1">
+                <hz:predicate type="sql">__key > 12</hz:predicate>
+                <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
+            </hz:query-cache>
+        </hz:query-caches>
+        <hz:metrics enabled="${metrics.enabled}">
+            <hz:jmx enabled="false"/>
+            <hz:collection-frequency-seconds>42</hz:collection-frequency-seconds>
+        </hz:metrics>
+    </hz:client>
+
+
+    <hz:map id="map1" instance-ref="instance" name="map1" lazy-init="true" depends-on="instance, client"/>
+    <hz:map id="map2" instance-ref="instance" name="map2" lazy-init="true" depends-on="map1"/>
+
+</beans>

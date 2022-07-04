@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.LockAware;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -43,8 +43,8 @@ public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
     }
 
     public LockAwareLazyMapEntry init(InternalSerializationService serializationService,
-                     Data key, Object value, Extractors extractors, Boolean locked) {
-        super.init(serializationService, key, value, extractors);
+                                      Data key, Object value, Extractors extractors, Boolean locked, long ttl) {
+        super.init(serializationService, key, value, extractors, ttl);
         this.locked = locked;
         return this;
     }

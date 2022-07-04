@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,31 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
+import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
+import com.hazelcast.spring.jet.JetBeanDefinitionParser;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -54,16 +60,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
-import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
 
@@ -75,6 +75,7 @@ import static org.springframework.util.Assert.isTrue;
  * <li>{@link HazelcastConfigBeanDefinitionParser}</li>
  * <li>{@link HazelcastInstanceDefinitionParser}</li>
  * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
+ * <li>{@link JetBeanDefinitionParser}</li>
  * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
@@ -98,7 +99,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
 
                 if (parserContext.isNested()) {
-                    builder.setScope(parserContext.getContainingBeanDefinition().getScope());
+                    BeanDefinition containingBeanDefinition = parserContext.getContainingBeanDefinition();
+                    if (containingBeanDefinition != null) {
+                        builder.setScope(containingBeanDefinition.getScope());
+                    }
                 } else {
                     Node scopeNode = attributes.getNamedItem("scope");
                     if (scopeNode != null) {
@@ -126,6 +130,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected BeanDefinitionBuilder createBeanBuilder(Class clazz) {
             BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
+            builder.setScope(configBuilder.getBeanDefinition().getScope());
+            builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
+            return builder;
+        }
+
+        protected BeanDefinitionBuilder createBeanBuilder(String className) {
+            BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(className);
             builder.setScope(configBuilder.getBeanDefinition().getScope());
             builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
             return builder;
@@ -229,8 +240,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleDataSerializableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<>();
+            ManagedMap<String, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<String, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("data-serializable-factory".equals(name)) {
@@ -239,10 +250,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     Node classNode = attributes.getNamedItem("class-name");
                     Node fidNode = attributes.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(getTextContent(fidNode), new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
-                        classNames.put(parseInt(getTextContent(fidNode)), getTextContent(classNode));
+                        classNames.put(getTextContent(fidNode), getTextContent(classNode));
                     }
                 }
             }
@@ -306,15 +317,15 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
             }
             if (overrideJavaSerializationNode != null) {
-                boolean value = getBooleanValue(getTextContent(overrideJavaSerializationNode));
+                String value = getTextContent(overrideJavaSerializationNode);
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(overrideJavaSerializationName), value);
             }
             return globalSerializerConfigBuilder;
         }
 
         protected void handlePortableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<>();
+            ManagedMap<String, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<String, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("portable-factory".equals(name)) {
@@ -323,15 +334,69 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     Node classNode = attributes.getNamedItem("class-name");
                     Node fidNode = attributes.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(getTextContent(fidNode), new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
-                        classNames.put(parseInt(getTextContent(fidNode)), getTextContent(classNode));
+                        classNames.put(getTextContent(fidNode), getTextContent(classNode));
                     }
                 }
             }
             serializationConfigBuilder.addPropertyValue("portableFactoryClasses", classNames);
             serializationConfigBuilder.addPropertyValue("portableFactories", factories);
+        }
+
+        private void handleCompactSerialization(Node compactNode, BeanDefinitionBuilder serializationConfigBuilder) {
+            BeanDefinitionBuilder compactSerializationConfigBuilder = createBeanBuilder(CompactSerializationConfig.class);
+            compactSerializationConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            compactSerializationConfigBuilder.setFactoryMethod("newCompactSerializationConfig");
+
+            NamedNodeMap attributes = compactNode.getAttributes();
+            Node enabledNode = attributes.getNamedItem("enabled");
+            if (enabledNode != null) {
+                String value = getTextContent(enabledNode);
+                compactSerializationConfigBuilder.addConstructorArgValue(value);
+            }
+
+            ManagedMap<String, TriTuple<String, String, String>> registrations = new ManagedMap<>();
+            for (Node child : childElements(compactNode)) {
+                String name = cleanNodeName(child);
+                if ("registered-classes".equals(name)) {
+                    handleRegisteredClasses(child, registrations);
+                }
+            }
+            compactSerializationConfigBuilder.addConstructorArgValue(registrations);
+
+            BeanDefinition compactBeanDefinition = compactSerializationConfigBuilder.getBeanDefinition();
+            serializationConfigBuilder.addPropertyValue("compactSerializationConfig", compactBeanDefinition);
+        }
+
+        private void handleRegisteredClasses(Node registeredClasses,
+                                             Map<String, TriTuple<String, String, String>> registrations) {
+            for (Node node : childElements(registeredClasses)) {
+                String nodeName = cleanNodeName(node);
+                if (!"class".equals(nodeName)) {
+                    continue;
+                }
+
+                String className = getTextContent(node);
+                NamedNodeMap classAttributes = node.getAttributes();
+                Node typeNameNode = classAttributes.getNamedItem("type-name");
+                Node serializerNode = classAttributes.getNamedItem("serializer");
+                if (typeNameNode != null ^ serializerNode != null) {
+                    throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
+                            + "must be defined to register a class with an explicit serializer, "
+                            + "or no attributes should be defined to register a class to be used with "
+                            + "reflective compact serializer.");
+                }
+
+                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : className;
+                String serializerName = serializerNode != null ? getTextContent(serializerNode) : null;
+
+                TriTuple<String, String, String> registration = TriTuple.of(className, typeName, serializerName);
+                if (registrations.put(typeName, registration) != null) {
+                    throw new InvalidConfigurationException("Found a duplicate type name registration for " + typeName);
+                }
+            }
         }
 
         protected void handleSerialization(Node node) {
@@ -348,6 +413,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     handleSerializers(child, serializationConfigBuilder);
                 } else if ("java-serialization-filter".equals(nodeName)) {
                     handleJavaSerializationFilter(child, serializationConfigBuilder);
+                } else if ("compact-serialization".equals(nodeName)) {
+                    handleCompactSerialization(child, serializationConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("serializationConfig", beanDefinition);
@@ -413,7 +480,6 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
-        @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         protected BeanDefinition getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
             Node size = node.getAttributes().getNamedItem("size");
             Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
@@ -426,53 +492,26 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             BeanDefinitionBuilder evictionConfigBuilder = createBeanBuilder(EvictionConfig.class);
+            evictionConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            evictionConfigBuilder.setFactoryMethod("newEvictionConfig");
 
-            Integer maxSize = isIMap ? MapConfig.DEFAULT_MAX_SIZE : EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
-            MaxSizePolicy maxSizePolicyValue = isIMap
-                    ? MapConfig.DEFAULT_MAX_SIZE_POLICY : EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
-            EvictionPolicy evictionPolicyValue = isIMap
-                    ? MapConfig.DEFAULT_EVICTION_POLICY : EvictionConfig.DEFAULT_EVICTION_POLICY;
             String comparatorClassNameValue = null;
-            String comparatorBeanValue = null;
 
-            if (size != null) {
-                maxSize = parseInt(getTextContent(size));
-                if (isIMap && maxSize == 0) {
-                    maxSize = MapConfig.DEFAULT_MAX_SIZE;
-                }
-            }
-            if (maxSizePolicy != null) {
-                maxSizePolicyValue = MaxSizePolicy.valueOf(
-                        upperCaseInternal(getTextContent(maxSizePolicy)));
-            }
-            if (evictionPolicy != null) {
-                evictionPolicyValue = EvictionPolicy.valueOf(
-                        upperCaseInternal(getTextContent(evictionPolicy)));
-            }
             if (comparatorClassName != null) {
                 comparatorClassNameValue = getTextContent(comparatorClassName);
             }
-            if (comparatorBean != null) {
-                comparatorBeanValue = getTextContent(comparatorBean);
-            }
 
-            try {
-                doEvictionConfigChecks(maxSizePolicyValue, evictionPolicyValue,
-                        comparatorClassNameValue, comparatorBeanValue, isIMap, isNearCache);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidConfigurationException(e.getMessage());
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(size));
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(maxSizePolicy));
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(evictionPolicy));
+            evictionConfigBuilder.addConstructorArgValue(isNearCache);
+            evictionConfigBuilder.addConstructorArgValue(isIMap);
+            evictionConfigBuilder.addConstructorArgValue(comparatorClassNameValue);
+            if (comparatorBean == null) {
+                evictionConfigBuilder.addConstructorArgValue(null);
+            } else {
+                evictionConfigBuilder.addConstructorArgReference(getTextContent(comparatorBean));
             }
-
-            evictionConfigBuilder.addPropertyValue("size", maxSize);
-            evictionConfigBuilder.addPropertyValue("maxSizePolicy", maxSizePolicyValue);
-            evictionConfigBuilder.addPropertyValue("evictionPolicy", evictionPolicyValue);
-            if (comparatorClassNameValue != null) {
-                evictionConfigBuilder.addPropertyValue("comparatorClassName", comparatorClassNameValue);
-            }
-            if (comparatorBean != null) {
-                evictionConfigBuilder.addPropertyReference("comparator", comparatorBeanValue);
-            }
-
             return evictionConfigBuilder.getBeanDefinition();
         }
 
@@ -484,30 +523,89 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
             BeanDefinitionBuilder nearCachePreloaderConfigBuilder = createBeanBuilder(NearCachePreloaderConfig.class);
 
-            Boolean enabledValue = Boolean.FALSE;
-            String directoryValue = "";
-            Integer storeInitialDelaySecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS;
-            Integer storeIntervalSecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS;
+            String storeInitialDelaySecondsValue = String.valueOf(NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS);
+            String storeIntervalSecondsValue = String.valueOf(NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS);
 
-            if (enabled != null) {
-                enabledValue = Boolean.parseBoolean(getTextContent(enabled));
-            }
-            if (directory != null) {
-                directoryValue = getTextContent(directory);
-            }
             if (storeInitialDelaySeconds != null) {
-                storeInitialDelaySecondsValue = parseInt(getTextContent(storeInitialDelaySeconds));
+                storeInitialDelaySecondsValue = getTextContent(storeInitialDelaySeconds);
             }
             if (storeIntervalSeconds != null) {
-                storeIntervalSecondsValue = parseInt(getTextContent(storeIntervalSeconds));
+                storeIntervalSecondsValue = getTextContent(storeIntervalSeconds);
             }
 
-            nearCachePreloaderConfigBuilder.addPropertyValue("enabled", enabledValue);
-            nearCachePreloaderConfigBuilder.addPropertyValue("directory", directoryValue);
+            nearCachePreloaderConfigBuilder.addPropertyValue("enabled", getTextContent(enabled));
+            nearCachePreloaderConfigBuilder.addPropertyValue("directory", getTextContent(directory));
             nearCachePreloaderConfigBuilder.addPropertyValue("storeInitialDelaySeconds", storeInitialDelaySecondsValue);
             nearCachePreloaderConfigBuilder.addPropertyValue("storeIntervalSeconds", storeIntervalSecondsValue);
 
             return nearCachePreloaderConfigBuilder.getBeanDefinition();
+        }
+
+        protected void handleNativeMemory(Node node) {
+            BeanDefinitionBuilder nativeMemoryConfigBuilder = createBeanBuilder(NativeMemoryConfig.class);
+            AbstractBeanDefinition beanDefinition = nativeMemoryConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, nativeMemoryConfigBuilder, "persistentMemoryDirectory");
+            ManagedList<BeanDefinition> directories = new ManagedList<>();
+            BeanDefinitionBuilder pmemConfigBuilder = createBeanBuilder(PersistentMemoryConfig.class);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("size".equals(nodeName)) {
+                    handleMemorySizeConfig(child, nativeMemoryConfigBuilder);
+                } else if ("persistent-memory".equals(nodeName)) {
+                    handlePersistentMemoryConfig(child, pmemConfigBuilder, directories);
+                }
+            }
+
+            Node attrPmemDirectory = node.getAttributes().getNamedItem("persistent-memory-directory");
+            if (attrPmemDirectory != null) {
+                BeanDefinitionBuilder pmemDirConfigBuilder = createBeanBuilder(PersistentMemoryDirectoryConfig.class);
+                pmemDirConfigBuilder.addConstructorArgValue(getTextContent(attrPmemDirectory));
+                directories.add(pmemDirConfigBuilder.getBeanDefinition());
+            }
+
+            if (!directories.isEmpty()) {
+                pmemConfigBuilder.addPropertyValue("directoryConfigs", directories);
+            }
+
+            nativeMemoryConfigBuilder.addPropertyValue("persistentMemoryConfig", pmemConfigBuilder.getBeanDefinition());
+            configBuilder.addPropertyValue("nativeMemoryConfig", beanDefinition);
+        }
+
+        private void handlePersistentMemoryConfig(Node pmemNode, BeanDefinitionBuilder pmemConfigBuilder,
+                                                  ManagedList<BeanDefinition> directoriesList) {
+            Node enabledNode = pmemNode.getAttributes().getNamedItem("enabled");
+            pmemConfigBuilder.addPropertyValue("enabled", getTextContent(enabledNode));
+
+            Node mode = pmemNode.getAttributes().getNamedItem("mode");
+            pmemConfigBuilder.addPropertyValue("mode", getTextContent(mode));
+
+
+            for (Node dirsNode : childElements(pmemNode)) {
+                String dirsNodeName = cleanNodeName(dirsNode);
+                if ("directories".equals(dirsNodeName)) {
+                    for (Node dirNode : childElements(dirsNode)) {
+                        String dirNodeName = cleanNodeName(dirNode);
+                        if ("directory".equals(dirNodeName)) {
+                            BeanDefinitionBuilder pmemDirConfigBuilder = createBeanBuilder(PersistentMemoryDirectoryConfig.class);
+                            NamedNodeMap attributes = dirNode.getAttributes();
+                            Node numaNode = attributes.getNamedItem("numa-node");
+                            pmemDirConfigBuilder.addConstructorArgValue(getTextContent(dirNode));
+                            pmemDirConfigBuilder.addConstructorArgValue(getTextContent(numaNode));
+                            directoriesList.add(pmemDirConfigBuilder.getBeanDefinition());
+                        }
+                    }
+                }
+            }
+        }
+
+        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+            NamedNodeMap attributes = node.getAttributes();
+            Node value = attributes.getNamedItem("value");
+            Node unit = attributes.getNamedItem("unit");
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("size", memorySizeConfigBuilder.getBeanDefinition());
         }
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -525,6 +623,12 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             discoveryConfigBuilder.addPropertyValue("discoveryStrategyConfigs", discoveryStrategyConfigs);
             joinConfigBuilder.addPropertyValue("discoveryConfig", discoveryConfigBuilder.getBeanDefinition());
+        }
+
+        protected void handleAutoDetection(Node node, BeanDefinitionBuilder joinConfigBuilder) {
+            BeanDefinitionBuilder autoDetectionConfigBuilder = createBeanBuilder(AutoDetectionConfig.class);
+            autoDetectionConfigBuilder.addPropertyValue("enabled", getAttribute(node, "enabled"));
+            joinConfigBuilder.addPropertyValue("autoDetectionConfig", autoDetectionConfigBuilder.getBeanDefinition());
         }
 
         protected void handleIndex(ManagedList<BeanDefinition> indexes, Node indexNode) {
@@ -621,8 +725,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
             Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
-            boolean defaultsDisabled = getBooleanValue(getTextContent(defaultsDisabledAttr));
-            filterConfigBuilder.addPropertyValue("defaultsDisabled", defaultsDisabled);
+            filterConfigBuilder.addPropertyValue("defaultsDisabled", getTextContent(defaultsDisabledAttr));
             serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
                     filterConfigBuilder.getBeanDefinition());
         }
@@ -649,25 +752,4 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
     }
 
-    private static void doEvictionConfigChecks(MaxSizePolicy maxSizePolicyValue,
-                                               EvictionPolicy evictionPolicyValue,
-                                               String comparatorClassNameValue,
-                                               String comparatorBeanValue,
-                                               boolean isIMap, boolean isNearCache) {
-        if (isIMap) {
-            checkMapEvictionConfig(maxSizePolicyValue, evictionPolicyValue,
-                    comparatorClassNameValue, comparatorBeanValue);
-            return;
-        }
-
-        if (isNearCache) {
-            checkNearCacheEvictionConfig(evictionPolicyValue,
-                    comparatorClassNameValue, comparatorBeanValue);
-            return;
-        }
-
-        checkEvictionConfig(evictionPolicyValue,
-                comparatorClassNameValue, comparatorBeanValue,
-                COMMONLY_SUPPORTED_EVICTION_POLICIES);
-    }
 }

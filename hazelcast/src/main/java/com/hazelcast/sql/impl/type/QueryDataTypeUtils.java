@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,15 @@ import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static com.hazelcast.sql.impl.type.QueryDataType.LATE;
+import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
+import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_INT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_SMALLINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_TINYINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_UNLIMITED;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
@@ -58,71 +53,133 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 
 /**
  * Utility methods for SQL data types.
+ * <p>
+ * Length descriptions are generated using https://github.com/openjdk/jol.
  */
 public final class QueryDataTypeUtils {
-    /** 12 (hdr) + 12 (fields) + 12 (arr) + 4 (arr len) + 16 (eight chars) */
-    public static final int TYPE_LEN_VARCHAR = 12 + 4 + 8 + 12 + 4 + 16;
+    /**
+     * java.lang.String footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        32        32   [C
+     *     1        24        24   java.lang.String
+     *     2                  56   (total)
+     */
+    public static final int TYPE_LEN_VARCHAR = 56;
 
-    /** 12 (hdr) + 28 (fields + padding) + 12 (int hdr) + 28 (int fields) + (12 arr hdr) + 4 (arr len) + 8 (eight digits). */
-    public static final int TYPE_LEN_DECIMAL = 12 + 28 + 12 + 28 + 12 + 4 + 8;
+    /**
+     * java.math.BigDecimal footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        32        32   [I
+     *     1        40        40   java.math.BigDecimal
+     *     1        40        40   java.math.BigInteger
+     *     3                 112   (total)
+     */
+    public static final int TYPE_LEN_DECIMAL = 112;
 
-    /** 12 (hdr) + 12 (fields + padding). */
-    public static final int TYPE_LEN_TIME = 12 + 12;
+    /**
+     * java.time.LocalTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalTime
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_TIME = 24;
 
-    /** 12 (hdr) + 12 (fields + padding). */
-    public static final int TYPE_LEN_DATE = 12 + 12;
+    /**
+     * java.time.LocalDate footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalDate
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_DATE = 24;
 
-    /** 12 (hdr) + 20 (fields + padding) + date + time. */
-    public static final int TYPE_LEN_TIMESTAMP = 12 + 20 + TYPE_LEN_TIME + TYPE_LEN_DATE;
+    /**
+     * java.time.LocalDateTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalDate
+     *     1        24        24   java.time.LocalDateTime
+     *     1        24        24   java.time.LocalTime
+     *     3                  72   (total)
+     */
+    public static final int TYPE_LEN_TIMESTAMP = 72;
 
-    /** 12 (hdr) + 20 (fields + padding) + timestamp + 12 (offset hdr) + 12 (offset fields). */
-    public static final int TYPE_LEN_TIMESTAMP_WITH_OFFSET = 12 + 20 + TYPE_LEN_TIMESTAMP + 12 + 12;
+    /**
+     * java.time.OffsetDateTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   [C
+     *     1        24        24   java.lang.String
+     *     1        24        24   java.time.LocalDate
+     *     1        24        24   java.time.LocalDateTime
+     *     1        24        24   java.time.LocalTime
+     *     1        24        24   java.time.OffsetDateTime
+     *     1        24        24   java.time.ZoneOffset
+     *     7                 168   (total)
+     */
+    public static final int TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE = 168;
+
+    /**
+     * com.hazelcast.sql.impl.type.SqlYearMonthInterval footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        16        16   com.hazelcast.sql.impl.type.SqlYearMonthInterval
+     *     1                  16   (total)
+     */
+    public static final int TYPE_LEN_INTERVAL_YEAR_MONTH = 16;
+
+    /**
+     * com.hazelcast.sql.impl.type.SqlDaySecondInterval footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   com.hazelcast.sql.impl.type.SqlDaySecondInterval
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_INTERVAL_DAY_SECOND = 24;
+
+    /**
+     * java.util.HashMap footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        48        48   java.util.HashMap
+     *     1                  48   (total)
+     *
+     * Empty map.
+     */
+    public static final int TYPE_LEN_MAP = 48;
+
+    /**
+     * TODO: replace footprint with actual value?
+     *
+     * True VARCHAR footprint is 40, old values are kept for now, therefore new value is computed
+     * as VARCHAR footprint + 16 (reference/class footprint).
+     */
+    public static final int TYPE_LEN_JSON = TYPE_LEN_VARCHAR + 16;
 
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
-    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[PRECISION_BIGINT + 1];
+    // With a non-zero value we avoid weird zero-cost columns. Technically, it
+    // still costs a single reference now, but reference cost is not taken into
+    // account as of now.
+    public static final int TYPE_LEN_NULL = 1;
 
-    static {
-        for (int i = 1; i <= PRECISION_BIGINT; i++) {
-            QueryDataType type;
-
-            if (i == PRECISION_BIT) {
-                type = BIT;
-            } else if (i < PRECISION_TINYINT) {
-                type = new QueryDataType(TINYINT.getConverter(), i);
-            } else if (i == PRECISION_TINYINT) {
-                type = TINYINT;
-            } else if (i < PRECISION_SMALLINT) {
-                type = new QueryDataType(SMALLINT.getConverter(), i);
-            } else if (i == PRECISION_SMALLINT) {
-                type = SMALLINT;
-            } else if (i < PRECISION_INT) {
-                type = new QueryDataType(INT.getConverter(), i);
-            } else if (i == PRECISION_INT) {
-                type = INT;
-            } else if (i < PRECISION_BIGINT) {
-                type = new QueryDataType(BIGINT.getConverter(), i);
-            } else {
-                type = BIGINT;
-            }
-
-            INTEGER_TYPES[i] = type;
-        }
-    }
+    public static final int PRECEDENCE_NULL = 0;
+    public static final int PRECEDENCE_VARCHAR = 100;
+    public static final int PRECEDENCE_BOOLEAN = 200;
+    public static final int PRECEDENCE_TINYINT = 300;
+    public static final int PRECEDENCE_SMALLINT = 400;
+    public static final int PRECEDENCE_INTEGER = 500;
+    public static final int PRECEDENCE_BIGINT = 600;
+    public static final int PRECEDENCE_DECIMAL = 700;
+    public static final int PRECEDENCE_REAL = 800;
+    public static final int PRECEDENCE_DOUBLE = 900;
+    public static final int PRECEDENCE_TIME = 1000;
+    public static final int PRECEDENCE_DATE = 1100;
+    public static final int PRECEDENCE_TIMESTAMP = 1200;
+    public static final int PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE = 1300;
+    public static final int PRECEDENCE_OBJECT = 1400;
+    public static final int PRECEDENCE_INTERVAL_YEAR_MONTH = 10;
+    public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 20;
+    public static final int PRECEDENCE_MAP = 30;
+    public static final int PRECEDENCE_JSON = 40;
 
     private QueryDataTypeUtils() {
         // No-op.
-    }
-
-    public static QueryDataType resolveType(Object obj) {
-        if (obj == null) {
-            return LATE;
-        }
-
-        Class<?> clazz = obj.getClass();
-
-        return resolveTypeForClass(clazz);
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
@@ -141,8 +198,8 @@ public final class QueryDataTypeUtils {
                     return VARCHAR_CHARACTER;
                 }
 
-            case BIT:
-                return BIT;
+            case BOOLEAN:
+                return BOOLEAN;
 
             case TINYINT:
                 return TINYINT;
@@ -150,7 +207,7 @@ public final class QueryDataTypeUtils {
             case SMALLINT:
                 return SMALLINT;
 
-            case INT:
+            case INTEGER:
                 return INT;
 
             case BIGINT:
@@ -180,7 +237,7 @@ public final class QueryDataTypeUtils {
             case TIMESTAMP:
                 return TIMESTAMP;
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 if (converter == DateConverter.INSTANCE) {
                     return TIMESTAMP_WITH_TZ_DATE;
                 } else if (converter == CalendarConverter.INSTANCE) {
@@ -196,11 +253,16 @@ public final class QueryDataTypeUtils {
                 }
 
             case OBJECT:
+            case MAP:
                 return OBJECT;
 
-            default:
-                assert typeFamily == QueryDataTypeFamily.LATE;
+            case NULL:
+                return NULL;
 
+            case JSON:
+                return JSON;
+
+            default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
     }
@@ -211,8 +273,8 @@ public final class QueryDataTypeUtils {
             case VARCHAR:
                 return VARCHAR;
 
-            case BIT:
-                return BIT;
+            case BOOLEAN:
+                return BOOLEAN;
 
             case TINYINT:
                 return TINYINT;
@@ -220,7 +282,7 @@ public final class QueryDataTypeUtils {
             case SMALLINT:
                 return SMALLINT;
 
-            case INT:
+            case INTEGER:
                 return INT;
 
             case BIGINT:
@@ -244,53 +306,40 @@ public final class QueryDataTypeUtils {
             case TIMESTAMP:
                 return TIMESTAMP;
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             case OBJECT:
                 return OBJECT;
 
-            default:
-                assert typeFamily == QueryDataTypeFamily.LATE;
+            case NULL:
+                return NULL;
 
+            case JSON:
+                return JSON;
+
+            default:
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);
         }
     }
 
-    /**
-     * Get integer type for the given precision.
-     *
-     * @param precision Precision.
-     * @return Type.
-     */
-    public static QueryDataType integerType(int precision) {
-        if (precision == 0) {
-            throw new IllegalArgumentException("Precision cannot be zero.");
-        }
-
-        if (precision == PRECISION_UNLIMITED) {
-            return DECIMAL;
-        } else if (precision <= PRECISION_BIGINT) {
-            return INTEGER_TYPES[precision];
-        } else {
-            return DECIMAL;
-        }
+    public static boolean isNumeric(QueryDataType type) {
+        return isNumeric(type.getTypeFamily());
     }
 
-    public static QueryDataType withHigherPrecedence(QueryDataType first, QueryDataType second) {
-        int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
+    public static boolean isNumeric(QueryDataTypeFamily typeFamily) {
+        switch (typeFamily) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+                return true;
 
-        if (res == 0) {
-            // Only types from the same type family may have the same precedence.
-            assert first.getTypeFamily() == second.getTypeFamily();
-
-            // Types from the same family either all have unlimited precision, or both have non-unlimited precision.
-            assert (first.getPrecision() != PRECISION_UNLIMITED && second.getPrecision() != PRECISION_UNLIMITED)
-                || (first.getPrecision() == PRECISION_UNLIMITED && second.getPrecision() == PRECISION_UNLIMITED);
-
-            res = Integer.compare(first.getPrecision(), second.getPrecision());
+            default:
+                return false;
         }
-
-        return (res >= 0) ? first : second;
     }
 }

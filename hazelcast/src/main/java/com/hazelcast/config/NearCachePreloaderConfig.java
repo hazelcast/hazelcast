@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     public NearCachePreloaderConfig setStoreInitialDelaySeconds(int storeInitialDelaySeconds) {
-        this.storeInitialDelaySeconds = checkPositive(storeInitialDelaySeconds,
-                "storeInitialDelaySeconds must be a positive number!");
+        this.storeInitialDelaySeconds = checkPositive("storeInitialDelaySeconds",
+                storeInitialDelaySeconds);
         return this;
     }
 
@@ -104,8 +104,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     public NearCachePreloaderConfig setStoreIntervalSeconds(int storeIntervalSeconds) {
-        this.storeIntervalSeconds = checkPositive(storeIntervalSeconds,
-                "storeIntervalSeconds must be a positive number!");
+        this.storeIntervalSeconds = checkPositive("storeIntervalSeconds", storeIntervalSeconds);
         return this;
     }
 
@@ -122,7 +121,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeUTF(directory);
+        out.writeString(directory);
         out.writeInt(storeInitialDelaySeconds);
         out.writeInt(storeIntervalSeconds);
     }
@@ -130,7 +129,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        directory = in.readUTF();
+        directory = in.readString();
         storeInitialDelaySeconds = in.readInt();
         storeIntervalSeconds = in.readInt();
     }

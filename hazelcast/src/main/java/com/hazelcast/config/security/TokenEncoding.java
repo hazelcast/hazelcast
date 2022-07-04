@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.config.security;
 
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.internal.util.StringUtil.trim;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -33,7 +34,13 @@ public enum TokenEncoding {
     /**
      * Base64 token encoding.
      */
-    BASE64("base64", ba -> Base64.getEncoder().encodeToString(ba), s -> Base64.getDecoder().decode(s));
+    BASE64("base64", ba -> Base64.getEncoder().encodeToString(ba), s -> {
+        if (MASK_FOR_SENSITIVE_DATA.equals(s)) {
+            return MASK_FOR_SENSITIVE_DATA.getBytes(US_ASCII);
+        } else {
+            return Base64.getDecoder().decode(s);
+        }
+    });
 
     private static final TokenEncoding DEFAULT = TokenEncoding.NONE;
 

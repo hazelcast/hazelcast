@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -39,19 +40,21 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      * <p>
-     * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
+     * The addMembershipListener method returns a registration ID. This ID is needed to remove the MembershipListener using the
      * {@link #removeMembershipListener(UUID)} method.
      * <p>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * The listener doesn't notify when a lite member is promoted to a data member.
      *
      * @param listener membership listener
      * @return the registration ID
      * @throws java.lang.NullPointerException if listener is null
      * @see #removeMembershipListener(UUID)
      */
+    @Nonnull
     UUID addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
@@ -77,6 +80,7 @@ public interface Cluster {
      *
      * @return current members in the cluster
      */
+    @Nonnull
     Set<Member> getMembers();
 
     /**
@@ -86,17 +90,22 @@ public interface Cluster {
      * via {@link #promoteLocalLiteMember()}
      * or when this member merges to a new cluster after split-brain detected. Returned value should not be
      * cached but instead this method should be called each time when local member is needed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return this Hazelcast instance member
      */
+    @Nonnull
     Member getLocalMember();
 
     /**
-     * Promotes local lite member to data member.
-     * When this method returns both {@link #getLocalMember()} and {@link #getMembers()}
-     * reflects the promotion.
+     * Promotes the local lite member to a data member.
+     * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflect the promotion.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
-     * @throws IllegalStateException when member is not a lite member or mastership claim in progress
+     * @throws IllegalStateException when member is not a lite member or mastership claim is in progress
      *                               or local member cannot be identified as a member of the cluster
      *                               or cluster state doesn't allow migrations/repartitioning
      * @since 3.9
@@ -119,6 +128,8 @@ public interface Cluster {
      * If cluster state change is in process, {@link ClusterState#IN_TRANSITION} will be returned.
      * <p>
      * This is a local operation, state will be read directly from local member.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return state of the cluster
      * @since 3.6
@@ -144,6 +155,8 @@ public interface Cluster {
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param newState new state of the cluster
      * @throws NullPointerException     if newState is null
@@ -175,6 +188,8 @@ public interface Cluster {
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param newState           new state of the cluster
      * @param transactionOptions transaction options
@@ -207,19 +222,36 @@ public interface Cluster {
      * 3.9, since all cluster members will be compatible with the new cluster version. Once cluster version
      * is updated to 3.9, further communication among members will take place in 3.9 and all new features and functionality
      * of version 3.9 will be available.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return the version at which this cluster operates.
      * @since 3.8
      */
+    @Nonnull
     Version getClusterVersion();
 
     /**
-     * Returns the Hot Restart service for interacting with Hot Restart.
-     *
-     * @return the hot restart service
-     * @throws UnsupportedOperationException if the hot restart service is not supported on this instance (e.g. on client)
+     * @deprecated since 5.0
+     * Use {@link Cluster#getPersistenceService()} instead.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      */
+    @Deprecated
     HotRestartService getHotRestartService();
+
+    /**
+     * Returns the public persistence service for interacting with Persistence
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
+     *
+     * @return the persistence service
+     * @throws UnsupportedOperationException if the persistence service is not
+     * supported on this instance (e.g. on client)
+     * @since 5.0
+     */
+    @Nonnull
+    PersistenceService getPersistenceService();
 
     /**
      * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,
@@ -234,6 +266,8 @@ public interface Cluster {
      * either all other nodes leave the cluster or a configurable timeout occurs
      * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @throws IllegalStateException if member-list changes during the transaction
      *                               or there are ongoing/pending migration operations
@@ -259,6 +293,8 @@ public interface Cluster {
      * either all other nodes leave the cluster or a configurable timeout occurs
      * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param transactionOptions transaction options
      * @throws IllegalStateException if member-list changes during the transaction
@@ -294,6 +330,8 @@ public interface Cluster {
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param version new version of the cluster
      * @since 3.8
@@ -320,6 +358,8 @@ public interface Cluster {
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param version new version of the cluster
      * @param options options by which to execute the transaction

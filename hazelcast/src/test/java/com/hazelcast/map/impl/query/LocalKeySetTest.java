@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
@@ -56,7 +57,9 @@ public class LocalKeySetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
+        Config config = regularInstanceConfig()
+                .setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
 
@@ -118,6 +121,15 @@ public class LocalKeySetTest extends HazelcastTestSupport {
         Set<String> result = map.localKeySet(new GoodPredicate());
 
         assertEquals(setOf(localKey1, localKey3), result);
+    }
+
+    @Test
+    public void whenPartitionPredicate() {
+        map.put(localKey1, "local");
+        map.put(remoteKey1, "remote");
+
+        Predicate<String, String> partitionPredicate = Predicates.partitionPredicate(remoteKey1, Predicates.alwaysTrue());
+        assertEquals(0, map.localKeySet(partitionPredicate).size());
     }
 
     @Test

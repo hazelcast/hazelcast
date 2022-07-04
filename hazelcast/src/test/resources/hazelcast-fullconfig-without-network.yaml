@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ hazelcast:
 
   management-center:
     scripting-enabled: false
+    console-enabled: false
+    data-access-enabled: true
     trusted-interfaces:
       - 10.10.1.*
       - 10.10.2.*
@@ -64,7 +66,6 @@ hazelcast:
             consistency-check-strategy: MERKLE_TREES
 
         istanbul:
-          class-name: com.hazelcast.wan.custom.WanPublisher
           queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
           initial-publisher-state: STOPPED
           queue-capacity: 12345
@@ -86,12 +87,14 @@ hazelcast:
             zones: us-east1-b,us-east1-c
           azure:
             enabled: false
+            instance-metadata-available: false
             client-id: CLIENT_ID
-            client-secret: CLIENT_SECRET
             tenant-id: TENANT_ID
+            client-secret: CLIENT_SECRET
             subscription-id: SUB_ID
-            cluster-id: HZLCAST001
-            group-name: RESOURCE-GROUP-NAME
+            resource-group: RESOURCE-GROUP-NAME
+            scale-set: SCALE-SET-NAME
+            tag: TAG-NAME=HZLCAST001
           kubernetes:
             enabled: false
             namespace: MY-KUBERNETES-NAMESPACE
@@ -142,6 +145,7 @@ hazelcast:
 
   durable-executor-service:
     dummy:
+      statistics-enabled: false
       pool-size: 10
       durability: 2
       capacity: 10
@@ -149,6 +153,7 @@ hazelcast:
 
   scheduled-executor-service:
     dummy:
+      statistics-enabled: false
       pool-size: 10
       durability: 2
       capacity: 50
@@ -194,6 +199,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
 
   map:
     default:
@@ -214,9 +220,16 @@ hazelcast:
       # OFF: No metadata is created.
       metadata-policy: CREATE_ON_UPDATE
 
-      # Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
-      # You can disable if you do not plan to use eviction on your entries.
-      statistics-enabled: false
+      # Whether map level statistical information (total
+      # hits, memory-cost etc.) should be gathered and stored.
+      statistics-enabled: true
+
+      # Whether statistical information (hits, creation
+      # time, last access time etc.) should be gathered
+      # and stored. You have to enable this if you plan to
+      # implement a custom eviction policy, out-of-the-box
+      # eviction policies work regardless of this setting.
+      per-entry-stats-enabled: false
 
       cache-deserialized-values: ALWAYS
 
@@ -295,16 +308,17 @@ hazelcast:
       # Proper eviction configuration example for NATIVE in-memory format :
       #    `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
       near-cache:
-        max-size: 10000
         time-to-live-seconds: 0
         max-idle-seconds: 0
-        eviction-policy: LFU
+        eviction:
+          size: 10000
+          eviction-policy: LFU
         invalidate-on-change: true
         cache-local-entries: false
 
       wan-replication-ref:
         my-wan-cluster:
-          merge-policy-class-name: hz.PASS_THROUGH
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.WanTestFilter1
             - com.example.WanTestFilter2
@@ -368,6 +382,7 @@ hazelcast:
           in-memory-format: BINARY
           coalesce: false
           populate: true
+          serialize-keys: false
           eviction:
             eviction-policy: LRU
             max-size-policy: ENTRY_COUNT
@@ -378,6 +393,15 @@ hazelcast:
                 - "name"
             - attributes:
               - "age"
+      tiered-store:
+        enabled: true
+        memory-tier:
+          capacity:
+            unit: MEGABYTES
+            value: 256
+        disk-tier:
+          enabled: true
+          device-name: default-tiered-store-device
 
   multimap:
     default:
@@ -481,9 +505,9 @@ hazelcast:
       cache-writer-factory:
         class-name: com.example.cache.MyCacheWriterFactory
       expiry-policy-factory:
-        class-name: com.example.cache.MyExpirePolicyFactory
+#        class-name: com.example.cache.MyExpirePolicyFactory
         timed-expiry-policy-factory:
-          expiry-policy-type: ETERNAL
+          expiry-policy-type: TOUCHED
           duration-amount: 123
           time-unit: MICROSECONDS
 
@@ -508,7 +532,7 @@ hazelcast:
         size: 50
       wan-replication-ref:
         name: my-wan-cluster
-        merge-policy-class-name: hz.PASS_THROUGH
+        merge-policy-class-name: PassThroughMergePolicy
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
@@ -524,6 +548,9 @@ hazelcast:
         enabled: true
         capacity: 100
         time-to-live-seconds: 100
+      merkle-tree:
+        enabled: true
+        depth: 5
 
   flake-id-generator:
     default:
@@ -548,6 +575,7 @@ hazelcast:
     enable-compression: true
     enable-shared-object: true
     allow-unsafe: true
+    allow-override-default-serializers: false
     data-serializable-factories:
       - factory-id: 1
         class-name: com.hazelcast.examples.DataSerializableFactory
@@ -577,6 +605,13 @@ hazelcast:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -584,14 +619,35 @@ hazelcast:
     size:
       unit: MEGABYTES
       value: 256
-    min-block-size: 123
+    min-block-size: 128
     page-size: 123
     metadata-space-percentage: 12.5
+    persistent-memory:
+      enabled: true
+      mode: MOUNTED
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
 
   security:
     enabled: false
     realms:
-      - name: mr
+      - name: simpleRealm
+        authentication:
+          simple:
+            users:
+              - username: test
+                password: 'a1234'
+                roles:
+                  - monitor
+                  - hazelcast
+              - username: dev
+                password: 'secret'
+                roles:
+                  - root
+      - name: jaasRealm
         authentication:
           jaas:
             - class-name: com.hazelcast.examples.MyRequiredLoginModule
@@ -603,21 +659,103 @@ hazelcast:
             class-name: com.hazelcast.examples.MyCredentialsFactory
             properties:
               property: value
-      - name: cr
+      - name: ldapRealm
+        authentication:
+          ldap:
+             url: ldap://ldap.my-company.example
+             socket-factory-class-name: socketFactoryClassName
+             parse-dn: true
+             role-context: roleContext
+             role-filter: roleFilter
+             role-mapping-attribute: roleMappingAttribute
+             role-mapping-mode: reverse
+             role-name-attribute: roleNameAttribute
+             role-recursion-max-depth: 25
+             role-search-scope: object
+             user-name-attribute: userNameAttribute
+             system-user-dn: systemUserDn
+             system-user-password: systemUserPassword
+             system-authentication: simple
+             security-realm: realmName
+             password-attribute: passwordAttribute
+             user-context: userContext
+             user-filter: userFilter
+             user-search-scope: one-level
+      - name: tlsRealm
+        authentication:
+          tls:
+             roleAttribute: cn
+      - name: usernamePasswordIdentityRealm
+        identity:
+          username-password:
+             username: user
+             password: Hazelcast
+      - name: tokenIdentityRealm
+        identity:
+          token:
+             encoding: base64
+             value: SGF6ZWxjYXN0
+      - name: kerberosRealm
+        authentication:
+          kerberos:
+            skip-role: true
+            relax-flags-check: true
+            use-name-without-realm: true
+            security-realm: krb5Acceptor
+            ldap:
+              url: ldap://127.0.0.1/
+              system-authentication: GSSAPI
+              security-realm: krb5Initiator
+              skip-authentication: true
+              user-filter: "(krb5PrincipalName={login})"
+              role-mapping-attribute: cn
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            security-realm: krb5Initiator
+            service-name-prefix: hz/
+            use-canonical-hostname: true
+            spn: hz/127.0.0.1@HAZELCAST.COM
+      - name: simpleKerberosRealm
+        authentication:
+          kerberos:
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+      - name: krb5Acceptor
         authentication:
           jaas:
-            - class-name: com.hazelcast.examples.MyOptionalLoginModule
-              usage: OPTIONAL
-              properties:
-                property: value
-            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
               usage: REQUIRED
               properties:
-                property: value
+                isInitiator: false
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
     member-authentication:
-      realm: mr
+      realm: jaasRealm
     client-authentication:
-      realm: cr
+      realm: simpleRealm
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -636,12 +774,10 @@ hazelcast:
             - all
       set:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cardinality-estimator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       scheduled-executor:
@@ -651,19 +787,16 @@ hazelcast:
             - all
       atomic-long:
         - name: "*"
-          principal: "*"
           actions:
             - all
       atomic-reference:
         - name: "*"
-          principal: "*"
           actions:
             - all
       transaction:
         principal: deployer
       pn-counter:
         - name: "*"
-          principal: "*"
           actions:
             - all
       semaphore:
@@ -678,7 +811,6 @@ hazelcast:
             - all
       durable-executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       map:
@@ -693,27 +825,22 @@ hazelcast:
             - read
       flake-id-generator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       topic:
         - name: "*"
-          principal: "*"
           actions:
             - all
       multimap:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cache:
         - name: "*"
-          principal: "*"
           actions:
             - all
       lock:
         - name: "*"
-          principal: "*"
           actions:
             - all
       queue:
@@ -722,12 +849,10 @@ hazelcast:
             - all
       list:
         - name: "*"
-          principal: "*"
           actions:
             - all
       executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       ring-buffer:
@@ -735,11 +860,29 @@ hazelcast:
           principal: "*"
           actions:
             - all
-      reliable-topic:
+      replicatedmap:
         - name: "*"
-          principal: "*"
           actions:
             - all
+      reliable-topic:
+        - name: "*"
+          actions:
+            - all
+      management:
+        - principal: "mcadmin"
+      job:
+        - principal: "*"
+          actions:
+            - all
+      connector:
+        - name: "*"
+          actions:
+            - all
+      sql:
+        - name: "*"
+          actions:
+            - all
+
     client-block-unmapped-actions: true
 
   member-attributes:
@@ -784,7 +927,7 @@ hazelcast:
       recently-active-split-brain-protection:
         heartbeat-tolerance-millis: 60000
 
-  hot-restart-persistence:
+  persistence:
     enabled: false
     backup-dir: backup-dir
     base-dir: base-dir
@@ -792,6 +935,19 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
+    rebalance-delay-seconds: 240
+
+  dynamic-configuration:
+    persistence-enabled: true
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
+
+  local-device:
+    default-tiered-store-device:
+      base-dir: base-dir
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 1
 
   lite-member:
     enabled: true
@@ -825,6 +981,14 @@ hazelcast:
       lock2:
         lock-acquire-limit: 2
 
+  auditlog:
+    enabled: false
+    factory-class-name: com.acme.AuditlogToSyslogFactory
+    properties:
+      host: syslogserver.acme.com
+      port: 514
+      type: tcp
+
   metrics:
     enabled: false
     management-center:
@@ -833,3 +997,9 @@ hazelcast:
     jmx:
       enabled: false
     collection-frequency-seconds: 24
+
+  instance-tracking:
+    enabled: false
+
+  sql:
+    statement-timeout-millis: 0

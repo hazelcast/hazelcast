@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.test.metrics;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.util.StringUtil;
+import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -60,6 +61,8 @@ public class MetricsRule implements TestRule {
             public void evaluate() throws Throwable {
                 try {
                     base.evaluate();
+                } catch (AssumptionViolatedException e) {
+                    // represents expected exceptions, no need to take an action.
                 } catch (Throwable t) {
                     StringBuilder sb = new StringBuilder();
                     publishers.forEach((instanceName, publisher) -> publisher.dumpRecordings(instanceName, sb));

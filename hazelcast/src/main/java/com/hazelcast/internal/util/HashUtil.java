@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  * Portions Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -332,7 +332,7 @@ public final class HashUtil {
      * @throws IllegalArgumentException if length is smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
-        checkPositive(length, "length must be larger than 0");
+        checkPositive("length", length);
 
         if (hash == Integer.MIN_VALUE) {
             return 0;

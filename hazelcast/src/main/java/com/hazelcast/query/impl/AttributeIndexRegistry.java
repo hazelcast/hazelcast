@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -164,6 +165,7 @@ public class AttributeIndexRegistry {
      * <p>
      * Exposed as a package-private class only for testing purposes.
      */
+    @SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
     static final class FirstComponentDecorator implements InternalIndex {
 
         // See CompositeValue docs for more details on what is going on in the
@@ -211,12 +213,13 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                             OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
         @Override
-        public void removeEntry(Data key, Object value, OperationSource operationSource) {
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
@@ -233,6 +236,62 @@ public class AttributeIndexRegistry {
         @Override
         public Set<QueryableEntry> evaluate(Predicate predicate) {
             return delegate.evaluate(predicate);
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparison comparison,
+                Comparable value,
+                boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparable from,
+                boolean fromInclusive,
+                Comparable to,
+                boolean toInclusive,
+                boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
@@ -329,6 +388,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public void beginPartitionUpdate() {
+            throw newUnsupportedException();
+        }
+
+        @Override
         public void markPartitionAsIndexed(int partitionId) {
             throw newUnsupportedException();
         }
@@ -341,6 +405,16 @@ public class AttributeIndexRegistry {
         @Override
         public PerIndexStats getPerIndexStats() {
             return delegate.getPerIndexStats();
+        }
+
+        @Override
+        public PartitionStamp getPartitionStamp() {
+            throw newUnsupportedException();
+        }
+
+        @Override
+        public boolean validatePartitionStamp(long stamp) {
+            throw newUnsupportedException();
         }
 
         private RuntimeException newUnsupportedException() {

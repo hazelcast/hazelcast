@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.sql.impl.type.converter;
+
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
@@ -36,22 +38,42 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
 
     @Override
     public byte asTinyint(Object val) {
-        return cast(val).byteValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).byteValueExact();
+        } catch (ArithmeticException e) {
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
+        }
     }
 
     @Override
     public short asSmallint(Object val) {
-        return cast(val).shortValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).shortValueExact();
+        } catch (ArithmeticException e) {
+            throw numericOverflowError(QueryDataTypeFamily.SMALLINT);
+        }
     }
 
     @Override
     public int asInt(Object val) {
-        return cast(val).intValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).intValueExact();
+        } catch (ArithmeticException e) {
+            throw numericOverflowError(QueryDataTypeFamily.INTEGER);
+        }
     }
 
     @Override
     public long asBigint(Object val) {
-        return cast(val).longValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).longValueExact();
+        } catch (ArithmeticException e) {
+            throw numericOverflowError(QueryDataTypeFamily.BIGINT);
+        }
     }
 
     @Override
@@ -77,4 +99,5 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
     private BigDecimal cast(Object val) {
         return (BigDecimal) val;
     }
+
 }

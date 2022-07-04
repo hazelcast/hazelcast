@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ import java.util.UUID;
  * values to other clusters over the wide area network, so it has to deal
  * with long delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats> {
+public interface WanReplicationService extends CoreService,
+        StatisticsAwareService<LocalWanStats> {
 
     /**
      * Service name.
@@ -71,14 +72,15 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * config with the same name, any publishers with publisher IDs that are
      * present in the provided {@code newConfig} but not present in the existing
      * config will be added (appended).
-     * If the existing config contains all of the publishers from the provided
+     * If the existing config contains all the publishers from the provided
      * config, no change is done to the existing config.
      * This method is thread-safe and may be called concurrently.
      *
      * @param newConfig the WAN configuration to add
+     * @return <code>false</code> if there is no change to the existing config
      * @see AbstractWanPublisherConfig#getPublisherId()
      */
-    void appendWanReplicationConfig(WanReplicationConfig newConfig);
+    boolean appendWanReplicationConfig(WanReplicationConfig newConfig);
 
     /**
      * Creates a new {@link WanPublisher} by the given name. If
@@ -181,12 +183,16 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     void removeWanEvents(String wanReplicationName, String wanPublisherId);
 
     /**
-     * Adds a new {@link WanReplicationConfig} to this member and creates the
-     * {@link WanPublisher}s specified in the config.
+     * Adds a new {@link WanReplicationConfig} to this member or appends to an
+     * existing config and initializes any {@link WanPublisher}s that were added
+     * as part of this config.
      * This method can also accept WAN configs with an existing WAN replication
      * name. Such configs will be merged into the existing WAN replication
      * config by adding publishers with publisher IDs which are not already part
      * of the existing configuration.
+     * Publishers with IDs which already exist in the configuration are ignored.
+     * In this sense, calling this method with the exact same config is thread-safe
+     * and idempotent.
      *
      * @throws UnsupportedOperationException if invoked on OS
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -27,16 +29,19 @@ import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
 
 /**
- * Contains various factory &amp; helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
+ * Contains various factory &amp; helper methods for a {@link
+ * com.hazelcast.map.impl.record.Record} object.
  */
 public final class Records {
 
     private Records() {
     }
 
-    public static void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-        out.writeByte(record.getMatchingRecordReaderWriter().getId());
-        record.getMatchingRecordReaderWriter().writeRecord(out, record, dataValue);
+    public static void writeRecord(ObjectDataOutput out, Record record,
+                                   Data dataValue) throws IOException {
+        RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
+        out.writeByte(readerWriter.getId());
+        readerWriter.writeRecord(out, record, dataValue);
     }
 
     public static Record readRecord(ObjectDataInput in) throws IOException {
@@ -44,23 +49,39 @@ public final class Records {
         return getById(matchingDataRecordId).readRecord(in);
     }
 
+    public static void writeExpiry(ObjectDataOutput out,
+                                   ExpiryMetadata expiryMetadata) throws IOException {
+        boolean hasExpiry = expiryMetadata.hasExpiry();
+        out.writeBoolean(hasExpiry);
+        if (hasExpiry) {
+            expiryMetadata.write(out);
+        }
+    }
+
+    public static ExpiryMetadata readExpiry(ObjectDataInput in) throws IOException {
+        ExpiryMetadata expiryMetadata = ExpiryMetadata.NULL;
+        boolean hasExpiry = in.readBoolean();
+        if (hasExpiry) {
+            expiryMetadata = new ExpiryMetadataImpl();
+            expiryMetadata.read(in);
+        }
+        return expiryMetadata;
+    }
+
     /**
      * Except transient field {@link com.hazelcast.query.impl.Metadata},
      * all record-metadata is copied from one record to another.
-     *
-     * @return populated record object with new metadata
      */
-    public static Record copyMetadataFrom(Record fromRecord, Record toRecord) {
+    public static void copyMetadataFrom(Record fromRecord, Record toRecord) {
+        if (fromRecord == null) {
+            return;
+        }
         toRecord.setHits(fromRecord.getHits());
-        toRecord.setTtl(fromRecord.getTtl());
-        toRecord.setMaxIdle(fromRecord.getMaxIdle());
         toRecord.setVersion(fromRecord.getVersion());
         toRecord.setCreationTime(fromRecord.getCreationTime());
-        toRecord.setExpirationTime(fromRecord.getExpirationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());
         toRecord.setLastStoredTime(fromRecord.getLastStoredTime());
         toRecord.setLastUpdateTime(fromRecord.getLastUpdateTime());
-        return toRecord;
     }
 
     /**
@@ -94,8 +115,9 @@ public final class Records {
      * otherwise return the actual value.
      * Value caching makes sense when:
      * <ul>
-     * <li>Portable serialization is not used</li>
      * <li>OBJECT InMemoryFormat is not used</li>
+     * <li>Portable serialization is not used</li>
+     * <li>HazelcastJsonValue objects are not used</li>
      * </ul>
      * <p>
      * If Record does not contain cached value and is found
@@ -185,7 +207,15 @@ public final class Records {
     }
 
     static boolean shouldCache(Object value) {
-        return value instanceof Data && !((Data) value).isPortable();
+        // For portables, we cannot extract information from the deserialized form.
+        // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
+        // means the metadata is created from the Data representation of the object.
+        // If we allow using the deserialized values, the metadata might not be safe to use.
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            return !(data.isPortable() || data.isJson() || data.isCompact());
+        }
+        return false;
     }
 
 

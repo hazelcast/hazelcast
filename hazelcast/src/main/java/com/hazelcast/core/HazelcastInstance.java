@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -39,6 +40,7 @@ import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberExcepti
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -58,7 +60,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * Instances should be shut down explicitly. See the {@link #shutdown()} method.
  * If the instance is a client and you don't shut it down explicitly, it will continue to run and
- * even connect to another live member if the one it was connected fails.
+ * even connect to another live member if the one it was connected to fails.
  * <p>
  * Each Hazelcast instance has its own socket and threads.
  *
@@ -451,6 +453,23 @@ public interface HazelcastInstance {
      * @return the CP subsystem that offers a set of in-memory linearizable data structures
      */
     @Nonnull CPSubsystem getCPSubsystem();
+
+    /**
+     * Returns a service to execute distributed SQL queries.
+     *
+     * @return SQL service
+     *
+     * @see SqlService
+     */
+    @Nonnull SqlService getSql();
+
+    /**
+     * Returns a Jet service to execute distributed batch and streaming jobs.
+     *
+     * @see JetService
+     */
+    @Nonnull
+    JetService getJet();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

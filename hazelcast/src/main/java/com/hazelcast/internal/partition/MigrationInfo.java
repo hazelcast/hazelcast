@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,24 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
-import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.UuidUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements IdentifiedDataSerializable {
 
     public enum MigrationStatus {
 
         ACTIVE(0),
-        INVALID(1),
         SUCCESS(2),
         FAILED(3);
 
@@ -54,8 +52,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
             switch (code) {
                 case 0:
                     return ACTIVE;
-                case 1:
-                    return INVALID;
                 case 2:
                     return SUCCESS;
                 case 3:
@@ -81,7 +77,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     private int initialPartitionVersion = -1;
     private int partitionVersionIncrement;
 
-    private final AtomicBoolean processing = new AtomicBoolean(false);
     private volatile MigrationStatus status;
 
     public MigrationInfo() {
@@ -146,14 +141,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         return this;
     }
 
-    public boolean startProcessing() {
-        return processing.compareAndSet(false, true);
-    }
-
-    public void doneProcessing() {
-        processing.set(false);
-    }
-
     public MigrationStatus getStatus() {
         return status;
     }
@@ -161,10 +148,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     public MigrationInfo setStatus(MigrationStatus status) {
         this.status = status;
         return this;
-    }
-
-    public boolean isValid() {
-        return status != MigrationStatus.INVALID;
     }
 
     public int getInitialPartitionVersion() {
@@ -202,6 +185,10 @@ public class MigrationInfo implements IdentifiedDataSerializable {
             return initialPartitionVersion + getPartitionVersionIncrement();
         }
         throw new IllegalStateException("Initial partition version is not set!");
+    }
+
+    public UUID getUid() {
+        return uuid;
     }
 
     @Override
@@ -270,7 +257,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         sb.append(", master=").append(master);
         sb.append(", initialPartitionVersion=").append(initialPartitionVersion);
         sb.append(", partitionVersionIncrement=").append(getPartitionVersionIncrement());
-        sb.append(", processing=").append(processing);
         sb.append(", status=").append(status);
         sb.append('}');
         return sb.toString();

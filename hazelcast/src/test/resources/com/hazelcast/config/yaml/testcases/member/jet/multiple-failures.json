@@ -1,0 +1,104 @@
+{
+  "instance": {
+    "hazelcast": {
+      "jet": {
+        "unknown": true,
+        "cooperative-thread-count": "2",
+        "flow-control-period": "3",
+        "backup-count": "4",
+        "scale-up-delay-millis": "20",
+        "lossless-restart-enabled": "Yes",
+        "edge-defaults": {
+          "unknown": true,
+          "queue-size": "8",
+          "packet-size-limit": "16384",
+          "receive-window-multiplier": null
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Jet",
+    "pointerToViolation": "#/hazelcast/jet",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Jet",
+        "pointerToViolation": "#/hazelcast/jet",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/lossless-restart-enabled",
+        "pointerToViolation": "#/hazelcast/jet/lossless-restart-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/cooperative-thread-count",
+        "pointerToViolation": "#/hazelcast/jet/cooperative-thread-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/flow-control-period",
+        "pointerToViolation": "#/hazelcast/jet/flow-control-period",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/backup-count",
+        "pointerToViolation": "#/hazelcast/jet/backup-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/scale-up-delay-millis",
+        "pointerToViolation": "#/hazelcast/jet/scale-up-delay-millis",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/edge-defaults",
+        "pointerToViolation": "#/hazelcast/jet/edge-defaults",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Jet/properties/edge-defaults",
+            "pointerToViolation": "#/hazelcast/jet/edge-defaults",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/Jet/properties/edge-defaults/properties/receive-window-multiplier",
+            "pointerToViolation": "#/hazelcast/jet/edge-defaults/receive-window-multiplier",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/Jet/properties/edge-defaults/properties/queue-size",
+            "pointerToViolation": "#/hazelcast/jet/edge-defaults/queue-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/Jet/properties/edge-defaults/properties/packet-size-limit",
+            "pointerToViolation": "#/hazelcast/jet/edge-defaults/packet-size-limit",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "4 schema violations found"
+      }
+    ],
+    "message": "10 schema violations found"
+  }
+}

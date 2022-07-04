@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,12 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -49,70 +51,39 @@ import java.util.Collection;
  * the {@link ManagedService} so you can get access to the services within the system.
  */
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface NodeEngine {
 
-    /**
-     * Gets the OperationService.
-     *
-     * @return the OperationService
-     */
     OperationService getOperationService();
 
-    /**
-     * Gets the ExecutionService.
-     *
-     * @return the ExecutionService
-     */
     ExecutionService getExecutionService();
 
-    /**
-     * Gets the ClusterService.
-     *
-     * @return the ClusterService
-     */
     ClusterService getClusterService();
 
-    /**
-     * Gets the IPartitionService.
-     *
-     * @return the IPartitionService
-     */
     IPartitionService getPartitionService();
 
-    /**
-     * Gets the EventService.
-     *
-     * @return the EventService
-     */
     EventService getEventService();
 
-    /**
-     * Gets the SerializationService.
-     *
-     * @return the SerializationService
-     */
     SerializationService getSerializationService();
 
     /**
-     * Gets the ProxyService.
-     *
-     * @return the ProxyService
+     * Gets the compatibility serialization service for (de)serializing objects in a
+     * format conforming with 3.x.
      */
+    SerializationService getCompatibilitySerializationService();
+
     ProxyService getProxyService();
 
     /**
-     * Gets the WanReplicationService.
-     *
-     * @return the WanReplicationService
+     * Returns the tenant control service.
      */
+    TenantControlServiceImpl getTenantControlService();
+
     WanReplicationService getWanReplicationService();
 
-    /**
-     * Gets the SplitBrainProtectionService.
-     *
-     * @return the SplitBrainProtectionService
-     */
     SplitBrainProtectionService getSplitBrainProtectionService();
+
+    SqlServiceImpl getSqlService();
 
     /**
      * Gets the TransactionManagerService.

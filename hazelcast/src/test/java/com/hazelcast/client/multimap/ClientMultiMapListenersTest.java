@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,13 @@ public class ClientMultiMapListenersTest {
         final MultiMap mm = client.getMultiMap(randomString());
         MyEntryListener myEntryListener = new CountDownValueNotNullListener(1);
         mm.addLocalEntryListener(myEntryListener);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddLocalEntryListener_whenValueIncluded() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        MyEntryListener myEntryListener = new CountDownValueNotNullListener(1);
+        mm.addLocalEntryListener(myEntryListener, true);
     }
 
     @Test(expected = NullPointerException.class)

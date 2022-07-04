@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapPutCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
-        return TransactionalMultiMapPutCodec.decodeResponse(response).response;
+        return TransactionalMultiMapPutCodec.decodeResponse(response);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapGetCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
-        List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
+        List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response);
         return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
@@ -69,7 +69,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapRemoveEntryCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
-        return TransactionalMultiMapRemoveEntryCodec.decodeResponse(response).response;
+        return TransactionalMultiMapRemoveEntryCodec.decodeResponse(response);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapRemoveCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
+        List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response);
         return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
@@ -86,7 +86,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapValueCountCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        return TransactionalMultiMapValueCountCodec.decodeResponse(response).response;
+        return TransactionalMultiMapValueCountCodec.decodeResponse(response);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapSizeCodec
                 .encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        return TransactionalMultiMapSizeCodec.decodeResponse(response).response;
+        return TransactionalMultiMapSizeCodec.decodeResponse(response);
     }
 
     @Override

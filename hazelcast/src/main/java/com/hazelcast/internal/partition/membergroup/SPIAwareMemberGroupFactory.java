@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.util.Collection;
 import java.util.Set;
@@ -62,10 +63,12 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
                                 + "check service definitions under META_INF.services folder. ");
                     } else {
                         for (DiscoveryStrategy discoveryStrategy : defaultDiscoveryService.getDiscoveryStrategies()) {
-                            checkNotNull(discoveryStrategy.getPartitionGroupStrategy());
-                            Iterable<MemberGroup> spiGroupsIterator =
-                                    discoveryStrategy.getPartitionGroupStrategy().getMemberGroups();
-                            for (MemberGroup group : spiGroupsIterator) {
+                            PartitionGroupStrategy groupStrategy = discoveryStrategy.getPartitionGroupStrategy(allMembers);
+                            if (groupStrategy == null) {
+                                groupStrategy = discoveryStrategy.getPartitionGroupStrategy();
+                            }
+                            checkNotNull(groupStrategy);
+                            for (MemberGroup group : groupStrategy.getMemberGroups()) {
                                 memberGroups.add(group);
                             }
                             return memberGroups;

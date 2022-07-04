@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-@Generated("d1b60eff430c3ace7b6a79bee18d55c0")
+@Generated("a3ab220cd5aed1444b6bab62f5626b63")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;
@@ -56,16 +56,6 @@ public final class ClientAddDistributedObjectListenerCodec {
     private ClientAddDistributedObjectListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
-         * members in the cluster.
-         */
-        public boolean localOnly;
-    }
-
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -78,21 +68,14 @@ public final class ClientAddDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddDistributedObjectListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
+     * members in the cluster.
+     */
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The registration id for the distributed object listener.
-         */
-        public java.util.UUID response;
+        return decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
@@ -105,12 +88,13 @@ public final class ClientAddDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddDistributedObjectListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * The registration id for the distributed object listener.
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
@@ -150,7 +134,7 @@ public final class ClientAddDistributedObjectListenerCodec {
          * @param serviceName Service name of the distributed object.
          * @param eventType Type of the event. It is either CREATED or DESTROYED.
          * @param source The UUID (client or member) of the source of this proxy event.
-        */
+         */
         public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }

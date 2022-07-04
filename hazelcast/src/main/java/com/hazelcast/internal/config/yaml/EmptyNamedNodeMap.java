@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * Empty {@link NamedNodeMap} implementation. Used by {@link ElementAdapter#getAttributes()}
+ * Empty {@link NamedNodeMap} implementation. Used by {@link YamlElementAdapter#getAttributes()}
  * when wrapping {@link YamlNode}s other than {@link YamlMapping}.
  */
 final class EmptyNamedNodeMap implements NamedNodeMap {

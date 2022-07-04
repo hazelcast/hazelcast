@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,17 +207,17 @@ public class PreconditionsTest {
     }
 
     public void checkPositive_long(long value, boolean success) {
-        String msg = "somemessage";
+        String paramName = "someParamName";
 
         if (success) {
-            long result = Preconditions.checkPositive(value, msg);
+            long result = Preconditions.checkPositive(paramName, value);
             Assert.assertEquals(result, value);
         } else {
             try {
-                Preconditions.checkPositive(value, msg);
+                Preconditions.checkPositive(paramName, value);
                 fail();
             } catch (IllegalArgumentException expected) {
-                assertSame(msg, expected.getMessage());
+                assertEquals(paramName + " is " + value + " but must be > 0", expected.getMessage());
             }
         }
     }
@@ -233,7 +233,7 @@ public class PreconditionsTest {
         String msg = "somemessage";
 
         if (success) {
-            long result = Preconditions.checkPositive(value, msg);
+            long result = Preconditions.checkPositive(msg, value);
             Assert.assertEquals(result, value);
         } else {
             try {

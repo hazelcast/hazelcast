@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -35,12 +34,9 @@ abstract class AbstractSessionMessageTask<P, R> extends AbstractCPMessageTask<P>
 
     @Override
     protected final void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         CPGroupId groupId = getGroupId();
         RaftOp raftOp = getRaftOp();
-
-        InternalCompletableFuture<R> future = service.getInvocationManager().invoke(groupId, raftOp);
-        future.whenCompleteAsync(this);
+        invoke(groupId, raftOp);
     }
 
     abstract CPGroupId getGroupId();

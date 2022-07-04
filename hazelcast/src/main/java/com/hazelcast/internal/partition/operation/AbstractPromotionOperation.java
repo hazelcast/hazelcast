@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,8 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     PartitionMigrationEvent getPartitionMigrationEvent() {
-        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(), 0);
+        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                0, migrationInfo.getUid());
     }
 
     @Override

@@ -1,0 +1,41 @@
+{
+  "instance": {
+    "hazelcast": {
+      "network": {
+        "ssl": {
+          "enabled": "Off",
+          "class-name": "FactoryClassName",
+          "properties": null
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/SSL",
+    "pointerToViolation": "#/hazelcast/network/ssl",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/SSL",
+        "pointerToViolation": "#/hazelcast/network/ssl",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [class-name] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/SSL/properties/enabled",
+        "pointerToViolation": "#/hazelcast/network/ssl/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/SSL/properties/properties",
+        "pointerToViolation": "#/hazelcast/network/ssl/properties",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      }
+    ],
+    "message": "3 schema violations found"
+  }
+}

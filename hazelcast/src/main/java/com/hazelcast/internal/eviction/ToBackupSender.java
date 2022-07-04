@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.eviction;
 
-import java.util.function.BiFunction;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.util.CollectionUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.BiFunction;
 
 /**
  * Helper class to create and send backup expiration operations.
@@ -59,7 +59,7 @@ public final class ToBackupSender<RS> {
     }
 
     private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
-        Collection<ExpiredKey> polledKeys = new ArrayList<ExpiredKey>(expiredKeys.size());
+        Collection<ExpiredKey> polledKeys = new LinkedList<>();
 
         do {
             ExpiredKey expiredKey = expiredKeys.poll();
@@ -90,8 +90,7 @@ public final class ToBackupSender<RS> {
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
             if (backupOpFilter.apply(partitionId, replicaIndex)) {
                 Operation operation = backupOpSupplier.apply(recordStore, expiredKeys);
-                operationService.createInvocationBuilder(serviceName, operation, partitionId)
-                        .setReplicaIndex(replicaIndex).invoke();
+                operationService.invokeOnPartitionAsync(serviceName, operation, partitionId, replicaIndex);
             }
         }
     }

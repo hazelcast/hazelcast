@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -36,47 +37,45 @@ public class TcpServerConnectionManager_ConnectionListenerTest
 
     @Test(expected = NullPointerException.class)
     public void addConnectionListener_whenNull() {
-        networkingServiceA.getConnectionManager(MEMBER).addConnectionListener(null);
+        tcpServerA.getConnectionManager(MEMBER).addConnectionListener(null);
     }
 
     @Test
     public void whenConnectionAdded() {
-        startAllNetworkingServices();
+        startAllTcpServers();
 
-        final ConnectionListener listener = mock(ConnectionListener.class);
-        networkingServiceA.getConnectionManager(MEMBER).addConnectionListener(listener);
+        ConnectionListener listener = mock(ConnectionListener.class);
+        tcpServerA.getConnectionManager(MEMBER).addConnectionListener(listener);
 
-        final Connection c = connect(networkingServiceA, addressB);
+        Connection c = connect(tcpServerA, addressB);
 
-        assertTrueEventually(() -> listener.connectionAdded(c));
+        assertTrueEventually(() -> verify(listener).connectionAdded(c));
     }
 
     @Test
     public void whenConnectionDestroyed() {
-        startAllNetworkingServices();
+        startAllTcpServers();
 
+        ConnectionListener listener = mock(ConnectionListener.class);
+        tcpServerA.getConnectionManager(MEMBER).addConnectionListener(listener);
 
-        final ConnectionListener listener = mock(ConnectionListener.class);
-        networkingServiceA.getConnectionManager(MEMBER).addConnectionListener(listener);
-
-        final Connection c = connect(networkingServiceA, addressB);
+        Connection c = connect(tcpServerA, addressB);
         c.close(null, null);
 
-        assertTrueEventually(() -> listener.connectionRemoved(c));
+        assertTrueEventually(() -> verify(listener).connectionRemoved(c));
     }
 
     @Test
     public void whenConnectionManagerShutdown_thenListenersRemoved() {
-        startAllNetworkingServices();
+        startAllTcpServers();
 
         ConnectionListener listener = mock(ConnectionListener.class);
-        networkingServiceA.getConnectionManager(MEMBER).addConnectionListener(listener);
+        tcpServerA.getConnectionManager(MEMBER).addConnectionListener(listener);
 
-        networkingServiceA.shutdown();
+        tcpServerA.shutdown();
 
-        final MemberViewUnifiedServerConnectionManager endpointManager = (MemberViewUnifiedServerConnectionManager) networkingServiceA
-                .getConnectionManager(EndpointQualifier.MEMBER);
+        TcpServerConnectionManager connectionManager = tcpServerA.getConnectionManager(EndpointQualifier.MEMBER);
 
-        assertEquals(0, endpointManager.getConnectionListenersCount());
+        assertEquals(0, connectionManager.connectionListeners.size());
     }
 }

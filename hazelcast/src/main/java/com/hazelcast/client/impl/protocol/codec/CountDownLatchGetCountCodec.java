@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current count.
  */
-@Generated("c1d791b9df7856ec1f9a3e3b69ba2ed4")
+@Generated("654afbe7e142fb1ad55fca805f418837")
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0B0400
     public static final int REQUEST_MESSAGE_TYPE = 721920;
@@ -86,15 +86,6 @@ public final class CountDownLatchGetCountCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The current count of this CountDownLatch instance
-         */
-        public int response;
-    }
-
     public static ClientMessage encodeResponse(int response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,12 @@ public final class CountDownLatchGetCountCodec {
         return clientMessage;
     }
 
-    public static CountDownLatchGetCountCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * The current count of this CountDownLatch instance
+     */
+    public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

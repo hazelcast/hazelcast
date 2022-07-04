@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,13 @@ public class RaftInvocation extends Invocation<CPMember> {
 
     public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, CPGroupId groupId, Operation op,
                           int retryCount, long retryPauseMillis, long callTimeoutMillis) {
-        super(context, op, null, retryCount, retryPauseMillis, callTimeoutMillis, DEFAULT_DESERIALIZE_RESULT, null);
+        this(context, raftInvocationContext, groupId, op, retryCount, retryPauseMillis, callTimeoutMillis,
+                DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, CPGroupId groupId, Operation op,
+            int retryCount, long retryPauseMillis, long callTimeoutMillis, boolean deserializeResponse) {
+        super(context, op, null, retryCount, retryPauseMillis, callTimeoutMillis, deserializeResponse, null);
         this.raftInvocationContext = raftInvocationContext;
         this.groupId = groupId;
 

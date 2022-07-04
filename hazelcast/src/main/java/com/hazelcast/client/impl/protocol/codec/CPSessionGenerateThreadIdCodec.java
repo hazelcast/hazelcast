@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Generates a new ID for the caller thread. The ID is unique in the given
  * CP group.
  */
-@Generated("0e9f51339cabfcffad12639fe0681c68")
+@Generated("ab0b5def0288366d92b1e5cdc96fb06d")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x1F0400
     public static final int REQUEST_MESSAGE_TYPE = 2032640;
@@ -48,15 +48,6 @@ public final class CPSessionGenerateThreadIdCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private CPSessionGenerateThreadIdCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * ID of the CP group
-         */
-        public com.hazelcast.cp.internal.RaftGroupId groupId;
     }
 
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId) {
@@ -71,22 +62,14 @@ public final class CPSessionGenerateThreadIdCodec {
         return clientMessage;
     }
 
-    public static CPSessionGenerateThreadIdCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * ID of the CP group
+     */
+    public static com.hazelcast.cp.internal.RaftGroupId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.groupId = RaftGroupIdCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A unique ID for the caller thread
-         */
-        public long response;
+        return RaftGroupIdCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(long response) {
@@ -99,12 +82,12 @@ public final class CPSessionGenerateThreadIdCodec {
         return clientMessage;
     }
 
-    public static CPSessionGenerateThreadIdCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * A unique ID for the caller thread
+     */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

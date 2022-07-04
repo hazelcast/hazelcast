@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         ILogger logger = Logger.getLogger(getClass());
-        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithoutBackpressure());
+        HazelcastProperties properties = new HazelcastProperties(new Properties());
+        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithoutBackpressure(), properties);
         serializationService = new DefaultSerializationServiceBuilder().build();
         nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);

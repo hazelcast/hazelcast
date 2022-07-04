@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public enum MemoryUnit {
     /**
      * MemoryUnit in bytes
      */
-    BYTES {
+    BYTES(0) {
         public long convert(long value, MemoryUnit m) {
             return m.toBytes(value);
         }
@@ -50,12 +50,16 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, G);
         }
+
+        public String abbreviation() {
+            return "B";
+        }
     },
 
     /**
      * MemoryUnit in kilobytes
      */
-    KILOBYTES {
+    KILOBYTES(1) {
         public long convert(long value, MemoryUnit m) {
             return m.toKiloBytes(value);
         }
@@ -75,12 +79,16 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, M);
         }
+
+        public String abbreviation() {
+            return "KB";
+        }
     },
 
     /**
      * MemoryUnit in megabytes
      */
-    MEGABYTES {
+    MEGABYTES(2) {
         public long convert(long value, MemoryUnit m) {
             return m.toMegaBytes(value);
         }
@@ -100,12 +108,16 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, K);
         }
+
+        public String abbreviation() {
+            return "MB";
+        }
     },
 
     /**
      * MemoryUnit in gigabytes
      */
-    GIGABYTES {
+    GIGABYTES(3) {
         public long convert(long value, MemoryUnit m) {
             return m.toGigaBytes(value);
         }
@@ -125,12 +137,31 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return value;
         }
+
+        public String abbreviation() {
+            return "GB";
+        }
     };
 
     static final int POWER = 10;
     static final int K = 1 << POWER;
     static final int M = 1 << (POWER * 2);
     static final int G = 1 << (POWER * 3);
+
+    private static final MemoryUnit[] VALUES = values();
+    private final int id;
+
+    MemoryUnit(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static MemoryUnit getById(int id) {
+        return VALUES[id];
+    }
 
     public abstract long convert(long value, MemoryUnit m);
 
@@ -141,4 +172,6 @@ public enum MemoryUnit {
     public abstract long toMegaBytes(long value);
 
     public abstract long toGigaBytes(long value);
+
+    public abstract String abbreviation();
 }

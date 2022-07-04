@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.impl.spi.impl.TranslateToPublicAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
@@ -42,6 +44,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -49,7 +52,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import javax.security.auth.callback.UnsupportedCallbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,10 +73,12 @@ class ClusterDiscoveryServiceBuilder {
     private final Collection<ClientConfig> configs;
     private final LifecycleService lifecycleService;
     private final AddressProvider externalAddressProvider;
+    private final ClientClusterService clusterService;
 
     ClusterDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
                                    AddressProvider externalAddressProvider, HazelcastProperties properties,
-                                   ClientExtension clientExtension, LifecycleService lifecycleService) {
+                                   ClientExtension clientExtension, LifecycleService lifecycleService,
+                                   ClientClusterService clusterService) {
         this.configsTryCount = configsTryCount;
         this.configs = configs;
         this.loggingService = loggingService;
@@ -82,6 +86,7 @@ class ClusterDiscoveryServiceBuilder {
         this.properties = properties;
         this.clientExtension = clientExtension;
         this.lifecycleService = lifecycleService;
+        this.clusterService = clusterService;
     }
 
     public ClusterDiscoveryService build() {
@@ -93,9 +98,7 @@ class ClusterDiscoveryServiceBuilder {
             if (credentialsFactory == null) {
                 credentialsFactory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
             }
-            credentialsFactory.configure(cs -> {
-                throw new UnsupportedCallbackException(cs[0]);
-            });
+            credentialsFactory.configure(new ClientCallbackHandler(config));
             DiscoveryService discoveryService = initDiscoveryService(config);
             AddressProvider provider;
             if (externalAddressProvider != null) {
@@ -106,7 +109,8 @@ class ClusterDiscoveryServiceBuilder {
 
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
+            contexts.add(new CandidateClusterContext(config.getClusterName(), provider,
+                    discoveryService, credentialsFactory,
                     interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
@@ -135,23 +139,23 @@ class ClusterDiscoveryServiceBuilder {
         isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled, gcpDiscoveryEnabled, azureDiscoveryEnabled,
                 kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
-        if (discoveryService != null) {
-            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
-        } else if (hazelcastCloudEnabled) {
-            String discoveryToken;
-            if (cloudConfig.isEnabled()) {
-                discoveryToken = cloudConfig.getDiscoveryToken();
-            } else {
-                discoveryToken = cloudDiscoveryToken;
-            }
+        if (hazelcastCloudEnabled) {
+            String discoveryToken = cloudDiscoveryToken(cloudConfig, cloudDiscoveryToken);
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
+            //We use the usePublic parameter as true always because on the cloud context hazelcast members and clients
+            // are never in the same network even-tough they can be in the same group/zone etc.
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
+        } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
+            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-
-        return new DefaultAddressProvider(networkConfig);
+        TranslateToPublicAddressProvider toPublicAddressProvider = new TranslateToPublicAddressProvider(networkConfig,
+                properties,
+                loggingService.getLogger(TranslateToPublicAddressProvider.class));
+        clusterService.addMembershipListener(toPublicAddressProvider);
+        return new DefaultAddressProvider(networkConfig, toPublicAddressProvider);
     }
 
     private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {
@@ -217,13 +221,22 @@ class ClusterDiscoveryServiceBuilder {
         }
     }
 
+    private static String cloudDiscoveryToken(ClientCloudConfig cloudConfig, String cloudDiscoveryToken) {
+        if (cloudConfig.isEnabled()) {
+            return cloudConfig.getDiscoveryToken();
+        } else {
+            return cloudDiscoveryToken;
+        }
+    }
+
     private DiscoveryService initDiscoveryService(ClientConfig config) {
         // Prevent confusing behavior where the DiscoveryService is started
         // and strategies are resolved but the AddressProvider is never registered
         List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                 ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
 
-        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()) {
+        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()
+                && !config.getNetworkConfig().isAutoDetectionEnabled()) {
             return null;
         }
 
@@ -236,16 +249,26 @@ class ClusterDiscoveryServiceBuilder {
             factory = new DefaultDiscoveryServiceProvider();
         }
 
+        boolean isAutoDetectionEnabled = networkConfig.isAutoDetectionEnabled();
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
                 .setConfigClassLoader(config.getClassLoader())
                 .setLogger(logger)
                 .setDiscoveryMode(DiscoveryMode.Client)
                 .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
-                .setDiscoveryConfig(discoveryConfig);
+                .setDiscoveryConfig(discoveryConfig)
+                .setAutoDetectionEnabled(isAutoDetectionEnabled);
 
         DiscoveryService discoveryService = factory.newDiscoveryService(settings);
+        if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
+            return null;
+        }
         discoveryService.start();
         return discoveryService;
+    }
+
+    private boolean isEmptyDiscoveryStrategies(DiscoveryService discoveryService) {
+        return discoveryService instanceof DefaultDiscoveryService
+                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
     }
 
     private ICredentialsFactory initCredentialsFactory(ClientConfig config) {

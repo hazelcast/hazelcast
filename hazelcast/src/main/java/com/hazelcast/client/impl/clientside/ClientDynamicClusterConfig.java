@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,15 +43,20 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConf
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -63,6 +68,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -72,16 +78,19 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -129,6 +138,9 @@ public class ClientDynamicClusterConfig extends Config {
         Data partitioningStrategy = mapConfig.getPartitioningStrategyConfig() == null
                 ? null : serializationService.toData(mapConfig.getPartitioningStrategyConfig().getPartitioningStrategy());
 
+        DataPersistenceAndHotRestartMerger
+                .merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
+
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
                 mapConfig.getMaxIdleSeconds(), EvictionConfigHolder.of(mapConfig.getEvictionConfig(), serializationService),
@@ -140,7 +152,8 @@ public class ClientDynamicClusterConfig extends Config {
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
-                mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId());
+                mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
+                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig());
         invoke(request);
         return this;
     }
@@ -149,6 +162,9 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(cacheConfig.getPartitionLostListenerConfigs());
+
+        DataPersistenceAndHotRestartMerger
+                .merge(cacheConfig.getHotRestartConfig(), cacheConfig.getDataPersistenceConfig());
 
         ClientMessage request = DynamicConfigAddCacheConfigCodec.encodeRequest(cacheConfig.getName(), cacheConfig.getKeyType(),
                 cacheConfig.getValueType(), cacheConfig.isStatisticsEnabled(), cacheConfig.isManagementEnabled(),
@@ -166,7 +182,8 @@ public class ClientDynamicClusterConfig extends Config {
                         : cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
-                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(), cacheConfig.getHotRestartConfig());
+                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
         invoke(request);
         return this;
     }
@@ -180,7 +197,7 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
-                queueConfig.getMergePolicyConfig().getBatchSize());
+                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getPriorityComparatorClassName());
         invoke(request);
         return this;
     }
@@ -290,7 +307,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(
                 durableExecutorConfig.getName(), durableExecutorConfig.getPoolSize(),
                 durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity(),
-                durableExecutorConfig.getSplitBrainProtectionName());
+                durableExecutorConfig.getSplitBrainProtectionName(), durableExecutorConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -301,7 +318,7 @@ public class ClientDynamicClusterConfig extends Config {
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
                 scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
                 scheduledExecutorConfig.getSplitBrainProtectionName(), scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
-                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
+                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -328,7 +345,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return super.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
@@ -383,7 +400,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config setProperty(String name, String value) {
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -829,6 +846,51 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public PersistenceConfig getPersistenceConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public DynamicConfigurationConfig getDynamicConfigurationConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setDynamicConfigurationConfig(DynamicConfigurationConfig dynamicConfigurationConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public DeviceConfig getDeviceConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -980,7 +1042,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     @Nonnull
-    public Config setMetricsConfig(MetricsConfig metricsConfig) {
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -990,6 +1052,65 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
+    @Override
+    public Config setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public SqlConfig getSqlConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public AuditlogConfig getAuditlogConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
 
     @Override
     public String toString() {

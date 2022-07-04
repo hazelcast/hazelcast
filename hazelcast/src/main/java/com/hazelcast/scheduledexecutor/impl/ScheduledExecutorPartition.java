@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 
 public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
 
-    private final ILogger logger;
     private final int partitionId;
+    private final ILogger logger;
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
     ScheduledExecutorPartition(NodeEngine nodeEngine, DistributedScheduledExecutorService service, int partitionId) {
@@ -46,7 +46,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
             }
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
-                    newPermitFor(name, service, config), config.getDurability());
+                    newPermitFor(name, service, config), config.getDurability(), config.isStatisticsEnabled());
         };
     }
 

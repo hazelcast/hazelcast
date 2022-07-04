@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 /**
  * Partially implements {@link IAtomicLong}.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterService> implements IAtomicLong {
 
     private final String name;
@@ -120,8 +121,18 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
     }
 
     @Override
+    public long getAndDecrement() {
+        return getAndDecrementAsync().joinInternal();
+    }
+
+    @Override
     public InternalCompletableFuture<Long> decrementAndGetAsync() {
         return addAndGetAsync(-1);
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndDecrementAsync() {
+        return getAndAddAsync(-1);
     }
 
     @Override

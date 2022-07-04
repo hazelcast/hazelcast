@@ -1,0 +1,129 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "network": {
+        "kubernetes": {
+          "service-name": "MY-SERVICE-NAME",
+          "service-label-name": "MY-SERVICE-LABEL-NAME",
+          "namespace": "MY-KUBERNETES-NAMESPACE",
+          "service-label-value": "MY-SERVICE-LABEL-VALUE",
+          "enabled": false
+        },
+        "hazelcast-cloud": {
+          "discovery-token": "EXAMPLE_TOKEN",
+          "enabled": false
+        },
+        "auto-detection": {
+          "enabled": false
+        },
+        "discovery-strategies": {
+          "node-filter": {
+            "class": "DummyFilterClass"
+          },
+          "discovery-strategies": [
+            {
+              "class": "DummyDiscoveryStrategy1",
+              "enabled": true,
+              "properties": {
+                "key-string": "foo",
+                "key-int": 123,
+                "key-boolean": true
+              }
+            }
+          ]
+        },
+        "eureka": {
+          "namespace": "hazelcast",
+          "self-registration": true,
+          "enabled": false
+        },
+        "smart-routing": true,
+        "ssl": {
+          "factory-class-name": "com.hazelcast.nio.ssl.BasicSSLContextFactory",
+          "enabled": false,
+          "properties": {
+            "keyStoreType": "JKS",
+            "trustStorePassword": "secret.123456",
+            "protocol": "TLS",
+            "keyStorePassword": "keystorePassword123",
+            "keyStore": "/opt/hazelcast-client.keystore",
+            "trustStore": "/opt/hazelcast-client.truststore",
+            "trustStoreType": "JKS"
+          }
+        },
+        "connection-timeout": 60000,
+        "cluster-members": [
+          "127.0.0.1",
+          "127.0.0.2"
+        ],
+        "gcp": {
+          "projects": "project-1,project-2",
+          "use-public-ip": true,
+          "hz-port": "5701-5710",
+          "label": "key=value",
+          "region": "us-central1",
+          "zones": "us-central1-b,us-central1-c",
+          "private-key-path": "key-path",
+          "enabled": false
+        },
+        "socket-options": {
+          "keep-alive": true,
+          "reuse-address": true,
+          "linger-seconds": 3,
+          "buffer-size": 128,
+          "tcp-no-delay": false
+        },
+        "icmp-ping": {
+          "interval-milliseconds": 3000,
+          "timeout-milliseconds": 2000,
+          "max-attempts": 5,
+          "echo-fail-fast-on-startup": false,
+          "ttl": 100,
+          "enabled": false
+        },
+        "outbound-ports": [
+          34600,
+          "34700-34710"
+        ],
+        "aws": {
+          "host-header": "ec2.amazonaws.com",
+          "secret-key": "my-secret-key",
+          "iam-role": "dummy",
+          "access-key": "my-access-key",
+          "read-timeout-seconds": 7,
+          "enabled": false,
+          "security-group-name": "hazelcast-sg",
+          "tag-value": "hz-nodes",
+          "use-public-ip": true,
+          "tag-key": "type",
+          "connection-timeout-seconds": 7,
+          "hz-port": "5701-5710",
+          "region": "us-west-1",
+          "connection-retries": 4
+        },
+        "socket-interceptor": {
+          "enabled": true,
+          "properties": {
+            "foo": "bar"
+          },
+          "class-name": "com.hazelcast.examples.MySocketInterceptor"
+        },
+        "redo-operation": true,
+        "azure": {
+          "scale-set": "SCALE-SET-NAME",
+          "client-secret": "CLIENT_SECRET",
+          "use-public-ip": true,
+          "instance-metadata-available": false,
+          "subscription-id": "SUB_ID",
+          "hz-port": "5701-5707",
+          "resource-group": "RESOURCE-GROUP-NAME",
+          "tag": "TAG-NAME=HZLCAST001",
+          "client-id": "CLIENT_ID",
+          "enabled": false,
+          "tenant-id": "TENANT_ID"
+        }
+      }
+    }
+  },
+  "error": null
+}

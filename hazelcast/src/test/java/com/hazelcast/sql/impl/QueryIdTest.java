@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryIdTest extends SqlTestSupport {
+public class QueryIdTest extends CoreSqlTestSupport {
     @Test
     public void testIds() {
         UUID memberId = UUID.randomUUID();
@@ -73,6 +73,37 @@ public class QueryIdTest extends SqlTestSupport {
         QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_ID);
 
         assertEquals(original, restored);
+    }
+
+    @Test
+    public void testParsing() {
+        QueryId original = QueryId.create(UUID.randomUUID());
+        QueryId restored = QueryId.parse(original.toString());
+        assertEquals(original, restored);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID().toString());
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "!_" + UUID.randomUUID());
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "!");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "_");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "_" + UUID.randomUUID());
+        });
     }
 
     private static QueryId create(UUID memberId, UUID localId) {

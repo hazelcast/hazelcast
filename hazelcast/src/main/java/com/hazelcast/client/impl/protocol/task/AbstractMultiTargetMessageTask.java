@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,10 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
+/**
+ * Base class for messages which are broadcast to a set of members
+ * determined by {@link #getTargets()}.
+ */
 public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMessageTask<P, Object> {
 
     protected AbstractMultiTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -72,8 +76,14 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
 
     protected abstract Supplier<Operation> createOperationSupplier();
 
+    /**
+     * Reduce the responses from all targets into a single object.
+     */
     protected abstract Object reduce(Map<Member, Object> map) throws Throwable;
 
+    /**
+     * Return the collection of members to which to send the operation.
+     */
     public abstract Collection<Member> getTargets();
 
     private final class MultiTargetCallback {

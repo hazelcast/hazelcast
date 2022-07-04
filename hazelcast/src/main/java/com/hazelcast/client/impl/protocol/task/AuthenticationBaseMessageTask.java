@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
@@ -91,7 +92,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                 break;
             case AUTHENTICATED:
                 if (logger.isFineEnabled()) {
-                    logger.fine("Processing authentication with clientUuid " + clientUuid);
+                    logger.fine("Processing authentication with clientUuid " + clientUuid
+                            + " and clientName " + clientName);
                 }
                 sendClientMessage(prepareAuthenticatedClientMessage());
                 break;
@@ -125,34 +127,50 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
+        String nodeClusterName = nodeEngine.getConfig().getClusterName();
+        if (! nodeClusterName.equals(clusterName)) {
+            return CREDENTIALS_FAILED;
+        }
+
         Connection connection = endpoint.getConnection();
+        Boolean passed = Boolean.FALSE;
         try {
             LoginContext lc = securityContext.createClientLoginContext(clusterName, credentials, connection);
             lc.login();
             endpoint.setLoginContext(lc);
+            passed = Boolean.TRUE;
             return AUTHENTICATED;
         } catch (LoginException e) {
             logger.warning(e);
             return CREDENTIALS_FAILED;
+        } finally {
+            nodeEngine.getNode().getNodeExtension().getAuditlogService()
+                .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
+                .message("Client connection authentication.")
+                .addParameter("connection", connection)
+                .addParameter("credentials", credentials)
+                .addParameter("passed", passed)
+                .log();
         }
     }
 
     private AuthenticationStatus verifyEmptyCredentialsAndClusterName(PasswordCredentials passwordCredentials) {
         if (passwordCredentials.getName() != null || passwordCredentials.getPassword() != null) {
             logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
-                    + ",  authentication rejected because security is disabled on the member, "
-                    + "and client sends not-null username or password.");
+                    + " and clientName " + clientName + ", authentication rejected because security"
+                    + " is disabled on the member, and client sends not-null username or password.");
             return CREDENTIALS_FAILED;
         }
         String nodeClusterName = nodeEngine.getConfig().getClusterName();
-        boolean clusternameMatch = nodeClusterName.equals(clusterName);
-        return clusternameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
+        boolean clusterNameMatched = nodeClusterName.equals(clusterName);
+        return clusterNameMatched ? AUTHENTICATED : CREDENTIALS_FAILED;
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
-        logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid + ", authentication failed");
+        logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
+                + " and clientName " + clientName + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
@@ -177,10 +195,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private ClientMessage prepareAuthenticatedClientMessage() {
         ServerConnection connection = endpoint.getConnection();
-
+        setConnectionType();
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);
-        setConnectionType();
         validateNodeStart();
         final UUID clusterId = clientEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
@@ -192,8 +209,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             return prepareNotAllowedInCluster();
         }
 
-        logger.info("Received auth from " + connection + ", successfully authenticated" + ", clientUuid: " + clientUuid
-                + ", client version: " + clientVersion);
+        logger.info("Received auth from " + connection + ", successfully authenticated, clientUuid: " + clientUuid
+                + ", client name: " + clientName + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
         UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();

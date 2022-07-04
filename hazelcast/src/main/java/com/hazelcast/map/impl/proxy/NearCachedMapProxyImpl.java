@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,6 +210,24 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             return super.putAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         } finally {
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data valueData,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        key = toNearCacheKeyWithStrategy(key);
+        try {
+            return super.putIfAbsentAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        } finally {
+            // If the operation is retried, the return value can be wrong.
+            // Consider: key k isn't present. We do putIfAbsent(k, v). The operation puts the value, updates
+            // the backup, but before the response is sent, the member crashes. The caller doesn't receive the response,
+            // so retries with the new key owner. This time, the operation does nothing because the key isn't absent,
+            // and returns the old value.
+            //The unnecessary invalidation doesn't hurt as much as non-invalidated near cache would.
             invalidateNearCache(key);
         }
     }

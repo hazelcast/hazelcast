@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,22 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @Test
+    public void testNameInConstructor() {
+        String name = randomMapName();
+        CacheSimpleConfig config = new CacheSimpleConfig(name);
+
+        assertEquals(name, config.getName());
+    }
 
     @Test
     public void givenCacheLoaderIsConfigured_whenConfigureCacheLoaderFactory_thenThrowIllegalStateException() {
@@ -69,6 +79,14 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
         expectedException.expect(IllegalStateException.class);
         config.setCacheWriter("foo");
+    }
+
+    @Test
+    public void givenNullMerkleTreeConfig_throws_NPE() {
+        expectedException.expect(NullPointerException.class);
+
+        new CacheSimpleConfig()
+                .setMerkleTreeConfig(null);
     }
 
     @Test

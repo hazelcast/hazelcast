@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,14 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,11 +35,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.query.Predicates.partitionPredicate;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -43,13 +52,16 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapKeySetTest extends HazelcastTestSupport {
 
+    private HazelcastInstance instance;
     private IMap<String, String> map;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
-        HazelcastInstance instance = createHazelcastInstance();
-
+        Config config = regularInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        config.getMapConfig("indexed").addIndexConfig(new IndexConfig(IndexType.SORTED, "this"));
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         serializationService = getSerializationService(instance);
     }
@@ -97,6 +109,66 @@ public class MapKeySetTest extends HazelcastTestSupport {
         Set<String> result = map.keySet(new GoodPredicate());
 
         assertEquals(setOf("1", "3"), result);
+    }
+
+    @Test
+    public void whenSelectingPartitionSubset() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<String> result = ((MapProxyImpl<String, String>) map).keySet(Predicates.alwaysTrue(), partitionSubset);
+        assertEquals(matchingKeys, result);
+    }
+
+    @Test
+    public void whenSelectingPartitionSubset_withIndex() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        map = instance.getMap("indexed");
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        // "" is sorted before any non-null string - internally all items from all partitions are added
+        // to the result (because the index is global), but there's a code that eliminates partitions not
+        // in the subset - this test aims to test that code
+        Predicate<String, String> predicate = Predicates.greaterThan("this", "");
+        Set<String> result =
+                ((MapProxyImpl<String, String>) map).keySet(predicate, partitionSubset);
+        assertEquals(2, result.size());
+        assertEquals(matchingKeys, result);
+    }
+
+    @Test
+    public void when_selectingPartitionSubset_and_partitionPredicate() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        String key1 = null;
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            if (i == 1) {
+                key1 = key;
+            }
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<String> result = ((MapProxyImpl<String, String>) map)
+                .keySet(partitionPredicate(key1, Predicates.alwaysTrue()), partitionSubset);
+        assertEquals(Collections.singleton(key1), result);
     }
 
     @Test

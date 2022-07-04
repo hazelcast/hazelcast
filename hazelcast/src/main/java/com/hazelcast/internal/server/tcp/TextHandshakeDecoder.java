@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,26 +21,37 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.internal.nio.ascii.RestApiTextDecoder;
 
+import static com.hazelcast.internal.util.JVMUtil.upcast;
+
 import java.nio.ByteBuffer;
 
 public class TextHandshakeDecoder
         extends SingleProtocolDecoder {
 
-    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next) {
-        super(supportedProtocol, new InboundHandler[] {next}, null);
+    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
+        super(supportedProtocol, next, encoder);
     }
 
     @Override
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
+        super.verifyProtocolCalled = true;
+        handleUnexpectedProtocol(incomingProtocol);
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, expected protocol: REST");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: REST"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
+                return false;
             }
         } else {
             if (!MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: MEMCACHED");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: MEMCACHED"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
+                return false;
             }
         }
+        return true;
     }
 
     @Override
@@ -49,7 +60,7 @@ public class TextHandshakeDecoder
         // we need to restore whatever is read
         ByteBuffer src = this.src;
         ByteBuffer dst = (ByteBuffer) inboundHandlers[0].src();
-        src.flip();
+        upcast(src).flip();
         dst.put(src);
     }
 }

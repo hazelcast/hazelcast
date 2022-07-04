@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
-@Generated("3b2c7acffe2355cd04fb710d590a0a93")
+@Generated("7e6e1dc6d1a9b2e40880e5339f74c9fd")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -96,15 +96,6 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Registration id for the registered listener.
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -115,12 +106,13 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         return clientMessage;
     }
 
-    public static CacheAddNearCacheInvalidationListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * Registration id for the registered listener.
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeCacheInvalidationEvent(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data key, @Nullable java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
@@ -138,6 +130,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
     }
+
     public static ClientMessage encodeCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -189,7 +182,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
          * @param sourceUuid UUID of the member who fired this event.
          * @param partitionUuid UUID of the source partition that invalidated entry belongs to.
          * @param sequence Sequence number of the invalidation event.
-        */
+         */
         public abstract void handleCacheInvalidationEvent(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data key, @Nullable java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
 
         /**
@@ -198,7 +191,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
          * @param sourceUuids List of UUIDs of the members who fired these events.
          * @param partitionUuids List of UUIDs of the source partitions that invalidated entries belong to.
          * @param sequences List of sequence numbers of the invalidation events.
-        */
+         */
         public abstract void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

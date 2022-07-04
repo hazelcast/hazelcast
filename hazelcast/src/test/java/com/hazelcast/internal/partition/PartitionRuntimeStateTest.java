@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.partition.impl.DummyInternalPartition;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -89,7 +88,7 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     }
 
     private PartitionRuntimeState createPartitionState(int partitionId, PartitionReplica... replicas) {
-        DummyInternalPartition partition = new DummyInternalPartition(replicas, partitionId);
+        InternalPartition partition = new ReadonlyInternalPartition(replicas, partitionId, 1);
         return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.emptyList(), partitionId);
     }
 

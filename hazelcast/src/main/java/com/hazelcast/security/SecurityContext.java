@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -126,4 +127,5 @@ public interface SecurityContext {
 
     void refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
+    SqlSecurityContext createSqlContext(Subject subject);
 }

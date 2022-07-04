@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 
 /**
- * Contains the non blocking {@link com.hazelcast.internal.networking.Networking} functionality. It relies
- * on {@link java.nio.channels.Selector} to be notified if there is something to read/write.
+ * Contains the non-blocking {@link com.hazelcast.internal.networking.Networking}
+ * functionality. It relies on {@link java.nio.channels.Selector} to be notified
+ * if there is something to read/write.
  */
 package com.hazelcast.internal.networking.nio;

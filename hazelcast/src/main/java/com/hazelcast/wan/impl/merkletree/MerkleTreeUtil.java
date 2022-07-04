@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package com.hazelcast.wan.impl.merkletree;
 
 import com.hazelcast.internal.util.QuickMath;
+import com.hazelcast.internal.util.collection.IntHashSet;
 
+import javax.annotation.Nonnull;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -45,7 +47,7 @@ public final class MerkleTreeUtil {
      * @param level The level
      * @return the breadth-first order of the leaf for the given {@code hash}
      */
-    static int getLeafOrderForHash(int hash, int level) {
+    public static int getLeafOrderForHash(int hash, int level) {
         long hashStepForLevel = getNodeHashRangeOnLevel(level);
         long hashDistanceFromMin = ((long) hash) - Integer.MIN_VALUE;
         int steps = (int) (hashDistanceFromMin / hashStepForLevel);
@@ -376,4 +378,17 @@ public final class MerkleTreeUtil {
         return new RemoteMerkleTreeView(leaves, depth);
     }
 
+    /**
+     * @param merkleTreeOrderValuePairs an array of {@code [nodeOrder, hashValue]} pairs
+     * @return set of given Merkle tree node orders
+     */
+    @Nonnull
+    public static IntHashSet setOfNodeOrders(int[] merkleTreeOrderValuePairs) {
+        assert merkleTreeOrderValuePairs.length % 2 == 0;
+        IntHashSet merkleTreeOrderValues = new IntHashSet(merkleTreeOrderValuePairs.length / 2, -1);
+        for (int i = 0; i < merkleTreeOrderValuePairs.length; i = i + 2) {
+            merkleTreeOrderValues.add(merkleTreeOrderValuePairs[i]);
+        }
+        return merkleTreeOrderValues;
+    }
 }

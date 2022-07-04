@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -76,17 +76,17 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientMessage = clientMessage;
         this.logger = node.getLogger(getClass());
         this.node = node;
-        this.nodeEngine = node.nodeEngine;
+        this.nodeEngine = node.getNodeEngine();
         this.serializationService = node.getSerializationService();
         this.connection = (ServerConnection) connection;
-        this.clientEngine = node.clientEngine;
+        this.clientEngine = node.getClientEngine();
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = initEndpoint();
     }
 
     @SuppressWarnings("unchecked")
     public <S> S getService(String serviceName) {
-        return (S) node.nodeEngine.getService(serviceName);
+        return (S) node.getNodeEngine().getService(serviceName);
     }
 
     private ClientEndpoint initEndpoint() {
@@ -270,8 +270,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         sendClientMessage(message);
     }
 
-    private ClientMessage encodeException(Throwable throwable) {
-        ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
+    protected ClientMessage encodeException(Throwable throwable) {
+        ClientExceptionFactory exceptionFactory = clientEngine.getExceptionFactory();
         return exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
     }
 
@@ -301,6 +301,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     final boolean addressesDecodedWithTranslation() {
         if (!isAdvancedNetworkEnabled()) {
+            return true;
+        }
+        if (parameters == null) {
             return true;
         }
         Class<Address> addressClass = Address.class;
@@ -341,8 +344,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 return t;
             }
         }
-
-        return peel(t);
+        //We are passing our own message factory, because we don't want checked exceptions to be wrapped to HazelcastException
+        return peel(t, null, null, (throwable, message) -> throwable);
     }
 
 

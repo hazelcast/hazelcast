@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 
 public class ExecutorServiceIsShutdownMessageTask
-        extends AbstractCallableMessageTask<ExecutorServiceIsShutdownCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<String> {
 
     public ExecutorServiceIsShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,11 +35,11 @@ public class ExecutorServiceIsShutdownMessageTask
     @Override
     protected Object call() throws Exception {
         final DistributedExecutorService service = getService(DistributedExecutorService.SERVICE_NAME);
-        return service.isShutdown(parameters.name);
+        return service.isShutdown(parameters);
     }
 
     @Override
-    protected ExecutorServiceIsShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ExecutorServiceIsShutdownCodec.decodeRequest(clientMessage);
     }
 

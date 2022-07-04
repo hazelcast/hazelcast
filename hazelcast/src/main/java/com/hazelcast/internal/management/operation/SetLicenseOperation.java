@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.internal.config.LicenseKey;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,6 +46,11 @@ public class SetLicenseOperation extends AbstractManagementOperation {
         DefaultNodeExtension nodeExtension
                 = (DefaultNodeExtension) ((NodeEngineImpl) getNodeEngine()).getNode().getNodeExtension();
         nodeExtension.setLicenseKey(licenseKey);
+
+        LicenseKey licenseKeyObject = new LicenseKey(licenseKey);
+        ConfigurationService configurationService
+                = getNodeEngine().getService(ClusterWideConfigurationService.SERVICE_NAME);
+        configurationService.persist(licenseKeyObject);
     }
 
     @Override
@@ -53,13 +61,13 @@ public class SetLicenseOperation extends AbstractManagementOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        licenseKey = in.readUTF();
+        licenseKey = in.readString();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(licenseKey);
+        out.writeString(licenseKey);
     }
 
 }

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+<suppressions>
+
+    <!-- impl packages are private API by contract, allow public members -->
+    <suppress checks="VisibilityModifier" files="[\\/]impl[\\/]"/>
+
+    <!-- Files start with the license header -->
+    <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
+
+    <!-- Files derived from the Agrona project -->
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]update[\\/]"/>
+    <suppress checks="OuterTypeNumber" files="AbstractConcurrentArrayQueue"/>
+
+    <!-- Suppress checking of copyright notice in a file derived from Apache Tez -->
+    <suppress checks="Header" files="TopologicalSorter"/>
+    <suppress checks="Header" files="generated"/>
+
+    <!-- Exclude these packages from JavaDoc checks -->
+    <suppress checks="JavadocMethod" files="JetException\.java"/>
+    <suppress checks="JavadocMethod" files="RestartableException\.java"/>
+    <suppress checks="JavadocMethod" files="JobNotFoundException\.java"/>
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
+
+    <!-- Exclude command line classes from Javadoc checks -->
+    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]server[\\/]" />
+
+    <!-- Exclude variations of JDK classes from Javadoc checks -->
+    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]function" />
+
+    <!-- Generated code in Client Protocol Templates -->
+    <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>
+    <suppress checks="" files="generated-sources" />
+
+    <!-- Suppress checks for test code -->
+    <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>
+    <suppress checks="LineLength" files="DecoratorTest.java"/>
+
+    <!-- Suppress checks for examples code -->
+    <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier|HideUtilityClassConstructor|RegexpSinglelineJava" files="[\\/]examples[\\/]"/>
+
+    <!-- Suppress maximum line count of a large factory file with lot of javadoc -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations.java"/>
+
+    <!-- Suppress checks for auto-generated client protocol codecs -->
+    <suppress checks="UnusedImports|LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
+    files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
+
+    <!-- Suppress checks for auto-generated test classes -->
+    <suppress checks="" files="generated-test-sources"/>
+
+    <!-- Suppress checks for properties files -->
+    <suppress checks="" files=".properties"/>
+</suppressions>

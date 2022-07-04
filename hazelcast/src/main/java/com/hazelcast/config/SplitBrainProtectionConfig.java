@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectio
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
@@ -70,13 +71,19 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
 
     private String name;
     private boolean enabled;
-    private int minimumClusterSize;
-    private List<SplitBrainProtectionListenerConfig> listenerConfigs = new ArrayList<SplitBrainProtectionListenerConfig>();
+    private int minimumClusterSize = 2;
+
+    private List<SplitBrainProtectionListenerConfig> listenerConfigs = new ArrayList<>();
+
     private SplitBrainProtectionOn protectOn = READ_WRITE;
     private String functionClassName;
     private SplitBrainProtectionFunction functionImplementation;
 
     public SplitBrainProtectionConfig() {
+    }
+
+    public SplitBrainProtectionConfig(String name) {
+        this.name = name;
     }
 
     public SplitBrainProtectionConfig(String name, boolean enabled) {
@@ -197,24 +204,24 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(enabled);
         out.writeInt(minimumClusterSize);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(protectOn.name());
-        out.writeUTF(functionClassName);
+        out.writeString(protectOn.name());
+        out.writeString(functionClassName);
         out.writeObject(functionImplementation);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         enabled = in.readBoolean();
         minimumClusterSize = in.readInt();
         listenerConfigs = readNullableList(in);
-        protectOn = SplitBrainProtectionOn.valueOf(in.readUTF());
-        functionClassName = in.readUTF();
+        protectOn = SplitBrainProtectionOn.valueOf(in.readString());
+        functionClassName = in.readString();
         functionImplementation = in.readObject();
     }
 
@@ -222,8 +229,8 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
      * Returns a builder for {@link SplitBrainProtectionConfig} with the given {@code name} using a probabilistic
      * split brain protection function, for the given split brain protection {@code size} that is enabled by default.
      *
-     * @param name  the split brain protection's name
-     * @param minimumClusterSize  minimum count of members in the cluster not to be considered it split.
+     * @param name               the split brain protection's name
+     * @param minimumClusterSize minimum count of members in the cluster not to be considered it split.
      * @see ProbabilisticSplitBrainProtectionFunction
      */
     public static ProbabilisticSplitBrainProtectionConfigBuilder
@@ -234,10 +241,11 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
     /**
      * Returns a builder for a {@link SplitBrainProtectionConfig} with the given {@code name} using a recently-active
      * split brain protection function for the given split brain protection {@code size} that is enabled by default.
-     * @param name              the split brain protection's name
-     * @param minimumClusterSize  minimum count of members in the cluster not to be considered it split.
-     * @param toleranceMillis   maximum amount of milliseconds that may have passed since last heartbeat was received for a
-     *                          member to be considered present for split brain protection.
+     *
+     * @param name               the split brain protection's name
+     * @param minimumClusterSize minimum count of members in the cluster not to be considered it split.
+     * @param toleranceMillis    maximum amount of milliseconds that may have passed since last heartbeat was received for a
+     *                           member to be considered present for split brain protection.
      * @see RecentlyActiveSplitBrainProtectionFunction
      */
     public static RecentlyActiveSplitBrainProtectionConfigBuilder
@@ -245,4 +253,24 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
         return new RecentlyActiveSplitBrainProtectionConfigBuilder(name, minimumClusterSize, toleranceMillis);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SplitBrainProtectionConfig that = (SplitBrainProtectionConfig) o;
+        return enabled == that.enabled && minimumClusterSize == that.minimumClusterSize
+                && Objects.equals(name, that.name) && Objects.equals(listenerConfigs, that.listenerConfigs)
+                && protectOn == that.protectOn && Objects.equals(functionClassName, that.functionClassName)
+                && Objects.equals(functionImplementation, that.functionImplementation);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hash(name, enabled, minimumClusterSize, listenerConfigs, protectOn, functionClassName, functionImplementation);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,15 @@ package com.hazelcast.config;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.hazelcast.config.RestEndpointGroup.getAllEndpointGroups;
 
 /**
- * This class allows to control which parts of Hazelcast REST API will be enabled. There are 2 levels of control:
+ * This class allows controlling which parts of Hazelcast REST API will be enabled. There are 2 levels of control:
  * <ul>
  * <li>overall REST access (enabled by default);</li>
  * <li>access to REST endpoint groups (see {@link RestEndpointGroup}).</li>
@@ -34,12 +37,12 @@ public class RestApiConfig {
 
     private boolean enabled;
 
-    private final Set<RestEndpointGroup> enabledGroups = Collections.synchronizedSet(EnumSet.noneOf(RestEndpointGroup.class));
+    private final Set<Integer> enabledGroupCodes = Collections.synchronizedSet(new HashSet<>());
 
     public RestApiConfig() {
-        for (RestEndpointGroup eg : RestEndpointGroup.values()) {
+        for (RestEndpointGroup eg : getAllEndpointGroups()) {
             if (eg.isEnabledByDefault()) {
-                enabledGroups.add(eg);
+                enabledGroupCodes.add(eg.getCode());
             }
         }
     }
@@ -48,7 +51,7 @@ public class RestApiConfig {
      * Enables all REST endpoint groups.
      */
     public RestApiConfig enableAllGroups() {
-        return enableGroups(RestEndpointGroup.values());
+        return enableGroups(getAllEndpointGroups().toArray(new RestEndpointGroup[0]));
     }
 
     /**
@@ -56,7 +59,8 @@ public class RestApiConfig {
      */
     public RestApiConfig enableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
-            enabledGroups.addAll(Arrays.asList(endpointGroups));
+            enabledGroupCodes.addAll(Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode)
+                    .collect(Collectors.toSet()));
         }
         return this;
     }
@@ -65,7 +69,7 @@ public class RestApiConfig {
      * Disables all REST endpoint groups.
      */
     public RestApiConfig disableAllGroups() {
-        enabledGroups.clear();
+        enabledGroupCodes.clear();
         return this;
     }
 
@@ -74,14 +78,14 @@ public class RestApiConfig {
      */
     public RestApiConfig disableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
-            enabledGroups.removeAll(Arrays.asList(endpointGroups));
+            Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode).forEach(enabledGroupCodes::remove);
         }
         return this;
     }
 
     /**
      * Checks if REST API access is enabled. This flag controls access to all REST resources on a Hazelcast member. Once the
-     * REST API is enabled you can control access to REST endpoints by enabling/disabling enpoint groups.
+     * REST API is enabled you can control access to REST endpoints by enabling/disabling endpoint groups.
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */
@@ -93,7 +97,7 @@ public class RestApiConfig {
      * Return true if the REST API is enabled and at least one REST endpoint group is allowed.
      */
     public boolean isEnabledAndNotEmpty() {
-        return enabled && !enabledGroups.isEmpty();
+        return enabled && !enabledGroupCodes.isEmpty();
     }
 
     /**
@@ -108,26 +112,43 @@ public class RestApiConfig {
      * Returns a not-{@code null} set of enabled REST endpoint groups.
      */
     public Set<RestEndpointGroup> getEnabledGroups() {
-        return new HashSet<RestEndpointGroup>(enabledGroups);
+        return enabledGroupCodes.stream().map(RestEndpointGroup::getRestEndpointGroup).collect(Collectors.toSet());
     }
 
     /**
      * Checks if given REST endpoint group is enabled. It can return {@code true} even if the REST API itself is disabled.
      */
     public boolean isGroupEnabled(RestEndpointGroup group) {
-        return enabledGroups.contains(group);
+        return enabledGroupCodes.contains(group.getCode());
     }
 
     public RestApiConfig setEnabledGroups(Collection<RestEndpointGroup> groups) {
-        enabledGroups.clear();
+        enabledGroupCodes.clear();
         if (groups != null) {
-            enabledGroups.addAll(groups);
+            enabledGroupCodes.addAll(groups.stream().map(RestEndpointGroup::getCode).collect(Collectors.toSet()));
         }
         return this;
     }
 
     @Override
     public String toString() {
-        return "RestApiConfig{enabled=" + enabled + ", enabledGroups=" + enabledGroups + "}";
+        return "RestApiConfig{enabled=" + enabled + ", enabledGroups=" + getEnabledGroups() + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RestApiConfig that = (RestApiConfig) o;
+        return enabled == that.enabled && Objects.equals(enabledGroupCodes, that.enabledGroupCodes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled, enabledGroupCodes);
     }
 }

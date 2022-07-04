@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddBackupListenerMessageTask
-        extends AbstractAddListenerMessageTask<ClientLocalBackupListenerCodec.RequestParameters>
+        extends AbstractAddListenerMessageTask<Void>
         implements Consumer<Long> {
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -55,7 +55,7 @@ public class AddBackupListenerMessageTask
 
     @Override
     protected void addDestroyAction(UUID registrationId) {
-        endpoint.addDestroyAction(registrationId, () -> clientEngine.deregisterBackupListener(registrationId));
+        endpoint.addDestroyAction(registrationId, () -> clientEngine.deregisterBackupListener(registrationId, this));
     }
 
     @Override
@@ -66,8 +66,8 @@ public class AddBackupListenerMessageTask
     }
 
     @Override
-    protected ClientLocalBackupListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientLocalBackupListenerCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

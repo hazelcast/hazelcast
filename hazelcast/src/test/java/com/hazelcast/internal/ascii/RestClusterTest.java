@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -363,6 +363,32 @@ public class RestClusterTest {
         ConnectionResponse response =
                 communicator.setLicense(config.getClusterName(), getPassword(), "whatever");
         assertSuccessJson(response);
+    }
+
+    @Test
+    public void testConfigReload() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        ConnectionResponse response = communicator.configReload(config.getClusterName(), getPassword());
+
+        // Reload is enterprise feature. Should fail here.
+        assertJsonContains(response.response, "status", "fail",
+                "message", "Configuration Reload requires Hazelcast Enterprise Edition");
+    }
+
+    @Test
+    public void testConfigUpdate() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        ConnectionResponse response = communicator.configUpdate(
+                config.getClusterName(), getPassword(), "hazelcast:\n"
+        );
+
+        // Reload is enterprise feature. Should fail here.
+        assertJsonContains(response.response, "status", "fail",
+                "message", "Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {

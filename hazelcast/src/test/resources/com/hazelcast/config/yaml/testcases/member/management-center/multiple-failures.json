@@ -1,0 +1,55 @@
+{
+  "instance":{
+    "hazelcast": {
+      "management-center": {
+        "scripting-enabled": null,
+        "console-enabled": null,
+        "data-access-enabled": null,
+        "other": true,
+        "trusted-interfaces": {}
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ManagementCenter",
+    "pointerToViolation": "#/hazelcast/management-center",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ManagementCenter",
+        "pointerToViolation": "#/hazelcast/management-center",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [other] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ManagementCenter/properties/scripting-enabled",
+        "pointerToViolation": "#/hazelcast/management-center/scripting-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ManagementCenter/properties/console-enabled",
+        "pointerToViolation": "#/hazelcast/management-center/console-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ManagementCenter/properties/data-access-enabled",
+        "pointerToViolation": "#/hazelcast/management-center/data-access-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ManagementCenter/properties/trusted-interfaces",
+        "pointerToViolation": "#/hazelcast/management-center/trusted-interfaces",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      }
+    ],
+    "message": "5 schema violations found"
+  }
+}

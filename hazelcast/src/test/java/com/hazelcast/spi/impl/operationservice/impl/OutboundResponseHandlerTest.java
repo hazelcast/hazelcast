@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Portable;
@@ -34,13 +34,13 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -55,11 +55,12 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setConne
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OutboundResponseHandlerTest {
@@ -99,7 +100,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(response.getCallId());
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -114,7 +115,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -130,7 +131,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -145,7 +146,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, null);
@@ -162,7 +163,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -178,7 +179,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -194,7 +195,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress), anyInt())).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, exception);
@@ -261,12 +262,12 @@ public class OutboundResponseHandlerTest {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("no", no);
-            writer.writeUTF("street", street);
+            writer.writeString("street", street);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            street = reader.readUTF("street");
+            street = reader.readString("street");
             no = reader.readInt("no");
         }
 

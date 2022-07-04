@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,12 @@
 package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.BitSet;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
@@ -26,6 +32,8 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
  * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#afterRun} methods.
  */
 public class HazelcastManagedThread extends Thread {
+
+    private BitSet allowedCpus;
 
     public HazelcastManagedThread() {
     }
@@ -40,6 +48,10 @@ public class HazelcastManagedThread extends Thread {
 
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
+    }
+
+    public void setThreadAffinity(ThreadAffinity threadAffinity) {
+        this.allowedCpus = threadAffinity.nextAllowedCpus();
     }
 
     @Override
@@ -71,10 +83,20 @@ public class HazelcastManagedThread extends Thread {
 
     }
 
-    /**
-     * Manages the thread lifecycle and can be overridden to customize if needed.
-     */
-    public void run() {
+    @Override
+    public final void run() {
+        if (allowedCpus != null) {
+            ThreadAffinityHelper.setAffinity(allowedCpus);
+            BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+            ILogger logger = Logger.getLogger(HazelcastManagedThread.class);
+            if (!actualCpus.equals(allowedCpus)) {
+                logger.warning(getName() + " affinity was not applied successfully. "
+                        + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
+            } else {
+                logger.info(getName() + " has affinity for CPUs:" + allowedCpus);
+            }
+        }
+
         try {
             beforeRun();
             executeRun();
@@ -85,3 +107,4 @@ public class HazelcastManagedThread extends Thread {
         }
     }
 }
+

@@ -1,0 +1,193 @@
+<!--
+  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+
+    <id>hazelcast</id>
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>com.hazelcast:hazelcast</include>
+                <include>com.hazelcast:hazelcast-sql</include>
+                <include>com.hazelcast:hazelcast-hibernate53</include>
+                <include>com.hazelcast:hazelcast-wm</include>
+                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
+                <include>javax.cache:cache-api</include>
+                <include>org.apache.logging.log4j:*</include>
+                <include>org.slf4j:*</include>
+                <include>info.picocli:picocli</include>
+                <include>org.jline:*</include>
+                <include>org.fusesource.jansi:jansi</include>
+                <include>com.hazelcast.jet:hazelcast-jet-avro</include>
+                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
+                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
+                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>
+                <include>com.hazelcast.jet:hazelcast-jet-csv</include>
+                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
+                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
+                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>
+                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>
+                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
+                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
+                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
+                <include>com.hazelcast.jet:hazelcast-jet-python</include>
+                <include>com.hazelcast.jet:hazelcast-jet-s3</include>
+                <include>com.hazelcast:hazelcast-3-connector-interface</include>
+                <include>com.hazelcast:hazelcast-3-connector-common</include>
+                <include>com.hazelcast:hazelcast-distribution</include>
+            </includes>
+            <outputDirectory>lib</outputDirectory>
+            <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+    </dependencySets>
+    <files>
+        <file>
+            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
+            <destName>THIRD-PARTY.txt</destName>
+            <outputDirectory>licenses</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/../target/aggregated-attribution.txt</source>
+            <destName>attribution.txt</destName>
+            <outputDirectory>licenses</outputDirectory>
+        </file>
+
+        <!-- Full Example YAML config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-full-example.yaml</source>
+            <destName>hazelcast-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-full-example.yaml</source>
+            <destName>hazelcast-client-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Simple XML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-default-assembly.xml</source>
+            <destName>hazelcast.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.xml</source>
+            <destName>hazelcast-docker.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.xml</source>
+            <destName>hazelcast-client.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+
+        <!-- Simple YAML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-default-assembly.yaml</source>
+            <destName>hazelcast.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.yaml</source>
+            <destName>hazelcast-docker.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.yaml</source>
+            <destName>hazelcast-client.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Full Example XML config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-full-example.xml</source>
+            <destName>hazelcast-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-full-example.xml</source>
+            <destName>hazelcast-client-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Other Example config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.yaml</source>
+            <destName>hazelcast-security-hardened.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.xml</source>
+            <destName>hazelcast-security-hardened.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- NOTICE file from hazelcast.jar -->
+        <file>
+            <source>${configs.from.jar}/META-INF/NOTICE</source>
+            <destName>NOTICE</destName>
+            <outputDirectory>/</outputDirectory>
+        </file>
+    </files>
+
+    <fileSets>
+        <fileSet>
+            <directory>src/root</directory>
+            <outputDirectory/>
+        </fileSet>
+
+        <!-- Files in these two directories contain property placeholders that the
+             Maven Assembly Plugin must expand (that's what "filtered" means). -->
+        <fileSet>
+            <directory>src/bin-filemode-755</directory>
+            <fileMode>0755</fileMode>
+            <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/bin-regular</directory>
+            <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.build.directory}/custom-lib</directory>
+            <outputDirectory>custom-lib</outputDirectory>
+        </fileSet>
+        <fileSet> <!-- Create empty directory -->
+            <outputDirectory>bin/user-lib</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -121,6 +122,12 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     protected HazelcastInstance getDriver() {
         return members[members.length - 1];
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddWanReplicationConfigIsNotSupported() {
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
     }
 
     @Test
@@ -196,7 +203,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig() {
-        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10);
+        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false);
 
         driver.getConfig().addDurableExecutorConfig(config);
 
@@ -207,7 +214,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
                 new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
-                ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
@@ -804,8 +811,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setWriteThrough(true)
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                               .setCapacity(42)
-                                                               .setTimeToLiveSeconds(52));
+                        .setCapacity(42)
+                        .setTimeToLiveSeconds(52));
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -849,8 +856,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                               .setCapacity(42)
-                                                               .setTimeToLiveSeconds(52))
+                        .setCapacity(42)
+                        .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))
@@ -861,7 +868,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
-                .setStatisticsEnabled(false);
+                .setStatisticsEnabled(false)
+                .setPerEntryStatsEnabled(true);
+
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setSize(4096)
@@ -898,6 +907,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setPopulate(true)
                 .setIncludeValue(true)
                 .setCoalesce(true)
+                .setSerializeKeys(true)
                 .setPredicateConfig(new PredicateConfig("com.hazelcast.Predicate"))
                 .setEvictionConfig(new EvictionConfig().setSize(32)
                         .setMaxSizePolicy(ENTRY_COUNT)

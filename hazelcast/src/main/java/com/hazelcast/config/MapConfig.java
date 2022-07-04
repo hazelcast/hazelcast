@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -85,6 +86,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public static final boolean DEFAULT_STATISTICS_ENABLED = true;
     /**
+     * Default value of whether per entry statistics are enabled or not
+     */
+    public static final boolean DEFAULT_ENTRY_STATS_ENABLED = false;
+    /**
      * Default max size.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
@@ -101,6 +106,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private boolean readBackupData;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
+    private boolean perEntryStatsEnabled = DEFAULT_ENTRY_STATS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
@@ -121,12 +127,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+    private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
     private EvictionConfig evictionConfig = new EvictionConfig()
             .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
+    private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 
     public MapConfig() {
     }
@@ -149,6 +157,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.readBackupData = config.readBackupData;
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
+        this.perEntryStatsEnabled = config.perEntryStatsEnabled;
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
@@ -160,8 +169,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+        this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
+        this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
     }
 
     /**
@@ -392,10 +403,16 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     /**
      * Sets the {@link MergePolicyConfig} for this map.
      *
+     * Note that you may need to enable per entry stats
+     * via {@link MapConfig#setPerEntryStatsEnabled}
+     * to see all fields of entry view in your {@link
+     * com.hazelcast.spi.merge.SplitBrainMergePolicy} implementation.
+     *
      * @return the updated map configuration
      */
     public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig,
+                "mergePolicyConfig cannot be null!");
         return this;
     }
 
@@ -409,13 +426,48 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     /**
-     * Sets statistics to enabled or disabled for this map.
+     * Set to enable/disable map level statistics for this map.
      *
-     * @param statisticsEnabled {@code true} to enable map statistics, {@code false} to disable
+     * This setting is only for map level stats such as last
+     * access time to map, total number of hits etc. For
+     * entry level stats see {@link #perEntryStatsEnabled}
+     *
+     * @param statisticsEnabled {@code true} to
+     *                          enable map statistics, {@code false} to disable
      * @return the current map config instance
+     * @see #setPerEntryStatsEnabled
      */
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
+    /**
+     * Checks if entry level statistics are enabled for this map.
+     *
+     * @return {@code true} if entry level statistics
+     * are enabled, {@code false} otherwise
+     * @since 4.2
+     */
+    public boolean isPerEntryStatsEnabled() {
+        return perEntryStatsEnabled;
+    }
+
+    /**
+     * Set to enable/disable per entry statistics.
+     * Its default value is {@code false}.
+     *
+     * When you enable per entry stats, you can retrieve entry
+     * level statistics such as hits, creation time, last access
+     * time, last update time, last stored time for an entry.
+     *
+     * @param perEntryStatsEnabled {@code true} to enable
+     *                             entry level statistics, {@code false} to disable
+     * @return the current map config instance
+     * @since 4.2
+     */
+    public MapConfig setPerEntryStatsEnabled(boolean perEntryStatsEnabled) {
+        this.perEntryStatsEnabled = perEntryStatsEnabled;
         return this;
     }
 
@@ -631,13 +683,41 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     /**
+     * Gets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public @Nonnull
+    DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code MapConfig}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
+     *
+     * @deprecated since 5.0 use {@link MapConfig#setDataPersistenceConfig(DataPersistenceConfig)}
      */
+    @Deprecated
     public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setDataPersistenceConfig(@Nonnull DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = checkNotNull(dataPersistenceConfig, "DataPersistenceConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -680,6 +760,26 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
         this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
+        return this;
+    }
+
+    /**
+     * Gets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @return tiered-store config
+     */
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfig;
+    }
+
+    /**
+     * Sets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @param tieredStoreConfig tiered-store config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setTieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
+        this.tieredStoreConfig = checkNotNull(tieredStoreConfig, "tieredStoreConfig cannot be null");
         return this;
     }
 
@@ -729,6 +829,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
             return false;
         }
         if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (perEntryStatsEnabled != that.perEntryStatsEnabled) {
             return false;
         }
         if (!name.equals(that.name)) {
@@ -785,6 +888,13 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!eventJournalConfig.equals(that.eventJournalConfig)) {
             return false;
         }
+        if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
+            return false;
+        }
+        if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
+            return false;
+        }
+
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
@@ -810,11 +920,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + getQueryCacheConfigs().hashCode();
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (perEntryStatsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + merkleTreeConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + dataPersistenceConfig.hashCode();
+        result = 31 * result + tieredStoreConfig.hashCode();
         return result;
     }
 
@@ -822,7 +935,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     public String toString() {
         return "MapConfig{"
                 + "name='" + name + '\''
-                + ", inMemoryFormat=" + inMemoryFormat + '\''
+                + ", inMemoryFormat='" + inMemoryFormat + '\''
                 + ", metadataPolicy=" + metadataPolicy
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
@@ -833,6 +946,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", merkleTree=" + merkleTreeConfig
                 + ", eventJournal=" + eventJournalConfig
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
                 + ", mergePolicyConfig=" + mergePolicyConfig
@@ -843,6 +957,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", queryCacheConfigs=" + queryCacheConfigs
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", entryStatsEnabled=" + perEntryStatsEnabled
+                + ", tieredStoreConfig=" + tieredStoreConfig
                 + '}';
     }
 
@@ -858,7 +975,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
@@ -867,9 +984,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeObject(mapStoreConfig);
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
-        out.writeUTF(cacheDeserializedValues.name());
+        out.writeString(cacheDeserializedValues.name());
         out.writeObject(mergePolicyConfig);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
@@ -878,16 +995,19 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
         out.writeObject(partitioningStrategyConfig);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
+        out.writeBoolean(perEntryStatsEnabled);
+        out.writeObject(dataPersistenceConfig);
+        out.writeObject(tieredStoreConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
@@ -896,9 +1016,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         mapStoreConfig = in.readObject();
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
-        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
+        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readString());
         mergePolicyConfig = in.readObject();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
@@ -907,10 +1027,13 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
-        splitBrainProtectionName = in.readUTF();
-        hotRestartConfig = in.readObject();
+        splitBrainProtectionName = in.readString();
+        setHotRestartConfig(in.readObject());
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
+        perEntryStatsEnabled = in.readBoolean();
+        setDataPersistenceConfig(in.readObject());
+        setTieredStoreConfig(in.readObject());
     }
 }

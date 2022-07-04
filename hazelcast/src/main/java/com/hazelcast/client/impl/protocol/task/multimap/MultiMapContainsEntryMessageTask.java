@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -34,7 +32,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSENTRY}
  */
 public class MultiMapContainsEntryMessageTask
-        extends AbstractPartitionMessageTask<MultiMapContainsEntryCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapContainsEntryCodec.RequestParameters> {
 
     public MultiMapContainsEntryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -55,11 +53,6 @@ public class MultiMapContainsEntryMessageTask
     @Override
     protected MultiMapContainsEntryCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapContainsEntryCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override

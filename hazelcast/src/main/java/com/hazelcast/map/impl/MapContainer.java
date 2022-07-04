@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,23 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -45,7 +48,8 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.record.RecordFactoryAttributes;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -54,21 +58,27 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
+import static java.lang.Boolean.TRUE;
 import static java.lang.System.getProperty;
 
 /**
@@ -94,11 +104,12 @@ public class MapContainer {
     protected final InternalSerializationService serializationService;
     protected final Function<Object, Data> toDataFunction = new ObjectToData();
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final ConstructorFunction<RecordFactoryAttributes, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
-    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
+    protected final AtomicInteger invalidationListenerCounter;
+    protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
     protected SplitBrainMergePolicy wanMergePolicy;
     protected DelegatingWanScheme wanReplicationDelegate;
@@ -107,6 +118,8 @@ public class MapContainer {
     private volatile Evictor evictor;
 
     private boolean persistWanReplicatedData;
+
+    private volatile boolean destroyed;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -133,6 +146,8 @@ public class MapContainer {
                 serializationService, extractors);
         this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
+        this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
+                .getOrCreateCounter(name);
         initWanReplication(mapServiceContext.getNodeEngine());
     }
 
@@ -147,13 +162,54 @@ public class MapContainer {
      * @return a new Indexes object
      */
     public Indexes createIndexes(boolean global) {
-        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
+        int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
+
+        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior(), mapConfig.getInMemoryFormat())
                 .global(global)
                 .extractors(extractors)
                 .statsEnabled(mapConfig.isStatisticsEnabled())
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .partitionCount(partitionCount)
+                .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
+    }
+
+    public AtomicLong getLastInvalidMergePolicyCheckTime() {
+        return lastInvalidMergePolicyCheckTime;
+    }
+
+    private class IndexResultFilterFactory implements Supplier<Predicate<QueryableEntry>> {
+
+        @Override
+        public Predicate<QueryableEntry> get() {
+            return new Predicate<QueryableEntry>() {
+                private long nowInMillis = Clock.currentTimeMillis();
+
+                @Override
+                public boolean test(QueryableEntry queryableEntry) {
+                    return MapContainer.this.hasNotExpired(queryableEntry, nowInMillis);
+                }
+            };
+        }
+    }
+
+    /**
+     * @return {@code true} if queryableEntry has
+     * not expired, otherwise returns {@code false}
+     */
+    private boolean hasNotExpired(QueryableEntry queryableEntry, long now) {
+        Data keyData = queryableEntry.getKeyData();
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(keyData);
+
+        if (!getIndexes(partitionId).isGlobal()) {
+            ThreadUtil.assertRunningOnPartitionThread();
+        }
+
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
+        return recordStore != null
+                && !recordStore.isExpired(keyData, now, false);
     }
 
     public final void initEvictor() {
@@ -175,8 +231,7 @@ public class MapContainer {
     }
 
     public boolean shouldUseGlobalIndex() {
-        // for non-native memory populate a single global index
-        return !mapConfig.getInMemoryFormat().equals(NATIVE);
+        return mapConfig.getInMemoryFormat() != NATIVE || mapServiceContext.globalIndexEnabled();
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -198,13 +253,14 @@ public class MapContainer {
     }
 
     // overridden in different context
-    ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
+    ConstructorFunction<RecordFactoryAttributes, RecordFactory> createRecordFactoryConstructor(
+            final SerializationService serializationService) {
         return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
-                    return new DataRecordFactory(mapConfig, serializationService);
+                    return new DataRecordFactory(this, serializationService);
                 case OBJECT:
-                    return new ObjectRecordFactory(mapConfig, serializationService);
+                    return new ObjectRecordFactory(this, serializationService);
                 default:
                     throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }
@@ -219,7 +275,7 @@ public class MapContainer {
         String wanReplicationRefName = wanReplicationRef.getName();
 
         Config config = nodeEngine.getConfig();
-        if (!mapConfig.getMerkleTreeConfig().isEnabled()
+        if (!TRUE.equals(mapConfig.getMerkleTreeConfig().getEnabled())
                 && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
             throw new InvalidConfigurationException(
                     "Map " + name + " has disabled merkle trees but the WAN replication scheme "
@@ -229,8 +285,9 @@ public class MapContainer {
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
-        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
-                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        wanMergePolicy = mergePolicyProvider.getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+        checkMapMergePolicy(mapConfig, wanReplicationRef.getMergePolicyClassName(), mergePolicyProvider);
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
@@ -269,7 +326,7 @@ public class MapContainer {
     }
 
     /**
-     * @return the global index, if the global index is in use (on-heap) or null.
+     * @return the global index, if the global index is in use or null.
      */
     public Indexes getIndexes() {
         return globalIndexes;
@@ -353,7 +410,7 @@ public class MapContainer {
         return toDataFunction;
     }
 
-    public ConstructorFunction<Void, RecordFactory> getRecordFactoryConstructor() {
+    public ConstructorFunction<RecordFactoryAttributes, RecordFactory> getRecordFactoryConstructor() {
         return recordFactoryConstructor;
     }
 
@@ -375,27 +432,37 @@ public class MapContainer {
     }
 
     public boolean hasInvalidationListener() {
-        return invalidationListenerCount.get() > 0;
+        return invalidationListenerCounter.get() > 0;
     }
 
-    public void increaseInvalidationListenerCount() {
-        invalidationListenerCount.incrementAndGet();
-    }
-
-    public void decreaseInvalidationListenerCount() {
-        invalidationListenerCount.decrementAndGet();
+    public AtomicInteger getInvalidationListenerCounter() {
+        return invalidationListenerCounter;
     }
 
     public InterceptorRegistry getInterceptorRegistry() {
         return interceptorRegistry;
     }
 
-    // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
+    /**
+     * Callback invoked before record store and indexes are destroyed. Ensures that if map iterator observes a non-destroyed
+     * state, then associated data structures are still valid.
+     */
+    public void onBeforeDestroy() {
+        destroyed = true;
+    }
+
+    // callback called when the MapContainer is de-registered
+    // from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
     }
 
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
-        return getIndexes(partitionId).haveAtLeastOneIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        return getIndexes(partitionId).haveAtLeastOneIndex()
+                && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
@@ -428,5 +495,25 @@ public class MapContainer {
             SerializationService ss = mapStoreContext.getSerializationService();
             return ss.toData(input, partitioningStrategy);
         }
+    }
+
+    public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
+        switch (getMapConfig().getCacheDeserializedValues()) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return getIndexes(partitionId).haveAtLeastOneIndex();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "MapContainer{"
+                + "name='" + name + '\''
+                + ", destroyed=" + destroyed
+                + '}';
     }
 }

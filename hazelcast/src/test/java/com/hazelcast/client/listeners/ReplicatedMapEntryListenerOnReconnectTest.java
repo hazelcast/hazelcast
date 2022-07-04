@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
         return replicatedMap.removeEntryListener(registrationId);
     }
 
-    @Override
-    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
+    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -80,7 +79,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
                     NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
                     EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
-                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == 1) {
+                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
                         found = true;
                     }
                 }

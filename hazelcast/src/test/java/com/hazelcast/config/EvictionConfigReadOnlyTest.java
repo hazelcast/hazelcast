@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -54,5 +56,13 @@ public class EvictionConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setComparatorOnReadOnlyEvictionConfigShouldFail() {
         getReadOnlyConfig().setComparator(null);
+    }
+
+    @Test
+    public void copy_constructor_copies_right_value_of_field_sizeConfigured() {
+        EvictionConfig evictionConfig = new EvictionConfig();
+        EvictionConfig asReadOnly = new EvictionConfigReadOnly(evictionConfig);
+
+        assertEquals(evictionConfig.sizeConfigured, asReadOnly.sizeConfigured);
     }
 }

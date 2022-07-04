@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,23 @@ public final class HazelcastProperty {
         this.timeUnit = null;
     }
 
+    public HazelcastProperty(String name, Enum<?> defaultEnum) {
+        this(name, defaultEnum.name());
+    }
+
     public HazelcastProperty(String name, boolean defaultValue) {
         this(name, defaultValue ? "true" : "false");
     }
 
     public HazelcastProperty(String name, Integer defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    public HazelcastProperty(String name, Double defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    public HazelcastProperty(String name, Float defaultValue) {
         this(name, String.valueOf(defaultValue));
     }
 

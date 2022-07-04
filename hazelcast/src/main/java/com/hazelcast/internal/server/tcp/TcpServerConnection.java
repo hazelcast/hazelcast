@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
@@ -24,8 +25,8 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
@@ -33,11 +34,16 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
@@ -65,11 +71,17 @@ public class TcpServerConnection implements ServerConnection {
 
     private final ILogger logger;
 
+    // Flag that indicates if the connection is accepted on this member (server-side)
+    // See also TcpServerAcceptor and TcpServerConnector
+    private final boolean acceptorSide;
+
     private final int connectionId;
 
     private final ServerContext serverContext;
 
     private Address remoteAddress;
+
+    private UUID remoteUuid;
 
     private TcpServerConnectionErrorHandler errorHandler;
 
@@ -80,17 +92,21 @@ public class TcpServerConnection implements ServerConnection {
     private volatile Throwable closeCause;
 
     private volatile String closeReason;
+    private volatile int planeIndex = -1;
 
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
                                int connectionId,
-                               Channel channel) {
+                               Channel channel,
+                               boolean acceptorSide
+    ) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.lifecycleListener = lifecycleListener;
         this.serverContext = connectionManager.getServer().getContext();
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnection.class);
         this.channel = channel;
+        this.acceptorSide = acceptorSide;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
     }
@@ -104,12 +120,20 @@ public class TcpServerConnection implements ServerConnection {
         return channel;
     }
 
+    public int getPlaneIndex() {
+        return planeIndex;
+    }
+
+    public void setPlaneIndex(int planeIndex) {
+        this.planeIndex = planeIndex;
+    }
+
     @Override
     public String getConnectionType() {
         return connectionType;
     }
 
-    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM)
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM, level = DEBUG)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }
@@ -162,8 +186,23 @@ public class TcpServerConnection implements ServerConnection {
         return remoteAddress;
     }
 
+    @Override
     public void setRemoteAddress(Address remoteAddress) {
         this.remoteAddress = remoteAddress;
+    }
+
+    @Override
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
+    @Override
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
+    }
+
+    public boolean isAcceptorSide() {
+        return acceptorSide;
     }
 
     public void setErrorHandler(TcpServerConnectionErrorHandler errorHandler) {
@@ -192,20 +231,24 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpServerConnection)) {
-            return false;
-        }
-        TcpServerConnection that = (TcpServerConnection) o;
-        return connectionId == that.getConnectionId();
+    public int hashCode() {
+        return Objects.hash(acceptorSide, connectionId);
     }
 
     @Override
-    public int hashCode() {
-        return connectionId;
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TcpServerConnection other = (TcpServerConnection) obj;
+        return acceptorSide == other.acceptorSide && connectionId == other.connectionId
+                && Objects.equals(remoteAddress, other.remoteAddress);
     }
 
     @Override
@@ -218,6 +261,15 @@ public class TcpServerConnection implements ServerConnection {
         this.closeCause = cause;
         this.closeReason = reason;
 
+        serverContext.getAuditLogService()
+            .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
+            .message("Closing server connection.")
+            .addParameter("reason", reason)
+            .addParameter("cause", cause)
+            .addParameter("remoteAddress", remoteAddress)
+            .addParameter("remoteUuid", remoteUuid)
+            .log();
+
         logClose();
 
         try {
@@ -226,8 +278,17 @@ public class TcpServerConnection implements ServerConnection {
             logger.warning(e);
         }
 
-        lifecycleListener.onConnectionClose(this, null, false);
+        lifecycleListener.onConnectionClose(this, cause, false);
         serverContext.onDisconnect(remoteAddress, cause);
+
+        LoginContext lc = (LoginContext) attributeMap.remove(LoginContext.class);
+        if (lc != null) {
+            try {
+                lc.logout();
+            } catch (LoginException e) {
+                logger.warning("Logout failed", e);
+            }
+        }
         if (cause != null && errorHandler != null) {
             errorHandler.onError(cause);
         }
@@ -298,8 +359,10 @@ public class TcpServerConnection implements ServerConnection {
                 + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", qualifier=" + connectionManager.getEndpointQualifier()
                 + ", endpoint=" + remoteAddress
+                + ", remoteUuid=" + remoteUuid
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
+                + ", planeIndex=" + planeIndex
                 + "]";
     }
 }

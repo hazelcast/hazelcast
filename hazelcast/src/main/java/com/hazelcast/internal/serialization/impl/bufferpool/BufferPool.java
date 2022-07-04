@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,9 @@ public interface BufferPool {
     /**
      * Returns a BufferObjectDataInput back to the pool.
      *
-     * The implementation is free to not return the instance to the pool but just close it.
+     * The implementation is free to not return the instance to the pool.
+     * In that case this call does not keep a reference to `BufferObjectDataInput` so that it can be
+     * garbage-collected.
      *
      * @param in the BufferObjectDataInput.
      */

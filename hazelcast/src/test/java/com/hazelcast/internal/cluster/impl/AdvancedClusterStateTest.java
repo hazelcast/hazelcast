@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -74,13 +74,14 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Rule
@@ -181,11 +182,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         Node node = getNode(hz);
         ClusterServiceImpl clusterService = node.getClusterService();
         int memberListVersion = clusterService.getMemberListVersion();
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        long partitionStateStamp = node.getPartitionService().getPartitionStateStamp();
         long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
         ClusterStateManager clusterStateManager = clusterService.getClusterStateManager();
         clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), UUID.randomUUID(),
-                timeoutInMillis, memberListVersion, partitionStateVersion);
+                timeoutInMillis, memberListVersion, partitionStateStamp);
     }
 
     @Test
@@ -499,24 +500,23 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_eitherClusterStateChange_orPartitionInitialization_shouldBeSuccessful()
-            throws Exception {
+    public void test_eitherClusterStateChange_orPartitionInitialization_shouldBeSuccessful() throws Exception {
         Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances(config);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = factory.newInstances(config, 3);
         HazelcastInstance hz1 = instances[0];
         HazelcastInstance hz2 = instances[1];
 
         assertClusterSizeEventually(instances.length, instances);
 
         InternalPartitionService partitionService = getNode(hz1).getPartitionService();
-        int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
+        long initialPartitionStateStamp = partitionService.getPartitionStateStamp();
 
         ClusterState newState = ClusterState.PASSIVE;
 
         Future future = spawn(() -> {
             try {
-                changeClusterState(hz2, newState, initialPartitionStateVersion);
+                changeClusterState(hz2, newState, initialPartitionStateStamp);
             } catch (Exception ignored) {
             }
         });
@@ -528,19 +528,28 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         ClusterState currentState = hz2.getCluster().getClusterState();
         if (currentState == newState) {
             // if cluster state changed then partition state version should be equal to initial version
-            assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
+            for (HazelcastInstance instance : instances) {
+                assertEquals(initialPartitionStateStamp, getPartitionService(instance).getPartitionStateStamp());
+            }
         } else {
             assertEquals(ClusterState.ACTIVE, currentState);
 
             InternalPartition partition = partitionService.getPartition(0, false);
             if (partition.getOwnerOrNull() == null) {
                 // if partition assignment failed then partition state version should be equal to initial version
-                assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
+                for (HazelcastInstance instance : instances) {
+                    assertEquals(initialPartitionStateStamp, getPartitionService(instance).getPartitionStateStamp());
+                }
             } else {
                 // if cluster state change failed and partition assignment is done
-                // then partition state version should be some positive number
-                final int partitionStateVersion = partitionService.getPartitionStateVersion();
-                assertTrue("Version should be positive: " + partitionService, partitionStateVersion > 0);
+                // then partition state version should be different.
+                waitAllForSafeState(instances);
+                long partitionStateStampNew = getPartitionService(hz1).getPartitionStateStamp();
+                for (HazelcastInstance instance : instances) {
+                    long partitionStateStamp = getPartitionService(instance).getPartitionStateStamp();
+                    assertNotEquals("Instance: " + getAddress(instance), initialPartitionStateStamp, partitionStateStamp);
+                    assertEquals("Instance: " + getAddress(instance), partitionStateStampNew, partitionStateStamp);
+                }
             }
         }
     }
@@ -632,11 +641,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         future.get();
     }
 
-    private void changeClusterState(HazelcastInstance instance, ClusterState newState, int partitionStateVersion) {
+    private void changeClusterState(HazelcastInstance instance, ClusterState newState, long partitionStateStamp) {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(instance);
         MemberMap members = clusterService.getMembershipManager().getMemberMap();
         clusterService.getClusterStateManager().changeClusterState(ClusterStateChange.from(newState), members,
-                partitionStateVersion, false);
+                partitionStateStamp, false);
     }
 
     private static TransactionManagerServiceImpl spyTransactionManagerService(HazelcastInstance hz) throws Exception {

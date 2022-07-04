@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.server.tcp.TcpServerContext;
-import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.server.tcp.TcpServer;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
@@ -142,7 +144,7 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry) {
+    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
         TcpServerContext context = new TcpServerContext(node, node.nodeEngine);
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
@@ -151,11 +153,10 @@ public class DefaultNodeContext implements NodeContext {
         return new TcpServer(config,
                 context,
                 registry,
-                node.loggingService,
+                addressRegistry,
                 metricsRegistry,
                 networking,
-                node.getNodeExtension().createChannelInitializerFn(context),
-                node.getProperties());
+                node.getNodeExtension().createChannelInitializerFn(context));
     }
 
     private Networking createNetworking(Node node) {
@@ -171,9 +172,12 @@ public class DefaultNodeContext implements NodeContext {
                         .threadNamePrefix(node.hazelcastInstance.getName())
                         .errorHandler(errorHandler)
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
+                        .inputThreadAffinity(newSystemThreadAffinity("hazelcast.io.input.thread.affinity"))
                         .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
+                        .outputThreadAffinity(newSystemThreadAffinity("hazelcast.io.output.thread.affinity"))
                         .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
                         .writeThroughEnabled(props.getBoolean(IO_WRITE_THROUGH_ENABLED))
-                        .concurrencyDetection(node.nodeEngine.getConcurrencyDetection()));
+                        .concurrencyDetection(node.nodeEngine.getConcurrencyDetection())
+        );
     }
 }

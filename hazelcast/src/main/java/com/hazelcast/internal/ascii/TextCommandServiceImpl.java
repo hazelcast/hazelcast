@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.memcache.BulkGetCommandProcessor;
@@ -36,14 +35,16 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
+import com.hazelcast.internal.ascii.rest.RestCallCollector;
 import com.hazelcast.internal.ascii.rest.RestValue;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -102,6 +103,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     private final AtomicLong decrementHits = new AtomicLong();
     private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
+    private final RestCallCollector restCallCollector = new RestCallCollector();
 
     private final Node node;
     private final HazelcastInstance hazelcast;
@@ -132,8 +134,8 @@ public class TextCommandServiceImpl implements TextCommandService {
         register(UNKNOWN, new ErrorCommandProcessor(this));
         register(VERSION, new VersionCommandProcessor(this));
         register(TOUCH, new TouchCommandProcessor(this));
-        register(INCREMENT, new IncrementCommandProcessor(this));
-        register(DECREMENT, new IncrementCommandProcessor(this));
+        register(INCREMENT, new IncrementCommandProcessor(this, entryConverter));
+        register(DECREMENT, new IncrementCommandProcessor(this, entryConverter));
         register(ERROR_CLIENT, new ErrorCommandProcessor(this));
         register(ERROR_SERVER, new ErrorCommandProcessor(this));
         register(HTTP_GET, new HttpGetCommandProcessor(this));
@@ -174,13 +176,11 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setIncrMisses(incrementMisses.get());
         stats.setDecrHits(decrementHits.get());
         stats.setDecrMisses(decrementMisses.get());
-        Server server = node.server;
+        Server server = node.getServer();
         ServerConnectionManager cm = server.getConnectionManager(MEMCACHE);
-        int totalText = (cm != null ? cm.getActiveConnections().size() : 0);
-
-        AggregateServerConnectionManager aem = server.getAggregateConnectionManager();
-        stats.setCurrConnections(totalText);
-        stats.setTotalConnections(aem.getActiveConnections().size());
+        int memcachedCount = cm == null ? 0 : cm.connectionCount(c -> Protocols.MEMCACHE.equals(c.getConnectionType()));
+        stats.setCurrConnections(memcachedCount);
+        stats.setTotalConnections(server.connectionCount());
         return stats;
     }
 
@@ -232,6 +232,11 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public long incrementTouchCount() {
         return touches.incrementAndGet();
+    }
+
+    @Override
+    public RestCallCollector getRestCallCollector() {
+        return restCallCollector;
     }
 
     @Override
@@ -361,6 +366,7 @@ public class TextCommandServiceImpl implements TextCommandService {
 
     @Override
     public void sendResponse(TextCommand textCommand) {
+        textCommand.beforeSendResponse(this);
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);
         }

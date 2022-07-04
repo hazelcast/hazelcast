@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,23 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.mocknetwork.MockServer.MockEndpointManager.isTargetLeft;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
+import static com.hazelcast.test.mocknetwork.MockServer.isTargetLeft;
 import static org.junit.Assert.assertNotNull;
 
 public class MockServerConnection implements ServerConnection {
 
     protected final Address localAddress;
+    protected final NodeEngineImpl localNodeEngine;
     protected final NodeEngineImpl remoteNodeEngine;
 
-    volatile MockServerConnection localConnection;
+    volatile MockServerConnection otherConnection;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
 
@@ -51,21 +54,40 @@ public class MockServerConnection implements ServerConnection {
 
     private final Address remoteAddress;
 
+    private final UUID localUuid;
+    private volatile UUID remoteUuid;
+
     private final ServerConnectionManager connectionManager;
 
     private final ConcurrentMap attributeMap = new ConcurrentHashMap();
 
-    public MockServerConnection(Address localAddress,
-                                Address remoteAddress, NodeEngineImpl remoteNodeEngine) {
-        this(null, localAddress, remoteAddress, remoteNodeEngine, null);
+    public MockServerConnection(
+            Address localAddress,
+            Address remoteAddress,
+            UUID localUuid,
+            UUID remoteUuid,
+            NodeEngineImpl localNodeEngine,
+            NodeEngineImpl remoteNodeEngine
+    ) {
+        this(null, localAddress, remoteAddress, localUuid, remoteUuid, localNodeEngine, remoteNodeEngine, null);
     }
 
-    public MockServerConnection(ConnectionLifecycleListener lifecycleListener, Address localAddress,
-                                Address remoteAddress, NodeEngineImpl remoteNodeEngine,
-                                ServerConnectionManager localConnectionManager) {
+    public MockServerConnection(
+            ConnectionLifecycleListener lifecycleListener,
+            Address localAddress,
+            Address remoteAddress,
+            UUID localUuid,
+            UUID remoteUuid,
+            NodeEngineImpl localNodeEngine,
+            NodeEngineImpl remoteNodeEngine,
+            ServerConnectionManager localConnectionManager
+    ) {
         this.lifecycleListener = lifecycleListener;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
+        this.localUuid = localUuid;
+        this.remoteUuid = remoteUuid;
+        this.localNodeEngine = localNodeEngine;
         this.remoteNodeEngine = remoteNodeEngine;
         this.connectionManager = localConnectionManager;
     }
@@ -99,6 +121,11 @@ public class MockServerConnection implements ServerConnection {
         return remoteAddress;
     }
 
+    @Override
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
     public InetAddress getInetAddress() {
         try {
             return localAddress.getInetAddress();
@@ -130,16 +157,16 @@ public class MockServerConnection implements ServerConnection {
         boolean writeDone;
         do {
             writeDone = packetWriter.writeTo(packet, buffer);
-            buffer.flip();
+            upcast(buffer).flip();
             newPacket = packetReader.readFrom(buffer);
             if (buffer.hasRemaining()) {
                 throw new IllegalStateException("Buffer should be empty! " + buffer);
             }
-            buffer.clear();
+            upcast(buffer).clear();
         } while (!writeDone);
 
         assertNotNull(newPacket);
-        newPacket.setConn(localConnection);
+        newPacket.setConn(otherConnection);
         return newPacket;
     }
 
@@ -152,17 +179,18 @@ public class MockServerConnection implements ServerConnection {
     }
 
     public void close(String msg, Throwable cause) {
-        if (!alive.compareAndSet(true, false)) {
-            return;
-        }
+        try {
+            if (!alive.compareAndSet(true, false)) {
+                return;
+            }
 
-        if (localConnection != null) {
-            //this is a member-to-member connection
-            localConnection.close(msg, cause);
-        }
-
-        if (lifecycleListener != null) {
-            lifecycleListener.onConnectionClose(this, cause, false);
+            if (otherConnection != null) {
+                otherConnection.close(msg, cause);
+            }
+        } finally {
+            if (lifecycleListener != null) {
+                lifecycleListener.onConnectionClose(this, cause, false);
+            }
         }
     }
 
@@ -196,6 +224,11 @@ public class MockServerConnection implements ServerConnection {
     }
 
     @Override
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
+    }
+
+    @Override
     public boolean isAlive() {
         return alive.get() && !isTargetLeft(remoteNodeEngine.getNode());
     }
@@ -203,8 +236,8 @@ public class MockServerConnection implements ServerConnection {
     @Override
     public String toString() {
         return "MockConnection{"
-                + "localEndpoint=" + localAddress
-                + ", remoteEndpoint=" + remoteAddress
+                + "localEndpoint=[address=" + localAddress + ", uuid=" + localUuid + "]"
+                + ", remoteEndpoint=[address=" + remoteAddress + ", uuid=" + remoteUuid + "]"
                 + ", alive=" + isAlive() + '}';
     }
 }

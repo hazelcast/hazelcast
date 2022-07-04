@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.security;
 import java.util.Properties;
 
 import javax.security.auth.callback.CallbackHandler;
+
+import com.hazelcast.cluster.Address;
 
 /**
  * ICredentialsFactory is used to create {@link Credentials} objects to be used during node authentication before connection is
@@ -48,6 +50,16 @@ public interface ICredentialsFactory {
      * @return the new Credentials object
      */
     Credentials newCredentials();
+
+    /**
+     * Creates new {@link Credentials} object for given target {@link Address}.
+     *
+     * @param address Target {@link Address} (may be {@code null})
+     * @return
+     */
+    default Credentials newCredentials(Address address) {
+        return newCredentials();
+    }
 
     /**
      * Destroys {@link ICredentialsFactory}.

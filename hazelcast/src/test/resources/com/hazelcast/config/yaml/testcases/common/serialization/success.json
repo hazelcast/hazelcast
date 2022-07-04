@@ -1,0 +1,70 @@
+{
+  "instance": {
+    "hazelcast": {
+      "serialization": {
+        "portable-version": 0,
+        "use-native-byte-order": false,
+        "byte-order": "BIG_ENDIAN",
+        "data-serializable-factories": [
+          {
+            "factory-id": 1,
+            "class-name": "com.hazelcast.examples.DataSerializableFactory"
+          }
+        ],
+        "portable-factories": [
+          {
+            "factory-id": 1,
+            "class-name": "com.hazelcast.examples.PortableFactory"
+          }
+        ],
+        "global-serializer": {
+          "class-name": "com.hazelcast.examples.GlobalSerializerFactory"
+        },
+        "serializers": [
+          {
+            "type-class": "com.hazelcast.examples.DummyType",
+            "class-name": "com.hazelcast.examples.SerializerFactory"
+          }
+        ],
+        "check-class-def-errors": true,
+        "java-serialization-filter": {
+          "defaults-disabled": true,
+          "blacklist": {
+            "class": [
+              "com.acme.app.BeanComparator"
+            ]
+          },
+          "whitelist": {
+            "class": [
+              "java.lang.String",
+              "example.Foo"
+            ],
+            "package": [
+              "com.acme.app",
+              "com.acme.app.subpkg"
+            ],
+            "prefix": [
+              "com.hazelcast.",
+              "java"
+            ]
+          }
+        },
+        "allow-override-default-serializers": true,
+        "compact-serialization": {
+          "enabled": true,
+          "registered-classes": [
+            {
+              "class": "com.hazelcast.examples.DummyType"
+            },
+            {
+              "class": "com.hazelcast.examples.DummyTypeWithSerializer",
+              "type-name": "dummy",
+              "serializer": "com.hazelcast.examples.DummyTypeSerializer"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "error": null
+}

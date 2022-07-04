@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,9 +67,12 @@ import java.util.EventListener;
 public interface PartitionLostListener extends EventListener {
 
     /**
-     * Invoked when a partition loses its owner and all backups.
+     * Invoked when a primary replica of the partition is lost. Node
+     * failures that do not involve a primary replica do not lead to
+     * partition lost events.
      *
-     * @param event the event that contains the partition ID and the backup count that has been lost
+     * @param event the event that contains the partition ID and the
+     *             backup count that has been lost
      */
     void partitionLost(PartitionLostEvent event);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
@@ -39,7 +38,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ENTRYSET}
  */
 public class MultiMapEntrySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapEntrySetCodec.RequestParameters> {
+        extends AbstractMultiMapAllPartitionsMessageTask<String> {
 
     public MultiMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,7 +46,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
     }
 
     @Override
@@ -60,11 +59,12 @@ public class MultiMapEntrySetMessageTask
             EntrySetResponse response = (EntrySetResponse) obj;
             entries.addAll(response.getDataEntrySet());
         }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return entries;
     }
 
     @Override
-    protected MultiMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapEntrySetCodec.decodeRequest(clientMessage);
     }
 
@@ -74,18 +74,13 @@ public class MultiMapEntrySetMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
-    }
-
-    @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override
@@ -97,4 +92,5 @@ public class MultiMapEntrySetMessageTask
     public Object[] getParameters() {
         return null;
     }
+
 }

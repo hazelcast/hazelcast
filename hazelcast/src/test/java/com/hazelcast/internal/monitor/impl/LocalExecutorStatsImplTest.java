@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,32 +43,5 @@ public class LocalExecutorStatsImplTest {
         assertEquals(0, localExecutorStats.getTotalStartLatency());
         assertEquals(0, localExecutorStats.getTotalExecutionLatency());
         assertNotNull(localExecutorStats.toString());
-    }
-
-    @Test
-    public void testSerialization() {
-        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
-        localExecutorStats.startPending();
-        localExecutorStats.startPending();
-        localExecutorStats.startPending();
-        localExecutorStats.startPending();
-
-        localExecutorStats.startExecution(5);
-        localExecutorStats.startExecution(5);
-        localExecutorStats.finishExecution(5);
-
-        localExecutorStats.rejectExecution();
-        localExecutorStats.cancelExecution();
-
-        JsonObject serialized = localExecutorStats.toJson();
-        LocalExecutorStatsImpl deserialized = new LocalExecutorStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertEquals(1, deserialized.getPendingTaskCount());
-        assertEquals(2, deserialized.getStartedTaskCount());
-        assertEquals(1, deserialized.getCompletedTaskCount());
-
-        assertEquals(1, localExecutorStats.getCancelledTaskCount());
-        assertEquals(1, deserialized.getCancelledTaskCount());
     }
 }

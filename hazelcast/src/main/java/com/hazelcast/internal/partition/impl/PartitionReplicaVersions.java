@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,7 +91,7 @@ final class PartitionReplicaVersions {
     }
 
     Collection<ServiceNamespace> getNamespaces() {
-        return fragmentVersionsMap.keySet();
+        return Collections.unmodifiableCollection(fragmentVersionsMap.keySet());
     }
 
     @Override

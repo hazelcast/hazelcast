@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.security.Permission;
  * SetClearMessageTask
  */
 public class SetClearMessageTask
-        extends AbstractPartitionMessageTask<SetClearCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public SetClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,11 +41,11 @@ public class SetClearMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionClearOperation(parameters.name);
+        return new CollectionClearOperation(parameters);
     }
 
     @Override
-    protected SetClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return SetClearCodec.decodeRequest(clientMessage);
     }
 
@@ -66,7 +66,7 @@ public class SetClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new SetPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new SetPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class SetClearMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

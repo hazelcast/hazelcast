@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("ca5ab7072a587c21510509db42965d46")
+@Generated("8961ed8249ba56ae9e3d1da39c77b3c3")
 public final class ClientCreateProxiesCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;
@@ -50,18 +50,6 @@ public final class ClientCreateProxiesCodec {
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientCreateProxiesCodec() {
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * proxies that will be created
-         * Each entry's key is distributed object name.
-         * Each entry's value is service name.
-         * For possible service names see createProxy message.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies;
     }
 
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies) {
@@ -76,17 +64,17 @@ public final class ClientCreateProxiesCodec {
         return clientMessage;
     }
 
-    public static ClientCreateProxiesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * proxies that will be created
+     * Each entry's key is distributed object name.
+     * Each entry's value is service name.
+     * For possible service names see createProxy message.
+     */
+    public static java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxies = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
     }
 
     public static ClientMessage encodeResponse() {
@@ -97,13 +85,4 @@ public final class ClientCreateProxiesCodec {
 
         return clientMessage;
     }
-
-    public static ClientCreateProxiesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

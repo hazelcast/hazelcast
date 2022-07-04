@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -37,9 +38,9 @@ import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -58,6 +59,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -68,6 +71,7 @@ import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIS
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
+import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -84,9 +88,8 @@ import static java.lang.String.format;
 public class ClusterJoinManager {
 
     public static final String STALE_JOIN_PREVENTION_DURATION_PROP = "hazelcast.stale.join.prevention.duration.seconds";
+    private static final int DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS = 30;
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
-    private static final int STALE_JOIN_PREVENTION_DURATION_SECONDS
-            = Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30);
 
     private final ILogger logger;
     private final Node node;
@@ -98,9 +101,21 @@ public class ClusterJoinManager {
 
     private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
+
+    /**
+     * Recently left member UUIDs: when a recently crashed member is joining
+     * with same UUID, typically it will have Persistence feature enabled
+     * (otherwise it will restart probably on the same address but definitely
+     * with a new random UUID). In order to support crashed members recovery
+     * with Persistence, partition table validation does not expect an
+     * identical partition table.
+     *
+     * Accessed by operation & cluster heartbeat threads
+     */
+    private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
-    private final long staleJoinPreventionDuration;
+    private final long staleJoinPreventionDurationInMillis;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
@@ -118,7 +133,8 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
-        staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
+        staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(
+            Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS));
     }
 
     boolean isJoinInProgress() {
@@ -225,7 +241,7 @@ public class ClusterJoinManager {
      * @param joinMessage the {@link JoinMessage} received from another node.
      * @return {@code true} if packet version of join message matches this node's packet version and configurations
      * are found to be compatible, otherwise {@code false}.
-     * @throws Exception in case any exception occurred while checking compatibilty
+     * @throws Exception in case any exception occurred while checking compatibility
      * @see ConfigCheck
      */
     public boolean validateJoinMessage(JoinMessage joinMessage) {
@@ -349,7 +365,7 @@ public class ClusterJoinManager {
 
     private void cleanupRecentlyJoinedMemberUuids() {
         long currentTime = Clock.currentTimeMillis();
-        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDuration);
+        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDurationInMillis);
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
@@ -373,14 +389,27 @@ public class ClusterJoinManager {
                 throw new SecurityException("Expecting security credentials, but credentials could not be found in join request");
             }
             String endpoint = joinRequest.getAddress().getHost();
+            Boolean passed = Boolean.FALSE;
             try {
                 String remoteClusterName = joinRequest.getConfigCheck().getClusterName();
                 LoginContext loginContext = node.securityContext.createMemberLoginContext(remoteClusterName, credentials,
                         connection);
                 loginContext.login();
+                connection.attributeMap().put(LoginContext.class, loginContext);
+                passed = Boolean.TRUE;
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",
                         String.valueOf(credentials), endpoint, e.getMessage()));
+            } finally {
+                Address remoteAddr = connection == null ? null : connection.getRemoteAddress();
+                nodeEngine.getNode().getNodeExtension().getAuditlogService()
+                    .eventBuilder(AuditlogTypeIds.AUTHENTICATION_MEMBER)
+                    .message("Member connection authentication.")
+                    .addParameter("credentials", credentials)
+                    .addParameter("remoteAddress", remoteAddr)
+                    .addParameter("endpoint", endpoint)
+                    .addParameter("passed", passed)
+                    .log();
             }
         }
     }
@@ -446,14 +475,13 @@ public class ClusterJoinManager {
      * Send join request to {@code toAddress}.
      *
      * @param toAddress       the currently known master address.
-     * @param withCredentials use cluster credentials
      * @return {@code true} if join request was sent successfully, otherwise {@code false}.
      */
-    public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
+    public boolean sendJoinRequest(Address toAddress) {
         if (toAddress == null) {
             toAddress = clusterService.getMasterAddress();
         }
-        JoinRequestOp joinRequest = new JoinRequestOp(node.createJoinRequest(withCredentials));
+        JoinRequestOp joinRequest = new JoinRequestOp(node.createJoinRequest(toAddress));
         return nodeEngine.getOperationService().send(joinRequest, toAddress);
     }
 
@@ -526,11 +554,11 @@ public class ClusterJoinManager {
                 return;
             }
 
-            Connection conn = node.getConnectionManager(MEMBER).get(currentMaster);
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
                         masterAddress, callerAddress, currentMaster));
-                sendJoinRequest(currentMaster, true);
+                sendJoinRequest(currentMaster);
             } else {
                 logger.warning(format("Ambiguous master response! Received master response %s from %s. "
                                 + "This node has a master %s, but does not have an active connection to it. "
@@ -545,8 +573,8 @@ public class ClusterJoinManager {
 
     private void setMasterAndJoin(Address masterAddress) {
         clusterService.setMasterAddress(masterAddress);
-        node.getConnectionManager(MEMBER).getOrConnect(masterAddress);
-        if (!sendJoinRequest(masterAddress, true)) {
+        node.getServer().getConnectionManager(MEMBER).getOrConnect(masterAddress);
+        if (!sendJoinRequest(masterAddress)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
         }
     }
@@ -607,7 +635,7 @@ public class ClusterJoinManager {
         if (masterAddress.equals(node.getThisAddress())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
-            // I already know that I will do a force-start so I will not allow target to join me
+            // I already know that I will do a force-start, so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }
@@ -621,15 +649,16 @@ public class ClusterJoinManager {
         nodeEngine.getOperationService().send(op, target);
     }
 
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
-        Address target = joinMessage.getAddress();
-        MemberImpl member = clusterService.getMember(target);
+        Address targetAddress = joinMessage.getAddress();
+        MemberImpl member = clusterService.getMember(targetAddress);
         if (member == null) {
             return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
 
         if (joinMessage.getUuid().equals(member.getUuid())) {
-            sendMasterAnswer(target);
+            sendMasterAnswer(targetAddress);
 
             if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 if (logger.isFineEnabled()) {
@@ -637,6 +666,7 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
@@ -645,9 +675,9 @@ public class ClusterJoinManager {
                         clusterService.getMembershipManager().getMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
-                        clusterService.getClusterVersion(), partitionRuntimeState);
+                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
                 op.setCallerUuid(clusterService.getThisUuid());
-                invokeClusterOp(op, target);
+                invokeClusterOp(op, targetAddress);
             }
             return true;
         }
@@ -655,21 +685,37 @@ public class ClusterJoinManager {
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.
-        if (clusterService.isMaster() || target.equals(clusterService.getMasterAddress())) {
+        if (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress())) {
             String msg = format("New join request has been received from an existing endpoint %s."
                     + " Removing old member and processing join request...", member);
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            ServerConnection existing = node.getConnectionManager(MEMBER).get(target);
+            ServerConnection existing = node.getServer().getConnectionManager(MEMBER).get(targetAddress);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getConnectionManager(MEMBER).register(target, connection);
+                node.getServer().getConnectionManager(MEMBER).register(targetAddress, joinMessage.getUuid(), connection);
             }
         }
         return true;
+    }
+
+    /** check if member is joining with persistence enabled */
+    private boolean isMemberRestartingWithPersistence(Map<String, String> attributes) {
+        return attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
+                && attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true");
+    }
+
+    private boolean isMemberRejoining(MemberMap previousMembersMap, Address address, UUID memberUuid) {
+        // may be already detected as crashed member
+        return (hasMemberLeft(memberUuid)
+                // or it is still in member list because connection timeout hasn't been reached yet
+                || previousMembersMap.contains(memberUuid)
+                // or it is a known missing member
+                || clusterService.getMembershipManager().isMissingMember(address, memberUuid))
+                && (node.getPartitionService().getLeftMemberSnapshot(memberUuid) != null);
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
@@ -698,11 +744,15 @@ public class ClusterJoinManager {
         }
     }
 
+    /**
+     * Starts join process on master member.
+     */
     private void startJoin() {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
             InternalPartitionService partitionService = node.getPartitionService();
+            boolean shouldTriggerRepartition = true;
             try {
                 joinInProgress = true;
 
@@ -726,12 +776,20 @@ public class ClusterJoinManager {
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
+                // this is the current partition assignment state, not taking into account the
+                // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
+                    if (isMemberRestartingWithPersistence(member.getAttributes())
+                        && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
+                        logger.info(member + " is rejoining the cluster");
+                        // do not trigger repartition immediately, wait for joining member to load hot-restart data
+                        shouldTriggerRepartition = false;
+                    }
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                            clusterService.getClusterVersion(), partitionRuntimeState);
+                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition);
                     op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
@@ -746,7 +804,9 @@ public class ClusterJoinManager {
 
             } finally {
                 reset();
-                partitionService.resumeMigration();
+                if (shouldTriggerRepartition) {
+                    partitionService.resumeMigration();
+                }
             }
         } finally {
             clusterServiceLock.unlock();
@@ -823,7 +883,7 @@ public class ClusterJoinManager {
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
-        logger.info(joinMessage.getAddress() + " should merge to us "
+        logger.info(joinMessage.getAddress() + " should merge to us"
                 + ", both have the same data member count: " + currentDataMemberCount);
         return REMOTE_NODE_SHOULD_MERGE;
     }
@@ -918,7 +978,7 @@ public class ClusterJoinManager {
         String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
 
         if (thisAddressStr.equals(targetAddressStr)) {
-            throw new IllegalArgumentException("Addresses should be different! This: "
+            throw new IllegalArgumentException("Addresses must be different! This: "
                     + thisAddress + ", Target: " + targetAddress);
         }
 
@@ -941,5 +1001,17 @@ public class ClusterJoinManager {
 
     void removeJoin(Address address) {
         joiningMembers.remove(address);
+    }
+
+    void addLeftMember(Member member) {
+        leftMembersUuids.put(member.getUuid(), Clock.currentTimeMillis());
+    }
+
+    public boolean hasMemberLeft(UUID memberUuid) {
+        return leftMembersUuids.containsKey(memberUuid);
+    }
+
+    public void removeLeftMember(UUID memberUuid) {
+        leftMembersUuids.remove(memberUuid);
     }
 }

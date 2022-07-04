@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,27 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,7 +56,7 @@ public class QueryDataTypeFamilyTest {
                 case TIME:
                 case DATE:
                 case TIMESTAMP:
-                case TIMESTAMP_WITH_TIMEZONE:
+                case TIMESTAMP_WITH_TIME_ZONE:
                     assertTrue(typeFamily.isTemporal());
 
                     break;
@@ -65,29 +69,48 @@ public class QueryDataTypeFamilyTest {
 
     @Test
     public void testEstimatedSize() {
-        assertTrue(BIT.getEstimatedSize() <= TINYINT.getEstimatedSize());
+        assertTrue(BOOLEAN.getEstimatedSize() <= TINYINT.getEstimatedSize());
         assertTrue(TINYINT.getEstimatedSize() < SMALLINT.getEstimatedSize());
-        assertTrue(SMALLINT.getEstimatedSize() < INT.getEstimatedSize());
-        assertTrue(INT.getEstimatedSize() < BIGINT.getEstimatedSize());
+        assertTrue(SMALLINT.getEstimatedSize() < INTEGER.getEstimatedSize());
+        assertTrue(INTEGER.getEstimatedSize() < BIGINT.getEstimatedSize());
 
         assertTrue(REAL.getEstimatedSize() < DOUBLE.getEstimatedSize());
+
+        assertTrue(NULL.getEstimatedSize() > 0);
     }
 
     @Test
     public void testPrecedence() {
-        assertTrue(LATE.getPrecedence() < VARCHAR.getPrecedence());
-        assertTrue(VARCHAR.getPrecedence() < BIT.getPrecedence());
-        assertTrue(BIT.getPrecedence() < TINYINT.getPrecedence());
-        assertTrue(TINYINT.getPrecedence() < SMALLINT.getPrecedence());
-        assertTrue(SMALLINT.getPrecedence() < INT.getPrecedence());
-        assertTrue(INT.getPrecedence() < BIGINT.getPrecedence());
-        assertTrue(BIGINT.getPrecedence() < DECIMAL.getPrecedence());
-        assertTrue(DECIMAL.getPrecedence() < REAL.getPrecedence());
-        assertTrue(REAL.getPrecedence() < DOUBLE.getPrecedence());
-        assertTrue(DOUBLE.getPrecedence() < TIME.getPrecedence());
-        assertTrue(TIME.getPrecedence() < DATE.getPrecedence());
-        assertTrue(DATE.getPrecedence() < TIMESTAMP.getPrecedence());
-        assertTrue(TIMESTAMP.getPrecedence() < TIMESTAMP_WITH_TIMEZONE.getPrecedence());
-        assertTrue(TIMESTAMP_WITH_TIMEZONE.getPrecedence() < OBJECT.getPrecedence());
+        checkPrecedence(NULL, VARCHAR);
+        checkPrecedence(VARCHAR, BOOLEAN);
+        checkPrecedence(BOOLEAN, TINYINT);
+        checkPrecedence(TINYINT, SMALLINT);
+        checkPrecedence(SMALLINT, INTEGER);
+        checkPrecedence(INTEGER, BIGINT);
+        checkPrecedence(BIGINT, DECIMAL);
+        checkPrecedence(DECIMAL, REAL);
+        checkPrecedence(REAL, DOUBLE);
+        checkPrecedence(DOUBLE, TIME);
+        checkPrecedence(TIME, DATE);
+        checkPrecedence(DATE, TIMESTAMP);
+        checkPrecedence(TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE);
+        checkPrecedence(TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+    }
+
+    @Test
+    public void testPrecedenceUnique() {
+        Map<Integer, QueryDataTypeFamily> map = new HashMap<>();
+
+        for (QueryDataTypeFamily family : QueryDataTypeFamily.values()) {
+            int precedence = family.getPrecedence();
+
+            QueryDataTypeFamily oldFamily = map.putIfAbsent(precedence, family);
+
+            assertNull(oldFamily + " and " + family + " have the same precedence: " + precedence, oldFamily);
+        }
+    }
+
+    private static void checkPrecedence(QueryDataTypeFamily lower, QueryDataTypeFamily higher) {
+        assertTrue(lower.getPrecedence() < higher.getPrecedence());
     }
 }

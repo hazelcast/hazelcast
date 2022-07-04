@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("b6e67b6468dd48ccc1a550ac4865b1d3")
+@Generated("e476453080ed5b95acd512e3cd4d8ccb")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
@@ -85,15 +85,6 @@ public final class MCRunConsoleCommandCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Execution result: console command output.
-         */
-        public java.lang.String result;
-    }
-
     public static ClientMessage encodeResponse(java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -104,13 +95,13 @@ public final class MCRunConsoleCommandCodec {
         return clientMessage;
     }
 
-    public static MCRunConsoleCommandCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * Execution result: console command output.
+     */
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.result = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
-
 }

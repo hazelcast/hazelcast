@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ package com.hazelcast.internal.nio;
 public final class Protocols {
 
     /**
-     * The length in bytes of the of the protocol-string
+     * The length in bytes of the protocol-string
      */
     public static final int PROTOCOL_LENGTH = 3;
 
@@ -45,6 +45,11 @@ public final class Protocols {
      * Protocol that is used by Memcached
      */
     public static final String MEMCACHE = "Memcached";
+
+    /**
+     * Protocol that is only used if received an unexpected protocol
+     */
+    public static final String UNEXPECTED_PROTOCOL = "HZX";
 
     private Protocols() {
     }

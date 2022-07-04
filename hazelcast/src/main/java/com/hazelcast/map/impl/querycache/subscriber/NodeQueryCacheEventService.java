@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.IMapEvent;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -201,8 +200,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         Data keyData = localEntryEventData.getKeyData();
         Object value = getValueOrOldValue(localEntryEventData);
 
-        QueryableEntry entry = new QueryEntry((InternalSerializationService) serializationService,
-                keyData, value, extractors);
+        QueryableEntry entry = new QueryEntry(serializationService, keyData, value, extractors);
         return filter.eval(entry);
     }
 

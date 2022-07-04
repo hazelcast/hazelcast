@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1ba0a27831d5d968f3da4dffc7f70045")
+@Generated("17e9b8645c69aa68e53792f26265eb07")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -48,7 +48,8 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
     private static final int REQUEST_DURABILITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CAPACITY_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddScheduledExecutorConfigCodec() {
@@ -94,9 +95,20 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
          * Number of entries to be sent in a merge operation.
          */
         public int mergeBatchSize;
+
+        /**
+         * {@code true} to enable gathering of statistics, otherwise {@code false}
+         */
+        public boolean statisticsEnabled;
+
+        /**
+         * True if the statisticsEnabled is received from the client, false otherwise.
+         * If this is false, statisticsEnabled has the default value for its type.
+         */
+        public boolean isStatisticsEnabledExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, boolean statisticsEnabled) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddScheduledExecutorConfig");
@@ -107,6 +119,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         encodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET, durability);
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
+        encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
@@ -122,14 +135,16 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         request.durability = decodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET);
         request.capacity = decodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET);
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
+            request.isStatisticsEnabledExists = true;
+        } else {
+            request.isStatisticsEnabledExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
         return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
     }
 
     public static ClientMessage encodeResponse() {
@@ -140,13 +155,4 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
 
         return clientMessage;
     }
-
-    public static DynamicConfigAddScheduledExecutorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
 }

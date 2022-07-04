@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Calendar;
 
 /**
@@ -38,6 +37,7 @@ public final class CalendarConverter extends AbstractTimestampWithTimezoneConver
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return OffsetDateTime.ofInstant(((Calendar) val).toInstant(), ZoneOffset.UTC);
+        Calendar c = (Calendar) val;
+        return OffsetDateTime.ofInstant(c.toInstant(), c.getTimeZone().toZoneId());
     }
 }

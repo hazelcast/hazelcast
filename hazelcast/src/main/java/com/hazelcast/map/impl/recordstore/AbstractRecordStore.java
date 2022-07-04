@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,20 +38,16 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.record.RecordReaderWriter;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
-
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
-
     protected final int partitionId;
     protected final String name;
     protected final LockStore lockStore;
@@ -77,7 +73,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(() -> partitionId);
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
@@ -102,18 +98,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
-            addJsonMetadataMutationObserver();
+            mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
+                    JsonMetadataInitializer.INSTANCE, getOrCreateMetadataStore()));
         }
 
         // Add observer for indexing
         indexingObserver = new IndexingMutationObserver<>(this, serializationService);
         mutationObserver.add(indexingObserver);
-    }
-
-    // Overridden in EE.
-    protected void addJsonMetadataMutationObserver() {
-        mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                JsonMetadataInitializer.INSTANCE));
     }
 
     public IndexingMutationObserver<Record> getIndexingObserver() {
@@ -147,28 +138,24 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
-        Record record = recordFactory.newRecord(value);
+    public Record createRecord(Data key, Object value, long now) {
+        Record record = recordFactory.newRecord(key, value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
+        if (record.getMatchingRecordReaderWriter()
+                == RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER) {
+            // To distinguish last-access-time from creation-time we
+            // set last-access-time for only LRU records. A LRU record
+            // has no creation-time field but last-access-time field.
+            record.setLastAccessTime(now);
+        }
 
-        setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
         return record;
     }
 
-    @Override
-    public Record createRecord(Data key, Record fromRecord, long nowInMillis) {
-        Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
-        if (fromRecord != null) {
-            Records.copyMetadataFrom(fromRecord, newRecord);
-        }
-        updateStatsOnPut(false, nowInMillis);
-        return newRecord;
-    }
-
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(memoryFormat, serializationService);
+        return new StorageImpl(memoryFormat, getExpirySystem(), serializationService);
     }
 
     @Override
@@ -188,41 +175,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected static long getNow() {
         return Clock.currentTimeMillis();
-    }
-
-    @SuppressWarnings("checkstyle:parameternumber")
-    protected void updateRecord(Data key, Record record, Object oldValue, Object newValue,
-                                long now, boolean countAsAccess,
-                                long ttl, long maxIdle, boolean mapStoreOperation,
-                                UUID transactionId, boolean backup) {
-        updateStatsOnPut(countAsAccess, now);
-        record.onUpdate(now);
-        if (countAsAccess) {
-            record.onAccess(now);
-        }
-        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
-        if (mapStoreOperation) {
-            newValue = putIntoMapStore(record, key, newValue, now, transactionId);
-        }
-        storage.updateRecordValue(key, record, newValue);
-        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
-    }
-
-    protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
-                                  long maxIdleMillis, long now, UUID transactionId) {
-        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
-        putIntoMapStore(record, key, newValue, now, transactionId);
-        storage.put(key, record);
-        mutationObserver.onPutRecord(key, record, oldValue, false);
-        return record;
-    }
-
-    protected Object putIntoMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
-        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(), now, transactionId);
-        if (mapDataStore.isPostProcessingMapStore()) {
-            storage.updateRecordValue(key, record, newValue);
-        }
-        return newValue;
     }
 
     @Override
@@ -284,8 +236,22 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.increaseHits(hits);
     }
 
+    protected void updateStatsOnRemove(long now) {
+        stats.setLastUpdateTime(now);
+    }
+
     protected void updateStatsOnGet(long now) {
         stats.setLastAccessTime(now);
         stats.increaseHits();
+    }
+
+    @Override
+    public LocalRecordStoreStatsImpl getStats() {
+        return stats;
+    }
+
+    @Override
+    public void setStats(LocalRecordStoreStats stats) {
+        this.stats.copyFrom(stats);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     }
 
     private Config getConfig(String mapName, long maxWbqCapacity) {
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
@@ -216,7 +216,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 .setEnabled(true)
                 .setImplementation(new MapStoreAdapter())
                 .setWriteCoalescing(false)
-                .setWriteDelaySeconds(3);
+                .setWriteDelaySeconds(6);
         return config;
     }
 
