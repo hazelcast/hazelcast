@@ -27,7 +27,6 @@ import com.hazelcast.test.ClusterFailureTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -181,7 +180,6 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     };
 
     @Test
-    @Repeat(50)
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
         statement.setCursorBufferSize(1);

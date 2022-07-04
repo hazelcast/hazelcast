@@ -117,7 +117,7 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    public void onResubmissionResponse(SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount, Connection connection) {
+    public void onResubmissionResponse(SqlResubmissionResult result) {
         synchronized (mux) {
             if (closed) {
                 // The result is already closed, ignore the response.
@@ -125,14 +125,14 @@ public class SqlClientResult implements SqlResult {
             }
 
             this.fetch = null;
-            this.resubmissionConnection = connection;
+            this.resubmissionConnection = result.getConnection();
 
-            if (rowMetadata != null) {
-                ClientIterator iterator = state == null ? new ClientIterator(rowMetadata) : state.iterator;
-                iterator.onNextPage(rowPage);
+            if (result.getRowMetadata() != null) {
+                ClientIterator iterator = state == null ? new ClientIterator(result.getRowMetadata()) : state.iterator;
+                iterator.onNextPage(result.getRowPage());
                 state = new State(iterator, -1, null);
             } else {
-                state = new State(null, updateCount, null);
+                state = new State(null, result.getUpdateCount(), null);
                 markClosed();
             }
             mux.notifyAll();
@@ -276,8 +276,7 @@ public class SqlClientResult implements SqlResult {
                 if (resubmissionResult == null) {
                     throw wrap(fetch.getError());
                 }
-                onResubmissionResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
-                        resubmissionResult.getUpdateCount(), resubmissionResult.getConnection());
+                onResubmissionResponse(resubmissionResult);
                 return fetch(timeoutNanos);
             } else {
                 SqlPage page = fetch.getPage();

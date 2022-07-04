@@ -258,8 +258,7 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            res.onResubmissionResponse(resubmissionResult.getRowMetadata(), resubmissionResult.getRowPage(),
-                    resubmissionResult.getUpdateCount(), resubmissionResult.getConnection());
+            res.onResubmissionResponse(resubmissionResult);
         }
     }
 
