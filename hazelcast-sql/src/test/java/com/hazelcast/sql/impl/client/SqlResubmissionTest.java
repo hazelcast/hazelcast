@@ -58,6 +58,10 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     private volatile State state;
     private volatile boolean done;
+
+    /**
+     * Elapsed time from the test start until the last execution, in millis.
+     */
     private volatile long lastExecutionTime;
 
     @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
