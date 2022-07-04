@@ -57,6 +57,5 @@ public final class HazelcastWithinGroupOperator extends HazelcastBinaryOperator 
     @Override
     public RelDataType deriveType(SqlValidator validator, SqlValidatorScope scope, SqlCall call) {
         return validator.deriveType(scope, call.getOperandList().get(0));
-        //return super.deriveType(validator, scope, call);
     }
 }

@@ -79,17 +79,11 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(objects.size());
-        for (Object o : objects) {
-            out.writeObject(o);
-        }
+        out.writeBoolean(isAbsentOnNull);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            objects.add(in.readObject());
-        }
+        isAbsentOnNull = in.readBoolean();
     }
 }
