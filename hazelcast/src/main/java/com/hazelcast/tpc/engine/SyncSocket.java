@@ -153,7 +153,7 @@ public abstract class SyncSocket implements Closeable {
      * There is no guarantee that frame is actually going to be received by the caller if
      * the SyncSocket has accepted the frame. E.g. when the connection closes.
      *
-     * This method is thread-safe.
+     * This method is not thread-safe.
      *
      * If there was no space, a {@link #flush()} is still triggered.
      *
