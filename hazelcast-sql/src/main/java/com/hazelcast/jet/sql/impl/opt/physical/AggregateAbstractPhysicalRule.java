@@ -223,7 +223,6 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
             SupplierEx<SqlAggregation> {
         private ExpressionUtil.SqlRowComparator comparator;
         private boolean isAbsentOnNull;
-
         private int aggIndex;
 
         public AggregateArrayAggSupplier() {
@@ -529,7 +528,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.ROW_GET_FN;
+            return JetSqlSerializerHook.ROW_IDENTITY_FN;
         }
     }
 

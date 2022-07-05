@@ -552,7 +552,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_JSON_ARRAYAGG() {
-        check(sql("JSON_ARRAYAGG(?) || JSON_ARRAYAGG(?)"), "1", "1");
+        check(sql("JSON_VALUE(JSON_ARRAYAGG(?), '$[0]')"), "k");
     }
 
     private void check(String sql, Object... params) {
