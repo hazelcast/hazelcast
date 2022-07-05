@@ -641,7 +641,7 @@ public class AggregateOperationsTest {
 
     @Test
     public void when_pickAny() {
-        validateOp(pickAny(), PickAnyAccumulator::get, 1, 2, 1, 1, 1);
+        validateOpWithoutDeduct(pickAny(), PickAnyAccumulator::get, 1, 2, 1, 1, 1);
     }
 
     @Test
