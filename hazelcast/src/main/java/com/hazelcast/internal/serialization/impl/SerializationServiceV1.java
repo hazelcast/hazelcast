@@ -166,6 +166,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter));
         registerConstantSerializers(builder.isCompatibility());
         registerJavaTypeSerializers(builder.isCompatibility());
+
+        // Called here so that we can make sure that we are not overriding
+        // any of the default serializers registered above with the Compact
+        // serialization, unless the user configured to so explicitly.
+        verifyDefaultSerializersNotOverriddenWithCompact();
     }
 
     @Override
@@ -365,8 +370,9 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     /**
-     * Init the ObjectDataInput for the given Data skipping the serialization header-bytes and navigating to the position
-     * from where the readData() starts reading the object fields.
+     * Init the ObjectDataInput for the given Data skipping the serialization
+     * header-bytes and navigating to the position from where the readData()
+     * starts reading the object fields.
      *
      * @param data data to initialize the ObjectDataInput with.
      * @return the initialized ObjectDataInput without the header.
