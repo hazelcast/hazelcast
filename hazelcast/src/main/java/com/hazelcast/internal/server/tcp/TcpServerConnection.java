@@ -232,7 +232,7 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public int hashCode() {
-        return Objects.hash(acceptorSide, connectionId, remoteAddress);
+        return Objects.hash(acceptorSide, connectionId);
     }
 
     @Override
