@@ -98,7 +98,9 @@ public class AddCacheConfigMessageTask
         if (parameters.isMerkleTreeConfigExists && parameters.merkleTreeConfig != null) {
             config.setMerkleTreeConfig(parameters.merkleTreeConfig);
         }
-        config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
+        if (parameters.isDataPersistenceConfigExists) {
+            config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
+        }
         return config;
     }
 
