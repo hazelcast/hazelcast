@@ -108,6 +108,103 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void given_streamToStreamJoin_when_relTreeIsNotPrimitive_then_ok() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    asList("b", "c", "d"),
+                    asList(TIMESTAMP, INTEGER, VARCHAR),
+                    row(timestamp(0L), 0, "zero"));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            assertTipOfStream(
+                    "SELECT a, b, d FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
+                            "                                   AND     s1.a + INTERVAL '0.004' SECOND ",
+                    singletonList(new Row(timestamp(0L), timestamp(0L), "zero"))
+            );
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_calcReordersFields_then_ok() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    asList("b", "c", "d"),
+                    asList(TIMESTAMP, INTEGER, VARCHAR),
+                    row(timestamp(0L), 0, "zero"));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            assertTipOfStream(
+                    "SELECT d, c, b, a FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
+                            "                                      AND     s1.a + INTERVAL '0.004' SECOND ",
+                    singletonList(new Row("zero", 0, timestamp(0L), timestamp(0L)))
+            );
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_calcHasParent_then_ok() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    asList("b", "c", "d"),
+                    asList(TIMESTAMP, INTEGER, VARCHAR),
+                    row(timestamp(0L), 0, "zero"));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT b FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            String join = "(SELECT b, a FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
+                    "                                           AND     s1.a + INTERVAL '0.004' SECOND)";
+            assertRowsEventuallyInAnyOrder(
+                    "SELECT window_start, window_end, a FROM " +
+                            "TABLE(TUMBLE(" + join +
+                            "  , DESCRIPTOR(a)" +
+                            "  , INTERVAL '0.002' SECOND" +
+                            "))",
+                    singletonList(
+                            new Row(timestamp(0L), timestamp(2L), timestamp(0L))
+                    )
+            );
+        }
+
+        @Test
         public void given_streamToStreamJoin_when_leftInputHasNonTemporalWatermarkedType_then_throw() {
             String stream = "stream1";
             TestStreamSqlConnector.create(

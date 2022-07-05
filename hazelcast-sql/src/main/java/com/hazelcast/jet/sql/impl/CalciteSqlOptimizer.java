@@ -40,6 +40,7 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.OptUtils.RelField;
+import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -600,6 +601,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(physicalRel);
+        keysAssigner.assignWatermarkKeys();
+
         return physicalRel;
     }
 

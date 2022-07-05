@@ -55,7 +55,6 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
             RelOptTable table,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
-
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }

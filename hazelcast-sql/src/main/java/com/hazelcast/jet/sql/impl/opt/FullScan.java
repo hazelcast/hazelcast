@@ -34,7 +34,7 @@ public abstract class FullScan extends TableScan {
 
     private final BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private final int watermarkedColumnIndex;
-
+    private byte watermarkKeyId;
     protected FullScan(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -56,6 +56,14 @@ public abstract class FullScan extends TableScan {
 
     public int watermarkedColumnIndex() {
         return watermarkedColumnIndex;
+    }
+
+    public byte getWatermarkKeyId() {
+        return watermarkKeyId;
+    }
+
+    public void setWatermarkKeyId(byte watermarkKeyId) {
+        this.watermarkKeyId = watermarkKeyId;
     }
 
     @Override

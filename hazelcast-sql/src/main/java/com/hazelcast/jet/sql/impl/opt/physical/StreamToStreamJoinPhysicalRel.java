@@ -98,7 +98,6 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
-            // TODO: enhance conversion ?
             leftTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
 
@@ -112,7 +111,6 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
-            // TODO: enhance conversion ?
             rightTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
         return rightTimeExtractors;
@@ -158,7 +156,9 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 joinType,
                 leftWatermarkedFields,
                 rightWatermarkedFields,
-                leftInputToJointRowMapping, rightInputToJointRowMapping, postponeTimeMap
+                leftInputToJointRowMapping,
+                rightInputToJointRowMapping,
+                postponeTimeMap
         );
     }
 }
