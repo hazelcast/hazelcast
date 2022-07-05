@@ -269,7 +269,7 @@ public final class SecuredFunctions {
 
     public static <T> SupplierEx<Processor> readJdbcProcessorFn(
             String connectionUrl,
-            SupplierEx<? extends Connection> newConnectionFn,
+            FunctionEx<Processor.Context, ? extends Connection> newConnectionFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {

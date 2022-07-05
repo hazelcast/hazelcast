@@ -1047,7 +1047,6 @@ public final class Sources {
                 .build(SecuredFunctions.jsonReadFileFn(directory));
     }
 
-
     /**
      * A source to stream lines added to files in a directory. This is a
      * streaming source, it will watch directory and emit lines as they are
@@ -1327,6 +1326,7 @@ public final class Sources {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(newConnectionFn, resultSetFn, createOutputFn));
     }
+
 
     /**
      * Convenience for {@link Sources#jdbc(SupplierEx,

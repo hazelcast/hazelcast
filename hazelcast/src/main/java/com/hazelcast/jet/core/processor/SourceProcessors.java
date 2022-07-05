@@ -23,7 +23,6 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -52,6 +51,7 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
@@ -429,14 +429,14 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     * SupplierEx, ToResultSetFunction, FunctionEx)}.
+     *SupplierEx, ToResultSetFunction, FunctionEx)}.
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
             @Nonnull SupplierEx<? extends java.sql.Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(newConnectionFn, resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> newConnectionFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**
