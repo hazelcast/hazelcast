@@ -16,10 +16,14 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.getters.PortableGetter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
@@ -56,14 +60,37 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
         Object res = ref.eval(row, context);
+        if (res == null) {
+            return null;
+        }
+
         if (isPrimitive(res.getClass())) {
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
         try {
-            return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
+            if (res instanceof PortableGenericRecord) {
+                return (T) type.convert(extractPortableField(
+                        (PortableGenericRecord) res,
+                        name,
+                        context.getSerializationService()
+                ));
+            } else if (res instanceof CompactGenericRecord) {
+                return null;
+            } else {
+                return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
+            }
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
+        }
+    }
+
+    private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss) {
+        final PortableGetter getter = new PortableGetter(ss);
+        try {
+            return getter.getValue(portable, name);
+        } catch (Exception e) {
+            return null;
         }
     }
 

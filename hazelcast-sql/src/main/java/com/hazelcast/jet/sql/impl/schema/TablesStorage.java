@@ -110,13 +110,6 @@ public class TablesStorage {
         return (Type) storage().get(name.toLowerCase(Locale.ROOT));
     }
 
-    public Type getTypeByClass(final Class<?> typeClass) {
-        return getAllTypes().stream()
-                .filter(type -> type.getJavaClassName().equals(typeClass.getName()))
-                .findFirst()
-                .orElse(null);
-    }
-
     public Type removeType(String name) {
         return (Type) storage().remove(name.toLowerCase(Locale.ROOT));
     }

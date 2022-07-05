@@ -35,7 +35,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
@@ -432,14 +431,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {
-        // TODO: columns
-        final String typeJavaClass = sqlNode.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS);
         return new CreateTypePlan(
                 planKey,
                 sqlNode.getName(),
-                typeJavaClass,
                 sqlNode.getReplace(),
                 sqlNode.ifNotExists(),
+                sqlNode.options(),
                 planExecutor
         );
     }

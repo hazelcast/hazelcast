@@ -33,7 +33,7 @@ public final class UpsertTargetUtils {
     private UpsertTargetUtils() { }
 
     public static Object convertRowToTargetType(final Object value, final QueryDataType type) {
-        final Class<?> targetClass = ReflectionUtils.loadClass(type.getTypeClassName());
+        final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeClassName());
         if (value.getClass().isAssignableFrom(targetClass)) {
             return value;
         }
@@ -49,8 +49,8 @@ public final class UpsertTargetUtils {
                 targetClass.getName()
         );
 
-        for (int i = 0; i < type.getFields().size(); i++) {
-            final QueryDataType.QueryDataTypeField typeField = type.getFields().get(i);
+        for (int i = 0; i < type.getObjectFields().size(); i++) {
+            final QueryDataType.QueryDataTypeField typeField = type.getObjectFields().get(i);
             final boolean isRowValueField = rowValue.getValues().get(i) instanceof RowValue;
             final Object fieldValue = isRowValueField
                     ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
@@ -84,7 +84,6 @@ public final class UpsertTargetUtils {
                 if (fieldValue == null && field.getType().isPrimitive()) {
                     throw QueryException.error("Cannot set NULL to a primitive field: " + field);
                 }
-                // TODO: test
                 if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                     field.set(result, fieldValue);
                 } else {

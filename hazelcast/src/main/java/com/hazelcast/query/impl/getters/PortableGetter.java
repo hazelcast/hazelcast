@@ -22,16 +22,16 @@ import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 
-final class PortableGetter extends Getter {
+public final class PortableGetter extends Getter {
     private final InternalSerializationService serializationService;
 
-    PortableGetter(InternalSerializationService serializationService) {
+    public PortableGetter(InternalSerializationService serializationService) {
         super(null);
         this.serializationService = serializationService;
     }
 
     @Override
-    Object getValue(Object target, String fieldPath) throws Exception {
+    public Object getValue(Object target, String fieldPath) throws Exception {
         InternalGenericRecord record;
         if (target instanceof PortableGenericRecord) {
             record = (InternalGenericRecord) target;

@@ -354,7 +354,7 @@ public final class OptUtils {
     private static RelDataType convertUserDefinedType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         final Map<String, RelDataType> dataTypeMap = new HashMap<>();
         convertUserDefinedTypeRecursively(fieldType, typeFactory, dataTypeMap);
-        return dataTypeMap.get(fieldType.getTypeName());
+        return dataTypeMap.get(fieldType.getObjectTypeName());
     }
 
     private static void convertUserDefinedTypeRecursively(
@@ -362,24 +362,24 @@ public final class OptUtils {
             RelDataTypeFactory typeFactory,
             Map<String, RelDataType> typeMap
     ) {
-        if (typeMap.get(type.getTypeName()) != null) {
+        if (typeMap.get(type.getObjectTypeName()) != null) {
             return;
         }
 
         final List<HazelcastObjectType.Field> fields = new ArrayList<>();
         final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
-        typeMap.put(type.getTypeName(), typeRef);
+        typeMap.put(type.getObjectTypeName(), typeRef);
 
-        for (int i = 0; i < type.getFields().size(); i++) {
-            final String fieldName = type.getFields().get(i).getName();
-            final QueryDataType fieldType = type.getFields().get(i).getDataType();
+        for (int i = 0; i < type.getObjectFields().size(); i++) {
+            final String fieldName = type.getObjectFields().get(i).getName();
+            final QueryDataType fieldType = type.getObjectFields().get(i).getDataType();
 
             RelDataType fieldRelDataType;
             if (fieldType.isCustomType()) {
-                fieldRelDataType = typeMap.get(fieldType.getTypeName());
+                fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
                 if (fieldRelDataType == null) {
                     convertUserDefinedTypeRecursively(fieldType, typeFactory, typeMap);
-                    fieldRelDataType = typeMap.get(fieldType.getTypeName());
+                    fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
                 }
             } else {
                 fieldRelDataType = typeFactory.createTypeWithNullability(
@@ -391,7 +391,7 @@ public final class OptUtils {
             fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
         }
 
-        typeRef.setOriginal(new HazelcastObjectType(type.getTypeName(), fields));
+        typeRef.setOriginal(new HazelcastObjectType(type.getObjectTypeName(), fields));
     }
 
 

@@ -126,7 +126,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         for (int i = 0; i < current.getFields().size(); i++) {
             final Type.TypeField field = current.getFields().get(i);
             if (field.getQueryDataType().isCustomType()) {
-                final String fieldTypeName = field.getQueryDataType().getTypeName();
+                final String fieldTypeName = field.getQueryDataType().getObjectTypeName();
                 if (!discovered.containsKey(fieldTypeName)) {
                     traverseTypeHierarchy(tablesStorage.getType(fieldTypeName), discovered, tablesStorage);
                 }
@@ -136,17 +136,17 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
     private void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
         for (final QueryDataType queryDataType : types.values()) {
-            final Type type = tablesStorage.getType(queryDataType.getTypeName());
-            queryDataType.setTypeClassName(type.getJavaClassName());
+            final Type type = tablesStorage.getType(queryDataType.getObjectTypeName());
+            queryDataType.setObjectTypeClassName(type.getJavaClassName());
             for (int i = 0; i < type.getFields().size(); i++) {
                 final Type.TypeField field = type.getFields().get(i);
                 if (field.getQueryDataType().isCustomType()) {
-                    queryDataType.getFields().add(new QueryDataType.QueryDataTypeField(
+                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
                             field.getName(),
-                            types.get(field.getQueryDataType().getTypeName())
+                            types.get(field.getQueryDataType().getObjectTypeName())
                     ));
                 } else {
-                    queryDataType.getFields().add(new QueryDataType.QueryDataTypeField(
+                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
                             field.getName(),
                             field.getQueryDataType()
                     ));

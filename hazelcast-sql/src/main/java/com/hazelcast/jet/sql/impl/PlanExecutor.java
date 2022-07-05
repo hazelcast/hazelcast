@@ -21,6 +21,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -48,6 +49,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.map.IMap;
@@ -56,6 +58,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -94,6 +97,7 @@ import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -457,11 +461,26 @@ public class PlanExecutor {
 
     SqlResult execute(CreateTypePlan plan) {
         final TypesStorage typesStorage = new TypesStorage(getNodeEngine(hazelcastInstance));
+
+        if (SqlConnector.PORTABLE_FORMAT.equals(plan.options().get(SqlConnector.OPTION_FORMAT))) {
+            final PortableContext portableContext = getSerializationService(hazelcastInstance).getPortableContext();
+            final ClassDefinition classDef = portableContext.lookupClassDefinition(
+                    Integer.parseInt(plan.options().get("portableFactoryId")),
+                    Integer.parseInt(plan.options().get("portableClassId")),
+                    Integer.parseInt(plan.options().get("portableClassVersion"))
+            );
+
+            typesStorage.registerType(plan.name(), classDef);
+
+            return UpdateSqlResultImpl.createUpdateCountResult(0);
+        }
+
         final Class<?> typeClass;
         try {
-            typeClass = ReflectionUtils.loadClass(plan.typeJavaClass());
+            typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
         } catch (Exception e) {
-            throw QueryException.error("Unable to load class: '" + plan.typeJavaClass() + "'", e);
+            throw QueryException.error("Unable to load class: '"
+                    + String.valueOf(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS)) + "'", e);
         }
 
         if (plan.ifNotExists()) {

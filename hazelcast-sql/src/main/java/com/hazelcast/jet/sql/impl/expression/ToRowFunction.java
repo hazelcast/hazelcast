@@ -65,7 +65,7 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
         foundObjects.add(System.identityHashCode(obj));
 
         final List<Object> fieldValues = new ArrayList<>();
-        for (final QueryDataType.QueryDataTypeField field : dataType.getFields()) {
+        for (final QueryDataType.QueryDataTypeField field : dataType.getObjectFields()) {
             final Object fieldValue = ReflectionUtils.getFieldValue(field.getName(), obj);
             if (!field.getDataType().isCustomType() || fieldValue == null) {
                 fieldValues.add(fieldValue);

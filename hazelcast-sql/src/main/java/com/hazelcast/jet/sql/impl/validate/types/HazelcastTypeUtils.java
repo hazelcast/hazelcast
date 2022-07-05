@@ -146,7 +146,7 @@ public final class HazelcastTypeUtils {
             return;
         }
         final QueryDataType current = new QueryDataType(source.getTypeName());
-        discovered.put(current.getTypeName(), current);
+        discovered.put(current.getObjectTypeName(), current);
 
         for (final RelDataTypeField field : source.getFieldList()) {
             final QueryDataType fieldType;
@@ -159,7 +159,7 @@ public final class HazelcastTypeUtils {
             } else {
                 fieldType = HazelcastTypeUtils.toHazelcastType(field.getType());
             }
-            current.getFields().add(field.getIndex(), new QueryDataType.QueryDataTypeField(field.getName(), fieldType));
+            current.getObjectFields().add(field.getIndex(), new QueryDataType.QueryDataTypeField(field.getName(), fieldType));
         }
     }
 

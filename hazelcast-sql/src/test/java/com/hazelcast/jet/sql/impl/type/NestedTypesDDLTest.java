@@ -29,7 +29,7 @@ import java.io.Serializable;
 import static java.lang.String.format;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class TypesDDLTest extends SqlJsonTestSupport {
+public class NestedTypesDDLTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = new Config();
@@ -39,35 +39,35 @@ public class TypesDDLTest extends SqlJsonTestSupport {
 
     @Test
     public void test_createTypeIsNotDuplicatedByDefault() {
-        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
+        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         assertThrows(HazelcastException.class, () -> instance().getSql()
-                .execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName())));
+                .execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName())));
     }
 
     @Test
     public void test_replaceType() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE OR REPLACE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName()));
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE OR REPLACE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
     }
 
     @Test
     public void test_createIfNotExists() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE TYPE IF NOT EXISTS FirstType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName()));
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE TYPE IF NOT EXISTS FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
     }
 
     @Test
     public void test_showTypes() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE TYPE SecondType OPTIONS ('typeJavaClass'='%s')", SecondType.class.getName()));
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
         assertRowsAnyOrder("SHOW TYPES", rows(1, "FirstType", "SecondType"));
     }
 
     @Test
     public void test_duplicateClass() {
-        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName()));
+        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         assertThrows(HazelcastException.class, () -> instance().getSql()
-                .execute(format("CREATE TYPE SecondType OPTIONS ('typeJavaClass'='%s')", FirstType.class.getName())));
+                .execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName())));
     }
 
     void execute(String sql) {

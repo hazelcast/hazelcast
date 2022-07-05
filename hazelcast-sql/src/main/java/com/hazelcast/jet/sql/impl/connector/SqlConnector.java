@@ -126,7 +126,7 @@ public interface SqlConnector {
     /**
      * The class name of the Custom Type's underlying Java Class
      */
-    String OPTION_TYPE_JAVA_CLASS = "typeJavaClass";
+    String OPTION_TYPE_JAVA_CLASS = "javaClass";
 
     /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}

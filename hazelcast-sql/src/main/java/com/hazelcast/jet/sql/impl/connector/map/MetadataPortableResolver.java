@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
@@ -24,6 +25,7 @@ import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -31,6 +33,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -77,12 +80,18 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
+        // TODO: return "this", resolveAndValidateFields
         return userFields.isEmpty()
-                ? resolveFields(isKey, classDefinition)
+                ? resolveFields(isKey, classDefinition, serializationService, typesStorage)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
-    Stream<MappingField> resolveFields(boolean isKey, @Nullable ClassDefinition clazz) {
+    Stream<MappingField> resolveFields(
+            boolean isKey,
+            @Nullable ClassDefinition clazz,
+            InternalSerializationService ss,
+            TypesStorage typesStorage
+    ) {
         if (clazz == null || clazz.getFieldCount() == 0) {
             // ClassDefinition does not exist, or it is empty, map the whole value
             String name = isKey ? KEY : VALUE;
@@ -92,10 +101,50 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return clazz.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
-                    QueryDataType type = resolvePortableType(clazz.getFieldType(name));
+                    FieldType portableFieldType = clazz.getFieldType(name);
+                    QueryDataType type;
+                    if (portableFieldType.equals(FieldType.PORTABLE)) {
+                        type = resolveNestedPortableFieldType(clazz.getField(name), typesStorage);
+                    } else {
+                        type = resolvePortableType(portableFieldType);
+                    }
 
                     return new MappingField(name, type, path.toString());
                 });
+    }
+
+    private QueryDataType resolveNestedPortableFieldType(final FieldDefinition sourceField, TypesStorage typesStorage) {
+        final Type portableType = typesStorage.getTypeByPortableClass(
+                sourceField.getFactoryId(),
+                sourceField.getClassId(),
+                sourceField.getVersion()
+        );
+
+        if (portableType == null) {
+            return QueryDataType.OBJECT;
+        }
+
+        final ClassDefinition classDef = portableType.getPortableClassDef();
+
+        final QueryDataType type = new QueryDataType(portableType.getName(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
+        final List<QueryDataType.QueryDataTypeField> fields = new ArrayList<>();
+
+        for (int i = 0; i < classDef.getFieldCount(); i++) {
+            final FieldDefinition fieldDef = classDef.getField(i);
+
+            final QueryDataType.QueryDataTypeField field = new QueryDataType.QueryDataTypeField();
+            field.setName(fieldDef.getName());
+            if (fieldDef.getType().equals(FieldType.PORTABLE)) {
+                field.setDataType(resolveNestedPortableFieldType(fieldDef, typesStorage));
+            } else {
+                field.setDataType(resolvePortableType(fieldDef.getType()));
+            }
+            fields.add(field);
+        }
+        type.setObjectFields(fields);
+        type.setObjectTypeClassName(PortableGenericRecord.class.getName());
+
+        return type;
     }
 
     private static Stream<MappingField> resolveAndValidateFields(
@@ -157,6 +206,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                 return QueryDataType.TIMESTAMP;
             case TIMESTAMP_WITH_TIMEZONE:
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+            case PORTABLE:
             default:
                 return QueryDataType.OBJECT;
         }
