@@ -53,7 +53,7 @@ public class AddMapConfigMessageTask
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:MethodLength"})
     protected IdentifiedDataSerializable getConfig() {
         MapConfig config = new MapConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
