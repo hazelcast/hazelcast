@@ -70,7 +70,7 @@ public class UpdateTcpIpMemberListOperation extends AbstractManagementOperation 
         int size = in.readInt();
         members = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            String member = in.readObject();
+            String member = in.readString();
             members.add(member);
         }
     }
@@ -80,7 +80,7 @@ public class UpdateTcpIpMemberListOperation extends AbstractManagementOperation 
         super.writeInternal(out);
         out.writeInt(members.size());
         for (String member : members) {
-            out.writeObject(member);
+            out.writeString(member);
         }
     }
 
