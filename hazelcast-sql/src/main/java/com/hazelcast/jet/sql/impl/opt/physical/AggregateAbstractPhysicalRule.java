@@ -21,6 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
@@ -40,6 +41,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
@@ -48,6 +50,8 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.opt.FieldCollation.convertCollation;
 
 public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
@@ -114,9 +118,12 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                     break;
                 case JSON_ARRAYAGG:
                     int arrayAggIndex = aggregateCallArguments.get(0);
+
+                    List<RelFieldCollation> colls = aggregateCall.getCollation().getFieldCollations();
+                    ExpressionUtil.SqlRowComparator comparator = new ExpressionUtil.SqlRowComparator(convertCollation(colls));
                     HazelcastJsonArrayAggFunction agg = (HazelcastJsonArrayAggFunction) aggregateCall.getAggregation();
-                    aggregationProviders.add(new AggregateArrayAggSupplier(agg.isAbsentOnNull()));
-                    valueProviders.add(new RowGetFn(arrayAggIndex));
+                    aggregationProviders.add(new AggregateArrayAggSupplier(comparator, agg.isAbsentOnNull(), arrayAggIndex));
+                    valueProviders.add(new RowIdentityFn());
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -214,28 +221,37 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
     public static class AggregateArrayAggSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
+        private ExpressionUtil.SqlRowComparator comparator;
         private boolean isAbsentOnNull;
+
+        private int aggIndex;
 
         public AggregateArrayAggSupplier() {
         }
 
-        public AggregateArrayAggSupplier(boolean isAbsentOnNull) {
+        public AggregateArrayAggSupplier(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
+            this.comparator = comparator;
             this.isAbsentOnNull = isAbsentOnNull;
+            this.aggIndex = aggIndex;
         }
 
         @Override
         public SqlAggregation getEx() throws Exception {
-            return JsonArrayAggAggregation.create(isAbsentOnNull);
+            return JsonArrayAggAggregation.create(comparator, isAbsentOnNull, aggIndex);
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(comparator);
             out.writeBoolean(isAbsentOnNull);
+            out.writeInt(aggIndex);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            comparator = in.readObject(ExpressionUtil.SqlRowComparator.class);
             isAbsentOnNull = in.readBoolean();
+            aggIndex = in.readInt();
         }
 
         @Override
@@ -486,6 +502,34 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         @Override
         public int getClassId() {
             return JetSqlSerializerHook.ROW_GET_MAYBE_SERIALIZED_FN;
+        }
+    }
+
+    public static class RowIdentityFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+        public RowIdentityFn() {
+        }
+
+        @Override
+        public Object applyEx(JetSqlRow row) {
+            return row;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.ROW_GET_FN;
         }
     }
 

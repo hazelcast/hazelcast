@@ -53,21 +53,21 @@ public class JsonSqlAggregateTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY name ABSENT ON NULL) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[Alice, Alice, Alice, Bob]"))
+                        new Row(new HazelcastJsonValue("[\"Alice\", \"Alice\", \"Alice\", \"Bob\"]"))
                 )
         );
 
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY name NULL ON NULL) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[null, null, Alice, Alice, Alice, Bob]"))
+                        new Row(new HazelcastJsonValue("[null, null, \"Alice\", \"Alice\", \"Alice\", \"Bob\"]"))
                 )
         );
 
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY name) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[Alice, Alice, Alice, Bob]"))
+                        new Row(new HazelcastJsonValue("[\"Alice\", \"Alice\", \"Alice\", \"Bob\"]"))
                 )
         );
     }
@@ -86,21 +86,21 @@ public class JsonSqlAggregateTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY distance ABSENT ON NULL) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[Alice, Bob, Alice, Alice]"))
+                        new Row(new HazelcastJsonValue("[\"Alice\", \"Bob\", \"Alice\", \"Alice\"]"))
                 )
         );
 
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY distance NULL ON NULL) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[Alice, Bob, Alice, null, Alice, null]"))
+                        new Row(new HazelcastJsonValue("[\"Alice\", \"Bob\", \"Alice\", null, \"Alice\", null]"))
                 )
         );
 
         assertRowsAnyOrder(
                 "SELECT JSON_ARRAYAGG(name ORDER BY distance) FROM " + name,
                 asList(
-                        new Row(new HazelcastJsonValue("[Alice, Bob, Alice, Alice]"))
+                        new Row(new HazelcastJsonValue("[\"Alice\", \"Bob\", \"Alice\", \"Alice\"]"))
                 )
         );
     }
@@ -132,6 +132,28 @@ public class JsonSqlAggregateTest extends SqlTestSupport {
                         new Row("Alice", new HazelcastJsonValue("[7, 4, 1]")),
                         new Row("Bob", new HazelcastJsonValue("[3]")),
                         new Row(null, new HazelcastJsonValue("[8, 6]"))
+
+                )
+        );
+    }
+
+    @Test
+    public void test_jsonArrayAgg_multiple() {
+        String name = createTable(
+                new String[]{"Alice", "1"},
+                new String[]{"Bob", "3"},
+                new String[]{"Alice", "4"},
+                new String[]{null, "6"},
+                new String[]{"Alice", "7"},
+                new String[]{null, "8"}
+        );
+
+        assertRowsAnyOrder(
+                "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance DESC), JSON_ARRAYAGG(distance ORDER BY distance ASC) FROM " + name + " GROUP BY name",
+                asList(
+                        new Row("Alice", new HazelcastJsonValue("[7, 4, 1]"), new HazelcastJsonValue("[1, 4, 7]")),
+                        new Row("Bob", new HazelcastJsonValue("[3]"), new HazelcastJsonValue("[3]")),
+                        new Row(null, new HazelcastJsonValue("[8, 6]"), new HazelcastJsonValue("[6, 8]"))
 
                 )
         );

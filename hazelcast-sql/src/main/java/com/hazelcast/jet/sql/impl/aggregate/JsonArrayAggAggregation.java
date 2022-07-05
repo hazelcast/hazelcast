@@ -17,37 +17,51 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.PriorityQueue;
 
 public final class JsonArrayAggAggregation implements SqlAggregation {
-    private List<Object> objects = new ArrayList<>();
+    private PriorityQueue<JetSqlRow> objects;
+    private ExpressionUtil.SqlRowComparator comparator;
     private boolean isAbsentOnNull;
+    private int aggIndex;
 
     private JsonArrayAggAggregation() {
     }
 
-    private JsonArrayAggAggregation(boolean isAbsentOnNull) {
+    private JsonArrayAggAggregation(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
+        this.comparator = comparator;
         this.isAbsentOnNull = isAbsentOnNull;
+        this.aggIndex = aggIndex;
+        this.objects = new PriorityQueue<>(this.comparator);
     }
 
-    public static JsonArrayAggAggregation create(boolean isAbsentOnNull) {
-        return new JsonArrayAggAggregation(isAbsentOnNull);
+    public static JsonArrayAggAggregation create(
+            ExpressionUtil.SqlRowComparator comparator,
+            boolean isAbsentOnNull,
+            int aggIndex
+    ) {
+        return new JsonArrayAggAggregation(comparator, isAbsentOnNull, aggIndex);
     }
 
     @Override
     public void accumulate(Object value) {
-        objects.add(value);
+        JetSqlRow row = (JetSqlRow) value;
+        objects.add(row);
     }
 
     @Override
     public void combine(SqlAggregation other) {
         JsonArrayAggAggregation otherC = (JsonArrayAggAggregation) other;
-        objects.addAll(otherC.objects);
+        while (!otherC.objects.isEmpty()) {
+            objects.add(otherC.objects.poll());
+        }
     }
 
     @Override
@@ -55,7 +69,9 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
         StringBuilder sb = new StringBuilder();
         boolean firstValue = true;
         sb.append("[");
-        for (Object value : objects) {
+        while (!objects.isEmpty()) {
+            JetSqlRow row = objects.poll();
+            Object value = row.get(aggIndex);
             if (value == null) {
                 if (!isAbsentOnNull) {
                     if (!firstValue) {
@@ -68,7 +84,7 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
                 if (!firstValue) {
                     sb.append(", ");
                 }
-                sb.append(value);
+                sb.append(JsonCreationUtil.serializeValue(value));
                 firstValue = false;
             }
         }
@@ -79,11 +95,11 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(isAbsentOnNull);
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        isAbsentOnNull = in.readBoolean();
+        throw new UnsupportedOperationException("Should not be called");
     }
 }

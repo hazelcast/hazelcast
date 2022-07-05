@@ -66,8 +66,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_AVG_SUPPLIER = 19;
     public static final int AGGREGATE_COUNT_SUPPLIER = 20;
     public static final int AGGREGATE_JSON_ARRAY_AGG_SUPPLIER = 21;
+    public static final int ROW_IDENTITY_FN = 22;
 
-    public static final int LEN = AGGREGATE_JSON_ARRAY_AGG_SUPPLIER + 1;
+    public static final int LEN = ROW_IDENTITY_FN + 1;
 
     @Override
     public int getFactoryId() {
@@ -104,6 +105,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
         constructors[AGGREGATE_COUNT_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCountSupplier();
         constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateArrayAggSupplier();
+        constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
         return new ArrayDataSerializableFactory(constructors);
     }
 }
