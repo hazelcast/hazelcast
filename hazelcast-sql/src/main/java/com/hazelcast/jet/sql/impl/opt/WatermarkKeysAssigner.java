@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.type.RelDataType;
@@ -36,18 +37,25 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- *
+ * Traverse optimized physical relational tree
+ * and manually assign watermark keys.
  */
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
+    private final WatermarkKeyAssignerVisitor visitor;
 
     public WatermarkKeysAssigner(PhysicalRel root) {
         this.root = root;
+        this.visitor = new WatermarkKeyAssignerVisitor(root);
     }
 
     public void assignWatermarkKeys() {
         WatermarkKeyAssignerVisitor visitor = new WatermarkKeyAssignerVisitor(root);
         visitor.go(root);
+    }
+
+    public Map<RexInputRef, Byte> getWatermarkedFieldsKey(RelNode node) {
+        return visitor.getRefToWmKeyMapping().get(node);
     }
 
     private static class WatermarkKeyAssignerVisitor extends RelVisitor {
@@ -72,6 +80,10 @@ public class WatermarkKeysAssigner {
             refToWmKeyMapping.put(rootRel, refByteMap);
         }
 
+        public Map<RelNode, Map<RexInputRef, Byte>> getRefToWmKeyMapping() {
+            return refToWmKeyMapping;
+        }
+
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
             // Most probably, query would not contain any watermarked fields.
@@ -86,6 +98,8 @@ public class WatermarkKeysAssigner {
                 visit((StreamToStreamJoinPhysicalRel) node, ordinal, parent);
             } else if (node instanceof SlidingWindow) {
                 visit((SlidingWindow) node, ordinal, parent);
+            } else if (node instanceof UnionPhysicalRel) {
+                visit((UnionPhysicalRel) node, ordinal, parent);
             }
 
             // anything else -- just forward without any changes.
@@ -116,17 +130,15 @@ public class WatermarkKeysAssigner {
                     // Sometimes watermarked fields may beremoved by Project or Calc relations.
                     // In such case, we assign a watermark key which would not
                     // be used in any joins, but stream still is abele to generate watermarks.
-                    wmKey = keyCounter[0];
-                    scan.setWatermarkDef(keyCounter[0]++);
+                    wmKey = keyCounter[0]++;
                 } else {
                     RexInputRef ref = refByteMap.keySet().iterator().next();
                     assert ref != null : "Parent node doesn't have watermark key";
-
                     if (watermarkedRexRef.equals(ref)) {
                         wmKey = refByteMap.get(ref);
-                        scan.setWatermarkDef(refByteMap.get(ref));
                     }
                 }
+                scan.setWatermarkKey(wmKey);
             }
 
             refToWmKeyMapping.put(scan, Collections.singletonMap(watermarkedRexRef, wmKey));
@@ -160,12 +172,10 @@ public class WatermarkKeysAssigner {
         private void visit(StreamToStreamJoinPhysicalRel join, int ordinal, @Nullable RelNode parent) {
             WatermarkedFields joinedWmFields = relMetadataQuery.extractWatermarkedFields(join);
             Map<RexInputRef, Byte> refByteMap = refToWmKeyMapping.get(parent);
-
-            // L: a1 b1 c1
-            // R: a2 b2
-            // J --> a1 b1 c1 a2 b2
-            // left: 0 -> 0, 1 -> 1, 2 -> 2
-            // right 0 -> 3, 1 -> 4
+            // Case when S2S Join rel is a root level
+            if (refByteMap == null) {
+                refByteMap = refToWmKeyMapping.get(join);
+            }
 
             Map<RexInputRef, Byte> leftInputRefByteMap = new HashMap<>();
             for (Map.Entry<Integer, Integer> entry : join.leftInputToJointRowMapping().entrySet()) {
@@ -179,6 +189,13 @@ public class WatermarkKeysAssigner {
 
             refToWmKeyMapping.put(join.getLeft(), leftInputRefByteMap);
             refToWmKeyMapping.put(join.getRight(), rightInputRefByteMap);
+        }
+
+        /**
+         *
+         */
+        private void visit(UnionPhysicalRel union, int ordinal, @Nullable RelNode parent) {
+            refToWmKeyMapping.put(union, refToWmKeyMapping.get(parent));
         }
 
         private void tryAssignKey(

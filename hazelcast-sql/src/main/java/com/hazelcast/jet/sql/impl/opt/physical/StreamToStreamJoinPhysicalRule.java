@@ -144,32 +144,15 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
         // endregion
 
-        Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeMap = new HashMap<>();
+        Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = new HashMap<>();
 
-        OptUtils.RelField llRelation = new OptUtils.RelField(
-                visitor.leftBound.f0().getName(),
-                visitor.leftBound.f0().getType()
-        );
-        OptUtils.RelField lrRelation = new OptUtils.RelField(
-                visitor.leftBound.f1().getName(),
-                visitor.leftBound.f1().getType()
-        );
-        OptUtils.RelField rlRelation = new OptUtils.RelField(
-                visitor.rightBound.f0().getName(),
-                visitor.rightBound.f0().getType()
-        );
-        OptUtils.RelField rrRelation = new OptUtils.RelField(
-                visitor.rightBound.f1().getName(),
-                visitor.rightBound.f1().getType()
-        );
+        Map<RexInputRef, Long> leftBoundMap = new HashMap<>();
+        leftBoundMap.put(visitor.leftBound.f0(), visitor.leftBound.f2());
+        postponeMap.put(visitor.leftBound.f1(), leftBoundMap);
 
-        Map<OptUtils.RelField, Long> leftBoundMap = new HashMap<>();
-        leftBoundMap.put(llRelation, visitor.leftBound.f2());
-        postponeMap.put(lrRelation, leftBoundMap);
-
-        Map<OptUtils.RelField, Long> rightBoundMap = new HashMap<>();
-        rightBoundMap.put(rlRelation, visitor.rightBound.f2());
-        postponeMap.put(rrRelation, rightBoundMap);
+        Map<RexInputRef, Long> rightBoundMap = new HashMap<>();
+        rightBoundMap.put(visitor.rightBound.f0(), visitor.rightBound.f2());
+        postponeMap.put(visitor.rightBound.f1(), rightBoundMap);
 
         Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
         Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
@@ -286,8 +269,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         private final Join joinRel;
         private final WatermarkedFields watermarkedFields;
 
-        public Tuple3<RelDataTypeField, RelDataTypeField, Long> leftBound = null;
-        public Tuple3<RelDataTypeField, RelDataTypeField, Long> rightBound = null;
+        public Tuple3<RexInputRef, RexInputRef, Long> leftBound = null;
+        public Tuple3<RexInputRef, RexInputRef, Long> rightBound = null;
         public boolean isValid = true;
 
         private BoundsExtractorVisitor(JoinLogicalRel joinRel, WatermarkedFields watermarkedFields) {
@@ -307,12 +290,11 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                             call.getOperands().get(1) instanceof RexInputRef) {
                         RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
                         RexInputRef rightOp = (RexInputRef) call.getOperands().get(1);
-                        RelDataTypeField leftField = joinRel.getRowType().getFieldList().get(leftOp.getIndex());
-                        RelDataTypeField rightField = joinRel.getRowType().getFieldList().get(rightOp.getIndex());
-                        leftBound = tuple3(leftField, rightField, 0L);
-                        rightBound = tuple3(leftField, rightField, 0L);
+                        leftBound = tuple3(leftOp, rightOp, 0L);
+                        rightBound = tuple3(leftOp, rightOp, 0L);
                     }
                     return null;
+                    // TODO: REWRITE TO REXINPUT
                 case GREATER_THAN:
                 case GREATER_THAN_OR_EQUAL:
                     // We assume that right operand is left bound
@@ -336,7 +318,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
          *
          * @return Tuple [ref1_index, ref2_index, bound]
          */
-        private Tuple3<RelDataTypeField, RelDataTypeField, Long> extractBoundFromComparisonCall(
+        private Tuple3<RexInputRef, RexInputRef, Long> extractBoundFromComparisonCall(
                 RexCall call,
                 WatermarkedFields wmFields,
                 boolean isLeft
@@ -345,17 +327,15 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
             RexNode rightOp = call.getOperands().get(1);
 
-            RelDataTypeField leftField = joinRel.getRowType().getFieldList().get(leftOp.getIndex());
-
-            Tuple3<RelDataTypeField, RelDataTypeField, Long> boundToReturn = null;
+            Tuple3<RexInputRef, RexInputRef, Long> boundToReturn = null;
 
             if (rightOp instanceof RexCall) {
-                Tuple2<RelDataTypeField, Long> timeBound = extractTimeBoundFromAddition((RexCall) rightOp, wmFields);
-                boundToReturn = isValid ? tuple3(leftField, timeBound.f0(), timeBound.f1()) : null;
+                Tuple2<RexInputRef, Long> timeBound = extractTimeBoundFromBinaryOp((RexCall) rightOp, wmFields);
+                boundToReturn = isValid ? tuple3(leftOp, timeBound.f0(), timeBound.f1()) : null;
             } else if (rightOp instanceof RexInputRef) {
                 RexInputRef rightIRef = (RexInputRef) rightOp;
                 RelDataTypeField rightField = joinRel.getRowType().getFieldList().get((rightIRef).getIndex());
-                boundToReturn = tuple3(leftField, rightField, 0L);
+                boundToReturn = tuple3(leftOp, rightIRef, 0L);
             } else {
                 isValid = false;
             }
@@ -374,7 +354,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         /**
          * Extract time boundness from PLUS/MINUS calls represented as `$ref + constant`.
          */
-        private Tuple2<RelDataTypeField, Long> extractTimeBoundFromAddition(
+        private Tuple2<RexInputRef, Long> extractTimeBoundFromBinaryOp(
                 RexCall call,
                 WatermarkedFields watermarkedFields) {
             if (!(call.isA(SqlKind.PLUS) || call.isA(SqlKind.MINUS))) {
@@ -428,7 +408,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 literalValue *= -1;
             }
 
-            return tuple2(joinRel.getRowType().getFieldList().get(inputRef.getIndex()), literalValue);
+            return tuple2(inputRef, literalValue);
         }
     }
 

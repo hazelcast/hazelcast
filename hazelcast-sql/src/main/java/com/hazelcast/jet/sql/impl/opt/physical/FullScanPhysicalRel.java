@@ -35,6 +35,7 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
@@ -47,7 +48,7 @@ import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTI
 
 public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
-    private byte watermarkDef = -1;
+    private byte watermarkKey = -1;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
@@ -133,17 +134,26 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     }
 
     @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        String eventPolicyPresence = eventTimePolicyProvider != null ? "Present" : "Absent";
+        return super.explainTerms(pw)
+                .itemIf("eventTimePolicyProvider", eventPolicyPresence, eventTimePolicyProvider != null)
+                .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0)
+                .itemIf("watermarkKey", watermarkKey, watermarkKey >= 0);
+    }
+
+    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
                 watermarkedColumnIndex());
     }
 
-    public byte getWatermarkDef() {
-        return watermarkDef;
+    public byte getWatermarkKey() {
+        return watermarkKey;
     }
 
-    public void setWatermarkDef(byte watermarkDef) {
-        this.watermarkDef = watermarkDef;
+    public void setWatermarkKey(byte watermarkKey) {
+        this.watermarkKey = watermarkKey;
     }
 
 }

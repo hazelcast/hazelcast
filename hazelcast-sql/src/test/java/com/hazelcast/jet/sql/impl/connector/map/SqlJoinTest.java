@@ -61,23 +61,6 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void when_streamToStreamJoin_then_success() {
-            String stream1 = "stream1";
-            TestStreamSqlConnector.create(
-                    sqlService,
-                    stream1,
-                    singletonList("a"),
-                    singletonList(BIGINT),
-                    row(0L),
-                    row(0L)
-            );
-            assertThatThrownBy(() -> instance()
-                    .getSql()
-                    .execute("SELECT * FROM TABLE(GENERATE_STREAM(1)) JOIN stream1 ON 1=1")
-            ).hasMessageContaining("Left input of stream to stream JOIN");
-        }
-
-        @Test
         public void given_streamToStreamJoin_when_joinHasTimestampBounds_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(

@@ -168,7 +168,7 @@ public final class HazelcastRelMdWatermarkedFields
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
 
         if (rel instanceof JoinNestedLoopPhysicalRel || rel instanceof JoinHashPhysicalRel) {
-            // For nested-loop join and hash join that iterate the left side and forward WM in it.
+            // Nested-loop join and hash join iterate the left side and forward WM in it.
             // WM on the right side isn't forwarded.
             return query.extractWatermarkedFields(rel.getLeft());
         } else {
@@ -191,30 +191,12 @@ public final class HazelcastRelMdWatermarkedFields
             WatermarkedFields rightWmFields = query.extractWatermarkedFields(right);
 
             Map<Integer, RexInputRef> leftPropsByIndex = leftWmFields.getPropertiesByIndex();
-            Map<Integer, RexInputRef> leftResultInputRefMap = new HashMap<>();
             Map<Integer, RexInputRef> rightPropsByIndex = rightWmFields.getPropertiesByIndex();
-            Map<Integer, RexInputRef> rightResultInputRefMap = new HashMap<>();
 
-            for (Integer key : leftPropsByIndex.keySet()) {
-                RelDataTypeField leftField = left.getRowType().getFieldList().get(key);
-                for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                    if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
-                        leftResultInputRefMap.put(field.getIndex(),
-                                rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
-                    }
-                }
-            }
+            Map<Integer, RexInputRef> leftInputToJoinRefMap = joinInputToJoinMapping(rel, left, leftPropsByIndex);
+            Map<Integer, RexInputRef> rightInputToJoinRefMap = joinInputToJoinMapping(rel, right, rightPropsByIndex);
 
-            for (Integer key : rightPropsByIndex.keySet()) {
-                RelDataTypeField leftField = right.getRowType().getFieldList().get(key);
-                for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                    if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
-                        rightResultInputRefMap.put(field.getIndex(),
-                                rel.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
-                    }
-                }
-            }
-            return WatermarkedFields.join(leftResultInputRefMap, rightResultInputRefMap);
+            return WatermarkedFields.join(leftInputToJoinRefMap, rightInputToJoinRefMap);
         }
     }
 
@@ -262,6 +244,24 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelNode rel, RelMetadataQuery mq) {
         return null;
+    }
+
+    private Map<Integer, RexInputRef> joinInputToJoinMapping(
+            Join join,
+            RelNode child,
+            Map<Integer, RexInputRef> childPropsByIndex) {
+        Map<Integer, RexInputRef> childResultRefMap = new HashMap<>();
+
+        for (Integer key : childPropsByIndex.keySet()) {
+            RelDataTypeField leftField = child.getRowType().getFieldList().get(key);
+            for (RelDataTypeField field : join.getRowType().getFieldList()) {
+                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
+                    childResultRefMap.put(field.getIndex(),
+                            join.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
+                }
+            }
+        }
+        return childResultRefMap;
     }
 
     public interface WatermarkedFieldsMetadata extends Metadata {

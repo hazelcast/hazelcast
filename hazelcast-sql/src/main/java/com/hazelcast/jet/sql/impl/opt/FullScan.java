@@ -32,9 +32,9 @@ import static java.util.Collections.emptyList;
 
 public abstract class FullScan extends TableScan {
 
-    private final BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final int watermarkedColumnIndex;
-    private byte watermarkKeyId;
+    protected final BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    protected final int watermarkedColumnIndex;
+
     protected FullScan(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -58,18 +58,11 @@ public abstract class FullScan extends TableScan {
         return watermarkedColumnIndex;
     }
 
-    public byte getWatermarkKeyId() {
-        return watermarkKeyId;
-    }
-
-    public void setWatermarkKeyId(byte watermarkKeyId) {
-        this.watermarkKeyId = watermarkKeyId;
-    }
-
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        String eventPolicyPresence = eventTimePolicyProvider != null ? "Present" : "Absent";
         return super.explainTerms(pw)
-                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null)
+                .itemIf("eventTimePolicyProvider", eventPolicyPresence, eventTimePolicyProvider != null)
                 .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }

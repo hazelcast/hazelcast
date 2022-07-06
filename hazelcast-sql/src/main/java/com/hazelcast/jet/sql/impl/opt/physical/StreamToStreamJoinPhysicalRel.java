@@ -19,8 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.OptUtils.RelField;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -48,7 +46,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final Map<Integer, Integer> rightInputToJointRowMapping;
     // Same postponeTimeMap as required by TDD, but with rel field defined
     // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
-    private final Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap;
+    private final Map<RexInputRef, Map<RexInputRef, Long>> postponeTimeMap;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected StreamToStreamJoinPhysicalRel(
@@ -62,7 +60,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             WatermarkedFields rightWatermarkedFields,
             Map<Integer, Integer> leftInputToJointRowMapping,
             Map<Integer, Integer> rightInputToJointRowMapping,
-            Map<RelField, Map<RelField, Long>> postponeTimeMap
+            Map<RexInputRef, Map<RexInputRef, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
 
@@ -121,7 +119,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
      * JOIN ON b.1 BETWEEN a.1 AND a.1 + 1
      * JOIN ON c.1 BETWEEN b.1 AND b.1 + 1
      */
-    public Map<OptUtils.RelField, Map<OptUtils.RelField, Long>> postponeTimeMap() {
+    public Map<RexInputRef, Map<RexInputRef, Long>> postponeTimeMap() {
         return postponeTimeMap;
     }
 
