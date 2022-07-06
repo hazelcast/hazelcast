@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -68,6 +69,17 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     @Override
     public boolean isCooperative() {
         return false;
+    }
+
+    /**
+     * Use {@link SourceProcessors#readJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier supplier(
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return supplier(ctx -> newConnectionFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**

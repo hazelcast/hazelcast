@@ -1327,6 +1327,39 @@ public final class Sources {
                 SourceProcessors.readJdbcP(newConnectionFn, resultSetFn, createOutputFn));
     }
 
+    /**
+     * Returns a source which connects to the specified database using the given
+     * {@code externalDataStoreRef}, queries the database and creates a result set
+     * using the the given {@code resultSetFn}. It creates output objects from the
+     * {@link ResultSet} using given {@code mapOutputFn} and emits them to
+     * downstream.
+     * <p>
+     * Example: <pre>{@code
+     *     p.readFrom(Sources.jdbc(
+     *         ExternalDataStoreRef.externalDataStoreRef(JDBC_DATA_STORE),
+     *         (con, parallelism, index) -> {
+     *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
+     *              stmt.setInt(1, parallelism);
+     *              stmt.setInt(2, index);
+     *              return stmt.executeQuery();
+     *         },
+     *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     * }</pre>
+     * <p>
+     * <p>
+     * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
+     *</p>
+     *
+     * @since 5.2
+     */
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(externalDataStoreRef, resultSetFn, createOutputFn));
+    }
 
     /**
      * Convenience for {@link Sources#jdbc(SupplierEx,
