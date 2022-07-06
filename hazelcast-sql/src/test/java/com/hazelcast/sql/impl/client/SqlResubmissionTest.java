@@ -111,8 +111,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     private void testStatement(SqlStatement statement, boolean shouldFail)
             throws InterruptedException {
-        Thread failingThread = new Thread(cyclicFailure);
-        failingThread.start();
+        Thread failureControlThread = new Thread(cyclicFailure);
+        failureControlThread.start();
         try {
             try {
                 if (shouldFail) {
@@ -124,7 +124,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
                 done = true;
             }
         } finally {
-            failingThread.join();
+            failureControlThread.join();
             clusterFailure.cleanUp();
         }
     }
@@ -154,10 +154,11 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     }
 
     private final Runnable cyclicFailure = () -> {
-        boolean failureNeeded = true;
+        boolean failAfterDone = true;
 
         while (!done) {
             State localState = state;
+            System.out.println(localState);
             switch (localState) {
                 case BEFORE_FAIL:
                     try {
@@ -166,17 +167,17 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
                         // ignored
                     }
                     state = State.BEFORE_RECOVER;
-                    failureNeeded = false;
+                    failAfterDone = false;
                     clusterFailure.fail();
                     break;
                 case BEFORE_RECOVER:
-                    failureNeeded = true;
+                    failAfterDone = true;
                     clusterFailure.recover();
                     state = State.BEFORE_EXECUTE;
                     break;
             }
         }
-        if (failureNeeded) {
+        if (failAfterDone) {
             clusterFailure.fail();
         }
     };
@@ -197,7 +198,6 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
             int rowsSeen = 0;
             for (SqlRow r : rows) {
                 int rowValue = r.getObject("__key");
-                System.out.println(rowValue);
                 if (rowsSeen++ == COMMON_MAP_SIZE  / 2) {
                     clusterFailure.fail();
                 }
