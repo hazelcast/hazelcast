@@ -457,7 +457,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     <A> Connection connect(A target, Function<A, Connection> getOrConnectFunction,
-                           Function<A, Address> addressProvider) {
+                           Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -469,13 +469,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             throw e;
         } catch (TargetDisconnectedException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
-            connectionProcessListener.remoteClosedConnection(addressProvider.apply(target));
+            connectionProcessListener.remoteClosedConnection(addressTranslator.apply(target));
             return null;
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             if (e.getCause() instanceof IOException) {
                 try {
-                    connectionProcessListener.connectionAttemptFailed(addressProvider.apply(target));
+                    connectionProcessListener.connectionAttemptFailed(addressTranslator.apply(target));
                 } catch (Exception e2) {
                     logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
                             + target, e2);
@@ -505,7 +505,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    connectionProcessListener.attemptingToConnectToAddress(translate(member.getAddress()));
+                    if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
+                        connectionProcessListener.attemptingToConnectToAddress(translate(member.getAddress()));
+                    }
                     Connection connection = connect(member,
                             o -> getOrConnectToMember(o, switchingToNextCluster),
                             this::translate);
@@ -520,7 +522,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-                    connectionProcessListener.attemptingToConnectToAddress(translate(address));
+                    if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
+                        connectionProcessListener.attemptingToConnectToAddress(translate(address));
+                    }
                     Connection connection = connect(address,
                             o -> getOrConnectToAddress(o, switchingToNextCluster),
                             this::translate);
@@ -1020,10 +1024,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured "
                         + "in the cluster or the credentials set in the Client security config could not be authenticated");
                 connection.close("Failed to authenticate connection", authException);
-                connectionProcessListener.credentialsFailed(connection.getRemoteAddress());
+                connectionProcessListener.credentialsFailed(connection.getInitAddress());
                 throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
-                connectionProcessListener.clientNotAllowedInCluster(connection.getRemoteAddress());
+                connectionProcessListener.clientNotAllowedInCluster(connection.getInitAddress());
                 ClientNotAllowedInClusterException notAllowedException =
                         new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
                 connection.close("Failed to authenticate connection", notAllowedException);
