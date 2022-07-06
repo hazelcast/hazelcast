@@ -114,16 +114,14 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         Thread failingThread = new Thread(cyclicFailure);
         failingThread.start();
         try {
-            if (shouldFail) {
-                assertThrows(HazelcastSqlException.class,
-                        () -> executeInLoop(statement, result -> false));
-                done = true;
-            } else {
-                try {
+            try {
+                if (shouldFail) {
+                    assertThrows(HazelcastSqlException.class, () -> executeInLoop(statement, result -> false));
+                } else {
                     executeInLoop(statement, result -> ((SqlClientResult) result).wasResubmission());
-                } finally {
-                    done = true;
                 }
+            } finally {
+                done = true;
             }
         } finally {
             failingThread.join();
@@ -132,7 +130,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
     }
 
     private void executeInLoop(SqlStatement statement, Predicate<SqlResult> shouldBreakFunction) {
-        while (!done) {
+        while (true) {
             State localState = state;
             if (localState == State.BEFORE_EXECUTE) {
                 state = State.BEFORE_FAIL;
@@ -144,6 +142,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
                         break;
                     }
                 } catch (RuntimeException e) {
+                    // Can be removed after merging https://github.com/hazelcast/hazelcast/pull/21639 - migration of
+                    // SQL catalog to IMap.
                     if (e.getMessage() != null && e.getMessage().contains("CREATE MAPPING")) {
                         continue;
                     }

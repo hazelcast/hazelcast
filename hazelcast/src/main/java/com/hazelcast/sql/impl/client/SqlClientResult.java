@@ -1,4 +1,4 @@
-/*
+        /*
  * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +37,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -48,7 +49,7 @@ public class SqlClientResult implements SqlResult {
     private final Connection connection;
     private final QueryId queryId;
     private final int cursorBufferSize;
-    private final ClientMessage sqlExecuteMessage;
+    private final Supplier<ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
 
     /** The connection that was created during resubmission. */
@@ -78,14 +79,14 @@ public class SqlClientResult implements SqlResult {
             Connection connection,
             QueryId queryId,
             int cursorBufferSize,
-            ClientMessage sqlExecuteMessage,
+            Supplier<ClientMessage> sqlExecuteMessageSupplier,
             SqlStatement statement
     ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.cursorBufferSize = cursorBufferSize;
-        this.sqlExecuteMessage = sqlExecuteMessage;
+        this.sqlExecuteMessageSupplier = sqlExecuteMessageSupplier;
         this.selectQuery = statement.getSql().trim().toLowerCase().startsWith("select");
     }
 
@@ -283,7 +284,9 @@ public class SqlClientResult implements SqlResult {
                     throw wrap(fetch.getError());
                 }
                 onResubmissionResponse(resubmissionResult);
-                return fetch(timeoutNanos);
+
+                // In onResubmissionResponse we change currentPage on iterator, so we now need to return it.
+                return state.iterator.currentPage;
             } else {
                 SqlPage page = fetch.getPage();
                 assert page != null;
@@ -437,7 +440,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     ClientMessage getSqlExecuteMessage() {
-        return sqlExecuteMessage;
+        return sqlExecuteMessageSupplier.get();
     }
 
     boolean isSelectQuery() {
