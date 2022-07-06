@@ -16,6 +16,9 @@
 
 package com.hazelcast.cp.internal.session.operation;
 
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.NotLeaderException;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,8 +28,12 @@ import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Pushes given session's heartbeat timeout forward. Fails with
@@ -53,6 +60,29 @@ public class HeartbeatSessionOp extends RaftOp implements IndeterminateOperation
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
+    }
+
+    @Override
+    public boolean hasOnNullRaftNodeAction() {
+        return true;
+    }
+
+    @Override
+    public void onNullRaftNodeAction(CPGroupId groupId, Operation operation) {
+        RaftService service = getNodeEngine().getService(RaftService.SERVICE_NAME);
+        getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () ->
+                service.getCPGroup(groupId).whenCompleteAsync((group, throwable) -> {
+                            // Checking if groupId, that session belongs to, is known by the CP Subsystem.
+                            // If it doesn't, it means the CPGroup and session have been destroyed.
+                            if (group == null && throwable == null) {
+                                getLogger().info("There is no " + groupId + " in the METADATA group for session heartbeat. "
+                                        + "Caller's session will be invalidated");
+                                operation.sendResponse(new CPGroupDestroyedException(groupId));
+                            } else {
+                                operation.sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+                            }
+                        },
+                        CALLER_RUNS));
     }
 
     @Override

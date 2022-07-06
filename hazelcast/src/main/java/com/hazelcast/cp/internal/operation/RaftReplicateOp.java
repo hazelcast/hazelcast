@@ -60,19 +60,33 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
         RaftService service = getService();
         RaftNode raftNode = service.getOrInitRaftNode(groupId);
         if (raftNode == null) {
-            if (service.isRaftGroupDestroyed(groupId)) {
-                sendResponse(new CPGroupDestroyedException(groupId));
-            } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
-            }
+            onNullRaftNode(service);
             return;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+        }
+        if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
             sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> service.stepDownRaftNode(groupId));
             return;
         }
 
         replicate(raftNode).whenCompleteAsync(this, CALLER_RUNS);
+    }
+
+    protected void onNullRaftNode(RaftService service) {
+        if (service.isRaftGroupDestroyed(groupId)) {
+            sendResponse(new CPGroupDestroyedException(groupId));
+        } else if (hasOnNullRaftNodeAction()) {
+            onNullRaftNodeAction(groupId);
+        } else {
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+        }
+    }
+
+    protected boolean hasOnNullRaftNodeAction() {
+        return false;
+    }
+
+    protected void onNullRaftNodeAction(CPGroupId groupId) {
     }
 
     protected abstract InternalCompletableFuture replicate(RaftNode raftNode);

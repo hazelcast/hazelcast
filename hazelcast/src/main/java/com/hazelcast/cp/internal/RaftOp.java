@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.logging.Level;
 
@@ -98,6 +99,13 @@ public abstract class RaftOp implements DataSerializable {
                 logger.log(level, e.getMessage(), e);
             }
         }
+    }
+
+    public boolean hasOnNullRaftNodeAction() {
+        return false;
+    }
+
+    public void onNullRaftNodeAction(CPGroupId groupId, Operation operation) {
     }
 
     protected void toString(StringBuilder sb) {

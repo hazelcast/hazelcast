@@ -47,6 +47,16 @@ public class DefaultRaftReplicateOp extends RaftReplicateOp implements Indetermi
         this.op = op;
     }
 
+    protected boolean hasOnNullRaftNodeAction() {
+        return op.hasOnNullRaftNodeAction();
+    }
+
+    @Override
+    protected void onNullRaftNodeAction(CPGroupId groupId) {
+        op.setNodeEngine(getNodeEngine());
+        op.onNullRaftNodeAction(groupId, this);
+    }
+
     @Override
     protected InternalCompletableFuture replicate(RaftNode raftNode) {
         if (op instanceof CallerAware) {
