@@ -122,7 +122,11 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * True if the {@linkplain #init(Context)} method won't block.
+     * Returns {@code true} if the {@link #init(Context)} method of this
+     * instance is cooperative. If it's not, the call to the {@code init()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
      */
     default boolean initIsCooperative() {
         return false;
@@ -143,7 +147,11 @@ public interface ProcessorMetaSupplier extends Serializable {
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
-     * If true, then {@link #close(Throwable)} should be cooperative, meaning it shouldn't block (e.g. by doing IO).
+     * Returns {@code true} if the {@link #close(Throwable)} method of this
+     * instance is cooperative. If it's not, the call to the {@code close()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
      */
     default boolean closeIsCooperative() {
         return false;
