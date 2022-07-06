@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -122,6 +123,11 @@ public class SqlClientResult implements SqlResult {
             if (closed) {
                 // The result is already closed, ignore the response.
                 return;
+            }
+
+            if (state != null && state.iterator != null && !state.iterator.rowMetadata.equals(result.getRowMetadata())) {
+                throw new HazelcastSqlException(queryId.getMemberId(), SqlErrorCode.GENERIC,
+                        "Row metadata changed after resubmission", null, null);
             }
 
             this.fetch = null;

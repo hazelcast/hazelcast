@@ -167,6 +167,9 @@ public class SqlClientService implements SqlService {
                 }
             }
 
+            // We measure the retry count and retry timeout for each individual resubmission. If a resubmission succeeds,
+            // and then later some fetch of the same query fails, we'll try to resubmit again, and we'll not include
+            // the number and time spent in the previous resubmission.
             if (invokeCount++ >= MAX_FAST_INVOCATION_COUNT) {
                 long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), resubmissionRetryPauseMillis);
                 try {
