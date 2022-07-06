@@ -40,6 +40,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -64,7 +66,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
      */
     private volatile long lastExecutionTime;
 
-    @Parameterized.Parameters(name = "clusterFailure:{0}, resubmissionMode:{1}")
+    @Parameterized.Parameters(name = "clusterFailure:{0}, mode:{1}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
         List<ClusterFailureTestSupport.SingleFailingInstanceClusterFailure> failures = Arrays.asList(
@@ -181,32 +183,41 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
     @Test
     public void when_failingSelectAfterSomeDataIsFetched() {
-        SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME);
+        SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME + " ORDER BY __key");
         statement.setCursorBufferSize(1);
         SqlResult rows = client.getSql().execute(statement);
 
         try {
-            if (shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
-                assertThrows(HazelcastSqlException.class,
-                        () -> countWithFailureInTheMiddle(rows));
-            } else {
-                int count = countWithFailureInTheMiddle(rows);
-                assertTrue(COMMON_MAP_SIZE < count);
+            // In this test we expect the rows to be: 0, 1, 2, ... X, 0, 1, 2, ... N.
+            // X is the row after which the query was resubmitted.
+            // N is total number of rows.
+            // The code below asserts this. We don't know the value X, but we know the value N.
+            boolean resubmitted = false;
+            int expectedValue = 0;
+            int rowsSeen = 0;
+            for (SqlRow r : rows) {
+                int rowValue = r.getObject("__key");
+                System.out.println(rowValue);
+                if (rowsSeen++ == COMMON_MAP_SIZE  / 2) {
+                    clusterFailure.fail();
+                }
+                if (expectedValue > 0 && rowValue == 0) {
+                    assertFalse("rows restarted from 0 for the 2nd time", resubmitted);
+                    resubmitted = true;
+                    expectedValue = 0;
+                }
+                assertEquals(expectedValue, rowValue);
+                expectedValue++;
             }
+            assertEquals(COMMON_MAP_SIZE, expectedValue);
+            assertTrue("resubmission didn't happen", resubmitted);
+        } catch (HazelcastSqlException e) {
+           if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
+               throw e;
+           } // else the error is expected
         } finally {
             clusterFailure.cleanUp();
         }
-    }
-
-    private int countWithFailureInTheMiddle(SqlResult rows) {
-        int count = 0;
-        for (SqlRow ignored : rows) {
-            if (count == COMMON_MAP_SIZE / 2) {
-                clusterFailure.fail();
-            }
-            count++;
-        }
-        return count;
     }
 
     enum State {
