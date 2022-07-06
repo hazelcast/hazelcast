@@ -115,7 +115,6 @@ public class ClientConnectionProcessListenerTest
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
-        HazelcastInstanceFactory.terminateAll();
     }
 
     private static ClientConfig newClientConfig() {

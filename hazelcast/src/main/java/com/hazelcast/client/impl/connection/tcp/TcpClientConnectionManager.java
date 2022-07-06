@@ -473,13 +473,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             return null;
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
-            if (e.getCause() instanceof IOException) {
-                try {
-                    connectionProcessListener.connectionAttemptFailed(addressTranslator.apply(target));
-                } catch (Exception e2) {
-                    logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
-                            + target, e2);
-                }
+            try {
+                connectionProcessListener.connectionAttemptFailed(addressTranslator.apply(target));
+            } catch (Exception e2) {
+                logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
+                        + target, e2);
             }
             return null;
         }
