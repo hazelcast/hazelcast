@@ -50,7 +50,6 @@ public class WatermarkKeysAssigner {
     }
 
     public void assignWatermarkKeys() {
-        WatermarkKeyAssignerVisitor visitor = new WatermarkKeyAssignerVisitor(root);
         visitor.go(root);
     }
 
@@ -63,21 +62,21 @@ public class WatermarkKeysAssigner {
         private final HazelcastRelMetadataQuery relMetadataQuery;
         private final byte[] keyCounter = {0};
         private final Map<RelNode, Map<RexInputRef, Byte>> refToWmKeyMapping = new HashMap<>();
-        private final Set<StreamToStreamJoinPhysicalRel> visited = new HashSet<>();
         private final Set<Byte> rootWatermarkKeysSet = new HashSet<>();
 
         WatermarkKeyAssignerVisitor(PhysicalRel rootRel) {
             this.rexBuilder = rootRel.getCluster().getRexBuilder();
             this.relMetadataQuery = OptUtils.metadataQuery(rootRel);
             WatermarkedFields rootWatermarkedFields = relMetadataQuery.extractWatermarkedFields(rootRel);
-
-            byte[] idx = {0};
-            Map<RexInputRef, Byte> refByteMap = new HashMap<>();
-            for (RexInputRef ref : rootWatermarkedFields.getPropertiesByIndex().values()) {
-                rootWatermarkKeysSet.add(idx[0]);
-                refByteMap.put(ref, idx[0]++);
+            if (rootWatermarkedFields != null) {
+                byte[] idx = {0};
+                Map<RexInputRef, Byte> refByteMap = new HashMap<>();
+                for (RexInputRef ref : rootWatermarkedFields.getPropertiesByIndex().values()) {
+                    rootWatermarkKeysSet.add(idx[0]);
+                    refByteMap.put(ref, idx[0]++);
+                }
+                refToWmKeyMapping.put(rootRel, refByteMap);
             }
-            refToWmKeyMapping.put(rootRel, refByteMap);
         }
 
         public Map<RelNode, Map<RexInputRef, Byte>> getRefToWmKeyMapping() {

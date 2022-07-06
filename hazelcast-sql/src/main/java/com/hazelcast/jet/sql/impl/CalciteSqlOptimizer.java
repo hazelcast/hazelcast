@@ -437,6 +437,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
+        WatermarkKeysAssigner watermarkKeysAssigner = new WatermarkKeysAssigner(physicalRel);
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
@@ -510,7 +511,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata, watermarkKeysAssigner);
             return new DmlPlan(
                     operation,
                     planKey,
@@ -523,7 +524,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata, watermarkKeysAssigner);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -651,12 +652,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private CreateDagVisitor traverseRel(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata,
+            WatermarkKeysAssigner watermarkKeysAssigner
     ) {
-        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(physicalRel);
-        keysAssigner.assignWatermarkKeys();
+        watermarkKeysAssigner.assignWatermarkKeys();
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, keysAssigner);
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, watermarkKeysAssigner);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
