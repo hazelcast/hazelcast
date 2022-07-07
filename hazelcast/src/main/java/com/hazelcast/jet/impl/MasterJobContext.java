@@ -668,6 +668,7 @@ public class MasterJobContext {
     }
 
     void finalizeJob(@Nullable Throwable failure) {
+        ManagedExecutorService coordinationExecutor = mc.coordinationService().coordinationExecutor();
         mc.coordinationService().submitToCoordinatorThread(() -> {
             mc.lock();
             JobStatus status = mc.jobStatus();
@@ -677,7 +678,7 @@ public class MasterJobContext {
             mc.unlock();
           })
           .thenComposeAsync(r -> completeVertices(failure))
-          .thenAccept(ignored -> {
+          .thenAcceptAsync(ignored -> {
             final Runnable nonSynchronizedAction;
             try {
                 mc.lock();
@@ -738,7 +739,7 @@ public class MasterJobContext {
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        }).join();
+        }, coordinationExecutor).join();
     }
 
     /**
