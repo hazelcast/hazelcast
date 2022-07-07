@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.CONFIG_UPDATE;
 import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.MEMBER_LIST_UPDATE;
 import static com.hazelcast.cluster.TcpIpSplitBrainDiscoveryTest.UpdateType.WITH_OPERATION;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -58,10 +57,8 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
     @Parameterized.Parameters(name = "advancedNetwork:{0}, updateType:{1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {true, CONFIG_UPDATE},
                 {true, MEMBER_LIST_UPDATE},
                 {true, WITH_OPERATION},
-                {false, CONFIG_UPDATE},
                 {false, MEMBER_LIST_UPDATE},
                 {false, WITH_OPERATION}
         });
