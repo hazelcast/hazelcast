@@ -66,7 +66,7 @@ public class TablesStorage {
 
     void put(String name, Mapping mapping) {
         newStorage().put(name, mapping);
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             oldStorage().put(name, mapping);
             awaitMappingOnAllMembers(name, mapping);
         }
@@ -74,7 +74,7 @@ public class TablesStorage {
 
     void put(String name, View view) {
         newStorage().put(name, view);
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             oldStorage().put(name, view);
             awaitMappingOnAllMembers(name, view);
         }
@@ -83,7 +83,7 @@ public class TablesStorage {
     boolean putIfAbsent(String name, Mapping mapping) {
         Object previousNew = newStorage().putIfAbsent(name, mapping);
         Object previousOld = null;
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             previousOld = oldStorage().putIfAbsent(name, mapping);
         }
         return previousNew == null && previousOld == null;
@@ -92,7 +92,7 @@ public class TablesStorage {
     boolean putIfAbsent(String name, View view) {
         Object previousNew = newStorage().putIfAbsent(name, view);
         Object previousOld = null;
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             previousOld = oldStorage().putIfAbsent(name, view);
         }
         return previousNew == null && previousOld == null;
@@ -101,7 +101,7 @@ public class TablesStorage {
     Mapping removeMapping(String name) {
         Mapping removedNew = (Mapping) newStorage().remove(name);
         Mapping removedOld = null;
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             removedOld = (Mapping) oldStorage().remove(name);
         }
         return removedNew == null ? removedOld : removedNew;
@@ -118,7 +118,7 @@ public class TablesStorage {
     View removeView(String name) {
         View removedNew = (View) newStorage().remove(name);
         View removedOld = null;
-        if (!useOnlyNewStorage()) {
+        if (useOldStorage()) {
             removedOld = (View) oldStorage().remove(name);
         }
         return removedNew == null ? removedOld : removedNew;
@@ -164,7 +164,12 @@ public class TablesStorage {
 
     private Map<String, Object> mergedStorage() {
         IMap<String, Object> newStorage = newStorage();
-        if (useOnlyNewStorage()) {
+        if (useOldStorage()) {
+            Map<String, Object> mergedCatalog = new HashMap<>();
+            mergedCatalog.putAll(newStorage);
+            mergedCatalog.putAll(oldStorage());
+            return mergedCatalog;
+        } else {
             if (!storageMovedToNew) {
                 synchronized (mergingMutex) {
                     if (!storageMovedToNew) {
@@ -176,16 +181,11 @@ public class TablesStorage {
                 }
             }
             return newStorage;
-        } else {
-            Map<String, Object> mergedCatalog = new HashMap<>();
-            mergedCatalog.putAll(newStorage);
-            mergedCatalog.putAll(oldStorage());
-            return mergedCatalog;
         }
     }
 
-    private boolean useOnlyNewStorage() {
-        return nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_2);
+    private boolean useOldStorage() {
+        return !nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_2);
     }
 
     private Collection<Address> getMemberAddresses() {
