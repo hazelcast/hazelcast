@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
@@ -127,8 +128,7 @@ public class ClientConnectionProcessListenerTest
     }
 
     @Test
-    public void successfulConnection()
-            throws Exception {
+    public void successfulConnection() throws Exception {
         String clusterName = getTestMethodName();
         ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
         ClientConfig clientConfig = newClientConfig()
@@ -150,8 +150,7 @@ public class ClientConnectionProcessListenerTest
     }
 
     @Test
-    public void hostResolutionFailure_portFailure()
-            throws Exception {
+    public void hostResolutionFailure_portFailure() throws Exception {
         String clusterName = getTestMethodName();
         ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
         ClientConfig clientConfig = newClientConfig()
@@ -178,8 +177,7 @@ public class ClientConnectionProcessListenerTest
     }
 
     @Test
-    public void remoteClosesConnection()
-            throws Exception {
+    public void remoteClosesConnection() throws Exception {
         ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
         ServerSocket server = new ServerSocket(5701);
         try {
@@ -213,6 +211,62 @@ public class ClientConnectionProcessListenerTest
             do {
                 server.close();
             } while (!server.isClosed());
+        }
+    }
+
+    @Test
+    public void clientNotAllowedInCluster() throws Exception {
+        String clusterName = getTestMethodName();
+        ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
+
+        ClientConfig clientConfig = newClientConfig()
+                .addListenerConfig(new ListenerConfig().setImplementation(listener));
+        ClientFailoverConfig failoverConfig = new ClientFailoverConfig().setTryCount(0).addClientConfig(clientConfig);
+
+        Hazelcast.newHazelcastInstance(new Config().setClusterName(clusterName));
+
+        try {
+            HazelcastClient.newHazelcastFailoverClient(failoverConfig);
+            fail("unexpectedly successful client startup");
+        } catch (IllegalStateException e) {
+            Address addr = new Address("127.0.0.1", 5701);
+            verify(listener).possibleAddressesCollected(asList(
+                    new Address("127.0.0.1", 5701),
+                    new Address("127.0.0.1", 5702),
+                    new Address("127.0.0.1", 5703)
+            ));
+            verify(listener).attemptingToConnectToAddress(addr);
+            verify(listener).clientNotAllowedInCluster(addr);
+            verify(listener).clusterConnectionFailed(clusterName);
+            verifyNoMoreInteractions(listener);
+        }
+    }
+
+    @Test
+    public void wrongClusterName() throws Exception {
+        String clusterName = getTestMethodName();
+        ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
+
+        ClientConfig clientConfig = newClientConfig()
+                .setClusterName("incorrect-name")
+                .setNetworkConfig(new ClientNetworkConfig()
+                        .addAddress("localhost:5701")
+                )
+                .addListenerConfig(new ListenerConfig().setImplementation(listener));
+
+        Hazelcast.newHazelcastInstance(new Config().setClusterName(clusterName));
+
+        try {
+            HazelcastClient.newHazelcastClient(clientConfig);
+            fail("unexpectedly successful client startup");
+        } catch (IllegalStateException e) {
+            Address addr = new Address("localhost", 5701);
+            verify(listener, atLeastOnce()).possibleAddressesCollected(singletonList(addr));
+            verify(listener, atLeastOnce()).attemptingToConnectToAddress(addr);
+            verify(listener, atLeastOnce()).credentialsFailed(addr);
+            verify(listener, atLeastOnce()).connectionAttemptFailed(addr);
+            verify(listener, atLeastOnce()).clusterConnectionFailed("incorrect-name");
+            verifyNoMoreInteractions(listener);
         }
     }
 
