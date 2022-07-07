@@ -34,11 +34,11 @@ public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
     public static final HazelcastJsonArrayAggFunction NULL_ON_NULL_INSTANCE
             = new HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause.NULL_ON_NULL);
 
-    private SqlJsonConstructorNullClause nullClause;
+    private final SqlJsonConstructorNullClause nullClause;
 
     protected HazelcastJsonArrayAggFunction(SqlJsonConstructorNullClause nullClause) {
         super(
-                "JSON_ARRAYAGG" + "_" + nullClause.name(),
+                "JSON_ARRAYAGG_" + nullClause.name(),
                 SqlKind.JSON_ARRAYAGG,
                 opBinding -> HazelcastJsonType.create(false),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),

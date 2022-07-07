@@ -75,14 +75,14 @@ public final class JsonArrayAggAggregation implements SqlAggregation {
             if (value == null) {
                 if (!isAbsentOnNull) {
                     if (!firstValue) {
-                        sb.append(", ");
+                        sb.append(",");
                     }
                     sb.append("null");
                     firstValue = false;
                 }
             } else {
                 if (!firstValue) {
-                    sb.append(", ");
+                    sb.append(",");
                 }
                 sb.append(JsonCreationUtil.serializeValue(value));
                 firstValue = false;

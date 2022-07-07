@@ -33,6 +33,7 @@ public final class HazelcastWithinGroupOperator extends HazelcastBinaryOperator 
     public static final HazelcastWithinGroupOperator INSTANCE = new HazelcastWithinGroupOperator();
 
     private static final int PRECEDENCE = 100;
+
     private HazelcastWithinGroupOperator() {
         super(
                 "WITHIN GROUP",
