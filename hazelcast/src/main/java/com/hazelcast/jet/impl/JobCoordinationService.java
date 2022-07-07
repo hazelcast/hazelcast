@@ -1375,4 +1375,5 @@ public class JobCoordinationService {
     boolean isMemberShuttingDown(UUID uuid) {
         return membersShuttingDown.containsKey(uuid);
     }
+
 }

@@ -202,60 +202,62 @@ public class MasterJobContext {
      */
 
     void tryStartJob(Supplier<Long> executionIdSupplier) {
-        ManagedExecutorService coordinationExecutor = mc.coordinationService().coordinationExecutor();
-        mc.coordinationService().submitToCoordinatorThread(() -> {
-              executionStartTime = System.currentTimeMillis();
-              JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-              jobExecRec.markExecuted();
-              DAG dag = resolveDag(executionIdSupplier);
-              if (dag == null) {
-                  return null;
-              }
-              // must call this before rewriteDagWithSnapshotRestore()
-              String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-              long snapshotId = jobExecRec.snapshotId();
-              String snapshotName = mc.jobConfig().getInitialSnapshotName();
-              String mapName =
-                      snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                              : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                              : null;
-              if (mapName != null) {
-                  rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-              } else {
-                  logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-              }
-              logger.info("Start executing " + mc.jobIdString()
-                      + ", execution graph in DOT format:\n" + dotRepresentation
-                      + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-              logger.fine("Building execution plan for " + mc.jobIdString());
-              return dag;
-          })
-          .thenComposeAsync(dag -> {
-              if (dag == null) {
-                  return completedFuture(null);
-              }
-              MembersView membersView = Util.getMembersView(mc.nodeEngine());
-              JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+        JobCoordinationService coordinationService = mc.coordinationService();
+        ManagedExecutorService coordinationExecutor = coordinationService.coordinationExecutor();
+        coordinationService
+                .submitToCoordinatorThread(() -> {
+                    executionStartTime = System.currentTimeMillis();
+                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                    jobExecRec.markExecuted();
+                    DAG dag = resolveDag(executionIdSupplier);
+                    if (dag == null) {
+                        return null;
+                    }
+                    // must call this before rewriteDagWithSnapshotRestore()
+                    String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                    long snapshotId = jobExecRec.snapshotId();
+                    String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                    String mapName =
+                            snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                    : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                    : null;
+                    if (mapName != null) {
+                        rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                    } else {
+                        logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                    }
+                    logger.info("Start executing " + mc.jobIdString()
+                            + ", execution graph in DOT format:\n" + dotRepresentation
+                            + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                    logger.fine("Building execution plan for " + mc.jobIdString());
+                    return dag;
+                })
+                .thenComposeAsync(dag -> {
+                    if (dag == null) {
+                        return completedFuture(null);
+                    }
+                    MembersView membersView = Util.getMembersView(mc.nodeEngine());
+                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
 
-              ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                          .getClassLoader(mc.jobId());
-              return Util.doWithClassLoader(classLoader, () ->
-                                 createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
-                                         dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                         false, mc.jobRecord().getSubject()))
-                         .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
-          }, coordinationExecutor)
-          .thenAcceptAsync(tuple -> {
-              if (tuple != null) {
-                  initExecution(tuple.membersView, tuple.plans);
-              }
-          }, coordinationExecutor)
-          .whenComplete((r, e) -> {
-              if (e != null) {
-                  finalizeJob(peel(e));
-              }
-          })
-          .join();
+                    ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
+                                                .getClassLoader(mc.jobId());
+                    return Util.doWithClassLoader(classLoader, () ->
+                                       createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                                               dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
+                                               false, mc.jobRecord().getSubject()))
+                               .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
+                }, coordinationExecutor)
+                .thenCompose(tuple -> coordinationService.submitToCoordinatorThread(() -> {
+                    if (tuple != null) {
+                        initExecution(tuple.membersView, tuple.plans);
+                    }
+                }))
+                .whenComplete((r, e) -> {
+                    if (e != null) {
+                        finalizeJob(peel(e));
+                    }
+                })
+                .join();
     }
 
     private static final class StartJobInitExecutionParams {
@@ -668,7 +670,6 @@ public class MasterJobContext {
     }
 
     void finalizeJob(@Nullable Throwable failure) {
-        ManagedExecutorService coordinationExecutor = mc.coordinationService().coordinationExecutor();
         mc.coordinationService().submitToCoordinatorThread(() -> {
             mc.lock();
             JobStatus status = mc.jobStatus();
@@ -678,7 +679,7 @@ public class MasterJobContext {
             mc.unlock();
           })
           .thenComposeAsync(r -> completeVertices(failure))
-          .thenAcceptAsync(ignored -> {
+          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
             final Runnable nonSynchronizedAction;
             try {
                 mc.lock();
@@ -739,7 +740,7 @@ public class MasterJobContext {
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        }, coordinationExecutor).join();
+        })).join();
     }
 
     /**
