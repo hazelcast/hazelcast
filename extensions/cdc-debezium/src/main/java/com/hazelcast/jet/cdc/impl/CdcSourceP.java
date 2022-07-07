@@ -172,7 +172,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
                 Map<String, ?> partition = record.sourcePartition();
                 Map<String, ?> offset = record.sourceOffset();
                 state.setOffset(partition, offset);
-                task.commitRecord(record);
+                task.commitRecord(record, null);
             }
 
             if (!snapshotting && commitPeriod == 0) {
@@ -238,6 +238,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private SourceConnector startNewConnector() {
         SourceConnector connector = newInstance(properties.getProperty(CONNECTOR_CLASS_PROPERTY), "connector");
         connector.initialize(new JetConnectorContext());
@@ -342,6 +343,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <V> Map<Map<String, V>, Map<String, Object>> offsets(Collection<Map<String, V>> partitions) {
             Map<Map<String, V>, Map<String, Object>> map = new HashMap<>();
             for (Map<String, V> partition : partitions) {
@@ -363,6 +365,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         return sb.toString();
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T> T newInstance(String className, String type) throws JetException {
         try {
             Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);

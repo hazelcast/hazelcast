@@ -34,15 +34,14 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
  * streams (ignoring idle streams).
  * <p>
  * The class also handles idle messages from inputs (coming in the form of a
- * watermark equal to {@link #IDLE_MESSAGE}). When such a message is received,
- * that input is switched to <em>idle</em> and excluded from coalescing. Any
- * event or watermark from such input will turn the input back to
- * <em>active</em> state.
+ * watermark with value equal to {@link #IDLE_MESSAGE_TIME}). When such a
+ * message is received, that input is switched to <em>idle</em> and excluded
+ * from coalescing. Any event or watermark from such input will turn the input
+ * back to <em>active</em> state.
  */
 public abstract class WatermarkCoalescer {
 
     public static final long IDLE_MESSAGE_TIME = Long.MAX_VALUE;
-    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
@@ -73,9 +72,9 @@ public abstract class WatermarkCoalescer {
      * Called after receiving a new watermark.
      *
      * @param queueIndex index of the queue on which the WM was received.
-     * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
+     * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE_TIME}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
+     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE_TIME}
      */
     public abstract long observeWm(int queueIndex, long wmValue);
 

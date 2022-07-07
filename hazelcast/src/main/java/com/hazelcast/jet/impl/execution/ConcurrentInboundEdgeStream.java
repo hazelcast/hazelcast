@@ -203,8 +203,11 @@ public final class ConcurrentInboundEdgeStream {
                     } else if (itemDetector.item instanceof SnapshotBarrier) {
                         observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
                         tracker.madeProgress();
+                    } else {
+                        assert false : "should never get here";
                     }
-                } else if (result.isMadeProgress()) {
+                }
+                if (itemDetector.normalItemObserved) {
                     coalescers.observeEvent(queueIndex);
                 }
 
@@ -260,16 +263,6 @@ public final class ConcurrentInboundEdgeStream {
                 waitForAllBarriers = true;
             }
             receivedBarriers.set(queueIndex);
-        }
-
-        @Override
-        public long topObservedWm(byte key) {
-            return coalescers.topObservedWm(key);
-        }
-
-        @Override
-        public long coalescedWm(byte key) {
-            return coalescers.coalescedWm(key);
         }
 
         /**
@@ -347,7 +340,7 @@ public final class ConcurrentInboundEdgeStream {
             }
 
             outer:
-            for (; ; ) {
+            for (;;) {
                 // find the current minimum item at the tail of queues
                 Object minItem = null;
                 for (int i = 0; i < drainedItems.size(); i++) {
@@ -382,16 +375,6 @@ public final class ConcurrentInboundEdgeStream {
                 lastItem = minItem;
                 dest.accept(lastItem);
             }
-        }
-
-        @Override
-        public long topObservedWm(byte key) {
-            return Long.MIN_VALUE;
-        }
-
-        @Override
-        public long coalescedWm(byte key) {
-            return Long.MIN_VALUE;
         }
 
         @Override

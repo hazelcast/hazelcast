@@ -60,6 +60,8 @@ public class KeyedWatermarkCoalescer {
     }
 
     public List<Watermark> queueDone(int queueIndex) {
+        // Store the index of the queue that is finished, so that we can use it for coalescers
+        // for WM keys we didn't yet observe, when they are lazily created.
         doneQueues.add(queueIndex);
         List<Watermark> result = new ArrayList<>();
         for (Entry<Byte, WatermarkCoalescer> entry : coalescers.entrySet()) {

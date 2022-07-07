@@ -77,7 +77,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @param <R> type of the finished result
  */
 public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
-    // TODO deal with the WM key??
     private static final Watermark COMPLETING_WM = new Watermark(Long.MAX_VALUE);
 
     // exposed for testing, to check for memory leaks
@@ -172,7 +171,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
         if (timestamp < currentWatermark) {
-            logLateEvent(getLogger(), currentWatermark, item);
+            logLateEvent(getLogger(), (byte) 0, currentWatermark, item);
             lateEventsDropped.inc();
             return true;
         }

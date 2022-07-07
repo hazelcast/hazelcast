@@ -187,8 +187,7 @@ public interface Processor {
      * Tries to process the supplied watermark. The value is always greater than
      * in a previous call with watermark with the same key. The watermark is
      * delivered for processing after it has been received from all the input
-     * edges. This is contrary to {@link #tryProcessWatermark(int, Watermark)},
-     * which receives watermark separately for each input ordinal.
+     * edges.
      * <p>
      * The implementation may choose to process only partially and return {@code
      * false}, in which case it will be called again later with the same
@@ -219,11 +218,11 @@ public interface Processor {
      * processor, on the other hand, expects the same watermarks from all
      * inputs, so it overrides the variant without an ordinal. Each watermark is
      * passed to both methods, so in most cases you need to override at most one
-     * method. However, if a watermark with some key is received only from one
-     * input edge, the variant without the ordinal is never called for that
-     * watermark.
+     * method. However, if a watermark with some key is not received from all
+     * input edges, the variant without the ordinal is never called for that
+     * watermark key.
      * <p>
-     * Also, please, pay attention to the default implementations in this class,
+     * Also, please, pay attention to the default implementation in this class,
      * and in {@link AbstractProcessor}, which handle the case of merging
      * streams.
      *
@@ -277,8 +276,9 @@ public interface Processor {
      * processor, on the other hand, expects the same watermarks from all
      * inputs, so it overrides the variant without an ordinal. Each watermark is
      * passed to both methods, so in most cases you need to override at most one
-     * method. If a watermark with some key is received only from one input
-     * edge, the variant without the ordinal is never called.
+     * method. However, if a watermark with some key is not received from all
+     * input edges, the variant without the ordinal is never called for that
+     * watermark key.
      * <p>
      * Also, please, pay attention to the default implementations in this class,
      * and in {@link AbstractProcessor}, which handle the case of merging

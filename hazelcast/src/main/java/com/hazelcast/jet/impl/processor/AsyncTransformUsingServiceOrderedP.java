@@ -51,11 +51,11 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <R> emitted item type
  */
 public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
-    protected final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<IR>> callAsyncFn;
-    protected final BiFunctionEx<? super T, ? super IR, ? extends Traverser<? extends R>> mapResultFn;
+    private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<IR>> callAsyncFn;
+    private final BiFunctionEx<? super T, ? super IR, ? extends Traverser<? extends R>> mapResultFn;
 
     // The queue holds both watermarks and output items
-    protected ArrayDeque<Object> queue;
+    private ArrayDeque<Object> queue;
     // The number of watermarks in the queue
     private int queuedWmCount;
 
@@ -93,15 +93,18 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (!makeRoomInQueue()) {
             return false;
         }
-        @SuppressWarnings("unchecked")
-        T castItem = (T) item;
-        CompletableFuture<IR> future = callAsyncFn.apply(service, castItem);
+        return tryProcessInt((T) item);
+    }
+
+    protected boolean tryProcessInt(T item) {
+        CompletableFuture<IR> future = callAsyncFn.apply(service, item);
         if (future != null) {
-            queue.add(tuple2(castItem, future));
+            queue.add(tuple2(item, future));
         }
         return true;
     }
@@ -124,7 +127,8 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        if (queue.peekLast() instanceof Watermark && watermark.key() == ((Watermark) queue.peekLast()).key()) {
+        Object lastItem = queue.peekLast();
+        if (lastItem instanceof Watermark && watermark.key() == ((Watermark) lastItem).key()) {
             // conflate the previous wm with the current one
             queue.removeLast();
             queue.add(watermark);

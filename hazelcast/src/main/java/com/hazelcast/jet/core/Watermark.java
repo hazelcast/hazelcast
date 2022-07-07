@@ -41,7 +41,7 @@ public final class Watermark implements SpecialBroadcastItem {
     private final byte key;
 
     /**
-     * Constructs a new watermark item.
+     * Constructs a new watermark item with {@code 0} watermark key.
      */
     public Watermark(long timestamp) {
         this.timestamp = timestamp;

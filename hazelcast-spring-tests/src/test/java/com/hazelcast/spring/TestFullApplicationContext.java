@@ -105,7 +105,6 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
@@ -832,12 +831,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
         assertNotNull(tcp);
         assertFalse(tcp.isEnabled());
-        SymmetricEncryptionConfig symmetricEncryptionConfig = networkConfig.getSymmetricEncryptionConfig();
-        assertFalse(symmetricEncryptionConfig.isEnabled());
-        assertEquals("PBEWithMD5AndDES", symmetricEncryptionConfig.getAlgorithm());
-        assertEquals("thesalt", symmetricEncryptionConfig.getSalt());
-        assertEquals("thepass", symmetricEncryptionConfig.getPassword());
-        assertEquals(19, symmetricEncryptionConfig.getIterationCount());
 
         List<String> members = tcp.getMembers();
         assertEquals(members.toString(), 2, members.size());
@@ -1120,7 +1113,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
-        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+        assertNotNull(sslContextFactory);
     }
 
     @Test
@@ -1387,7 +1380,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+        assertNotNull(sslContextFactory);
         assertEquals(60, vaultConfig.getPollingInterval());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
