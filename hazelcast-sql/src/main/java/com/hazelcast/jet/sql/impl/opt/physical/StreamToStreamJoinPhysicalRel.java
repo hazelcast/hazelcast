@@ -42,9 +42,9 @@ import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields leftWatermarkedFields;
     private final WatermarkedFields rightWatermarkedFields;
-    private final Map<Integer, Integer> leftInputToJointRowMapping;
-    private final Map<Integer, Integer> rightInputToJointRowMapping;
-    // Same postponeTimeMap as required by TDD, but with rel field defined
+    private final Map<RexInputRef, RexInputRef> jointRowToLeftInputMapping;
+    private final Map<RexInputRef, RexInputRef> jointRowToRightInputMapping;
+    // Same postponeTimeMap as required by TDD, but with rex reference defined
     // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
     private final Map<RexInputRef, Map<RexInputRef, Long>> postponeTimeMap;
 
@@ -58,8 +58,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             JoinRelType joinType,
             WatermarkedFields leftWatermarkedFields,
             WatermarkedFields rightWatermarkedFields,
-            Map<Integer, Integer> leftInputToJointRowMapping,
-            Map<Integer, Integer> rightInputToJointRowMapping,
+            Map<RexInputRef, RexInputRef> jointRowToLeftInputMapping,
+            Map<RexInputRef, RexInputRef> jointRowToRightInputMapping,
             Map<RexInputRef, Map<RexInputRef, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
@@ -67,8 +67,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         this.leftWatermarkedFields = leftWatermarkedFields;
         this.rightWatermarkedFields = rightWatermarkedFields;
 
-        this.leftInputToJointRowMapping = leftInputToJointRowMapping;
-        this.rightInputToJointRowMapping = rightInputToJointRowMapping;
+        this.jointRowToLeftInputMapping = jointRowToLeftInputMapping;
+        this.jointRowToRightInputMapping = jointRowToRightInputMapping;
 
         this.postponeTimeMap = postponeTimeMap;
     }
@@ -89,27 +89,29 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         );
     }
 
-    public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
-        Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
-        for (RexInputRef value : leftWatermarkedFields.getPropertiesByIndex().values()) {
-            int i = value.getIndex();
-            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
+    public Map<RexInputRef, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
+        Map<RexInputRef, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
+        for (Map.Entry<Integer, RexInputRef> value : leftWatermarkedFields.getPropertiesByIndex().entrySet()) {
+            int i = value.getKey();
+            RexInputRef ref = value.getValue();
+            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(ref.getType());
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
-            leftTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
+            leftTimeExtractors.put(ref, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
 
         return leftTimeExtractors;
     }
 
-    public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
-        Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
-        for (RexInputRef value : rightWatermarkedFields.getPropertiesByIndex().values()) {
-            int i = value.getIndex();
-            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(value.getType());
+    public Map<RexInputRef, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
+        Map<RexInputRef, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
+        for (Map.Entry<Integer, RexInputRef> value : rightWatermarkedFields.getPropertiesByIndex().entrySet()) {
+            int i = value.getKey();
+            RexInputRef ref = value.getValue();
+            QueryDataType dataType = HazelcastTypeUtils.toHazelcastType(ref.getType());
             assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
 
-            rightTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
+            rightTimeExtractors.put(ref, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
         }
         return rightTimeExtractors;
     }
@@ -123,12 +125,12 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return postponeTimeMap;
     }
 
-    public Map<Integer, Integer> leftInputToJointRowMapping() {
-        return leftInputToJointRowMapping;
+    public Map<RexInputRef, RexInputRef> jointRowToLeftInputMapping() {
+        return jointRowToLeftInputMapping;
     }
 
-    public Map<Integer, Integer> rightInputToJointRowMapping() {
-        return rightInputToJointRowMapping;
+    public Map<RexInputRef, RexInputRef> jointRowToRightInputMapping() {
+        return jointRowToRightInputMapping;
     }
 
     @Override
@@ -154,8 +156,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 joinType,
                 leftWatermarkedFields,
                 rightWatermarkedFields,
-                leftInputToJointRowMapping,
-                rightInputToJointRowMapping,
+                jointRowToLeftInputMapping,
+                jointRowToRightInputMapping,
                 postponeTimeMap
         );
     }

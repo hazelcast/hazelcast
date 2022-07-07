@@ -62,7 +62,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexProgram;
 
@@ -436,27 +435,26 @@ public class CreateDagVisitor {
 
     public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
         JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
-        Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
-        RexBuilder rexBuilder = rel.getCluster().getRexBuilder();
 
         Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
         Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
         List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
 
         // map watermarked timestamps extractors to enumerated wm keys
-        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
-            Integer fieldIndex = rel.leftInputToJointRowMapping().get(e.getKey());
-            Byte wmKey = refByteMap.get(rexBuilder.makeInputRef(fieldList.get(fieldIndex).getType(), fieldIndex));
+        for (Map.Entry<RexInputRef, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
+            Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
+            Byte wmKey = refByteMap.get(e.getKey());
             leftExtractors.put(wmKey, e.getValue());
         }
 
-        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
-            Integer fieldIndex = rel.rightInputToJointRowMapping().get(e.getKey());
-            Byte wmKey = refByteMap.get(rexBuilder.makeInputRef(fieldList.get(fieldIndex).getType(), fieldIndex));
+        for (Map.Entry<RexInputRef, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
+            Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
+            Byte wmKey = refByteMap.get(e.getKey());
             rightExtractors.put(wmKey, e.getValue());
         }
 
         // map field descriptors to enumerated watermark keys
+        Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
         for (Entry<RexInputRef, Map<RexInputRef, Long>> entry : rel.postponeTimeMap().entrySet()) {
             Map<Byte, Long> map = new HashMap<>();

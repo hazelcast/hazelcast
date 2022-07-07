@@ -29,6 +29,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -99,38 +100,38 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         // region checks
         if (leftFields == null || leftFields.isEmpty()) {
             call.transformTo(
-                    fail(join, "Left input of stream to stream JOIN must contain watermarked columns"));
+                    fail(join, "Left input of stream-to-stream JOIN must contain watermarked columns"));
             return;
         }
 
         if (!checkWatermarkedFieldsAreTemporalType(leftFields)) {
             call.transformTo(
-                    fail(join, "Left input of stream to stream JOIN watermarked columns are not temporal"));
+                    fail(join, "Left input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
 
         if (rightFields == null || rightFields.isEmpty()) {
             call.transformTo(
-                    fail(join, "Right input of stream to stream JOIN must contain watermarked columns"));
+                    fail(join, "Right input of stream-to-stream JOIN must contain watermarked columns"));
             return;
         }
 
         if (!checkWatermarkedFieldsAreTemporalType(rightFields)) {
             call.transformTo(
-                    fail(join, "Right input of stream to stream JOIN watermarked columns are not temporal"));
+                    fail(join, "Right input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
 
         WatermarkedFields watermarkedFields = watermarkedFields(join, leftFields, rightFields);
         if (watermarkedFields.isEmpty()) {
-            call.transformTo(fail(join, "Stream to stream JOIN must contain watermarked columns"));
+            call.transformTo(fail(join, "Stream-to-stream JOIN must contain watermarked columns"));
             return;
         }
 
         RexNode predicate = join.analyzeCondition().getRemaining(join.getCluster().getRexBuilder());
         if (!(predicate instanceof RexCall)) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate"));
+                    fail(join, "Stream-to-stream JOIN condition must contain time boundness predicate"));
             return;
         }
 
@@ -144,6 +145,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
         // endregion
 
+        RexBuilder rb = join.getCluster().getRexBuilder();
         Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = new HashMap<>();
 
         Map<RexInputRef, Long> leftBoundMap = new HashMap<>();
@@ -154,22 +156,26 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         rightBoundMap.put(visitor.rightBound.f0(), visitor.rightBound.f2());
         postponeMap.put(visitor.rightBound.f1(), rightBoundMap);
 
-        Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
-        Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
+        Map<RexInputRef, RexInputRef> leftInputToJointRowMapping = new HashMap<>();
+        Map<RexInputRef, RexInputRef> rightInputToJointRowMapping = new HashMap<>();
 
-        // calculate field indices mapping from input rows to joint row field indices
+        // calculate field refs mapping from joint row to input rows to
         for (int i = 0; i < join.getRowType().getFieldList().size(); ++i) {
             RelDataTypeField field = join.getRowType().getFieldList().get(i);
             for (int j = 0; j < left.getRowType().getFieldList().size(); ++j) {
                 RelDataTypeField leftField = left.getRowType().getFieldList().get(j);
                 if (fieldsAreEqual(field, leftField)) {
-                    leftInputToJointRowMapping.put(j, i);
+                    leftInputToJointRowMapping.put(
+                            rb.makeInputRef(field.getType(), i),
+                            rb.makeInputRef(leftField.getType(), j));
                 }
             }
             for (int j = 0; j < right.getRowType().getFieldList().size(); ++j) {
                 RelDataTypeField rightField = right.getRowType().getFieldList().get(j);
                 if (fieldsAreEqual(field, rightField)) {
-                    rightInputToJointRowMapping.put(j, i);
+                    rightInputToJointRowMapping.put(
+                            rb.makeInputRef(field.getType(), i),
+                            rb.makeInputRef(rightField.getType(), j));
                 }
             }
         }

@@ -205,7 +205,7 @@ public class SqlJoinTest {
             assertThatThrownBy(() -> instance()
                     .getSql()
                     .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
-            ).hasMessageContaining("Left input of stream to stream JOIN watermarked columns are not temporal");
+            ).hasMessageContaining("Left input of stream-to-stream JOIN watermarked columns are not temporal");
         }
 
         @Test
@@ -234,7 +234,7 @@ public class SqlJoinTest {
             assertThatThrownBy(() -> instance()
                     .getSql()
                     .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
-            ).hasMessageContaining("Right input of stream to stream JOIN watermarked columns are not temporal");
+            ).hasMessageContaining("Right input of stream-to-stream JOIN watermarked columns are not temporal");
         }
 
         @Test
