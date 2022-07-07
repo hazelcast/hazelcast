@@ -178,8 +178,8 @@ public class TablesStorage {
             return newStorage;
         } else {
             Map<String, Object> mergedCatalog = new HashMap<>();
-            mergedCatalog.putAll(oldStorage());
             mergedCatalog.putAll(newStorage);
+            mergedCatalog.putAll(oldStorage());
             return mergedCatalog;
         }
     }
