@@ -1394,12 +1394,12 @@ abstract class MapProxySupport<K, V>
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             PartitionIdSet partitionIds = partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys());
-            boolean allFalse = true;
-            for (int partitionId : partitionIds) {
-                allFalse &= target.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
-                    || target.mode() == TargetMode.PARTITION_OWNER && !target.partitions().contains(partitionId);
-            }
-            if (allFalse) {
+            final Target t = target;
+            boolean allAlwaysFalsePredicate = partitionIds.stream().allMatch(
+                partitionId -> t.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
+                || t.mode() == TargetMode.PARTITION_OWNER && !t.partitions().contains(partitionId)
+            );
+            if (allAlwaysFalsePredicate) {
                 userPredicate = alwaysFalse();
             } else {
                 target = createPartitionTarget(partitionIds);
