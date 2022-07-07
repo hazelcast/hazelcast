@@ -99,6 +99,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
@@ -468,19 +469,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
         } catch (TargetDisconnectedException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
-            connectionProcessListener.remoteClosedConnection(addressTranslator.apply(target));
-            return null;
+            return handleExceptionWithAddressTranslation(e, connectionProcessListener::remoteClosedConnection,
+                    addressTranslator, target);
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
-            try {
-                connectionProcessListener.connectionAttemptFailed(addressTranslator.apply(target));
-            } catch (Exception e2) {
-                logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
-                        + target, e2);
-            }
-            return null;
+            return handleExceptionWithAddressTranslation(e, connectionProcessListener::connectionAttemptFailed,
+                    addressTranslator, target);
         }
+    }
+
+    private <A> Connection handleExceptionWithAddressTranslation(Exception e, Consumer<Address> listenerFunction,
+            Function<A, Address> addressTranslator, A target) {
+        logger.warning("Exception during initial connection to " + target + ": " + e);
+        try {
+            listenerFunction.accept(addressTranslator.apply(target));
+        } catch (Exception e2) {
+            logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
+                    + target, e2);
+        }
+        return null;
     }
 
     private void fireLifecycleEvent(LifecycleState state) {
