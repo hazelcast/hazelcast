@@ -48,6 +48,7 @@ public class PagingPredicateHolder {
     public PagingPredicateHolder(AnchorDataListHolder anchorDataListHolder, Data predicateData, Data comparatorData,
                                  int pageSize, int page, byte iterationTypeId,
                                  Data partitionKeyData,
+                                 boolean partitionKeysDataExists,
                                  Collection<Data> partitionKeysData) {
         this.anchorDataListHolder = anchorDataListHolder;
         this.predicateData = predicateData;
@@ -55,8 +56,8 @@ public class PagingPredicateHolder {
         this.pageSize = pageSize;
         this.page = page;
         this.iterationTypeId = iterationTypeId;
-        this.partitionKeysData = partitionKeysData != null
-             ? partitionKeysData
+        this.partitionKeysData = partitionKeysDataExists
+             ? partitionKeysData.stream().collect(Collectors.toSet())
              : partitionKeyData != null
                    ? Collections.singleton(partitionKeyData)
                    : null;
@@ -158,11 +159,12 @@ public class PagingPredicateHolder {
         AnchorDataListHolder anchorDataListHolder = new AnchorDataListHolder(pageList, anchorDataList);
         Data predicateData = serializationService.toData(pagingPredicate.getPredicate());
         Data comparatorData = serializationService.toData(pagingPredicate.getComparator());
+        boolean partitionKeysDataExists = partitionKeys != null;
         return new PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pagingPredicate.getPageSize(),
                 pagingPredicate.getPage(), pagingPredicate.getIterationType().getId(), null,
-                partitionKeys != null
-                    // Important to use a set here
-                    ? partitionKeys.stream().map(k -> (Data)serializationService.toData(k)).collect(Collectors.toSet())
+                partitionKeysDataExists,
+                partitionKeysDataExists
+                    ? partitionKeys.stream().map(k -> (Data) serializationService.toData(k)).collect(Collectors.toList())
                     : null
         );
     }

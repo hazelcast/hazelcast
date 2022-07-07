@@ -110,8 +110,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
         Query query = buildQuery(predicate);
         String name = query.getMapName();
-        QueryResult result = mapServiceContext.getQueryEngine(name).execute(query, Target.createPartitionTarget(query.getPartitionIdSet()));
-        return result;
+        return mapServiceContext.getQueryEngine(name)
+                                     .execute(query, Target.createPartitionTarget(query.getPartitionIdSet()));
     }
 
     private PartitionIdSet invokeOnMembers(Collection<AccumulatedResults> result, Predicate predicate, int partitionCount) {

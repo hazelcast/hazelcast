@@ -73,13 +73,15 @@ public final class PagingPredicateHolderCodec {
         com.hazelcast.internal.serialization.Data predicateData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data comparatorData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data partitionKeyData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        boolean isPartitionKeysDataExists = false;
         java.util.List<com.hazelcast.internal.serialization.Data> partitionKeysData = null;
         if (!iterator.peekNext().isEndFrame()) {
             partitionKeysData = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
+            isPartitionKeysDataExists = true;
         }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData, partitionKeysData);
+        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData, isPartitionKeysDataExists, partitionKeysData);
     }
 }

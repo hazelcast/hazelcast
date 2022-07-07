@@ -898,7 +898,7 @@ public class ReferenceObjects {
 
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
-            anInt, anInt, aByte, aData, null);
+            anInt, anInt, aByte, aData, false, null);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
