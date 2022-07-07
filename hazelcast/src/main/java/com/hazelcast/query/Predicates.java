@@ -585,9 +585,9 @@ public final class Predicates {
      * Creates a new partition predicate that restricts the execution of the target predicate to a subset of partitions.
      *
      * @param partitionKeys the partition keys
-     * @param target       the target {@link Predicate}
-     * @param <K>          the type of keys the predicate operates on.
-     * @param <V>          the type of values the predicate operates on.
+     * @param target        the target {@link Predicate}
+     * @param <K>           the type of keys the predicate operates on.
+     * @param <V>           the type of values the predicate operates on.
      * @throws NullPointerException     if partitionKeys or target predicate are {@code null}
      * @throws IllegalArgumentException if partitionkeys is an empty set
      */
