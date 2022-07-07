@@ -57,7 +57,7 @@ public class TablesStorage {
     private final Object mergingMutex = new Object();
     private final ILogger logger;
 
-    private volatile boolean storagesMerged;
+    private volatile boolean storageMovedToNew;
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -153,8 +153,8 @@ public class TablesStorage {
 
     ReplicatedMap<String, Object> oldStorage() {
         // To remove in 5.3. We are using the old storage if the cluster version is lower than 5.2. We destroy the old catalog
-        // during first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
-        // catalog, so it is possible that destroy happens before put, and we end up with unused ReplicatedMap.
+        // during the first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
+        // catalog, so it is possible that destroy happens before put, and we end up with a leaked ReplicatedMap.
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
@@ -165,13 +165,13 @@ public class TablesStorage {
     private Map<String, Object> mergedStorage() {
         IMap<String, Object> newStorage = newStorage();
         if (useOnlyNewStorage()) {
-            if (!storagesMerged) {
+            if (!storageMovedToNew) {
                 synchronized (mergingMutex) {
-                    if (!storagesMerged) {
+                    if (!storageMovedToNew) {
                         ReplicatedMap<String, Object> oldStorage = oldStorage();
                         oldStorage.forEach(newStorage::putIfAbsent);
                         oldStorage.destroy();
-                        storagesMerged = true;
+                        storageMovedToNew = true;
                     }
                 }
             }
@@ -268,4 +268,3 @@ public class TablesStorage {
         }
     }
 }
-

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -43,7 +42,6 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        instance().getCluster().changeClusterVersion(Versions.CURRENT_CLUSTER_VERSION);
         storage = new TablesStorage(Accessors.getNodeEngineImpl(instance()));
     }
 
