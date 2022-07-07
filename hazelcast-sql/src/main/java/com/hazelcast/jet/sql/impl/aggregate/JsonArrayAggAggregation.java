@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.google.common.collect.TreeMultiset;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
@@ -24,82 +25,162 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.io.IOException;
-import java.util.PriorityQueue;
+import java.util.ArrayList;
+import java.util.List;
 
-public final class JsonArrayAggAggregation implements SqlAggregation {
-    private PriorityQueue<JetSqlRow> objects;
-    private ExpressionUtil.SqlRowComparator comparator;
-    private boolean isAbsentOnNull;
-    private int aggIndex;
+public final class JsonArrayAggAggregation {
 
     private JsonArrayAggAggregation() {
     }
 
-    private JsonArrayAggAggregation(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
-        this.comparator = comparator;
-        this.isAbsentOnNull = isAbsentOnNull;
-        this.aggIndex = aggIndex;
-        this.objects = new PriorityQueue<>(this.comparator);
-    }
-
-    public static JsonArrayAggAggregation create(
+    public static OrderedJsonArrayAggAggregation create(
             ExpressionUtil.SqlRowComparator comparator,
             boolean isAbsentOnNull,
             int aggIndex
     ) {
-        return new JsonArrayAggAggregation(comparator, isAbsentOnNull, aggIndex);
+        return new OrderedJsonArrayAggAggregation(comparator, isAbsentOnNull, aggIndex);
     }
 
-    @Override
-    public void accumulate(Object value) {
-        JetSqlRow row = (JetSqlRow) value;
-        objects.add(row);
+    public static UnorderedJsonArrayAggAggregation create(boolean isAbsentOnNull) {
+        return new UnorderedJsonArrayAggAggregation(isAbsentOnNull);
     }
 
-    @Override
-    public void combine(SqlAggregation other) {
-        JsonArrayAggAggregation otherC = (JsonArrayAggAggregation) other;
-        while (!otherC.objects.isEmpty()) {
-            objects.add(otherC.objects.poll());
+    private static final class OrderedJsonArrayAggAggregation implements SqlAggregation {
+        private TreeMultiset<JetSqlRow> objects;
+        private boolean isAbsentOnNull;
+        private int aggIndex;
+
+        private OrderedJsonArrayAggAggregation() {
         }
-    }
 
-    @Override
-    public Object collect() {
-        StringBuilder sb = new StringBuilder();
-        boolean firstValue = true;
-        sb.append("[");
-        while (!objects.isEmpty()) {
-            JetSqlRow row = objects.poll();
-            Object value = row.get(aggIndex);
-            if (value == null) {
-                if (!isAbsentOnNull) {
+        private OrderedJsonArrayAggAggregation(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
+            this.isAbsentOnNull = isAbsentOnNull;
+            this.aggIndex = aggIndex;
+            this.objects = TreeMultiset.create(comparator);
+        }
+
+        @Override
+        public void accumulate(Object value) {
+            JetSqlRow row = (JetSqlRow) value;
+            objects.add(row);
+        }
+
+        @Override
+        public void combine(SqlAggregation other) {
+            throw new UnsupportedOperationException("OrderedJsonArrayAgg combine() method should not be called");
+        }
+
+        @Override
+        public Object collect() {
+            StringBuilder sb = new StringBuilder();
+            boolean firstValue = true;
+            sb.append("[");
+            for (Object o : objects) {
+                JetSqlRow row = (JetSqlRow) o;
+                Object value = row.get(aggIndex);
+                if (value == null) {
+                    if (!isAbsentOnNull) {
+                        if (!firstValue) {
+                            sb.append(",");
+                        }
+                        sb.append("null");
+                        firstValue = false;
+                    }
+                } else {
                     if (!firstValue) {
                         sb.append(",");
                     }
-                    sb.append("null");
+                    sb.append(JsonCreationUtil.serializeValue(value));
                     firstValue = false;
                 }
+            }
+            sb.append("]");
+            if (firstValue) {
+                return null;
             } else {
-                if (!firstValue) {
-                    sb.append(",");
-                }
-                sb.append(JsonCreationUtil.serializeValue(value));
-                firstValue = false;
+                return new HazelcastJsonValue(sb.toString());
             }
         }
-        sb.append("]");
 
-        return new HazelcastJsonValue(sb.toString());
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            throw new UnsupportedOperationException("OrderedJsonArrayAgg writeData() method should not be called");
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            throw new UnsupportedOperationException("OrderedJsonArrayAgg readData() should not be called");
+        }
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException("Should not be called");
-    }
+    private static final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
+        private final List<Object> values = new ArrayList<>();
+        private boolean isAbsentOnNull;
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException("Should not be called");
+        private UnorderedJsonArrayAggAggregation() {
+        }
+
+        private UnorderedJsonArrayAggAggregation(boolean isAbsentOnNull) {
+            this.isAbsentOnNull = isAbsentOnNull;
+        }
+
+        @Override
+        public void accumulate(Object value) {
+            values.add(value);
+        }
+
+        @Override
+        public void combine(SqlAggregation other) {
+            UnorderedJsonArrayAggAggregation other0 = (UnorderedJsonArrayAggAggregation) other;
+            values.addAll(other0.values);
+        }
+
+        @Override
+        public Object collect() {
+            StringBuilder sb = new StringBuilder();
+            boolean firstValue = true;
+            sb.append("[");
+            for (Object value : values) {
+                if (value == null) {
+                    if (!isAbsentOnNull) {
+                        if (!firstValue) {
+                            sb.append(",");
+                        }
+                        sb.append("null");
+                        firstValue = false;
+                    }
+                } else {
+                    if (!firstValue) {
+                        sb.append(",");
+                    }
+                    sb.append(JsonCreationUtil.serializeValue(value));
+                    firstValue = false;
+                }
+            }
+            sb.append("]");
+            if (firstValue) {
+                return null;
+            } else {
+                return new HazelcastJsonValue(sb.toString());
+            }
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeBoolean(isAbsentOnNull);
+            out.write(values.size());
+            for (Object o : values) {
+                out.writeObject(o);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            isAbsentOnNull = in.readBoolean();
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                values.add(in.readObject());
+            }
+        }
     }
 }

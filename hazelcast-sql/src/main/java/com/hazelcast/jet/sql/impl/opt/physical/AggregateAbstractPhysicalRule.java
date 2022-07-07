@@ -118,12 +118,17 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                     break;
                 case JSON_ARRAYAGG:
                     int arrayAggIndex = aggregateCallArguments.get(0);
-
                     List<RelFieldCollation> colls = aggregateCall.getCollation().getFieldCollations();
-                    ExpressionUtil.SqlRowComparator comparator = new ExpressionUtil.SqlRowComparator(convertCollation(colls));
-                    HazelcastJsonArrayAggFunction agg = (HazelcastJsonArrayAggFunction) aggregateCall.getAggregation();
-                    aggregationProviders.add(new AggregateArrayAggSupplier(comparator, agg.isAbsentOnNull(), arrayAggIndex));
-                    valueProviders.add(new RowIdentityFn());
+                    if (colls.size() > 0) {
+                        ExpressionUtil.SqlRowComparator comparator = new ExpressionUtil.SqlRowComparator(convertCollation(colls));
+                        HazelcastJsonArrayAggFunction agg = (HazelcastJsonArrayAggFunction) aggregateCall.getAggregation();
+                        aggregationProviders.add(new AggregateArrayAggSupplier(comparator, agg.isAbsentOnNull(), arrayAggIndex));
+                        valueProviders.add(new RowIdentityFn());
+                    } else {
+                        HazelcastJsonArrayAggFunction agg = (HazelcastJsonArrayAggFunction) aggregateCall.getAggregation();
+                        aggregationProviders.add(new AggregateArrayAggSupplier(agg.isAbsentOnNull()));
+                        valueProviders.add(new RowGetFn(arrayAggIndex));
+                    }
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -221,6 +226,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
     public static class AggregateArrayAggSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
+        private boolean ordered;
         private ExpressionUtil.SqlRowComparator comparator;
         private boolean isAbsentOnNull;
         private int aggIndex;
@@ -228,7 +234,13 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         public AggregateArrayAggSupplier() {
         }
 
+        public AggregateArrayAggSupplier(boolean isAbsentOnNull) {
+            this.ordered = false;
+            this.isAbsentOnNull = isAbsentOnNull;
+        }
+
         public AggregateArrayAggSupplier(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
+            this.ordered = true;
             this.comparator = comparator;
             this.isAbsentOnNull = isAbsentOnNull;
             this.aggIndex = aggIndex;
@@ -236,21 +248,35 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public SqlAggregation getEx() {
-            return JsonArrayAggAggregation.create(comparator, isAbsentOnNull, aggIndex);
+            if (comparator == null) {
+                return JsonArrayAggAggregation.create(isAbsentOnNull);
+            } else {
+                return JsonArrayAggAggregation.create(comparator, isAbsentOnNull, aggIndex);
+            }
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(comparator);
-            out.writeBoolean(isAbsentOnNull);
-            out.writeInt(aggIndex);
+            out.writeBoolean(ordered);
+            if (ordered) {
+                out.writeObject(comparator);
+                out.writeBoolean(isAbsentOnNull);
+                out.writeInt(aggIndex);
+            } else {
+                out.writeBoolean(isAbsentOnNull);
+            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            comparator = in.readObject(ExpressionUtil.SqlRowComparator.class);
-            isAbsentOnNull = in.readBoolean();
-            aggIndex = in.readInt();
+            ordered = in.readBoolean();
+            if (ordered) {
+                comparator = in.readObject(ExpressionUtil.SqlRowComparator.class);
+                isAbsentOnNull = in.readBoolean();
+                aggIndex = in.readInt();
+            } else {
+               isAbsentOnNull = in.readBoolean();
+            }
         }
 
         @Override

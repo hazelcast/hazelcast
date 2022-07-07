@@ -40,21 +40,37 @@ public class JsonSqlAggregateTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void test_emptyResult() {
+    public void test_jsonArrayAgg_emptyResult() {
         String name = createTable();
 
-        assertRowsAnyOrder("select json_arrayagg(name) from " + name + " where 1=2", singletonList(null));
-        assertRowsAnyOrder("select json_arrayagg(name null on null) from " + name + " where 1=2", singletonList(null));
-        assertRowsAnyOrder("select json_arrayagg(name absent on null) from " + name + " where 1=2", singletonList(null));
-        assertRowsAnyOrder("select json_arrayagg(name) from " + name + " where name is null", singletonList(null));
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name ABSENT ON NULL) from " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE name IS NULL", singletonList(new Row((Object) null)));
     }
 
     @Test
-    public void test_nulls() {
+    public void test_jsonArrayAgg_nulls() {
         String name = createTable();
 
-        assertRowsAnyOrder("select json_arrayagg(name null on null) from " + name + " where name is null",
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE name IS NULL",
                 singletonList(new Row(json("[null,null]"))));
+    }
+
+    @Test
+    public void test_jsonArrayAgg_unordered() {
+        String name = createTable();
+        assertRowsAnyOrder(
+                "SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE name = 'Alice'",
+                singletonList(
+                        new Row(json("[\"Alice\",\"Alice\",\"Alice\"]"))
+                )
+        );
+
+        assertRowsAnyOrder(
+                "SELECT name, JSON_ARRAYAGG(distance) FROM " + name + " WHERE name = 'Bob' GROUP BY name",
+                singletonList(new Row("Bob", json("[3]")))
+        );
     }
 
     @Test
