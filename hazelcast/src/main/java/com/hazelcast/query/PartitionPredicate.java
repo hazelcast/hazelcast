@@ -43,6 +43,7 @@ public interface PartitionPredicate<K, V> extends Predicate<K, V> {
      * collection is provided for backwards compatibility.
      *
      * @return the partition keys
+     * @since 5.2
      */
     default Collection<? extends Object> getPartitionKeys() {
         return Collections.singleton(getPartitionKey());
