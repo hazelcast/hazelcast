@@ -158,7 +158,6 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
 
         while (!done) {
             State localState = state;
-            System.out.println(localState);
             switch (localState) {
                 case BEFORE_FAIL:
                     try {

@@ -32,7 +32,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -50,12 +49,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.sql.impl.SqlErrorCode.CONNECTION_PROBLEM;
 import static com.hazelcast.sql.impl.SqlErrorCode.PARTITION_DISTRIBUTION;
 import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
@@ -100,17 +100,17 @@ public class SqlClientService implements SqlService {
             params0.add(serializeParameter(param));
         }
 
-        Supplier<ClientMessage> requestMessageSupplier = () -> SqlExecuteCodec.encodeRequest(
+        Function<QueryId, ClientMessage> requestMessageSupplier = (queryId) -> SqlExecuteCodec.encodeRequest(
                 statement.getSql(),
                 params0,
                 statement.getTimeoutMillis(),
                 statement.getCursorBufferSize(),
                 statement.getSchema(),
                 statement.getExpectedResultType().getId(),
-                id,
+                queryId,
                 skipUpdateStatistics
         );
-        ClientMessage requestMessage = requestMessageSupplier.get();
+        ClientMessage requestMessage = requestMessageSupplier.apply(id);
 
         SqlClientResult res = new SqlClientResult(
                 this,
@@ -148,22 +148,24 @@ public class SqlClientService implements SqlService {
 
         SqlResubmissionResult resubmissionResult = null;
         do {
-            LoggingUtil.logFinest(logger, "Resubmitting query: " + result.getQueryId());
             ClientConnection connection = null;
             try {
                 connection = getQueryConnection();
-                ClientMessage message = invoke(result.getSqlExecuteMessage(), connection);
+                QueryId queryId = QueryId.create(connection.getRemoteUuid());
+                logFinest(logger, "Resubmitting query: %s with new query id", result.getQueryId(), queryId);
+                result.setQueryId(queryId);
+                ClientMessage message = invoke(result.getSqlExecuteMessage(queryId), connection);
                 resubmissionResult = createResubmissionResult(message, connection);
                 if (resubmissionResult.getSqlError() == null) {
-                    LoggingUtil.logFinest(logger, "Resubmitting query: " + result.getQueryId() + " ended without error");
+                    logFinest(logger, "Resubmitting query: %s ended without error", result.getQueryId());
                 } else {
-                    LoggingUtil.logFinest(logger, "Resubmitting query: " + result.getQueryId() + " ended with error");
+                    logFinest(logger, "Resubmitting query: %s ended with error", result.getQueryId());
                 }
                 if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
                     return resubmissionResult;
                 }
             } catch (Exception e) {
-                LoggingUtil.logFinest(logger, "Resubmitting query: " + result.getQueryId() + " ended with exception");
+                logFinest(logger, "Resubmitting query: %s ended with exception", result.getQueryId());
                 RuntimeException rethrown = connection == null ? (RuntimeException) e : rethrow(e, connection);
                 if (!shouldResubmit(rethrown)) {
                     throw rethrown;
@@ -184,7 +186,9 @@ public class SqlClientService implements SqlService {
             }
         } while (System.nanoTime() - resubmissionStartTime <= resubmissionTimeoutNano);
 
-        LoggingUtil.logFinest(logger, "Resubmitting query timed out");
+        if (logger.isFinestEnabled()) {
+            logger.finest("Resubmitting query timed out");
+        }
 
         return resubmissionResult;
     }

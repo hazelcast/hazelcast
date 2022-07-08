@@ -33,11 +33,10 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -46,15 +45,12 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  */
 public class SqlClientResult implements SqlResult {
     private final SqlClientService service;
-    private final Connection connection;
-    private final QueryId queryId;
     private final int cursorBufferSize;
-    private final Supplier<ClientMessage> sqlExecuteMessageSupplier;
+    private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
-
-    /** The connection that was created during resubmission. */
-    @GuardedBy("mux")
-    private Connection resubmissionConnection;
+    private Connection connection;
+    private QueryId queryId;
+    private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
     private final Object mux = new Object();
@@ -79,7 +75,7 @@ public class SqlClientResult implements SqlResult {
             Connection connection,
             QueryId queryId,
             int cursorBufferSize,
-            Supplier<ClientMessage> sqlExecuteMessageSupplier,
+            Function<QueryId, ClientMessage> sqlExecuteMessageSupplier,
             SqlStatement statement
     ) {
         this.service = service;
@@ -132,7 +128,8 @@ public class SqlClientResult implements SqlResult {
             }
 
             this.fetch = null;
-            this.resubmissionConnection = result.getConnection();
+            this.connection = result.getConnection();
+            this.resubmissionCount++;
 
             if (result.getRowMetadata() != null) {
                 ClientIterator iterator = state == null ? new ClientIterator(result.getRowMetadata()) : state.iterator;
@@ -227,7 +224,7 @@ public class SqlClientResult implements SqlResult {
                 onFetchFinished(null, QueryException.cancelledByUser());
 
                 // Send the close request.
-                service.close(resubmissionConnection != null ? resubmissionConnection : connection, queryId);
+                service.close(connection, queryId);
             } finally {
                 // Set the closed flag to avoid multiple close requests.
                 closed = true;
@@ -257,8 +254,7 @@ public class SqlClientResult implements SqlResult {
             } else {
                 // Initiate the fetch.
                 fetch = new SqlFetchResult();
-                service.fetchAsync(resubmissionConnection != null ? resubmissionConnection : connection, queryId,
-                        cursorBufferSize, this);
+                service.fetchAsync(connection, queryId, cursorBufferSize, this);
             }
 
             // Await the response.
@@ -439,8 +435,8 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    ClientMessage getSqlExecuteMessage() {
-        return sqlExecuteMessageSupplier.get();
+    ClientMessage getSqlExecuteMessage(QueryId newId) {
+        return sqlExecuteMessageSupplier.apply(newId);
     }
 
     boolean isSelectQuery() {
@@ -455,9 +451,13 @@ public class SqlClientResult implements SqlResult {
         return queryId;
     }
 
+    void setQueryId(QueryId queryId) {
+        this.queryId = queryId;
+    }
+
     boolean wasResubmission() {
         synchronized (mux) {
-            return resubmissionConnection != null;
+            return resubmissionCount > 0;
         }
     }
 }

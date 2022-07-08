@@ -26,7 +26,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
@@ -92,6 +91,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
@@ -484,7 +484,7 @@ public class PlanExecutor {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
-            if (ExceptionUtil.isTopologyException(t)) {
+            if (isTopologyException(t)) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;
             }
             t = t.getCause();
