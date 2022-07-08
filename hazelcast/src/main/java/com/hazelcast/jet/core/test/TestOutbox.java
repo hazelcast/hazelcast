@@ -218,8 +218,8 @@ public final class TestOutbox implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm() {
-        return outbox.lastForwardedWm();
+    public long lastForwardedWm(byte key) {
+        return outbox.lastForwardedWm(key);
     }
 
     @Override

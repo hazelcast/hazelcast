@@ -28,6 +28,8 @@ import com.hazelcast.jet.impl.util.Util;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
@@ -56,17 +58,17 @@ public class OutboxImpl implements OutboxInternal {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
-    private final Counter lastForwardedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+    private final Map<Byte, Counter> lastForwardedWm = new HashMap<>();
 
     private boolean blocked;
 
     /**
-     * @param outstreams The output queues
+     * @param outstreams  The output queues
      * @param hasSnapshot If the last queue in {@code outstreams} is the snapshot queue
      * @param progTracker Tracker to track progress. Only madeProgress will be called,
      *                    done status won't be ever changed
-     * @param batchSize Maximum number of items that will be allowed to offer until
-     *                  {@link #reset()} is called.
+     * @param batchSize   Maximum number of items that will be allowed to offer until
+     *                    {@link #reset()} is called.
      */
     public OutboxImpl(OutboundCollector[] outstreams, boolean hasSnapshot, ProgressTracker progTracker,
                       SerializationService serializationService, int batchSize, AtomicLongArray counters) {
@@ -79,7 +81,7 @@ public class OutboxImpl implements OutboxInternal {
 
         allEdges = IntStream.range(0, outstreams.length - (hasSnapshot ? 1 : 0)).toArray();
         allEdgesAndSnapshot = IntStream.range(0, outstreams.length).toArray();
-        snapshotEdge = hasSnapshot ? new int[] {outstreams.length - 1} : null;
+        snapshotEdge = hasSnapshot ? new int[]{outstreams.length - 1} : null;
         broadcastTracker = new BitSet(outstreams.length);
     }
 
@@ -115,7 +117,7 @@ public class OutboxImpl implements OutboxInternal {
         }
         assert unfinishedItem == null || item.equals(unfinishedItem)
                 : "Different item offered after previous call returned false: expected=" + unfinishedItem
-                        + ", got=" + item;
+                + ", got=" + item;
         assert unfinishedItemOrdinals == null || Arrays.equals(unfinishedItemOrdinals, ordinals)
                 : "Offered to different ordinals after previous call returned false: expected="
                 + Arrays.toString(unfinishedItemOrdinals) + ", got=" + Arrays.toString(ordinals);
@@ -154,14 +156,21 @@ public class OutboxImpl implements OutboxInternal {
             unfinishedItemOrdinals = null;
             if (item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) item).timestamp();
-                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE_TIME) {
-                    // We allow equal timestamp here, even though the WMs should be increasing.
-                    // But we don't track WMs per ordinal and the same WM can be offered to different
-                    // ordinals in different calls. Theoretically a completely different WM could be
-                    // emitted to each ordinal, but we don't do that currently.
-                    assert lastForwardedWm.get() <= wmTimestamp
-                            : "current=" + lastForwardedWm.get() + ", new=" + wmTimestamp;
-                    lastForwardedWm.set(wmTimestamp);
+                if (wmTimestamp == WatermarkCoalescer.IDLE_MESSAGE_TIME) {
+                    return true;
+                }
+                // We allow equal timestamp here, even though the WMs should be increasing.
+                // But we don't track WMs per ordinal and the same WM can be offered to different
+                // ordinals in different calls. Theoretically a completely different WM could be
+                // emitted to each ordinal, but we don't do that currently.
+                byte key = ((Watermark) item).key();
+                Counter counter = lastForwardedWm.get(key);
+                if (counter == null) {
+                    lastForwardedWm.put(key, SwCounter.newSwCounter(Long.MIN_VALUE));
+                } else {
+                    assert counter.get() <= wmTimestamp
+                            : "current=" + counter.get() + ", new=" + wmTimestamp;
+                    lastForwardedWm.get(key).set(wmTimestamp);
                 }
             }
         } else {
@@ -253,7 +262,12 @@ public class OutboxImpl implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm() {
-        return lastForwardedWm.get();
+    public long lastForwardedWm(byte key) {
+        Counter counter = lastForwardedWm.get(key);
+        if (counter == null) {
+            counter = SwCounter.newSwCounter(Long.MIN_VALUE);
+            lastForwardedWm.put(key, counter);
+        }
+        return counter.get();
     }
 }

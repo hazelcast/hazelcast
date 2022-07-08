@@ -71,7 +71,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
 
-
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
@@ -192,14 +191,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         while (iterator.hasNext()) {
             JetSqlRow oppositeBufferItem = iterator.next();
+            System.err.println("Joining " + (ordinal == 0 ? currItem : oppositeBufferItem + " AND " +
+                    (ordinal == 0 ? oppositeBufferItem : currItem)));
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.condition(),
+                    joinInfo.nonEquiCondition(),
                     evalContext);
             // it is used already once
             unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
-
+            System.err.println("Emit " + preparedOutput);
             if (preparedOutput != null && !tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
                 return false;
@@ -213,6 +214,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
+    }
+
+    @Override
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        System.err.println(" ---> " + watermark);
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
         }
@@ -227,8 +234,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
             //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
             // 5.2 & 5.3
-            clearExpiredItemsInBuffer(0);
-            clearExpiredItemsInBuffer(1);
+            clearExpiredItemsInBuffer(ordinal);
         }
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
@@ -258,6 +264,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             if (!tryEmit(pendingOutput.peek())) {
                 return false;
             } else {
+                System.err.println("Emit " + pendingOutput.peek());
                 pendingOutput.remove();
             }
         }

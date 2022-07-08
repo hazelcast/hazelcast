@@ -28,11 +28,13 @@ import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,10 +65,6 @@ public class WatermarkKeysAssigner {
         private final byte[] keyCounter = {0};
         private final Map<RelNode, Map<RexInputRef, Byte>> refToWmKeyMapping = new HashMap<>();
 
-//        private final Set<FullScanPhysicalRel> leafRels;
-//        private boolean metUnion;
-//        private boolean finish;
-
         BottomUpWatermarkKeyAssignerVisitor(PhysicalRel root) {
             this.rb = root.getCluster().getRexBuilder();
             this.relMetadataQuery = OptUtils.metadataQuery(root);
@@ -80,10 +78,8 @@ public class WatermarkKeysAssigner {
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
             // front wave of recursion
-            super.visit(node, ordinal, parent);
 
-            // back wave of recursion
-
+            // FullScan rel is always a leaf node in rel tree.
             if (node instanceof FullScanPhysicalRel) {
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
@@ -92,7 +88,15 @@ public class WatermarkKeysAssigner {
                     scan.setWatermarkKey(keyCounter[0]);
                     refToWmKeyMapping.put(scan, Collections.singletonMap(rb.makeInputRef(type, idx), keyCounter[0]++));
                 }
-            } else if (node instanceof CalcPhysicalRel) {
+                return;
+            }
+
+            super.visit(node, ordinal, parent);
+
+            // back wave of recursion
+            if (node instanceof CalcPhysicalRel) {
+                CalcPhysicalRel calc = (CalcPhysicalRel) node;
+                List<RexNode> projects = calc.getProgram().expandList(calc.getProgram().getProjectList());
                 System.err.println();
             } else if (node instanceof UnionPhysicalRel) {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;

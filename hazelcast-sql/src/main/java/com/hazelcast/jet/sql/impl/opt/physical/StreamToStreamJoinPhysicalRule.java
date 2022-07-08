@@ -40,7 +40,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.immutables.value.Value;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -149,12 +148,12 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = new HashMap<>();
 
         Map<RexInputRef, Long> leftBoundMap = new HashMap<>();
-        leftBoundMap.put(visitor.leftBound.f0(), visitor.leftBound.f2());
-        postponeMap.put(visitor.leftBound.f1(), leftBoundMap);
+        leftBoundMap.put(visitor.leftBound.f1(), visitor.leftBound.f2());
+        postponeMap.put(visitor.leftBound.f0(), leftBoundMap);
 
         Map<RexInputRef, Long> rightBoundMap = new HashMap<>();
-        rightBoundMap.put(visitor.rightBound.f0(), visitor.rightBound.f2());
-        postponeMap.put(visitor.rightBound.f1(), rightBoundMap);
+        rightBoundMap.put(visitor.rightBound.f1(), visitor.rightBound.f2());
+        postponeMap.put(visitor.rightBound.f0(), rightBoundMap);
 
         Map<RexInputRef, RexInputRef> leftInputToJointRowMapping = new HashMap<>();
         Map<RexInputRef, RexInputRef> rightInputToJointRowMapping = new HashMap<>();
@@ -256,20 +255,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         return join(leftResultInputRefMap, rightResultInputRefMap);
     }
 
-    private void extractMapping(
-            List<RelDataTypeField> inputFieldsList,
-            List<RelDataTypeField> joinFieldsList,
-            Map<Integer, Integer> inputToJoinWmFieldsMapping,
-            int idx) {
-        for (int j = 0; j < inputFieldsList.size(); ++j) {
-            if (inputFieldsList.get(j).getName().equals(joinFieldsList.get(idx).getName()) &&
-                    inputFieldsList.get(j).getType().equals(joinFieldsList.get(idx).getType())) {
-                inputToJoinWmFieldsMapping.put(j, idx);
-                return;
-            }
-        }
-    }
-
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
         private final Join joinRel;
@@ -300,7 +285,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         rightBound = tuple3(leftOp, rightOp, 0L);
                     }
                     return null;
-                    // TODO: REWRITE TO REXINPUT
                 case GREATER_THAN:
                 case GREATER_THAN_OR_EQUAL:
                     // We assume that right operand is left bound
@@ -318,9 +302,22 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         /**
-         * Extract time boundness from GTE/LTE calls
-         * represented as `$ref1 >= $ref2 + constant1`
-         * or `$ref1 <= $ref2 + constant2`.
+         * Extract time boundness from GTE/LTE calls represented as
+         * `$ref1 >= $ref2 + constant1` or `$ref1 <= $ref2 + constant2`.
+         * <p>
+         * It's needed to enlighten mathematical representation for group of canonical time-bound in-equations.
+         * Long story short, we reduce existing bounds to such in-equations system:
+         * <pre>
+         * right.time >= left.time - left_bound
+         * left.time >= right.time - right_bound
+         * </pre>
+         * Then, we represent this in-equations system as so-called 'postpone map':
+         * <pre>
+         * [left_wm_key -> [right_wm_key -> left_bound]]
+         * [right_wm_key -> [left_wm_key -> right_bound]]
+         * </pre>
+         * <p>
+         * <a href=https://github.com/Fly-Style/hazelcast/blob/feat/5.2/stream-to-stream-join-design/docs/design/sql/15-stream-to-stream-join.md#implementation-of-multiple-watermarks-in-the-join-processor>Read more.</a>
          *
          * @return Tuple [ref1_index, ref2_index, bound]
          */
@@ -345,11 +342,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             } else {
                 isValid = false;
             }
-
-            /*
-             It's needed to enlighten mathematical representation for group of canonical time-bound non-equations.
-             Read more: https://github.com/Fly-Style/hazelcast/blob/feat/5.2/stream-to-stream-join-design/docs/design/sql/15-stream-to-stream-join.md#implementation-of-multiple-watermarks-in-the-join-processor
-            */
             if (isValid && isLeft) {
                 boundToReturn = tuple3(boundToReturn.f1(), boundToReturn.f0(), -boundToReturn.f2());
             }

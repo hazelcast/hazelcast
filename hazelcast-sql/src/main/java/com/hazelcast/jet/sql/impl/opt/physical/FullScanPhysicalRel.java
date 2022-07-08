@@ -135,10 +135,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        String eventPolicyPresence = eventTimePolicyProvider != null ? "Present" : "Absent";
         return super.explainTerms(pw)
-                .itemIf("eventTimePolicyProvider", eventPolicyPresence, eventTimePolicyProvider != null)
-                .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0)
                 .itemIf("watermarkKey", watermarkKey, watermarkKey >= 0);
     }
 

@@ -45,6 +45,5 @@ public interface OutboxInternal extends Outbox {
      * If there was no watermark added, it returns {@code Long.MIN_VALUE}. Can
      * be called from a concurrent thread.
      */
-    long lastForwardedWm();
-
+    long lastForwardedWm(byte key);
 }
