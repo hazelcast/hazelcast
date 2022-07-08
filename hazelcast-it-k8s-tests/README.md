@@ -40,13 +40,13 @@ See also Fabric8 Kubernetes client docs for more examples:
 
 Take a look at `SampleHelmTest`as an example of the test.
 
-### Using custom docker image with a local codebase using GCP
+### Setting up a GCP Kubernetes cluster
 
-- Make sure you've setup GCP locally:
+- Setup GCP locally:
 ```shell
 gcloud init
 ```
-- Make sure you've got or created a Kubernetes cluster
+- Create a Kubernetes cluster
 ```shell
 gcloud container clusters create <my-cluster>
 ```
@@ -54,18 +54,21 @@ gcloud container clusters create <my-cluster>
 ```shell
 gcloud container clusters get-credentials <my-cluster>
 ```
+
+### Using custom docker image with a local codebase using GCP
+
 - Setup authentication for the artifact registry on GCP
 ```shell
 gcloud auth configure-docker us-east1-docker.pkg.dev
 ```
 
-#### Creating up docker registry
-Needed to store custom docker images, can be shared across the teams
+- Create docker registry
+Needed for storing custom docker images, can be shared across the teams
 ```shell
 gcloud artifacts repositories create <my-docker-repository> --location us-east1 --repository-format=docker
 ```
 
-#### Building and pushing docker image to GCP
+- Build and push docker image to GCP
 
 You can use your custom codebase for tests by building local docker image and pushing it to the GCP Artifact Registry.
 In order to do that:
