@@ -483,7 +483,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         try {
             listenerFunction.accept(addressTranslator.apply(target));
         } catch (Exception e2) {
-            logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target"
+            logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target "
                     + target, e2);
         }
         return null;
@@ -509,9 +509,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
-                        connectionProcessListener.attemptingToConnectToAddress(translate(member.getAddress()));
-                    }
+                    reportAddressConnectionAttempt(this::translate, member);
                     Connection connection = connect(member,
                             o -> getOrConnectToMember(o, switchingToNextCluster),
                             this::translate);
@@ -526,9 +524,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-                    if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
-                        connectionProcessListener.attemptingToConnectToAddress(translate(address));
-                    }
+                    reportAddressConnectionAttempt(this::translate, address);
                     Connection connection = connect(address,
                             o -> getOrConnectToAddress(o, switchingToNextCluster),
                             this::translate);
@@ -752,6 +748,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             closeResource(socketChannel);
             logger.finest(e);
             throw rethrow(e);
+        }
+    }
+
+    private <A> void reportAddressConnectionAttempt(Function<A, Address> addressTranslator, A target) {
+        try {
+            if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
+                connectionProcessListener.attemptingToConnectToAddress(addressTranslator.apply(target));
+            }
+        }  catch (Exception e) {
+            logger.warning("failed to translate address, can't fire attemptingToConnectToAddress() event for target "
+                    + target, e);
         }
     }
 
