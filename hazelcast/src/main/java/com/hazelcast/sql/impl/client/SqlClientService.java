@@ -137,7 +137,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    @SuppressWarnings("BusyWait")
+    @SuppressWarnings({"BusyWait", "checkstyle:cyclomaticcomplexity"})
     SqlResubmissionResult resubmitIfPossible(SqlClientResult result, RuntimeException error) {
         if (!shouldResubmit(error) || !shouldResubmit(result)) {
             return null;
