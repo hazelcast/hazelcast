@@ -132,17 +132,32 @@ public class SqlClientService implements SqlService {
                 res.onExecuteError(error);
                 throw error;
             }
-            handleExecuteResubmittedResponse(res, resubmissionResult);
+            res.onResubmissionResponse(resubmissionResult);
             return res;
         }
     }
 
-    @SuppressWarnings({"BusyWait", "checkstyle:cyclomaticcomplexity"})
     SqlResubmissionResult resubmitIfPossible(SqlClientResult result, RuntimeException error) {
         if (!shouldResubmit(error) || !shouldResubmit(result)) {
             return null;
         }
 
+        SqlResubmissionResult resubmissionResult = resubmitIfPossible0(result, error);
+        if (resubmissionResult.getSqlError() != null) {
+            SqlError sqlError = resubmissionResult.getSqlError();
+            throw new HazelcastSqlException(
+                    sqlError.getOriginatingMemberId(),
+                    sqlError.getCode(),
+                    sqlError.getMessage(),
+                    null,
+                    sqlError.getSuggestion()
+            );
+        }
+        return resubmissionResult;
+    }
+
+    @SuppressWarnings({"BusyWait", "checkstyle:cyclomaticcomplexity"})
+    private SqlResubmissionResult resubmitIfPossible0(SqlClientResult result, RuntimeException error) {
         long resubmissionStartTime = System.nanoTime();
         int invokeCount = 0;
 
@@ -254,21 +269,6 @@ public class SqlClientService implements SqlService {
                     response.rowPage,
                     response.updateCount
             );
-        }
-    }
-
-    private void handleExecuteResubmittedResponse(SqlClientResult res, SqlResubmissionResult resubmissionResult) {
-        if (resubmissionResult.getSqlError() != null) {
-            SqlError sqlError = resubmissionResult.getSqlError();
-            throw new HazelcastSqlException(
-                    sqlError.getOriginatingMemberId(),
-                    sqlError.getCode(),
-                    sqlError.getMessage(),
-                    null,
-                    sqlError.getSuggestion()
-            );
-        } else {
-            res.onResubmissionResponse(resubmissionResult);
         }
     }
 
