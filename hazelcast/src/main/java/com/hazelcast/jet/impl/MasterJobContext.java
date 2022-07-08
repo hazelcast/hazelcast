@@ -256,8 +256,7 @@ public class MasterJobContext {
                     if (e != null) {
                         finalizeJob(peel(e));
                     }
-                })
-                .join();
+                });
     }
 
     private static final class StartJobInitExecutionParams {
@@ -740,7 +739,7 @@ public class MasterJobContext {
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        })).join();
+        }));
     }
 
     /**
