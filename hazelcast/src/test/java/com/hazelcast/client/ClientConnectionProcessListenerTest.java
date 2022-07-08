@@ -114,7 +114,6 @@ public class ClientConnectionProcessListenerTest
     public void tearDown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
-        HazelcastClient.shutdownAll();
     }
 
     private static ClientConfig newClientConfig() {
