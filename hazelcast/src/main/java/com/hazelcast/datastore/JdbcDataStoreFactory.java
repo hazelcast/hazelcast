@@ -22,6 +22,9 @@ import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import javax.sql.DataSource;
 
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
+    private static final String JDBC_URL = "jdbc.url";
+    private static final String JDBC_USERNAME = "jdbc.username";
+    private static final String JDBC_PASSWORD = "jdbc.password";
     private ExternalDataStoreConfig config;
 
     public void init(ExternalDataStoreConfig config) {
@@ -30,9 +33,14 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
 
     @Override
     public DataSource createDataStore() {
-        String jdbcUrl = config.getProperty("jdbc.url");
+        String jdbcUrl = config.getProperty(JDBC_URL);
         if (config.isShared()) {
             throw new UnsupportedOperationException("shared flag is not yet supported");
+        }
+        if (config.getProperties().containsKey(JDBC_USERNAME) || config.getProperties().containsKey(JDBC_PASSWORD)) {
+            String username = config.getProperty(JDBC_USERNAME);
+            String password = config.getProperty(JDBC_PASSWORD);
+            return new DataSourceFromConnectionSupplier(jdbcUrl, username, password);
         }
         //TODO Use HikariDataSource for pooling or similar
         return new DataSourceFromConnectionSupplier(jdbcUrl);

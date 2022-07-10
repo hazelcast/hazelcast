@@ -17,9 +17,6 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
@@ -37,10 +34,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
+import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
 import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
@@ -155,23 +153,6 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .hasMessageContaining("Data store factory '" + DUMMY_DATA_STORE + "' must be an instance of JdbcDataStoreFactory");
     }
 
-    private static void configureJdbcDataStore(String name, String jdbcUrl, Config config) {
-        Properties properties = new Properties();
-        properties.put("jdbc.url", jdbcUrl);
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-                .setName(name)
-                .setClassName(JdbcDataStoreFactory.class.getName())
-                .setProperties(properties);
-        config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
-    }
-
-    private static void configureDummyDataStore(String name, Config config) {
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-                .setName(name)
-                .setClassName(DummyDataStoreFactory.class.getName());
-        config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
-    }
-
     @Test
     public void test_whenTotalParallelismOne() {
         Pipeline p = Pipeline.create();
@@ -182,16 +163,4 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    private static class DummyDataStoreFactory implements ExternalDataStoreFactory<Object> {
-
-        @Override
-        public Object createDataStore() {
-            return new Object();
-        }
-
-        @Override
-        public void init(ExternalDataStoreConfig config) {
-
-        }
-    }
 }

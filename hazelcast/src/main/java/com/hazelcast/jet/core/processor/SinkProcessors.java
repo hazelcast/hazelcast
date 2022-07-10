@@ -17,12 +17,14 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datastore.ExternalDataStoreFactory;
+import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -32,9 +34,13 @@ import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -390,7 +396,37 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(), bindFn, exactlyOnce, batchLimit);
+    }
+
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeJdbcP(
+            @Nonnull String updateQuery,
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce,
+            int batchLimit
+    ) {
+        checkNotNull(updateQuery, "updateQuery");
+        checkNotNull(externalDataStoreRef, "externalDataStoreRef");
+        checkNotNull(bindFn, "bindFn");
+        checkPositive(batchLimit, "batchLimit");
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(externalDataStoreRef.getName()),
+                bindFn, exactlyOnce, batchLimit);
+    }
+
+    private static FunctionEx<ProcessorMetaSupplier.Context, CommonDataSource> dataSourceSupplier(String externalDataStoreName) {
+        return context -> getDataStoreFactory(context, externalDataStoreName).createDataStore();
+    }
+
+    private static JdbcDataStoreFactory getDataStoreFactory(ProcessorMetaSupplier.Context context, String name) {
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+        ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
+        if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
+            String className = JdbcDataStoreFactory.class.getSimpleName();
+            throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
+        }
+        return (JdbcDataStoreFactory) dataStoreFactory;
     }
 
     /**

@@ -31,13 +31,24 @@ import java.util.logging.Logger;
  */
 public class DataSourceFromConnectionSupplier implements DataSource {
     private final String jdbcUrl;
+    private final String username;
+    private final String password;
 
     public DataSourceFromConnectionSupplier(@Nonnull String jdbcUrl) {
+        this(jdbcUrl, null, null);
+    }
+
+    public DataSourceFromConnectionSupplier(@Nonnull String jdbcUrl, String username, String password) {
         this.jdbcUrl = jdbcUrl;
+        this.password = password;
+        this.username = username;
     }
 
     @Override
     public Connection getConnection() throws SQLException {
+        if (username != null || password != null) {
+            return getConnection(username, password);
+        }
         return DriverManager.getConnection(jdbcUrl);
     }
 

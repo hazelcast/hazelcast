@@ -1271,6 +1271,31 @@ public final class Sinks {
     /**
      * A shortcut for:
      * <pre>{@code
+     *     Sinks.<T>jdbcBuilder()
+     *             .updateQuery(updateQuery)
+     *             .externalDataStoreRef(externalDataStoreRef)
+     *             .bindFn(bindFn)
+     *             .build();
+     * }</pre>
+     * <p>
+     * See {@link #jdbcBuilder()} for more information.
+     */
+    @Nonnull
+    public static <T> Sink<T> jdbc(
+            @Nonnull String updateQuery,
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
+    ) {
+        return Sinks.<T>jdbcBuilder()
+                .updateQuery(updateQuery)
+                .externalDataStoreRef(externalDataStoreRef)
+                .bindFn(bindFn)
+                .build();
+    }
+
+    /**
+     * A shortcut for:
+     * <pre>{@code
      *     jdbcBuilder(updateQuery, bindFn)
      *              .jdbcUrl(jdbcUrl)
      *              .build()
@@ -1296,7 +1321,8 @@ public final class Sinks {
      * prepares an SQL statement and executes it for each item. On the returned
      * builder you must specify a connection (either using a {@linkplain
      * JdbcSinkBuilder#jdbcUrl(String) JDBC URL} or using a {@linkplain
-     * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource}), the
+     * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource} or using a {@linkplain
+     * JdbcSinkBuilder#externalDataStoreRef(ExternalDataStoreRef) datastore}), the
      * {@linkplain JdbcSinkBuilder#updateQuery(String) SQL statement} and a
      * {@linkplain JdbcSinkBuilder#bindFn(BiConsumerEx) bind function}.
      * <p>

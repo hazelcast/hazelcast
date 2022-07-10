@@ -51,6 +51,7 @@ public class JdbcSinkBuilder<T> {
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
+    private ExternalDataStoreRef externalDataStoreRef;
 
     JdbcSinkBuilder() {
     }
@@ -118,6 +119,8 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> jdbcUrl(String connectionUrl) {
         this.jdbcUrl = connectionUrl;
+        this.dataSourceSupplier = null;
+        this.externalDataStoreRef = null;
         return this;
     }
 
@@ -139,6 +142,8 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
         this.dataSourceSupplier = dataSourceSupplier;
+        this.jdbcUrl = null;
+        this.externalDataStoreRef = null;
         return this;
     }
 
@@ -183,15 +188,37 @@ public class JdbcSinkBuilder<T> {
      */
     @Nonnull
     public Sink<T> build() {
-        if (dataSourceSupplier == null && jdbcUrl == null) {
-            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
+        if (dataSourceSupplier == null && jdbcUrl == null && externalDataStoreRef == null) {
+            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() nor externalDataStoreRef() set");
         }
-        if (dataSourceSupplier == null) {
+        if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
             dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
         }
+        if (dataSourceSupplier != null) {
+            return Sinks.fromProcessor("jdbcSink",
+                    SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                            exactlyOnce, batchLimit));
+        }
+
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                SinkProcessors.writeJdbcP(updateQuery, externalDataStoreRef, bindFn,
                         exactlyOnce, batchLimit));
+
+    }
+
+    /**
+     * Sets the reference to the configured external dataStore of {@link ExternalDataStoreRef} from which
+     * the instance of the {@link javax.sql.DataSource} will be retrieved.
+     *
+     * @param externalDataStoreRef the reference to the configured external dataStore
+     * @return this instance for fluent API
+     */
+    @Nonnull
+    public JdbcSinkBuilder<T> externalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
+        this.dataSourceSupplier = null;
+        this.jdbcUrl = null;
+        this.externalDataStoreRef = externalDataStoreRef;
+        return this;
     }
 }

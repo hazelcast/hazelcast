@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -52,6 +53,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
+import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
+import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doAnswer;
@@ -59,6 +63,9 @@ import static org.mockito.Mockito.mock;
 
 @Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
+
+    private static final String JDBC_DATA_STORE = "jdbc-data-store";
+    private static final String DUMMY_DATA_STORE = "dummy-data-store";
 
     @ClassRule
     @SuppressWarnings("rawtypes")
@@ -76,8 +83,11 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @BeforeClass
-    public static void setupClass() {
-        initialize(2, null);
+    public static void setupClass() throws SQLException {
+        Config config = smallInstanceConfig();
+        configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataStore(DUMMY_DATA_STORE, config);
+        initialize(2, config);
     }
 
     @Before
@@ -86,7 +96,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         logger.info("Will use table: " + tableName);
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
             connection.createStatement()
-                      .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+                    .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
         }
     }
 
@@ -94,27 +104,44 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     public void test() throws SQLException {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
-         .map(item -> entry(item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                 () -> createDataSource(false),
-                 (stmt, item) -> {
-                     stmt.setInt(1, item.getKey());
-                     stmt.setString(2, item.getValue());
-                 }
-         ));
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        () -> createDataSource(false),
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
 
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
     @Test
+    public void test_external_datastore_config() throws SQLException {
+        assertEquals(0, rowCount());
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        externalDataStoreRef(JDBC_DATA_STORE),
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
+
+        instance().getJet().newJob(p).join();
+        assertEquals(PERSON_COUNT, rowCount());
+    }
+
     public void testReconnect() throws SQLException {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
-         .map(item -> entry(item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                 failTwiceDataSourceSupplier(), failOnceBindFn()
-         ));
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        failTwiceDataSourceSupplier(), failOnceBindFn()
+                ));
 
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
