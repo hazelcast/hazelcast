@@ -112,7 +112,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected TcpClientConnection createSocketConnection(Address remoteAddress) {
+        protected TcpClientConnection createConnection(Address remoteAddress) {
             checkClientActive();
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(remoteAddress);
