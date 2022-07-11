@@ -115,6 +115,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -692,6 +693,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
     @SuppressWarnings("unchecked")
     protected TcpClientConnection createSocketConnection(Address target) {
         CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
@@ -709,6 +711,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
             TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            connection.channelInitializer = currentClusterContext.getChannelInitializer();
 
             socketChannel.configureBlocking(true);
             SocketInterceptor socketInterceptor = currentClusterContext.getSocketInterceptor();
@@ -882,6 +885,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
+    // This needs to be fixed; the server should tell the client the list of ports the client
+    // can connect to.
+    private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
+    private int tpcClientServerPort = 15000;
+
+
     /**
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
@@ -894,6 +904,40 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
+
+            // Super ugly; doing remote calls while holding a mutex.
+            // Todo: we should use the list of ports from the clientAuthentication.response.
+            if (eventloopCount > 0) {
+                try {
+                    Channel[] tpcChannels = new Channel[eventloopCount];
+                    for (int k = 0; k < tpcChannels.length; k++) {
+                        // very hacky way to get the tpcChannels running. but fine for POC.
+
+                        Address address = new Address(connection.getRemoteAddress().getHost(), tpcClientServerPort + k);
+
+                        SocketChannel tpcSocketChannel = SocketChannel.open();
+                        //Socket socket = socketChannel.socket();
+
+                        //..bindSocketToPort(socket);
+
+                        Channel tpcChannel = networking.register(connection.channelInitializer, tpcSocketChannel, true);
+                        tpcChannel.attributeMap().put(Address.class, address);
+
+                        InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
+                        tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
+
+                        System.out.println("Client: Successfully connected to " + tpcSocketChannelAddress);
+
+                        tpcSocketChannel.configureBlocking(false);
+                        tpcChannel.start();
+
+                        tpcChannels[k] = tpcChannel;
+                    }
+                    connection.setTpcChannels(tpcChannels);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
             TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
             if (existingConnection != null) {
