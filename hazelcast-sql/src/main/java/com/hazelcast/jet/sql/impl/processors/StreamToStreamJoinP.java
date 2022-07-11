@@ -43,7 +43,6 @@ import java.util.Set;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
 public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
@@ -54,6 +53,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     //  (1) removals in the middle,
     //  (2) traversing whole list without index-based access
     // package-visible for tests
+    @SuppressWarnings("unchecked")
     final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
 
     private final JetJoinInfo joinInfo;
@@ -67,7 +67,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet(), new HashSet()};
+    @SuppressWarnings("unchecked")
+    private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet<>(), new HashSet<>()};
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
@@ -270,6 +271,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // 5.2 : compute new maximum for each output WM in the `wmState`.
         Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = timeExtractors(ordinal);
+        @SuppressWarnings("unchecked")
         ToLongFunctionEx<JetSqlRow>[] extractors = new ToLongFunctionEx[currExtractors.values().size()];
         long[] limits = new long[currExtractors.values().size()];
 
