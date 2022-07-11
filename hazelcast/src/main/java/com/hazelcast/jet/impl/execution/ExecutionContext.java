@@ -170,7 +170,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 .thenAccept(ignored -> initWithPlan(plan));
     }
 
-    private InternalSerializationService createSerializationService(JobClassLoaderService jobClassLoaderService, JetServiceBackend jetServiceBackend) {
+    private InternalSerializationService createSerializationService(JobClassLoaderService jobClassLoaderService,
+                                                                    JetServiceBackend jetServiceBackend) {
         if (isLightJob) {
             return jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
         }
