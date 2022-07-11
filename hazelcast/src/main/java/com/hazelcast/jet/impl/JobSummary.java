@@ -1,4 +1,4 @@
-/*
+    /*
  * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 public class JobSummary implements IdentifiedDataSerializable {
-
     private boolean isLightJob;
     private long jobId;
     private long executionId;

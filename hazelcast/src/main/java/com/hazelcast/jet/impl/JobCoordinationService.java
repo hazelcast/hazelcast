@@ -697,8 +697,14 @@ public class JobCoordinationService {
      */
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
         return getJobAndSqlSummaryList().thenApply(jobAndSqlSummaries -> jobAndSqlSummaries.stream()
-                .map(JobAndSqlSummary::getJobSummary)
+                .map(this::toJobSummary)
                 .collect(toList()));
+    }
+
+    private JobSummary toJobSummary(JobAndSqlSummary jobAndSqlSummary) {
+        return new JobSummary(jobAndSqlSummary.isLightJob(), jobAndSqlSummary.getJobId(), jobAndSqlSummary.getExecutionId(),
+                jobAndSqlSummary.getNameOrId(), jobAndSqlSummary.getStatus(), jobAndSqlSummary.getSubmissionTime(),
+                jobAndSqlSummary.getCompletionTime(), jobAndSqlSummary.getFailureText());
     }
 
     /**
@@ -709,15 +715,14 @@ public class JobCoordinationService {
             Map<Long, JobAndSqlSummary> jobs = new HashMap<>();
             if (isMaster()) {
                 // running jobs
-                jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(),
-                        new JobAndSqlSummary(s, null)));
+                jobRepository.getJobRecords().stream().map(this::getJobAndSqlSummary).forEach(s -> jobs.put(s.getJobId(), s));
 
                 // completed jobs
                 jobRepository.getJobResults().stream()
-                        .map(r -> new JobSummary(
+                        .map(r -> new JobAndSqlSummary(
                                 false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText()))
-                        .forEach(s -> jobs.put(s.getJobId(), new JobAndSqlSummary(s, null)));
+                                r.getCompletionTime(), r.getFailureText(), null))
+                        .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
             // light jobs
@@ -736,10 +741,9 @@ public class JobCoordinationService {
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
-        JobSummary jobSummary = new JobSummary(
+        return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null);
-        return new JobAndSqlSummary(jobSummary, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
     }
 
     /**
@@ -1197,7 +1201,7 @@ public class JobCoordinationService {
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).size();
     }
 
-    private JobSummary getJobSummary(JobRecord record) {
+    private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
         JobStatus status;
@@ -1208,8 +1212,8 @@ public class JobCoordinationService {
         } else {
             status = ctx.jobStatus();
         }
-        return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null);
+        return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
+                record.getCreationTime(), 0, null, null);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {

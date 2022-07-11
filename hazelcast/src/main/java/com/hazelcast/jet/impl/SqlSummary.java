@@ -15,16 +15,9 @@
  */
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-
-public class SqlSummary implements IdentifiedDataSerializable {
-    String query;
-    boolean unbounded;
+public class SqlSummary  {
+    private String query;
+    private boolean unbounded;
 
     public SqlSummary() {
     }
@@ -38,30 +31,16 @@ public class SqlSummary implements IdentifiedDataSerializable {
         return query;
     }
 
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
     public boolean isUnbounded() {
         return unbounded;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(query);
-        out.writeBoolean(unbounded);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        query = in.readString();
-        unbounded = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return JetInitDataSerializerHook.SQL_SUMMARY;
+    public void setUnbounded(boolean unbounded) {
+        this.unbounded = unbounded;
     }
 
     @Override
