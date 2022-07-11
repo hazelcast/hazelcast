@@ -239,10 +239,8 @@ public final class TestProcessors {
             }
             closeCount.incrementAndGet();
 
-            assertTrue("Close called more times than init was called. Init count: "
-                    + initCount.get() + " close count: " + closeCount, initCount.get() >= closeCount.get());
-            assertTrue("Close called " + closeCount.get() + " times, but init called "
-                    + initCount.get() + " times!", closeCount.get() >= initCount.get());
+            assertEquals("Close called more times than init was called. Init count: "
+                    + initCount.get() + " close count: " + closeCount, initCount.get(), closeCount.get());
 
             assertTrue("PMS.close() already called once",
                     receivedCloseError.compareAndSet(null, error)
