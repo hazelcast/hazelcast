@@ -542,21 +542,17 @@
         to true to be able to use your defined interfaces. You can define multiple interfaces
         using its <interface> sub-element. By default, it is disabled.
         * <ssl>:
-        Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-        Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-        your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-        By default, it is disabled. The following is an example:
+        Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+        Enterprise.
+        The default configuration usually uses JSSE engine available in Java.
+        Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
         <ssl enabled="true">
-            <factory-class-name>
-                com.hazelcast.nio.ssl.BasicSSLContextFactory
-            </factory-class-name>
+            <factory-class-name>com.hazelcast.nio.ssl.OpenSSLEngineFactory</factory-class-name>
             <properties>
-                <property name="keyStore">keyStore</property>
-                <property name="keyStorePassword">keyStorePassword</property>
-                <property name="keyManagerAlgorithm">SunX509</property>
-                <property name="trustManagerAlgorithm">SunX509</property>
-                <property name="protocol">TLS</property>
-                <property name="mutualAuthentication">REQUIRED</property>
+                <property name="protocol">TLSv1.2</property>
+                <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
             </properties>
         </ssl>
         * <socket-interceptor>:
@@ -575,10 +571,7 @@
             </properties>
         </socket-interceptor>
         * <symmetric-encryption>:
-        Lets you encrypt the entire socket level communication among all Hazelcast members.
-        This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
-        properties and the same configuration must be placed to all members. By default, it is disabled.
-        The following is an example:
+        The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
         <symmetric-encryption enabled="true">
             <algorithm>PBEWithMD5AndDES</algorithm>
             <salt>thesalt</salt>
@@ -726,26 +719,19 @@
             <interface>10.10.1.*</interface>
         </interfaces>
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
                 <property name="protocol">TLS</property>
 
                 <property name="mutualAuthentication">REQUIRED</property>
                 <property name="keyStore">/opt/hazelcast.keystore</property>
                 <property name="keyStorePassword">secret.97531</property>
-                <property name="keyStoreType">JKS</property>
+                <property name="keyStoreType">PKCS12</property>
                 <property name="trustStore">/opt/hazelcast.truststore</property>
                 <property name="trustStorePassword">changeit</property>
-                <property name="trustStoreType">JKS</property>
+                <property name="trustStoreType">PKCS12</property>
             </properties>
         </ssl>
         <socket-interceptor enabled="false"/>
-        <symmetric-encryption enabled="false">
-            <algorithm>PBEWithMD5AndDES</algorithm>
-            <password>...</password>
-            <salt>...</salt>
-            <iteration-count>7</iteration-count>
-        </symmetric-encryption>
         <member-address-provider enabled="false">
             <class-name>com.hazelcast.MemberAddressProviderImpl</class-name>
             <properties>

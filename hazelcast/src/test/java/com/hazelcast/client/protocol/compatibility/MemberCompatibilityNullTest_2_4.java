@@ -6689,6 +6689,8 @@ public class MemberCompatibilityNullTest_2_4 {
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
         assertTrue(parameters.isPerEntryStatsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.perEntryStatsEnabled));
+        assertFalse(parameters.isDataPersistenceConfigExists);
+        assertFalse(parameters.isTieredStoreConfigExists);
     }
 
     @Test
