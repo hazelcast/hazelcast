@@ -172,8 +172,8 @@ public class ProcessorTasklet implements Tasklet {
         this.instreams = instreams;
         this.instreamGroupQueue = createInstreamGroupQueue(instreams);
         this.outstreams = outstreams.stream()
-                .sorted(comparing(OutboundEdgeStream::ordinal))
-                .toArray(OutboundEdgeStream[]::new);
+                                    .sorted(comparing(OutboundEdgeStream::ordinal))
+                                    .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
         String prefix = prefix(context.jobConfig().getName(),
                 context.jobId(), context.vertexName(), context.globalProcessorIndex());
@@ -269,8 +269,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public ProgressState call() {
         assert state != END : "already in terminal state";
         progTracker.reset();
@@ -310,7 +309,8 @@ public class ProcessorTasklet implements Tasklet {
                 if (pendingWatermark.equals(IDLE_MESSAGE)
                         ? outbox.offer(IDLE_MESSAGE)
                         : doWithClassLoader(context.classLoader(), () ->
-                        processor.tryProcessWatermark(pendingWatermark))) {
+                                processor.tryProcessWatermark(pendingWatermark))
+                ) {
                     state = NULLARY_PROCESS;
                     pendingWatermark = null;
                 }
@@ -595,8 +595,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll())
-                .map(CircularListCursor::new)
-                .orElse(null);
+                       .map(CircularListCursor::new)
+                       .orElse(null);
     }
 
     @Override
@@ -669,8 +669,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");

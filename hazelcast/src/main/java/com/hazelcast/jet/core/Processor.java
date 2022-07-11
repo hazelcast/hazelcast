@@ -206,7 +206,7 @@ public interface Processor {
      *
      * @param watermark watermark to be processed
      * @return {@code true} if this watermark has now been processed,
-     * {@code false} to call this method again with the same watermark
+     *         {@code false} to call this method again with the same watermark
      */
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
 
@@ -235,7 +235,7 @@ public interface Processor {
      * next call.
      *
      * @return {@code true} if the processor is now done completing the edge,
-     * {@code false} to call this method again
+     *         {@code false} to call this method again
      */
     default boolean completeEdge(int ordinal) {
         return true;
@@ -258,7 +258,7 @@ public interface Processor {
      * the latency of snapshots and job cancellations.
      *
      * @return {@code true} if the completing step is now done, {@code false}
-     * to call this method again
+     *         to call this method again
      */
     default boolean complete() {
         return true;
@@ -279,7 +279,7 @@ public interface Processor {
      * The default implementation does nothing and returns {@code true}.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     * method again
+     *      method again
      */
     default boolean saveToSnapshot() {
         return true;
@@ -320,7 +320,7 @@ public interface Processor {
      * #snapshotCommitFinish} will be skipped too.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     * method again
+     *      method again
      * @since Jet 4.0
      */
     default boolean snapshotCommitPrepare() {
@@ -373,7 +373,7 @@ public interface Processor {
      *
      * @param success true, if the first snapshot phase completed successfully
      * @return {@code true} if this step is done, {@code false} to call this
-     * method again
+     *      method again
      * @since Jet 4.0
      */
     default boolean snapshotCommitFinish(boolean success) {
@@ -427,7 +427,7 @@ public interface Processor {
      * The default implementation takes no action and returns {@code true}.
      *
      * @return {@code true} if this step is done, {@code false} to call this
-     * method again
+     *      method again
      */
     default boolean finishSnapshotRestore() {
         return true;
