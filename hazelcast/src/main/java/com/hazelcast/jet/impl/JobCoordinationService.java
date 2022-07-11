@@ -696,40 +696,50 @@ public class JobCoordinationService {
      * Return a summary of all jobs
      */
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
+        return getJobAndSqlSummaryList().thenApply(jobAndSqlSummaries -> jobAndSqlSummaries.stream()
+                .map(JobAndSqlSummary::getJobSummary)
+                .collect(toList()));
+    }
+
+    /**
+     * Return a summary of all jobs with sql data
+     */
+    public CompletableFuture<List<JobAndSqlSummary>> getJobAndSqlSummaryList() {
         return submitToCoordinatorThread(() -> {
-            Map<Long, JobSummary> jobs = new HashMap<>();
+            Map<Long, JobAndSqlSummary> jobs = new HashMap<>();
             if (isMaster()) {
                 // running jobs
-                jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
+                jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(),
+                        new JobAndSqlSummary(s, null)));
 
                 // completed jobs
                 jobRepository.getJobResults().stream()
                         .map(r -> new JobSummary(
                                 false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null))
-                        .forEach(s -> jobs.put(s.getJobId(), s));
+                                r.getCompletionTime(), r.getFailureText()))
+                        .forEach(s -> jobs.put(s.getJobId(), new JobAndSqlSummary(s, null)));
             }
 
             // light jobs
             lightMasterContexts.values().stream()
                     .filter(lmc -> lmc != UNINITIALIZED_LIGHT_JOB_MARKER)
                     .map(LightMasterContext.class::cast)
-                    .map(this::getJobSummary)
+                    .map(this::getJobAndSqlSummary)
                     .forEach(s -> jobs.put(s.getJobId(), s));
 
-            return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
+            return jobs.values().stream().sorted(comparing(JobAndSqlSummary::getSubmissionTime).reversed()).collect(toList());
         });
     }
 
-    private JobSummary getJobSummary(LightMasterContext lmc) {
+    private JobAndSqlSummary getJobAndSqlSummary(LightMasterContext lmc) {
         String query = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_QUERY_TEXT);
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
-
-        return new JobSummary(
+        JobSummary jobSummary = new JobSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null);
+        return new JobAndSqlSummary(jobSummary, sqlSummary);
     }
 
     /**
@@ -1199,7 +1209,7 @@ public class JobCoordinationService {
             status = ctx.jobStatus();
         }
         return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null);
+                record.getCreationTime(), 0, null);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {

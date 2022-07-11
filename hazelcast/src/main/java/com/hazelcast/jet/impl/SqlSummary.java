@@ -23,8 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 public class SqlSummary implements IdentifiedDataSerializable {
-    private String query;
-    private boolean unbounded;
+    String query;
+    boolean unbounded;
 
     public SqlSummary() {
     }
