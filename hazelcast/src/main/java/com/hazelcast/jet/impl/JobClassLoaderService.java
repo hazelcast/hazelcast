@@ -173,7 +173,7 @@ public class JobClassLoaderService {
      * given processor should be done.
      *
      * It returns processor classloader for a vertex with given name, in a job specified by the id;
-     * however ff there is no specific processor classloader, this method will return
+     * however if there is no specific processor classloader, this method will return
      * {@link #getClassLoader(long) general job classloader}.
      * <p>
      * This method must be called after the classloader was created by
