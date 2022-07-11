@@ -146,7 +146,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public CompletableFuture<Void> initialize(
             @Nonnull Address coordinator,
             @Nonnull Set<Address> participants,
-            @Nonnull ExecutionPlan plan) {
+            @Nonnull ExecutionPlan plan,
+            @Nullable JobClassLoaderService jobClassLoaderService) {
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -160,11 +161,30 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
         JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-        serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
+
+        serializationService = createSerializationService(jobClassLoaderService,
+                jetServiceBackend);
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
                 .thenAccept(ignored -> initWithPlan(plan));
+    }
+
+    private InternalSerializationService createSerializationService(JobClassLoaderService jobClassLoaderService, JetServiceBackend jetServiceBackend) {
+        if (isLightJob) {
+            return jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
+        }
+        InternalSerializationService internalSerializationService;
+        try {
+            jobClassLoaderService.prepareProcessorClassLoaders(jobId);
+            ClassLoader jobCl = jobClassLoaderService.getClassLoader(jobId);
+            internalSerializationService =
+                    doWithClassLoader(jobCl, () ->
+                        jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs()));
+        } finally {
+            jobClassLoaderService.clearProcessorClassLoaders();
+        }
+        return internalSerializationService;
     }
 
     private void initWithPlan(@Nonnull ExecutionPlan plan) {
