@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
@@ -97,7 +98,23 @@ public class WatermarkKeysAssigner {
             if (node instanceof CalcPhysicalRel) {
                 CalcPhysicalRel calc = (CalcPhysicalRel) node;
                 List<RexNode> projects = calc.getProgram().expandList(calc.getProgram().getProjectList());
-                System.err.println();
+                Map<RexInputRef, Byte> refByteMap = refToWmKeyMapping.get(calc.getInput());
+                if (refByteMap == null) {
+                    return;
+                }
+
+                Map<RexInputRef, Byte> calcRefByteMap = new HashMap<>();
+                for (RexNode rexNode : projects) {
+                    if (rexNode instanceof RexInputRef) {
+                        RexInputRef ref = (RexInputRef) rexNode;
+                        if (refByteMap.containsKey(ref)) {
+                            calcRefByteMap.put(ref, refByteMap.get(ref));
+                        }
+                    }
+                }
+
+                refToWmKeyMapping.put(calc, calcRefByteMap);
+
             } else if (node instanceof UnionPhysicalRel) {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 Set<RexInputRef> used = new HashSet<>();
@@ -115,7 +132,7 @@ public class WatermarkKeysAssigner {
                 for (int i = idx; i < union.getInputs().size(); ++i) {
                     refToWmKeyMapping.put(union.getInput(i), refByteMap);
                 }
-                // spread equal watermark keys on whole Union branch.
+                // TODO: spread equal watermark keys on whole Union branch.
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
                 Map<RexInputRef, Byte> leftRefByteMap = refToWmKeyMapping.get(join.getLeft());
@@ -146,6 +163,11 @@ public class WatermarkKeysAssigner {
 
                 assert leftRefByteMap.size() + rightRefByteMap.size() == jointRefByteMap.size();
                 refToWmKeyMapping.put(join, jointRefByteMap);
+            } else if (node instanceof Join) {
+                // Hash Join and Nested Loop Join just forward watermarks from left input.
+                Join join = (Join) node;
+                Map<RexInputRef, Byte> refByteMap = refToWmKeyMapping.get(join.getLeft());
+                refToWmKeyMapping.put(node, refByteMap);
             } else {
                 // anything else -- just forward without any changes.
                 if (!node.getInputs().isEmpty()) {
@@ -174,7 +196,6 @@ public class WatermarkKeysAssigner {
             return leafNodes;
         }
 
-        // TODO: to implement Union watermark keys back-propagation.
         private void spreadWatermarkKeyForUnion(UnionPhysicalRel root) {
             RelVisitor visitor = new RelVisitor() {
                 @Override

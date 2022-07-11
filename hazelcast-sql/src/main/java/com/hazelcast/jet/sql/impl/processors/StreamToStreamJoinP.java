@@ -165,6 +165,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
         for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+            if (!wmState.containsKey(en.getKey())) {
+                continue;
+            }
             long joinTimeLimit = wmState.get(en.getKey());
             long time = en.getValue().applyAsLong((JetSqlRow) item);
             if (time < joinTimeLimit) {
@@ -191,8 +194,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         while (iterator.hasNext()) {
             JetSqlRow oppositeBufferItem = iterator.next();
-            System.err.println("Joining " + (ordinal == 0 ? currItem : oppositeBufferItem + " AND " +
-                    (ordinal == 0 ? oppositeBufferItem : currItem)));
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
@@ -200,7 +201,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     evalContext);
             // it is used already once
             unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
-            System.err.println("Emit " + preparedOutput);
+
             if (preparedOutput != null && !tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
                 return false;
@@ -219,12 +220,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        System.err.println(" ---> " + watermark);
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
         }
 
-        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
+        if (!wmState.containsKey(watermark.key())) {
+            return true;
+        }
+
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
         if (!postponeTimeMap.get(watermark.key()).isEmpty()) {
@@ -234,7 +237,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
             //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
             // 5.2 & 5.3
-            clearExpiredItemsInBuffer(ordinal);
+            clearExpiredItemsInBuffer(0);
+            clearExpiredItemsInBuffer(1);
         }
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
@@ -264,7 +268,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             if (!tryEmit(pendingOutput.peek())) {
                 return false;
             } else {
-                System.err.println("Emit " + pendingOutput.peek());
                 pendingOutput.remove();
             }
         }
