@@ -224,8 +224,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
+        // if not in wm state - just forward it.
         if (!wmState.containsKey(watermark.key())) {
-            return true;
+            lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
+            lastEmittedWm.put((Byte) watermark.key(), watermark.timestamp());
+            return tryEmit(watermark);
         }
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
