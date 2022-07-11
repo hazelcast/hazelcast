@@ -125,15 +125,16 @@ public class QueryEngineImpl implements QueryEngine {
 
     private Query adjustQuery(Query query) {
         IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
-        Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
-        if (adjustedQuery.getPredicate() instanceof PagingPredicateImpl) {
-            ((PagingPredicateImpl) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
-        } else {
-            if (adjustedQuery.getPredicate() == Predicates.alwaysTrue()) {
-                queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());
-            }
+        Query.QueryBuilder builder = Query.of(query).iterationType(retrievalIterationType);
+        if (query.getPredicate() instanceof PagingPredicateImpl) {
+            // PagingPredicateImpl must be cloned before adjusting else it corrupts the iteration type for the caller
+            PagingPredicateImpl clonedPredicate = ((PagingPredicateImpl)query.getPredicate()).clone();
+            clonedPredicate.setIterationType(query.getIterationType());
+            builder.predicate(clonedPredicate);
+        } else if (query.getPredicate() == Predicates.alwaysTrue()) {
+            queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(query.getMapName());
         }
-        return adjustedQuery;
+        return builder.build();
     }
 
     // query thread first, fallback to partition thread

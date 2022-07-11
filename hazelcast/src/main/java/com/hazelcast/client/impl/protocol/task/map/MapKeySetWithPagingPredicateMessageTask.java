@@ -42,7 +42,7 @@ public class MapKeySetWithPagingPredicateMessageTask
 
     @Override
     protected IterationType getIterationType() {
-        return IterationType.getById(parameters.predicate.getIterationTypeId());
+        return IterationType.ENTRY;
     }
 
     @Override

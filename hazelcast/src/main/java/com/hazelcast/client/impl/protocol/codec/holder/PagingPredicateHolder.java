@@ -56,7 +56,7 @@ public class PagingPredicateHolder {
         this.pageSize = pageSize;
         this.page = page;
         this.iterationTypeId = iterationTypeId;
-        this.partitionKeysData = partitionKeysDataExists
+        this.partitionKeysData = partitionKeysData != null
              ? partitionKeysData.stream().collect(Collectors.toSet())
              : partitionKeyData != null
                    ? Collections.singleton(partitionKeyData)

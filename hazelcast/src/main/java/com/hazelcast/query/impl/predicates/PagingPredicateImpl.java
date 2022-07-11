@@ -153,6 +153,10 @@ public class PagingPredicateImpl<K, V>
         setInnerPredicate(predicateReplacement);
     }
 
+    public PagingPredicateImpl clone() {
+        return new PagingPredicateImpl(this, this.predicate);
+    }
+
     @Override
     public Predicate accept(Visitor visitor, Indexes indexes) {
         if (predicate instanceof VisitablePredicate) {
