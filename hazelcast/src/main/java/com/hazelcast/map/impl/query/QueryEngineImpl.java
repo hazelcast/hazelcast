@@ -128,7 +128,7 @@ public class QueryEngineImpl implements QueryEngine {
         Query.QueryBuilder builder = Query.of(query).iterationType(retrievalIterationType);
         if (query.getPredicate() instanceof PagingPredicateImpl) {
             // PagingPredicateImpl must be cloned before adjusting else it corrupts the iteration type for the caller
-            PagingPredicateImpl clonedPredicate = ((PagingPredicateImpl)query.getPredicate()).clone();
+            PagingPredicateImpl clonedPredicate = new PagingPredicateImpl((PagingPredicateImpl) query.getPredicate());
             clonedPredicate.setIterationType(query.getIterationType());
             builder.predicate(clonedPredicate);
         } else if (query.getPredicate() == Predicates.alwaysTrue()) {
