@@ -233,7 +233,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     /**
-     * Mark result as closed. Invoked when we received an update count or the last page.
+     * Mark the result as closed. Invoked when we receive an update count or the last page.
      */
     private void markClosed() {
         synchronized (mux) {

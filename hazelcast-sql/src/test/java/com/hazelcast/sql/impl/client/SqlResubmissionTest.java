@@ -114,16 +114,13 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         Thread failureControlThread = new Thread(cyclicFailure);
         failureControlThread.start();
         try {
-            try {
-                if (shouldFail) {
-                    assertThrows(HazelcastSqlException.class, () -> executeInLoop(statement, result -> false));
-                } else {
-                    executeInLoop(statement, result -> ((SqlClientResult) result).wasResubmission());
-                }
-            } finally {
-                done = true;
+            if (shouldFail) {
+                assertThrows(HazelcastSqlException.class, () -> executeInLoop(statement, result -> false));
+            } else {
+                executeInLoop(statement, result -> ((SqlClientResult) result).wasResubmission());
             }
         } finally {
+            done = true;
             failureControlThread.join();
             clusterFailure.cleanUp();
         }
