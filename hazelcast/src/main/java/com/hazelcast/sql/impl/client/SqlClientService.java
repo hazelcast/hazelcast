@@ -167,7 +167,7 @@ public class SqlClientService implements SqlService {
             try {
                 connection = getQueryConnection();
                 QueryId queryId = QueryId.create(connection.getRemoteUuid());
-                logFinest(logger, "Resubmitting query: %s with new query id", result.getQueryId(), queryId);
+                logFinest(logger, "Resubmitting query: %s with new query id %s", result.getQueryId(), queryId);
                 result.setQueryId(queryId);
                 ClientMessage message = invoke(result.getSqlExecuteMessage(queryId), connection);
                 resubmissionResult = createResubmissionResult(message, connection);
@@ -201,9 +201,7 @@ public class SqlClientService implements SqlService {
             }
         } while (System.nanoTime() - resubmissionStartTime <= resubmissionTimeoutNano);
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("Resubmitting query timed out");
-        }
+        logger.finest("Resubmitting query timed out");
 
         return resubmissionResult;
     }
