@@ -42,6 +42,9 @@ import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
+import static org.apache.calcite.rel.core.JoinRelType.INNER;
+import static org.apache.calcite.rel.core.JoinRelType.LEFT;
+import static org.apache.calcite.rel.core.JoinRelType.RIGHT;
 
 public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
@@ -61,7 +64,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
-
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
@@ -86,6 +88,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.rightTimeExtractors = rightTimeExtractors;
         this.postponeTimeMap = postponeTimeMap;
         this.columnCounts = columnCounts;
+
+        if (joinInfo.getJoinType() != INNER && joinInfo.getJoinType() != LEFT && joinInfo.getJoinType() != RIGHT) {
+            throw new IllegalArgumentException("Unsupported join type: " + joinInfo.getJoinType());
+        }
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
             wmState.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
@@ -192,6 +198,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
+        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark";
+
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
         if (!postponeTimeMap.get(watermark.key()).isEmpty()) {
@@ -248,6 +256,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     private long findMinimumBufferTime(byte key) {
+        // TODO optimization: use PriorityQueues. Or at least one PriorityQueue in case of single WM key.
         ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
         int ordinal = 0;
         if (extractor == null) {
