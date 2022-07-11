@@ -1,30 +1,12 @@
-# Design document template
-
-### Table of Contents
-
-+ [Background](#background)
-    - [Description](#description)
-    - [Terminology](#terminology)
-    - [Actors and Scenarios](#actors-and-scenarios)
-+ [Functional Design](#functional-design)
-    * [Summary of Functionality](#summary-of-functionality)
-    * [Additional Functional Design Topics](#additional-functional-design-topics)
-        + [Notes/Questions/Issues](#notesquestionsissues)
-+ [User Interaction](#user-interaction)
-    - [API design and/or Prototypes](#api-design-andor-prototypes)
-+ [Client Related Changes](#client-related-changes)
-+ [Technical Design](#technical-design)
-+ [Testing Criteria](#testing-criteria)
-+ [Other Artifacts](#other-artifacts)
-
-
+# Automatic query resubmission
 
 |||
 |---|------------------- https://hazelcast.atlassian.net/browse/HZ-1098 https://hazelcast.atlassian.net/browse/HZ-1098 |
-|Related Github issues||
-|Document Status / Completeness| DRAFT                                          |
+|Related Github issues|https://github.com/hazelcast/hazelcast/pull/21635|
+|Document Status / Completeness| Complete                                          |
 |Requirement owner| Sandeep Akhouri                                              |
-|Developer(s)| TODO                                  |
+|TDD Author|Viliam Ďurina|
+|Developer(s)| Krzysztof Ślusarski |
 |Quality Engineer| TODO                             |
 |Support Engineer| TODO                             |
 |Technical Reviewers| TODO                          |
@@ -41,10 +23,10 @@ killed, the client throws errors.
 
 Automatic retries, with an upper bound on the number of retries, are implemented
 with many IMap operations on the client. However, with SQL, the client cannot do
-this, because it doesn't understand the query and doesn't know if the query is
-side effect free and it's safe to be retried. Secondly, the client might already
-have received some result rows, and if it retries the query, those rows will be
-received again.
+this, because it doesn't understand the query, and it doesn't know if the query
+is side-effect-free and it's safe to be retried. Secondly, the client might
+already have received some result rows, and if it retries the query, those rows
+will be received again.
 
 #### Scope
 
@@ -161,6 +143,13 @@ topology-related failures.
 We should avoid checking the error message or exception instance. The
 client-side logic must remain simple so that it can be easily ported to other
 clients in the future.
+
+#### SQL commands that are queries, but don't start with SELECT
+
+It's possible that a read-only statement doesn't start with `SELECT`. For
+example, it can start with a comment, or with the `WITH` keyword for a common
+table expression. For the sake of simplicity, we don't resubmit them in the
+`RETRY_SELECTS` mode for now.
 
 ### Testing Criteria
 
