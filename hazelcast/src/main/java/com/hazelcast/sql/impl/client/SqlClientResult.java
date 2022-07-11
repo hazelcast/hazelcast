@@ -48,8 +48,8 @@ public class SqlClientResult implements SqlResult {
     private final int cursorBufferSize;
     private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
+    private volatile QueryId queryId;
     private Connection connection;
-    private QueryId queryId;
     private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
