@@ -34,6 +34,6 @@ public class GetJobAndSqlSummaryListOperation extends AsyncOperation implements 
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.GET_JOB_SUMMARY_LIST_OP;
+        return JetInitDataSerializerHook.GET_JOB_AND_SQL_SUMMARY_LIST_OP;
     }
 }
