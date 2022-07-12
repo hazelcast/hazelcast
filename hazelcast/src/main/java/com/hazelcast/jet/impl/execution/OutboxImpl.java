@@ -265,6 +265,11 @@ public class OutboxImpl implements OutboxInternal {
 
     @Override
     public long lastForwardedWm(byte key) {
-        return lastForwardedWm.get(key).get();
+        Counter counter = lastForwardedWm.get(key);
+        if (counter == null) {
+            counter = SwCounter.newSwCounter(Long.MIN_VALUE);
+            lastForwardedWm.put(key, counter);
+        }
+        return counter.get();
     }
 }
