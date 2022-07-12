@@ -28,6 +28,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.tpc.bootstrap.TpcBootstrap;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -174,7 +175,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         byte status = CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+                clientFailoverSupported, null);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
@@ -182,7 +183,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
         return encodeAuth(status, null, null, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+                clientFailoverSupported, null);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
@@ -190,7 +191,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null,
                 serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(),
-                clientEngine.getClusterService().getClusterId(), clientFailoverSupported);
+                clientEngine.getClusterService().getClusterId(), clientFailoverSupported, null);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
@@ -215,8 +216,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+
         return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported);
+                clientEngine.getPartitionService().getPartitionCount(), clusterId,
+                clientFailoverSupported, nodeEngine.getTpcBootstrap().getClientPorts());
     }
 
     private void setConnectionType() {
@@ -225,7 +228,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
-                                                int partitionCount, UUID clusterId, boolean failoverSupported);
+                                                int partitionCount, UUID clusterId,
+                                                boolean failoverSupported, String tpcPorts);
 
     protected abstract String getClientType();
 

@@ -89,7 +89,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, StaticMetricsProvider {
+public final class ClassicOperationExecutor implements OperationExecutor, StaticMetricsProvider {
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -111,15 +111,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
 
-    public OperationExecutorImpl(HazelcastProperties properties,
-                                 LoggingService loggerService,
-                                 Address thisAddress,
-                                 OperationRunnerFactory runnerFactory,
-                                 NodeExtension nodeExtension,
-                                 String hzName,
-                                 ClassLoader configClassLoader) {
+    public ClassicOperationExecutor(HazelcastProperties properties,
+                                    LoggingService loggerService,
+                                    Address thisAddress,
+                                    OperationRunnerFactory runnerFactory,
+                                    NodeExtension nodeExtension,
+                                    String hzName,
+                                    ClassLoader configClassLoader) {
         this.thisAddress = thisAddress;
-        this.logger = loggerService.getLogger(OperationExecutorImpl.class);
+        this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
@@ -554,6 +554,6 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public String toString() {
-        return "OperationExecutorImpl{node=" + thisAddress + '}';
+        return "ClassicOperationExecutor{node=" + thisAddress + '}';
     }
 }

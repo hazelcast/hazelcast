@@ -62,6 +62,11 @@ public final class EpollAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
+    public int getLocalPort() {
+        return 0;
+    }
+
+    @Override
     protected SocketAddress getLocalAddress0() throws Exception {
         return serverSocket.localAddress();
     }

@@ -122,14 +122,14 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (tpcChannels == null) {
+        ClientMessage clientMessage = (ClientMessage) frame;
+        int partitionId = clientMessage.getPartitionId();
+        if (tpcChannels == null || partitionId < 0) {
             if (channel.write(frame)) {
                 return true;
             }
         } else {
             // todo: ugly behavior in case of negative partitionId.
-            ClientMessage clientMessage = (ClientMessage) frame;
-            int partitionId = clientMessage.getPartitionId();
             int tpcThreadIndex = HashUtil.hashToIndex(partitionId, tpcChannels.length);
             if (tpcChannels[tpcThreadIndex].write(frame)) {
                 return true;

@@ -98,6 +98,7 @@ public final class NioChannel extends AbstractChannel {
             socketChannel.configureBlocking(false);
             channelInitializer.initChannel(this);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new HazelcastException("Failed to start " + this, e);
         }
         inboundPipeline.start();

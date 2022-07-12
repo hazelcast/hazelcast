@@ -223,7 +223,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
                 escapeChar = null;
             }
 
-            // Main logic.
+            // ClientMain logic.
             StringBuilder javaPattern = new StringBuilder();
 
             int i;

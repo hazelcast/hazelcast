@@ -54,7 +54,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
-        this.requestService = nodeEngine.getRequestService();
+        this.requestService = null;// nodeEngine.getTpcBootstrap();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.requestAllocator = new ConcurrentIOBufferAllocator(128, true);
@@ -98,7 +98,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         if (concurrency == 1) {
             try {
-                IOBuffer response = asyncNoop().get(23, SECONDS);
+                IOBuffer response = asyncNoop(partitionId).get(23, SECONDS);
                 response.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);

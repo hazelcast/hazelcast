@@ -78,7 +78,10 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
         try {
             while (src.hasRemaining()) {
                 boolean trusted = isEndpointTrusted();
+
+                //System.out.println("ClientMessageDecoder:src.remaining "+src.remaining());
                 boolean complete = activeReader.readFrom(src, trusted);
+                //System.out.println("ClientMessageDecoder:complete "+complete);
                 if (!complete) {
                     break;
                 }

@@ -88,10 +88,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class TPCOperationExecutor implements OperationExecutor, StaticMetricsProvider {
-    private static final HazelcastProperty IDLE_STRATEGY
-            = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
-    private final ThreadAffinity threadAffinity = newSystemThreadAffinity("hazelcast.operation.thread.affinity");
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
@@ -450,15 +447,20 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
             return false;
         }
 
+        if (op.getPartitionId() < 0) {
+            return true;
+        }
+
         // if it is async we don't need to check if it is PartitionOperationThread or not
         if (isAsync) {
             return true;
         }
 
-        if (currentThread.getClass() == TPCEventloopThread.class) {
-            return false;
+        if (currentThread.getClass() != TPCEventloopThread.class) {
+            return true;
         }
 
+        // todo: we need to do partition checking. For now we just accept
         return true;
     }
 
@@ -505,6 +507,6 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
 
     @Override
     public String toString() {
-        return "OperationExecutorImpl{node=" + thisAddress + '}';
+        return "TPCOperationExecutor{node=" + thisAddress + '}';
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
@@ -111,7 +111,7 @@ public abstract class OperationRunner {
      * or not. So it could be that a value is returned while no operation is
      * running.
      * <p>
-     * For example, the {@link OperationExecutorImpl} will never unset this
+     * For example, the {@link ClassicOperationExecutor} will never unset this
      * field since each OperationRunner is bound to a single OperationThread;
      * so this field is initialized when the OperationRunner is created.
      * <p>

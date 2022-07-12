@@ -146,9 +146,9 @@ public final class HazelcastBootstrap {
                 if (jarFile.getManifest() == null) {
                     error("No manifest file in " + jar + ". You can use the -c option to provide the main class.");
                 }
-                mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
+                mainClass = jarFile.getManifest().getMainAttributes().getValue("ClientMain-Class");
                 if (mainClass == null) {
-                    error("No Main-Class found in manifest. You can use the -c option to provide the main class.");
+                    error("No ClientMain-Class found in manifest. You can use the -c option to provide the main class.");
                 }
             }
 

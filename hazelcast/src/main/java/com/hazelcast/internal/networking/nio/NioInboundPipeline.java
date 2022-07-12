@@ -114,6 +114,8 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     void process() throws Exception {
         int readBytes = socketChannel.read(receiveBuffer);
 
+        //System.out.println("\t\t\tBytesRead: "+readBytes);
+
         if (readBytes == -1) {
             throw new EOFException("Remote socket closed!");
         }

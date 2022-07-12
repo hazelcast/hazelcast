@@ -31,7 +31,7 @@ import static picocli.CommandLine.Command;
 import static picocli.CommandLine.Option;
 
 /**
- * Main command class for Hazelcast operations
+ * ClientMain command class for Hazelcast operations
  */
 @Command(name = "hz", description = "Command line utility to start Hazelcast server process."
         + "%n%nGlobal options are:%n",

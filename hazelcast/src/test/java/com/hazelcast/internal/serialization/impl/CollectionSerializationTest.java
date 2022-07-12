@@ -108,7 +108,7 @@ public class CollectionSerializationTest {
     @Test
     public void testCollectionSerialization() {
         collection.add(new SerializationConcurrencyTest.PortablePerson(12, 120, "Osman",
-                new SerializationConcurrencyTest.PortableAddress("Main street", 35)));
+                new SerializationConcurrencyTest.PortableAddress("ClientMain street", 35)));
         collection.add(new SerializationConcurrencyTest.PortablePerson(35, 120, "Orhan",
                 new SerializationConcurrencyTest.PortableAddress("2nd street", 40)));
         Data data = serializationService.toData(collection);

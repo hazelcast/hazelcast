@@ -145,7 +145,7 @@ public class HazelcastProxyFactory {
     }
 
     /**
-     * Main entry point to obtain proxies for a target class loader.
+     * ClientMain entry point to obtain proxies for a target class loader.
      * <p>
      * Creates an Object valid for the Hazelcast version started with
      * {@code targetClassLoader} that proxies the given {@code arg},
