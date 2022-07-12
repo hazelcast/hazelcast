@@ -161,7 +161,7 @@ public class OutboxImpl implements OutboxInternal {
             if (item instanceof Watermark) {
                 Watermark wm = (Watermark) item;
                 long wmTimestamp = wm.timestamp();
-                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
+                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE_TIME) {
                     // We allow equal timestamp here, even though the WMs should be increasing.
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be
@@ -265,6 +265,11 @@ public class OutboxImpl implements OutboxInternal {
 
     @Override
     public long lastForwardedWm(byte key) {
-        return lastForwardedWm.get(key).get();
+        Counter counter = lastForwardedWm.get(key);
+        if (counter == null) {
+            counter = SwCounter.newSwCounter(Long.MIN_VALUE);
+            lastForwardedWm.put(key, counter);
+        }
+        return counter.get();
     }
 }
