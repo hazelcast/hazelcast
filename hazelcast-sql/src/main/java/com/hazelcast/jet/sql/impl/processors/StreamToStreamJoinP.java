@@ -178,7 +178,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.condition(),
+                    joinInfo.nonEquiCondition(),
                     evalContext);
             // it is used already once
             unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
