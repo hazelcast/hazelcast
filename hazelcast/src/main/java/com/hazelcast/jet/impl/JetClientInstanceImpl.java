@@ -21,9 +21,11 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -31,9 +33,11 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -85,6 +89,20 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
                 JetGetJobSummaryListCodec::decodeResponse);
+    }
+
+    /**
+     * Returns a list of jobs and a summary of their details (including SQL ones).
+     */
+    @Nonnull
+    public List<JobAndSqlSummary> getJobAndSqlSummaryList() {
+        HazelcastJsonValue json = invokeRequestOnMasterAndDecodeResponse(JetGetJobAndSqlSummaryListCodec.encodeRequest(),
+                JetGetJobAndSqlSummaryListCodec::decodeResponse);
+        try {
+            return JsonUtil.listFrom(json.getValue(), JobAndSqlSummary.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot parse JSON", e);
+        }
     }
 
     @Nonnull

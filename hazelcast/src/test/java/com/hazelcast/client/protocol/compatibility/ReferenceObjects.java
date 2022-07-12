@@ -49,6 +49,7 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -551,6 +552,13 @@ public class ReferenceObjects {
         return a.isFsync() == b.isFsync();
     }
 
+    public static boolean isEqual(HazelcastJsonValue a, HazelcastJsonValue b) {
+        if (a == null && b != null) {
+            return false;
+        }
+        return a.equals(b);
+    }
+
     public static boolean isEqual(DataPersistenceConfig a, DataPersistenceConfig b) {
         if (a == b) {
             return true;
@@ -895,4 +903,5 @@ public class ReferenceObjects {
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
 }

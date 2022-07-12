@@ -476,6 +476,7 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCach
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCpMember;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aDataPersistenceConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aHazelcastJsonValue;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCacheEventData;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfClientBwListEntries;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCpMembers;
@@ -7512,7 +7513,7 @@ public class ClientCompatibilityNullTest_2_5 {
     public void test_JetGetJobAndSqlSummaryListCodec_decodeResponse() {
         int fileClientMessageIndex = 896;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, JetGetJobAndSqlSummaryListCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(aHazelcastJsonValue, JetGetJobAndSqlSummaryListCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

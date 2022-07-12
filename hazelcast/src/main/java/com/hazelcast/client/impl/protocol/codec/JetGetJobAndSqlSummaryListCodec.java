@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
+import com.hazelcast.client.impl.protocol.codec.custom.HazelcastJsonValueCodec;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.RESPONSE_BACKUP_ACKS_FIELD_OFFSET;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("8dfa9f236431c8966ba7a65cfd3c87a3")
+@Generated("be84ee2084369dacdaf42458023d092c")
 public final class JetGetJobAndSqlSummaryListCodec {
     //hex: 0xFE0F00
     public static final int REQUEST_MESSAGE_TYPE = 16649984;
@@ -60,22 +60,22 @@ public final class JetGetJobAndSqlSummaryListCodec {
         return clientMessage;
     }
 
-    public static ClientMessage encodeResponse(java.lang.String response) {
+    public static ClientMessage encodeResponse(com.hazelcast.core.HazelcastJsonValue response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, response);
+        HazelcastJsonValueCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     /**
      */
-    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.core.HazelcastJsonValue decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return StringCodec.decode(iterator);
+        return HazelcastJsonValueCodec.decode(iterator);
     }
 }

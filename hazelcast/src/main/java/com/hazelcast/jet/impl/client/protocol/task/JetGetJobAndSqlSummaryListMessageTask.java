@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -80,7 +81,7 @@ public class JetGetJobAndSqlSummaryListMessageTask extends AbstractMultiTargetMe
     @Override
     protected ClientMessage encodeResponse(Object response) {
         try {
-            return JetGetJobAndSqlSummaryListCodec.encodeResponse(JsonUtil.toJson(response));
+            return JetGetJobAndSqlSummaryListCodec.encodeResponse(new HazelcastJsonValue(JsonUtil.toJson(response)));
         } catch (IOException e) {
             throw new RuntimeException("Cannot generate JSON", e);
         }
