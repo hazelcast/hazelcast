@@ -80,6 +80,7 @@ public final class CommonElasticSinksPipeline {
                 .clientFn(elasticSupplier)
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE))
                 .mapToRequestFn((TestItem item) -> new UpdateRequest(index, item.getId()).doc(item.asMap()))
+                .retries(0)
                 .build();
 
         p.readFrom(TestSources.items(items))

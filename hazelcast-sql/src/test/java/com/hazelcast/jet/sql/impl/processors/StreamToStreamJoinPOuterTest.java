@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
@@ -55,8 +56,8 @@ import static org.junit.Assert.assertEquals;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
+    private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
+    private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
 
     @Parameter
@@ -119,8 +120,8 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 .expectExactOutput(
                         in(0, wm((byte) 0, 1L)),
                         out(wm((byte) 0, 1L)),
-                        in(1, wm((byte) 1, 1L)),
-                        out(wm((byte) 1, 1L)),
+                        in(1, wm((byte) 1, 2L)),
+                        out(wm((byte) 1, 2L)),
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
                         in(ordinal1, wm(ordinal1, 6L)),
@@ -154,6 +155,33 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                         out(isLeft ? jetRow(8L, null) : jetRow(null, 8L)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
+                );
+    }
+
+    @Test
+    public void when_offLimitAccordingToWm1_and_lateAccordingToWm2_then_handleAsLate() {
+        // l.time1 BETWEEN r.time - 1 AND r.time + 1  (l.time2 is irrelevant)
+        // left ordinal
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 2, 1L));
+        postponeTimeMap.put((byte) 1, emptyMap());
+        // right ordinal
+        postponeTimeMap.put((byte) 2, singletonMap((byte) 0, 1L));
+
+        leftExtractors = new HashMap<>();
+        leftExtractors.put((byte) 0, l -> l.getRow().get(0));
+        leftExtractors.put((byte) 1, l -> l.getRow().get(1));
+        rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
+
+        SupplierEx<Processor> supplier = createProcessor(2, 1);
+
+        TestSupport.verifyProcessor(supplier)
+                .disableSnapshots()
+                .expectExactOutput(
+                        in(1, wm((byte) 2, 10)),
+                        out(wm((byte) 2, 10)),
+                        in(0, wm((byte) 1, 10)),
+                        out(wm((byte) 1, 10)),
+                        in(0, jetRow(0L, 0L))
                 );
     }
 
