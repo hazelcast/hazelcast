@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,7 +36,7 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
 
     public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2) {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
-        OperationExecutorImpl executor = (OperationExecutorImpl) operationServiceImpl.getOperationExecutor();
+        ClassicOperationExecutor executor = (ClassicOperationExecutor) operationServiceImpl.getOperationExecutor();
         int thread1 = executor.toPartitionThreadIndex(partitionId1);
         int thread2 = executor.toPartitionThreadIndex(partitionId2);
         return thread1 == thread2;

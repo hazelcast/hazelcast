@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import java.io.IOException;
 
 /**
- * Base class for all mutable cache operations. Main purpose of this abstract class is providing the
+ * Base class for all mutable cache operations. ClientMain purpose of this abstract class is providing the
  * completion event functionality.
  * <p>This operation publishes COMPLETE event.</p>
  */

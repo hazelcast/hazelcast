@@ -38,6 +38,7 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -61,6 +62,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
@@ -105,6 +107,14 @@ import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
+import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
@@ -458,13 +468,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             return null;
         }
     }
@@ -886,12 +896,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
 
-    // This needs to be fixed; the server should tell the client the list of ports the client
-    // can connect to.
-    private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-    private int tpcClientServerPort = 15000;
-
-
     /**
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
@@ -905,34 +909,58 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
 
-            // Super ugly; doing remote calls while holding a mutex.
-            // Todo: we should use the list of ports from the clientAuthentication.response.
-            if (eventloopCount > 0) {
+            List<Integer> tpcPorts = new ArrayList<>();
+            if (!StringUtil.isNullOrEmpty(response.tpcPorts)) {
+                String[] ports = response.tpcPorts.split(",");
+                for (int k = 0; k < ports.length; k++) {
+                    tpcPorts.add(Integer.parseInt(ports[k]));
+                }
+            }
+
+            if (tpcPorts.isEmpty()) {
+                System.out.println("TPC Client: disabled, no TPC ports detected");
+            } else {
                 try {
-                    Channel[] tpcChannels = new Channel[eventloopCount];
+                    System.out.println("TPC Client: connecting to ports " + tpcPorts);
+
+                    Channel[] tpcChannels = new Channel[tpcPorts.size()];
                     for (int k = 0; k < tpcChannels.length; k++) {
-                        // very hacky way to get the tpcChannels running. but fine for POC.
-
-                        Address address = new Address(connection.getRemoteAddress().getHost(), tpcClientServerPort + k);
-
+                        Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
+                        System.out.println("TPC Client: Connecting to:" + address);
                         SocketChannel tpcSocketChannel = SocketChannel.open();
-                        //Socket socket = socketChannel.socket();
-
-                        //..bindSocketToPort(socket);
 
                         Channel tpcChannel = networking.register(connection.channelInitializer, tpcSocketChannel, true);
                         tpcChannel.attributeMap().put(Address.class, address);
+                        tpcChannel.attributeMap().put(TcpClientConnection.class, connection);
 
                         InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
+
                         tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
 
-                        System.out.println("Client: Successfully connected to " + tpcSocketChannelAddress);
+                        System.out.println("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
+                        System.out.println("TPC Client: configure blocking");
 
                         tpcSocketChannel.configureBlocking(false);
+                        System.out.println("TPC Client: channel.start");
+
                         tpcChannel.start();
+
+                        System.out.println("TPC Client: started");
+
+                        // first thing we need to send is the clientUuid so this new socket can be connected
+                        // to the connection on the member.
+                        ClientMessage clientUuidMessage = ClientMessage.createForEncode();
+                        ClientMessage.Frame initialFrame = new ClientMessage.Frame(
+                                new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
+                        encodeUUID(initialFrame.content, 0, clientUuid);
+                        clientUuidMessage.add(initialFrame);
+                        tpcChannel.write(clientUuidMessage);
+                        System.out.println("TPC Client: uuid send, size:" + initialFrame.getSize());
 
                         tpcChannels[k] = tpcChannel;
                     }
+
+                    System.out.println("TPC Client: all connections made ");
                     connection.setTpcChannels(tpcChannels);
                 } catch (IOException e) {
                     e.printStackTrace();

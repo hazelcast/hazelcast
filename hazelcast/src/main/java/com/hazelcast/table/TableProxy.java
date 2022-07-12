@@ -54,7 +54,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     public TableProxy(NodeEngineImpl nodeEngine, TableService tableService, String name) {
         super(nodeEngine, tableService);
-        this.requestService = nodeEngine.getRequestService();
+        this.requestService = null;// nodeEngine.getTpcBootstrap();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.requestAllocator = new ConcurrentIOBufferAllocator(128, true);
@@ -93,12 +93,12 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
-    public void concurrentNoop(int concurrency) {
+    public void concurrentNoop(int concurrency, int partitionId) {
         checkPositive("concurrency", concurrency);
 
         if (concurrency == 1) {
             try {
-                IOBuffer response = asyncNoop().get(23, SECONDS);
+                IOBuffer response = asyncNoop(partitionId).get(23, SECONDS);
                 response.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -106,7 +106,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         } else {
             CompletableFuture[] futures = new CompletableFuture[concurrency];
             for (int k = 0; k < futures.length; k++) {
-                futures[k] = asyncNoop();
+                futures[k] = asyncNoop(partitionId);
             }
 
             for (CompletableFuture<IOBuffer> f : futures) {
@@ -121,8 +121,27 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     @Override
+    public void concurrentNoop(int concurrency) {
+        int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+        concurrentNoop(concurrency, partitionId);
+    }
+
+    @Override
+    public void noop(int partitionId) {
+        CompletableFuture<IOBuffer> f = asyncNoop(partitionId);
+        try {
+            IOBuffer response = f.get(requestTimeoutMs, MILLISECONDS);
+            response.release();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void noop() {
-        CompletableFuture<IOBuffer> f = asyncNoop();
+        int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+
+        CompletableFuture<IOBuffer> f = asyncNoop(partitionId);
         try {
             IOBuffer response = f.get(requestTimeoutMs, MILLISECONDS);
             response.release();
@@ -132,7 +151,10 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     }
 
     private CompletableFuture<IOBuffer> asyncNoop() {
-        int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+        return asyncNoop(ThreadLocalRandom.current().nextInt(partitionCount));
+    }
+
+    private CompletableFuture<IOBuffer> asyncNoop(int partitionId) {
         IOBuffer request = requestAllocator.allocate(32)
                 .writeRequestHeader(partitionId, NOOP)
                 .constructComplete();

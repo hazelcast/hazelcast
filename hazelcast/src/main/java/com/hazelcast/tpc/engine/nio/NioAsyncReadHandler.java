@@ -23,9 +23,11 @@ import java.nio.ByteBuffer;
 public abstract class NioAsyncReadHandler implements ReadHandler {
 
     protected NioAsyncSocket socket;
+    protected NioEventloop eventloop;
 
     public void init(NioAsyncSocket socket) {
         this.socket = socket;
+        this.eventloop = socket.eventloop();
     }
 
     public abstract void onRead(ByteBuffer buffer);

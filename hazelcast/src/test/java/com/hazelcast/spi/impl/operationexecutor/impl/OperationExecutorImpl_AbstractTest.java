@@ -52,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Abstract test support to test the {@link OperationExecutorImpl}.
+ * Abstract test support to test the {@link ClassicOperationExecutor}.
  * <p>
  * The idea is the following; all dependencies for the executor are available as fields in this object and by calling the
  * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
@@ -67,7 +67,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
     Consumer<Packet> responsePacketConsumer;
-    OperationExecutorImpl executor;
+    ClassicOperationExecutor executor;
     Config config;
 
     @Before
@@ -87,9 +87,9 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         responsePacketConsumer = new DummyResponsePacketConsumer();
     }
 
-    protected OperationExecutorImpl initExecutor() {
+    protected ClassicOperationExecutor initExecutor() {
         props = new HazelcastProperties(config);
-        executor = new OperationExecutorImpl(
+        executor = new ClassicOperationExecutor(
                 props, loggingService, thisAddress, handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
         executor.start();
         return executor;

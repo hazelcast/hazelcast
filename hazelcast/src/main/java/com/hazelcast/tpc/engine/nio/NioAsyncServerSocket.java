@@ -76,6 +76,11 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
+    public int getLocalPort() {
+        return serverSocketChannel.socket().getLocalPort();
+    }
+
+    @Override
     public boolean isReusePort() {
         //serverSocketChannel.getOption(StandardSocketOptions.SO_REUSEPORT)
         return false;

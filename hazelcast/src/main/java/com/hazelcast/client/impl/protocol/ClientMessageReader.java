@@ -42,11 +42,14 @@ public final class ClientMessageReader {
     public boolean readFrom(ByteBuffer src, boolean trusted) {
         for (; ; ) {
             if (readFrame(src, trusted)) {
+               // System.out.println("\t\t\tCLientMessageReader: frame fully read");
                 if (ClientMessage.isFlagSet(clientMessage.endFrame.flags, IS_FINAL_FLAG)) {
+                    //System.out.println("\t\t\tClientMessageReader: exit with true");
                     return true;
                 }
                 readOffset = -1;
             } else {
+                //System.out.println("\t\t\tClientMessageReader: exit with false");
                 return false;
             }
 
@@ -73,6 +76,9 @@ public final class ClientMessageReader {
             }
 
             int frameLength = Bits.readIntL(src, src.position());
+            //if(debug) {
+            //    System.out.println("\t\t\tClientMessageReader.Framelength:" + frameLength);
+            //}
             if (frameLength < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
                 throw new IllegalArgumentException(format(
                         "The client message frame reported illegal length (%d bytes)."
@@ -92,6 +98,9 @@ public final class ClientMessageReader {
 
             upcast(src).position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
+            //System.out.println("Read flags: "+flags);
+
+
             upcast(src).position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
@@ -102,6 +111,10 @@ public final class ClientMessageReader {
             } else {
                 clientMessage.add(frame);
             }
+
+            //System.out.println("\t\t\tClientMessageReader: frame.content.length:" + frame.content.length + " flags:" + frame.flags + " isFinal:" + ClientMessage.isFlagSet(flags, IS_FINAL_FLAG));
+
+
             readOffset = 0;
             if (size == 0) {
                 return true;

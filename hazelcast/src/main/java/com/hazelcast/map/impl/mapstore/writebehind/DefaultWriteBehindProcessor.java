@@ -337,7 +337,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     /**
-     * Main contract for retry operations.
+     * ClientMain contract for retry operations.
      *
      * @param <T> the type of object to be processed in this task.
      */

@@ -156,6 +156,10 @@ public final class Bits {
         return EndiannessUtil.readIntL(BYTE_BUFFER_ACCESS, buffer, pos);
     }
 
+    public static int readIntB(ByteBuffer buffer, int pos) {
+        return EndiannessUtil.readIntB(BYTE_BUFFER_ACCESS, buffer, pos);
+    }
+
     public static void writeInt(byte[] buffer, int pos, int v, boolean useBigEndian) {
         EndiannessUtil.writeInt(BYTE_ARRAY_ACCESS, buffer, pos, v, useBigEndian);
     }

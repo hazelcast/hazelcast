@@ -79,6 +79,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
+    public int getLocalPort() {
+        return serverSocket.localAddress().getPort();
+    }
+
+    @Override
     public IOUringEventloop eventloop() {
         return eventloop;
     }

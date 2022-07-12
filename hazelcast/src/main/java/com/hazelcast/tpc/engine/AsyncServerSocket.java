@@ -73,4 +73,6 @@ public abstract class AsyncServerSocket implements Closeable {
     public String toString() {
         return getClass().getSimpleName() + "[" + localAddress() + "]";
     }
+
+    public abstract int getLocalPort();
 }

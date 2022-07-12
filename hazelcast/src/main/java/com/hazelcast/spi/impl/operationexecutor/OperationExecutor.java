@@ -17,10 +17,10 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.operationexecutor.impl.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 
 import java.util.BitSet;
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * and PartitionSpecificRunnable to a thread instead of only runnables.
  *
  * It depends on the implementation if an operation is executed on the calling
- * thread or not. For example the {@link OperationExecutorImpl} will always
+ * thread or not. For example the {@link ClassicOperationExecutor} will always
  * offload a partition specific Operation to the correct partition-operation-thread.
  *
  * The actual processing of a operation-packet, Operation, or a

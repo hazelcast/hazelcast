@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +42,10 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutCodec.Req
                 parameters.value, parameters.ttl);
         op.setThreadId(parameters.threadId);
         return op;
+//
+//        FakePutOperation fakePutOperation = new FakePutOperation();
+//        fakePutOperation.setPartitionId(op.getPartitionId());
+//        return fakePutOperation;
     }
 
     private MapOperation newPutOperation(String name, Data keyData, Data valueData, long ttl) {
@@ -74,5 +79,12 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutCodec.Req
             return new Object[]{parameters.key, parameters.value};
         }
         return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
+    }
+}
+
+class FakePutOperation extends Operation implements PartitionAwareOperation{
+    @Override
+    public Object getResponse() {
+        return null;
     }
 }

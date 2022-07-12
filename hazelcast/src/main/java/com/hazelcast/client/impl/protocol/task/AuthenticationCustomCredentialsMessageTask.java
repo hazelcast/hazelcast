@@ -66,7 +66,7 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
-                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported) {
+                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported, String tpcPorts) {
         return ClientAuthenticationCustomCodec
                 .encodeResponse(status, thisAddress, uuid, version,
                         getMemberBuildInfo().getVersion(), partitionCount, clusterId, clientFailoverSupported);

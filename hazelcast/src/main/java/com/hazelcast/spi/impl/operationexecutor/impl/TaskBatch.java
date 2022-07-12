@@ -20,7 +20,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 
 import java.util.BitSet;
 
-import static com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl.getPartitionThreadId;
+import static com.hazelcast.spi.impl.operationexecutor.impl.ClassicOperationExecutor.getPartitionThreadId;
 
 /**
  * A 'batch' of tasks to be executed on a partition thread.

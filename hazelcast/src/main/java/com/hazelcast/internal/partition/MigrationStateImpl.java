@@ -27,7 +27,7 @@ import java.util.Objects;
 
 /**
  * Summary of the migration state.
- * Main implementation of {@link MigrationState}.
+ * ClientMain implementation of {@link MigrationState}.
  */
 public class MigrationStateImpl implements MigrationState, IdentifiedDataSerializable {
 

@@ -37,7 +37,7 @@ public interface FilteringStrategy {
      int FILTER_DOES_NOT_MATCH = -1;
 
     /**
-     * Main entry point for filtering events according to given filter.
+     * ClientMain entry point for filtering events according to given filter.
      *
      * @param filter        the event filter
      * @param dataKey       the event entry key

@@ -226,7 +226,7 @@ public final class Hazelcast {
      *     to acquire a Hazelcast client instance.
      * <li>
      *     Create a runnable JAR (e.g. {@code jet-job.jar}) with your entry point
-     *     declared as the {@code Main-Class} in {@code MANIFEST.MF}. The JAR should
+     *     declared as the {@code ClientMain-Class} in {@code MANIFEST.MF}. The JAR should
      *     include all dependencies required to run it (except the Hazelcast classes
      *     &mdash; these are already available on the cluster classpath).
      * <li>

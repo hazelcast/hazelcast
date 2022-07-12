@@ -31,7 +31,7 @@ import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link OperationExecutorImpl#handle(Packet)}.
+ * Tests {@link ClassicOperationExecutor#handle(Packet)}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

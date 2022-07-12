@@ -20,6 +20,7 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.requestservice.FrameCodec;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_CHAR;
@@ -48,6 +49,8 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
  * should be agnostic of the composition.
  */
 public class IOBuffer {
+
+     public CompletableFuture future;
 
     public IOBuffer next;
     public AsyncSocket socket;
@@ -152,6 +155,22 @@ public class IOBuffer {
     public IOBuffer writeInt(int value) {
         ensureRemaining(BYTES_INT);
         buff.putInt(value);
+        return this;
+    }
+
+    public IOBuffer writeIntL(int v){
+        ensureRemaining(BYTES_INT);
+        buff.put((byte) ((v) & 0xFF));
+        buff.put((byte) ((v>>> 8) & 0xFF));
+        buff.put((byte) ((v>>> 16) & 0xFF));
+        buff.put((byte) ((v >>> 24) & 0xFF));
+        return this;
+    }
+
+    public IOBuffer writeShortL(short v){
+        ensureRemaining(BYTES_INT);
+        buff.put((byte) ((v) & 0xFF));
+        buff.put((byte) ((v>>> 8) & 0xFF));
         return this;
     }
 

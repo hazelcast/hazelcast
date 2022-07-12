@@ -186,9 +186,14 @@ public final class ClientAuthenticationCodec {
          * Returns true if server supports clients with failover feature.
          */
         public boolean failoverSupported;
+
+        /**
+         * Returns a list of TPC ports (comma seperated). Null if TPC not enabled
+         */
+        public String tpcPorts;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, String tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -202,6 +207,7 @@ public final class ClientAuthenticationCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
+        CodecUtil.encodeNullable(clientMessage, tpcPorts, StringCodec::encode);
         return clientMessage;
     }
 
@@ -217,6 +223,7 @@ public final class ClientAuthenticationCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
+        response.tpcPorts = StringCodec.decode(iterator);
         return response;
     }
 }

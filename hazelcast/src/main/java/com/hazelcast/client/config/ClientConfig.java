@@ -60,7 +60,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
- * Main configuration to setup a Hazelcast Client
+ * ClientMain configuration to setup a Hazelcast Client
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConfig {

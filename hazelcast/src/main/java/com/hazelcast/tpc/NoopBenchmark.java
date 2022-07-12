@@ -26,7 +26,7 @@ public class NoopBenchmark {
 
     public static void main(String[] args) throws Exception {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+       // HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Table table = node1.getTable("piranaha");
 
@@ -49,6 +49,6 @@ public class NoopBenchmark {
         long duration = System.currentTimeMillis() - startMs;
         System.out.println("Throughput: " + (operations * 1000.0f / duration) + " op/s");
         node1.shutdown();
-        node2.shutdown();
+    //    node2.shutdown();
     }
 }

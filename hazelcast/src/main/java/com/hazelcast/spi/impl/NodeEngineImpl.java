@@ -66,6 +66,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.tpc.bootstrap.TpcBootstrap;
 import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
@@ -131,7 +132,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final RequestService requestService;
+    private final TpcBootstrap tpcBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -146,7 +147,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
-            this.requestService = new RequestService(this);
+            this.tpcBootstrap = new TpcBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -191,8 +192,8 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public RequestService getRequestService(){
-        return requestService;
+    public TpcBootstrap getTpcBootstrap(){
+        return tpcBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -260,7 +261,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        requestService.start();
+        tpcBootstrap.start();
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -575,8 +576,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if(requestService !=null){
-            requestService.shutdown();
+        if(tpcBootstrap !=null){
+            tpcBootstrap.shutdown();
         }
     }
 

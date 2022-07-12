@@ -46,5 +46,9 @@ public interface Table<K,E> {
 
     void noop();
 
+    void noop(int partitionId);
+
     void concurrentNoop(int concurrency);
+
+    void concurrentNoop(int concurrency, int partitionId);
 }
