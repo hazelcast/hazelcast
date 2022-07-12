@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
@@ -27,6 +28,8 @@ import com.hazelcast.jet.impl.util.Util;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
@@ -55,7 +58,7 @@ public class OutboxImpl implements OutboxInternal {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
-    private final Counter lastForwardedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+    private final Map<Byte, Counter> lastForwardedWm = new HashMap<>();
 
     private boolean blocked;
 
@@ -108,6 +111,7 @@ public class OutboxImpl implements OutboxInternal {
         return offerInternal(ordinals, item);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private boolean offerInternal(@Nonnull int[] ordinals, @Nonnull Object item) {
         if (shouldBlock()) {
             return false;
@@ -154,18 +158,23 @@ public class OutboxImpl implements OutboxInternal {
             broadcastTracker.clear();
             unfinishedItem = null;
             unfinishedItemOrdinals = null;
-//            if (item instanceof Watermark) {
-//                long wmTimestamp = ((Watermark) item).timestamp();
-//                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
-//                    // We allow equal timestamp here, even though the WMs should be increasing.
-//                    // But we don't track WMs per ordinal and the same WM can be offered to different
-//                    // ordinals in different calls. Theoretically a completely different WM could be
-//                    // emitted to each ordinal, but we don't do that currently.
-//                    assert lastForwardedWm.get() <= wmTimestamp
-//                            : "current=" + lastForwardedWm.get() + ", new=" + wmTimestamp;
-//                    lastForwardedWm.set(wmTimestamp);
-//                }
-//            }
+            if (item instanceof Watermark) {
+                Watermark wm = (Watermark) item;
+                long wmTimestamp = wm.timestamp();
+                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
+                    // We allow equal timestamp here, even though the WMs should be increasing.
+                    // But we don't track WMs per ordinal and the same WM can be offered to different
+                    // ordinals in different calls. Theoretically a completely different WM could be
+                    // emitted to each ordinal, but we don't do that currently.
+                    if (lastForwardedWm.get(wm.key()) == null) {
+                        lastForwardedWm.put(wm.key(), SwCounter.newSwCounter(Long.MIN_VALUE));
+                        return true;
+                    }
+                    assert lastForwardedWm.get(wm.key()).get() <= wmTimestamp
+                            : "current=" + lastForwardedWm.get(wm.key()).get() + ", new=" + wmTimestamp;
+                    lastForwardedWm.get(wm.key()).set(wmTimestamp);
+                }
+            }
         } else {
             numRemainingInBatch = -1;
             unfinishedItem = item;
@@ -255,7 +264,7 @@ public class OutboxImpl implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm() {
-        return lastForwardedWm.get();
+    public long lastForwardedWm(byte key) {
+        return lastForwardedWm.get(key).get();
     }
 }

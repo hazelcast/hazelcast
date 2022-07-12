@@ -88,7 +88,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         out(jetRow(1L, 1L)),
                         in(wm((byte) 0, 1L)),
                         out(wm((byte) 0, 0L)),
-                        in(wm((byte) 1, 1L)),
+                        in(wm((byte) 1, 2L)),
                         out(wm((byte) 0, 1L)),
                         out(wm((byte) 1, 1L))
                 );

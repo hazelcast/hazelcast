@@ -197,8 +197,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark";
+        if (!wmState.containsKey(watermark.key())) {
+            lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
+            lastEmittedWm.put((Byte) watermark.key(), watermark.timestamp());
+            return tryEmit(watermark);
+        }
+
+        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark : " + watermark;
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
@@ -208,23 +213,17 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
             // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
             //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
-            // 5.2 & 5.3
+
             clearExpiredItemsInBuffer(0);
             clearExpiredItemsInBuffer(1);
         }
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
 
-        // TODO stale comments
-        // 5.5 : from the remaining elements in the buffer, compute
-        // the minimum time value in each watermark timestamp column.
         for (Byte wmKey : wmState.keySet()) {
             long minimumBufferTime = findMinimumBufferTime(wmKey);
             long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
             long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
-            // 5.6 For each WM key, emit a new watermark
-            // as the minimum of value computed in step 5
-            // and of the last received value for that WM key.
             if (newWmTime > lastEmittedWm.getValue(wmKey)) {
                 pendingOutput.add(new Watermark(newWmTime, wmKey));
                 lastEmittedWm.put(wmKey, newWmTime);

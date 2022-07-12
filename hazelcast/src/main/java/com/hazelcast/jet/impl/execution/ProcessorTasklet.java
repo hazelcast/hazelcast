@@ -638,7 +638,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private long lastForwardedWmLatency() {
-        long wm = outbox.lastForwardedWm();
+        long wm = outbox.lastForwardedWm((byte) 0);
         if (wm == IDLE_MESSAGE.timestamp()) {
             return Long.MIN_VALUE; // idle
         }
@@ -693,7 +693,8 @@ public class ProcessorTasklet implements Tasklet {
 
         mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
         mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
-        mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
+//        TODO: metrics for keyed WM will be fully supported in corresponding PR. Now we are requesting the default key.
+        mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm((byte) 0));
         mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 
         mContext.collect(descriptor, this);
