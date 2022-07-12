@@ -120,8 +120,8 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 .expectExactOutput(
                         in(0, wm((byte) 0, 1L)),
                         out(wm((byte) 0, 1L)),
-                        in(1, wm((byte) 1, 1L)),
-                        out(wm((byte) 1, 1L)),
+                        in(1, wm((byte) 1, 2L)),
+                        out(wm((byte) 1, 2L)),
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
                         in(ordinal1, wm(ordinal1, 6L)),

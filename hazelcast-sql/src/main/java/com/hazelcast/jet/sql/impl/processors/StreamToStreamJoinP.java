@@ -197,12 +197,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        if (!wmState.containsKey(watermark.key())) {
-            lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
-            lastEmittedWm.put((Byte) watermark.key(), watermark.timestamp());
-            return tryEmit(watermark);
-        }
-
+        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
         assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark : " + watermark;
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
@@ -213,7 +208,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
             // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
             //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
-
             clearExpiredItemsInBuffer(0);
             clearExpiredItemsInBuffer(1);
         }
