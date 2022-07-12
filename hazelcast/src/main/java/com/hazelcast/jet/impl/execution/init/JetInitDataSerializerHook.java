@@ -107,7 +107,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 45;
     public static final int NOOP_PROCESSOR_SUPPLIER = 46;
     public static final int CHECK_LIGHT_JOBS_OP = 47;
-    public static final int GET_JOB_AND_SQL_SUMMARY_LIST_OP = 49;
+    public static final int GET_JOB_AND_SQL_SUMMARY_LIST_OP = 48;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 

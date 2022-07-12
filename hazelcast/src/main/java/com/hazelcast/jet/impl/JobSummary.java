@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -121,13 +120,11 @@ public class JobSummary implements IdentifiedDataSerializable {
     }
 
     @Override
-    @JsonIgnore
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
-    @JsonIgnore
     public int getClassId() {
         return JetInitDataSerializerHook.JOB_SUMMARY;
     }
