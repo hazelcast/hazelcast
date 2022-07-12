@@ -26,14 +26,13 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 public final class JsonArrayAggAggregation {
 
     private JsonArrayAggAggregation() {
     }
 
-    public static OrderedJsonArrayAggAggregation create(
+    public static OrderedJsonArrayAggAggregation createOrdered(
             ExpressionUtil.SqlRowComparator comparator,
             boolean isAbsentOnNull,
             int aggIndex
@@ -41,17 +40,14 @@ public final class JsonArrayAggAggregation {
         return new OrderedJsonArrayAggAggregation(comparator, isAbsentOnNull, aggIndex);
     }
 
-    public static UnorderedJsonArrayAggAggregation create(boolean isAbsentOnNull) {
+    public static UnorderedJsonArrayAggAggregation createUnordered(boolean isAbsentOnNull) {
         return new UnorderedJsonArrayAggAggregation(isAbsentOnNull);
     }
 
     private static final class OrderedJsonArrayAggAggregation implements SqlAggregation {
-        private TreeMultiset<JetSqlRow> objects;
-        private boolean isAbsentOnNull;
-        private int aggIndex;
-
-        private OrderedJsonArrayAggAggregation() {
-        }
+        private final TreeMultiset<JetSqlRow> objects;
+        private final boolean isAbsentOnNull;
+        private final int aggIndex;
 
         private OrderedJsonArrayAggAggregation(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
             this.isAbsentOnNull = isAbsentOnNull;
@@ -75,8 +71,7 @@ public final class JsonArrayAggAggregation {
             StringBuilder sb = new StringBuilder();
             boolean firstValue = true;
             sb.append("[");
-            for (Object o : objects) {
-                JetSqlRow row = (JetSqlRow) o;
+            for (JetSqlRow row : objects) {
                 Object value = row.get(aggIndex);
                 if (value == null) {
                     if (!isAbsentOnNull) {
@@ -103,20 +98,21 @@ public final class JsonArrayAggAggregation {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
             throw new UnsupportedOperationException("OrderedJsonArrayAgg writeData() method should not be called");
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
             throw new UnsupportedOperationException("OrderedJsonArrayAgg readData() should not be called");
         }
     }
 
     private static final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
-        private final List<Object> values = new ArrayList<>();
+        private final ArrayList<Object> values = new ArrayList<>();
         private boolean isAbsentOnNull;
 
+        @SuppressWarnings("unused") // used for deserialization
         private UnorderedJsonArrayAggAggregation() {
         }
 
@@ -178,6 +174,7 @@ public final class JsonArrayAggAggregation {
         public void readData(ObjectDataInput in) throws IOException {
             isAbsentOnNull = in.readBoolean();
             int size = in.readInt();
+            values.ensureCapacity(size);
             for (int i = 0; i < size; i++) {
                 values.add(in.readObject());
             }

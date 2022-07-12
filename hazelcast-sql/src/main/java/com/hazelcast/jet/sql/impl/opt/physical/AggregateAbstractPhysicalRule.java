@@ -249,9 +249,9 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         @Override
         public SqlAggregation getEx() {
             if (comparator == null) {
-                return JsonArrayAggAggregation.create(isAbsentOnNull);
+                return JsonArrayAggAggregation.createUnordered(isAbsentOnNull);
             } else {
-                return JsonArrayAggAggregation.create(comparator, isAbsentOnNull, aggIndex);
+                return JsonArrayAggAggregation.createOrdered(comparator, isAbsentOnNull, aggIndex);
             }
         }
 
