@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.test.TestAbstractSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
@@ -29,9 +28,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.logical.LogicalUnion;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,9 +39,8 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 
-public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
+public class UnionDropLateItemsTransposeTest extends OptimizerTestSupport {
     private TableResolver resolver;
 
     @BeforeClass
@@ -61,81 +59,76 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
                 stream,
                 asList("a", "b"),
                 asList(INTEGER, TIMESTAMP),
+                row(0, timestamp(0L))
+        );
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream2,
+                asList("a", "b"),
+                asList(INTEGER, TIMESTAMP),
                 row(1, timestamp(1L))
         );
+
+        String stream3 = "stream3";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream3,
+                asList("x", "y"),
+                asList(INTEGER, TIMESTAMP),
+                row(2, timestamp(2L))
+        );
     }
 
     @Test
-    public void given_calcAndDropItemsRelTransposes_whenNoProjectPermutes_then_success() {
+    public void when_unionAndDropItemsRelTransposes_then_transposes() {
         // TODO: optimizer support for stream tables and assertPlan(..)
-        String sql = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
+        String sql = "" +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND)) " +
+                "UNION ALL " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))" +
+                "UNION ALL " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(y), INTERVAL '0.001' SECOND))";
 
         assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
-        HazelcastTable streamingTable = streamingTable(resolver.getTables().get(0), 1L);
+        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(1));
+        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(2));
+        HazelcastTable streamingTable1 = streamingTable(resolver.getTables().get(0), 1L);
+        HazelcastTable streamingTable2 = streamingTable(resolver.getTables().get(1), 1L);
+        HazelcastTable streamingTable3 = streamingTable(resolver.getTables().get(2), 1L);
 
-        RelNode node = preOptimize(sql, streamingTable);
+        RelNode node = preOptimize(sql, streamingTable1, streamingTable2, streamingTable3);
         assertPlan(
                 node,
                 plan(
-                        planRow(0, LogicalTableFunctionScan.class),
-                        planRow(1, LogicalTableScan.class)
-                )
-        );
-
-        LogicalRel logicalRel = optimizeLogical(sql, streamingTable);
-        assertPlan(
-                logicalRel,
-                plan(
-                        planRow(0, DropLateItemsLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
-                )
-        );
-
-        assertRowsEventuallyInAnyOrder(sql, ImmutableList.of(new Row(1, timestamp(1L))));
-    }
-
-    @Test
-    public void given_calcAndDropItemsRelTransposes_whenProjectPermutes_then_success() {
-        // TODO: optimizer support for stream tables and assertPlan(..)
-        String sql = "SELECT b, a FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
-
-        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
-        HazelcastTable streamingTable = streamingTable(resolver.getTables().get(0), 1L);
-
-        RelNode node = preOptimize(sql, streamingTable);
-        assertPlan(
-                node,
-                plan(
-                        planRow(0, LogicalCalc.class),
+                        planRow(0, LogicalUnion.class),
+                        planRow(1, LogicalTableFunctionScan.class),
+                        planRow(2, LogicalTableScan.class),
+                        planRow(1, LogicalTableFunctionScan.class),
+                        planRow(2, LogicalTableScan.class),
                         planRow(1, LogicalTableFunctionScan.class),
                         planRow(2, LogicalTableScan.class)
                 )
         );
 
-        LogicalRel logicalRel = optimizeLogical(sql, streamingTable);
-        /* Desired behaviour of logical optimizations:
-          1. Initial state
-          - Calc
-          -- DropRel
-          --- FullScan
-
-          2. DropRel and Calc transposition
-          - DropRel
-          -- Calc
-          --- FullScan
-
-          3. Calc push-down into FullScan
-          - DropRel
-          -- FullScan
-         */
+        LogicalRel logicalRel = optimizeLogical(sql, streamingTable1, streamingTable2, streamingTable3);
         assertPlan(
                 logicalRel,
                 plan(
                         planRow(0, DropLateItemsLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(1, UnionLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class)
                 )
         );
-        assertRowsEventuallyInAnyOrder(sql, singletonList(new Row(timestamp(1L), 1)));
+
+        assertRowsEventuallyInAnyOrder(sql, asList(
+                new Row(0, timestamp(0L)),
+                new Row(1, timestamp(1L)),
+                new Row(2, timestamp(2L))
+        ));
     }
 
     private static HazelcastTable streamingTable(Table table, long rowCount) {

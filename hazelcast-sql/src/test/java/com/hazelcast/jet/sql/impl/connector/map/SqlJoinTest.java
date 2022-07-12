@@ -91,7 +91,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void given_streamToStreamJoin_when_relTreeIsNotPrimitive_then_ok() {
+        public void given_streamToStreamJoin_when_joinIsEquijoin_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -104,9 +104,9 @@ public class SqlJoinTest {
             TestStreamSqlConnector.create(
                     sqlService,
                     stream2,
-                    asList("b", "c", "d"),
-                    asList(TIMESTAMP, INTEGER, VARCHAR),
-                    row(timestamp(0L), 0, "zero"));
+                    singletonList("b"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
 
             sqlService.execute("CREATE VIEW s1 AS " +
                     "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
@@ -114,14 +114,43 @@ public class SqlJoinTest {
                     "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
 
             assertTipOfStream(
-                    "SELECT a, b, d FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
-                            "                                   AND     s1.a + INTERVAL '0.004' SECOND ",
-                    singletonList(new Row(timestamp(0L), timestamp(0L), "zero"))
+                    "SELECT * FROM s1 JOIN s2 ON s2.b = s1.a",
+                    singletonList(new Row(timestamp(0L), timestamp(0L)))
             );
         }
 
         @Test
-        public void given_streamToStreamJoin_when_calcReordersFields_then_ok() {
+        public void given_streamToStreamJoin_when_joinIsEquijoinBetweenFunctions_then_fail() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(2L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    singletonList("b"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(2L)));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+            // TODO: TO_TIMESTAMP
+            assertThatThrownBy(() ->
+                    sqlService.execute("SELECT * FROM s1 JOIN s2 ON TO_TIMESTAMP_TZ(s2.b) = TO_TIMESTAMP_TZ(2)"),
+                    "Time boundness or time equality condition are supported for stream-to-stream JOIN"
+            );
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_calcReordersFields_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -151,7 +180,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void given_streamToStreamJoin_when_calcHasParent_then_ok() {
+        public void given_streamToStreamJoin_when_calcHasParent_then_success() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -188,7 +217,50 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void given_streamToStreamJoin_when_leftInputHasNonTemporalWatermarkedType_then_throw() {
+        public void given_streamToStreamJoin_when_relTreeHasUnion_then_success() {
+            String stream = "stream1";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream,
+                    singletonList("a"),
+                    singletonList(TIMESTAMP),
+                    row(timestamp(0L)));
+
+            String stream2 = "stream2";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream2,
+                    asList("b", "c", "d"),
+                    asList(TIMESTAMP, INTEGER, VARCHAR),
+                    row(timestamp(0L), 0, "zero"));
+            String stream3 = "stream3";
+            TestStreamSqlConnector.create(
+                    sqlService,
+                    stream3,
+                    asList("b", "c", "d"),
+                    asList(TIMESTAMP, INTEGER, VARCHAR),
+                    row(timestamp(1L), 1, "one"));
+
+            sqlService.execute("CREATE VIEW s1 AS " +
+                    "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+            sqlService.execute("CREATE VIEW s2 AS " +
+                    "SELECT b, d FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND)) " +
+                    "UNION ALL " +
+                    "SELECT b, d FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(b), INTERVAL '0.001' SECOND)) ");
+
+            assertTipOfStream(
+                    "SELECT a, d FROM s1 JOIN s2 " +
+                            "ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
+                            "        AND     s1.a + INTERVAL '0.004' SECOND ",
+                    asList(
+                            new Row(timestamp(0L), timestamp(0L), "zero"),
+                            new Row(timestamp(1L), timestamp(1L), "one")
+                    )
+            );
+        }
+
+        @Test
+        public void given_streamToStreamJoin_when_leftInputHasNonTemporalWatermarkedType_then_fail() {
             String stream = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,
@@ -209,7 +281,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void given_streamToStreamJoin_when_rightInputHasNonTemporalWatermarkedType_then_throw() {
+        public void given_streamToStreamJoin_when_rightInputHasNonTemporalWatermarkedType_then_fail() {
             String stream1 = "stream1";
             TestStreamSqlConnector.create(
                     sqlService,

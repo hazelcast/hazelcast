@@ -90,6 +90,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types."));
         }
 
+        RexBuilder rb = join.getCluster().getRexBuilder();
+
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
 
@@ -127,33 +129,29 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
-        RexNode predicate = join.analyzeCondition().getRemaining(join.getCluster().getRexBuilder());
+
+        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(join, watermarkedFields);
+        RexNode predicate;
+        if (join.analyzeCondition().isEqui()) {
+            predicate = join.getCondition();
+        } else {
+            predicate = join.analyzeCondition().getRemaining(rb);
+        }
+
         if (!(predicate instanceof RexCall)) {
-            call.transformTo(
-                    fail(join, "Stream-to-stream JOIN condition must contain time boundness predicate"));
+            call.transformTo(fail(join, visitor.errorMessage));
             return;
         }
 
-        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(join, watermarkedFields);
         predicate.accept(visitor);
 
         if (!visitor.isValid) {
-            call.transformTo(
-                    fail(join, "Stream to stream JOIN condition must contain time boundness predicate"));
+            call.transformTo(fail(join, visitor.errorMessage));
             return;
         }
         // endregion
 
-        RexBuilder rb = join.getCluster().getRexBuilder();
-        Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = new HashMap<>();
-
-        Map<RexInputRef, Long> leftBoundMap = new HashMap<>();
-        leftBoundMap.put(visitor.leftBound.f1(), visitor.leftBound.f2());
-        postponeMap.put(visitor.leftBound.f0(), leftBoundMap);
-
-        Map<RexInputRef, Long> rightBoundMap = new HashMap<>();
-        rightBoundMap.put(visitor.rightBound.f1(), visitor.rightBound.f2());
-        postponeMap.put(visitor.rightBound.f0(), rightBoundMap);
+        Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = assemblePostponeTimeMap(join, visitor);
 
         Map<RexInputRef, RexInputRef> leftInputToJointRowMapping = new HashMap<>();
         Map<RexInputRef, RexInputRef> rightInputToJointRowMapping = new HashMap<>();
@@ -217,6 +215,21 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         return true;
     }
 
+    private Map<RexInputRef, Map<RexInputRef, Long>> assemblePostponeTimeMap(
+            Join join,
+            BoundsExtractorVisitor visitor) {
+        Map<RexInputRef, Map<RexInputRef, Long>> postponeMap = new HashMap<>();
+
+        Map<RexInputRef, Long> leftBoundMap = new HashMap<>();
+        leftBoundMap.put(visitor.leftBound.f1(), visitor.leftBound.f2());
+        postponeMap.put(visitor.leftBound.f0(), leftBoundMap);
+
+        Map<RexInputRef, Long> rightBoundMap = new HashMap<>();
+        rightBoundMap.put(visitor.rightBound.f1(), visitor.rightBound.f2());
+        postponeMap.put(visitor.rightBound.f0(), rightBoundMap);
+        return postponeMap;
+    }
+
     /**
      * Extracts all watermarked fields represented in JOIN relation row type.
      *
@@ -259,15 +272,22 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
         private final Join joinRel;
         private final WatermarkedFields watermarkedFields;
+        private final String defaultErrorMessage = "Stream-to-stream JOIN condition must contain time boundness predicate";
+        private String errorMessage = null;
 
         public Tuple3<RexInputRef, RexInputRef, Long> leftBound = null;
         public Tuple3<RexInputRef, RexInputRef, Long> rightBound = null;
+
         public boolean isValid = true;
 
         private BoundsExtractorVisitor(JoinLogicalRel joinRel, WatermarkedFields watermarkedFields) {
             super(true);
             this.joinRel = joinRel;
             this.watermarkedFields = watermarkedFields;
+        }
+
+        public String errorMessage() {
+            return errorMessage == null ? defaultErrorMessage : errorMessage;
         }
 
         // Note: we're expecting equality or `a BETWEEN b and c` call here. Anything else will be rejected.
@@ -282,7 +302,10 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
                         RexInputRef rightOp = (RexInputRef) call.getOperands().get(1);
                         leftBound = tuple3(leftOp, rightOp, 0L);
-                        rightBound = tuple3(leftOp, rightOp, 0L);
+                        rightBound = tuple3(rightOp, leftOp, 0L);
+                    } else {
+                        isValid = false;
+                        errorMessage = "Time boundness or time equality condition are supported for stream-to-stream JOIN";
                     }
                     return null;
                 case GREATER_THAN:
