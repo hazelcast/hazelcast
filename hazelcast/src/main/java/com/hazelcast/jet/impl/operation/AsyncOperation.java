@@ -57,7 +57,15 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
             doSendResponse(e);
             return;
         }
-        future.whenComplete(withTryCatch(getLogger(), (r, f) -> doSendResponse(f != null ? peel(f) : r)));
+        future.whenComplete(withTryCatch(getLogger(), (r, f) -> {
+            if (f != null) {
+                Throwable peeledFailure = peel(f);
+                logError(peeledFailure);
+                doSendResponse(peeledFailure);
+            } else {
+                doSendResponse(r);
+            }
+        }));
     }
 
     protected abstract CompletableFuture<?> doRun() throws Exception;
