@@ -70,6 +70,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
+import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -537,6 +538,10 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
+        if (version.isLessThan(V5_2)) {
+            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
+                    + " for the cluster version less than 5.2");
+        }
         invokeOnStableClusterSerial(
                 nodeEngine,
                 () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
