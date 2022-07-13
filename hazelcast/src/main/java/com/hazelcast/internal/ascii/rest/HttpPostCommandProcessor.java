@@ -27,6 +27,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
+import com.hazelcast.persistence.BackupTaskStatus;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
@@ -89,6 +90,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleBackup(command, false);
             } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
                 handleBackup(command, true);
+            } else if (uri.startsWith(URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL)) {
+                handleGetBackupStatus(command);
             } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
                 handlePartialStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
@@ -157,11 +160,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (!state.equals(clusterService.getClusterState())) {
             clusterService.changeClusterState(state);
             JsonObject res = response(SUCCESS,
-                    "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
+                    "state", lowerCaseInternal(state.toString()));
             prepareResponse(cmd, res);
         } else {
             JsonObject res = response(FAIL,
-                    "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
+                    "state", lowerCaseInternal(state.toString()));
             prepareResponse(cmd, res);
         }
     }
@@ -207,6 +210,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         } else {
             prepareResponse(cmd, response(SUCCESS));
         }
+    }
+
+    private void handleGetBackupStatus(HttpPostCommand command) throws Throwable {
+        decodeParamsAndAuthenticate(command, 2);
+        BackupTaskStatus status = textCommandService.getNode().getNodeExtension()
+            .getHotRestartService().getBackupTaskStatus();
+        prepareResponse(command, response(SUCCESS, "state", lowerCaseInternal(status.getState().toString())));
     }
 
     private void handleBackupInterrupt(HttpPostCommand cmd, boolean deprecated) throws Throwable {

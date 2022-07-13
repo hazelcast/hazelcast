@@ -16,6 +16,18 @@
 
 package com.hazelcast.internal.ascii;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
+
+import org.apache.http.NoHttpResponseException;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
@@ -32,17 +44,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.http.NoHttpResponseException;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.SocketException;
-import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
@@ -52,6 +53,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -188,11 +190,24 @@ public class RestClusterTest {
     }
 
     @Test
+    public void testHotBackupState() throws IOException {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String clusterName = config.getClusterName();
+
+        ConnectionResponse resp = communicator.hotBackupState(clusterName, getPassword());
+        assertSuccessJson(resp);
+        assertJsonNeverContains(resp.response, "state", "no_task");
+    }
+
+    @Test
     public void testHotBackup() throws IOException {
         Config config = createConfigWithRestEnabled();
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String clusterName = config.getClusterName();
+
         ConnectionResponse resp = communicator.hotBackup(clusterName, getPassword());
         assertSuccessJson(resp);
 
@@ -269,6 +284,7 @@ public class RestClusterTest {
                 "nodeState", "ACTIVE",
                 "clusterState", "ACTIVE");
         assertTrue(jsonResult.getBoolean("clusterSafe", false));
+        assertTrue(jsonResult.getBoolean("localMemberSafe", false));
         assertEquals(0, jsonResult.getInt("migrationQueueSize", -1));
         assertEquals(1, jsonResult.getInt("clusterSize", -1));
     }
@@ -398,6 +414,17 @@ public class RestClusterTest {
             String expectedValue = attributesAndValues[i++];
             assertEquals(expectedValue, object.getString(key, null));
         }
+        return object;
+    }
+
+    private JsonObject assertJsonNeverContains(String json, String key, String expectedValue) {
+        JsonObject object = Json.parse(json).asObject();
+
+        if (!object.names().contains(key)) {
+            return object;
+        }
+
+        assertNotEquals(expectedValue, object.getString(key, null));
         return object;
     }
 

@@ -69,6 +69,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     public static final String URI_FORCESTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
     public static final String URI_PARTIALSTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
     public static final String URI_PERSISTENCE_BACKUP_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/backup";
+    public static final String URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL = URI_PERSISTENCE_BACKUP_CLUSTER_URL + "/state";
     public static final String URI_PERSISTENCE_BACKUP_INTERRUPT_CLUSTER_URL
             = URI_CLUSTER_MANAGEMENT_BASE_URL + "/backupInterrupt";
     // Deprecated endpoints

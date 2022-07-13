@@ -48,6 +48,9 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_CP_MEMBERS_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_FORCESTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL;
+import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PERSISTENCE_BACKUP_CLUSTER_URL;
+import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PERSISTENCE_BACKUP_CLUSTER_INTERRUPT_URL;
+import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_LOCAL_CP_MEMBER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PARTIALSTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_RESET_CP_SUBSYSTEM_URL;
@@ -77,6 +80,9 @@ public class RestClusterBadRequestTest extends HazelcastTestSupport {
             URI_PARTIALSTART_CLUSTER_URL,
             URI_HOT_RESTART_BACKUP_CLUSTER_URL,
             URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL,
+            URI_PERSISTENCE_BACKUP_CLUSTER_URL,
+            URI_PERSISTENCE_BACKUP_CLUSTER_INTERRUPT_URL,
+            URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL,
             URI_WAN_SYNC_MAP,
             URI_WAN_SYNC_ALL_MAPS,
             URI_WAN_CLEAR_QUEUES,

@@ -159,6 +159,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                     .add("nodeState", nodeState.toString())
                     .add("clusterState", clusterState.toString())
                     .add("clusterSafe", isClusterSafe())
+                    .add("localMemberSafe", isLocalMemberSafe())
                     .add("migrationQueueSize", migrationQueueSize)
                     .add("clusterSize", clusterSize);
             prepareResponse(command, response);
@@ -173,13 +174,17 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         return memberStateSafe && !partitionService.hasOnGoingMigration();
     }
 
+    private boolean isLocalMemberSafe() {
+        InternalPartitionService partitionService = textCommandService.getNode().getPartitionService();
+        boolean memberStateSafe = partitionService.isMemberStateSafe();
+        return memberStateSafe && !partitionService.hasOnGoingMigrationLocal();
+    }
+
     private void handleGetClusterVersion(HttpGetCommand command) {
         Node node = textCommandService.getNode();
         ClusterService clusterService = node.getClusterService();
-        JsonObject response = new JsonObject()
-                .add("status", "success")
-                .add("version", clusterService.getClusterVersion().toString());
-        prepareResponse(command, response);
+        prepareResponse(command,
+            response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString()));
     }
 
     private void handleCPGroupRequest(HttpGetCommand command) {

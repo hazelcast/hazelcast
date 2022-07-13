@@ -16,13 +16,23 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.logging.ILogger;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -43,22 +53,13 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Level;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
@@ -86,7 +87,14 @@ public class HTTPCommunicator {
     // Hot restart
     public static final String URI_FORCESTART_CLUSTER_URL = "management/cluster/forceStart";
     public static final String URI_PARTIALSTART_CLUSTER_URL = "management/cluster/partialStart";
+    public static final String URI_PERSISTENCE_BACKUP_CLUSTER_URL = "management/cluster/backup";
+    public static final String URI_PERSISTENCE_BACKUP_CLUSTER_INTERRUPT_URL = "management/cluster/backupInterrupt";
+    public static final String URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL = "management/cluster/backup/state";
+
+    // Deprecated endpoints
+    @Deprecated
     public static final String URI_HOT_RESTART_BACKUP_CLUSTER_URL = "management/cluster/hotBackup";
+    @Deprecated
     public static final String URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL = "management/cluster/hotBackupInterrupt";
 
     // WAN
@@ -306,12 +314,17 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse hotBackup(String clusterName, String clusterPassword) throws IOException {
-        String url = getUrl(URI_HOT_RESTART_BACKUP_CLUSTER_URL);
+        String url = getUrl(URI_PERSISTENCE_BACKUP_CLUSTER_URL);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
+    public ConnectionResponse hotBackupState(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_PERSISTENCE_BACKUP_CLUSTER_STATE_URL);
         return doPost(url, clusterName, clusterPassword);
     }
 
     public ConnectionResponse hotBackupInterrupt(String clusterName, String clusterPassword) throws IOException {
-        String url = getUrl(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL);
+        String url = getUrl(URI_PERSISTENCE_BACKUP_CLUSTER_INTERRUPT_URL);
         return doPost(url, clusterName, clusterPassword);
     }
 
