@@ -1553,7 +1553,7 @@
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client-bom</artifactId>
-                <version>1.34.0</version>
+                <version>1.34.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
