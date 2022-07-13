@@ -797,7 +797,7 @@ public class MembershipManager {
                 node.getPartitionService().memberAdded(newMember);
                 node.getNodeExtension().onMemberListChange();
                 Joiner joiner = node.getJoiner();
-                if (joiner != null && joiner.getType().equals("tcp-ip")) {
+                if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
                     ((TcpIpJoiner) joiner).onMemberAdded(newMember);
                 }
                 // async events

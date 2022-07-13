@@ -58,7 +58,7 @@ insufficient, it is possible that the addresses of these new members do not
 exist in the configurations of the first set of members, since we will not have
 added these new members' addresses in the configurations of the first set of
 members while starting them. In a cluster with a long lifecycle, some members
-may do not have the address of every other member, thus we can encounter an
+may not have the address of every other member, thus we can encounter an
 unrecoverable split-brain condition in such a case.
 
 In the cluster join protocol, a new member, which only contains the subset of
