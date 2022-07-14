@@ -34,7 +34,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 
@@ -962,7 +961,7 @@ public class ClientConfig {
      */
     @Nonnull
     public ClientConfig setMetricsConfig(@Nonnull ClientMetricsConfig metricsConfig) {
-        Preconditions.checkNotNull(metricsConfig, "metricsConfig");
+        isNotNull(metricsConfig, "metricsConfig");
         this.metricsConfig = metricsConfig;
         return this;
     }
@@ -980,7 +979,7 @@ public class ClientConfig {
      */
     @Nonnull
     public ClientConfig setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
-        Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
+        isNotNull(instanceTrackingConfig, "instanceTrackingConfig");
         this.instanceTrackingConfig = instanceTrackingConfig;
         return this;
     }
@@ -1000,7 +999,7 @@ public class ClientConfig {
      */
     @Nonnull
     public ClientConfig setSqlConfig(ClientSqlConfig sqlConfig) {
-        Preconditions.checkNotNull(sqlConfig, "sqlConfig");
+        isNotNull(sqlConfig, "sqlConfig");
         this.sqlConfig = sqlConfig;
         return this;
     }

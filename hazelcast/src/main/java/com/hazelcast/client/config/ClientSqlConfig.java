@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.internal.util.Preconditions;
-
 import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the SQL configuration for the client.
@@ -27,15 +27,17 @@ import java.util.Objects;
  * @since 5.2
  */
 public class ClientSqlConfig {
-    private ClientSqlResubmissionMode resubmissionMode = ClientSqlResubmissionMode.NEVER;
+    public static final ClientSqlResubmissionMode DEFAULT_RESUBMISSION_MODE = ClientSqlResubmissionMode.NEVER;
+
+    private ClientSqlResubmissionMode resubmissionMode = DEFAULT_RESUBMISSION_MODE;
 
     /**
      * Sets the resubmission mode for failing SQL queries. See {@link ClientSqlResubmissionMode}.
      * @since 5.2
      */
     @Nonnull
-    public ClientSqlConfig setSqlResubmissionMode(ClientSqlResubmissionMode resubmissionMode) {
-        Preconditions.checkNotNull(resubmissionMode, "resubmissionMode");
+    public ClientSqlConfig setSqlResubmissionMode(@Nonnull ClientSqlResubmissionMode resubmissionMode) {
+        isNotNull(resubmissionMode, "resubmissionMode");
         this.resubmissionMode = resubmissionMode;
         return this;
     }
@@ -44,6 +46,7 @@ public class ClientSqlConfig {
      * Returns the resubmission mode for failing SQL queries. See {@link ClientSqlResubmissionMode}.
      * @since 5.2
      */
+    @Nonnull
     public ClientSqlResubmissionMode getResubmissionMode() {
         return resubmissionMode;
     }

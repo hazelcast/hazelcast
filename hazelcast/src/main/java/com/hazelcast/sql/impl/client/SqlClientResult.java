@@ -35,7 +35,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -65,7 +64,7 @@ public class SqlClientResult implements SqlResult {
     private boolean closed;
 
     /** Whether any SqlRow was returned from an iterator. */
-    private final AtomicBoolean returnedAnyResult = new AtomicBoolean();
+    private volatile boolean returnedAnyResult;
 
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
@@ -408,7 +407,7 @@ public class SqlClientResult implements SqlResult {
 
             JetSqlRow row = getCurrentRow();
             currentPosition++;
-            returnedAnyResult.set(true);
+            returnedAnyResult = true;
             return new SqlRowImpl(rowMetadata, row);
         }
 
@@ -444,7 +443,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     boolean isReturnedAnyResult() {
-        return returnedAnyResult.get();
+        return returnedAnyResult;
     }
 
     QueryId getQueryId() {
