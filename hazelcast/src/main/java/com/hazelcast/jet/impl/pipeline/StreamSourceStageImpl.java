@@ -68,8 +68,7 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
                 limitingLag(allowedLag),
                 0,
                 0,
-                transform.partitionIdleTimeout(),
-                (byte) 0
+                transform.partitionIdleTimeout()
         ));
         return new StreamStageImpl<>(transform, ADAPT_TO_JET_EVENT, pipeline);
     }
@@ -83,8 +82,7 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
                 limitingLag(allowedLag),
                 0,
                 0,
-                transform.partitionIdleTimeout(),
-                (byte) 0
+                transform.partitionIdleTimeout()
         ));
         return new StreamStageImpl<>(transform, ADAPT_TO_JET_EVENT, pipeline);
     }
