@@ -199,7 +199,7 @@ public final class ConcurrentInboundEdgeStream {
                         specialItemsStash.addAll(coalescers.queueDone(queueIndex));
                     } else if (itemDetector.item instanceof Watermark) {
                         Watermark watermark = (Watermark) itemDetector.item;
-                        specialItemsStash.addAll(coalescers.observeWm(watermark.key(), queueIndex, watermark.timestamp()));
+                        specialItemsStash.addAll(coalescers.observeWm(queueIndex, watermark));
                     } else if (itemDetector.item instanceof SnapshotBarrier) {
                         observeBarrier(queueIndex, (SnapshotBarrier) itemDetector.item);
                         tracker.madeProgress();

@@ -95,10 +95,10 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
     @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        if (!makeRoomInQueue()) {
-            return false;
+        if (makeRoomInQueue()) {
+            return tryProcessInt((T) item);
         }
-        return tryProcessInt((T) item);
+        return false;
     }
 
     protected boolean tryProcessInt(T item) {

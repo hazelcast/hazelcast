@@ -586,8 +586,7 @@ public class ProcessorTasklet implements Tasklet {
                     if (wm.timestamp() != IDLE_MESSAGE_TIME) {
                         pendingEdgeWatermark.add(wm);
                     }
-                    pendingGlobalWatermarks.addAll(
-                            coalescers.observeWm(wm.key(), currInstream.ordinal(), wm.timestamp()));
+                    pendingGlobalWatermarks.addAll(coalescers.observeWm(currInstream.ordinal(), wm));
                 } else if (item instanceof SnapshotBarrier) {
                     observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
                 } else {

@@ -80,17 +80,17 @@ public class KeyedWatermarkCoalescer {
         }
     }
 
-    public List<Watermark> observeWm(byte key, int queueIndex, long wmValue) {
-        WatermarkCoalescer c = coalescer(key);
-        long newWmValue = c.observeWm(queueIndex, wmValue);
+    public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
+        WatermarkCoalescer c = coalescer(watermark.key());
+        long newWmValue = c.observeWm(queueIndex, watermark.timestamp());
         if (newWmValue == NO_NEW_WM) {
             return c.idleMessagePending()
-                    ? singletonList(new Watermark(IDLE_MESSAGE_TIME, key))
+                    ? singletonList(new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
                     : emptyList();
         }
-        Watermark newWm = new Watermark(newWmValue, key);
+        Watermark newWm = new Watermark(newWmValue, watermark.key());
         return c.idleMessagePending()
-                ? asList(newWm, new Watermark(IDLE_MESSAGE_TIME, key))
+                ? asList(newWm, new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
                 : singletonList(newWm);
     }
 

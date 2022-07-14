@@ -38,6 +38,10 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 public final class Watermark implements SpecialBroadcastItem {
 
     private final long timestamp;
+
+    /**
+     * The watermark identifier distinguishes watermarks obtained from different sources.
+     */
     private final byte key;
 
     /**
