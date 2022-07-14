@@ -146,7 +146,6 @@ public class TcpIpConfig {
      * @see #getMembers()
      */
     public TcpIpConfig addMember(String member) {
-        // TODO [ufuk]: consider this check throwing exception after adding dynamic update support
         String memberText = checkHasText(member, "member must contain text");
         List<String> splitMembers = Arrays.asList(MEMBER_TEXT_SPLIT_PATTERN.split(memberText.trim()));
         members.addAll(splitMembers);
