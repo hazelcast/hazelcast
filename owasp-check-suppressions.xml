@@ -72,6 +72,13 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.zendesk/mysql\-binlog\-connector\-java@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>

@@ -276,12 +276,11 @@ final class AccumulatorSerializerHooks {
                 @Override
                 public void write(@Nonnull ObjectDataOutput out, @Nonnull PickAnyAccumulator acc) throws IOException {
                     out.writeObject(acc.get());
-                    out.writeLong(acc.count());
                 }
 
                 @Nonnull @Override
                 public PickAnyAccumulator read(@Nonnull ObjectDataInput in) throws IOException {
-                    return new PickAnyAccumulator<>(in.readObject(), in.readLong());
+                    return new PickAnyAccumulator<>(in.readObject());
                 }
             };
         }

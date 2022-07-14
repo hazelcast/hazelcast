@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
@@ -145,11 +146,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         return new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListener listener) {
                 Addresses possibleAddresses = new Addresses();
                 for (Address address : getKnownAddresses()) {
                     Addresses addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                            address.getHost(), 1);
+                            address.getHost(), 1, listener);
                     possibleAddresses.addAll(addresses);
                 }
                 return possibleAddresses;
