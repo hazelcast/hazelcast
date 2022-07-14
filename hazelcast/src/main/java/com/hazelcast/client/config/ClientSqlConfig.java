@@ -32,7 +32,10 @@ public class ClientSqlConfig {
     private ClientSqlResubmissionMode resubmissionMode = DEFAULT_RESUBMISSION_MODE;
 
     /**
-     * Sets the resubmission mode for failing SQL queries. See {@link ClientSqlResubmissionMode}.
+     * Sets the resubmission mode for failing SQL queries. See {@link
+     * ClientSqlResubmissionMode}. The default value is {@link
+     * ClientSqlResubmissionMode#NEVER NEVER}.
+     *
      * @since 5.2
      */
     @Nonnull
