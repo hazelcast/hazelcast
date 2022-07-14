@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema.type;
 
 public enum TypeKind {
+    NONE,
     JAVA,
     PORTABLE,
     COMPACT;

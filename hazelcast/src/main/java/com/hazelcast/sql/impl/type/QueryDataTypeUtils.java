@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.CalendarConverter;
@@ -350,6 +351,49 @@ public final class QueryDataTypeUtils {
 
             default:
                 return false;
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
+    public static FieldKind resolveCompactType(QueryDataType queryDataType) {
+        switch (queryDataType.getTypeFamily()) {
+            case VARCHAR:
+                return FieldKind.STRING;
+            case BOOLEAN:
+                return FieldKind.BOOLEAN;
+            case TINYINT:
+                return FieldKind.INT8;
+            case SMALLINT:
+                return FieldKind.INT16;
+            case INTEGER:
+                return FieldKind.INT32;
+            case BIGINT:
+                return FieldKind.INT64;
+            case DECIMAL:
+                return FieldKind.DECIMAL;
+            case REAL:
+                return FieldKind.FLOAT32;
+            case DOUBLE:
+                return FieldKind.FLOAT64;
+            case TIME:
+                return FieldKind.TIME;
+            case DATE:
+                return FieldKind.DATE;
+            case TIMESTAMP:
+                return FieldKind.TIMESTAMP;
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return FieldKind.TIMESTAMP_WITH_TIMEZONE;
+            case OBJECT:
+                // TODO: review
+                return FieldKind.COMPACT;
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_DAY_SECOND:
+            case MAP:
+            case JSON:
+            case NULL:
+            case ROW:
+            default:
+                throw new IllegalArgumentException("Unexpected data type: " + queryDataType);
         }
     }
 }

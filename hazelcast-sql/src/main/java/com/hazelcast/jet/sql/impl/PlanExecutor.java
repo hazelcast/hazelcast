@@ -21,6 +21,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -74,9 +76,11 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -86,11 +90,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
@@ -465,12 +471,36 @@ public class PlanExecutor {
         if (SqlConnector.PORTABLE_FORMAT.equals(plan.options().get(SqlConnector.OPTION_FORMAT))) {
             final PortableContext portableContext = getSerializationService(hazelcastInstance).getPortableContext();
             final ClassDefinition classDef = portableContext.lookupClassDefinition(
-                    Integer.parseInt(plan.options().get("portableFactoryId")),
-                    Integer.parseInt(plan.options().get("portableClassId")),
-                    Integer.parseInt(plan.options().get("portableClassVersion"))
+                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID)),
+                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID)),
+                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION))
             );
 
             typesStorage.registerType(plan.name(), classDef);
+
+            return UpdateSqlResultImpl.createUpdateCountResult(0);
+        }
+        if (SqlConnector.COMPACT_FORMAT.equals(plan.options().get(SqlConnector.OPTION_FORMAT))) {
+            final Type type = new Type();
+            type.setKind(TypeKind.COMPACT);
+            type.setName(plan.name());
+            final List<Type.TypeField> typeFields = plan.columns().stream()
+                    .map(typeColumn -> new Type.TypeField(typeColumn.name(), typeColumn.dataType()))
+                    .collect(Collectors.toList());
+            type.setFields(typeFields);
+
+            final TreeMap<String, FieldDescriptor> schemaFieldDescriptors = new TreeMap<>();
+            for (int i = 0; i < typeFields.size(); i++) {
+                final Type.TypeField field = typeFields.get(i);
+                schemaFieldDescriptors.put(field.getName(), new FieldDescriptor(
+                        field.getName(),
+                        QueryDataTypeUtils.resolveCompactType(field.getQueryDataType())
+                ));
+            }
+            final Schema schema = new Schema(type.getName(), schemaFieldDescriptors);
+            type.setCompactFingerprint(schema.getSchemaId());
+
+            typesStorage.register(type.getName(), type);
 
             return UpdateSqlResultImpl.createUpdateCountResult(0);
         }

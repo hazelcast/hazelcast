@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -31,6 +33,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class TypesStorage extends TablesStorage {
@@ -118,6 +121,39 @@ public class TypesStorage extends TablesStorage {
         put(name, type);
 
         return false;
+    }
+
+    public boolean registerType(String name, Schema schema) {
+        final Type type = new Type();
+        type.setName(name);
+        type.setKind(TypeKind.COMPACT);
+        type.setCompactFingerprint(schema.getSchemaId());
+
+        final List<Type.TypeField> fields = new ArrayList<>();
+
+        return false;
+    }
+
+    public boolean register(String name, Type type) {
+        put(name, type);
+        return true;
+    }
+
+    public Schema getTypeCompactSchema(String typeName, Long fingerprint) {
+        final Type type = getType(typeName);
+        final TreeMap<String, FieldDescriptor> fieldDefinitions = new TreeMap<>();
+        for (int i = 0; i < type.getFields().size(); i++) {
+            final Type.TypeField typeField = type.getFields().get(i);
+            fieldDefinitions.put(typeField.getName(), new FieldDescriptor(
+                    typeField.getName(),
+                    QueryDataTypeUtils.resolveCompactType(typeField.getQueryDataType())
+            ));
+        }
+        final Schema schema = new Schema(typeName, fieldDefinitions);
+
+        assert schema.getSchemaId() == fingerprint;
+
+        return schema;
     }
 
     private void fixTypeReferences(final Type addedType) {

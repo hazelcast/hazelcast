@@ -21,7 +21,6 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
@@ -50,6 +49,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.schema.TypesUtils.convertTypeToQueryDataType;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 
@@ -109,50 +109,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             return QueryDataType.OBJECT;
         }
 
-        final Map<String, QueryDataType> discoveredTypes = new HashMap<>();
-
-        traverseTypeHierarchy(rootType, discoveredTypes, typesStorage);
-        populateTypeInformation(discoveredTypes, typesStorage);
-
-        return discoveredTypes.get(rootType.getName());
-    }
-
-    private void traverseTypeHierarchy(final Type current,
-                                       final Map<String, QueryDataType> discovered,
-                                       final TablesStorage tablesStorage
-    ) {
-        discovered.putIfAbsent(current.getName(), new QueryDataType(current.getName(), current.getJavaClassName()));
-
-        for (int i = 0; i < current.getFields().size(); i++) {
-            final Type.TypeField field = current.getFields().get(i);
-            if (field.getQueryDataType().isCustomType()) {
-                final String fieldTypeName = field.getQueryDataType().getObjectTypeName();
-                if (!discovered.containsKey(fieldTypeName)) {
-                    traverseTypeHierarchy(tablesStorage.getType(fieldTypeName), discovered, tablesStorage);
-                }
-            }
-        }
-    }
-
-    private void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
-        for (final QueryDataType queryDataType : types.values()) {
-            final Type type = tablesStorage.getType(queryDataType.getObjectTypeName());
-            queryDataType.setObjectTypeClassName(type.getJavaClassName());
-            for (int i = 0; i < type.getFields().size(); i++) {
-                final Type.TypeField field = type.getFields().get(i);
-                if (field.getQueryDataType().isCustomType()) {
-                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
-                            field.getName(),
-                            types.get(field.getQueryDataType().getObjectTypeName())
-                    ));
-                } else {
-                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
-                            field.getName(),
-                            field.getQueryDataType()
-                    ));
-                }
-            }
-        }
+        return convertTypeToQueryDataType(rootType, typesStorage);
     }
 
     private Stream<MappingField> resolvePrimitiveSchema(

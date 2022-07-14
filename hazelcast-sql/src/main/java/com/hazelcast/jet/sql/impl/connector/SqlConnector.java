@@ -129,6 +129,17 @@ public interface SqlConnector {
     String OPTION_TYPE_JAVA_CLASS = "javaClass";
 
     /**
+     * The name of the Compact type used for Type
+     */
+    String OPTION_TYPE_COMPACT_TYPE_NAME = "compactTypeName";
+
+    String OPTION_TYPE_PORTABLE_FACTORY_ID = "portableFactoryId";
+
+    String OPTION_TYPE_PORTABLE_CLASS_ID = "portableClassId";
+
+    String OPTION_TYPE_PORTABLE_CLASS_VERSION = "portableClassVersion";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */

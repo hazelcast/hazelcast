@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.getters.CompactGetter;
 import com.hazelcast.query.impl.getters.PortableGetter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -76,7 +77,11 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
                         context.getSerializationService()
                 ));
             } else if (res instanceof CompactGenericRecord) {
-                return null;
+                return (T) type.convert(extractCompactField(
+                        (CompactGenericRecord) res,
+                        name,
+                        context.getSerializationService()
+                ));
             } else {
                 return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
             }
@@ -89,6 +94,15 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
         final PortableGetter getter = new PortableGetter(ss);
         try {
             return getter.getValue(portable, name);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
+        final CompactGetter getter = new CompactGetter(ss);
+        try {
+            return getter.getValue(compact, name);
         } catch (Exception e) {
             return null;
         }

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -64,10 +65,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public static final int MAX_DECIMAL_PRECISION = 76;
     public static final int MAX_DECIMAL_SCALE = 38;
-    public static final int OBJECT_TYPE_KIND_NONE = 0;
-    public static final int OBJECT_TYPE_KIND_JAVA = 1;
-    public static final int OBJECT_TYPE_KIND_PORTABLE = 2;
-    public static final int OBJECT_TYPE_KIND_COMPACT = 3;
+    public static final int OBJECT_TYPE_KIND_NONE = TypeKind.NONE.ordinal();
+    public static final int OBJECT_TYPE_KIND_JAVA = TypeKind.JAVA.ordinal();
+    public static final int OBJECT_TYPE_KIND_PORTABLE = TypeKind.PORTABLE.ordinal();
+    public static final int OBJECT_TYPE_KIND_COMPACT = TypeKind.COMPACT.ordinal();
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
@@ -116,7 +117,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public QueryDataType(String objectTypeName) {
         this.converter = ObjectConverter.INSTANCE;
         this.objectTypeName = objectTypeName;
-        this.objectTypeKind = OBJECT_TYPE_KIND_JAVA;
     }
 
     public QueryDataType(String objectTypeName, String objectTypeClassName) {
@@ -378,8 +378,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     }
 
     public boolean isCustomType() {
-        return this.converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                && (!this.objectTypeName.isEmpty() || !this.objectTypeClassName.isEmpty());
+        return this.converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && (!this.objectTypeName.isEmpty());
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {

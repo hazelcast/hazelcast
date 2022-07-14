@@ -38,6 +38,7 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     private TypeKind kind = TypeKind.JAVA;
     private String javaClassName;
     private ClassDefinition portableClassDef;
+    private Long compactFingerprint;
     private Schema compactSchema;
     private List<TypeField> fields;
 
@@ -103,6 +104,14 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         this.compactSchema = compactSchema;
     }
 
+    public Long getCompactFingerprint() {
+        return compactFingerprint;
+    }
+
+    public void setCompactFingerprint(final Long compactFingerprint) {
+        this.compactFingerprint = compactFingerprint;
+    }
+
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(name);
@@ -115,6 +124,7 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 out.writeObject(portableClassDef);
                 break;
             case COMPACT:
+                out.writeLong(compactFingerprint);
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);
@@ -138,6 +148,7 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 this.portableClassDef = in.readObject();
                 break;
             case COMPACT:
+                this.compactFingerprint = in.readLong();
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);

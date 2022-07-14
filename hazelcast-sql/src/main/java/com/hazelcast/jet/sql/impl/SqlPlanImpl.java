@@ -40,6 +40,7 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
@@ -1287,6 +1288,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final String name;
         private final boolean replace;
         private final boolean ifNotExists;
+        private final List<TypeColumn> columns;
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
@@ -1295,6 +1297,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 final String name,
                 final boolean replace,
                 final boolean ifNotExists,
+                final List<TypeColumn> columns,
                 final Map<String, String> options,
                 final PlanExecutor planExecutor
         ) {
@@ -1302,6 +1305,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.name = name;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
+            this.columns = columns;
             this.options = options;
             this.planExecutor = planExecutor;
         }
@@ -1320,6 +1324,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public boolean ifNotExists() {
             return ifNotExists;
+        }
+
+        public List<TypeColumn> columns() {
+            return columns;
         }
 
         @Override
@@ -1342,6 +1350,24 @@ abstract class SqlPlanImpl extends SqlPlan {
             SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
             return planExecutor.execute(this);
+        }
+
+        static class TypeColumn {
+            private final String name;
+            private final QueryDataType dataType;
+
+            TypeColumn(String name, QueryDataType dataType) {
+                this.name = name;
+                this.dataType = dataType;
+            }
+
+            public String name() {
+                return name;
+            }
+
+            public QueryDataType dataType() {
+                return dataType;
+            }
         }
     }
 

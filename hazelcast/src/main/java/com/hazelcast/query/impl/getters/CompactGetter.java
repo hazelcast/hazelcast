@@ -25,13 +25,13 @@ import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 public class CompactGetter extends Getter {
     private final InternalSerializationService serializationService;
 
-    CompactGetter(InternalSerializationService serializationService) {
+    public CompactGetter(InternalSerializationService serializationService) {
         super(null);
         this.serializationService = serializationService;
     }
 
     @Override
-    Object getValue(Object target, String fieldPath) throws Exception {
+    public Object getValue(Object target, String fieldPath) throws Exception {
         InternalGenericRecord record;
         if (target instanceof CompactGenericRecord) {
             record = (InternalGenericRecord) target;

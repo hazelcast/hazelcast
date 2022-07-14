@@ -79,8 +79,8 @@ public class SqlCreateType extends SqlCreate {
         return ifNotExists;
     }
 
-    public Stream<SqlMappingColumn> columns() {
-        return columns.getList().stream().map(node -> (SqlMappingColumn) node);
+    public Stream<SqlTypeColumn> columns() {
+        return columns.getList().stream().map(node -> (SqlTypeColumn) node);
     }
 
     public Map<String, String> options() {

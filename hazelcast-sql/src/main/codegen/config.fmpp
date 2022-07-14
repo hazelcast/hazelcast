@@ -42,6 +42,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
+      "com.hazelcast.jet.sql.impl.parse.SqlTypeColumn"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
       "org.apache.calcite.sql.SqlCreate"

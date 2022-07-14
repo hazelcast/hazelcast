@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -31,6 +32,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
@@ -109,6 +111,10 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             QueryDataType type = entry.getValue().type();
+            if (type.isCustomType()) {
+                final Type rootType = typesStorage.getType(type.getObjectTypeName());
+                type = TypesUtils.convertTypeToQueryDataType(rootType, typesStorage);
+            }
             String name = entry.getValue().name();
 
             fields.add(new MapTableField(name, type, false, path));
@@ -163,6 +169,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
                 return FieldKind.TIMESTAMP;
             case TIMESTAMP_WITH_TIME_ZONE:
                 return FieldKind.TIMESTAMP_WITH_TIMEZONE;
+            case OBJECT:
+                return FieldKind.COMPACT;
             default:
                 throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
         }

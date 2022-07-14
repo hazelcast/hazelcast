@@ -72,6 +72,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
     name = SimpleIdentifier()
+    columns = TypeColumns()
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
@@ -83,6 +84,46 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
             ifNotExists,
             startPos.plus(getPos())
         );
+    }
+}
+
+SqlNodeList TypeColumns():
+{
+    SqlParserPos pos = getPos();
+    SqlTypeColumn column;
+    List<SqlNode> columns = new ArrayList<SqlNode>();
+}
+{
+    [
+        <LPAREN> {  pos = getPos(); }
+        column = TypeColumn()
+        {
+            columns.add(column);
+        }
+        (
+            <COMMA> column = TypeColumn()
+            {
+                columns.add(column);
+            }
+        )*
+        <RPAREN>
+    ]
+    {
+        return new SqlNodeList(columns, pos.plus(getPos()));
+    }
+}
+
+SqlTypeColumn TypeColumn():
+{
+    Span span;
+    SqlIdentifier name;
+    SqlDataType type;
+}
+{
+    name = SimpleIdentifier() { span = span(); }
+    type = SqlDataType()
+    {
+        return new SqlTypeColumn(name, type, span.end(this));
     }
 }
 

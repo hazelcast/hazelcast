@@ -166,9 +166,10 @@ public final class FieldsUtil {
         return fields;
     }
 
+    // TODO: maybe move to more generic utilities class?
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+    public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
