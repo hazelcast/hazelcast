@@ -69,7 +69,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow currItem;
 
     @SuppressWarnings("unchecked")
-    private final Set<JetSqlRow>[] unusedEventsTracker = new Set[]{new HashSet<>(), new HashSet<>()};
+    private final Set<JetSqlRow> unusedEventsTracker = new HashSet<>();
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
@@ -167,9 +167,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
             iterator = buffer[1 - ordinal].iterator();
-            if (!joinInfo.isInner()) {
-                unusedEventsTracker[1 - ordinal].add(currItem);
-                unusedEventsTracker[ordinal].add(currItem);
+            if (joinInfo.isLeftOuter() && ordinal == 0 || joinInfo.isRightOuter() && ordinal == 1) {
+                unusedEventsTracker.add(currItem);
             }
         }
 
@@ -181,8 +180,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     joinInfo.nonEquiCondition(),
                     evalContext);
             // it is used already once
-            unusedEventsTracker[1 - ordinal].remove(oppositeBufferItem);
-            unusedEventsTracker[ordinal].remove(oppositeBufferItem);
+            unusedEventsTracker.remove(oppositeBufferItem);
 
             if (preparedOutput != null && !tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
@@ -293,7 +291,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
                 if (extractors[idx].applyAsLong(row) < limits[idx]) {
-                    if (!joinInfo.isInner() && unusedEventsTracker[ordinal].remove(row)) {
+                    if (!joinInfo.isInner() && unusedEventsTracker.remove(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
                         JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);

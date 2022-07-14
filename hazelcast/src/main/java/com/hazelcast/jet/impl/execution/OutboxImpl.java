@@ -118,7 +118,7 @@ public class OutboxImpl implements OutboxInternal {
         }
         assert unfinishedItem == null || item.equals(unfinishedItem)
                 : "Different item offered after previous call returned false: expected=" + unfinishedItem
-                        + ", got=" + item;
+                + ", got=" + item;
         assert unfinishedItemOrdinals == null || Arrays.equals(unfinishedItemOrdinals, ordinals)
                 : "Offered to different ordinals after previous call returned false: expected="
                 + Arrays.toString(unfinishedItemOrdinals) + ", got=" + Arrays.toString(ordinals);
@@ -166,10 +166,8 @@ public class OutboxImpl implements OutboxInternal {
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be
                     // emitted to each ordinal, but we don't do that currently.
-                    if (lastForwardedWm.get(wm.key()) == null) {
-                        lastForwardedWm.put(wm.key(), SwCounter.newSwCounter(Long.MIN_VALUE));
-                        return true;
-                    }
+                    lastForwardedWm.putIfAbsent(wm.key(), SwCounter.newSwCounter(Long.MIN_VALUE));
+
                     assert lastForwardedWm.get(wm.key()).get() <= wmTimestamp
                             : "current=" + lastForwardedWm.get(wm.key()).get() + ", new=" + wmTimestamp;
                     lastForwardedWm.get(wm.key()).set(wmTimestamp);
@@ -267,8 +265,7 @@ public class OutboxImpl implements OutboxInternal {
     public long lastForwardedWm(byte key) {
         Counter counter = lastForwardedWm.get(key);
         if (counter == null) {
-            counter = SwCounter.newSwCounter(Long.MIN_VALUE);
-            lastForwardedWm.put(key, counter);
+            return Long.MIN_VALUE;
         }
         return counter.get();
     }
