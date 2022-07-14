@@ -27,6 +27,9 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @since 5.2
  */
 public class ClientSqlConfig {
+    /**
+     * The default resubmission mode.
+     */
     public static final ClientSqlResubmissionMode DEFAULT_RESUBMISSION_MODE = ClientSqlResubmissionMode.NEVER;
 
     private ClientSqlResubmissionMode resubmissionMode = DEFAULT_RESUBMISSION_MODE;
