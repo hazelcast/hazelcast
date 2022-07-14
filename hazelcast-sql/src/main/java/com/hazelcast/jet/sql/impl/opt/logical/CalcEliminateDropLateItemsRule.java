@@ -31,8 +31,8 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * Physical rule that eliminates {@link DropLateItemsLogicalRel} under {@link Calc},
- * if {@link Calc} doesn't project watermarked field.
+ * Logical rule that eliminates {@link DropLateItemsLogicalRel}
+ * under {@link Calc}, if calc doesn't project watermarked field.
  * <p>
  * Before:
  * <pre>

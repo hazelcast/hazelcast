@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -89,7 +90,7 @@ public class PhysicalJoinTest extends OptimizerTestSupport {
         );
     }
 
-    // @Ignore("Support streaming tables with watermarks in OptimizerTestSupport")
+    @Ignore("Support streaming tables with watermarks in OptimizerTestSupport")
     @Test
     public void when_bothInputsAreStreamScan_then_useS2SJoin() {
         String leftStream = "l";
