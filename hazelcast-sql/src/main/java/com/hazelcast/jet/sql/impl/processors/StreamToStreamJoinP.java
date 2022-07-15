@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
-import com.google.common.collect.Streams;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
@@ -40,6 +39,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
 
@@ -105,8 +105,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         // no key must be on both sides
-        if (Streams.concat(leftTimeExtractors.keySet().stream(), rightTimeExtractors.keySet().stream()).distinct().count()
-                != leftTimeExtractors.size() + rightTimeExtractors.size()) {
+        if (hasNonEmptyIntersection(leftTimeExtractors.keySet(), rightTimeExtractors.keySet())) {
             throw new IllegalArgumentException("Some watermark key is found on both inputs. Left="
                     + leftTimeExtractors.keySet() + ", right=" + rightTimeExtractors.keySet());
         }
