@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -80,6 +81,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
+
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME);
 
     public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
@@ -345,7 +348,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return new Watermark(timestamp);
     }
 
-    public static Watermark wm(byte key, long timestamp) {
+    public static Watermark wm(long timestamp, byte key) {
         return new Watermark(timestamp, key);
     }
 

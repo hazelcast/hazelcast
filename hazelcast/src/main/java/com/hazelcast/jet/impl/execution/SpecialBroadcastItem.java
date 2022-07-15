@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.impl.execution;
 
-public final class DoneItem implements SpecialBroadcastItem {
+import com.hazelcast.jet.core.Watermark;
 
-    public static final DoneItem DONE_ITEM = new DoneItem();
-
-    private DoneItem() { }
-
-    @Override
-    public String toString() {
-        return "DONE_ITEM";
-    }
+/**
+ * Marker interface for {@link Watermark}s, {@link SnapshotBarrier}s, and {@link
+ * DoneItem}, i.e. the types of broadcast items at which the draining in {@link
+ * ConcurrentInboundEdgeStream} stops.
+ */
+public interface SpecialBroadcastItem extends BroadcastItem {
 }

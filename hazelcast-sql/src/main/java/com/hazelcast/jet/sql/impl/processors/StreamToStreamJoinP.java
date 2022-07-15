@@ -147,7 +147,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             long wmValue = lastReceivedWm.getValue(en.getKey());
             long time = en.getValue().applyAsLong((JetSqlRow) item);
             if (time < wmValue) {
-                logLateEvent(getLogger(), wmValue, item);
+                logLateEvent(getLogger(), en.getKey(), wmValue, item);
                 return true;
             }
         }

@@ -126,9 +126,6 @@ public class OutboxImpl implements OutboxInternal {
                 : "Offered to different ordinals after previous call returned false: expected="
                 + Arrays.toString(unfinishedItemOrdinals) + ", got=" + Arrays.toString(ordinals);
 
-        assert numRemainingInBatch != -1 : "Outbox.offer() called again after it returned false, without a " +
-                "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
-                "or AbstractProcessor.tryEmit() returned false";
         numRemainingInBatch--;
         boolean done = true;
         if (numRemainingInBatch == -1) {
@@ -164,7 +161,7 @@ public class OutboxImpl implements OutboxInternal {
             if (item instanceof Watermark) {
                 Watermark wm = (Watermark) item;
                 long wmTimestamp = wm.timestamp();
-                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
+                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE_TIME) {
                     // We allow equal timestamp here, even though the WMs should be increasing.
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be

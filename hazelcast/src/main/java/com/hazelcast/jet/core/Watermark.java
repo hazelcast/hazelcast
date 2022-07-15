@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.impl.execution.BroadcastItem;
+import com.hazelcast.jet.impl.execution.SpecialBroadcastItem;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import java.util.Objects;
 
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
@@ -35,19 +35,25 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  *
  * @since Jet 3.0
  */
-public final class Watermark implements BroadcastItem {
+public final class Watermark implements SpecialBroadcastItem {
 
+    /**
+     * The watermark identifier distinguishes watermarks obtained from different sources.
+     */
     private final byte key;
     private final long timestamp;
 
     /**
-     * Constructs a new watermark item.
+     * Constructs a new watermark item with {@code 0} watermark key.
      */
     public Watermark(long timestamp) {
         this.timestamp = timestamp;
         this.key = 0;
     }
 
+    /**
+     * Constructs a new watermark item with specified key.
+     */
     public Watermark(long timestamp, byte key) {
         this.timestamp = timestamp;
         this.key = key;
@@ -61,7 +67,7 @@ public final class Watermark implements BroadcastItem {
     }
 
     /**
-     * Returns key of this watermark item.
+     * Returns the key of this watermark item.
      */
     public byte key() {
         return key;
@@ -81,9 +87,10 @@ public final class Watermark implements BroadcastItem {
 
     @Override
     public String toString() {
-        return (timestamp == IDLE_MESSAGE.timestamp
-                ? "Watermark{IDLE_MESSAGE}"
-                : "Watermark{ts=" + toLocalTime(timestamp)) +
-                ", key=" + key + '}';
+        return timestamp ==
+                WatermarkCoalescer.IDLE_MESSAGE_TIME
+                        ? "Watermark{IDLE_MESSAGE"
+                        : "Watermark{ts=" + toLocalTime(timestamp)
+                + ", key=" + key + "}";
     }
 }
