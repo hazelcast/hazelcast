@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -39,6 +40,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 
 public class OutboxImpl implements OutboxInternal {
+
+    private static final Function<Byte, Counter> CREATE_COUNTER_FUNCTION = x -> SwCounter.newSwCounter(Long.MIN_VALUE);
 
     private final OutboundCollector[] outstreams;
     private final ProgressTracker progTracker;
@@ -166,11 +169,9 @@ public class OutboxImpl implements OutboxInternal {
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be
                     // emitted to each ordinal, but we don't do that currently.
-                    lastForwardedWm.putIfAbsent(wm.key(), SwCounter.newSwCounter(Long.MIN_VALUE));
-
-                    assert lastForwardedWm.get(wm.key()).get() <= wmTimestamp
-                            : "current=" + lastForwardedWm.get(wm.key()).get() + ", new=" + wmTimestamp;
-                    lastForwardedWm.get(wm.key()).set(wmTimestamp);
+                    Counter counter = lastForwardedWm.computeIfAbsent(wm.key(), CREATE_COUNTER_FUNCTION);
+                    assert counter.get() <= wmTimestamp : "current=" + counter.get() + ", new=" + wmTimestamp;
+                    counter.set(wmTimestamp);
                 }
             }
         } else {
