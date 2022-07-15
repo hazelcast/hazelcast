@@ -28,6 +28,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -38,7 +39,7 @@ import java.util.function.BiFunction;
  */
 public final class ExceptionUtil {
 
-    private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
+    static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
 
     private static final BiFunction<Throwable, String, HazelcastException> HAZELCAST_EXCEPTION_WRAPPER = (throwable, message) -> {
         if (message != null) {
@@ -240,14 +241,23 @@ public final class ExceptionUtil {
     private static <T extends Throwable> T cloneException(Class<? extends Throwable> exceptionClass,
                                                           String message, @Nullable Throwable cause,
                                                           ConstructorMethod constructorMethod) {
+        Constructor<? extends Throwable> reflectedConstructor = null;
+        boolean isAccessible = false;
         try {
-            MethodHandle constructor = MethodHandles.publicLookup()
-                    .findConstructor(exceptionClass, constructorMethod.signature());
+            reflectedConstructor = exceptionClass.getDeclaredConstructor(constructorMethod.signature().parameterArray());
+            isAccessible = reflectedConstructor.isAccessible();
+            reflectedConstructor.setAccessible(true);
+
+            MethodHandle constructor = MethodHandles.publicLookup().unreflectConstructor(reflectedConstructor);
             return constructorMethod.cloneWith(constructor, message, cause);
         } catch (ClassCastException | WrongMethodTypeException
                 | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
         } catch (Throwable t) {
             throw new RuntimeException("Exception creation failed ", t);
+        } finally {
+            if (reflectedConstructor != null) {
+                reflectedConstructor.setAccessible(isAccessible);
+            }
         }
 
         return null;
@@ -345,7 +355,7 @@ public final class ExceptionUtil {
             return (T) clone;
         }
 
-        return null;
+        return original;
     }
 
     private static StackTraceElement[] getFixedStackTrace(Throwable throwable,
