@@ -73,8 +73,12 @@ public class TableResolverImpl implements TableResolver {
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
-    private volatile int lastMappingsSize;
+    // These fields should normally be volatile because we're accessing them from multiple threads. But we
+    // don't care if some thread doesn't see a newer value written by another thread. Each thread will write
+    // the same value (we assume that the number of mappings and views doesn't change much), so we
+    // shave a tiny bit of performance from not synchronizing :)
     private int lastViewsSize;
+    private int lastMappingsSize;
 
     public TableResolverImpl(
             NodeEngine nodeEngine,

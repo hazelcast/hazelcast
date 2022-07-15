@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -31,22 +30,18 @@ import static org.junit.Assert.assertFalse;
 public class SqlCatalogInitTest extends SqlTestSupport {
     public static final String MAP_NAME = randomName();
     public static final Config CONFIG = smallInstanceConfig();
-    @BeforeClass
-    public static void beforeClass() {
-        initialize(2, CONFIG);
-        createMapping(MAP_NAME, Integer.class, Integer.class);
-    }
 
+    // test case for https://github.com/hazelcast/hazelcast/issues/21632
     @Test
     public void test() {
-        HazelcastInstance instance = factory().newHazelcastInstance(CONFIG);
-        assertClusterSizeEventually(3, instance);
-        waitAllForSafeState(instance);
-        try {
-            SqlResult result = instance.getSql().execute("select * from " + MAP_NAME);
-            assertFalse(result.iterator().hasNext());
-        } finally {
-            instance.shutdown();
-        }
+        HazelcastInstance instance1 = createHazelcastInstance(CONFIG);
+        createHazelcastInstance(CONFIG);
+        createMapping(instance1, MAP_NAME, Integer.class, Integer.class);
+
+        HazelcastInstance instance3 = createHazelcastInstance(CONFIG);
+        assertClusterSizeEventually(3, instance3);
+        waitAllForSafeState(instance3);
+        SqlResult result = instance3.getSql().execute("select * from " + MAP_NAME);
+        assertFalse(result.iterator().hasNext());
     }
 }
