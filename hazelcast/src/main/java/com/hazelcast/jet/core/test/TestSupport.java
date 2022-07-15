@@ -49,6 +49,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,8 +61,6 @@ import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -207,7 +206,7 @@ public final class TestSupport {
 
     private final ProcessorMetaSupplier metaSupplier;
     private ProcessorSupplier supplier;
-    private List<ItemWithOrdinal> inputOutput = emptyList();
+    private List<TestEventInt> testEvents = new ArrayList<>();
     private boolean assertProgress = true;
     private boolean doSnapshots = true;
     private boolean logInputOutput = true;
@@ -269,7 +268,7 @@ public final class TestSupport {
      * @return {@code this} instance for fluent API
      */
     public TestSupport input(@Nonnull List<?> input) {
-        this.inputOutput = mixInputs(singletonList(input), new int[]{0});
+        this.testEvents = mixInputs(singletonList(input), new int[]{0});
         return this;
     }
 
@@ -309,7 +308,7 @@ public final class TestSupport {
         if (inputs.size() != priorities.length) {
             throw new IllegalArgumentException("Number of inputs must be equal to number of priorities");
         }
-        this.inputOutput = mixInputs(inputs, priorities);
+        this.testEvents = mixInputs(inputs, priorities);
         return this;
     }
 
@@ -336,13 +335,9 @@ public final class TestSupport {
      * @throws AssertionError if some assertion does not hold
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
-        if (!(inputOutput instanceof ArrayList)) {
-            inputOutput = new ArrayList<>(inputOutput);
-        }
-
         for (int ordinal = 0; ordinal < expectedOutputs.size(); ordinal++) {
             for (Object item : expectedOutputs.get(ordinal)) {
-                inputOutput.add(out(ordinal, item));
+                testEvents.add((TestEventInt) out(ordinal, item));
             }
         }
 
@@ -354,9 +349,19 @@ public final class TestSupport {
     /**
      * Runs the test and expects an exact sequence of input and output items.
      * The output must occur in the expected order given by the {@code
-     * inputOutput} parameter, that is a particular output item must occur after
+     * testEvents} parameter, that is particular output items must occur after
      * particular input items. If the output happens at other time, the test
      * fails.
+     * <p>
+     * Additionally, the {@code testEvents} can contain {@linkplain
+     * #processorAssertion(Consumer) processor assertions} that give the test a
+     * chance to assert the internal processor state. For example, the test can
+     * assert that the internal processor buffers contain or don't contain
+     * particular data, or that the internal watermark is at a certain value
+     * etc. Processor assertions must not be immediately followed by output
+     * items, they must occur before an input item, or at the end of test events
+     * - this is an implementation restriction and might be lifted in the
+     * future; the test will fail in this case.
      * <p>
      * To create `ItemWithOrdinal` instances, use the {@link #in} and {@link
      * #out} static factory methods.
@@ -371,14 +376,23 @@ public final class TestSupport {
      * number of ordinals in that case, this item will be ignored, except for
      * using its ordinal.
      *
-     * @param inputOutput the input and expected output items
+     * @param testEvents a sequence of input items, output items and
+     *                   processor assertions
+     * @see #in(Object)
+     * @see #in(int, Object)
+     * @see #out(Object)
+     * @see #out(int, Object)
+     * @see #processorAssertion(Consumer)
      */
-    public void expectExactOutput(ItemWithOrdinal... inputOutput) {
-        this.inputOutput = asList(inputOutput);
+    public void expectExactOutput(TestEvent... testEvents) {
+        this.testEvents = new ArrayList<>(testEvents.length);
+        for (TestEvent e : testEvents) {
+            this.testEvents.add((TestEventInt) e);
+        }
 
-        outputOrdinalCount = this.inputOutput.stream()
-                .filter(ItemWithOrdinal::isOutput)
-                .mapToInt(ItemWithOrdinal::ordinal)
+        outputOrdinalCount = this.testEvents.stream()
+                .filter(TestEventInt::isOutput)
+                .mapToInt(event -> ((ItemWithOrdinal) event).ordinal())
                 .max()
                 .orElse(-1) + 1;
         outputMustOccurOnTime = true;
@@ -580,8 +594,16 @@ public final class TestSupport {
     }
 
     private void run() {
-        // filter null items from inputOutput. They are there only to affect the number of ordinals. See class javadoc.
-        inputOutput.removeIf(item -> item.item == null);
+        // filter null items from testEvents. They are there only to affect the number of ordinals. See class javadoc.
+        testEvents.removeIf(event -> event instanceof ItemWithOrdinal && ((ItemWithOrdinal) event).item == null);
+
+        boolean isAfterProcessorAssertion = false;
+        for (TestEventInt e : testEvents) {
+            if (isAfterProcessorAssertion && e.isOutput()) {
+                throw new IllegalArgumentException("A processor assertion must not be directly followed by an output item");
+            }
+            isAfterProcessorAssertion = e.isProcessorAssertion();
+        }
 
         try {
             TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
@@ -604,7 +626,7 @@ public final class TestSupport {
             }
             supplier.init(supplierContext);
             runTest(new TestMode(false, 0, 1));
-            if (inputOutput.stream().anyMatch(ItemWithOrdinal::isInput)) {
+            if (testEvents.stream().anyMatch(TestEventInt::isInput)) {
                 // only run this version if there is any input
                 runTest(new TestMode(false, 0, EdgeConfig.DEFAULT_QUEUE_SIZE));
             }
@@ -657,20 +679,30 @@ public final class TestSupport {
 
         // call the process() method
         int ioPosition = 0;
-        while (ioPosition < inputOutput.size() || !inbox.isEmpty()) {
+        while (ioPosition < testEvents.size() || !inbox.isEmpty()) {
             if (inbox.isEmpty()) {
-                inboxOrdinal = inputOutput.get(ioPosition).ordinal();
+                while (ioPosition < testEvents.size() && testEvents.get(ioPosition).isProcessorAssertion()) {
+                    @SuppressWarnings("unchecked")
+                    ProcessorAssertion<Processor> assertion = (ProcessorAssertion<Processor>) testEvents.get(ioPosition++);
+                    assertion.assertion.accept(processor[0]);
+                }
+
+                if (ioPosition == testEvents.size()) {
+                    break;
+                }
+
+                inboxOrdinal = -1;
                 for (int added = 0;
-                     ioPosition < inputOutput.size()
+                     ioPosition < testEvents.size()
                              && added < testMode.inboxLimit()
-                             && inputOutput.get(ioPosition).isInput()
-                             && inboxOrdinal == inputOutput.get(ioPosition).ordinal
-                             && (added == 0 || !(inputOutput.get(ioPosition).item instanceof Watermark));
+                             && testEvents.get(ioPosition).isInput()
+                             && (inboxOrdinal == -1 || inboxOrdinal == ((ItemWithOrdinal) testEvents.get(ioPosition)).ordinal)
+                             && (added == 0 || !(((ItemWithOrdinal) testEvents.get(ioPosition)).item instanceof Watermark));
                      added++
                 ) {
-                    ItemWithOrdinal objectWithOrdinal = inputOutput.get(ioPosition++);
-                    inbox.queue().add(objectWithOrdinal.item);
-                    inboxOrdinal = objectWithOrdinal.ordinal;
+                    ItemWithOrdinal inputEvent = (ItemWithOrdinal) testEvents.get(ioPosition++);
+                    inbox.queue().add(inputEvent.item);
+                    inboxOrdinal = inputEvent.ordinal;
                 }
                 if (logInputOutput) {
                     System.out.println(LocalTime.now() + " Input-" + inboxOrdinal + ": " + inbox);
@@ -679,13 +711,13 @@ public final class TestSupport {
             int lastInboxSize = inbox.size();
 
             // add to accumulatedExpectedOutput
-            while (ioPosition < inputOutput.size() && inputOutput.get(ioPosition).isOutput()) {
-                accumulatedExpectedOutput.add(inputOutput.get(ioPosition));
+            while (ioPosition < testEvents.size() && testEvents.get(ioPosition).isOutput()) {
+                accumulatedExpectedOutput.add((ItemWithOrdinal) testEvents.get(ioPosition));
                 ioPosition++;
             }
 
             if (inbox.isEmpty()) {
-                if (ioPosition < inputOutput.size()) {
+                if (ioPosition < testEvents.size()) {
                     throw new IllegalArgumentException("Invalid test case: there's expected output before first input -" +
                             " there's no processor call that could have produced that output, and we're not calling" +
                             " complete() yet");
@@ -711,7 +743,7 @@ public final class TestSupport {
                 if (outputMustOccurOnTime) {
                     // if there isn't more input to be processed, don't assert the output. The output after
                     // the last input item can be generated in `complete()`
-                    if (ioPosition < inputOutput.size()) {
+                    if (ioPosition < testEvents.size()) {
                         assertOutputFn.accept(testMode, actualOutputs);
                     }
                 }
@@ -719,7 +751,7 @@ public final class TestSupport {
             }
         }
 
-        if (logInputOutput && inputOutput.stream().anyMatch(ItemWithOrdinal::isInput)) {
+        if (logInputOutput && testEvents.stream().anyMatch(TestEventInt::isInput)) {
             System.out.println(LocalTime.now() + " Input processed, calling complete()");
         }
 
@@ -791,14 +823,14 @@ public final class TestSupport {
      * Sorts the objects from multiple inputs into an order in which they will
      * be passed to processor, based on priorities.
      */
-    private static List<ItemWithOrdinal> mixInputs(List<List<?>> inputs, int[] priorities) {
+    private static List<TestEventInt> mixInputs(List<List<?>> inputs, int[] priorities) {
         SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
         for (int i = 0; i < priorities.length; i++) {
             ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
                             .add(i);
         }
 
-        List<ItemWithOrdinal> result = new ArrayList<>();
+        List<TestEventInt> result = new ArrayList<>();
         for (List<Integer> ordinals : ordinalsByPriority.values()) {
             boolean allDone;
             int index = 0;
@@ -1040,7 +1072,42 @@ public final class TestSupport {
                    .collect(Collectors.joining("\n"));
     }
 
-    public static final class ItemWithOrdinal {
+    public interface TestEvent {
+    }
+
+    // Internal interface with a couple of useful methods. We could move these methods to the
+    // super-interface, but we did it this way because we don't want them to be a public API.
+    private interface TestEventInt extends TestEvent {
+        boolean isInput();
+        boolean isOutput();
+        boolean isProcessorAssertion();
+    }
+
+    private static final class ProcessorAssertion<T extends Processor> implements TestEventInt {
+
+        private final Consumer<? super T> assertion;
+
+        private ProcessorAssertion(Consumer<? super T> assertion) {
+            this.assertion = assertion;
+        }
+
+        @Override
+        public boolean isInput() {
+            return false;
+        }
+
+        @Override
+        public boolean isOutput() {
+            return false;
+        }
+
+        @Override
+        public boolean isProcessorAssertion() {
+            return true;
+        }
+    }
+
+    private static final class ItemWithOrdinal implements TestEventInt {
         private final int ordinal;
         private final Object item;
 
@@ -1049,20 +1116,23 @@ public final class TestSupport {
             this.item = item;
         }
 
+        @Override
         public boolean isInput() {
             return ordinal >= 0;
         }
 
+        @Override
         public boolean isOutput() {
             return ordinal < 0;
         }
 
-        public int ordinal() {
-            return isInput() ? ordinal : -ordinal - 1;
+        @Override
+        public boolean isProcessorAssertion() {
+            return false;
         }
 
-        public Object item() {
-            return item;
+        public int ordinal() {
+            return isInput() ? ordinal : -ordinal - 1;
         }
 
         @Override
@@ -1072,22 +1142,57 @@ public final class TestSupport {
         }
     }
 
-    public static ItemWithOrdinal in(Object item) {
+    /**
+     * Create a test event with an input item. Equivalent to {@link #in(int, Object) in(0, item)}.
+     *
+     * @return the new test event
+     * @see #expectExactOutput(TestEvent...)
+     */
+    public static TestEvent in(Object item) {
         return in(0, item);
     }
 
-    public static ItemWithOrdinal in(int ordinal, Object item) {
+    /**
+     * Create a test event with an input item on the given ordinal.
+     *
+     * @return the new test event
+     * @see #expectExactOutput(TestEvent...)
+     */
+    public static TestEvent in(int ordinal, Object item) {
         checkNotNegative(ordinal, "ordinal");
         return new ItemWithOrdinal(ordinal, item);
     }
 
-    public static ItemWithOrdinal out(Object item) {
+    /**
+     * Create a test event with an output item. Equivalent to {@link #out(int, Object) out(0, item)}.
+     *
+     * @return the new test event
+     * @see #expectExactOutput(TestEvent...)
+     */
+    public static TestEvent out(Object item) {
         return out(0, item);
     }
 
-    public static ItemWithOrdinal out(int ordinal, Object item) {
+    /**
+     * Create a test event with an output item on the given ordinal.
+     *
+     * @return the new test event
+     * @see #expectExactOutput(TestEvent...)
+     */
+    public static TestEvent out(int ordinal, Object item) {
         checkNotNegative(ordinal, "ordinal");
         return new ItemWithOrdinal(-ordinal - 1, item);
+    }
+
+    /**
+     * Create a test event with a processor assertion. The assertion must not be
+     * followed by an output item event.
+     *
+     * @return the new test event
+     * @see #expectExactOutput(TestEvent...)
+     */
+    public static <T extends Processor> TestEvent processorAssertion(Consumer<T> assertion) {
+        return new ProcessorAssertion<>(assertion);
     }
 
     private List<List<?>> transformToListList(List<ItemWithOrdinal> items) {
