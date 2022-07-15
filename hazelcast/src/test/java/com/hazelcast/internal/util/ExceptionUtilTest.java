@@ -21,7 +21,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -86,7 +85,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCloneExceptionWithFixedAsyncStackTrace() {
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenStandardConstructorSignature_thenAppendAsyncTrace() {
         IOException expectedException = new IOException();
         ExecutionException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(new ExecutionException(expectedException));
 
